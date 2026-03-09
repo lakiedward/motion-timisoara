@@ -18,7 +18,7 @@ import { finalize, switchMap } from 'rxjs/operators';
 import { AuthService } from '../../../core/services/auth.service';
 import { CourseDetail, PublicApiService } from '../../../core/services/public-api.service';
 import { RatingService } from '../../../core/services/rating.service';
-import { API_BASE_URL } from '../../../core/tokens/api-base-url.token';
+import { SupabaseService } from '../../../core/services/supabase.service';
 import { WeekCalendarComponent } from './week-calendar/week-calendar.component';
 import { CourseGalleryComponent } from './course-gallery/course-gallery.component';
 import { LocationMapComponent } from './location-map/location-map.component';
@@ -63,7 +63,7 @@ export class CourseDetailsComponent implements OnInit {
   private readonly ratingService = inject(RatingService);
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly apiBaseUrl = inject<string>(API_BASE_URL);
+  private readonly supabase = inject(SupabaseService);
 
   readonly course = signal<EnrichedCourseDetail | null>(null);
   readonly isLoading = signal(true);
@@ -218,13 +218,9 @@ export class CourseDetailsComponent implements OnInit {
     // If already absolute, return as is
     if (/^https?:\/\//i.test(url)) return url;
 
-    // Ensure base URL has no trailing slash
-    const base = (this.apiBaseUrl || '').replace(/\/$/, '');
-    if (!base) return url; // fallback to original relative (same-origin)
-
-    // Ensure URL starts with a slash
-    const path = url.startsWith('/') ? url : `/${url}`;
-    return `${base}${path}`;
+    // Relative path: resolve via Supabase storage
+    const { data } = this.supabase.storage('course-photos').getPublicUrl(url);
+    return data?.publicUrl ?? url;
   }
 
   loadMyRating(): void {

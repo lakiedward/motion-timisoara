@@ -1,7 +1,7 @@
 ﻿import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe, UpperCasePipe } from '@angular/common';
 import { ProgramCourse, SportType } from '../../../core/services/public-api.service';
-import { API_BASE_URL } from '../../../core/tokens/api-base-url.token';
+import { SupabaseService } from '../../../core/services/supabase.service';
 
 interface SportConfig {
   icon: string;
@@ -18,7 +18,7 @@ interface SportConfig {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CourseCardComponent {
-  private readonly apiBaseUrl = inject(API_BASE_URL);
+  private readonly supabase = inject(SupabaseService);
   
   @Input({ required: true }) course!: ProgramCourse;
   @Output() viewDetails = new EventEmitter<string>();
@@ -81,10 +81,7 @@ export class CourseCardComponent {
 
   get heroBackgroundImage(): string {
     if (this.course?.heroPhotoUrl) {
-      const base = this.apiBaseUrl.replace(/\/$/, '');
-      const fullUrl = this.course.heroPhotoUrl.startsWith('http') 
-        ? this.course.heroPhotoUrl 
-        : `${base}${this.course.heroPhotoUrl}`;
+      const fullUrl = this.resolveUrl(this.course.heroPhotoUrl);
       return `url('${fullUrl}')`;
     }
     // Fallback gradient based on sport type
@@ -161,19 +158,23 @@ export class CourseCardComponent {
     if (this.photoFailed) {
       return null;
     }
-    const base = this.apiBaseUrl.replace(/\/$/, '');
     const avatar = this.course?.coach?.avatarUrl?.trim();
     if (avatar) {
-      if (/^https?:\/\//i.test(avatar)) {
-        return avatar;
-      }
-      return `${base}${avatar.startsWith('/') ? '' : '/'}${avatar}`;
+      return this.resolveUrl(avatar);
     }
     const coachId = this.course?.coach?.id;
     if (coachId) {
-      return `${base}/api/public/coaches/${coachId}/photo`;
+      const { data } = this.supabase.storage('coach-photos').getPublicUrl(coachId);
+      return data?.publicUrl ?? null;
     }
     return null;
+  }
+
+  private resolveUrl(url: string): string {
+    if (!url) return url;
+    if (/^https?:\/\//i.test(url)) return url;
+    const { data } = this.supabase.storage('course-photos').getPublicUrl(url);
+    return data?.publicUrl ?? url;
   }
 
   onCoachPhotoError(): void {

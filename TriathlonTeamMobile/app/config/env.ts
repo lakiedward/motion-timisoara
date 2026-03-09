@@ -1,9 +1,3 @@
-import { Platform } from 'react-native';
-
-const DEV_BASE_URL = 'https://api.motiontimisoara.com';
-const PROD_BASE_URL = 'https://api.motiontimisoara.com';
-
-export const API_BASE_URL = __DEV__ ? DEV_BASE_URL : PROD_BASE_URL;
-
-export const STRIPE_PUBLISHABLE_KEY =
-  process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? 'pk_test_REPLACE_ME_WITH_REAL_KEY';
+export const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://your-project.supabase.co';
+export const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'your-anon-key-here';
+export const STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || '';

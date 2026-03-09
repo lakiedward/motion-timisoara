@@ -7,7 +7,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { ClubService, ClubCoach, ClubInvitationCode } from '../../services/club.service';
-import { API_BASE_URL } from '../../../../core/tokens/api-base-url.token';
+import { SupabaseService } from '../../../../core/services/supabase.service';
 
 type CodeFilter = 'recent' | 'active' | 'used' | 'all';
 
@@ -29,7 +29,7 @@ export class ClubCoachesComponent implements OnInit {
   private readonly clubService = inject(ClubService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly router = inject(Router);
-  private readonly apiBaseUrl = inject(API_BASE_URL);
+  private readonly supabase = inject(SupabaseService);
 
   // State
   readonly coaches = signal<ClubCoach[]>([]);
@@ -138,8 +138,8 @@ export class ClubCoachesComponent implements OnInit {
   }
 
   getCoachPhotoUrl(coachUserId: string): string {
-    const base = (this.apiBaseUrl || '').replace(/\/$/, '');
-    return `${base}/api/public/coaches/${coachUserId}/photo`;
+    const { data } = this.supabase.storage('coach-photos').getPublicUrl(coachUserId);
+    return data?.publicUrl ?? '';
   }
 
   canShowCoachPhoto(coach: ClubCoach): boolean {

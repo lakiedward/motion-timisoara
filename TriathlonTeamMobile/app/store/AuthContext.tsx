@@ -1,90 +1,102 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import * as SecureStore from 'expo-secure-store';
-import { login as loginApi } from '../api/authApi';
-import { setHttpAccessToken } from '../api/httpClient';
-
-export type AuthUser = {
-  id: string | null;
-  name: string | null;
-  email: string | null;
-};
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '../lib/supabase';
 
 export type Role = 'PARENT' | 'COACH' | 'ADMIN';
 
-export type AuthContextValue = {
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface AuthState {
   isAuthenticated: boolean;
   user: AuthUser | null;
   roles: Role[];
-  accessToken: string | null;
-  refreshToken: string | null;
+  isLoading: boolean;
+}
+
+interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
-  loginMock: () => void;
-  logout: () => void;
-};
+  logout: () => Promise<void>;
+}
 
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [refreshToken, setRefreshToken] = useState<string | null>(null);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<AuthState>({
+    isAuthenticated: false,
+    user: null,
+    roles: [],
+    isLoading: true,
+  });
 
-  const login = async (email: string, password: string) => {
-    const auth = await loginApi(email, password);
+  useEffect(() => {
+    // Load initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        loadProfile(session.user.id);
+      } else {
+        setState((prev) => ({ ...prev, isLoading: false }));
+      }
+    });
 
-    setAccessToken(auth.accessToken);
-    setRefreshToken(auth.refreshToken);
-    setHttpAccessToken(auth.accessToken);
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        loadProfile(session.user.id);
+      } else {
+        setState({
+          isAuthenticated: false,
+          user: null,
+          roles: [],
+          isLoading: false,
+        });
+      }
+    });
 
-    const userSummary = auth.user;
-    setUser({ id: userSummary.id, name: userSummary.name, email: userSummary.email });
-    setRoles([userSummary.role as Role]);
-    setIsAuthenticated(true);
+    return () => subscription.unsubscribe();
+  }, []);
 
-    try {
-      await SecureStore.setItemAsync('accessToken', auth.accessToken);
-      await SecureStore.setItemAsync('refreshToken', auth.refreshToken);
-    } catch {
-      // Stocarea token-urilor poate eșua pe unele dispozitive; nu blocăm login-ul pentru asta.
+  async function loadProfile(userId: string) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, name, email, role')
+      .eq('id', userId)
+      .single();
+
+    if (profile) {
+      setState({
+        isAuthenticated: true,
+        user: { id: profile.id, name: profile.name, email: profile.email },
+        roles: [profile.role as Role],
+        isLoading: false,
+      });
+    } else {
+      setState((prev) => ({ ...prev, isLoading: false }));
     }
-  };
+  }
 
-  const loginMock = () => {
-    setUser({ id: '1', name: 'Mock Parent', email: 'parent@example.com' });
-    setRoles(['PARENT']);
-    setIsAuthenticated(true);
-  };
+  async function login(email: string, password: string) {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    // onAuthStateChange will handle state update
+  }
 
-  const logout = () => {
-    setIsAuthenticated(false);
-    setUser(null);
-    setRoles([]);
-    setAccessToken(null);
-    setRefreshToken(null);
-    setHttpAccessToken(null);
-    try {
-      SecureStore.deleteItemAsync('accessToken');
-      SecureStore.deleteItemAsync('refreshToken');
-    } catch {
-      // Ignorăm erorile de ștergere a token-urilor din storage.
-    }
-  };
+  async function logout() {
+    await supabase.auth.signOut();
+    // onAuthStateChange will handle state update
+  }
 
   return (
-    <AuthContext.Provider
-      value={{ isAuthenticated, user, roles, accessToken, refreshToken, login, loginMock, logout }}
-    >
+    <AuthContext.Provider value={{ ...state, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-export const useAuth = (): AuthContextValue => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return ctx;
-};
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  return context;
+}

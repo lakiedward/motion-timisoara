@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
-import { API_BASE_URL } from '../tokens/api-base-url.token';
+import { SupabaseService } from './supabase.service';
 
 export interface AnnouncementAttachment {
   id: string;
@@ -26,12 +26,11 @@ export interface AnnouncementDto {
 @Injectable({ providedIn: 'root' })
 export class AnnouncementsService {
   private readonly http = inject(HttpClient);
-  private readonly apiBaseUrl = inject(API_BASE_URL);
+  private readonly supabase = inject(SupabaseService);
 
-  private absoluteUrl(path: string): string {
-    const base = (this.apiBaseUrl || '').replace(/\/$/, '');
-    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-    return `${base}${normalizedPath}`;
+  private storageUrl(bucket: string, path: string): string {
+    const { data } = this.supabase.storage(bucket).getPublicUrl(path);
+    return data?.publicUrl ?? '';
   }
 
   // Coach/Admin endpoints
@@ -83,19 +82,19 @@ export class AnnouncementsService {
 
   // Image helpers
   getParentImageUrl(courseId: string, announcementId: string, imageId: string): string {
-    return this.absoluteUrl(`/api/parent/courses/${courseId}/announcements/${announcementId}/images/${imageId}`);
+    return this.storageUrl('announcement-attachments', `${courseId}/${announcementId}/${imageId}`);
   }
 
   getCoachImageUrl(courseId: string, announcementId: string, imageId: string): string {
-    return this.absoluteUrl(`/api/coach/courses/${courseId}/announcements/${announcementId}/images/${imageId}`);
+    return this.storageUrl('announcement-attachments', `${courseId}/${announcementId}/${imageId}`);
   }
 
   getParentVideoUrl(courseId: string, announcementId: string, videoId: string): string {
-    return this.absoluteUrl(`/api/parent/courses/${courseId}/announcements/${announcementId}/videos/${videoId}`);
+    return this.storageUrl('announcement-attachments', `${courseId}/${announcementId}/${videoId}`);
   }
 
   getCoachVideoUrl(courseId: string, announcementId: string, videoId: string): string {
-    return this.absoluteUrl(`/api/coach/courses/${courseId}/announcements/${announcementId}/videos/${videoId}`);
+    return this.storageUrl('announcement-attachments', `${courseId}/${announcementId}/${videoId}`);
   }
 
   // Utility: group by course from aggregated feed

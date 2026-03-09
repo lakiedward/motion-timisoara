@@ -1,11 +1,25 @@
-import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
-import { AuthResponse, ClubCodeValidationResponse, ClubRegistrationResponse, CoachRegistrationResponse, CompleteProfileRequest, ForgotPasswordRequest, LoginRequest, OnboardingLinkResponse, RegisterClubRequest, RegisterCoachRequest, RegisterParentRequest, ResetPasswordRequest, StripeAccountStatus, User, ValidateClubCodeRequest } from '../models/auth';
-import { API_BASE_URL } from '../tokens/api-base-url.token';
-
-const OAUTH_RETURN_URL_KEY = 'motion.oauth.returnUrl';
+import { BehaviorSubject, Observable, from, of } from 'rxjs';
+import { map, tap, catchError, switchMap } from 'rxjs/operators';
+import { SupabaseService } from './supabase.service';
+import {
+  AuthResponse,
+  ClubCodeValidationResponse,
+  ClubRegistrationResponse,
+  CoachRegistrationResponse,
+  CompleteProfileRequest,
+  ForgotPasswordRequest,
+  LoginRequest,
+  OnboardingLinkResponse,
+  RegisterClubRequest,
+  RegisterCoachRequest,
+  RegisterParentRequest,
+  ResetPasswordRequest,
+  StripeAccountStatus,
+  User,
+  ValidateClubCodeRequest,
+} from '../models/auth';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -13,118 +27,183 @@ export class AuthService {
   currentUser$ = this.currentUserSubject.asObservable();
 
   constructor(
-    private http: HttpClient,
+    private supabase: SupabaseService,
     @Inject(PLATFORM_ID) private platformId: Object,
-    @Inject(API_BASE_URL) private apiBaseUrl: string,
   ) {
-    // Only attempt to load user on browser (not during SSR)
-    // Token is now in HttpOnly cookie, so we just try to fetch user info
     if (this.isBrowser()) {
-      this.me().subscribe({
-        next: (user) => {
-          this.currentUserSubject.next(user);
-        },
-        error: (err: unknown) => {
-          const status = (err as HttpErrorResponse)?.status;
-          // Only log actual errors, not normal flow
-          if (status && status !== 401) {
-            console.error('[AuthService] Unexpected error loading user:', status);
-          }
-          // User not authenticated or cookie expired
-          if (status === 401) {
-            this.currentUserSubject.next(null);
-          }
-          // For other errors (network, 5xx, 4xx non-auth), keep trying
-        },
+      // Load initial session
+      this.loadSession();
+
+      // Listen for auth state changes
+      this.supabase.auth.onAuthStateChange((event, session) => {
+        if (session?.user) {
+          this.loadProfile(session.user.id);
+        } else {
+          this.currentUserSubject.next(null);
+        }
       });
     }
   }
 
-  requestPasswordReset(request: ForgotPasswordRequest): Observable<any> {
-    return this.http.post('/api/auth/forgot-password', request, { withCredentials: true });
+  private async loadSession(): Promise<void> {
+    const { data: { session } } = await this.supabase.auth.getSession();
+    if (session?.user) {
+      await this.loadProfile(session.user.id);
+    }
   }
 
-  resetPassword(request: ResetPasswordRequest): Observable<any> {
-    return this.http.post('/api/auth/reset-password', request, { withCredentials: true });
+  private async loadProfile(userId: string): Promise<void> {
+    const { data: profile } = await this.supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (profile) {
+      this.currentUserSubject.next({
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        role: profile.role,
+        phone: profile.phone,
+        oauthProvider: profile.oauth_provider,
+        avatarUrl: profile.avatar_url,
+        needsProfileCompletion: !profile.phone,
+      });
+    }
   }
 
   login(request: LoginRequest): Observable<AuthResponse> {
-    return this.http
-      .post<AuthResponse>('/api/auth/login', request, { withCredentials: true })
-      .pipe(tap((response) => this.handleAuthResponse(response)));
+    return from(
+      this.supabase.auth.signInWithPassword({
+        email: request.email,
+        password: request.password,
+      }),
+    ).pipe(
+      switchMap(({ data, error }) => {
+        if (error) throw error;
+        return from(this.loadProfileAndReturn(data.user!.id));
+      }),
+    );
   }
 
   registerParent(request: RegisterParentRequest): Observable<AuthResponse> {
-    return this.http
-      .post<AuthResponse>('/api/auth/register-parent', request, { withCredentials: true })
-      .pipe(tap((response) => this.handleAuthResponse(response)));
+    return from(
+      this.supabase.auth.signUp({
+        email: request.email,
+        password: request.password,
+        options: {
+          data: {
+            name: request.name,
+            phone: request.phone || null,
+            role: 'PARENT',
+          },
+        },
+      }),
+    ).pipe(
+      switchMap(({ data, error }) => {
+        if (error) throw error;
+        return from(this.loadProfileAndReturn(data.user!.id));
+      }),
+    );
   }
 
   registerCoach(request: RegisterCoachRequest): Observable<CoachRegistrationResponse> {
-    return this.http
-      .post<CoachRegistrationResponse>('/api/auth/register-coach', request, { withCredentials: true })
-      .pipe(tap((response) => this.handleAuthResponse(response)));
+    return from(this.supabase.invokeFunction<CoachRegistrationResponse>('register-coach', request));
   }
 
   registerClub(request: RegisterClubRequest): Observable<ClubRegistrationResponse> {
-    return this.http
-      .post<ClubRegistrationResponse>('/api/auth/register-club', request, { withCredentials: true })
-      .pipe(tap((response) => this.handleAuthResponse(response)));
+    return from(this.supabase.invokeFunction<ClubRegistrationResponse>('register-club', request));
   }
 
   validateClubCode(request: ValidateClubCodeRequest): Observable<ClubCodeValidationResponse> {
-    return this.http.post<ClubCodeValidationResponse>('/api/auth/validate-club-code', request, { withCredentials: true });
+    return from(
+      this.supabase
+        .from('club_invitation_codes')
+        .select('id, code, club:clubs(name)')
+        .eq('code', request.code)
+        .eq('active', true)
+        .single(),
+    ).pipe(
+      map(({ data, error }) => {
+        if (error || !data) {
+          return { valid: false, message: 'Cod invalid sau expirat' };
+        }
+        const clubName = (data as any).club?.name;
+        return { valid: true, message: 'Cod valid', clubName };
+      }),
+    );
   }
 
-  // Stripe Connect methods for coaches
+  requestPasswordReset(request: ForgotPasswordRequest): Observable<any> {
+    return from(
+      this.supabase.auth.resetPasswordForEmail(request.email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      }),
+    );
+  }
+
+  resetPassword(request: ResetPasswordRequest): Observable<any> {
+    return from(
+      this.supabase.auth.updateUser({ password: request.newPassword }),
+    );
+  }
+
+  // Stripe Connect methods
   getStripeAccountStatus(): Observable<StripeAccountStatus> {
-    return this.http.get<StripeAccountStatus>('/api/coach/stripe/status', { withCredentials: true });
+    return from(this.supabase.invokeFunction<StripeAccountStatus>('stripe-connect', { action: 'status' }));
   }
 
   getStripeOnboardingLink(): Observable<OnboardingLinkResponse> {
-    return this.http.get<OnboardingLinkResponse>('/api/coach/stripe/onboarding-link', { withCredentials: true });
+    return from(this.supabase.invokeFunction<OnboardingLinkResponse>('stripe-connect', { action: 'onboarding-link' }));
   }
 
   getStripeDashboardLink(): Observable<OnboardingLinkResponse> {
-    return this.http.get<OnboardingLinkResponse>('/api/coach/stripe/dashboard-link', { withCredentials: true });
+    return from(this.supabase.invokeFunction<OnboardingLinkResponse>('stripe-connect', { action: 'dashboard-link' }));
   }
 
   refreshStripeStatus(): Observable<StripeAccountStatus> {
-    return this.http.post<StripeAccountStatus>('/api/coach/stripe/refresh-status', {}, { withCredentials: true });
+    return from(this.supabase.invokeFunction<StripeAccountStatus>('stripe-connect', { action: 'refresh-status' }));
   }
 
   me(): Observable<User> {
-    console.log('📡 [AuthService] Calling /api/auth/me with credentials');
-    return this.http
-      .get<User>('/api/auth/me', { withCredentials: true })
-      .pipe(
-        tap((user) => {
-          console.log('✅ [AuthService] /api/auth/me response:', user);
-          this.currentUserSubject.next(user);
-        })
-      );
+    return from(this.supabase.auth.getSession()).pipe(
+      switchMap(({ data: { session } }) => {
+        if (!session?.user) throw new Error('Not authenticated');
+        return from(
+          this.supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single(),
+        );
+      }),
+      map(({ data, error }) => {
+        if (error || !data) throw error || new Error('Profile not found');
+        const user: User = {
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          phone: data.phone,
+          oauthProvider: data.oauth_provider,
+          avatarUrl: data.avatar_url,
+          needsProfileCompletion: !data.phone,
+        };
+        this.currentUserSubject.next(user);
+        return user;
+      }),
+    );
   }
 
   logout(): Observable<any> {
-    return this.http
-      .post('/api/auth/logout', {}, { withCredentials: true })
-      .pipe(
-        tap(() => {
-          this.currentUserSubject.next(null);
-        })
-      );
+    return from(this.supabase.auth.signOut()).pipe(
+      tap(() => this.currentUserSubject.next(null)),
+    );
   }
 
   refreshToken(): Observable<any> {
-    return this.http
-      .post('/api/auth/refresh', {}, { withCredentials: true })
-      .pipe(
-        tap((response: any) => {
-          // Backend sets cookies, we just might need to update user state if returned
-          // But usually refresh just returns tokens.
-          // If we need to update user, we can call me() or if response has user.
-        })
-      );
+    return from(this.supabase.auth.refreshSession());
   }
 
   isLoggedIn(): boolean {
@@ -136,96 +215,94 @@ export class AuthService {
   }
 
   loginWithGoogle(redirectUrl?: string): void {
-    if (!this.isBrowser()) {
-      return;
-    }
+    if (!this.isBrowser()) return;
 
-    const sanitized = this.sanitizeReturnUrl(redirectUrl);
-    if (sanitized) {
-      sessionStorage.setItem(OAUTH_RETURN_URL_KEY, sanitized);
-    } else {
-      sessionStorage.removeItem(OAUTH_RETURN_URL_KEY);
-    }
+    const redirectTo = redirectUrl
+      ? `${window.location.origin}/auth/callback?returnUrl=${encodeURIComponent(redirectUrl)}`
+      : `${window.location.origin}/auth/callback`;
 
-    const base = (this.apiBaseUrl || '').replace(/\/$/, '');
-    const url = base ? `${base}/oauth2/authorization/google` : '/oauth2/authorization/google';
-    window.location.href = url;
-  }
-
-  popOAuthReturnUrl(): string | null {
-    if (!this.isBrowser()) {
-      return null;
-    }
-    const value = sessionStorage.getItem(OAUTH_RETURN_URL_KEY);
-    if (value !== null) {
-      sessionStorage.removeItem(OAUTH_RETURN_URL_KEY);
-      return this.sanitizeReturnUrl(value);
-    }
-    return null;
+    this.supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo },
+    });
   }
 
   handleOAuthCallback(): Observable<User> {
-    console.log('📡 [AuthService] handleOAuthCallback - calling /api/auth/me');
     return this.me();
   }
 
   completeProfile(request: CompleteProfileRequest): Observable<User> {
-    return this.http
-      .patch<User>('/api/auth/complete-profile', request, { withCredentials: true })
-      .pipe(tap((user) => this.currentUserSubject.next(user)));
+    return from(this.supabase.auth.getSession()).pipe(
+      switchMap(({ data: { session } }) => {
+        if (!session?.user) throw new Error('Not authenticated');
+        const updates: any = { phone: request.phone };
+        if (request.name) updates.name = request.name;
+        return from(
+          this.supabase
+            .from('profiles')
+            .update(updates)
+            .eq('id', session.user.id)
+            .select()
+            .single(),
+        );
+      }),
+      map(({ data, error }) => {
+        if (error || !data) throw error || new Error('Update failed');
+        const user: User = {
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          phone: data.phone,
+          oauthProvider: data.oauth_provider,
+          avatarUrl: data.avatar_url,
+          needsProfileCompletion: !data.phone,
+        };
+        this.currentUserSubject.next(user);
+        return user;
+      }),
+    );
   }
 
-  /**
-   * Clear authentication state (set current user to null).
-   * Used by HTTP interceptor when receiving 401 on protected endpoints.
-   */
   clearAuthState(): void {
     this.currentUserSubject.next(null);
   }
 
-  /**
-   * @deprecated Token is now stored in HttpOnly cookie managed by backend.
-   * This method returns null for backwards compatibility.
-   */
   getToken(): string | null {
     return null;
   }
 
-  private handleAuthResponse(response: AuthResponse): void {
-    // Token is now set as HttpOnly cookie by backend
-    // We only need to update the current user
-    this.currentUserSubject.next(response.user);
+  popOAuthReturnUrl(): string | null {
+    if (!this.isBrowser()) return null;
+    const params = new URLSearchParams(window.location.search);
+    return params.get('returnUrl');
+  }
+
+  private async loadProfileAndReturn(userId: string): Promise<AuthResponse> {
+    const { data: profile } = await this.supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (!profile) throw new Error('Profile not found');
+
+    const user: User = {
+      id: profile.id,
+      name: profile.name,
+      email: profile.email,
+      role: profile.role,
+      phone: profile.phone,
+      oauthProvider: profile.oauth_provider,
+      avatarUrl: profile.avatar_url,
+      needsProfileCompletion: !profile.phone,
+    };
+
+    this.currentUserSubject.next(user);
+    return { user };
   }
 
   private isBrowser(): boolean {
     return isPlatformBrowser(this.platformId);
-  }
-
-  private sanitizeReturnUrl(redirectUrl?: string | null): string | null {
-    if (!redirectUrl) {
-      return null;
-    }
-
-    const trimmed = redirectUrl.trim();
-    if (!trimmed) {
-      return null;
-    }
-
-    const disallowed = ['/login', '/register', '/auth/callback'];
-    for (const path of disallowed) {
-      if (trimmed === path || trimmed.startsWith(`${path}?`)) {
-        return null;
-      }
-    }
-
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-      return null;
-    }
-
-    if (!trimmed.startsWith('/')) {
-      return `/${trimmed}`;
-    }
-
-    return trimmed;
   }
 }

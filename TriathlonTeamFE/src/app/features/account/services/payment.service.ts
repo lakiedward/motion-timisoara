@@ -1,6 +1,6 @@
-﻿import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { from, Observable } from 'rxjs';
+import { SupabaseService } from '../../../core/services/supabase.service';
 
 interface PaymentIntentResponse {
   clientSecret: string;
@@ -8,9 +8,14 @@ interface PaymentIntentResponse {
 
 @Injectable({ providedIn: 'root' })
 export class PaymentService {
-  private readonly http = inject(HttpClient);
+  private readonly supabase = inject(SupabaseService);
 
   createIntent(enrollmentId: string): Observable<PaymentIntentResponse> {
-    return this.http.post<PaymentIntentResponse>('/api/payments/create-intent', { enrollmentId });
+    // Complex mutation (Stripe interaction) -> Edge Function
+    return from(
+      this.supabase.invokeFunction<PaymentIntentResponse>('create-payment-intent', {
+        enrollmentId
+      })
+    );
   }
 }

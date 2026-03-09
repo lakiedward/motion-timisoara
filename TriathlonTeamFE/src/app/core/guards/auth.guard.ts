@@ -9,11 +9,10 @@ export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot, state: R
   if (authService.isLoggedIn()) {
     return true;
   }
-  // Try to restore session on hard reloads before deciding
   return authService.me().pipe(
     map(() => true),
     catchError(() =>
       of(router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } }))
-    )
+    ),
   );
 };

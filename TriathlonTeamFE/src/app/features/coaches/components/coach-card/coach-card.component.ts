@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CoachSummary } from '../../../../core/services/public-api.service';
-import { API_BASE_URL } from '../../../../core/tokens/api-base-url.token';
+import { SupabaseService } from '../../../../core/services/supabase.service';
 
 interface SportConfig {
   icon: string;
@@ -18,7 +18,7 @@ interface SportConfig {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CoachCardComponent {
-  private readonly apiBaseUrl = inject(API_BASE_URL);
+  private readonly supabase = inject(SupabaseService);
   
   @Input({ required: true }) coach!: CoachSummary;
   @Input() showSummary = true;
@@ -37,8 +37,8 @@ export class CoachCardComponent {
   };
 
   get coachPhotoUrl(): string {
-    const base = this.apiBaseUrl.replace(/\/$/, '');
-    return `${base}/api/public/coaches/${this.coach.id}/photo`;
+    const { data } = this.supabase.storage('coach-photos').getPublicUrl(this.coach.id);
+    return data?.publicUrl ?? '';
   }
 
   get sportsBadgeText(): string {

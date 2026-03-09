@@ -13,7 +13,7 @@ import { CourseFormComponent } from '../../../coach/components/course-form/cours
 import { CourseFormPayload } from '../../../coach/services/coach.service';
 import { timer, Subject, EMPTY, merge, from, of } from 'rxjs';
 import { switchMap, tap, finalize, catchError, takeUntil, share, ignoreElements, defaultIfEmpty, concatMap, toArray, map } from 'rxjs/operators';
-import { API_BASE_URL } from '../../../../core/tokens/api-base-url.token';
+import { SupabaseService } from '../../../../core/services/supabase.service';
 
 @Component({
   selector: 'app-admin-course-form',
@@ -29,7 +29,7 @@ export class AdminCourseFormComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly snackbar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly apiBaseUrl = inject(API_BASE_URL);
+  private readonly supabase = inject(SupabaseService);
 
   // Subject to trigger reorder requests.
   private readonly reorderRequests = new Subject<{ courseId: string; photoIds: string[] }>();
@@ -369,10 +369,11 @@ export class AdminCourseFormComponent implements OnInit {
     const courseId = this.courseId();
     const currentCourse = this.currentCourse();
     if (courseId && currentCourse?.hasHeroPhoto) {
-      // Use the public endpoint with absolute base to avoid base-href/meta mismatches
-      const base = this.apiBaseUrl.replace(/\/$/, '');
+      const { data } = this.supabase.storage('course-photos').getPublicUrl(`${courseId}/hero`);
+      const url = data?.publicUrl;
+      if (!url) return null;
       const bust = this.heroPhotoBust();
-      return `${base}/api/public/courses/${courseId}/hero-photo?v=${bust}`;
+      return bust > 0 ? `${url}?v=${bust}` : url;
     }
     return null;
   }

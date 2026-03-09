@@ -20,7 +20,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AdminService, AdminUser, UpdateUserPayload } from '../../services/admin.service';
 import { DeleteUserDialogComponent, DeleteUserDialogData, DeleteUserDialogResult } from './delete-user-dialog.component';
-import { API_BASE_URL } from '../../../../core/tokens/api-base-url.token';
+import { SupabaseService } from '../../../../core/services/supabase.service';
 
 @Component({
   selector: 'app-admin-users',
@@ -45,7 +45,7 @@ export class AdminUsersComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
-  private readonly apiBaseUrl = inject<string>(API_BASE_URL);
+  private readonly supabase = inject(SupabaseService);
 
   readonly users = signal<AdminUser[]>([]);
   readonly isLoading = signal(true);
@@ -370,12 +370,8 @@ export class AdminUsersComponent implements OnInit {
       return url;
     }
 
-    const base = (this.apiBaseUrl || '').replace(/\/$/, '');
-    const path = url.startsWith('/') ? url : `/${url}`;
-    if (!base) {
-      return path;
-    }
-
-    return `${base}${path}`;
+    // Relative path: resolve via Supabase storage
+    const { data } = this.supabase.storage('avatars').getPublicUrl(url);
+    return data?.publicUrl ?? url;
   }
 }

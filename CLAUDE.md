@@ -1,16 +1,20 @@
-# Motion Timișoara - Triathlon Team Platform
+# Motion Timisoara - Triathlon Team Platform
 
 ## Project Overview
 Platform for managing triathlon & multi-sport clubs for kids. Parents enroll children in courses, manage payments, view calendars and announcements. Coaches manage courses, attendance, photos, and announcements. Club owners manage their club, coaches, and revenue. Admins have full control.
 
-**Status**: Testing phase | **Domain**: motiontimisoara.com (planned)
+**Status**: Testing phase (Supabase migration in progress) | **Domain**: motiontimisoara.com (planned)
 
 ## Monorepo Structure
 ```
 motion-timisoara/
-├── TriathlonTeamBE/         # Kotlin Spring Boot 3.5.5 (JDK 21)
+├── supabase/                # Supabase backend (migrations, Edge Functions, seed)
+│   ├── migrations/          # PostgreSQL schema migrations (00001–00004)
+│   ├── functions/           # Deno Edge Functions (business logic)
+│   └── seed/                # Data migration script from Spring Boot
 ├── TriathlonTeamFE/         # Angular 20.3 + SSR
 ├── TriathlonTeamMobile/     # Expo + React Native 0.81 (React 19)
+├── TriathlonTeamBE/         # [ARCHIVED] Kotlin Spring Boot 3.5.5 — retired, kept for reference
 ├── tests/                   # Playwright E2E tests (root-level)
 ├── src/                     # Root-level static assets (minimal)
 ├── _archive-docs/           # Historical docs & summaries
@@ -19,89 +23,102 @@ motion-timisoara/
 └── CLAUDE.md                # This file
 ```
 
-## Backend (TriathlonTeamBE)
+> **Note**: `TriathlonTeamBE/` is the original Kotlin Spring Boot backend. It is archived and no longer actively developed. All backend functionality has been migrated to Supabase. Do NOT delete this directory — it serves as a reference for the original API contracts and business logic.
 
-**Stack**: Kotlin 1.9.25 · Spring Boot 3.5.5 · PostgreSQL · Flyway · JWT (HMAC512, com.auth0:java-jwt 4.4.0) · Stripe 24.0.0 · AWS S3 SDK 2.25.0 · SpringDoc OpenAPI 2.6.0 · WebSocket · Spring Mail
+---
+
+## Backend (Supabase)
+
+**Stack**: Supabase (hosted PostgreSQL with RLS) · Supabase Auth · Supabase Storage · Supabase Realtime · Deno Edge Functions · Stripe
+
+Supabase replaces the Spring Boot backend entirely. Auth, database access, storage, real-time subscriptions, and server-side business logic are all handled by Supabase services and Edge Functions.
 
 ### Key Paths
-- **Entry point**: `src/main/kotlin/com/example/demo/TriathlonTeamBeApplication.kt`
-- **Domain entities**: `src/main/kotlin/com/club/triathlon/domain/` (28 entities)
-- **Services**: `src/main/kotlin/com/club/triathlon/service/` (47 services, organized in sub-packages)
-- **Controllers**: `src/main/kotlin/com/club/triathlon/web/` (60+ controllers, organized in sub-packages)
-- **Repositories**: `src/main/kotlin/com/club/triathlon/repo/` (31 repos)
-- **Security**: `src/main/kotlin/com/club/triathlon/security/` (JWT filter, auth handlers, user details)
-- **Config**: `src/main/kotlin/com/club/triathlon/config/` (11 config classes)
-- **Enums**: `src/main/kotlin/com/club/triathlon/enums/` (12 enums)
-- **Migrations**: `src/main/resources/db/migration/` (V1–V40, naming: `V{n}__{desc}.sql`)
-- **App config**: `src/main/resources/application.yml`
+- **Schema migrations**: `supabase/migrations/` (00001–00004)
+- **Edge Functions**: `supabase/functions/` (Deno TypeScript)
+- **Shared utilities**: `supabase/functions/_shared/` (cors.ts, stripe.ts, supabase.ts)
+- **Data migration**: `supabase/seed/migrate-data.ts`
 
-### Main Entities
-User, Child, Course, CourseOccurrence, Activity, Camp, Club, Enrollment, Attendance, Payment, MonthlyPayment, Invoice, CoachProfile, CoachInvitationCode, ClubInvitationCode, Location, UserRecentLocation, Sport, CoursePhoto, CourseAnnouncement, CourseAnnouncementAttachment, ClubAnnouncement, CourseRating, CoachRating, RefreshToken, PasswordResetToken, AuditLog
+### Migrations
+| File | Description |
+|------|-------------|
+| `00001_schema.sql` | Core tables, enums, and relationships |
+| `00002_functions_and_triggers.sql` | Database functions and triggers |
+| `00003_rls_policies.sql` | Row Level Security policies for all tables |
+| `00004_storage_buckets.sql` | Supabase Storage bucket configuration |
 
-### Enums
-EnrollmentKind (COURSE/CAMP/ACTIVITY), EnrollmentStatus, PaymentStatus, PaymentMethod, PaymentRecipientType (COACH/CLUB), AttendanceStatus, Role (ADMIN/CLUB/COACH/PARENT), LocationType, AnnouncementAttachmentType, InvoiceStatus, InvoiceType, IssuerType
+### Edge Functions
+Edge Functions handle business logic that cannot be expressed as simple RLS-gated queries. Each function runs on Deno and is invoked via `supabase.functions.invoke()` from clients.
 
-### Auth & Security
-- Dual JWT strategy: access token (15min, HttpOnly cookie) + refresh token (30 days, DB-backed, one-time use)
-- BCrypt passwords, OAuth2 (Google) support
-- Roles: PARENT, COACH, CLUB, ADMIN
-- Rate limiting: auth (5/15min), public (60/min), contact (3/10min), DSAR (5/1hr)
-- CSRF protection with cookie-based tokens
+| Function | Description |
+|----------|-------------|
+| `register-coach` | Coach registration with invitation code validation |
+| `register-club` | Club registration |
+| `create-enrollment` | Enrollment creation (courses, camps, activities) |
+| `cancel-enrollment` | Enrollment cancellation |
+| `create-payment-intent` | Creates Stripe PaymentIntent for enrollment |
+| `stripe-webhook` | Handles Stripe payment webhooks |
+| `stripe-connect-webhook` | Handles Stripe Connect webhooks |
+| `mark-cash-paid` | Marks an enrollment as paid by cash |
+| `stripe-connect` | Stripe Connect account management (status, onboarding, dashboard links) |
+| `record-attendance` | Records attendance for course sessions |
+| `contact-form` | Public contact form submission |
 
-### API Structure
-| Prefix | Access | Description |
-|--------|--------|-------------|
-| `/api/public/*` | No auth | Courses, coaches, clubs, locations, sports, camps, activities, schedule, contact |
-| `/api/auth/*` | No auth | Login, register, refresh, logout, forgot/reset password |
-| `/api/parent/*` | ROLE_PARENT | Account, children, dashboard |
-| `/api/enrollments/*` | ROLE_PARENT | Enrollment management, session purchases |
-| `/api/payments/*` | Authenticated | Payment processing |
-| `/api/coach/*` | ROLE_COACH + ROLE_ADMIN | Course management, attendance, photos, announcements, payments, locations, Stripe |
-| `/api/club/*` | ROLE_CLUB | Club dashboard, attendance, photos, payments |
-| `/api/admin/*` | ROLE_ADMIN | Full CRUD for all entities, migration tools, invitation codes |
-| `/api/ratings` | Authenticated | Course and coach ratings |
-| `/api/webhooks/stripe/*` | Stripe signature | Payment webhooks + Connect webhooks |
-| `/swagger-ui.html` | No auth | API documentation |
+### Shared Utilities (`supabase/functions/_shared/`)
+- `cors.ts` — CORS headers for Edge Functions
+- `stripe.ts` — Stripe client initialization
+- `supabase.ts` — Supabase admin client for Edge Functions
 
-### Service Sub-packages
-`announcement/`, `attendance/`, `camp/`, `course/`, `enrollment/`, `mail/`, `notification/`, `parent/`, `payment/`, `public/`, `rating/`, `storage/`
+### Auth
+- Supabase Auth handles all authentication (email/password, OAuth with Google)
+- User profiles stored in a `profiles` table synced via triggers from `auth.users`
+- Roles: PARENT, COACH, CLUB, ADMIN (stored in `profiles.role`)
+- Session management handled by `@supabase/supabase-js` (access + refresh tokens, auto-refresh)
+- No custom JWT, no CSRF tokens, no cookie-based auth
+
+### Data Access
+- Clients query Supabase PostgreSQL directly via `supabase.from('table')` (PostgREST)
+- Row Level Security (RLS) enforces authorization at the database level
+- Complex operations use Edge Functions
+- No REST API controllers — RLS policies replace role-based endpoint guards
 
 ### Key Integrations
-- **Stripe**: Payments + Connect (coach/club revenue sharing)
-- **SmartBill**: Romanian invoice generation (optional, disabled by default)
-- **S3/Railway Object Storage**: Photo/file storage with presigned URLs
-- **WebSocket**: Real-time notifications via STOMP/SockJS
-- **Mail**: SMTP via Gmail (optional)
+- **Stripe**: Payments + Connect (coach/club revenue sharing) via Edge Functions
+- **Supabase Storage**: Photo/file storage with signed URLs (replaces S3/Railway)
+- **Supabase Realtime**: Real-time notifications via channels (replaces STOMP/SockJS WebSocket)
+- **Supabase Auth**: Email/password + Google OAuth (replaces custom JWT + Spring Security)
 
-### Run Locally
-```bash
-cd TriathlonTeamBE
-# Required env vars: DATABASE_URL, DATABASE_USERNAME, DATABASE_PASSWORD, JWT_SECRET (min 32 chars), CORS_ALLOWED_ORIGINS
-./gradlew bootRun    # starts on port 8081
-./gradlew test       # tests with H2 in-memory (Flyway disabled in test profile)
-```
+### Main Tables
+profiles, children, courses, course_occurrences, activities, camps, clubs, enrollments, attendance, payments, monthly_payments, invoices, coach_profiles, coach_invitation_codes, club_invitation_codes, locations, user_recent_locations, sports, course_photos, course_announcements, course_announcement_attachments, club_announcements, course_ratings, coach_ratings, audit_log, coach_sports, club_sports, club_coaches
 
-### Tests
-- Framework: JUnit 5 + Mockito-Kotlin 5.2.0 + Spring Test
-- Test DB: H2 in-memory (PostgreSQL mode), `hibernate.ddl-auto=create-drop`
-- Test config: `src/test/resources/application-test.yml`
-- 7 test classes: application integration, audit, payment, enrollment, recurrence rule, IP detection, DTO validation
+### Enums
+enrollment_kind (COURSE/CAMP/ACTIVITY), enrollment_status, payment_status, payment_method, payment_recipient_type (COACH/CLUB), attendance_status, role (ADMIN/CLUB/COACH/PARENT), location_type, announcement_attachment_type, invoice_status, invoice_type, issuer_type
 
-**Deployed**: Railway at `https://triathlonteambe-production.up.railway.app`
+### Data Migration
+`supabase/seed/migrate-data.ts` — TypeScript script to migrate data from the Spring Boot PostgreSQL database to Supabase. Run once during the migration phase.
 
 ---
 
 ## Frontend (TriathlonTeamFE)
 
-**Stack**: Angular 20.3 · TypeScript 5.9 · Angular Material 20.2 · Angular SSR · RxJS 7.8 · Stripe.js 7.9 · Leaflet 1.9 · STOMP/SockJS (WebSocket)
+**Stack**: Angular 20.3 · TypeScript 5.9 · Angular Material 20.2 · Angular SSR · RxJS 7.8 · @supabase/supabase-js · Stripe.js 7.9 · Leaflet 1.9
 
 ### Key Paths
 - **Features**: `src/app/features/` (13 feature areas)
-- **Core**: `src/app/core/` (guards, interceptors, services, layout components, models, tokens, errors)
+- **Core**: `src/app/core/` (guards, services, layout components, models, tokens, errors)
 - **Shared**: `src/app/shared/` (components, directives, pipes, services, utils, styles)
 - **Routes**: `src/app/app.routes.ts`
-- **API base URL**: `src/index.html` → `<meta name="api-base-url" content="...">`
+- **Supabase config**: `src/index.html` → `<meta name="supabase-url">` and `<meta name="supabase-anon-key">`
 - **SSR server**: `server.ts`
+
+### Architecture Changes (Post-Migration)
+- **SupabaseService** (`core/services/supabase.service.ts`) wraps `@supabase/supabase-js` and is the central data access layer
+- **AuthService** uses Supabase Auth (`signInWithPassword`, `signUp`, `signInWithOAuth`) instead of custom JWT cookies
+- **PublicApiService** queries Supabase tables directly via `supabase.from('table')` instead of `HttpClient`
+- **WebSocketService** uses Supabase Realtime channels instead of STOMP/SockJS
+- **Interceptors removed**: `BaseUrlInterceptor`, `AuthInterceptor`, `CsrfInterceptor` are no longer needed (Supabase JS client handles auth headers automatically). Only `LoadingInterceptor` and `HttpErrorInterceptor` remain for any residual HTTP calls.
+- **Tokens**: `SUPABASE_URL` and `SUPABASE_ANON_KEY` injection tokens replace the old `API_BASE_URL` token
+- **No `withCredentials`**: Supabase auth uses bearer tokens managed by the JS client, not cookies
 
 ### Feature Modules
 | Feature | Path | Description |
@@ -121,14 +138,15 @@ cd TriathlonTeamBE
 | `not-found` | `features/not-found/` | 404 page |
 
 ### Core Services
-`auth.service.ts`, `public-api.service.ts`, `announcements.service.ts`, `csrf.service.ts`, `error-reporting.service.ts`, `geocoding.service.ts`, `location.service.ts`, `notification.service.ts`, `rating.service.ts`, `websocket.service.ts`
-
-### Interceptors Chain
-`BaseUrlInterceptor` → `AuthInterceptor` → `CsrfInterceptor` → `LoadingInterceptor` → `HttpErrorInterceptor`
+- `supabase.service.ts` — Supabase client wrapper (auth, from, storage, channel, invokeFunction)
+- `auth.service.ts` — Authentication via Supabase Auth, profile loading from `profiles` table
+- `public-api.service.ts` — Public data queries via Supabase PostgREST
+- `websocket.service.ts` — Real-time notifications via Supabase Realtime channels
+- `error-reporting.service.ts`, `geocoding.service.ts`, `location.service.ts`, `notification.service.ts`, `rating.service.ts`
 
 ### Guards
-- `auth.guard.ts` — Requires authentication
-- `role.guard.ts` — Role-based route protection
+- `auth.guard.ts` — Checks Supabase session via `AuthService.me()`
+- `role.guard.ts` — Role-based route protection using profile data
 
 ### Shared Components
 `form-error`, `lightbox`, `loader-overlay`, `location-picker`, `premium-confirm-dialog`, `rating-dialog`, `skeleton-loader`, `star-rating`, `video-embed`, `toast-container`
@@ -137,7 +155,7 @@ cd TriathlonTeamBE
 `core-layout`, `header`, `footer`, `fab-account`
 
 ### State Management
-RxJS BehaviorSubject (no NgRx). Auth state in `AuthService`, feature-specific state in feature services.
+RxJS BehaviorSubject (no NgRx). Auth state in `AuthService`, feature-specific state in feature services. Supabase Auth state changes drive the `currentUser$` observable via `onAuthStateChange`.
 
 ### Run Locally
 ```bash
@@ -151,10 +169,12 @@ npm run lint:content # content validation script
 npm run optimize:images # image optimization via sharp
 ```
 
-### API URL
-Change meta tag in `src/index.html`:
-- Local BE: `http://localhost:8081`
-- Deployed BE: `https://triathlonteambe-production.up.railway.app`
+### Supabase Configuration
+Update meta tags in `src/index.html`:
+- `<meta name="supabase-url" content="https://your-project.supabase.co">`
+- `<meta name="supabase-anon-key" content="your-anon-key-here">`
+
+For SSR, set `SUPABASE_URL` and `SUPABASE_ANON_KEY` environment variables (read by `app.config.ts` factory).
 
 ### Code Style
 Prettier configured: 100 char width, single quotes, Angular HTML parser.
@@ -163,16 +183,23 @@ Prettier configured: 100 char width, single quotes, Angular HTML parser.
 
 ## Mobile App (TriathlonTeamMobile)
 
-**Stack**: Expo · React Native 0.81.5 · React 19 · TypeScript 5.9 · Stripe React Native 0.50.3 · Axios · React Navigation · Expo Secure Store
+**Stack**: Expo · React Native 0.81.5 · React 19 · TypeScript 5.9 · @supabase/supabase-js · Stripe React Native 0.50.3 · React Navigation · Expo Secure Store
 
 ### Key Paths
-- **Entry**: `App.tsx` (AuthProvider → NavigationContainer → RootNavigator)
-- **API layer**: `app/api/` (14 API clients, Axios-based)
+- **Entry**: `App.tsx` (AuthProvider -> NavigationContainer -> RootNavigator)
+- **API layer**: `app/api/` (API clients using Supabase JS client)
 - **Features**: `app/features/` (auth, admin, coach, parent — organized by role)
 - **Navigation**: `app/navigation/` (10 navigators, role-based tab structure)
 - **Components**: `app/components/coach/` (shared coach UI components)
-- **Config**: `app/config/` (env.ts, theme.ts)
+- **Config**: `app/config/` (env.ts with SUPABASE_URL + SUPABASE_ANON_KEY, theme.ts)
 - **State**: `app/store/AuthContext.tsx` (Context API for auth)
+
+### Architecture
+- Uses `@supabase/supabase-js` instead of Axios for all backend communication
+- Auth tokens stored in Expo Secure Store, passed to Supabase client
+- API clients query Supabase tables directly and invoke Edge Functions for complex operations
+- Supabase Realtime for push notifications and live updates
+- Config in `app/config/env.ts`: `SUPABASE_URL` and `SUPABASE_ANON_KEY`
 
 ### Navigation Hierarchy
 ```
@@ -184,9 +211,6 @@ RootNavigator
     └── ParentTabsNavigator (home, schedule, children, enrollments, payments, announcements, profile)
 ```
 
-### API Clients
-`authApi`, `enrollmentApi`, `parentChildrenApi`, `parentScheduleApi`, `parentPaymentsApi`, `parentAnnouncementsApi`, `coachCoursesApi`, `coachAttendanceApi`, `coachSessionAttendanceApi`, `coachWeeklyAttendanceApi`, `coachPaymentsApi`, `coachAnnouncementsApi`, `adminCoursesApi`
-
 ---
 
 ## E2E Tests (Root Level)
@@ -194,7 +218,7 @@ RootNavigator
 **Stack**: Playwright · Chromium/Firefox/WebKit
 
 ### Test Suites (`tests/`)
-- `smoke-tests.spec.ts` — Quick validation (homepage, API, assets, JS errors, SSL, performance)
+- `smoke-tests.spec.ts` — Quick validation (homepage, assets, JS errors, SSL, performance)
 - `production-readiness.spec.ts` — Comprehensive production checks (user flows, security headers, performance, responsive design, data integrity, error handling)
 - `example.spec.ts` — Basic Playwright examples
 
@@ -210,25 +234,36 @@ RootNavigator
 
 ## Development Workflows
 
-**Full local** (FE + BE): Start BE first (`./gradlew bootRun`), then FE (`npm start`). Set meta tag to `http://localhost:8081`.
+**Frontend local**: Run `npm start` in `TriathlonTeamFE/`. Configure Supabase URL and anon key in `src/index.html` meta tags (point to your Supabase project or local Supabase instance).
 
-**Hybrid** (FE local + BE deployed): Just `npm start` in FE. Meta tag pointed at Railway URL.
+**Frontend + local Supabase**: Run `supabase start` (requires Supabase CLI and Docker) for a local Supabase instance. Update meta tags to point at `http://localhost:54321`. Then `npm start` in `TriathlonTeamFE/`.
 
-**Mobile**: Run `npx expo start` in TriathlonTeamMobile. Configure `app/config/env.ts` for API URL.
+**Mobile**: Run `npx expo start` in `TriathlonTeamMobile/`. Configure `app/config/env.ts` with `SUPABASE_URL` and `SUPABASE_ANON_KEY`.
+
+**Edge Functions local dev**: Run `supabase functions serve` to test Edge Functions locally. Functions will be available at `http://localhost:54321/functions/v1/<function-name>`.
+
+**Data migration**: Run `supabase/seed/migrate-data.ts` to migrate data from the old Spring Boot PostgreSQL database to Supabase (one-time operation).
 
 ---
 
 ## Coding Conventions
 
-### Backend (Kotlin)
-- Data classes for DTOs, entities are JPA `@Entity` classes
-- Services: `@Service`, Controllers: `@RestController`, Repos: extend `JpaRepository`
-- New DB fields → add Flyway migration (`V{n}__{desc}.sql`), NEVER use `ddl-auto`
-- `hibernate.ddl-auto=validate` in production
-- Service sub-packages by domain: `attendance/`, `payment/`, `enrollment/`, etc.
-- Controller sub-packages mirror service structure: `web/admin/`, `web/coach/`, `web/public/`, etc.
-- Two package roots: `com.example.demo` (entry point + CORS) and `com.club.triathlon` (all business logic)
-- `@Entity`, `@MappedSuperclass`, `@Embeddable` made open via allopen plugin
+### Supabase (Edge Functions)
+- Written in TypeScript, run on Deno
+- One function per directory: `supabase/functions/<name>/index.ts`
+- Shared code in `supabase/functions/_shared/`
+- Use `createClient` from `@supabase/supabase-js` with service role key for admin operations
+- Use the user's JWT (from `Authorization` header) for user-scoped operations
+- Return JSON responses with appropriate HTTP status codes
+- Handle CORS via shared `cors.ts`
+
+### Database
+- Schema changes go in new migration files: `supabase/migrations/00005_<desc>.sql` (next number is 00005)
+- Always define RLS policies for new tables
+- Use PostgreSQL enums for type-safe enumeration columns
+- Use `uuid` primary keys (generated by `gen_random_uuid()`)
+- Use `timestamptz` for all timestamp columns
+- Foreign keys with appropriate ON DELETE behavior
 
 ### Frontend (Angular)
 - Feature modules lazy-loaded per route
@@ -237,64 +272,68 @@ RootNavigator
 - Component-scoped SCSS styles
 - Use `isPlatformBrowser()` for browser-only code (SSR safety)
 - `OnPush` change detection + `trackBy` for lists
-- `withCredentials: true` for all API calls (cookie auth)
+- Use `SupabaseService` for all data access — do not use `HttpClient` for backend calls
+- Wrap Supabase async calls with `from()` to convert to Observables where needed
 - Prettier: 100 char width, single quotes
 
 ### Mobile (React Native)
 - Feature-first organization by user role
 - Custom hooks (`useXyz`) for screen logic
-- Centralized API clients in `app/api/`
+- Centralized API clients in `app/api/` using `@supabase/supabase-js`
 - Theme constants in `app/config/theme.ts`
 - Context API for global state (no Redux)
 
 ---
 
-## Environment Variables (Backend)
+## Environment Variables
 
+### Supabase Project
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `DATABASE_URL` | Yes | `jdbc:postgresql://host:port/db` |
-| `DATABASE_USERNAME` | Yes | DB user |
-| `DATABASE_PASSWORD` | Yes | DB password |
-| `JWT_SECRET` | Yes | Min 32 chars for HMAC512 |
-| `CORS_ALLOWED_ORIGINS` | Yes | Comma-separated origins |
-| `PORT` | No | Default 8081 |
-| `STRIPE_SECRET_KEY` | No | Stripe payments |
-| `STRIPE_WEBHOOK_SECRET` | No | Stripe webhooks |
-| `STRIPE_CONNECT_WEBHOOK_SECRET` | No | Stripe Connect webhooks |
-| `USE_SECURE_COOKIES` | No | `true` in production |
-| `APP_TIME_ZONE` | No | Default `Europe/Bucharest` |
-| `STORAGE_BUCKET_NAME` | No | S3 bucket for Railway Object Storage |
-| `STORAGE_ACCESS_KEY` | No | S3 access key |
-| `STORAGE_SECRET_KEY` | No | S3 secret key |
-| `SMARTBILL_*` | No | SmartBill invoice integration (disabled by default) |
-| `SPRING_MAIL_*` | No | SMTP config for email notifications |
-| `GOOGLE_CLIENT_ID` | No | Google OAuth2 client ID |
-| `GOOGLE_CLIENT_SECRET` | No | Google OAuth2 client secret |
+| `SUPABASE_URL` | Yes | Supabase project URL (e.g., `https://xxxx.supabase.co`) |
+| `SUPABASE_ANON_KEY` | Yes | Supabase anonymous/public key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes (Edge Functions) | Service role key for admin operations in Edge Functions |
+| `STRIPE_SECRET_KEY` | No | Stripe payments (used in Edge Functions) |
+| `STRIPE_WEBHOOK_SECRET` | No | Stripe webhook signature verification |
+| `STRIPE_CONNECT_WEBHOOK_SECRET` | No | Stripe Connect webhook signature verification |
+
+### Frontend (Angular)
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `SUPABASE_URL` | Yes | Set via `<meta name="supabase-url">` in `index.html` or env var for SSR |
+| `SUPABASE_ANON_KEY` | Yes | Set via `<meta name="supabase-anon-key">` in `index.html` or env var for SSR |
+
+### Mobile (React Native)
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `SUPABASE_URL` | Yes | Set in `app/config/env.ts` |
+| `SUPABASE_ANON_KEY` | Yes | Set in `app/config/env.ts` |
 
 ---
 
 ## Common Tasks
 
-**Add new endpoint**: Controller method → Service logic → Test with Swagger (`/swagger-ui.html`) → FE service method → consume in component
+**Add new Edge Function**: Create `supabase/functions/<name>/index.ts` → implement handler → deploy with `supabase functions deploy <name>` → call from FE via `supabase.invokeFunction('<name>', body)`
 
-**Add field to entity**: Update Kotlin entity → Flyway migration (`V{next}__{desc}.sql`) → Update DTOs → Update FE model → Update forms/views
+**Add new table**: Create migration file `supabase/migrations/00005_<desc>.sql` → define table with RLS policies → update FE models and services to query the new table
 
-**Add new page (FE)**: Create component in `features/` → Add route in `app.routes.ts` → Add navigation link
+**Add field to table**: Create migration file → `ALTER TABLE ... ADD COLUMN ...` → update RLS policies if needed → update FE model → update forms/views
 
-**Add new mobile screen**: Create screen in `app/features/{role}/` → Add to appropriate navigator → Create API client if needed
+**Add new page (FE)**: Create component in `features/` → add route in `app.routes.ts` → add navigation link
 
-**Add new Flyway migration**: Next number is V41. File goes in `src/main/resources/db/migration/V41__{desc}.sql`
+**Add new mobile screen**: Create screen in `app/features/{role}/` → add to appropriate navigator → use Supabase client for data access
+
+**Next migration number**: 00005. File goes in `supabase/migrations/00005_<desc>.sql`
 
 ---
 
 ## Debugging Quick Reference
 
-- **401 Unauthorized**: Token expired/missing → re-login, check cookie sent with `withCredentials: true`
-- **403 Forbidden**: Wrong role or CSRF token missing
-- **CORS error**: Update `CORS_ALLOWED_ORIGINS` on backend
+- **Auth errors**: Check Supabase Auth dashboard, verify session with `supabase.auth.getSession()`, check profile exists in `profiles` table
+- **RLS denied (empty results or 403)**: Check RLS policies on the table, verify `auth.uid()` matches expected user, check role in `profiles`
+- **Edge Function errors**: Check Supabase Dashboard → Edge Functions → Logs, or run locally with `supabase functions serve`
 - **SSR errors**: Use `isPlatformBrowser()` for `window`/`document`/`localStorage`
-- **Backend logs**: Railway Dashboard or local console (`logs/triathlon-app.log`)
-- **FE network issues**: Browser F12 → Network tab
-- **Mobile auth issues**: Check Expo Secure Store token storage
-- **Stripe issues**: Check webhook signatures, verify secret keys match environment
+- **FE network issues**: Browser F12 → Network tab, check Supabase client requests
+- **Mobile auth issues**: Check Expo Secure Store token storage, verify Supabase client config in `env.ts`
+- **Stripe issues**: Check Edge Function logs, verify webhook signatures, verify secret keys in Supabase secrets
+- **Realtime not working**: Check Supabase Realtime is enabled for the table, verify channel subscription in `WebSocketService`

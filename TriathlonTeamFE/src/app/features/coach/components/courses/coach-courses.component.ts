@@ -13,7 +13,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { HttpClient } from '@angular/common/http';
-import { API_BASE_URL } from '../../../../core/tokens/api-base-url.token';
+import { SupabaseService } from '../../../../core/services/supabase.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CoachService, CoachCourseSummary } from '../../services/coach.service';
 
@@ -28,7 +28,7 @@ import { CoachService, CoachCourseSummary } from '../../services/coach.service';
 export class CoachCoursesComponent implements OnInit {
   private readonly coachService = inject(CoachService);
   private readonly http = inject(HttpClient);
-  private readonly apiBaseUrl = inject(API_BASE_URL);
+  private readonly supabase = inject(SupabaseService);
   private readonly router = inject(Router);
   private readonly snackbar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
@@ -124,25 +124,17 @@ export class CoachCoursesComponent implements OnInit {
   }
 
   loadHeroPhoto(courseId: string): void {
-    const url = `${this.apiBaseUrl}/api/public/courses/${courseId}/hero-photo`;
-    
-    this.http.get(url, {
-      responseType: 'blob'
-    })
-    .pipe(takeUntilDestroyed(this.destroyRef))
-    .subscribe({
-      next: (blob) => {
-        const blobUrl = URL.createObjectURL(blob);
-        this.heroPhotoUrls.update(urls => ({
-          ...urls,
-          [courseId]: blobUrl
-        }));
-      },
-      error: (error) => {
-        console.warn('Failed to load hero photo for course:', courseId, error);
-        this.heroPhotoErrors.update(errors => new Set([...errors, courseId]));
-      }
-    });
+    // Use Supabase storage to get the hero photo URL
+    const { data } = this.supabase.storage('course-photos').getPublicUrl(`${courseId}/hero`);
+    const url = data?.publicUrl;
+    if (url) {
+      this.heroPhotoUrls.update(urls => ({
+        ...urls,
+        [courseId]: url
+      }));
+    } else {
+      this.heroPhotoErrors.update(errors => new Set([...errors, courseId]));
+    }
   }
 
   onHeroPhotoError(event: Event, courseId: string): void {

@@ -20,7 +20,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { EMPTY, catchError, of } from 'rxjs';
 import { finalize, switchMap } from 'rxjs/operators';
-import { API_BASE_URL } from '../../../../core/tokens/api-base-url.token';
+import { SupabaseService } from '../../../../core/services/supabase.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { RatingService } from '../../../../core/services/rating.service';
 import { StarRatingComponent } from '../../../../shared/components/star-rating/star-rating.component';
@@ -46,7 +46,7 @@ import {
 })
 export class CoachProfileComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly api = inject(PublicApiService);
-  private readonly apiBaseUrl = inject(API_BASE_URL);
+  private readonly supabase = inject(SupabaseService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
@@ -72,8 +72,8 @@ export class CoachProfileComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly courseIdToHeroUrl = signal<Record<string, string>>({});
 
   getCoachPhotoUrl(coachId: string): string {
-    const base = this.apiBaseUrl.replace(/\/$/, '');
-    return `${base}/api/public/coaches/${coachId}/photo`;
+    const { data } = this.supabase.storage('coach-photos').getPublicUrl(coachId);
+    return data?.publicUrl ?? '';
   }
 
   ngOnInit(): void {
@@ -247,8 +247,8 @@ export class CoachProfileComponent implements OnInit, AfterViewInit, OnDestroy {
   private resolveUrl(possiblyRelative: string): string {
     if (!possiblyRelative) return '';
     if (/^https?:\/\//i.test(possiblyRelative)) return possiblyRelative;
-    const base = this.apiBaseUrl.replace(/\/$/, '');
-    return `${base}${possiblyRelative.startsWith('/') ? '' : '/'}${possiblyRelative}`;
+    const { data } = this.supabase.storage('course-photos').getPublicUrl(possiblyRelative);
+    return data?.publicUrl ?? possiblyRelative;
   }
 
   private prefetchHeroPhotos(courses: CoachCourseSummary[]): void {

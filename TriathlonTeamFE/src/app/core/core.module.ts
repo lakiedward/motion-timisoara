@@ -1,17 +1,11 @@
-﻿import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { AuthInterceptor } from './interceptors/auth.interceptor';
-
+/**
+ * CoreModule is no longer used - interceptors are configured in app.config.ts.
+ * Kept for backward compatibility but can be safely deleted.
+ */
 @NgModule({
   imports: [CommonModule],
-  providers: [
-    {
-      provide: HTTP_INTERCEPTORS,
-      useClass: AuthInterceptor,
-      multi: true
-    }
-  ]
 })
 export class CoreModule {}
