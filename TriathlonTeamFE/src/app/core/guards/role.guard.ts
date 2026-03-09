@@ -9,9 +9,7 @@ export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot, state: R
   const router = inject(Router);
 
   const requiredRoles = (route.data['roles'] as Role[]) || [];
-  if (requiredRoles.length === 0) {
-    return true;
-  }
+  if (requiredRoles.length === 0) return true;
 
   const evaluate = () => {
     const currentUser = authService.getCurrentUser();
@@ -20,14 +18,10 @@ export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot, state: R
     return hasRole ? true : router.createUrlTree(['/']);
   };
 
-  // If we already have a user, evaluate immediately
-  if (authService.getCurrentUser()) {
-    return evaluate();
-  }
+  if (authService.getCurrentUser()) return evaluate();
 
-  // Attempt to restore the session before deciding
   return authService.me().pipe(
     map(() => evaluate()),
-    catchError(() => of(router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } })))
+    catchError(() => of(router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } }))),
   );
 };

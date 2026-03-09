@@ -25,7 +25,7 @@ import {
   CreateClubCoachRequest,
   UpdateClubCoachRequest
 } from '../../services/club.service';
-import { API_BASE_URL } from '../../../../core/tokens/api-base-url.token';
+import { SupabaseService } from '../../../../core/services/supabase.service';
 
 @Component({
   selector: 'app-club-coach-form',
@@ -52,7 +52,7 @@ export class ClubCoachFormComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly clubService = inject(ClubService);
   private readonly sportService = inject(SportService);
-  private readonly apiBaseUrl = inject(API_BASE_URL);
+  private readonly supabase = inject(SupabaseService);
 
   readonly coachId = signal<string | null>(null);
   readonly isLoading = signal(true);
@@ -220,8 +220,8 @@ export class ClubCoachFormComponent implements OnInit {
   getExistingPhotoUrl(): string | null {
     const coach = this.loadedCoach();
     if (!coach?.userId || !coach.hasPhoto) return null;
-    const base = (this.apiBaseUrl || '').replace(/\/$/, '');
-    return `${base}/api/public/coaches/${coach.userId}/photo`;
+    const { data } = this.supabase.storage('coach-photos').getPublicUrl(coach.userId);
+    return data?.publicUrl ?? null;
   }
 
   private loadSports(): void {

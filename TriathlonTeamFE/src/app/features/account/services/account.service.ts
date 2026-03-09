@@ -1,7 +1,7 @@
-import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { from, Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
+import { SupabaseService } from '../../../core/services/supabase.service';
 
 export interface ParentEnrollment {
   id: string;
@@ -47,111 +47,258 @@ interface ParentOverviewResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AccountService {
-  private readonly http = inject(HttpClient);
+  private readonly supabase = inject(SupabaseService);
 
   getParentOverview(): Observable<ParentOverviewResponse> {
-    return this.http.get<{ enrollments: any[]; payments: any[] }>('/api/parent/overview').pipe(
-      map((payload) => ({
-        enrollments: payload.enrollments.map((item) => this.mapEnrollment(item)),
-        payments: payload.payments.map((item) => this.mapPayment(item))
-      })),
+    return from(this.fetchOverview()).pipe(
       catchError(() => of(this.getMockOverview()))
     );
   }
 
   getParentEnrollments(): Observable<ParentEnrollment[]> {
-    return this.http.get<any[]>('/api/parent/enrollments').pipe(
-      map((items) => items.map((item) => this.mapEnrollment(item))),
+    return from(this.fetchEnrollments()).pipe(
       catchError(() => of(this.getMockOverview().enrollments))
     );
   }
 
   getRecentPayments(): Observable<RecentPayment[]> {
-    return this.http.get<any[]>('/api/parent/payments').pipe(
-      map((items) => items.map((item) => this.mapPayment(item))),
+    return from(this.fetchRecentPayments()).pipe(
       catchError(() => of(this.getMockOverview().payments))
     );
   }
 
   getCalendarEvents(startDate: Date, endDate: Date): Observable<CalendarEvent[]> {
-    const params = {
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString()
-    };
-    return this.http.get<any[]>('/api/parent/calendar', { params }).pipe(
-      map((items) => items.map((item) => this.mapCalendarEvent(item))),
+    return from(this.fetchCalendarEvents(startDate, endDate)).pipe(
       catchError(() => of(this.getMockCalendarEvents()))
     );
   }
 
   getUpcomingEvents(limit: number = 10): Observable<CalendarEvent[]> {
-    return this.http.get<any[]>(`/api/parent/upcoming-events?limit=${limit}`).pipe(
-      map((items) => items.map((item) => this.mapCalendarEvent(item))),
+    return from(this.fetchUpcomingEvents(limit)).pipe(
       catchError(() => of(this.getMockCalendarEvents().slice(0, limit)))
     );
   }
 
-  private mapEnrollment(item: any): ParentEnrollment {
-    const nextRaw =
-      item.nextOccurrence ??
-      item.nextSession ??
-      item.startsAt ??
-      item.nextDate ??
-      item.nextCourseDate;
-    const nextIso = typeof nextRaw === 'string' ? new Date(nextRaw).toISOString() : undefined;
-    const kindValue = String(item.kind ?? item.type ?? 'course').toLowerCase();
-    const normalizedKind: ParentEnrollment['kind'] = kindValue === 'camp' ? 'camp' : kindValue === 'activity' ? 'activity' : 'course';
-    const paymentStatus = this.normalizePaymentStatus(item.paymentStatus ?? item.payment?.status ?? item.lastPayment?.status);
-    const paymentMethod = this.normalizePaymentMethod(item.paymentMethod ?? item.payment?.method ?? item.lastPayment?.method);
-    const purchasedSessions = this.toNumber(item.purchasedSessions ?? item.totalSessions ?? item.purchased);
-    const remainingSessions = this.toNumber(item.remainingSessions ?? item.remaining ?? (purchasedSessions != null && item.sessionsUsed != null ? purchasedSessions - Number(item.sessionsUsed) : undefined));
-    const sessionsUsed = this.toNumber(item.sessionsUsed ?? item.consumedSessions);
+  private async fetchOverview(): Promise<ParentOverviewResponse> {
+    const [enrollments, payments] = await Promise.all([
+      this.fetchEnrollments(),
+      this.fetchRecentPayments()
+    ]);
+    return { enrollments, payments };
+  }
+
+  private async fetchEnrollments(): Promise<ParentEnrollment[]> {
+    // RLS filters by parent_id automatically
+    const { data, error } = await this.supabase
+      .from('enrollments')
+      .select(`
+        id,
+        entity_type,
+        entity_id,
+        status,
+        payment_method,
+        sessions_remaining,
+        sessions_total,
+        created_at,
+        child:children!child_id (
+          id,
+          first_name,
+          last_name
+        ),
+        course:courses!entity_id (
+          id,
+          name,
+          location:locations!location_id ( name )
+        ),
+        payments (
+          status,
+          amount,
+          currency,
+          payment_method
+        ),
+        next_occurrence:course_occurrences!entity_id (
+          starts_at
+        )
+      `)
+      .in('status', ['ACTIVE', 'PENDING'])
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data ?? []).map((row: any) => this.mapEnrollmentRow(row));
+  }
+
+  private async fetchRecentPayments(): Promise<RecentPayment[]> {
+    // RLS filters by parent through enrollment -> child -> parent_id
+    const { data, error } = await this.supabase
+      .from('payments')
+      .select(`
+        id,
+        amount,
+        currency,
+        status,
+        payment_method,
+        paid_at,
+        created_at,
+        enrollment:enrollments!enrollment_id (
+          entity_type,
+          entity_id,
+          course:courses!entity_id ( name )
+        )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (error) throw error;
+
+    return (data ?? []).map((row: any) => this.mapPaymentRow(row));
+  }
+
+  private async fetchCalendarEvents(startDate: Date, endDate: Date): Promise<CalendarEvent[]> {
+    // Get course occurrences for parent's enrolled courses within the date range
+    const { data, error } = await this.supabase
+      .from('course_occurrences')
+      .select(`
+        id,
+        starts_at,
+        ends_at,
+        course:courses!course_id (
+          id,
+          name,
+          location:locations!location_id ( name ),
+          enrollments (
+            id,
+            entity_type,
+            status,
+            child:children!child_id (
+              first_name,
+              last_name
+            )
+          )
+        )
+      `)
+      .gte('starts_at', startDate.toISOString())
+      .lte('starts_at', endDate.toISOString())
+      .order('starts_at', { ascending: true });
+
+    if (error) throw error;
+
+    return (data ?? [])
+      .filter((row: any) => row.course?.enrollments?.length > 0)
+      .map((row: any) => this.mapCalendarRow(row));
+  }
+
+  private async fetchUpcomingEvents(limit: number): Promise<CalendarEvent[]> {
+    const now = new Date();
+    const { data, error } = await this.supabase
+      .from('course_occurrences')
+      .select(`
+        id,
+        starts_at,
+        ends_at,
+        course:courses!course_id (
+          id,
+          name,
+          location:locations!location_id ( name ),
+          enrollments (
+            id,
+            entity_type,
+            status,
+            child:children!child_id (
+              first_name,
+              last_name
+            )
+          )
+        )
+      `)
+      .gte('starts_at', now.toISOString())
+      .order('starts_at', { ascending: true })
+      .limit(limit);
+
+    if (error) throw error;
+
+    return (data ?? [])
+      .filter((row: any) => row.course?.enrollments?.length > 0)
+      .map((row: any) => this.mapCalendarRow(row));
+  }
+
+  private mapEnrollmentRow(row: any): ParentEnrollment {
+    const child = row.child;
+    const childName =
+      child && child.first_name ? `${child.first_name} ${child.last_name ?? ''}`.trim() : undefined;
+    const course = row.course;
+    const latestPayment = Array.isArray(row.payments) ? row.payments[0] : undefined;
+    const nextOcc = Array.isArray(row.next_occurrence) ? row.next_occurrence[0] : undefined;
+    const kindValue = String(row.entity_type ?? 'COURSE').toLowerCase();
+    const normalizedKind: ParentEnrollment['kind'] =
+      kindValue === 'camp' ? 'camp' : kindValue === 'activity' ? 'activity' : 'course';
+    const normalizedStatus = this.normalizeStatus(row.status);
 
     return {
-      id: String(item.id ?? this.generateId()),
-      title: item.title ?? item.courseName ?? 'Curs',
-      period: item.period ?? item.schedule ?? item.occursOn ?? 'Nespecificat',
-      status: (item.status ?? 'active') as ParentEnrollment['status'],
-      statusLabel: this.statusLabel(item.status ?? 'active'),
-      childName: item.childName ?? item.child?.name ?? undefined,
-      nextOccurrence: nextIso,
+      id: String(row.id),
+      title: course?.name ?? 'Curs',
+      period: 'Nespecificat',
+      status: normalizedStatus,
+      statusLabel: this.statusLabel(normalizedStatus),
+      childName,
+      nextOccurrence: nextOcc?.starts_at ? new Date(nextOcc.starts_at).toISOString() : undefined,
       kind: normalizedKind,
-      location: item.location ?? item.locationName ?? item.venue ?? undefined,
-      paymentStatus,
-      paymentMethod,
-      remainingSessions,
-      purchasedSessions,
-      sessionsUsed
+      location: course?.location?.name ?? undefined,
+      paymentStatus: latestPayment ? this.normalizePaymentStatus(latestPayment.status) : undefined,
+      paymentMethod: this.normalizePaymentMethod(latestPayment?.payment_method ?? row.payment_method),
+      remainingSessions: this.toNumber(row.sessions_remaining),
+      purchasedSessions: this.toNumber(row.sessions_total),
+      sessionsUsed:
+        row.sessions_total != null && row.sessions_remaining != null
+          ? row.sessions_total - row.sessions_remaining
+          : undefined
     };
   }
 
-  private mapPayment(item: any): RecentPayment {
+  private mapPaymentRow(row: any): RecentPayment {
+    const enrollment = row.enrollment;
+    const courseName = enrollment?.course?.name;
+    const description = courseName ?? 'Plata';
+
     return {
-      id: String(item.id ?? this.generateId()),
-      description: item.description ?? 'Plata',
-      amount: Number(item.amount ?? 0),
-      currency: item.currency ?? 'RON',
-      date: item.date ?? new Date().toISOString(),
-      status: (item.status ?? 'completed') as RecentPayment['status'],
-      statusLabel: this.paymentStatusLabel(item.status ?? 'completed')
+      id: String(row.id),
+      description,
+      amount: Number(row.amount ?? 0),
+      currency: row.currency ?? 'RON',
+      date: row.paid_at ?? row.created_at ?? new Date().toISOString(),
+      status: this.normalizeRecentPaymentStatus(row.status),
+      statusLabel: this.paymentStatusLabel(this.normalizeRecentPaymentStatus(row.status))
     };
   }
 
-  private mapCalendarEvent(item: any): CalendarEvent {
-    const eventDate = item.date ? new Date(item.date) : new Date();
-    const eventType = item.type?.toLowerCase();
+  private mapCalendarRow(row: any): CalendarEvent {
+    const course = row.course;
+    const firstEnrollment = Array.isArray(course?.enrollments) ? course.enrollments[0] : undefined;
+    const child = firstEnrollment?.child;
+    const childName =
+      child && child.first_name ? `${child.first_name} ${child.last_name ?? ''}`.trim() : undefined;
+    const entityType = String(firstEnrollment?.entity_type ?? 'COURSE').toLowerCase();
     const normalizedType: CalendarEvent['type'] =
-      eventType === 'camp' ? 'camp' : eventType === 'attendance' ? 'attendance' : 'course';
+      entityType === 'camp' ? 'camp' : entityType === 'activity' ? 'activity' : 'course';
+    const startsAt = new Date(row.starts_at);
+    const timeStr = `${String(startsAt.getHours()).padStart(2, '0')}:${String(startsAt.getMinutes()).padStart(2, '0')}`;
 
     return {
-      id: String(item.id ?? this.generateId()),
-      date: eventDate,
+      id: String(row.id),
+      date: startsAt,
       type: normalizedType,
-      title: item.title ?? item.name ?? 'Eveniment',
-      location: item.location ?? item.locationName ?? undefined,
-      time: item.time ?? item.timeSlot ?? undefined,
-      childName: item.childName ?? item.child?.name ?? undefined
+      title: course?.name ?? 'Eveniment',
+      location: course?.location?.name ?? undefined,
+      time: timeStr,
+      childName
     };
+  }
+
+  private normalizeStatus(status: any): ParentEnrollment['status'] {
+    const value = String(status ?? 'ACTIVE').toUpperCase();
+    if (value === 'PENDING') return 'pending';
+    if (value === 'EXPIRED' || value === 'CANCELLED') return 'completed';
+    return 'active';
   }
 
   private statusLabel(status: ParentEnrollment['status']): string {
@@ -163,6 +310,13 @@ export class AccountService {
       default:
         return 'activ';
     }
+  }
+
+  private normalizeRecentPaymentStatus(status: any): RecentPayment['status'] {
+    const value = String(status ?? 'SUCCEEDED').toUpperCase();
+    if (value === 'PENDING') return 'pending';
+    if (value === 'FAILED') return 'failed';
+    return 'completed';
   }
 
   private paymentStatusLabel(status: RecentPayment['status']): string {
@@ -178,19 +332,13 @@ export class AccountService {
 
   private normalizePaymentStatus(status: any): ParentEnrollment['paymentStatus'] {
     if (!status) return undefined;
-    const normalized = String(status).toLowerCase();
+    const normalized = String(status).toUpperCase();
     switch (normalized) {
-      case 'pending':
+      case 'PENDING':
         return 'pending';
-      case 'partial':
-        return 'partial';
-      case 'failed':
+      case 'FAILED':
         return 'failed';
-      case 'refunded':
-        return 'refunded';
-      case 'completed':
-      case 'succeeded':
-      case 'success':
+      case 'SUCCEEDED':
         return 'completed';
       default:
         return undefined;
@@ -207,13 +355,6 @@ export class AccountService {
     if (value == null) return undefined;
     const numeric = Number(value);
     return Number.isFinite(numeric) ? numeric : undefined;
-  }
-
-  private generateId(): string {
-    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-      return crypto.randomUUID();
-    }
-    return Math.random().toString(36).slice(2, 10);
   }
 
   private getMockOverview(): ParentOverviewResponse {
@@ -277,46 +418,42 @@ export class AccountService {
     const today = new Date();
     const events: CalendarEvent[] = [];
 
-    // Add some mock course events
     for (let i = 1; i <= 30; i++) {
       const eventDate = new Date(today);
       eventDate.setDate(today.getDate() + i);
 
-      // Course events on Mondays and Wednesdays
       if (eventDate.getDay() === 1 || eventDate.getDay() === 3) {
         events.push({
           id: `course-${i}`,
           date: eventDate,
           type: 'course',
-          title: 'Curs Înot Avansați',
+          title: 'Curs Inot Avansati',
           location: 'Bazin Olimpic',
           time: '18:00',
           childName: 'Andrei Pop'
         });
       }
 
-      // Course events on Tuesdays and Thursdays
       if (eventDate.getDay() === 2 || eventDate.getDay() === 4) {
         events.push({
           id: `course-cycling-${i}`,
           date: eventDate,
           type: 'course',
           title: 'Curs Ciclism',
-          location: 'Baza Sportivă',
+          location: 'Baza Sportiva',
           time: '17:30',
           childName: 'Maria Pop'
         });
       }
     }
 
-    // Add a camp event
     const campDate = new Date(today);
     campDate.setDate(today.getDate() + 10);
     events.push({
       id: 'camp-1',
       date: campDate,
       type: 'camp',
-      title: 'Tabără Montană de Vară',
+      title: 'Tabara Montana de Vara',
       location: 'Piatra Craiului',
       time: '09:00',
       childName: 'Maria Pop'

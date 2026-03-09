@@ -1,8 +1,7 @@
-import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { API_BASE_URL } from '../../../core/tokens/api-base-url.token';
-import { BehaviorSubject, Observable, of } from 'rxjs';
-import { catchError, map, tap } from 'rxjs/operators';
+import { BehaviorSubject, from, Observable, of } from 'rxjs';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
+import { SupabaseService } from '../../../core/services/supabase.service';
 
 export interface Child {
   id: string;
@@ -49,9 +48,7 @@ export interface ChildValidationResult {
 
 @Injectable({ providedIn: 'root' })
 export class ChildrenService {
-  private readonly http = inject(HttpClient);
-  private readonly baseUrl = '/api/parent/children';
-  private readonly apiBaseUrl = inject(API_BASE_URL);
+  private readonly supabase = inject(SupabaseService);
 
   private readonly childPhotoBust = new Map<string, number>();
 
@@ -59,8 +56,7 @@ export class ChildrenService {
   readonly children$ = this.childrenSubject.asObservable();
 
   loadChildren(): Observable<Child[]> {
-    return this.http.get<any[]>(this.baseUrl).pipe(
-      map((children) => (children ?? []).map((c) => this.mapChildResponse(c))),
+    return from(this.fetchChildren()).pipe(
       tap((children) => this.childrenSubject.next(children)),
       catchError((error) => {
         console.warn('Folosesc date mock pentru copii', error);
@@ -76,12 +72,14 @@ export class ChildrenService {
     if (cached) {
       return of(cached);
     }
-    return this.http.get<any>(`${this.baseUrl}/${id}`).pipe(map((c) => this.mapChildResponse(c)));
+    return from(this.fetchChild(id));
   }
 
   getChildPhotoUrl(id: string): string {
-    const base = this.apiBaseUrl.replace(/\/$/, '');
-    const url = `${base}${this.baseUrl}/${id}/photo`;
+    // Generate a Supabase Storage public/signed URL for the child photo
+    const path = `children/${id}/photo`;
+    const { data } = this.supabase.storage('child-photos').getPublicUrl(path);
+    const url = data?.publicUrl ?? '';
     const bust = this.childPhotoBust.get(id);
     if (!bust) return url;
     const separator = url.includes('?') ? '&' : '?';
@@ -89,26 +87,26 @@ export class ChildrenService {
   }
 
   uploadChildPhoto(id: string, base64: string): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/${id}/photo`, { photo: base64 }).pipe(
+    return from(this.uploadPhoto(id, base64)).pipe(
       tap(() => {
         this.childPhotoBust.set(id, Date.now());
         this.childrenSubject.next(
-          this.childrenSubject.value.map((child) => (child.id === id ? { ...child, hasPhoto: true } : child))
+          this.childrenSubject.value.map((child) =>
+            child.id === id ? { ...child, hasPhoto: true } : child
+          )
         );
       })
     );
   }
 
   createChild(payload: ChildPayload): Observable<Child> {
-    return this.http.post<any>(this.baseUrl, payload).pipe(
-      map((c) => this.mapChildResponse(c)),
+    return from(this.insertChild(payload)).pipe(
       tap((child) => this.childrenSubject.next([...this.childrenSubject.value, child]))
     );
   }
 
   updateChild(id: string, payload: ChildPayload): Observable<Child> {
-    return this.http.put<any>(`${this.baseUrl}/${id}`, payload).pipe(
-      map((c) => this.mapChildResponse(c)),
+    return from(this.updateChildRow(id, payload)).pipe(
       tap((child) => {
         this.childrenSubject.next(
           this.childrenSubject.value.map((existing) => (existing.id === id ? child : existing))
@@ -118,8 +116,10 @@ export class ChildrenService {
   }
 
   deleteChild(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`).pipe(
-      tap(() => this.childrenSubject.next(this.childrenSubject.value.filter((child) => child.id !== id)))
+    return from(this.deleteChildRow(id)).pipe(
+      tap(() =>
+        this.childrenSubject.next(this.childrenSubject.value.filter((child) => child.id !== id))
+      )
     );
   }
 
@@ -128,10 +128,134 @@ export class ChildrenService {
   }
 
   validateChildren(courseId: string, childIds: string[]): Observable<ChildValidationResult[]> {
-    return this.http.post<ChildValidationResult[]>('/api/enrollments/validate', {
-      courseId,
-      childIds
+    return from(
+      this.supabase.invokeFunction<ChildValidationResult[]>('validate-enrollment', {
+        courseId,
+        childIds
+      })
+    );
+  }
+
+  // --- Private Supabase operations ---
+
+  private async fetchChildren(): Promise<Child[]> {
+    // RLS filters by parent_id automatically
+    const { data, error } = await this.supabase
+      .from('children')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
+    return (data ?? []).map((row: any) => this.mapChildRow(row));
+  }
+
+  private async fetchChild(id: string): Promise<Child> {
+    const { data, error } = await this.supabase
+      .from('children')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+
+    return this.mapChildRow(data);
+  }
+
+  private async insertChild(payload: ChildPayload): Promise<Child> {
+    const [firstName, ...lastParts] = payload.name.split(' ');
+    const lastName = lastParts.join(' ') || '';
+
+    const { data, error } = await this.supabase
+      .from('children')
+      .insert({
+        first_name: firstName,
+        last_name: lastName,
+        birth_date: payload.birthDate,
+        notes: payload.allergies ?? null
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return this.mapChildRow(data);
+  }
+
+  private async updateChildRow(id: string, payload: ChildPayload): Promise<Child> {
+    const [firstName, ...lastParts] = payload.name.split(' ');
+    const lastName = lastParts.join(' ') || '';
+
+    const { data, error } = await this.supabase
+      .from('children')
+      .update({
+        first_name: firstName,
+        last_name: lastName,
+        birth_date: payload.birthDate,
+        notes: payload.allergies ?? null
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return this.mapChildRow(data);
+  }
+
+  private async deleteChildRow(id: string): Promise<void> {
+    const { error } = await this.supabase.from('children').delete().eq('id', id);
+
+    if (error) throw error;
+  }
+
+  private async uploadPhoto(id: string, base64: string): Promise<void> {
+    // Convert base64 to Uint8Array for storage upload
+    const byteString = atob(base64.replace(/^data:image\/\w+;base64,/, ''));
+    const bytes = new Uint8Array(byteString.length);
+    for (let i = 0; i < byteString.length; i++) {
+      bytes[i] = byteString.charCodeAt(i);
+    }
+
+    const path = `children/${id}/photo`;
+    const { error } = await this.supabase.storage('child-photos').upload(path, bytes, {
+      contentType: 'image/jpeg',
+      upsert: true
     });
+
+    if (error) throw error;
+
+    // Update the child record to indicate a photo exists
+    await this.supabase
+      .from('children')
+      .update({ photo_storage_path: path })
+      .eq('id', id);
+  }
+
+  private mapChildRow(row: any): Child {
+    if (!row || !row.id) {
+      console.warn('Child response missing id', row);
+      throw new Error('Child response missing id');
+    }
+
+    const firstName = row.first_name ?? '';
+    const lastName = row.last_name ?? '';
+    const name = `${firstName} ${lastName}`.trim();
+
+    return {
+      id: String(row.id),
+      name,
+      birthDate: row.birth_date ?? '',
+      level: undefined,
+      allergies: row.notes ?? undefined,
+      emergencyContactName: undefined,
+      emergencyPhone: '',
+      gdprConsentAt: undefined,
+      secondaryContactName: undefined,
+      secondaryPhone: undefined,
+      tshirtSize: undefined,
+      hasPhoto: Boolean(row.photo_storage_path)
+    };
   }
 
   private mockChildren(): Child[] {
@@ -153,28 +277,5 @@ export class ChildrenService {
         emergencyPhone: '+40733333222'
       }
     ];
-  }
-
-  private mapChildResponse(raw: any): Child {
-    const rawId = raw.id ?? raw.childId ?? raw.child?.id;
-    if (rawId == null) {
-      console.warn('Child response missing id', raw);
-      throw new Error('Child response missing id');
-    }
-
-    return {
-      id: String(rawId),
-      name: raw.name,
-      birthDate: raw.birthDate ?? raw.birth_date,
-      level: raw.level ?? undefined,
-      allergies: raw.allergies ?? undefined,
-      emergencyContactName: raw.emergencyContactName ?? raw.emergency_contact_name ?? undefined,
-      emergencyPhone: raw.emergencyPhone ?? raw.emergency_phone,
-      gdprConsentAt: raw.gdprConsentAt ?? raw.gdpr_consent_at ?? undefined,
-      secondaryContactName: raw.secondaryContactName ?? raw.secondary_contact_name ?? undefined,
-      secondaryPhone: raw.secondaryPhone ?? raw.secondary_phone ?? undefined,
-      tshirtSize: raw.tshirtSize ?? raw.tshirt_size ?? undefined,
-      hasPhoto: Boolean(raw.hasPhoto ?? raw.has_photo ?? false)
-    };
   }
 }

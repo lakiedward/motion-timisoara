@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { filter, Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
-import { API_BASE_URL } from '../../tokens/api-base-url.token';
+import { SupabaseService } from '../../services/supabase.service';
 
 // ============================================
 // Types
@@ -45,7 +45,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
-  private readonly apiBaseUrl = inject<string>(API_BASE_URL);
+  private readonly supabase = inject(SupabaseService);
 
   readonly currentUser$ = this.authService.currentUser$;
   readonly currentYear = new Date().getFullYear();
@@ -350,11 +350,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   private getCoachPhotoUrl(coachUserId: string): string {
-    const base = (this.apiBaseUrl || '').replace(/\/$/, '');
-    if (!base) {
-      return `/api/public/coaches/${coachUserId}/photo`;
-    }
-    return `${base}/api/public/coaches/${coachUserId}/photo`;
+    const { data } = this.supabase.storage('coach-photos').getPublicUrl(coachUserId);
+    return data?.publicUrl ?? '';
   }
 
   private normalizeAvatarUrl(avatarUrl: string | null | undefined): string | null {
@@ -368,12 +365,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
       return url;
     }
 
-    const base = (this.apiBaseUrl || '').replace(/\/$/, '');
-    const path = url.startsWith('/') ? url : `/${url}`;
-    if (!base) {
-      return path;
-    }
-
-    return `${base}${path}`;
+    // Relative path: resolve via Supabase storage
+    const { data } = this.supabase.storage('avatars').getPublicUrl(url);
+    return data?.publicUrl ?? url;
   }
 }

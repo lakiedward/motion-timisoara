@@ -1,7 +1,7 @@
-import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { SupabaseService } from '../../../core/services/supabase.service';
 
 export interface BillingDetailsRequest {
   name: string;
@@ -61,35 +61,38 @@ export interface ParentEnrollmentListItem {
 
 @Injectable({ providedIn: 'root' })
 export class EnrollmentService {
-  private readonly http = inject(HttpClient);
+  private readonly supabase = inject(SupabaseService);
 
   createEnrollment(payload: EnrollmentRequest): Observable<EnrollmentCreateResponse> {
-    return this.http.post<EnrollmentCreateResponse>('/api/enrollments', payload);
+    // Complex mutation -> Edge Function
+    return from(
+      this.supabase.invokeFunction<EnrollmentCreateResponse>('create-enrollment', payload)
+    );
   }
 
   cancelDraftEnrollment(enrollmentId: string): Observable<void> {
-    return this.http.post<void>(`/api/enrollments/${enrollmentId}/cancel-draft`, {});
+    // Complex mutation -> Edge Function
+    return from(
+      this.supabase.invokeFunction<void>('cancel-draft-enrollment', { enrollmentId })
+    );
   }
 
   myEnrollments(): Observable<Enrollment[]> {
-    return this.http.get<Enrollment[]>('/api/enrollments/me');
+    return from(this.fetchMyEnrollments());
   }
 
   getEnrollments(): Observable<ParentEnrollmentListItem[]> {
-    return this.http.get<any[]>('/api/parent/enrollments').pipe(
+    return from(this.fetchParentEnrollments()).pipe(
       map((items) => {
-        const mapped = (items ?? [])
-          .map((item) => this.mapParentEnrollment(item))
-          .filter((enrollment) => {
-            // Filter out enrollments with missing childId to prevent matching issues
-            if (!enrollment.childId) {
-              console.error('Enrollment missing childId - data integrity issue:', enrollment);
-              return false;
-            }
-            return true;
-          });
+        const filtered = items.filter((enrollment) => {
+          if (!enrollment.childId) {
+            console.error('Enrollment missing childId - data integrity issue:', enrollment);
+            return false;
+          }
+          return true;
+        });
 
-        const sorted = [...mapped].sort((a, b) => {
+        const sorted = [...filtered].sort((a, b) => {
           const aDate = a.paymentCreatedAt ?? a.paymentPaidAt ?? '';
           const bDate = b.paymentCreatedAt ?? b.paymentPaidAt ?? '';
           return (bDate || '').localeCompare(aDate || '');
@@ -112,67 +115,143 @@ export class EnrollmentService {
     );
   }
 
-  private mapParentEnrollment(raw: any): ParentEnrollmentListItem {
-    const payment = raw.payment ?? raw.lastPayment ?? {};
-    const invoice = raw.invoice ?? {};
-    const normalizedStatus = this.normalizeEnrollmentStatus(raw.status);
-    const normalizedKind = this.normalizeKind(raw.kind ?? raw.type);
-    const normalizedPaymentStatus = this.normalizePaymentStatus(payment.status ?? raw.paymentStatus);
+  // --- Private Supabase operations ---
 
-    const invoiceUrl = this.resolveInvoiceUrl({
-      url: invoice.url ?? raw.invoiceUrl,
-      id: invoice.id ?? raw.invoiceId ?? payment.invoiceId
-    });
+  private async fetchMyEnrollments(): Promise<Enrollment[]> {
+    // RLS filters by parent's children automatically
+    const { data, error } = await this.supabase
+      .from('enrollments')
+      .select('id, status')
+      .order('created_at', { ascending: false });
 
-    // Extract childId - critical for matching enrollments to children
-    const childId = raw.child?.id ?? raw.childId;
+    if (error) throw error;
+
+    return (data ?? []).map((row: any) => ({
+      id: String(row.id),
+      status: String(row.status)
+    }));
+  }
+
+  private async fetchParentEnrollments(): Promise<ParentEnrollmentListItem[]> {
+    // RLS ensures only parent's children's enrollments are returned
+    const { data, error } = await this.supabase
+      .from('enrollments')
+      .select(`
+        id,
+        entity_type,
+        entity_id,
+        status,
+        payment_method,
+        sessions_remaining,
+        sessions_total,
+        created_at,
+        child:children!child_id (
+          id,
+          first_name,
+          last_name
+        ),
+        course:courses!entity_id (
+          id,
+          name,
+          location:locations!location_id ( name )
+        ),
+        payments (
+          id,
+          amount,
+          currency,
+          status,
+          payment_method,
+          paid_at,
+          created_at
+        ),
+        next_occurrence:course_occurrences!entity_id (
+          starts_at
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data ?? []).map((row: any) => this.mapParentEnrollment(row));
+  }
+
+  private mapParentEnrollment(row: any): ParentEnrollmentListItem {
+    const child = row.child;
+    const childId = child?.id ? String(child.id) : '';
+    const childName =
+      child && child.first_name
+        ? `${child.first_name} ${child.last_name ?? ''}`.trim()
+        : 'Copil';
+    const course = row.course;
+    const latestPayment = Array.isArray(row.payments) && row.payments.length > 0
+      ? row.payments.sort(
+          (a: any, b: any) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )[0]
+      : undefined;
+    const nextOcc = Array.isArray(row.next_occurrence) ? row.next_occurrence[0] : undefined;
+
+    const normalizedStatus = this.normalizeEnrollmentStatus(row.status);
+    const normalizedKind = this.normalizeKind(row.entity_type);
+    const normalizedPaymentStatus = latestPayment
+      ? this.normalizePaymentStatus(latestPayment.status)
+      : undefined;
+
     if (!childId) {
-      console.warn('Enrollment data missing child information:', { enrollmentId: raw.id, raw });
+      console.warn('Enrollment data missing child information:', { enrollmentId: row.id, row });
     }
 
     return {
-      id: String(raw.id ?? payment.id ?? this.generateId()),
-      childId: childId != null ? String(childId) : '',
-      childName: raw.childName ?? raw.child?.name ?? 'Copil',
-      title: raw.title ?? raw.entity?.name ?? raw.activityName ?? raw.courseName ?? raw.campName ?? 'Activitate',
-      period: raw.period ?? raw.schedule ?? raw.occursOn ?? raw.dateRange ?? undefined,
+      id: String(row.id),
+      childId,
+      childName,
+      title: course?.name ?? 'Activitate',
+      period: undefined,
       kind: normalizedKind,
-      location: raw.location ?? raw.venue ?? raw.facility ?? undefined,
-      nextOccurrence: this.resolveDate(raw.nextOccurrence ?? raw.nextSession ?? raw.startsAt ?? raw.startDate),
+      location: course?.location?.name ?? undefined,
+      nextOccurrence: nextOcc?.starts_at
+        ? new Date(nextOcc.starts_at).toISOString()
+        : undefined,
       status: normalizedStatus,
       statusLabel: this.enrollmentStatusLabel(normalizedStatus),
-      paymentAmount: payment.amount ?? raw.paymentAmount ?? undefined,
-      paymentCurrency: payment.currency ?? raw.paymentCurrency ?? 'RON',
+      paymentAmount: latestPayment?.amount ?? undefined,
+      paymentCurrency: latestPayment?.currency ?? 'RON',
       paymentStatus: normalizedPaymentStatus,
       paymentStatusLabel: this.paymentStatusLabel(normalizedPaymentStatus),
-      paymentMethod: this.normalizePaymentMethod(payment.method ?? raw.paymentMethod),
-      paymentCreatedAt: this.resolveDate(payment.createdAt ?? raw.paymentCreatedAt),
-      paymentPaidAt: this.resolveDate(payment.paidAt ?? raw.paymentPaidAt),
-      invoiceUrl,
-      invoiceId: invoiceUrl ? String(invoice.id ?? raw.invoiceId ?? payment.invoiceId) : undefined,
-      purchasedSessions: raw.purchasedSessions ?? undefined,
-      remainingSessions: raw.remainingSessions ?? undefined,
-      sessionsUsed: raw.sessionsUsed ?? undefined
+      paymentMethod: this.normalizePaymentMethod(
+        latestPayment?.payment_method ?? row.payment_method
+      ),
+      paymentCreatedAt: latestPayment?.created_at
+        ? new Date(latestPayment.created_at).toISOString()
+        : undefined,
+      paymentPaidAt: latestPayment?.paid_at
+        ? new Date(latestPayment.paid_at).toISOString()
+        : undefined,
+      invoiceUrl: undefined,
+      invoiceId: undefined,
+      purchasedSessions: row.sessions_total ?? undefined,
+      remainingSessions: row.sessions_remaining ?? undefined,
+      sessionsUsed:
+        row.sessions_total != null && row.sessions_remaining != null
+          ? row.sessions_total - row.sessions_remaining
+          : undefined
     };
   }
 
   private normalizeKind(kind: any): EnrollmentKind {
-    const value = String(kind ?? 'course').toLowerCase();
-    if (value === 'camp') return 'camp';
-    if (value === 'activity') return 'activity';
+    const value = String(kind ?? 'COURSE').toUpperCase();
+    if (value === 'CAMP') return 'camp';
+    if (value === 'ACTIVITY') return 'activity';
     return 'course';
   }
 
   private normalizeEnrollmentStatus(status: any): EnrollmentStatus {
-    const value = String(status ?? 'active').toLowerCase();
+    const value = String(status ?? 'ACTIVE').toUpperCase();
     switch (value) {
-      case 'pending':
+      case 'PENDING':
         return 'pending';
-      case 'completed':
-      case 'finished':
-        return 'completed';
-      case 'cancelled':
-      case 'canceled':
+      case 'EXPIRED':
+      case 'CANCELLED':
         return 'cancelled';
       default:
         return 'active';
@@ -181,19 +260,13 @@ export class EnrollmentService {
 
   private normalizePaymentStatus(status: any): PaymentStatus | undefined {
     if (!status) return undefined;
-    const normalized = String(status).toLowerCase();
+    const normalized = String(status).toUpperCase();
     switch (normalized) {
-      case 'pending':
+      case 'PENDING':
         return 'pending';
-      case 'partial':
-        return 'partial';
-      case 'failed':
+      case 'FAILED':
         return 'failed';
-      case 'refunded':
-        return 'refunded';
-      case 'completed':
-      case 'succeeded':
-      case 'success':
+      case 'SUCCEEDED':
         return 'completed';
       default:
         return undefined;
@@ -220,9 +293,7 @@ export class EnrollmentService {
   }
 
   private paymentStatusLabel(status?: PaymentStatus): string | undefined {
-    if (!status) {
-      return undefined;
-    }
+    if (!status) return undefined;
 
     switch (status) {
       case 'completed':
@@ -239,34 +310,4 @@ export class EnrollmentService {
         return undefined;
     }
   }
-
-  private resolveInvoiceUrl(params: { url?: string; id?: string }): string | undefined {
-    if (params.url) {
-      return String(params.url);
-    }
-
-    if (params.id) {
-      return '/api/invoices/' + params.id;
-    }
-
-    return undefined;
-  }
-
-  private resolveDate(value: any): string | undefined {
-    if (!value) {
-      return undefined;
-    }
-
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
-  }
-
-  private generateId(): string {
-    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-      return crypto.randomUUID();
-    }
-
-    return Math.random().toString(36).slice(2, 10);
-  }
 }
-

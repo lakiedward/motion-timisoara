@@ -1,6 +1,6 @@
-import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { from, Observable } from 'rxjs';
+import { SupabaseService } from '../../../core/services/supabase.service';
 
 export interface SessionPurchaseRequest {
   sessionCount: number;
@@ -17,16 +17,18 @@ export interface SessionPurchaseResponse {
 
 @Injectable({ providedIn: 'root' })
 export class SessionPurchaseService {
-  private readonly http = inject(HttpClient);
+  private readonly supabase = inject(SupabaseService);
 
   purchaseAdditionalSessions(
     enrollmentId: string,
     request: SessionPurchaseRequest
   ): Observable<SessionPurchaseResponse> {
-    return this.http.post<SessionPurchaseResponse>(
-      `/api/enrollments/${enrollmentId}/purchase-sessions`,
-      request
+    // Complex mutation (payment + enrollment update) -> Edge Function
+    return from(
+      this.supabase.invokeFunction<SessionPurchaseResponse>('purchase-sessions', {
+        enrollmentId,
+        ...request
+      })
     );
   }
 }
-

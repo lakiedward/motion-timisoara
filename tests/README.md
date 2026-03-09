@@ -71,9 +71,8 @@ $env:BASE_URL="http://localhost:4200"; npx playwright test
 ```
 
 **IMPORTANT:** Asigură-te că:
-1. Backend rulează pe `http://localhost:8081`
-2. Frontend rulează pe `http://localhost:4200`
-3. Meta tag `api-base-url` din `TriathlonTeamFE/src/index.html` pointează la `http://localhost:8081`
+1. Frontend rulează pe `http://localhost:4200`
+2. Meta tag-urile `supabase-url` și `supabase-anon-key` din `TriathlonTeamFE/src/index.html` sunt configurate corect (Supabase cloud sau local via `supabase start`)
 
 ### Vizualizare Rapoarte
 

@@ -17,7 +17,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs/operators';
 import { PublicApiService, PublicClubSummary } from '../../../../core/services/public-api.service';
 import { Router } from '@angular/router';
-import { API_BASE_URL } from '../../../../core/tokens/api-base-url.token';
+import { SupabaseService } from '../../../../core/services/supabase.service';
 
 @Component({
   selector: 'app-clubs-list',
@@ -33,7 +33,7 @@ export class ClubsListComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly router = inject(Router);
-  private readonly apiBaseUrl = inject(API_BASE_URL);
+  private readonly supabase = inject(SupabaseService);
 
   private intersectionObserver?: IntersectionObserver;
   private hasLoadedInitialData = false;
@@ -115,12 +115,9 @@ export class ClubsListComponent implements OnInit, AfterViewInit, OnDestroy {
     const hasScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw);
     if (hasScheme) return raw;
 
-    const base = (this.apiBaseUrl || '').replace(/\/$/, '');
-    if (base) {
-      return raw.startsWith('/') ? `${base}${raw}` : `${base}/${raw}`;
-    }
-
-    return raw.startsWith('/') ? raw : `/${raw}`;
+    // Relative path: resolve via Supabase storage
+    const { data } = this.supabase.storage('club-assets').getPublicUrl(raw);
+    return data?.publicUrl ?? raw;
   }
 
   private setupScrollReveal(): void {

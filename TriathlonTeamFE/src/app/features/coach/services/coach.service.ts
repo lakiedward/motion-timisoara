@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { SupabaseService } from '../../../core/services/supabase.service';
 import {
   CoachApiService,
   CoachCourse,
@@ -10,7 +10,7 @@ import {
   CourseAttendancePayload,
   CourseScheduleSlot,
   CreateCoursePayload,
-  LocationOption
+  LocationOption,
 } from './coach-api.service';
 
 export interface CoachCourseSummary {
@@ -159,17 +159,51 @@ export interface ActivityParticipant {
 @Injectable({ providedIn: 'root' })
 export class CoachService {
   private readonly api = inject(CoachApiService);
-  private readonly http = inject(HttpClient);
-  private readonly activitiesUrl = '/api/coach/activities';
+  private readonly supabase = inject(SupabaseService);
 
-  private readonly dayDefinitions: Array<{ key: string; number: number; label: string; aliases: string[] }> = [
+  private readonly dayDefinitions: Array<{
+    key: string;
+    number: number;
+    label: string;
+    aliases: string[];
+  }> = [
     { key: 'monday', number: 1, label: 'Luni', aliases: ['1', '01', 'luni', 'monday', 'mon'] },
-    { key: 'tuesday', number: 2, label: 'Marti', aliases: ['2', '02', 'marti', 'tuesday', 'tue'] },
-    { key: 'wednesday', number: 3, label: 'Miercuri', aliases: ['3', '03', 'miercuri', 'wednesday', 'wed'] },
-    { key: 'thursday', number: 4, label: 'Joi', aliases: ['4', '04', 'joi', 'thursday', 'thu'] },
-    { key: 'friday', number: 5, label: 'Vineri', aliases: ['5', '05', 'vineri', 'friday', 'fri'] },
-    { key: 'saturday', number: 6, label: 'Sambata', aliases: ['6', '06', 'sambata', 'saturday', 'sat'] },
-    { key: 'sunday', number: 7, label: 'Duminica', aliases: ['7', '07', 'duminica', 'sunday', 'sun'] }
+    {
+      key: 'tuesday',
+      number: 2,
+      label: 'Marti',
+      aliases: ['2', '02', 'marti', 'tuesday', 'tue'],
+    },
+    {
+      key: 'wednesday',
+      number: 3,
+      label: 'Miercuri',
+      aliases: ['3', '03', 'miercuri', 'wednesday', 'wed'],
+    },
+    {
+      key: 'thursday',
+      number: 4,
+      label: 'Joi',
+      aliases: ['4', '04', 'joi', 'thursday', 'thu'],
+    },
+    {
+      key: 'friday',
+      number: 5,
+      label: 'Vineri',
+      aliases: ['5', '05', 'vineri', 'friday', 'fri'],
+    },
+    {
+      key: 'saturday',
+      number: 6,
+      label: 'Sambata',
+      aliases: ['6', '06', 'sambata', 'saturday', 'sat'],
+    },
+    {
+      key: 'sunday',
+      number: 7,
+      label: 'Duminica',
+      aliases: ['7', '07', 'duminica', 'sunday', 'sun'],
+    },
   ];
 
   getMyCourses(): Observable<CoachCourseSummary[]> {
@@ -190,7 +224,7 @@ export class CoachService {
           coachName: item.coachName,
           location: item.location,
           active: item.active,
-          hasHeroPhoto: Boolean(item.hasHeroPhoto)
+          hasHeroPhoto: Boolean(item.hasHeroPhoto),
         }))
       )
     );
@@ -201,7 +235,9 @@ export class CoachService {
   }
 
   getParticipants(courseId: string): Observable<CoachParticipantView[]> {
-    return this.api.getCourseParticipants(courseId).pipe(map((items) => items.map((item) => this.mapParticipant(item))));
+    return this.api
+      .getCourseParticipants(courseId)
+      .pipe(map((items) => items.map((item) => this.mapParticipant(item))));
   }
 
   setCourseStatus(courseId: string, active: boolean): Observable<void> {
@@ -219,7 +255,9 @@ export class CoachService {
 
   updateCourse(courseId: string, payload: CourseFormPayload): Observable<CoachCourseDetail> {
     const apiPayload = this.toApiPayload(payload);
-    return this.api.updateCourse(courseId, apiPayload).pipe(map((course) => this.mapCourseDetail(course)));
+    return this.api
+      .updateCourse(courseId, apiPayload)
+      .pipe(map((course) => this.mapCourseDetail(course)));
   }
 
   getLocations(): Observable<LocationOption[]> {
@@ -241,47 +279,227 @@ export class CoachService {
 
   // ========== ACTIVITIES ==========
   getMyActivities(): Observable<CoachActivity[]> {
-    return this.http.get<CoachActivity[]>(this.activitiesUrl);
+    return from(
+      this.supabase
+        .from('activities')
+        .select(
+          `
+          id, name, activity_date, start_time, end_time, price, currency,
+          capacity, active, hero_photo_storage_path,
+          sport:sports(code, name),
+          location:locations(name),
+          coach:coach_profiles(user:users(first_name, last_name)),
+          enrollments(id, status)
+        `
+        )
+        .order('activity_date', { ascending: false })
+        .then(({ data, error }) => {
+          if (error) throw error;
+          return (data ?? []).map((row: any) => {
+            const coach = row.coach?.user;
+            const enrollments = row.enrollments ?? [];
+            return {
+              id: row.id,
+              name: row.name,
+              coachName: coach ? `${coach.first_name} ${coach.last_name}` : '',
+              sport: row.sport?.code ?? '',
+              sportName: row.sport?.name ?? '',
+              location: row.location?.name ?? '',
+              activityDate: row.activity_date,
+              startTime: row.start_time,
+              endTime: row.end_time,
+              price: row.price,
+              currency: row.currency ?? 'RON',
+              capacity: row.capacity,
+              active: row.active,
+              enrolledCount: enrollments.filter(
+                (e: any) => e.status === 'ACTIVE' || e.status === 'PENDING'
+              ).length,
+              reservedCount: enrollments.filter((e: any) => e.status === 'PENDING').length,
+              hasHeroPhoto: Boolean(row.hero_photo_storage_path),
+            } as CoachActivity;
+          });
+        })
+    );
   }
 
   getActivityById(activityId: string): Observable<CoachActivityDetail> {
-    return this.http.get<CoachActivityDetail>(`${this.activitiesUrl}/${activityId}`);
+    return from(
+      this.supabase
+        .from('activities')
+        .select(
+          `
+          id, name, description, coach_id, activity_date, start_time, end_time,
+          price, currency, capacity, active, hero_photo_storage_path, created_at,
+          sport:sports(code, name),
+          location:locations(id, name),
+          coach:coach_profiles(user:users(first_name, last_name))
+        `
+        )
+        .eq('id', activityId)
+        .single()
+        .then(({ data, error }) => {
+          if (error) throw error;
+          const row = data as any;
+          const coach = row.coach?.user;
+          return {
+            id: row.id,
+            name: row.name,
+            description: row.description,
+            coachId: row.coach_id,
+            coachName: coach ? `${coach.first_name} ${coach.last_name}` : '',
+            sport: row.sport?.code ?? '',
+            sportName: row.sport?.name ?? '',
+            locationId: row.location?.id ?? '',
+            locationName: row.location?.name ?? '',
+            activityDate: row.activity_date,
+            startTime: row.start_time,
+            endTime: row.end_time,
+            price: row.price,
+            currency: row.currency ?? 'RON',
+            capacity: row.capacity,
+            active: row.active,
+            hasHeroPhoto: Boolean(row.hero_photo_storage_path),
+            createdAt: row.created_at,
+          } as CoachActivityDetail;
+        })
+    );
   }
 
   createActivity(payload: CoachActivityPayload): Observable<CoachActivityDetail> {
-    return this.http.post<CoachActivityDetail>(this.activitiesUrl, payload);
+    return from(
+      this.supabase
+        .invokeFunction<any>('create-activity', payload)
+        .then((data) => data as CoachActivityDetail)
+    );
   }
 
-  updateActivity(activityId: string, payload: CoachActivityPayload): Observable<CoachActivityDetail> {
-    return this.http.put<CoachActivityDetail>(`${this.activitiesUrl}/${activityId}`, payload);
+  updateActivity(
+    activityId: string,
+    payload: CoachActivityPayload
+  ): Observable<CoachActivityDetail> {
+    return from(
+      this.supabase
+        .invokeFunction<any>('update-activity', { activityId, ...payload })
+        .then((data) => data as CoachActivityDetail)
+    );
   }
 
   setActivityStatus(activityId: string, active: boolean): Observable<void> {
-    return this.http.patch<void>(`${this.activitiesUrl}/${activityId}/status`, { active });
+    return from(
+      this.supabase
+        .from('activities')
+        .update({ active })
+        .eq('id', activityId)
+        .then(({ error }) => {
+          if (error) throw error;
+        })
+    );
   }
 
   deleteActivity(activityId: string): Observable<void> {
-    return this.http.delete<void>(`${this.activitiesUrl}/${activityId}`);
+    return from(
+      this.supabase
+        .invokeFunction<void>('delete-activity', { activityId })
+    );
   }
 
   getActivityHeroPhoto(activityId: string): Observable<{ photo: string | null }> {
-    return this.http.get<{ photo: string | null }>(`${this.activitiesUrl}/${activityId}/hero-photo`);
+    return from(
+      this.supabase
+        .from('activities')
+        .select('hero_photo_storage_path')
+        .eq('id', activityId)
+        .single()
+        .then(({ data, error }) => {
+          if (error) throw error;
+          const storagePath = (data as any)?.hero_photo_storage_path;
+          if (!storagePath) return { photo: null };
+          const { data: urlData } = this.supabase
+            .storage('activity-photos')
+            .getPublicUrl(storagePath);
+          return { photo: urlData?.publicUrl ?? null };
+        })
+    );
   }
 
-  uploadActivityHeroPhoto(activityId: string, photoBase64: string): Observable<CoachActivityDetail> {
-    return this.http.post<CoachActivityDetail>(`${this.activitiesUrl}/${activityId}/hero-photo`, { photo: photoBase64 });
+  uploadActivityHeroPhoto(
+    activityId: string,
+    photoBase64: string
+  ): Observable<CoachActivityDetail> {
+    return from(
+      this.supabase
+        .invokeFunction<CoachActivityDetail>('upload-activity-hero-photo', {
+          activityId,
+          photo: photoBase64,
+        })
+    );
   }
 
   deleteActivityHeroPhoto(activityId: string): Observable<void> {
-    return this.http.delete<void>(`${this.activitiesUrl}/${activityId}/hero-photo`);
+    return from(
+      this.supabase.invokeFunction<void>('delete-activity-hero-photo', { activityId })
+    );
   }
 
   getActivityParticipants(activityId: string): Observable<ActivityParticipant[]> {
-    return this.http.get<ActivityParticipant[]>(`${this.activitiesUrl}/${activityId}/participants`);
+    return from(
+      this.supabase
+        .from('enrollments')
+        .select(
+          `
+          id, entity_type, status, sessions_remaining, sessions_total, created_at,
+          child:children(id, first_name, last_name),
+          payments(id, payment_method, status, amount, created_at, paid_at)
+        `
+        )
+        .eq('entity_id', activityId)
+        .eq('entity_type', 'ACTIVITY')
+        .then(({ data, error }) => {
+          if (error) throw error;
+          return (data ?? []).map((row: any) => {
+            const child = row.child;
+            const latestPayment = (row.payments ?? [])[0];
+            return {
+              id: row.id,
+              kind: row.entity_type,
+              status: row.status,
+              child: {
+                id: child?.id ?? '',
+                name: child ? `${child.first_name} ${child.last_name}` : '',
+              },
+              payment: latestPayment
+                ? {
+                    id: latestPayment.id,
+                    method: latestPayment.payment_method,
+                    status: latestPayment.status,
+                    amount: latestPayment.amount,
+                    createdAt: latestPayment.created_at,
+                    paidAt: latestPayment.paid_at ?? undefined,
+                  }
+                : undefined,
+              createdAt: row.created_at,
+              purchasedSessions: row.sessions_total ?? 0,
+              remainingSessions: row.sessions_remaining ?? 0,
+              sessionsUsed: (row.sessions_total ?? 0) - (row.sessions_remaining ?? 0),
+            } as ActivityParticipant;
+          });
+        })
+    );
   }
 
   confirmActivityCashPayment(activityId: string, paymentId: string): Observable<void> {
-    return this.http.post<void>(`${this.activitiesUrl}/${activityId}/payments/${paymentId}/confirm-cash`, {});
+    return from(
+      this.supabase
+        .from('payments')
+        .update({ status: 'SUCCEEDED', paid_at: new Date().toISOString() })
+        .eq('id', paymentId)
+        .eq('payment_method', 'CASH')
+        .eq('status', 'PENDING')
+        .then(({ error }) => {
+          if (error) throw error;
+        })
+    );
   }
 
   markAttendance(
@@ -292,7 +510,7 @@ export class CoachService {
     const payload: CourseAttendancePayload = {
       courseId,
       date,
-      participants
+      participants,
     };
     return this.api.markCourseAttendance(payload);
   }
@@ -310,7 +528,7 @@ export class CoachService {
       ageRange: this.composeAgeRange(item),
       enrolledCount: item.enrolledCount ?? 0,
       schedule: item.scheduleSummary,
-      price: item.price
+      price: item.price,
     };
   }
 
@@ -348,7 +566,7 @@ export class CoachService {
         : this.composeTimeRange(item.startTime, item.endTime),
       scheduleSlots,
       ageFrom: item.ageFrom,
-      ageTo: item.ageTo
+      ageTo: item.ageTo,
     };
   }
 
@@ -360,8 +578,9 @@ export class CoachService {
       parentName: item.parentName ?? undefined,
       parentEmail: item.parentEmail ?? undefined,
       paymentStatus,
-      paymentStatusLabel: item.paymentStatusLabel ?? (paymentStatus === 'paid' ? 'Platita' : 'Restanta'),
-      presentToday: Boolean(item.presentToday)
+      paymentStatusLabel:
+        item.paymentStatusLabel ?? (paymentStatus === 'paid' ? 'Platita' : 'Restanta'),
+      presentToday: Boolean(item.presentToday),
     };
   }
 
@@ -385,23 +604,23 @@ export class CoachService {
       description: payload.description,
       locationId: locationId || undefined,
       clubId: clubId || undefined,
-      paymentRecipient: payload.paymentRecipient
+      paymentRecipient: payload.paymentRecipient,
     };
   }
 
   private buildRecurrenceRule(schedule: CourseScheduleSlot[]): string {
     const daySchedules: Record<string, { start: string; end: string }> = {};
 
-    schedule.forEach(slot => {
+    schedule.forEach((slot) => {
       if (!slot.startTime || !slot.endTime) {
         return;
       }
-      
+
       const dayNumber = this.dayToNumber(slot.day);
       if (dayNumber) {
         daySchedules[dayNumber.toString()] = {
           start: this.normalizeTime(slot.startTime),
-          end: this.normalizeTime(slot.endTime)
+          end: this.normalizeTime(slot.endTime),
         };
       }
     });
@@ -437,7 +656,9 @@ export class CoachService {
       return `${this.formatTime(normalizedStart)} - ${this.formatTime(normalizedEnd)}`;
     }
 
-    return normalizedStart ? this.formatTime(normalizedStart) : this.formatTime(normalizedEnd ?? '');
+    return normalizedStart
+      ? this.formatTime(normalizedStart)
+      : this.formatTime(normalizedEnd ?? '');
   }
 
   private formatTime(value: string): string {
@@ -450,7 +671,7 @@ export class CoachService {
 
   private normalizePaymentStatus(status?: string): 'paid' | 'due' {
     const normalized = String(status ?? '').toLowerCase();
-    if (['paid', 'platit', 'platita', 'completed', 'success'].includes(normalized)) {
+    if (['paid', 'platit', 'platita', 'completed', 'success', 'succeeded'].includes(normalized)) {
       return 'paid';
     }
     return 'due';
@@ -470,7 +691,7 @@ export class CoachService {
           day: definition.key,
           dayLabel: definition.label,
           startTime: this.normalizeTime(slot.startTime ?? item.startTime),
-          endTime: this.normalizeOptionalTime(slot.endTime ?? item.endTime)
+          endTime: this.normalizeOptionalTime(slot.endTime ?? item.endTime),
         });
       });
       return this.sortSlots(slots);
@@ -486,7 +707,7 @@ export class CoachService {
           day: definition.key,
           dayLabel: definition.label,
           startTime: this.normalizeTime(slot.startTime ?? item.startTime),
-          endTime: this.normalizeOptionalTime(slot.endTime ?? item.endTime)
+          endTime: this.normalizeOptionalTime(slot.endTime ?? item.endTime),
         });
       });
       return this.sortSlots(slots);
@@ -496,7 +717,8 @@ export class CoachService {
     if (item.recurrenceRule) {
       try {
         const parsed = JSON.parse(item.recurrenceRule as unknown as string);
-        const daySchedules = (parsed && (parsed.daySchedules || parsed.daySchedule || parsed.days)) || null;
+        const daySchedules =
+          (parsed && (parsed.daySchedules || parsed.daySchedule || parsed.days)) || null;
         if (daySchedules && typeof daySchedules === 'object') {
           Object.keys(daySchedules).forEach((key) => {
             const definition = this.dayDefinition(Number(key));
@@ -508,7 +730,7 @@ export class CoachService {
               day: definition.key,
               dayLabel: definition.label,
               startTime: this.normalizeTime(scheduleForDay?.start ?? item.startTime),
-              endTime: this.normalizeOptionalTime(scheduleForDay?.end ?? item.endTime)
+              endTime: this.normalizeOptionalTime(scheduleForDay?.end ?? item.endTime),
             });
           });
           if (slots.length) {
@@ -530,7 +752,7 @@ export class CoachService {
           day: definition.key,
           dayLabel: definition.label,
           startTime: this.normalizeTime(item.startTime),
-          endTime: this.normalizeOptionalTime(item.endTime)
+          endTime: this.normalizeOptionalTime(item.endTime),
         });
       });
       return this.sortSlots(slots);
@@ -543,7 +765,7 @@ export class CoachService {
           day: definition.key,
           dayLabel: definition.label,
           startTime: this.normalizeTime(item.startTime),
-          endTime: this.normalizeOptionalTime(item.endTime)
+          endTime: this.normalizeOptionalTime(item.endTime),
         });
       }
     }
@@ -580,7 +802,9 @@ export class CoachService {
     return this.dayDefinition(day)?.label;
   }
 
-  private dayDefinition(day: string | number | undefined): { key: string; number: number; label: string } | null {
+  private dayDefinition(
+    day: string | number | undefined
+  ): { key: string; number: number; label: string } | null {
     if (day == null) {
       return null;
     }
@@ -595,4 +819,3 @@ export class CoachService {
     );
   }
 }
-

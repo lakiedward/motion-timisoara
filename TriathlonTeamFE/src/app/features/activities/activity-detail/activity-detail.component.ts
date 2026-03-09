@@ -5,7 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../../../core/services/auth.service';
 import { PublicApiService, PublicActivityDetail } from '../../../core/services/public-api.service';
-import { API_BASE_URL } from '../../../core/tokens/api-base-url.token';
+import { SupabaseService } from '../../../core/services/supabase.service';
 import { LocationMapComponent } from '../../program/course-details/location-map/location-map.component';
 
 @Component({
@@ -23,7 +23,7 @@ export class ActivityDetailComponent implements OnInit {
   private readonly api = inject(PublicApiService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-  private readonly apiBaseUrl = inject<string>(API_BASE_URL);
+  private readonly supabase = inject(SupabaseService);
 
   readonly activity = signal<PublicActivityDetail | null>(null);
   readonly isLoading = signal(true);
@@ -158,11 +158,8 @@ export class ActivityDetailComponent implements OnInit {
     if (!url) return url;
     // If already absolute, return as is
     if (/^https?:\/\//i.test(url)) return url;
-    // Ensure base URL has no trailing slash
-    const base = (this.apiBaseUrl || '').replace(/\/$/, '');
-    if (!base) return url;
-    // Ensure URL starts with a slash
-    const path = url.startsWith('/') ? url : `/${url}`;
-    return `${base}${path}`;
+    // Relative path: resolve via Supabase storage
+    const { data } = this.supabase.storage('activity-photos').getPublicUrl(url);
+    return data?.publicUrl ?? url;
   }
 }

@@ -12,7 +12,7 @@ import { CourseFormComponent } from '../../../coach/components/course-form/cours
 import { CourseFormPayload } from '../../../coach/services/coach.service';
 import { CourseScheduleSlot } from '../../../coach/services/coach-api.service';
 import { ClubCoach, ClubCourseDetail, ClubService, CoursePhotoItem, CreateClubCourseRequest, UpdateClubCourseRequest } from '../../services/club.service';
-import { API_BASE_URL } from '../../../../core/tokens/api-base-url.token';
+import { SupabaseService } from '../../../../core/services/supabase.service';
 
 @Component({
   selector: 'app-club-course-form',
@@ -28,7 +28,7 @@ export class ClubCourseFormComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly snackbar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly apiBaseUrl = inject(API_BASE_URL);
+  private readonly supabase = inject(SupabaseService);
 
   readonly coaches = signal<ClubCoach[]>([]);
   readonly selectedCoachUserId = signal<string | null>(null);
@@ -341,16 +341,16 @@ export class ClubCourseFormComponent implements OnInit {
   getGalleryPhotoUrl(photoId: string): string {
     const courseId = this.courseId();
     if (!courseId) return '';
-    const base = this.apiBaseUrl.replace(/\/$/, '');
-    return `${base}/api/public/courses/${courseId}/photos/${photoId}`;
+    const { data } = this.supabase.storage('course-photos').getPublicUrl(`${courseId}/${photoId}`);
+    return data?.publicUrl ?? '';
   }
 
   getHeroPhotoUrl(): string | null {
     const courseId = this.courseId();
     const currentCourse = this.currentCourse();
     if (courseId && currentCourse?.hasHeroPhoto) {
-      const base = this.apiBaseUrl.replace(/\/$/, '');
-      return `${base}/api/public/courses/${courseId}/hero-photo`;
+      const { data } = this.supabase.storage('course-photos').getPublicUrl(`${courseId}/hero`);
+      return data?.publicUrl ?? null;
     }
     return null;
   }

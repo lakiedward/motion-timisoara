@@ -18,7 +18,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { forkJoin } from 'rxjs';
 import { Router } from '@angular/router';
 import { ClubService, ClubCoach, ClubInvitationCode, ClubDashboardStats, ClubProfile } from '../../services/club.service';
-import { API_BASE_URL } from '../../../../core/tokens/api-base-url.token';
+import { SupabaseService } from '../../../../core/services/supabase.service';
 import { readFileAsDataUrl, validateImageFile } from '../../../../shared/utils/image-upload';
 
 @Component({
@@ -43,7 +43,7 @@ export class ClubDashboardComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly platformId = inject(PLATFORM_ID);
-  private readonly apiBaseUrl = inject(API_BASE_URL);
+  private readonly supabase = inject(SupabaseService);
   private readonly router = inject(Router);
 
   // State
@@ -186,8 +186,8 @@ export class ClubDashboardComponent implements OnInit {
   }
 
   getCoachPhotoUrl(coachUserId: string): string {
-    const base = (this.apiBaseUrl || '').replace(/\/$/, '');
-    return `${base}/api/public/coaches/${coachUserId}/photo`;
+    const { data } = this.supabase.storage('coach-photos').getPublicUrl(coachUserId);
+    return data?.publicUrl ?? '';
   }
 
   canShowCoachPhoto(coach: ClubCoach): boolean {
@@ -398,13 +398,12 @@ export class ClubDashboardComponent implements OnInit {
     if (!raw) return null;
 
     const hasScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw);
-    const base = (this.apiBaseUrl || '').replace(/\/$/, '');
 
     let resolved = raw;
-    if (!hasScheme && base) {
-      resolved = raw.startsWith('/') ? `${base}${raw}` : `${base}/${raw}`;
-    } else if (!hasScheme && !raw.startsWith('/')) {
-      resolved = `/${raw}`;
+    if (!hasScheme) {
+      // Relative path: resolve via Supabase storage
+      const { data } = this.supabase.storage('club-assets').getPublicUrl(raw);
+      resolved = data?.publicUrl ?? raw;
     }
 
     const bustValue = Number(bust ?? 0);

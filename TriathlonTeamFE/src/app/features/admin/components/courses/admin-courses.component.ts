@@ -19,7 +19,7 @@ import { AdminService } from '../../services/admin.service';
 import { AdminCourse } from '../../services/models/admin-course.model';
 import { AuthService } from '../../../../core/services/auth.service';
 import { DeleteCourseDialogComponent, DeleteCourseDialogData, DeleteCourseDialogResult } from './delete-course-dialog.component';
-import { API_BASE_URL } from '../../../../core/tokens/api-base-url.token';
+import { SupabaseService } from '../../../../core/services/supabase.service';
 
 @Component({
   selector: 'app-admin-courses',
@@ -33,7 +33,7 @@ export class AdminCoursesComponent implements OnInit {
   private readonly adminService = inject(AdminService);
   private readonly http = inject(HttpClient);
   private readonly authService = inject(AuthService);
-  private readonly apiBaseUrl = inject(API_BASE_URL);
+  private readonly supabase = inject(SupabaseService);
   private readonly router = inject(Router);
   private readonly snackbar = inject(MatSnackBar);
   private readonly dialog = inject(MatDialog);
@@ -168,32 +168,17 @@ export class AdminCoursesComponent implements OnInit {
   }
 
   loadHeroPhoto(courseId: string): void {
-    // Use public endpoint since hero-photo is publicly accessible
-    const url = `${this.apiBaseUrl}/api/public/courses/${courseId}/hero-photo`;
-    
-    this.http.get(url, {
-      responseType: 'blob'
-    })
-    .pipe(takeUntilDestroyed(this.destroyRef))
-    .subscribe({
-      next: (blob) => {
-        const blobUrl = URL.createObjectURL(blob);
-        this.heroPhotoUrls.update(urls => ({
-          ...urls,
-          [courseId]: blobUrl
-        }));
-      },
-      error: (error) => {
-        console.error('Failed to load hero photo for course:', courseId, {
-          status: error?.status,
-          statusText: error?.statusText,
-          message: error?.message,
-          url: url,
-          error: error
-        });
-        this.heroPhotoErrors.update(errors => ({ ...errors, [courseId]: true }));
-      }
-    });
+    // Use Supabase storage to get the hero photo URL
+    const { data } = this.supabase.storage('course-photos').getPublicUrl(`${courseId}/hero`);
+    const url = data?.publicUrl;
+    if (url) {
+      this.heroPhotoUrls.update(urls => ({
+        ...urls,
+        [courseId]: url
+      }));
+    } else {
+      this.heroPhotoErrors.update(errors => ({ ...errors, [courseId]: true }));
+    }
   }
 
   onHeroPhotoError(event: Event): void {

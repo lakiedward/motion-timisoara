@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { API_BASE_URL } from '../../../../core/tokens/api-base-url.token';
+import { SupabaseService } from '../../../../core/services/supabase.service';
 
 interface Coach {
   id: string;
@@ -22,7 +22,7 @@ interface Coach {
   styleUrls: ['./coach-card.component.scss']
 })
 export class CoachCardComponent {
-  private readonly apiBaseUrl = inject<string>(API_BASE_URL);
+  private readonly supabase = inject(SupabaseService);
   
   @Input({ required: true }) coach!: Coach;
   @Input() showHeader = false;
@@ -80,12 +80,8 @@ export class CoachCardComponent {
     // If already absolute, return as is
     if (/^https?:\/\//i.test(url)) return url;
 
-    // Ensure base URL has no trailing slash
-    const base = (this.apiBaseUrl || '').replace(/\/$/, '');
-    if (!base) return url; // fallback to original relative (same-origin)
-
-    // Ensure URL starts with a slash
-    const path = url.startsWith('/') ? url : `/${url}`;
-    return `${base}${path}`;
+    // Relative path: resolve via Supabase storage
+    const { data } = this.supabase.storage('coach-photos').getPublicUrl(url);
+    return data?.publicUrl ?? url;
   }
 }

@@ -8,7 +8,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CourseFormComponent } from '../course-form/course-form.component';
 import { CourseFormPayload } from '../../services/coach.service';
 import { CoachApiService, CoachCourseDetails, CourseScheduleSlot, CreateCoursePayload, LocationOption } from '../../services/coach-api.service';
-import { API_BASE_URL } from '../../../../core/tokens/api-base-url.token';
+import { SupabaseService } from '../../../../core/services/supabase.service';
 
 @Component({
   selector: 'app-coach-course-wrapper',
@@ -36,7 +36,7 @@ export class CoachCourseWrapperComponent implements OnInit {
   readonly galleryPhotos = signal<Array<{ preview: string; file: File }>>([]);
   readonly existingPhotos = signal<Array<{ id: string; displayOrder: number }>>([]);
   readonly isLoadingPhotos = signal(false);
-  private readonly apiBaseUrl = inject(API_BASE_URL);
+  private readonly supabase = inject(SupabaseService);
 
   readonly isEditMode = computed(() => Boolean(this.courseId()));
 
@@ -211,8 +211,8 @@ export class CoachCourseWrapperComponent implements OnInit {
     const courseId = this.courseId();
     const currentCourse = this.currentCourse();
     if (courseId && currentCourse?.hasHeroPhoto) {
-      const base = this.apiBaseUrl.replace(/\/$/, '');
-      return `${base}/api/public/courses/${courseId}/hero-photo`;
+      const { data } = this.supabase.storage('course-photos').getPublicUrl(`${courseId}/hero`);
+      return data?.publicUrl ?? null;
     }
     return null;
   }

@@ -15,7 +15,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { AuthService } from '../../../../core/services/auth.service';
 import { CoachSummary, ProgramCourse, PublicApiService, PublicClubDetail } from '../../../../core/services/public-api.service';
-import { API_BASE_URL } from '../../../../core/tokens/api-base-url.token';
+import { SupabaseService } from '../../../../core/services/supabase.service';
 import { CourseCardComponent } from '../../../program/course-card/course-card.component';
 import { getInitials } from '../../../../shared/utils/string-utils';
 
@@ -35,7 +35,7 @@ export class ClubDetailsComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
-  private readonly apiBaseUrl = inject(API_BASE_URL);
+  private readonly supabase = inject(SupabaseService);
 
   readonly club = signal<PublicClubDetail | null>(null);
   readonly coaches = signal<CoachSummary[]>([]);
@@ -154,12 +154,9 @@ export class ClubDetailsComponent implements OnInit {
     const hasScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw);
     if (hasScheme) return raw;
 
-    const base = (this.apiBaseUrl || '').replace(/\/$/, '');
-    if (base) {
-      return raw.startsWith('/') ? `${base}${raw}` : `${base}/${raw}`;
-    }
-
-    return raw.startsWith('/') ? raw : `/${raw}`;
+    // Relative path: resolve via Supabase storage
+    const { data } = this.supabase.storage('club-assets').getPublicUrl(raw);
+    return data?.publicUrl ?? raw;
   }
 }
 

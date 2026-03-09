@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "angular-fe",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "npx", "ng", "serve", "--port", "4200"],
+      "port": 4200,
+      "cwd": "TriathlonTeamFE"
+    },
+    {
+      "name": "expo-mobile",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "npx", "expo", "start", "--web", "--port", "8081"],
+      "port": 8081,
+      "cwd": "TriathlonTeamMobile"
+    }
+  ]
+}
