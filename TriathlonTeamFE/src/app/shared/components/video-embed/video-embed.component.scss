@@ -1,0 +1,33 @@
+.video-embed {
+  display: block;
+}
+
+.video-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  border: var(--border-premium);
+  background: #000;
+}
+
+/* Responsive 16:9 ratio */
+.video-wrapper::before {
+  content: '';
+  display: block;
+  padding-top: 56.25%;
+}
+
+.video-wrapper iframe,
+.video-wrapper video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.fallback-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}

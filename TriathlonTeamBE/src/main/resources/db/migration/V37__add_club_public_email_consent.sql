@@ -1,0 +1,1 @@
+ALTER TABLE clubs ADD COLUMN public_email_consent BOOLEAN NOT NULL DEFAULT FALSE;

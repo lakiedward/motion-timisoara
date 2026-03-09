@@ -1,0 +1,131 @@
+<div class="scroll-progress" [style.width.%]="scrollProgress"></div>
+
+<!-- Hero Section - Light & Clean -->
+<section class="camps-hero">
+  <div class="camps-hero__container">
+    <span class="camps-hero__badge">Tabere</span>
+    <h1 class="camps-hero__title">
+      Aventuri <span>de Neuitat</span>
+    </h1>
+    <p class="camps-hero__subtitle">
+      Tabere sportive pentru copii cu antrenamente, activități recreative și prietenii noi
+    </p>
+
+    <!-- Quick Stats -->
+    <div class="camps-hero__features">
+      <div class="feature-pill">
+        <mat-icon>landscape</mat-icon>
+        <span>Locații spectaculoase</span>
+      </div>
+      <div class="feature-pill">
+        <mat-icon>groups</mat-icon>
+        <span>Antrenori dedicați</span>
+      </div>
+      <div class="feature-pill">
+        <mat-icon>verified_user</mat-icon>
+        <span>Siguranță maximă</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Main Content -->
+<section class="camps-content">
+  <div class="camps-container">
+
+    <!-- Results Header -->
+    <div class="results-header" *ngIf="!isLoading() && !error() && camps().length">
+      <h2 class="results-title">
+        <span class="results-count">{{ camps().length }}</span>
+        Tabere Disponibile
+      </h2>
+    </div>
+
+    <!-- Loading State -->
+    <div class="skeleton-grid" *ngIf="isLoading()">
+      <div class="skeleton-card" *ngFor="let card of [1, 2, 3]">
+        <div class="skeleton-image"></div>
+        <div class="skeleton-body">
+          <div class="skeleton-line lg"></div>
+          <div class="skeleton-line md"></div>
+          <div class="skeleton-line sm"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div class="empty-state" *ngIf="!isLoading() && error()">
+      <mat-icon>cloud_off</mat-icon>
+      <h3>Nu am putut încărca taberele</h3>
+      <p>Încearcă să reîmprospătezi pagina mai târziu.</p>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!isLoading() && !error() && camps().length === 0">
+      <mat-icon>beach_access</mat-icon>
+      <h3>Momentan nu există tabere disponibile</h3>
+      <p>Revino mai târziu pentru a descoperi noi oportunități de aventură!</p>
+    </div>
+
+    <!-- Camps Grid -->
+    <div class="camps-grid" *ngIf="!isLoading() && !error() && camps().length">
+      <article class="camp-card" *ngFor="let camp of camps(); trackBy: trackBySlug; let i = index" appScrollReveal
+        [scrollRevealDelay]="(i % 3) * 80">
+
+        <!-- Card Image -->
+        <div class="camp-card__image">
+          <img [src]="camp.heroImageUrl || '/ui/DSC_0486.JPG'" [alt]="camp.title" loading="lazy"
+            appImageFallback="/ui/DSC_0486.JPG" />
+
+          <!-- Status Badge -->
+          <span class="camp-card__status camp-card__status--soldout" *ngIf="camp.soldOut">
+            Sold Out
+          </span>
+          <span class="camp-card__status camp-card__status--available" *ngIf="!camp.soldOut">
+            Locuri disponibile
+          </span>
+        </div>
+
+        <!-- Card Body -->
+        <div class="camp-card__body">
+          <div class="camp-card__date">
+            <mat-icon>event</mat-icon>
+            {{ camp.startDate | date: 'd MMM' }} - {{ camp.endDate | date: 'd MMM y' }}
+          </div>
+
+          <h3 class="camp-card__title">{{ camp.title }}</h3>
+
+          <div class="camp-card__meta">
+            <span class="camp-card__location">
+              <mat-icon>location_on</mat-icon>
+              {{ camp.location }}
+            </span>
+          </div>
+
+          <p class="camp-card__desc">
+            {{ camp.summary || 'Tabără dedicată pregătirii sportive complete, cu antrenamente zilnice și activități
+            recreative.' }}
+          </p>
+        </div>
+
+        <!-- Card Footer -->
+        <div class="camp-card__footer">
+          <div class="camp-card__price">
+            <span class="price-value">{{ (camp.price / 100) | currency: camp.currency:'symbol-narrow':'1.0-0' }}</span>
+            <span class="price-label">/ loc</span>
+          </div>
+          <a class="camp-card__btn" [routerLink]="['/tabere', camp.slug]">
+            Vezi detalii
+            <mat-icon>arrow_forward</mat-icon>
+          </a>
+        </div>
+
+        <!-- Cash Badge -->
+        <div class="camp-card__badge" *ngIf="camp.allowCash">
+          <mat-icon>payments</mat-icon> Cash OK
+        </div>
+      </article>
+    </div>
+
+  </div>
+</section>

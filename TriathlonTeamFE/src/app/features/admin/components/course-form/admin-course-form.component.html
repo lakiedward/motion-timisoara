@@ -1,0 +1,225 @@
+<section class="course-form-page">
+  <!-- Hero Section - Admin Pattern -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--warning">Administrare</span>
+      <h1 class="hero-title">{{ isEditMode() ? 'Editează' : 'Creează' }} <span>Curs</span></h1>
+      <p class="hero-subtitle">{{ isEditMode() ? 'Actualizează detaliile cursului și antrenorul asociat.' : 'Completează
+        detaliile și programează noul curs.' }}</p>
+    </div>
+    <button class="hero-btn hero-btn--secondary" type="button" (click)="onCancel()">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Înapoi la listă</span>
+    </button>
+  </header>
+
+  <!-- Error Alert -->
+  <div class="alert alert--error" *ngIf="loadError()">
+    <mat-icon class="alert__icon">error_outline</mat-icon>
+    <div class="alert__content">
+      <strong class="alert__title">Nu am putut încărca cursul</strong>
+      <p class="alert__text">Reîncarcă pagina sau contactează administratorul pentru suport.</p>
+    </div>
+    <button class="back-btn back-btn--small" type="button" (click)="onCancel()">Înapoi la listă</button>
+  </div>
+
+  <!-- Main Content -->
+  <div class="page-layout" *ngIf="!loadError()">
+    <!-- Main Column -->
+    <main class="main-content">
+
+      <!-- Section: Antrenor -->
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <mat-icon>groups</mat-icon>
+              Antrenor
+            </h2>
+          </div>
+        </div>
+
+        <div class="picker-grid">
+          <!-- Coach Picker Card -->
+          <div class="picker-card">
+            <div class="picker-card__header">
+              <mat-icon>person</mat-icon>
+              <span>Antrenor</span>
+            </div>
+            <mat-select [value]="selectedCoachId()" (valueChange)="onCoachChange($event)"
+              placeholder="Selectează antrenor" [disabled]="isLoading() || isSaving()" color="primary">
+              <mat-option *ngFor="let coach of coaches()" [value]="coach.id">
+                {{ coach.name }}
+              </mat-option>
+            </mat-select>
+
+            <div class="empty-hint" *ngIf="!coaches().length && !isLoading()">
+              <p>Nu există antrenori. Adaugă unul mai întâi.</p>
+            </div>
+
+            <div class="coach-details" *ngIf="selectedCoach() as coach">
+              <div class="coach-info">
+                <strong>{{ coach.name }}</strong>
+                <span>{{ coach.email }}</span>
+              </div>
+              <span class="badge" [class.badge--success]="coach.enabled" [class.badge--error]="!coach.enabled">
+                {{ coach.enabled ? 'Activ' : 'Inactiv' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Info Card (Placeholder for layout balance) -->
+          <div class="picker-card"
+            style="display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 1rem;">
+            <div class="picker-card__header">
+              <mat-icon>info</mat-icon>
+              <span>Informații</span>
+            </div>
+            <p class="picker-hint" style="margin: 0;">
+              Antrenorul selectat va fi responsabil pentru acest curs. Asigură-te că este activ.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: Media -->
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <mat-icon>photo_camera</mat-icon>
+              Media
+            </h2>
+          </div>
+        </div>
+
+        <div class="media-grid">
+          <!-- Hero Photo -->
+          <div class="media-card media-card--wide">
+            <div class="media-card__header">
+              <mat-icon>image</mat-icon>
+              <span>Hero Photo</span>
+            </div>
+            <input type="file" #heroPhotoInput accept="image/*" (change)="onHeroPhotoSelected($event)"
+              style="display: none" />
+
+            <div class="hero-photo-container">
+              <div class="photo-preview" *ngIf="heroPhotoPreview() || getHeroPhotoUrl()">
+                <img [src]="heroPhotoPreview() || getHeroPhotoUrl()" alt="Hero photo" class="photo-preview__image" />
+                <button type="button" class="photo-preview__remove action-btn action-btn--delete"
+                  (click)="removeHeroPhoto()" [disabled]="isSaving() || heroPhotoUploading()" aria-label="Șterge hero photo">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+              <button class="upload-btn" type="button" (click)="heroPhotoInput.click()" [disabled]="isSaving() || heroPhotoUploading()"
+                *ngIf="!heroPhotoPreview() && !getHeroPhotoUrl()">
+                <mat-icon>cloud_upload</mat-icon>
+                <span>Încarcă Hero Photo</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Gallery -->
+          <div class="media-card media-card--wide">
+            <div class="media-card__header">
+              <mat-icon>photo_library</mat-icon>
+              <span>Galerie ({{ existingPhotos().length + galleryPhotos().length }})</span>
+            </div>
+            <input type="file" #galleryPhotoInput accept="image/*" (change)="onGalleryPhotoSelected($event)"
+              style="display: none" />
+
+            <!-- EXISTING PHOTOS (Sortable via Arrows) -->
+            <div class="gallery-grid" style="margin-bottom: 1rem;" *ngIf="existingPhotos().length > 0">
+              <div *ngFor="let photo of existingPhotos(); let i = index; trackBy: trackByPhotoId" class="gallery-item">
+                <img [src]="getExistingPhotoUrl(photo.id)" [alt]="'Photo ' + (i + 1)" class="gallery-item__image" />
+
+                <!-- Delete Button (Top Right) -->
+                <button type="button" class="gallery-item__delete action-btn action-btn--delete"
+                  (click)="deleteExistingPhoto(photo.id)" [disabled]="galleryBusy()" aria-label="Șterge fotografia">
+                  <mat-icon>close</mat-icon>
+                </button>
+
+                <!-- Order Controls (Bottom) - Pill Style -->
+                <div class="gallery-item__controls">
+                  <div class="reorder-pill">
+                    <button type="button" class="reorder-pill__btn reorder-pill__btn--left"
+                      (click)="movePhoto(i, 'left')"
+                      [disabled]="galleryBusy() || i === 0"
+                      [class.reorder-pill__btn--disabled]="i === 0"
+                      title="Mută la stânga">
+                      <mat-icon>arrow_back</mat-icon>
+                    </button>
+                    <span class="reorder-pill__position">{{ i + 1 }} / {{ existingPhotos().length }}</span>
+                    <button type="button" class="reorder-pill__btn reorder-pill__btn--right"
+                      (click)="movePhoto(i, 'right')"
+                      [disabled]="galleryBusy() || i === existingPhotos().length - 1"
+                      [class.reorder-pill__btn--disabled]="i === existingPhotos().length - 1"
+                      title="Mută la dreapta">
+                      <mat-icon>arrow_forward</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <button class="gallery-add" type="button" (click)="galleryPhotoInput.click()" [disabled]="galleryBusy()">
+                <mat-icon>add_photo_alternate</mat-icon>
+              </button>
+            </div>
+
+            <!-- NEW PHOTOS (Append Only) -->
+            <div class="gallery-grid">
+              <!-- New photos -->
+              <div *ngFor="let photo of galleryPhotos(); let i = index" class="gallery-item gallery-item--new">
+                <img [src]="photo.preview" alt="New photo" class="gallery-item__image" />
+                <button type="button" class="gallery-item__delete action-btn action-btn--delete"
+                  (click)="removeGalleryPhoto(i)" [disabled]="galleryBusy()" aria-label="Șterge fotografia nouă">
+                  <mat-icon>close</mat-icon>
+                </button>
+                
+                <!-- Order Controls for New Photos -->
+                <div class="gallery-item__controls">
+                  <div class="reorder-pill">
+                    <button type="button" class="reorder-pill__btn reorder-pill__btn--left"
+                      (click)="moveNewPhoto(i, 'left')"
+                      [disabled]="galleryBusy() || i === 0"
+                      [class.reorder-pill__btn--disabled]="i === 0"
+                      title="Mută la stânga">
+                      <mat-icon>arrow_back</mat-icon>
+                    </button>
+                    <span class="reorder-pill__position">{{ i + 1 }} / {{ galleryPhotos().length }}</span>
+                    <button type="button" class="reorder-pill__btn reorder-pill__btn--right"
+                      (click)="moveNewPhoto(i, 'right')"
+                      [disabled]="galleryBusy() || i === galleryPhotos().length - 1"
+                      [class.reorder-pill__btn--disabled]="i === galleryPhotos().length - 1"
+                      title="Mută la dreapta">
+                      <mat-icon>arrow_forward</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Add button -->
+              <button class="gallery-add" type="button" (click)="galleryPhotoInput.click()" [disabled]="galleryBusy()"
+                *ngIf="existingPhotos().length === 0">
+                <mat-icon>add_photo_alternate</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: Course Form -->
+      <section class="section-card">
+        <app-course-form [courseId]="courseId()" [externalSave]="true" [externalData]="true"
+          [externalCourse]="courseFormValue()" [externalLoading]="isLoading()" [externalSaving]="isSaving()"
+          [showHeader]="false" [compact]="true" (submit)="onSubmit($event)" (cancel)="onCancel()"></app-course-form>
+      </section>
+
+      <!-- Tip Card -->
+      <div class="tip-card" *ngIf="!isEditMode()">
+        <mat-icon>lightbulb</mat-icon>
+        <p>Verifică disponibilitatea sălii și a antrenorului înainte de publicare.</p>
+      </div>
+    </main>
+  </div>
+</section>

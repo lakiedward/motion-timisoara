@@ -1,0 +1,23 @@
+﻿.form {
+  display: grid;
+  gap: 1rem;
+}
+
+.two-columns {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 720px) {
+  .two-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+mat-dialog-actions {
+  padding: 0 1.5rem 1.5rem;
+}
+
+mat-progress-spinner {
+  margin-right: 0.5rem;
+}

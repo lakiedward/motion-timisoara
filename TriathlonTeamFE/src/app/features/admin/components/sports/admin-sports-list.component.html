@@ -1,0 +1,104 @@
+<section class="sports-page">
+  <!-- Hero Section - Admin Pattern -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--warning">Administrare</span>
+      <h1 class="hero-title">Gestionare <span>Sporturi</span></h1>
+      <p class="hero-subtitle">Adaugă, editează și gestionează sporturile folosite în platformă</p>
+    </div>
+    <button class="hero-btn" type="button" (click)="addSport()">
+      <mat-icon>add</mat-icon>
+      <span>Adaugă sport</span>
+    </button>
+  </header>
+
+  <!-- Stats Cards -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>sports</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ sports().length }}</span>
+        <span class="stat-label">Sporturi totale</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" [class.stat-icon--green]="duplicateCodesCount() === 0"
+        [class.stat-icon--amber]="duplicateCodesCount() > 0">
+        <mat-icon>{{ duplicateCodesCount() === 0 ? 'check_circle' : 'qr_code_2' }}</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ duplicateCodesCount() }}</span>
+        <span class="stat-label">Coduri duplicate</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" [class.stat-icon--green]="duplicateNamesCount() === 0"
+        [class.stat-icon--amber]="duplicateNamesCount() > 0">
+        <mat-icon>{{ duplicateNamesCount() === 0 ? 'check_circle' : 'warning_amber' }}</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ duplicateNamesCount() }}</span>
+        <span class="stat-label">Nume duplicate</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sports Section -->
+  <section class="section-card">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>sports</mat-icon>
+          Lista Sporturi
+        </h2>
+        <span class="section-count">{{ sports().length }}</span>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-grid" *ngIf="isLoading()">
+      <div class="skeleton-card" *ngFor="let _ of [1, 2, 3, 4, 5, 6]"></div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!isLoading() && sports().length === 0">
+      <mat-icon class="empty-state__icon">sports</mat-icon>
+      <h3 class="empty-state__title">Niciun sport încă</h3>
+      <p class="empty-state__text">
+        Adaugă primul sport pentru a-l putea folosi la antrenori, cursuri și activități.
+      </p>
+      <button class="hero-btn" type="button" (click)="addSport()">
+        <mat-icon>add</mat-icon>
+        <span>Adaugă primul sport</span>
+      </button>
+    </div>
+
+    <!-- Sports Grid -->
+    <div class="entity-grid" *ngIf="!isLoading() && sports().length > 0">
+      <article class="entity-card" *ngFor="let sport of sortedSports(); trackBy: trackBySport">
+        <div class="entity-card__header">
+          <div class="entity-icon">
+            <mat-icon>sports</mat-icon>
+          </div>
+          <div class="entity-card__actions">
+            <button class="action-btn action-btn--edit" type="button" matTooltip="Editează" (click)="editSport(sport)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button class="action-btn action-btn--delete" type="button" matTooltip="Șterge"
+              (click)="deleteSport(sport)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <div class="entity-card__body">
+          <h3 class="entity-card__name">{{ sport.name }}</h3>
+          <div class="entity-card__code">{{ sport.code }}</div>
+
+        </div>
+      </article>
+    </div>
+  </section>
+</section>

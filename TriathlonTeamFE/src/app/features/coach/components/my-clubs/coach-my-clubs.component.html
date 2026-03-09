@@ -1,0 +1,169 @@
+<section class="my-clubs-page">
+  <!-- Hero Section -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--coach">Antrenor</span>
+      <h1 class="hero-title">Cluburile <span>Mele</span></h1>
+      <p class="hero-subtitle">Gestionează afilierile tale la cluburile sportive</p>
+    </div>
+  </header>
+
+  <!-- Stats Cards -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>business</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ clubs().length }}</span>
+        <span class="stat-label">Cluburi totale</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--green">
+        <mat-icon>payments</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ onlinePaymentsCount() }}</span>
+        <span class="stat-label">Plăți Online Active</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--purple">
+        <mat-icon>credit_card</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ stripeConfiguredCount() }}</span>
+        <span class="stat-label">Stripe Configurat</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-grid">
+    <!-- Join Club Section -->
+    <div class="join-section card">
+      <div class="card-header">
+        <div class="header-icon">
+          <mat-icon>add_business</mat-icon>
+        </div>
+        <div class="header-text">
+          <h2>Alătură-te unui Club</h2>
+          <p>Folosește codul unic primit de la administratorul clubului</p>
+        </div>
+      </div>
+      
+      <form [formGroup]="joinForm" (ngSubmit)="onJoinSubmit()" class="join-form">
+        <mat-form-field appearance="outline" class="code-input">
+          <mat-label>Cod Invitație (ex: XXXX-XXXX)</mat-label>
+          <input matInput formControlName="code" placeholder="XXXX-XXXX" class="code-input__field">
+          <mat-icon matSuffix>vpn_key</mat-icon>
+          @if (joinForm.get('code')?.hasError('required')) {
+            <mat-error>Codul este obligatoriu</mat-error>
+          }
+          @if (joinForm.get('code')?.hasError('pattern')) {
+            <mat-error>Cod invalid. Format: XXXX-XXXX</mat-error>
+          }
+        </mat-form-field>
+
+        <button 
+          mat-flat-button 
+          color="primary" 
+          type="submit" 
+          [disabled]="joinForm.invalid || isJoining()"
+          class="join-btn"
+          [attr.aria-label]="isJoining() ? 'Se procesează...' : 'Alătură-te'"
+        >
+          @if (!isJoining()) {
+            <mat-icon>login</mat-icon>
+          }
+          @if (isJoining()) {
+            <mat-progress-spinner diameter="20" mode="indeterminate"></mat-progress-spinner>
+          }
+          <span>{{ isJoining() ? 'Se procesează...' : 'Alătură-te' }}</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- My Clubs List -->
+    <section class="clubs-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <mat-icon>business</mat-icon>
+          Cluburile Tale
+        </h2>
+        @if (clubs().length > 0) {
+          <span class="count-badge">{{ clubs().length }}</span>
+        }
+      </div>
+
+      <!-- Loading State -->
+      @if (isLoading()) {
+        <div class="loading-grid">
+          @for (_ of [1, 2]; track $index) {
+            <div class="skeleton-card"></div>
+          }
+        </div>
+      }
+
+      <!-- Empty State -->
+      @if (!isLoading() && clubs().length === 0) {
+        <div class="empty-state">
+          <mat-icon class="empty-icon">business_off</mat-icon>
+          <h3>Nu ești membru în niciun club</h3>
+          <p>Folosește formularul de mai sus pentru a te alătura primului tău club.</p>
+        </div>
+      }
+
+      <!-- Clubs Grid -->
+      @if (!isLoading() && clubs().length > 0) {
+        <div class="clubs-grid">
+          @for (club of clubs(); track club.id) {
+            <article class="club-card">
+              <div class="club-card__header">
+                <div class="club-logo">
+                  <div class="logo-fallback">
+                    {{ getInitials(club.name) }}
+                  </div>
+                </div>
+                <div class="club-actions">
+                  <button 
+                    class="action-btn action-btn--delete" 
+                    (click)="leaveClub(club)"
+                    [disabled]="isLeaving().has(club.id)"
+                    matTooltip="Părăsește clubul"
+                    aria-label="Părăsește clubul"
+                  >
+                    <mat-icon>exit_to_app</mat-icon>
+                  </button>
+                </div>
+              </div>
+              
+              <div class="club-card__body">
+                <span class="badge" 
+                      [class.badge--success]="club.canReceivePayments" 
+                      [class.badge--warning]="!club.canReceivePayments">
+                  {{ club.canReceivePayments ? 'Plăți Active' : 'Plăți Inactive' }}
+                </span>
+                
+                <h3 class="club-name">{{ club.name }}</h3>
+                
+                <div class="club-status-list">
+                  <div class="status-item" [class.active]="club.stripeConfigured">
+                    <mat-icon>{{ club.stripeConfigured ? 'check_circle' : 'error_outline' }}</mat-icon>
+                    <span>Stripe: {{ club.stripeConfigured ? 'Configurat' : 'Neconfigurat' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="club-card__footer">
+                <div class="club-info-text">
+                  Membru
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  </div>
+</section>

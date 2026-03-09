@@ -1,0 +1,37 @@
+<h2 mat-dialog-title>Adauga antrenor</h2>
+<form [formGroup]="form" (ngSubmit)="submit()" class="add-coach-form">
+  <mat-form-field appearance="outline">
+    <mat-label>Nume</mat-label>
+    <input matInput formControlName="name" placeholder="ex: Andrei Popescu" />
+    <mat-error *ngIf="form.controls['name'].hasError('required')">
+      Numele este obligatoriu.
+    </mat-error>
+    <mat-error *ngIf="form.controls['name'].hasError('minlength')">
+      Numele trebuie sa aiba minim 3 caractere.
+    </mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Email</mat-label>
+    <input matInput formControlName="email" type="email" placeholder="ex: andrei@club.ro" />
+    <mat-error *ngIf="form.controls['email'].hasError('required')">
+      Emailul este obligatoriu.
+    </mat-error>
+    <mat-error *ngIf="form.controls['email'].hasError('email')">
+      Introdu un email valid.
+    </mat-error>
+  </mat-form-field>
+
+  <div class="form-actions">
+    <button mat-stroked-button type="button" (click)="cancel()" [disabled]="isSubmitting()">
+      Anuleaza
+    </button>
+    <button mat-raised-button color="primary" type="submit" [disabled]="isSubmitting()">
+      {{ isSubmitting() ? 'Se trimite...' : 'Trimite invitatie' }}
+    </button>
+  </div>
+
+  <p class="form-error" *ngIf="form.errors?.['submit']">
+    Nu am putut trimite invitatie. Incearca din nou in cateva momente.
+  </p>
+</form>

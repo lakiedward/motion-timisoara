@@ -1,0 +1,193 @@
+<section class="locations-page">
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--coach">Antrenor</span>
+      <h1 class="hero-title">Locații <span>Globale</span></h1>
+      <p class="hero-subtitle">Creează locații pe care le poți folosi ulterior în cursuri (și sunt vizibile pentru toți).</p>
+    </div>
+    <button class="hero-btn" (click)="openCreateLocation()">
+      <mat-icon>add_location</mat-icon>
+      <span>Adaugă Locație</span>
+    </button>
+  </header>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>location_city</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ isLoading() ? '...' : cities().length }}</span>
+        <span class="stat-label">Orașe disponibile</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--green">
+        <mat-icon>history</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ isLoading() ? '...' : recentLocations().length }}</span>
+        <span class="stat-label">Locații recente</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--amber">
+        <mat-icon>manage_search</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ isLocationsLoading() ? '...' : locations().length }}</span>
+        <span class="stat-label">Rezultate</span>
+      </div>
+    </div>
+  </div>
+
+  <section class="section-card">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>location_on</mat-icon>
+          Caută / gestionează locații
+        </h2>
+        <span class="section-count">{{ locations().length }}</span>
+      </div>
+    </div>
+
+    <div class="filters-row">
+      <div class="filters-row__left">
+        <label class="field">
+          <span class="field__label">Oraș</span>
+          <select class="field__control" [value]="selectedCity()" (change)="onCityChange($any($event.target).value)">
+            <option value="">Toate</option>
+            <option *ngFor="let c of cities()" [value]="c">{{ c }}</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span class="field__label">Căutare</span>
+          <input
+            class="field__control"
+            type="text"
+            placeholder="Nume / adresă"
+            [value]="searchQuery()"
+            (input)="onSearchInput($event)"
+            (keyup.enter)="searchLocations()"
+          />
+        </label>
+      </div>
+
+      <button class="search-btn" type="button" (click)="searchLocations()" [disabled]="isLocationsLoading()">
+        <mat-icon>search</mat-icon>
+        <span>Caută</span>
+      </button>
+    </div>
+
+    <div class="locations-grid" *ngIf="!isLocationsLoading() && locations().length; else listFallback">
+      <article class="location-card" *ngFor="let location of locations(); trackBy: trackByLocation" [class.location-card--inactive]="location.isActive === false">
+        <div class="location-card__header">
+          <div class="location-icon" [attr.data-type]="location.type">
+            <mat-icon>{{ getTypeIcon(location.type) }}</mat-icon>
+          </div>
+          <div class="location-actions" *ngIf="canManage(location)">
+            <button class="action-btn action-btn--edit" 
+                    type="button" 
+                    (click)="openEditLocation(location)" 
+                    [disabled]="updatingLocationId() === location.id"
+                    title="Editează">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button type="button"
+                    class="action-btn"
+                    [class.action-btn--success]="location.isActive !== false"
+                    [class.action-btn--warning]="location.isActive === false"
+                    role="switch"
+                    [disabled]="updatingLocationId() === location.id"
+                    [attr.aria-checked]="location.isActive !== false"
+                    (click)="toggleLocationStatus(location)"
+                    [attr.aria-label]="(location.isActive !== false) ? 'Dezactivează locație' : 'Activează locație'"
+                    [matTooltip]="(location.isActive !== false) ? 'Dezactivează locație' : 'Activează locație'">
+              <span class="mini-toggle" [class.mini-toggle--on]="location.isActive !== false" [class.mini-toggle--off]="location.isActive === false">
+                <span class="mini-toggle__track"></span>
+                <span class="mini-toggle__knob"></span>
+              </span>
+            </button>
+            <button
+              class="action-btn action-btn--delete"
+              type="button"
+              [disabled]="deletingLocationId() === location.id || updatingLocationId() === location.id"
+              (click)="deleteLocation(location)"
+              title="Șterge"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <div class="location-card__body">
+          <span class="type-badge" [attr.data-type]="location.type">{{ getTypeLabel(location.type) }}</span>
+          <h3 class="location-name">{{ location.name }}</h3>
+          <div class="location-meta">
+            <span class="meta-item" *ngIf="location.city">
+              <mat-icon>location_city</mat-icon>
+              {{ location.city }}
+            </span>
+            <span class="meta-item" *ngIf="location.address">
+              <mat-icon>location_on</mat-icon>
+              {{ location.address }}
+            </span>
+            <span class="meta-item meta-item--muted" *ngIf="!location.address">
+              <mat-icon>location_off</mat-icon>
+              Adresă nespecificată
+            </span>
+          </div>
+        </div>
+
+        <div class="location-card__footer">
+          <div class="coordinates-display" *ngIf="location.lat && location.lng">
+            <mat-icon>my_location</mat-icon>
+            <span class="coordinates">{{ location.lat | number: '1.4-4' }}, {{ location.lng | number: '1.4-4' }}</span>
+          </div>
+          <div class="no-coordinates" *ngIf="!location.lat || !location.lng">
+            <mat-icon>location_disabled</mat-icon>
+            <span>Fără coordonate</span>
+          </div>
+          <span class="badge" 
+                [class.badge--success]="location.isActive !== false" 
+                [class.badge--neutral]="location.isActive === false"
+                style="margin-left: auto;">
+            {{ (location.isActive !== false) ? 'Activ' : 'Inactiv' }}
+          </span>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>
+
+<ng-template #listFallback>
+  <div class="empty-state" *ngIf="!isLocationsLoading() && !hasLocationsError() && locations().length === 0">
+    <mat-icon class="empty-state__icon">location_off</mat-icon>
+    <h3 class="empty-state__title">Nu am găsit locații</h3>
+    <p class="empty-state__text">Încearcă alte filtre sau adaugă o locație nouă.</p>
+    <button class="hero-btn" (click)="openCreateLocation()">
+      <mat-icon>add_location</mat-icon>
+      <span>Adaugă locație</span>
+    </button>
+  </div>
+
+  <div class="empty-state" *ngIf="hasLocationsError()">
+    <mat-icon class="empty-state__icon">error_outline</mat-icon>
+    <h3 class="empty-state__title">Nu am putut încărca locațiile</h3>
+    <p class="empty-state__text">Reîncearcă sau verifică conexiunea.</p>
+    <button class="hero-btn" type="button" (click)="searchLocations()">
+      <mat-icon>refresh</mat-icon>
+      <span>Reîncearcă</span>
+    </button>
+  </div>
+
+  <div class="empty-state" *ngIf="isLocationsLoading()">
+    <mat-icon class="empty-state__icon">hourglass_top</mat-icon>
+    <h3 class="empty-state__title">Încărcăm…</h3>
+    <p class="empty-state__text">Te rugăm așteaptă.</p>
+  </div>
+</ng-template>

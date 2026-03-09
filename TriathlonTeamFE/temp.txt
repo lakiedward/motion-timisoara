@@ -1,0 +1,88 @@
+﻿import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal, DestroyRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { finalize } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AuthService } from '../../../core/services/auth.service';
+import {
+  LocationSummary,
+  ProgramCourse,
+  PublicApiService,
+  ScheduleFilters
+} from '../../../core/services/public-api.service';
+import { FilterPanelComponent } from '../filter-panel/filter-panel.component';
+import { CourseCardComponent } from '../course-card/course-card.component';
+
+@Component({
+  selector: 'app-program',
+  standalone: true,
+  imports: [CommonModule, FilterPanelComponent, CourseCardComponent],
+  templateUrl: './program.component.html',
+  styleUrls: ['./program.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class ProgramComponent implements OnInit {
+  private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
+  private readonly api = inject(PublicApiService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  private currentFilters: ScheduleFilters = { page: 0, size: 9 };
+
+  readonly courses = signal<ProgramCourse[]>([]);
+  readonly locations = signal<LocationSummary[]>([]);
+  readonly isLoading = signal(false);
+  readonly skeletonItems = Array.from({ length: 3 }, (_, index) => index);
+  readonly isEmpty = computed(() => !this.isLoading() && this.courses().length === 0);
+
+  ngOnInit(): void {
+    this.loadSchedule();
+  }
+
+  onFiltersChange(filters: ScheduleFilters): void {
+    this.currentFilters = { ...this.currentFilters, ...filters, page: 0 };
+    this.loadSchedule();
+  }
+
+  viewCourseDetails(courseId: string): void {
+    void this.router.navigate(['/cursuri', courseId]);
+  }
+
+  enroll(courseId: string): void {
+    if (this.authService.isLoggedIn()) {
+      void this.router.navigate(['/account/checkout'], { queryParams: { kind: 'COURSE', id: courseId } });
+      return;
+    }
+    void this.router.navigate(['/login'], {
+      queryParams: { redirect: '/account/checkout', kind: 'COURSE', id: courseId }
+    });
+  }
+
+  private loadSchedule(): void {
+    this.isLoading.set(true);
+    this.api
+      .getSchedule(this.currentFilters)
+      .pipe(takeUntilDestroyed(this.destroyRef), finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response) => {
+          this.courses.set(response.content);
+          this.locations.set(this.extractLocations(response.content));
+        },
+        error: () => {
+          this.courses.set([]);
+          this.locations.set([]);
+        }
+      });
+  }
+
+  private extractLocations(items: ProgramCourse[]): LocationSummary[] {
+    const map = new Map<string, LocationSummary>();
+    items.forEach((course) => {
+      if (course.location && !map.has(course.location.id)) {
+        map.set(course.location.id, course.location);
+      }
+    });
+    return Array.from(map.values());
+  }
+}
+

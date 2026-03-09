@@ -1,0 +1,231 @@
+<section class="dashboard-page">
+  <!-- Hero Section - Coach Pattern -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--coach">Dashboard Antrenor</span>
+      <h1 class="hero-title">Bine ai venit, <span>Coach</span></h1>
+      <p class="hero-subtitle">Rezumatul activității tale și acțiuni rapide</p>
+    </div>
+    <div class="hero-actions">
+      <button class="hero-btn" (click)="navigateToNewCourse()">
+        <mat-icon>add</mat-icon>
+        <span>Adaugă Curs</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Quick Actions Row -->
+  <div class="quick-actions-row">
+    <button class="action-card" (click)="navigateToNewCourse()">
+      <div class="action-card__icon action-card__icon--primary">
+        <mat-icon>add_circle</mat-icon>
+      </div>
+      <span class="action-card__label">Curs Nou</span>
+    </button>
+    <button class="action-card" (click)="navigateToAnnouncements()">
+      <div class="action-card__icon action-card__icon--green">
+        <mat-icon>campaign</mat-icon>
+      </div>
+      <span class="action-card__label">Anunț</span>
+    </button>
+    <button class="action-card" (click)="navigateToAttendance()">
+      <div class="action-card__icon action-card__icon--amber">
+        <mat-icon>fact_check</mat-icon>
+      </div>
+      <span class="action-card__label">Prezență</span>
+    </button>
+    <button class="action-card" (click)="navigateToAllCourses()">
+      <div class="action-card__icon action-card__icon--cyan">
+        <mat-icon>school</mat-icon>
+      </div>
+      <span class="action-card__label">Cursuri</span>
+    </button>
+    <button class="action-card" (click)="openJoinClubDialog()">
+      <div class="action-card__icon action-card__icon--purple">
+        <mat-icon>group_add</mat-icon>
+      </div>
+      <span class="action-card__label">Alătură-te Club</span>
+    </button>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>school</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ totalCourses() }}</span>
+        <span class="stat-label">Cursuri totale</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--green">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ activeCourses() }}</span>
+        <span class="stat-label">Cursuri active</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--amber">
+        <mat-icon>people</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ totalEnrolled() }}</span>
+        <span class="stat-label">Total înscriși</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--cyan">
+        <mat-icon>event</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ thisWeekSessions() }}</span>
+        <span class="stat-label">Sesiuni săptămână</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Status Card -->
+  @if (stripeStatus()) {
+    <div class="payment-status-card" [class.payment-status-card--success]="stripeStatus()!.paymentDestination !== 'NONE'">
+      <div class="payment-status-card__icon">
+        @if (stripeStatus()!.paymentDestination === 'COACH') {
+          <mat-icon>account_balance_wallet</mat-icon>
+        } @else if (stripeStatus()!.paymentDestination === 'CLUB') {
+          <mat-icon>business</mat-icon>
+        } @else {
+          <mat-icon>warning</mat-icon>
+        }
+      </div>
+      <div class="payment-status-card__content">
+        @if (stripeStatus()!.paymentDestination === 'COACH') {
+          <h3 class="payment-status-card__title">Plățile online merg în contul tău</h3>
+          <p class="payment-status-card__text">Contul Stripe este configurat. Vei încasa direct plățile de la cursanți.</p>
+        } @else if (stripeStatus()!.paymentDestination === 'CLUB') {
+          <h3 class="payment-status-card__title">Plățile online merg la {{ stripeStatus()!.clubName }}</h3>
+          <p class="payment-status-card__text">Clubul tău încasează plățile. Configurează Stripe pentru a primi banii direct.</p>
+        } @else {
+          <h3 class="payment-status-card__title">Plățile online nu sunt disponibile</h3>
+          <p class="payment-status-card__text">Configurează Stripe pentru a primi plăți de la cursanți.</p>
+        }
+      </div>
+      @if (stripeStatus()!.paymentDestination !== 'COACH') {
+        <button class="payment-status-card__btn" (click)="openStripeOnboarding()">
+          <mat-icon>launch</mat-icon>
+          Configurează Stripe
+        </button>
+      }
+    </div>
+  }
+
+  <!-- Widgets Grid -->
+  <div class="widgets-grid">
+    <!-- Upcoming Sessions Widget -->
+    <section class="section-card">
+      <div class="section-header">
+        <div class="section-header__left">
+          <h2 class="section-title">
+            <mat-icon>schedule</mat-icon>
+            Sesiuni Următoare
+          </h2>
+          <span class="section-count" *ngIf="upcomingSessions().length > 0">{{ upcomingSessions().length }}</span>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div class="loading-state" *ngIf="isLoading()">
+        <div class="skeleton-item" *ngFor="let _ of [1, 2, 3]"></div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="!isLoading() && upcomingSessions().length === 0">
+        <mat-icon class="empty-state__icon">event_available</mat-icon>
+        <h3 class="empty-state__title">Fără sesiuni</h3>
+        <p class="empty-state__text">Nu există sesiuni programate în perioada următoare</p>
+      </div>
+
+      <!-- Sessions List -->
+      <div class="sessions-list" *ngIf="!isLoading() && upcomingSessions().length > 0">
+        <article 
+          class="session-item" 
+          *ngFor="let session of upcomingSessions(); trackBy: trackBySession"
+          matRipple
+        >
+          <div class="session-item__icon">
+            <mat-icon>event</mat-icon>
+          </div>
+          <div class="session-item__content">
+            <h4 class="session-item__title">{{ session.courseName }}</h4>
+            <div class="session-item__meta">
+              <span class="meta-item">
+                <mat-icon>calendar_today</mat-icon>
+                {{ formatDate(session.date) }}
+              </span>
+              <span class="meta-item">
+                <mat-icon>access_time</mat-icon>
+                {{ session.time }}
+              </span>
+              <span class="meta-item">
+                <mat-icon>group</mat-icon>
+                {{ session.enrolledCount }} copii
+              </span>
+            </div>
+          </div>
+          <button 
+            class="action-btn action-btn--announce"
+            (click)="navigateToSessionAttendance(session)"
+            matTooltip="Marchează prezența"
+          >
+            <mat-icon>check_circle</mat-icon>
+          </button>
+        </article>
+      </div>
+    </section>
+
+    <!-- Alerts Widget -->
+    <section class="section-card">
+      <div class="section-header">
+        <div class="section-header__left">
+          <h2 class="section-title">
+            <mat-icon>notifications</mat-icon>
+            Alerte
+          </h2>
+          <span class="section-count section-count--warning" *ngIf="alerts().length > 0">{{ alerts().length }}</span>
+        </div>
+      </div>
+
+      <!-- Empty State (no alerts = success) -->
+      <div class="empty-state empty-state--success" *ngIf="alerts().length === 0">
+        <mat-icon class="empty-state__icon">check_circle</mat-icon>
+        <h3 class="empty-state__title">Totul în regulă!</h3>
+        <p class="empty-state__text">Nu există alerte momentan</p>
+      </div>
+
+      <!-- Alerts List -->
+      <div class="alerts-list" *ngIf="alerts().length > 0">
+        <article 
+          class="alert-item" 
+          *ngFor="let alert of alerts(); trackBy: trackByAlert"
+          [class.alert-item--warning]="alert.type === 'low-sessions'"
+          matRipple
+          (click)="alert.courseId && navigateToCourse(alert.courseId)"
+        >
+          <div class="alert-item__icon">
+            <mat-icon>{{ alert.icon }}</mat-icon>
+          </div>
+          <div class="alert-item__content">
+            <h4 class="alert-item__message">{{ alert.message }}</h4>
+            <span class="alert-item__type">
+              <span *ngIf="alert.type === 'low-sessions'">Sesiuni scăzute</span>
+              <span *ngIf="alert.type === 'no-attendance'">Lipsă prezență</span>
+            </span>
+          </div>
+          <mat-icon class="alert-item__arrow">chevron_right</mat-icon>
+        </article>
+      </div>
+    </section>
+  </div>
+</section>

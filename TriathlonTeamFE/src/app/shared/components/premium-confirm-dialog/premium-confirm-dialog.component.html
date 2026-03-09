@@ -1,0 +1,41 @@
+<div class="premium-confirm-dialog">
+  <div class="dialog-header">
+    <div class="icon-container" [class.force-mode]="variant === 'danger'">
+      <mat-icon class="warning-icon">{{ icon }}</mat-icon>
+    </div>
+    <div class="header-content">
+      <h2 mat-dialog-title>{{ data.title }}</h2>
+      <p class="header-subtitle" *ngIf="data.subtitle">{{ data.subtitle }}</p>
+    </div>
+  </div>
+
+  <mat-dialog-content class="dialog-content">
+    <div class="info-card" [class.warning-card]="variant === 'warning'" [class.danger-card]="variant === 'danger'">
+      <div class="card-icon-badge">
+        <mat-icon>info</mat-icon>
+      </div>
+      <div class="card-content">
+        <p class="card-description">{{ data.description }}</p>
+        <p class="card-note" *ngIf="data.note">{{ data.note }}</p>
+      </div>
+    </div>
+
+    <div class="alert-banner" [class.danger-banner]="variant === 'danger'" [class.info-banner]="variant !== 'danger' && !isIrreversible">
+      <mat-icon>{{ variant === 'danger' ? 'dangerous' : (isIrreversible ? 'lock' : 'info') }}</mat-icon>
+      <span *ngIf="isIrreversible">Această acțiune este <strong>ireversibilă</strong></span>
+      <span *ngIf="!isIrreversible">Poți reactiva oricând</span>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="dialog-actions">
+    <button mat-button (click)="onCancel()" class="cancel-btn">
+      <mat-icon>arrow_back</mat-icon>
+      <span>{{ cancelText }}</span>
+    </button>
+
+    <button mat-flat-button (click)="onConfirm()" class="confirm-btn" [class.force-btn]="variant === 'danger'">
+      <mat-icon>{{ confirmIcon }}</mat-icon>
+      <span>{{ confirmText }}</span>
+    </button>
+  </mat-dialog-actions>
+</div>

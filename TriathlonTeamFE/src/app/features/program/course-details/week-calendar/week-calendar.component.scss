@@ -1,0 +1,348 @@
+// ============================================================================
+// WEEK SCHEDULE - Following UIGuidelines
+// ============================================================================
+// Using global CSS variables from styles.scss
+// ============================================================================
+
+:host {
+  display: block;
+  width: 100%;
+  font-family: var(--font-primary);
+}
+
+// ============================================================================
+// MAIN CONTAINER
+// ============================================================================
+.week-schedule {
+  width: 100%;
+  background: var(--sport-bg-white);
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  overflow: clip;
+  
+  @media (max-width: 640px) {
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    box-shadow: var(--shadow-card);
+  }
+}
+
+// ============================================================================
+// SCROLL HINT - Hidden on desktop, subtle on mobile
+// ============================================================================
+.scroll-hint {
+  display: none;
+  
+  @media (max-width: 767px) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    background: var(--sport-bg-light);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    color: var(--sport-text-muted);
+    font-family: var(--font-primary);
+    font-size: 0.8125rem;
+    font-weight: 500;
+  }
+}
+
+.scroll-hint-text {
+  letter-spacing: 0.01em;
+}
+
+.scroll-hint-icon {
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  color: var(--sport-text-muted) !important;
+}
+
+// Hide hint after scroll
+.schedule-container.has-scroll-left ~ .scroll-hint,
+.week-schedule:has(.schedule-container.has-scroll-left) .scroll-hint {
+  display: none;
+}
+
+// ============================================================================
+// SCHEDULE CONTAINER
+// ============================================================================
+.schedule-container {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  
+  // Critical for mobile touch scrolling
+  touch-action: pan-x;
+  -ms-touch-action: pan-x;
+
+  // Hide scrollbar but allow scrolling
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  @media (min-width: 768px) {
+    overflow-x: visible;
+    touch-action: auto;
+  }
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// ============================================================================
+// SCHEDULE GRID
+// ============================================================================
+.schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  min-width: 100%;
+
+  @media (max-width: 767px) {
+    grid-template-columns: repeat(7, minmax(90px, 1fr));
+    min-width: 630px;
+    // Prevent touch events from being captured by children
+    touch-action: pan-x;
+  }
+}
+
+// ============================================================================
+// DAY CARD
+// ============================================================================
+.day-card {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  // Allow parent scroll on mobile
+  @media (max-width: 767px) {
+    touch-action: pan-x;
+  }
+
+  &:last-child {
+    border-right: none;
+  }
+
+  &:hover {
+    background: var(--sport-bg-light);
+  }
+
+  // TODAY - Highlighted with primary color
+  &.is-today {
+    background: linear-gradient(180deg, rgba(37, 99, 235, 0.08) 0%, var(--sport-bg-white) 100%);
+    
+    .day-header {
+      background: var(--gradient-primary);
+      
+      .day-name {
+        color: var(--color-text-on-primary);
+      }
+    }
+
+    .today-label {
+      display: inline-block;
+    }
+  }
+
+  // Has events
+  &.has-events {
+    .day-content {
+      background: transparent;
+    }
+  }
+
+  // No events
+  &:not(.has-events) {
+    .day-content {
+      opacity: 0.5;
+    }
+  }
+}
+
+// ============================================================================
+// DAY HEADER
+// ============================================================================
+.day-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.875rem 0.5rem;
+  background: var(--sport-bg-light);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  min-height: 52px;
+}
+
+.day-name {
+  font-family: var(--font-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--sport-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.today-label {
+  display: none;
+  font-family: var(--font-primary);
+  font-size: 0.5625rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  margin-top: 0.125rem;
+}
+
+// ============================================================================
+// DAY CONTENT
+// ============================================================================
+.day-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0.5rem;
+  min-height: 80px;
+}
+
+// ============================================================================
+// TIME SLOTS
+// ============================================================================
+.time-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  width: 100%;
+}
+
+.time-slot {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--sport-text-dark);
+  text-align: center;
+  line-height: 1.3;
+  padding: 0.5rem 0.25rem;
+  background: rgba(37, 99, 235, 0.08);
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  .day-card:hover & {
+    background: rgba(37, 99, 235, 0.15);
+  }
+
+  // Today's slot - primary gradient
+  .day-card.is-today & {
+    background: var(--gradient-primary);
+    color: var(--color-text-on-primary);
+    font-weight: 700;
+    box-shadow: var(--shadow-btn);
+  }
+}
+
+// ============================================================================
+// NO EVENTS
+// ============================================================================
+.no-events {
+  font-family: var(--font-primary);
+  font-size: 1rem;
+  color: var(--sport-text-muted);
+  text-align: center;
+  line-height: 1;
+  opacity: 0.6;
+}
+
+// ============================================================================
+// RESPONSIVE
+// ============================================================================
+
+// Large screens
+@media (min-width: 1024px) {
+  .day-header {
+    padding: 1rem 0.75rem;
+    min-height: 56px;
+  }
+
+  .day-name {
+    font-size: 0.8125rem;
+  }
+
+  .day-content {
+    padding: 1.25rem 0.75rem;
+    min-height: 90px;
+  }
+
+  .time-slot {
+    font-size: 0.9375rem;
+    padding: 0.625rem 0.5rem;
+  }
+}
+
+// Tablet
+@media (min-width: 768px) and (max-width: 1023px) {
+  .day-header {
+    padding: 0.75rem 0.375rem;
+    min-height: 48px;
+  }
+
+  .day-name {
+    font-size: 0.6875rem;
+  }
+
+  .day-content {
+    padding: 0.875rem 0.375rem;
+    min-height: 70px;
+  }
+
+  .time-slot {
+    font-size: 0.8125rem;
+    padding: 0.4375rem 0.25rem;
+  }
+
+  .no-events {
+    font-size: 0.875rem;
+  }
+}
+
+// Mobile
+@media (max-width: 767px) {
+  .week-schedule {
+    border-radius: 12px;
+  }
+
+  .day-header {
+    padding: 0.625rem 0.25rem;
+    min-height: 44px;
+  }
+
+  .day-name {
+    font-size: 0.625rem;
+    letter-spacing: 0.05em;
+  }
+
+  .today-label {
+    font-size: 0.5rem;
+  }
+
+  .day-content {
+    padding: 0.75rem 0.25rem;
+    min-height: 60px;
+  }
+
+  .time-slot {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.125rem;
+    border-radius: 4px;
+  }
+
+  .no-events {
+    font-size: 0.8125rem;
+  }
+}

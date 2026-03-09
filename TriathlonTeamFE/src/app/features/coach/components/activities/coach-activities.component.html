@@ -1,0 +1,227 @@
+<section class="activities-page">
+  <!-- Hero Section - Coach Pattern -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--coach">Antrenor</span>
+      <h1 class="hero-title">Activitățile <span>Mele</span></h1>
+      <p class="hero-subtitle">Gestionează activitățile și evenimentele tale</p>
+    </div>
+    <button class="hero-btn" (click)="goToCreate()">
+      <mat-icon>add</mat-icon>
+      <span>Activitate Nouă</span>
+    </button>
+  </header>
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>event</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ activities().length }}</span>
+        <span class="stat-label">Activități totale</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--green">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getActiveCount() }}</span>
+        <span class="stat-label">Activități active</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--amber">
+        <mat-icon>people</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getTotalEnrolled() }}</span>
+        <span class="stat-label">Total participanți</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activities Section -->
+  <section class="section-card">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>event</mat-icon>
+          Lista Activități
+        </h2>
+        <span class="section-count">{{ activities().length }}</span>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-grid" *ngIf="isLoading()">
+      <div class="skeleton-card" *ngFor="let _ of [1, 2, 3, 4, 5, 6]"></div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!isLoading() && activities().length === 0">
+      <mat-icon class="empty-state__icon">event</mat-icon>
+      <h3 class="empty-state__title">Nicio activitate încă</h3>
+      <p class="empty-state__text">Nu ai creat încă nicio activitate. Creează prima ta activitate!</p>
+      <button class="hero-btn" (click)="goToCreate()">
+        <mat-icon>add</mat-icon>
+        <span>Creează Activitate</span>
+      </button>
+    </div>
+
+    <!-- Activities Grid -->
+    <div class="activities-grid" *ngIf="!isLoading() && activities().length > 0">
+      <article class="activity-card" *ngFor="let activity of activities(); trackBy: trackByActivity" [class.activity-card--inactive]="!activity.active">
+        <div class="activity-card__header">
+          <div class="activity-icon" [attr.data-active]="activity.active">
+            <mat-icon>event</mat-icon>
+          </div>
+          <div class="activity-actions">
+            <button class="action-btn action-btn--announce" (click)="viewParticipants(activity)" [disabled]="updatingId() === activity.id" matTooltip="Participanți">
+              <mat-icon>people</mat-icon>
+            </button>
+            <button class="action-btn action-btn--edit" (click)="editActivity(activity)" [disabled]="updatingId() === activity.id" matTooltip="Editează">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button 
+              class="action-btn action-btn--toggle" 
+              [class.action-btn--active]="activity.active"
+              (click)="toggleStatus(activity)" 
+              [disabled]="updatingId() === activity.id" 
+              [matTooltip]="activity.active ? 'Dezactivează' : 'Activează'"
+            >
+              <mat-icon>power_settings_new</mat-icon>
+            </button>
+            <button class="action-btn action-btn--delete" (click)="deleteActivity(activity)" [disabled]="updatingId() === activity.id" matTooltip="Șterge">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+        
+        <div class="activity-card__body">
+          <div class="activity-status">
+            <span class="badge" [class.badge--success]="activity.active" [class.badge--error]="!activity.active">
+              {{ activity.active ? 'Activ' : 'Inactiv' }}
+            </span>
+            <span class="badge badge--coach">{{ activity.sportName }}</span>
+          </div>
+          <h3 class="activity-name">{{ activity.name }}</h3>
+          <div class="activity-meta">
+            <span class="meta-item">
+              <mat-icon>calendar_today</mat-icon>
+              {{ formatDate(activity.activityDate) }}
+            </span>
+            <span class="meta-item">
+              <mat-icon>schedule</mat-icon>
+              {{ formatTime(activity.startTime) }} - {{ formatTime(activity.endTime) }}
+            </span>
+            <span class="meta-item">
+              <mat-icon>location_on</mat-icon>
+              {{ activity.location }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="activity-card__footer">
+          <div class="price-info">
+            <mat-icon>payments</mat-icon>
+            <span>{{ (activity.price / 100) | number:'1.0-0' }} {{ activity.currency }}</span>
+          </div>
+          <div class="enrollment-stats">
+            <div class="enrollment-item enrollment-item--paid">
+              <mat-icon>group</mat-icon>
+              <span>{{ activity.enrolledCount }}<span *ngIf="activity.capacity">/{{ activity.capacity }}</span></span>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>
+
+<!-- Participants Dialog -->
+@if (showParticipantsDialog()) {
+  <div class="dialog-overlay" (click)="closeParticipantsDialog()">
+    <div class="dialog-content" (click)="$event.stopPropagation()">
+      <div class="dialog-header">
+        <h2>Participanți - {{ selectedActivity()?.name }}</h2>
+        <button mat-icon-button (click)="closeParticipantsDialog()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      
+      @if (loadingParticipants()) {
+        <div class="loading-state">
+          <mat-spinner diameter="32"></mat-spinner>
+          <p>Se încarcă participanții...</p>
+        </div>
+      }
+      
+      @if (!loadingParticipants() && participants().length === 0) {
+        <div class="empty-participants">
+          <mat-icon>people_outline</mat-icon>
+          <p>Nu există participanți înscriși la această activitate.</p>
+        </div>
+      }
+      
+      @if (!loadingParticipants() && participants().length > 0) {
+        <div class="participants-list">
+          @for (participant of participants(); track participant.id) {
+            <div class="participant-card" [class.pending]="participant.status === 'PENDING'" [class.active]="participant.status === 'ACTIVE'">
+              <div class="participant-info">
+                <div class="participant-name">
+                  <mat-icon>person</mat-icon>
+                  <strong>{{ participant.child.name }}</strong>
+                </div>
+                <div class="participant-details">
+                  <span class="status-text">Status: {{ participant.status }}</span>
+                </div>
+              </div>
+              
+              @if (participant.payment) {
+                <div class="participant-payment">
+                  <div class="payment-info">
+                    <span class="amount">{{ (participant.payment.amount / 100) | number:'1.0-0' }} RON</span>
+                    <span class="method" [class.cash]="participant.payment.method === 'CASH'" [class.card]="participant.payment.method === 'CARD'">
+                      <mat-icon>{{ participant.payment.method === 'CASH' ? 'payments' : 'credit_card' }}</mat-icon>
+                      {{ participant.payment.method === 'CASH' ? 'Cash' : 'Card' }}
+                    </span>
+                  </div>
+                  
+                  <div class="payment-status">
+                    @if (participant.payment.status === 'SUCCEEDED') {
+                      <span class="status-badge paid">
+                        <mat-icon>check_circle</mat-icon>
+                        Plătit
+                      </span>
+                    } @else if (participant.payment.method === 'CASH' && participant.payment.status === 'PENDING') {
+                      <button mat-flat-button color="primary" 
+                              (click)="confirmCashPayment(participant)" 
+                              [disabled]="confirmingPaymentId() === participant.payment.id">
+                        @if (confirmingPaymentId() === participant.payment.id) {
+                          <mat-spinner diameter="18"></mat-spinner>
+                        } @else {
+                          <ng-container>
+                            <mat-icon>check</mat-icon>
+                            Confirmă Plata
+                          </ng-container>
+                        }
+                      </button>
+                    } @else {
+                      <span class="status-badge pending">
+                        <mat-icon>schedule</mat-icon>
+                        În așteptare
+                      </span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}

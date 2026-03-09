@@ -1,0 +1,352 @@
+:host {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  
+  --blue-50: #eff6ff;
+  --blue-100: #dbeafe;
+  --blue-500: #3b82f6;
+  --blue-600: #2563eb;
+  --blue-700: #1d4ed8;
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+  --radius-sm: 8px;
+  --radius-lg: 16px;
+  --shadow-1: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-2: 0 12px 28px rgba(15, 23, 42, 0.10);
+  --shadow-3: 0 22px 55px rgba(15, 23, 42, 0.12);
+}
+
+.course-gallery {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+}
+
+.gallery-header {
+  padding: 0 clamp(1.5rem, 4vw, 2rem);
+  padding-top: clamp(1.5rem, 4vw, 2rem);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+
+  .image-counter {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--blue-700);
+    border: 1px solid var(--blue-200);
+  }
+}
+
+.gallery-main {
+  padding: clamp(1.5rem, 4vw, 2rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.main-image-container {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--gray-100);
+  cursor: pointer;
+  box-sizing: border-box;
+
+  // Premium dark gradient overlay
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(0, 0, 0, 0.3) 60%,
+      rgba(0, 0, 0, 0.7) 100%
+    );
+    opacity: 0.6;
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  &:hover::after {
+    opacity: 0.4;
+  }
+
+  &:hover .main-image {
+    transform: scale(1.05);
+  }
+}
+
+.main-image {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-2);
+  z-index: 10;
+
+  mat-icon {
+    font-size: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--blue-600);
+  }
+
+  &:hover:not(:disabled) {
+    background: #ffffff;
+    transform: translateY(-50%) scale(1.05);
+    box-shadow: var(--shadow-3);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &.nav-previous {
+    left: 1rem;
+  }
+
+  &.nav-next {
+    right: 1rem;
+  }
+}
+
+.thumbnail-strip {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0; // Fix for flex children overflow
+  overflow: hidden;
+}
+
+.thumbnails-container {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scroll-snap-type: x mandatory;
+
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--gray-100);
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--gray-300);
+    border-radius: 3px;
+
+    &:hover {
+      background: var(--gray-400);
+    }
+  }
+}
+
+.thumbnail {
+  position: relative;
+  flex: 0 0 auto;
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  scroll-snap-align: center;
+  border: 2px solid transparent;
+
+  &:hover {
+    transform: scale(1.05);
+    border-color: var(--blue-300);
+  }
+
+  &.active {
+    border-color: var(--blue-600);
+    box-shadow: 0 0 0 2px var(--blue-100);
+  }
+
+  .thumbnail-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s ease;
+  }
+
+  &:hover .thumbnail-image {
+    transform: scale(1.1);
+  }
+}
+
+.no-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--gray-100);
+  color: var(--gray-500);
+  gap: 0.75rem;
+
+  mat-icon {
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+    opacity: 0.7;
+  }
+
+  span {
+    font-size: 1rem;
+    font-weight: 500;
+  }
+}
+
+.thumbnail-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gray-100);
+  color: var(--gray-400);
+
+  mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    opacity: 0.7;
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  :host {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .course-gallery {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .gallery-header {
+    padding: 0.5rem 0 0;
+
+    .image-counter {
+      font-size: 0.8rem;
+      padding: 0.4rem 0.8rem;
+    }
+  }
+
+  .gallery-main {
+    padding: 0.5rem 0;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .main-image-container {
+    aspect-ratio: 4 / 3;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .main-image {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .nav-button {
+    width: 40px;
+    height: 40px;
+
+    mat-icon {
+      font-size: 1.25rem;
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    &.nav-previous {
+      left: 0.75rem;
+    }
+
+    &.nav-next {
+      right: 0.75rem;
+    }
+  }
+
+  .thumbnails-container {
+    gap: 0.5rem;
+  }
+
+  .thumbnail {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+@media (max-width: 480px) {
+  .gallery-header {
+    padding: 0.5rem 0 0;
+  }
+
+  .gallery-main {
+    padding: 0.5rem 0;
+  }
+
+  .nav-button {
+    width: 36px;
+    height: 36px;
+
+    mat-icon {
+      font-size: 1.1rem;
+      width: 1.1rem;
+      height: 1.1rem;
+    }
+  }
+
+  .thumbnail {
+    width: 50px;
+    height: 50px;
+  }
+}

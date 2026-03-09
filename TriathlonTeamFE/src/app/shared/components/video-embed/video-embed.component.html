@@ -1,0 +1,22 @@
+<ng-container [ngSwitch]="kind()">
+  <div *ngSwitchCase="'iframe'" class="video-embed">
+    <iframe
+      [src]="safeSrc()"
+      title="Video"
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      allowfullscreen
+    ></iframe>
+  </div>
+
+  <div *ngSwitchCase="'video'" class="video-embed">
+    <video controls preload="metadata">
+      <source [src]="url" type="video/mp4" />
+      Browserul tău nu suportă redarea video.
+    </video>
+  </div>
+
+  <a *ngSwitchDefault class="video-link" [href]="url" target="_blank" rel="noopener noreferrer">
+    Deschide video
+  </a>
+</ng-container>

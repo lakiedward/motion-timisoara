@@ -1,0 +1,15 @@
+<section class="callback">
+  <div class="state state--loading" *ngIf="isLoading(); else errorState">
+    <mat-progress-spinner mode="indeterminate" diameter="48"></mat-progress-spinner>
+    <p>Finalizam autentificarea...</p>
+  </div>
+
+  <ng-template #errorState>
+    <div class="state state--error">
+      <mat-icon color="warn">error_outline</mat-icon>
+      <p>{{ error() }}</p>
+      <a routerLink="/login">Reveniti la autentificare</a>
+    </div>
+  </ng-template>
+</section>
+

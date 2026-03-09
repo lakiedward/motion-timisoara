@@ -1,0 +1,40 @@
+.callback {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 2rem 1rem;
+}
+
+.state {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: center;
+}
+
+.state--loading p {
+  color: rgba(0, 0, 0, 0.7);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.state--error {
+  color: rgba(0, 0, 0, 0.75);
+}
+
+.state--error p {
+  margin: 0;
+}
+
+.state--error a {
+  color: #1a73e8;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.state--error a:hover {
+  text-decoration: underline;
+}
+

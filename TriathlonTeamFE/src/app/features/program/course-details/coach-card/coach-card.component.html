@@ -1,0 +1,72 @@
+<div class="coach-card">
+  <!-- Header Section (Simplified) -->
+  <div *ngIf="showHeader" class="coach-header">
+    <h2>Antrenorul tau</h2>
+    <p>Informatii despre antrenor</p>
+  </div>
+
+  <!-- Main Content -->
+  <div class="coach-main">
+    <!-- Avatar Section (Simplified - no rotating ring) -->
+    <div class="avatar-section">
+      <div class="avatar-wrapper">
+        <div class="coach-avatar">
+          <img
+            *ngIf="resolvedAvatarUrl(); else noAvatarTemplate"
+            [src]="resolvedAvatarUrl()"
+            [alt]="coach.name"
+            class="avatar-image"
+          />
+          <ng-template #noAvatarTemplate>
+            <div class="avatar-placeholder">
+              {{ getCoachInitials(coach.name) }}
+            </div>
+          </ng-template>
+        </div>
+        <div class="status-badge">
+          <mat-icon>verified</mat-icon>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Section -->
+    <div class="coach-details">
+      <div class="name-section">
+        <h3 class="coach-name">{{ coach.name | titlecase }}</h3>
+        <span class="coach-role">Antrenor Certificat</span>
+      </div>
+
+      <!-- Specializations -->
+      <div *ngIf="coach.focusAreas && coach.focusAreas.length > 0" class="specializations">
+        <div class="spec-header">
+          <mat-icon>star</mat-icon>
+          <span>Specializări</span>
+        </div>
+        <div class="spec-badges">
+          <span 
+            *ngFor="let area of coach.focusAreas; trackBy: trackByArea" 
+            class="spec-badge"
+          >
+            <mat-icon class="badge-icon">sports</mat-icon>
+            {{ area }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Button -->
+  <div class="coach-footer">
+    <a 
+      [routerLink]="getCoachLink()"
+      class="profile-btn"
+    >
+      <span class="btn-content">
+        <mat-icon>person_search</mat-icon>
+        <span class="btn-text">Vezi profilul complet</span>
+        <mat-icon class="btn-arrow">arrow_forward</mat-icon>
+      </span>
+    </a>
+  </div>
+</div>
+

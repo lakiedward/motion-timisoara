@@ -1,0 +1,122 @@
+<section class="course-form-page">
+  <!-- Hero Section - Coach Green Theme -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--coach">Antrenor</span>
+      <h1 class="hero-title">{{ isEditMode() ? 'Editează' : 'Creează' }} <span>Curs</span></h1>
+      <p class="hero-subtitle">{{ isEditMode() ? 'Actualizează detaliile cursului și programul.' : 'Completează detaliile și programează noul curs.' }}</p>
+    </div>
+    <button class="back-btn" type="button" (click)="onCancel()">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Înapoi la cursuri</span>
+    </button>
+  </header>
+
+  <!-- Error Alert -->
+  <div class="alert alert--error" *ngIf="loadError()">
+    <mat-icon class="alert__icon">error_outline</mat-icon>
+    <div class="alert__content">
+      <strong class="alert__title">Nu am putut încărca cursul</strong>
+      <p class="alert__text">Reîncarcă pagina sau contactează administratorul.</p>
+    </div>
+    <button class="back-btn back-btn--small" type="button" (click)="onCancel()">Înapoi</button>
+  </div>
+
+  <!-- Main Content -->
+  <div class="page-layout" *ngIf="!loadError()">
+    <main class="main-content">
+      
+      <!-- Section: Media -->
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <mat-icon>photo_camera</mat-icon>
+              Media
+            </h2>
+          </div>
+        </div>
+        
+        <div class="media-grid">
+          <!-- Hero Photo -->
+          <div class="media-card">
+            <div class="media-card__header">
+              <mat-icon>image</mat-icon>
+              <span>Hero Photo</span>
+            </div>
+            <input type="file" #heroPhotoInput accept="image/*" (change)="onHeroPhotoSelected($event)" style="display: none" />
+            
+            <div class="hero-photo-container">
+              <div class="photo-preview" *ngIf="heroPhotoPreview() || getHeroPhotoUrl()">
+                <img [src]="heroPhotoPreview() || getHeroPhotoUrl()" alt="Hero photo" class="photo-preview__image" />
+                <button mat-icon-button type="button" class="photo-preview__remove" (click)="removeHeroPhoto()" [disabled]="isSaving()">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+              <button class="upload-btn" type="button" (click)="heroPhotoInput.click()" [disabled]="isSaving()" *ngIf="!heroPhotoPreview() && !getHeroPhotoUrl()">
+                <mat-icon>cloud_upload</mat-icon>
+                <span>Încarcă</span>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Gallery -->
+          <div class="media-card media-card--wide">
+            <div class="media-card__header">
+              <mat-icon>photo_library</mat-icon>
+              <span>Galerie ({{ existingPhotos().length + galleryPhotos().length }})</span>
+            </div>
+            <input type="file" #galleryPhotoInput accept="image/*" (change)="onGalleryPhotoSelected($event)" style="display: none" />
+            
+            <div class="gallery-grid">
+              <!-- Existing photos -->
+              <div *ngFor="let photo of existingPhotos()" class="gallery-item">
+                <img [src]="getExistingPhotoUrl(photo.id)" [alt]="'Photo ' + (photo.displayOrder + 1)" />
+                <button mat-icon-button class="gallery-item__delete" (click)="deleteExistingPhoto(photo.id)" [disabled]="isSaving()">
+                  <mat-icon>close</mat-icon>
+                </button>
+                <span class="gallery-item__order">{{ photo.displayOrder + 1 }}</span>
+              </div>
+              
+              <!-- New photos -->
+              <div *ngFor="let photo of galleryPhotos(); let i = index" class="gallery-item gallery-item--new">
+                <img [src]="photo.preview" alt="New photo" />
+                <button mat-icon-button class="gallery-item__delete" (click)="removeGalleryPhoto(i)" [disabled]="isSaving()">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+              
+              <!-- Add button -->
+              <button class="gallery-add" type="button" (click)="galleryPhotoInput.click()" [disabled]="isSaving()">
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Section: Course Form -->
+      <section class="section-card">
+        <app-course-form
+          [courseId]="courseId()"
+          [externalSave]="true"
+          [externalData]="true"
+          [externalCourse]="courseFormValue()"
+          [externalLoading]="isLoading()"
+          [externalSaving]="isSaving()"
+          [showHeader]="false"
+          [compact]="true"
+          (submit)="onSubmit($event)"
+          (cancel)="onCancel()"
+        ></app-course-form>
+      </section>
+      
+      <!-- Tip Card -->
+      <div class="tip-card" *ngIf="!isEditMode()">
+        <mat-icon>lightbulb</mat-icon>
+        <p>Verifică disponibilitatea sălii și a programului înainte de publicare.</p>
+      </div>
+    </main>
+  </div>
+</section>
+

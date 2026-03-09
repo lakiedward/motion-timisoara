@@ -1,0 +1,466 @@
+// ============================================
+// ADMIN CAMP FORM - Standardized Styles
+// ============================================
+:host {
+  /* Trigger Rebuild */
+  display: block;
+  /* Amber accent */
+  --amber: #f59e0b;
+  --form-accent: var(--sport-accent);
+}
+
+.page-layout {
+  display: grid;
+  gap: 2rem;
+  max-width: none;
+  margin: 0;
+}
+
+// ============================================
+// HERO SECTION
+// ============================================
+.page-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 2rem 2.5rem;
+  background: linear-gradient(135deg, #eff6ff 0%, var(--sport-bg-light) 50%, #fffbeb 100%);
+  border-radius: var(--radius-card);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800;
+  color: var(--sport-text-dark);
+  margin: 0.5rem 0 0.25rem;
+  letter-spacing: -0.02em;
+
+  span {
+    color: var(--sport-accent);
+  }
+}
+
+.hero-subtitle {
+  font-size: 0.95rem;
+  color: var(--sport-text-muted);
+  margin: 0;
+}
+
+// ============================================
+// HERO BUTTONS
+// ============================================
+.hero-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  border-radius: var(--radius-btn);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 2;
+
+  mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  &--secondary {
+    background: var(--sport-bg-white);
+    color: var(--sport-accent);
+    border: 2px solid var(--sport-accent);
+    box-shadow: none;
+
+    &:hover {
+      background: var(--sport-bg-white);
+      color: var(--sport-accent);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+    }
+  }
+}
+
+// ============================================
+// BADGES
+// ============================================
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  &--warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--sport-accent-dark);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+}
+
+// ============================================
+// SECTIONS & FORMS
+// ============================================
+.section-card {
+  background: var(--sport-bg-white);
+  border-radius: var(--radius-card);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  // margin-bottom: 2rem; // Remove margin bottom as we use grid gap
+  height: 100%; // Ensure equal height in grid
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--sport-text-dark);
+
+  mat-icon {
+    color: var(--sport-accent);
+  }
+}
+
+// ============================================
+// NATIVE FORM INPUTS (Premium Style)
+// ============================================
+.form-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); // Tighter columns
+
+  &--full {
+    grid-column: 1 / -1;
+  }
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  &--full {
+    grid-column: 1 / -1;
+  }
+}
+
+// ============================================
+// MEDIA & GALLERY (Matched to Course Form)
+// ============================================
+.media-card {
+  background: var(--sport-bg-light);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 14px;
+  padding: 1.25rem;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--sport-text-dark);
+
+    mat-icon {
+      color: var(--sport-accent);
+      font-size: 1.125rem;
+      width: 1.125rem;
+      height: 1.125rem;
+    }
+  }
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--color-border-subtle);
+}
+
+.gallery-item {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--sport-bg-white);
+  border: 2px solid rgba(245, 158, 11, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &:hover {
+    border-color: var(--sport-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+  }
+}
+
+
+// ... (Existing inputs styles below)
+
+label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--sport-text-dark);
+  display: block;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+textarea {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--color-border-default);
+  background: var(--sport-bg-light);
+  font-size: 0.95rem;
+  color: var(--sport-text-dark);
+  font-family: var(--font-primary);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:focus {
+    outline: none;
+    background: white;
+    border-color: var(--sport-accent);
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
+  }
+
+  &::placeholder {
+    color: var(--sport-text-muted);
+  }
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--sport-bg-light);
+  border-radius: 12px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #fffbeb;
+    border-color: rgba(245, 158, 11, 0.3);
+  }
+
+  input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--sport-accent);
+  }
+
+  span {
+    font-weight: 600;
+    color: var(--sport-text-dark);
+  }
+}
+
+.error-msg {
+  color: #ef4444;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+.hint-msg {
+  color: var(--sport-text-muted);
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+// ============================================
+// FORM ACTIONS
+// ============================================
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--color-border-subtle);
+  grid-column: 1 / -1;
+
+  button {
+    min-width: 140px;
+    padding: 0.875rem 1.5rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .btn-submit {
+    background: var(--gradient-warm);
+    color: white;
+    border: none;
+    border-radius: var(--radius-btn);
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+    }
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+  }
+
+  .btn-cancel {
+    background: transparent;
+    color: var(--sport-text-muted);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-btn);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background: var(--sport-bg-light);
+      color: var(--sport-text-dark);
+    }
+  }
+}
+
+// ============================================
+// LOADING & RESPONSIVE
+// ============================================
+.loading-state {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-card);
+
+  &--header {
+    height: 160px;
+  }
+
+  &--card {
+    height: 300px;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (min-width: 768px) {
+  .page-layout {
+    grid-template-columns: 1fr 1fr; // 2 Columns on desktop
+  }
+
+  // Make Description and Actions span full width
+  .section-card--full,
+  .form-actions {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-hero {
+    flex-direction: column;
+    padding: 1.5rem;
+    text-align: center;
+    gap: 1.5rem;
+
+    &::before {
+      display: none;
+    }
+  }
+
+  .hero-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+
+    /* Reorder buttons for mobile */
+    button {
+      width: 100%;
+    }
+  }
+
+  .gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+}

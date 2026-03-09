@@ -1,0 +1,162 @@
+<div class="scroll-progress" [style.width.%]="scrollProgress"></div>
+
+<!-- Hero Section - Matching Homepage Style -->
+<section class="contact-hero">
+  <div class="contact-hero__container">
+    <div class="contact-hero__content">
+      <span class="contact-hero__badge">Contact</span>
+      <h1 class="contact-hero__title">
+        Contactează-ne <span>Oricând</span>
+      </h1>
+      <p class="contact-hero__subtitle">
+        Echipa noastră răspunde în maxim 24h. Alege cum vrei să ne contactezi.
+      </p>
+      
+      <!-- Quick Contact Buttons -->
+      <div class="contact-hero__actions">
+        <a href="tel:+40750420455" class="quick-btn quick-btn--phone">
+          <mat-icon>call</mat-icon>
+          <span>Sună acum</span>
+        </a>
+        <a (click)="scrollToForm($event)" class="quick-btn quick-btn--email" role="button">
+          <mat-icon>mail</mat-icon>
+          <span>Trimite mesaj</span>
+        </a>
+      </div>
+    </div>
+    
+    <!-- Info Cards -->
+    <div class="contact-hero__cards">
+      <div class="floating-card">
+        <mat-icon>location_on</mat-icon>
+        <div>
+          <strong>Locație</strong>
+          <span>Str. Blaise Pascal 37, Dumbrăvița</span>
+        </div>
+      </div>
+      <div class="floating-card">
+        <mat-icon>schedule</mat-icon>
+        <div>
+          <strong>Program</strong>
+          <span>Luni - Vineri: 9:00 - 18:00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Contact Form Section - Main Focus -->
+<section class="contact-main" id="contact-form">
+  <div class="contact-container">
+    <div class="contact-layout">
+      <!-- Left Side - Form -->
+      <div class="contact-form-wrapper">
+        <div class="form-header">
+          <h2>Trimite-ne un mesaj</h2>
+          <p>Completează formularul și te contactăm noi</p>
+        </div>
+        
+        <form class="contact-form" [formGroup]="contactForm" (ngSubmit)="submitContact()" novalidate>
+        <div class="form-field" [class.form-field--invalid]="hasError('name')">
+          <label for="name">Nume complet *</label>
+          <input id="name" type="text" formControlName="name" placeholder="Introdu numele" autocomplete="name" />
+          <div class="form-error" *ngIf="hasError('name')">Te rugăm să introduci numele complet.</div>
+        </div>
+
+        <div class="form-field" [class.form-field--invalid]="hasError('email')">
+          <label for="email">Email *</label>
+          <input id="email" type="email" formControlName="email" placeholder="nume@exemplu.com" autocomplete="email" />
+          <div class="form-error" *ngIf="contactForm.get('email')?.hasError('required') && (contactForm.get('email')?.dirty || contactForm.get('email')?.touched)">
+            Te rugăm să introduci o adresă de email.
+          </div>
+          <div class="form-error" *ngIf="contactForm.get('email')?.hasError('email') && (contactForm.get('email')?.dirty || contactForm.get('email')?.touched)">
+            Adresa de email nu pare validă.
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="subject">Subiect (opțional)</label>
+          <input id="subject" type="text" formControlName="subject" placeholder="Subiectul mesajului" />
+        </div>
+
+        <div class="form-field" [class.form-field--invalid]="hasError('message')">
+          <label for="message">Mesaj *</label>
+          <textarea id="message" rows="6" formControlName="message" placeholder="Scrie-ne mesajul tău"></textarea>
+          <div class="form-error" *ngIf="contactForm.get('message')?.hasError('required') && (contactForm.get('message')?.dirty || contactForm.get('message')?.touched)">
+            Mesajul este necesar pentru a-ți putea răspunde.
+          </div>
+          <div class="form-error" *ngIf="contactForm.get('message')?.hasError('minlength') && (contactForm.get('message')?.dirty || contactForm.get('message')?.touched)">
+            Mesajul trebuie să conțină cel puțin 10 caractere.
+          </div>
+        </div>
+
+        <div class="contact-form__actions">
+          <button type="submit" [disabled]="submissionState() === 'loading'" class="submit-btn">
+            <mat-icon *ngIf="submissionState() !== 'loading'">send</mat-icon>
+            {{ submissionState() === 'loading' ? 'Se trimite...' : 'Trimite mesajul' }}
+          </button>
+        </div>
+
+        <p class="form-feedback form-feedback--success" *ngIf="submissionState() === 'success'">
+          <mat-icon>check_circle</mat-icon>
+          Mulțumim! Te vom contacta în cel mai scurt timp.
+        </p>
+        <p class="form-feedback form-feedback--error" *ngIf="submissionState() === 'error'">
+          <mat-icon>error</mat-icon>
+          {{ contactForm.invalid ? 'Verifică câmpurile și încearcă din nou.' : 'A apărut o problemă. Încearcă mai târziu.' }}
+        </p>
+        </form>
+      </div>
+      
+      <!-- Right Side - Info & Map -->
+      <div class="contact-info-side">
+        <div class="info-card">
+          <div class="info-card__header">
+            <mat-icon>support_agent</mat-icon>
+            <h3>Preferați telefonul?</h3>
+          </div>
+          <p>Sunați-ne direct și vorbim imediat</p>
+          <a href="tel:+40750420455" class="info-card__link">
+            <mat-icon>call</mat-icon>
+            0750 420 455
+          </a>
+        </div>
+        
+        <div class="info-card">
+          <div class="info-card__header">
+            <mat-icon>email</mat-icon>
+            <h3>Sau prin email</h3>
+          </div>
+          <p>Răspundem în maxim 24 de ore</p>
+          <a href="mailto:office@motiontimisoara.com" class="info-card__link">
+            <mat-icon>mail</mat-icon>
+            office@motiontimisoara.com
+          </a>
+        </div>
+        
+        <!-- Mini Map Preview -->
+        <div class="map-preview">
+          <div class="map-preview__header">
+            <mat-icon>place</mat-icon>
+            <div>
+              <strong>Sediul nostru</strong>
+              <span>Str. Blaise Pascal 37, Dumbrăvița</span>
+            </div>
+          </div>
+          <div class="map-preview__frame">
+            <iframe
+              title="Hartă sediu Motion Timișoara"
+              src="https://www.openstreetmap.org/export/embed.html?bbox=21.2080,45.7880,21.2280,45.8080&layer=mapnik&marker=45.7980,21.2180"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+            ></iframe>
+          </div>
+          <a href="https://maps.google.com/?q=Strada+Blaise+Pascal+37,+Dumbr%C4%83vi%C8%9Ba" target="_blank" rel="noopener" class="map-preview__btn">
+            <mat-icon>directions</mat-icon>
+            Obține indicații
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

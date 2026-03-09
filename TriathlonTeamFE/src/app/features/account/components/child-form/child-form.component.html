@@ -1,0 +1,45 @@
+<h1 mat-dialog-title>{{ data.mode === 'create' ? 'Adauga copil' : 'Editeaza copil' }}</h1>
+<form [formGroup]="form" (ngSubmit)="submit()" mat-dialog-content class="form">
+  <mat-form-field appearance="fill">
+    <mat-label>Nume complet</mat-label>
+    <input matInput formControlName="name" required />
+    <mat-error *ngIf="form.controls.name.hasError('required')">Numele este obligatoriu</mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="fill">
+    <mat-label>Data nasterii</mat-label>
+    <input matInput [matDatepicker]="picker" formControlName="birthDate" required readonly (click)="picker.open()">
+    <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+    <mat-datepicker #picker></mat-datepicker>
+    <mat-error *ngIf="form.controls.birthDate.hasError('required')">
+      Data nasterii este obligatorie
+    </mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="fill">
+    <mat-label>Alergii / observatii medicale</mat-label>
+    <textarea matInput formControlName="allergies" rows="2"></textarea>
+  </mat-form-field>
+
+  <mat-form-field appearance="fill">
+    <mat-label>Persoana contact urgenta</mat-label>
+    <input matInput formControlName="emergencyContactName" />
+  </mat-form-field>
+
+  <mat-form-field appearance="fill">
+    <mat-label>Telefon de urgenta</mat-label>
+    <input matInput formControlName="emergencyPhone" required placeholder="+40 7xx xxx xxx" />
+    <mat-hint>Format: +40722123456</mat-hint>
+    <mat-error *ngIf="form.controls.emergencyPhone.hasError('required')">
+      Telefonul de urgenta este obligatoriu
+    </mat-error>
+    <mat-error *ngIf="form.controls.emergencyPhone.hasError('pattern')">
+      Telefon invalid
+    </mat-error>
+  </mat-form-field>
+</form>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()">Anuleaza</button>
+  <button mat-flat-button color="primary" type="submit" (click)="submit()">Salveaza</button>
+</mat-dialog-actions>

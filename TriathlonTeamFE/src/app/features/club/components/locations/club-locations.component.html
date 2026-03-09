@@ -1,0 +1,144 @@
+<section class="locations-page">
+  <!-- Hero Section -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--info" style="margin-bottom: 0.75rem;">Infrastructură</span>
+      <h1 class="hero-title">Locații <span>Club</span></h1>
+      <p class="hero-subtitle">Gestionează locațiile unde se desfășoară cursurile</p>
+    </div>
+    <button class="hero-btn" (click)="addLocation()">
+      <mat-icon>add_location</mat-icon>
+      <span>Adaugă Locație</span>
+    </button>
+  </header>
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>location_on</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ locations().length }}</span>
+        <span class="stat-label">Locații totale</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--green">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getActiveLocationsCount() }}</span>
+        <span class="stat-label">Locații active</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>groups</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getTotalCapacity() }}</span>
+        <span class="stat-label">Capacitate totală</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Locations Section -->
+  <section class="section-card">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>location_on</mat-icon>
+          Lista Locațiilor
+        </h2>
+        <span class="section-count">{{ locations().length }}</span>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-grid" *ngIf="isLoading()">
+      <div class="skeleton-card" *ngFor="let _ of [1, 2, 3]"></div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!isLoading() && locations().length === 0">
+      <mat-icon class="empty-state__icon">location_off</mat-icon>
+      <h3 class="empty-state__title">Nicio locație adăugată</h3>
+      <p class="empty-state__text">Adaugă locațiile unde clubul și antrenorii pot organiza cursuri.</p>
+      <button class="hero-btn" (click)="addLocation()">
+        <mat-icon>add_location</mat-icon>
+        <span>Adaugă prima locație</span>
+      </button>
+    </div>
+
+    <!-- Locations Grid -->
+    <div class="locations-grid" *ngIf="!isLoading() && locations().length > 0">
+      <article class="location-card"
+               *ngFor="let location of locations(); trackBy: trackByLocation"
+               [class.location-card--inactive]="!location.isActive">
+        <div class="location-card__header">
+          <div class="location-card__header-left">
+            <div class="location-icon-mini">
+              <mat-icon>place</mat-icon>
+            </div>
+            <span class="badge" [class.badge--success]="location.isActive" [class.badge--neutral]="!location.isActive">
+              {{ location.isActive ? 'Activ' : 'Inactiv' }}
+            </span>
+          </div>
+
+          <div class="location-actions">
+            <button class="action-btn action-btn--edit" 
+                    [disabled]="updatingLocationId() === location.id"
+                    (click)="editLocation(location)" 
+                    matTooltip="Editează">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button type="button"
+                    class="action-btn"
+                    [class.action-btn--success]="location.isActive"
+                    [class.action-btn--warning]="!location.isActive"
+                    role="switch"
+                    [disabled]="updatingLocationId() === location.id"
+                    [attr.aria-checked]="location.isActive"
+                    (click)="toggleLocationStatus(location)" 
+                    [attr.aria-label]="location.isActive ? 'Dezactivează locație' : 'Activează locație'"
+                    [matTooltip]="location.isActive ? 'Dezactivează locație' : 'Activează locație'">
+              <span class="mini-toggle" [class.mini-toggle--on]="location.isActive" [class.mini-toggle--off]="!location.isActive">
+                <span class="mini-toggle__track"></span>
+                <span class="mini-toggle__knob"></span>
+              </span>
+            </button>
+            <button class="action-btn action-btn--delete" 
+                    [disabled]="updatingLocationId() === location.id"
+                    (click)="deleteLocation(location)" 
+                    matTooltip="Șterge">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+        
+        <div class="location-card__body">
+          <h3 class="location-name">{{ location.name }}</h3>
+          <div class="location-meta">
+            <span class="meta-item">
+              <mat-icon>place</mat-icon>
+              {{ location.address }}, {{ location.city }}
+            </span>
+            <span class="meta-item" *ngIf="location.capacity">
+              <mat-icon>groups</mat-icon>
+              Capacitate: {{ location.capacity }} persoane
+            </span>
+          </div>
+          <p class="location-description" *ngIf="location.description">{{ location.description }}</p>
+        </div>
+        
+        <div class="location-card__footer">
+          <span class="capacity-badge" *ngIf="location.capacity">
+            <mat-icon>people</mat-icon>
+            {{ location.capacity }} locuri
+          </span>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>

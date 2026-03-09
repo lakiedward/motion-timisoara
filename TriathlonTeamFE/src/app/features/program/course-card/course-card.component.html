@@ -1,0 +1,84 @@
+<article class="course-card" *ngIf="course" [ngClass]="accentClass" (click)="onCardClick()">
+  <!-- Hero image section -->
+  <div class="course-card__hero" [style.background-image]="heroBackgroundImage">
+    <div class="course-card__hero-overlay"></div>
+    
+    <!-- Sport category badge -->
+    <div class="course-card__category">{{ sportIcon }}</div>
+    
+    <!-- Sport label tag -->
+    <div class="course-card__tag">{{ sportLabel }}</div>
+    
+    <!-- Title and rating on hero -->
+    <div class="course-card__hero-content">
+      <h3 class="course-card__title">{{ course.name }}</h3>
+      
+      <!-- Rating on hero (if available) -->
+      <div class="course-card__rating" *ngIf="course.averageRating && course.totalRatings">
+        <span class="rating-value">{{ course.averageRating | number:'1.1-1' }}</span>
+        <span class="rating-star">★</span>
+        <span class="rating-count">({{ course.totalRatings }})</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="course-card__content">
+    <!-- Key info badges -->
+    <div class="course-card__badges">
+      <span class="badge badge--level" *ngIf="levelLabel">
+        <span class="badge__icon">🎯</span>
+        {{ levelLabel }}
+      </span>
+      <span class="badge badge--age" *ngIf="ageRangeDisplay">
+        <span class="badge__icon">👥</span>
+        {{ ageRangeDisplay }}
+      </span>
+      <span class="badge badge--capacity" *ngIf="course.capacity">
+        <span class="badge__icon">📊</span>
+        Max {{ course.capacity }} locuri
+      </span>
+    </div>
+
+    <!-- Coach info with photo -->
+    <div class="course-card__meta">
+      <div class="coach" *ngIf="course.coach as coach">
+        <img *ngIf="coachPhotoUrl; else initials" class="avatar" [src]="coachPhotoUrl" [alt]="coach.name" loading="lazy" (error)="onCoachPhotoError()" />
+        <ng-template #initials>
+          <div class="avatar">{{ coachInitials }}</div>
+        </ng-template>
+        <div class="coach-info">
+          <span class="coach-label">Antrenor</span>
+          <span class="coach-name">{{ coach.name }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Location -->
+    <div class="location-info" *ngIf="course.location">
+      <span class="location-icon">📍</span>
+      <span class="location-name">{{ course.location.name }}</span>
+    </div>
+
+    <!-- Schedule -->
+    <ul class="occurrences" *ngIf="occurrencesPreview.length > 0">
+      <li *ngFor="let occ of occurrencesPreview">
+        <span class="day">{{ getDayName(occ.startTime) }}</span>
+        <span class="time">
+          {{ occ.startTime | date: 'HH:mm' }}<ng-container *ngIf="occ.endTime"> - {{ occ.endTime | date: 'HH:mm' }}</ng-container>
+        </span>
+      </li>
+    </ul>
+
+    <!-- Footer with price and actions -->
+    <div class="course-card__footer">
+      <div class="price-container">
+        <span class="price-label">Preț per ședință</span>
+        <span class="price">{{ (course.pricePerSession / 100) | currency: course.currency:'symbol-narrow':'1.0-0' }}</span>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn-secondary" (click)="onViewDetails($event)">Detalii</button>
+        <button type="button" class="btn-primary" (click)="onEnroll($event)">Înscrie-te</button>
+      </div>
+    </div>
+  </div>
+</article>

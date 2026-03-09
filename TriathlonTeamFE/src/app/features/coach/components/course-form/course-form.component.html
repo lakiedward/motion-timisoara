@@ -1,0 +1,345 @@
+<section class="course-form-page">
+  <!-- Hero Section - Coach Pattern -->
+  <header class="page-hero" *ngIf="showHeader">
+    <div class="hero-content">
+      <span class="badge badge--coach">Antrenor</span>
+      <h1 class="hero-title">{{ isEditMode() ? 'Editează' : 'Creează' }} <span>Curs</span></h1>
+      <p class="hero-subtitle">{{ isEditMode() ? 'Actualizează informațiile cursului și programul.' : 'Completează
+        detaliile cursului și programul aferent.' }}</p>
+    </div>
+    <button class="hero-btn hero-btn--secondary" type="button" (click)="handleCancel()">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Înapoi la cursuri</span>
+    </button>
+  </header>
+
+  <!-- Error Alert -->
+  <div class="alert alert--error" *ngIf="loadError()">
+    <mat-icon class="alert__icon">error_outline</mat-icon>
+    <div class="alert__content">
+      <strong class="alert__title">Nu am putut încărca cursul</strong>
+      <p class="alert__text">Reîncarcă pagina sau contactează administratorul.</p>
+    </div>
+    <button class="back-btn back-btn--small" type="button" (click)="handleCancel()">Înapoi</button>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="isLoading()">
+    <div class="skeleton-card" *ngFor="let _ of [1, 2, 3]"></div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="page-layout" *ngIf="!isLoading() && !loadError()">
+    <main class="main-content">
+      <form [formGroup]="form" (ngSubmit)="handleSubmit()" novalidate>
+
+        <!-- Section: Detalii de bază -->
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-header__left">
+              <h2 class="section-title">
+                <mat-icon>info</mat-icon>
+                {{ isEditMode() ? 'Detalii curs' : 'Detalii de bază' }}
+              </h2>
+            </div>
+          </div>
+          <div class="form-grid">
+            <label class="form-field"
+              [class.form-field--invalid]="form.controls.name.invalid && form.controls.name.touched">
+              <span>Nume curs</span>
+              <input type="text" formControlName="name" autocomplete="off" placeholder="Ex: Triathlon Junior" />
+              <small *ngIf="form.controls.name.invalid && form.controls.name.touched">
+                Introdu un nume de minim 3 caractere.
+              </small>
+            </label>
+
+            <label class="form-field"
+              [class.form-field--invalid]="form.controls.sport.invalid && form.controls.sport.touched">
+              <span>Sport</span>
+              <mat-select formControlName="sport" placeholder="Selectează sportul" panelClass="course-form-select-panel"
+                (opened)="onSelectOpened()">
+                <mat-option value="" disabled>Selectează sportul</mat-option>
+                <mat-option *ngFor="let sport of sports()" [value]="sport.value">{{ sport.label }}</mat-option>
+              </mat-select>
+              <small *ngIf="form.controls.sport.invalid && form.controls.sport.touched">Câmp obligatoriu.</small>
+            </label>
+
+            <label class="form-field"
+              [class.form-field--invalid]="form.controls.level.invalid && form.controls.level.touched">
+              <span>Nivel</span>
+              <mat-select formControlName="level" placeholder="Selectează nivelul" panelClass="course-form-select-panel"
+                (opened)="onSelectOpened()">
+                <mat-option value="" disabled>Selectează nivelul</mat-option>
+                <mat-option *ngFor="let level of levels" [value]="level.value">{{ level.label }}</mat-option>
+              </mat-select>
+              <small *ngIf="form.controls.level.invalid && form.controls.level.touched">Câmp obligatoriu.</small>
+            </label>
+
+            <label class="form-field form-field--full">
+              <span>Descriere (opțional)</span>
+              <textarea formControlName="description" rows="3"
+                placeholder="Adaugă o descriere pentru curs..."></textarea>
+              <p class="form-hint">Descrie pe scurt cursul, obiectivele și ce vor învăța participanții.</p>
+            </label>
+          </div>
+        </section>
+
+        <!-- Section: Participanți și costuri -->
+        <section class="section-card section-card--premium">
+          <div class="section-header">
+            <div class="section-header__left">
+              <h2 class="section-title">
+                <mat-icon>people_alt</mat-icon>
+                Participanți și costuri
+              </h2>
+            </div>
+          </div>
+
+          <div class="premium-layout">
+
+            <!-- Age & Capacity Group -->
+            <div class="premium-group">
+              <h3 class="premium-group__title">Detalii Participanți</h3>
+              <div class="form-grid form-grid--tight">
+                <label class="form-field" [class.form-field--invalid]="form.errors?.['ageRange']">
+                  <span>Vârstă minimă (ani)</span>
+                  <input type="number" formControlName="ageFrom" min="0" placeholder="Ex: 8" />
+                </label>
+
+                <label class="form-field" [class.form-field--invalid]="form.errors?.['ageRange']">
+                  <span>Vârstă maximă (ani)</span>
+                  <input type="number" formControlName="ageTo" min="0" placeholder="Ex: 14" />
+                </label>
+
+                <label class="form-field"
+                  [class.form-field--invalid]="form.controls.capacity.invalid && form.controls.capacity.touched">
+                  <span>Capacitate (persoane)</span>
+                  <input type="number" formControlName="capacity" min="1" placeholder="Ex: 20" />
+                  <small *ngIf="form.controls.capacity.invalid && form.controls.capacity.touched">
+                    Specifică capacitatea.
+                  </small>
+                </label>
+              </div>
+
+              <div class="form-error-banner" *ngIf="form.errors?.['ageRange']">
+                <mat-icon>error_outline</mat-icon>
+                Vârsta maximă trebuie să fie mai mare sau egală cu cea minimă.
+              </div>
+            </div>
+
+            <!-- Price Group -->
+            <div class="premium-group">
+              <h3 class="premium-group__title">Costuri și Pachete</h3>
+              <div class="form-grid">
+                <label class="form-field"
+                  [class.form-field--invalid]="form.controls.pricePerSession.invalid && form.controls.pricePerSession.touched">
+                  <span>Preț per ședință</span>
+                  <div class="form-field__with-addon">
+                    <span class="form-field__addon">RON</span>
+                    <input type="number" formControlName="pricePerSession" min="1" step="1" placeholder="0" />
+                  </div>
+                  <small *ngIf="form.controls.pricePerSession.invalid && form.controls.pricePerSession.touched">
+                    Prețul este obligatoriu.
+                  </small>
+                </label>
+
+                <label class="form-field form-field--full">
+                  <span>Configurare Pachete (Opțional)</span>
+                  <input type="text" formControlName="packageOptions" placeholder="Ex: 10:250, 20:480" />
+                  <p class="form-hint">Format: <strong>număr_ședințe:preț_total</strong> (separate prin virgulă)</p>
+                </label>
+              </div>
+            </div>
+
+            <!-- Location Group (Full Width) -->
+            <div class="premium-group premium-group--full">
+              <h3 class="premium-group__title">Locație Desfășurare</h3>
+              <div class="form-field location-field"
+                [class.form-field--invalid]="form.controls.locationId.invalid && form.controls.locationId.touched">
+                <app-location-picker formControlName="locationId" [label]="'Caută locație'"
+                  [placeholder]="'Caută o locație...'" [required]="true" [showCityFilter]="false" [showLabel]="false"
+                  [enableMapPicker]="true" (locationSelected)="onLocationPicked($event)"></app-location-picker>
+                <small *ngIf="form.controls.locationId.invalid && form.controls.locationId.touched">Locația este
+                  obligatorie.</small>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Section: Program -->
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-header__left">
+              <h2 class="section-title">
+                <mat-icon>calendar_month</mat-icon>
+                Program
+              </h2>
+            </div>
+          </div>
+
+          <div class="day-selector">
+            <button type="button" class="day-selector__chip"
+              *ngFor="let control of schedule.controls; let i = index; trackBy: trackByDay"
+              [class.day-selector__chip--selected]="control.value?.enabled" (click)="toggleDay(i)">
+              {{ weekDays[i].label }}
+            </button>
+          </div>
+
+          <div class="schedule-times" formArrayName="schedule">
+            <div *ngFor="let control of schedule.controls; let i = index; trackBy: trackByDay" [formGroupName]="i"
+              class="schedule-times__day" [class.schedule-times__day--visible]="control.value?.enabled">
+              <label class="schedule-times__label">{{ weekDays[i].label }}</label>
+              <div class="schedule-times__inputs">
+                <label>
+                  <span>Ora start</span>
+                  <input type="time" formControlName="startTime" />
+                </label>
+                <label>
+                  <span>Ora final</span>
+                  <input type="time" formControlName="endTime" />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <p class="form-hint">Fiecare zi poate avea un interval orar diferit.</p>
+          <p class="schedule__error" *ngIf="scheduleError()">{{ scheduleError() }}</p>
+        </section>
+
+        <!-- Section: Încasări și Club -->
+        <section class="section-card" *ngIf="showClubPaymentSection">
+          <div class="section-header">
+            <div class="section-header__left">
+              <h2 class="section-title">
+                <mat-icon>payments</mat-icon>
+                Încasări și Club
+              </h2>
+            </div>
+          </div>
+          <div class="form-grid">
+            <!-- Warning dacă antrenorul nu are Stripe configurat -->
+            @if (!coachHasStripe() && form.value.paymentRecipient === 'COACH') {
+            <div class="form-field form-field--full">
+              <div class="form-warning">
+                <mat-icon>warning</mat-icon>
+                <div>
+                  <strong>Nu ai cont Stripe configurat!</strong>
+                  <p>Plățile online nu vor fi disponibile pentru acest curs până nu configurezi Stripe. Plățile vor
+                    merge către platformă.</p>
+                </div>
+              </div>
+            </div>
+            }
+
+            @if (hasClubs()) {
+            <label class="form-field">
+              <span>Club asociat (opțional)</span>
+              <select formControlName="clubId">
+                <option value="">— Fără club (independent) —</option>
+                @for (club of clubs(); track club.id) {
+                <option [value]="club.id">
+                  {{ club.name }}
+                  @if (!club.stripeConfigured) {
+                  (Stripe neonfigurat)
+                  }
+                </option>
+                }
+              </select>
+              <p class="form-hint">Dacă selectezi un club, cursul va fi vizibil în dashboard-ul clubului.</p>
+            </label>
+
+            <div class="form-field form-field--full">
+              <span>Cine încasează plățile online?</span>
+              <div class="radio-group">
+                <label class="radio-option" [class.radio-option--selected]="form.value.paymentRecipient === 'COACH'">
+                  <input type="radio" formControlName="paymentRecipient" value="COACH" />
+                  <mat-icon>person</mat-icon>
+                  <div class="radio-option__content">
+                    <strong>Eu (Antrenorul)</strong>
+                    <span>Plățile vor merge în contul meu Stripe</span>
+                  </div>
+                </label>
+                <label class="radio-option" [class.radio-option--selected]="form.value.paymentRecipient === 'CLUB'"
+                  [class.radio-option--disabled]="!form.value.clubId">
+                  <input type="radio" formControlName="paymentRecipient" value="CLUB" [disabled]="!form.value.clubId" />
+                  <mat-icon>business</mat-icon>
+                  <div class="radio-option__content">
+                    <strong>Clubul</strong>
+                    <span>Plățile vor merge în contul clubului</span>
+                  </div>
+                </label>
+              </div>
+              <p class="form-hint" *ngIf="!form.value.clubId">
+                Selectează un club pentru a putea alege ca plățile să meargă la club.
+              </p>
+            </div>
+            }
+          </div>
+        </section>
+
+        <!-- Actions -->
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="handleCancel()" [disabled]="isSaving()">
+            Renunță
+          </button>
+          <button type="submit" class="btn-primary" [disabled]="isSaving()">
+            <mat-icon>save</mat-icon>
+            {{ isSaving() ? 'Se salvează...' : (isEditMode() ? 'Salvează cursul' : 'Creează cursul') }}
+          </button>
+        </div>
+      </form>
+    </main>
+
+    <!-- Summary Aside -->
+    <aside class="summary-aside">
+      <div class="summary-card">
+        <h2 class="summary-card__title">
+          <mat-icon>summarize</mat-icon>
+          Rezumat curs
+        </h2>
+        <dl class="summary-list">
+          <div class="summary-item">
+            <dt>Nume</dt>
+            <dd>{{ form.get('name')?.value || 'Necompletat' }}</dd>
+          </div>
+          <div class="summary-item">
+            <dt>Sport</dt>
+            <dd>{{ sportLabelMap()[form.get('sport')?.value || ''] || 'Selectează sportul' }}</dd>
+          </div>
+          <div class="summary-item">
+            <dt>Nivel</dt>
+            <dd>{{ levelLabelMap[form.get('level')?.value || ''] || 'Selectează nivelul' }}</dd>
+          </div>
+          <div class="summary-item">
+            <dt>Interval vârstă</dt>
+            <dd>
+              <ng-container *ngIf="form.get('ageFrom')?.value && form.get('ageTo')?.value; else ageFallback">
+                {{ form.get('ageFrom')?.value }} - {{ form.get('ageTo')?.value }} ani
+              </ng-container>
+              <ng-template #ageFallback>Completează intervalul</ng-template>
+            </dd>
+          </div>
+          <div class="summary-item">
+            <dt>Locație</dt>
+            <dd>{{ getSelectedLocationName() || 'Selectează locația' }}</dd>
+          </div>
+          <div class="summary-item">
+            <dt>Capacitate</dt>
+            <dd>{{ form.get('capacity')?.value || 'Necompletat' }}</dd>
+          </div>
+          <div class="summary-item">
+            <dt>Preț/ședință</dt>
+            <dd>{{ form.get('pricePerSession')?.value ? form.get('pricePerSession')?.value + ' RON' : 'Completează
+              prețul' }}</dd>
+          </div>
+          <div class="summary-item">
+            <dt>Program</dt>
+            <dd>{{ schedulePreview() }}</dd>
+          </div>
+        </dl>
+        <p class="summary-hint">Rezumatul se actualizează automat.</p>
+      </div>
+    </aside>
+  </div>
+</section>

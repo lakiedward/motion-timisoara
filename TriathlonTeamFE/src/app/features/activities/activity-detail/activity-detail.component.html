@@ -1,0 +1,224 @@
+<div class="activity-detail-page">
+  <!-- Back Button -->
+  <div class="back-nav">
+    <button class="back-btn" routerLink="/activitati">
+      <span class="back-icon">←</span>
+      Înapoi la activități
+    </button>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Se încarcă...</p>
+    </div>
+  }
+
+  @if (hasError() && !isLoading()) {
+    <div class="error-state">
+      <span class="error-icon">⚠️</span>
+      <h3>Activitatea nu a fost găsită</h3>
+      <p>Activitatea căutată nu există sau nu mai este disponibilă.</p>
+      <button class="btn-primary" routerLink="/activitati">Înapoi la activități</button>
+    </div>
+  }
+
+  @if (!isLoading() && !hasError() && activity(); as act) {
+    <div class="activity-layout">
+      <!-- Hero Section -->
+      <section class="hero-section">
+        <div class="hero-image">
+          @if (resolvedHeroPhotoUrl()) {
+            <img [src]="resolvedHeroPhotoUrl()" [alt]="act.name">
+          } @else {
+            <div class="placeholder-hero">
+              <span>🎯</span>
+            </div>
+          }
+          <div class="hero-overlay"></div>
+        </div>
+        <div class="hero-content">
+          <span class="sport-badge">{{ act.sport.name }}</span>
+          <h1>{{ act.name }}</h1>
+        </div>
+      </section>
+
+      <!-- Main Content -->
+      <div class="content-grid">
+        <!-- Left Column - Details -->
+        <div class="main-content">
+          <!-- Key Info Cards -->
+          <div class="info-cards">
+            <div class="info-card">
+              <span class="info-icon">📅</span>
+              <div class="info-text">
+                <span class="info-label">Data</span>
+                <span class="info-value">{{ formatDate(act.activityDate) }}</span>
+              </div>
+            </div>
+            
+            <div class="info-card">
+              <span class="info-icon">⏰</span>
+              <div class="info-text">
+                <span class="info-label">Ora</span>
+                <span class="info-value">{{ formatTime(act.startTime) }} - {{ formatTime(act.endTime) }}</span>
+              </div>
+            </div>
+            
+            <div class="info-card">
+              <span class="info-icon">⏱️</span>
+              <div class="info-text">
+                <span class="info-label">Durată</span>
+                <span class="info-value">{{ getDuration() }}</span>
+              </div>
+            </div>
+            
+            <div class="info-card">
+              <span class="info-icon">📍</span>
+              <div class="info-text">
+                <span class="info-label">Locație</span>
+                <span class="info-value">{{ act.location.name }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Description -->
+          @if (act.description) {
+            <section class="description-section">
+              <div class="section-header section-header--left">
+                <span class="section-header__eyebrow">ℹ️ DETALII</span>
+                <h2 class="section-header__title">Despre această <span>activitate</span></h2>
+              </div>
+              <div class="section-body">
+                <p>{{ act.description }}</p>
+              </div>
+            </section>
+          }
+
+          <!-- Coach -->
+          <section class="coach-section">
+            <div class="section-header section-header--left">
+              <span class="section-header__eyebrow">👨‍🏫 INSTRUCTOR</span>
+              <h2 class="section-header__title">Antrenorul <span>tău</span></h2>
+            </div>
+            <div class="section-body">
+              <a class="coach-card" [routerLink]="['/antrenori', act.coach.id]">
+                <div class="coach-avatar">
+                  @if (resolvedCoachAvatarUrl()) {
+                    <img [src]="resolvedCoachAvatarUrl()" [alt]="act.coach.name">
+                  } @else {
+                    <span class="avatar-placeholder">{{ act.coach.name.charAt(0) }}</span>
+                  }
+                </div>
+                <div class="coach-info">
+                  <h3>{{ act.coach.name }}</h3>
+                  <span class="coach-role">Antrenor {{ act.sport.name }}</span>
+                </div>
+                <div class="coach-arrow">
+                  <span>→</span>
+                </div>
+              </a>
+            </div>
+          </section>
+
+          <!-- Location Map -->
+          <section class="location-section">
+            <div class="section-header section-header--left">
+              <span class="section-header__eyebrow">📍 LOCAȚIE</span>
+              <h2 class="section-header__title">Unde ne <span>întâlnim</span></h2>
+            </div>
+            <div class="section-body">
+              <app-location-map [location]="act.location"></app-location-map>
+            </div>
+          </section>
+        </div>
+
+        <!-- Right Column - Booking Card -->
+        <aside class="sidebar">
+          <div class="booking-card">
+            <div class="section-header section-header--center">
+              <span class="section-header__eyebrow">🛒 ÎNSCRIERE</span>
+              <h2 class="section-header__title">Rezervă-ți <span>locul</span></h2>
+            </div>
+            <div class="booking-body">
+              <div class="price-section">
+                <span class="price-label">Preț</span>
+                <div class="price">
+                  <span class="amount">{{ act.price }}</span>
+                  <span class="currency">{{ act.currency }}</span>
+                </div>
+              </div>
+
+              <div class="spots-section" *ngIf="act.capacity">
+                <div class="spots-info">
+                  <span class="spots-label">Locuri disponibile</span>
+                  @if (isPast()) {
+                    <span class="spots-value sold-out">Încheiată</span>
+                  } @else if (act.spotsLeft === 0) {
+                    <span class="spots-value sold-out">Sold Out</span>
+                  } @else if (act.spotsLeft && act.spotsLeft <= 5) {
+                    <span class="spots-value limited">Ultimele {{ act.spotsLeft }} locuri!</span>
+                  } @else {
+                    <span class="spots-value">{{ act.spotsLeft }} din {{ act.capacity }}</span>
+                  }
+                </div>
+                <div class="progress-bar" *ngIf="!isPast()">
+                  <div class="progress-fill" [style.width.%]="((act.capacity - (act.spotsLeft ?? 0)) / act.capacity) * 100"></div>
+                </div>
+              </div>
+
+              <button 
+                class="enroll-btn" 
+                (click)="enroll()"
+                [disabled]="isSoldOut() || isPast()">
+                @if (isPast()) {
+                  Încheiată
+                } @else if (isSoldOut()) {
+                  Sold Out
+                } @else {
+                  <span>Înscrie-te acum</span>
+                  <span class="btn-icon">→</span>
+                }
+              </button>
+
+              <div class="guarantee">
+                <span class="guarantee-icon">✓</span>
+                <span>Confirmare instantă</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- Mobile Fixed Bottom CTA -->
+      <div class="info-card--action-mobile">
+        <span
+          *ngIf="act.capacity"
+          class="mobile-spots"
+          [class.sold-out]="isSoldOut() || isPast()">
+          @if (isPast()) {
+            Încheiată
+          } @else if (isSoldOut()) {
+            Sold Out
+          } @else if (act.spotsLeft && act.spotsLeft <= 5) {
+            Ultimele {{ act.spotsLeft }} locuri
+          }
+        </span>
+
+        <div class="mobile-price">
+          <span class="price-amount">{{ act.price }}</span>
+          <span class="price-currency">{{ act.currency }}</span>
+          <div class="price-per-session">per activitate</div>
+        </div>
+
+        <button
+          class="mobile-cta-btn"
+          (click)="enroll()"
+          [disabled]="isSoldOut() || isPast()">
+          <span>{{ isPast() ? 'Încheiată' : isSoldOut() ? 'Sold Out' : 'Înscrie-te' }}</span>
+          <span class="btn-icon">→</span>
+        </button>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,160 @@
+<section class="announcements-page">
+  <!-- Hero Section -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--info" style="margin-bottom: 0.75rem;">Comunicare</span>
+      <h1 class="hero-title">Anunțuri <span>Club</span></h1>
+      <p class="hero-subtitle">Comunică cu antrenorii și părinții</p>
+    </div>
+    <button class="hero-btn" (click)="addAnnouncement()">
+      <mat-icon>add</mat-icon>
+      <span>Adaugă Anunț</span>
+    </button>
+  </header>
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>campaign</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ announcements().length }}</span>
+        <span class="stat-label">Anunțuri totale</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--green">
+        <mat-icon>notifications_active</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getActiveAnnouncements() }}</span>
+        <span class="stat-label">Anunțuri active</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>visibility</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">0</span>
+        <span class="stat-label">Vizualizări totale</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Form -->
+  <section class="section-card add-form-section" *ngIf="showAddForm()">
+    <div class="section-header">
+      <h2 class="section-title">
+        <mat-icon>add_circle</mat-icon>
+        Anunț Nou
+      </h2>
+    </div>
+    <div class="add-form">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Titlu</mat-label>
+        <input matInput [(ngModel)]="newAnnouncement.title" placeholder="Titlul anunțului">
+      </mat-form-field>
+      
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Conținut</mat-label>
+        <textarea matInput [(ngModel)]="newAnnouncement.content" rows="4" placeholder="Conținutul anunțului"></textarea>
+      </mat-form-field>
+      
+      <mat-form-field appearance="outline" class="form-field form-field--small">
+        <mat-label>Prioritate</mat-label>
+        <mat-select [(ngModel)]="newAnnouncement.priority">
+          <mat-option value="LOW">Scăzută</mat-option>
+          <mat-option value="NORMAL">Normală</mat-option>
+          <mat-option value="HIGH">Ridicată</mat-option>
+          <mat-option value="URGENT">Urgentă</mat-option>
+        </mat-select>
+      </mat-form-field>
+      
+      <div class="form-actions">
+        <button class="btn btn--secondary" (click)="cancelAdd()" [disabled]="isSubmitting()">Anulează</button>
+        <button class="btn btn--primary" (click)="submitAnnouncement()" [disabled]="isSubmitting()">
+          {{ isSubmitting() ? 'Se salvează...' : 'Salvează' }}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Announcements Section -->
+  <section class="section-card">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>campaign</mat-icon>
+          Lista Anunțurilor
+        </h2>
+        <span class="section-count">{{ announcements().length }}</span>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-list" *ngIf="isLoading()">
+      <div class="skeleton-item" *ngFor="let _ of [1, 2, 3]"></div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!isLoading() && announcements().length === 0 && !showAddForm()">
+      <mat-icon class="empty-state__icon">campaign</mat-icon>
+      <h3 class="empty-state__title">Niciun anunț</h3>
+      <p class="empty-state__text">Creează anunțuri pentru a comunica cu antrenorii și părinții din club.</p>
+      <button class="hero-btn" (click)="addAnnouncement()">
+        <mat-icon>add</mat-icon>
+        <span>Creează primul anunț</span>
+      </button>
+    </div>
+
+    <!-- Announcements List -->
+    <div class="announcements-list" *ngIf="!isLoading() && announcements().length > 0">
+      <article class="announcement-card" *ngFor="let announcement of announcements()"
+               [class.announcement-card--urgent]="announcement.priority === 'URGENT'"
+               [class.announcement-card--high]="announcement.priority === 'HIGH'"
+               [class.announcement-card--inactive]="!announcement.isActive">
+        <div class="announcement-card__header">
+          <div class="announcement-info">
+            <div class="announcement-badges">
+              <span class="badge" [class.badge--warning]="announcement.priority === 'URGENT' || announcement.priority === 'HIGH'"
+                    [class.badge--info]="announcement.priority === 'NORMAL'"
+                    [class.badge--neutral]="announcement.priority === 'LOW'">
+                {{ getPriorityLabel(announcement.priority) }}
+              </span>
+              <span class="badge" [class.badge--success]="announcement.isActive" [class.badge--neutral]="!announcement.isActive">
+                {{ announcement.isActive ? 'Activ' : 'Inactiv' }}
+              </span>
+            </div>
+            <div class="announcement-meta">
+              <span class="meta-item">
+                <mat-icon>person</mat-icon>
+                {{ announcement.authorName }}
+              </span>
+              <span class="meta-item">
+                <mat-icon>schedule</mat-icon>
+                {{ formatDate(announcement.createdAt) }}
+              </span>
+            </div>
+          </div>
+          <div class="announcement-actions">
+            <button class="action-btn" [class.action-btn--active]="announcement.isActive" 
+                    (click)="toggleStatus(announcement)" 
+                    [matTooltip]="announcement.isActive ? 'Dezactivează' : 'Activează'">
+              <mat-icon>{{ announcement.isActive ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <button class="action-btn action-btn--delete" (click)="deleteAnnouncement(announcement)" matTooltip="Șterge">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <div class="announcement-card__body">
+          <h3 class="announcement-title">{{ announcement.title }}</h3>
+          <p class="announcement-content">{{ announcement.content }}</p>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>

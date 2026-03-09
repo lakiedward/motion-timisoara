@@ -1,0 +1,434 @@
+<section class="club-page">
+  <!-- Hero Section -->
+  <header
+    class="page-hero"
+    [class.page-hero--with-hero]="!!getClubHeroPhotoUrl()"
+    [style.background-image]="getDashboardHeroBackground()"
+  >
+    <div class="hero-content">
+      <div class="club-identity">
+        <div class="club-logo">
+          @if (getClubLogoUrl()) {
+            <img [src]="getClubLogoUrl()!" alt="Logo club" />
+          } @else {
+            <div class="club-logo__fallback">{{ getInitials(profile()?.name || 'Club') }}</div>
+          }
+
+          <input #logoHeaderInput type="file" accept="image/*" hidden (change)="onBrandingLogoSelected($event)" />
+          <button
+            class="club-logo__edit"
+            type="button"
+            (click)="logoHeaderInput.click()"
+            [disabled]="brandingBusy()"
+            matTooltip="Schimbă logo"
+          >
+            <mat-icon>edit</mat-icon>
+          </button>
+        </div>
+
+        <div class="club-text">
+          <span class="badge badge--info" style="margin-bottom: 0.75rem;">Dashboard Club</span>
+          <h1 class="hero-title">{{ profile()?.name || 'Club' }} <span>Dashboard</span></h1>
+          <p class="hero-subtitle">Gestionează antrenorii și codurile de invitație</p>
+        </div>
+      </div>
+    </div>
+
+    <button class="hero-btn" (click)="generateInvitationCode()">
+      <mat-icon>person_add</mat-icon>
+      <span>Invită Antrenor</span>
+    </button>
+
+    <div class="hero-corner-actions">
+      <input #heroCornerInput type="file" accept="image/*" hidden (change)="onBrandingHeroSelected($event)" />
+      <button
+        class="hero-corner-btn"
+        type="button"
+        (click)="heroCornerInput.click()"
+        [disabled]="brandingBusy()"
+        aria-label="Schimbă imaginea de copertă"
+        matTooltip="Schimbă imaginea de copertă"
+      >
+        <mat-icon>image</mat-icon>
+      </button>
+
+      <button
+        class="hero-corner-btn"
+        type="button"
+        (click)="toggleBrandingEditor()"
+        [disabled]="brandingBusy()"
+        aria-label="Personalizare"
+        matTooltip="Personalizare"
+      >
+        <mat-icon>photo_camera</mat-icon>
+      </button>
+    </div>
+  </header>
+
+  <!-- Stripe Alert (if not configured) -->
+  @if (stats() && !stats()!.stripeOnboardingComplete) {
+    <div class="alert alert--warning">
+      <div class="alert__icon">
+        <mat-icon>warning</mat-icon>
+      </div>
+      <div class="alert__content">
+        <h4>Configurare Stripe necesară</h4>
+        <p>Pentru a primi plăți online, trebuie să configurezi contul Stripe.</p>
+      </div>
+      <button class="alert__action" (click)="openStripeOnboarding()">
+        Configurează Stripe
+        <mat-icon>open_in_new</mat-icon>
+      </button>
+    </div>
+  }
+
+  <!-- Branding Alert (if missing logo or hero photo) -->
+  @if (profile() && (!profile()!.hasLogo || !profile()!.hasHeroPhoto)) {
+    <div class="alert alert--info">
+      <div class="alert__icon">
+        <mat-icon>photo_camera</mat-icon>
+      </div>
+      <div class="alert__content">
+        <h4>Personalizează clubul</h4>
+        <p>
+          @if (!profile()!.hasLogo && !profile()!.hasHeroPhoto) {
+            Adaugă un logo și o imagine de copertă pentru club.
+          } @else if (!profile()!.hasLogo) {
+            Adaugă un logo pentru club.
+          } @else {
+            Adaugă o imagine de copertă pentru club.
+          }
+        </p>
+      </div>
+      <button class="alert__action" (click)="toggleBrandingEditor()">
+        Editează branding
+        <mat-icon>edit</mat-icon>
+      </button>
+    </div>
+  }
+
+  @if (showBrandingEditor()) {
+    <section class="section-card branding-section">
+      <div class="section-header">
+        <div class="section-header__left">
+          <h2 class="section-title">
+            <mat-icon>photo_camera</mat-icon>
+            Branding Club
+          </h2>
+        </div>
+        <button class="section-close" (click)="toggleBrandingEditor()">
+          <mat-icon>close</mat-icon>
+          Închide
+        </button>
+      </div>
+
+      <p class="branding-note">Imaginile se salvează automat imediat după ce le alegi.</p>
+
+      <div class="branding-grid">
+        <div class="branding-panel">
+          <h3>Logo</h3>
+          <div class="branding-preview branding-preview--logo">
+            @if (brandingLogoPreview()) {
+              <img [src]="brandingLogoPreview()!" alt="Logo preview" />
+            } @else if (getClubLogoUrl()) {
+              <img [src]="getClubLogoUrl()!" alt="Logo club" />
+            } @else {
+              <div class="branding-fallback">{{ getInitials(profile()?.name || 'Club') }}</div>
+            }
+          </div>
+
+          <div class="branding-actions">
+            <input #logoInput type="file" accept="image/*" hidden (change)="onBrandingLogoSelected($event)" />
+            <button mat-stroked-button type="button" (click)="logoInput.click()" [disabled]="brandingBusy()">
+              <mat-icon>{{ brandingBusy() ? 'hourglass_top' : 'upload' }}</mat-icon>
+              {{ profile()?.hasLogo ? 'Schimbă' : 'Alege' }}
+            </button>
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="deleteBrandingLogo()"
+              [disabled]="brandingBusy() || !profile()?.hasLogo"
+            >
+              <mat-icon>delete</mat-icon>
+              Șterge
+            </button>
+          </div>
+        </div>
+
+        <div class="branding-panel">
+          <h3>Hero photo</h3>
+          <div class="branding-preview branding-preview--hero">
+            @if (brandingHeroPreview()) {
+              <img [src]="brandingHeroPreview()!" alt="Hero preview" />
+            } @else if (getClubHeroPhotoUrl()) {
+              <img [src]="getClubHeroPhotoUrl()!" alt="Hero photo club" />
+            } @else {
+              <div class="branding-fallback branding-fallback--hero">
+                <mat-icon>image</mat-icon>
+              </div>
+            }
+          </div>
+
+          <div class="branding-actions">
+            <input #heroInput type="file" accept="image/*" hidden (change)="onBrandingHeroSelected($event)" />
+            <button mat-stroked-button type="button" (click)="heroInput.click()" [disabled]="brandingBusy()">
+              <mat-icon>{{ brandingBusy() ? 'hourglass_top' : 'upload' }}</mat-icon>
+              {{ profile()?.hasHeroPhoto ? 'Schimbă' : 'Alege' }}
+            </button>
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="deleteBrandingHeroPhoto()"
+              [disabled]="brandingBusy() || !profile()?.hasHeroPhoto"
+            >
+              <mat-icon>delete</mat-icon>
+              Șterge
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- Stats Cards -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>groups</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ coaches().length }}</span>
+        <span class="stat-label">Antrenori</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>vpn_key</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getActiveCodesCount() }}</span>
+        <span class="stat-label">Coduri active</span>
+      </div>
+    </div>
+    <div class="stat-card" [class.stat-card--success]="stats()?.canReceivePayments" 
+                           [class.stat-card--warning]="!stats()?.canReceivePayments">
+      <div class="stat-icon" [class.stat-icon--green]="stats()?.canReceivePayments"
+                              [class.stat-icon--gray]="!stats()?.canReceivePayments">
+        <mat-icon>{{ stats()?.canReceivePayments ? 'check_circle' : 'pending' }}</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ stats()?.canReceivePayments ? 'Activ' : 'Inactiv' }}</span>
+        <span class="stat-label">Stripe Status</span>
+      </div>
+      @if (stats()?.canReceivePayments) {
+        <button class="stat-action" (click)="openStripeDashboard()" matTooltip="Deschide Stripe Dashboard">
+          <mat-icon>open_in_new</mat-icon>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Invitation Codes Section -->
+  <section class="section-card">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>vpn_key</mat-icon>
+          Coduri de Invitație
+        </h2>
+        <span class="section-count">{{ invitationCodes().length }}</span>
+      </div>
+      
+      <div class="chips">
+        <button mat-stroked-button 
+                [class.active]="codeFilter() === 'recent'"
+                (click)="setCodeFilter('recent')">
+          Recente
+        </button>
+        <button mat-stroked-button 
+                [class.active]="codeFilter() === 'active'"
+                (click)="setCodeFilter('active')">
+          Active
+        </button>
+        <button mat-stroked-button 
+                [class.active]="codeFilter() === 'used'"
+                (click)="setCodeFilter('used')">
+          Folosite
+        </button>
+        <button mat-stroked-button 
+                [class.active]="codeFilter() === 'all'"
+                (click)="setCodeFilter('all')">
+          Toate
+        </button>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    @if (invitationCodes().length === 0 && !isLoading()) {
+      <div class="empty-state">
+        <mat-icon class="empty-state__icon">vpn_key</mat-icon>
+        <h3 class="empty-state__title">Niciun cod de invitație</h3>
+        <p class="empty-state__text">Generează un cod pentru a invita antrenori în club.</p>
+        <button class="hero-btn" (click)="generateInvitationCode()">
+          <mat-icon>add</mat-icon>
+          <span>Generează cod</span>
+        </button>
+      </div>
+    }
+
+    <!-- Codes Grid -->
+    @if (filteredInvitationCodes().length > 0) {
+      <div class="codes-grid">
+        @for (code of filteredInvitationCodes(); track code.id) {
+          <div class="invitation-card" 
+               [class.expired]="!code.isValid && code.expiresAt" 
+               [class.used]="!code.isValid">
+            <div class="invitation-card__header">
+              <span class="badge" 
+                    [class.badge--success]="code.isValid"
+                    [class.badge--error]="!code.isValid && code.expiresAt"
+                    [class.badge--neutral]="!code.isValid && !code.expiresAt">
+                {{ !code.isValid ? (code.expiresAt ? 'Expirat' : 'Folosit') : 'Activ' }}
+              </span>
+              <button class="delete-btn" (click)="deleteInvitationCode(code)" matTooltip="Șterge">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+            <div class="invitation-card__code">
+              <code>{{ code.code }}</code>
+              <button class="copy-btn" (click)="copyCode(code.code)" matTooltip="Copiază">
+                <mat-icon>content_copy</mat-icon>
+              </button>
+            </div>
+            <div class="invitation-card__footer">
+              <div class="meta-item">
+                <mat-icon>schedule</mat-icon>
+                <span>{{ code.createdAt | date:'dd.MM.yyyy' }}</span>
+              </div>
+              @if (code.usedByCoachName) {
+                <div class="meta-item">
+                  <mat-icon>person</mat-icon>
+                  <span>{{ code.usedByCoachName }}</span>
+                </div>
+              }
+              <div class="uses-counter">{{ code.currentUses }}/{{ code.maxUses }}</div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+  <!-- Coaches Section -->
+  <section class="section-card">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>groups</mat-icon>
+          Antrenorii Clubului
+        </h2>
+        <span class="section-count">{{ coaches().length }}</span>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+      <div class="loading-grid">
+        @for (_ of [1, 2, 3, 4, 5, 6]; track _) {
+          <div class="skeleton-card"></div>
+        }
+      </div>
+    }
+
+    <!-- Empty State -->
+    @if (!isLoading() && coaches().length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-state__icon">groups</mat-icon>
+        <h3 class="empty-state__title">Niciun antrenor încă</h3>
+        <p class="empty-state__text">Generează un cod de invitație și trimite-l unui antrenor pentru a se înregistra.</p>
+        <button class="hero-btn" (click)="generateInvitationCode()">
+          <mat-icon>person_add</mat-icon>
+          <span>Invită primul antrenor</span>
+        </button>
+      </div>
+    }
+
+    <!-- Coaches Grid -->
+    @if (!isLoading() && coaches().length > 0) {
+      <div class="coaches-grid">
+        @for (coach of coaches(); track coach.id) {
+          <article class="coach-card">
+            <div class="coach-card__header">
+              <div class="coach-avatar">
+                @if (coach.avatarUrl) {
+                  <img [src]="coach.avatarUrl" [alt]="coach.name" loading="lazy" decoding="async" />
+                } @else if (canShowCoachPhoto(coach)) {
+                  <img
+                    [src]="getCoachPhotoUrl(coach.userId)"
+                    [alt]="coach.name"
+                    loading="lazy"
+                    decoding="async"
+                    (error)="onCoachPhotoError(coach.userId)"
+                  />
+                } @else {
+                  <div class="avatar-fallback">
+                    {{ getInitials(coach.name) }}
+                  </div>
+                }
+              </div>
+              <div class="coach-actions">
+                <button
+                  class="action-btn action-btn--edit"
+                  (click)="editCoach(coach)"
+                  matTooltip="Editează"
+                >
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button class="action-btn action-btn--delete" 
+                        (click)="removeCoach(coach)" 
+                        matTooltip="Elimină din club">
+                  <mat-icon>person_remove</mat-icon>
+                </button>
+              </div>
+            </div>
+            
+            <div class="coach-card__body">
+              <h3 class="coach-name">{{ coach.name }}</h3>
+              <div class="coach-meta">
+                <span class="meta-item">
+                  <mat-icon>email</mat-icon>
+                  {{ coach.email }}
+                </span>
+                @if (coach.phone) {
+                  <span class="meta-item">
+                    <mat-icon>phone</mat-icon>
+                    {{ coach.phone }}
+                  </span>
+                }
+              </div>
+            </div>
+            
+            <div class="coach-card__footer">
+              @if (coach.sports.length > 0) {
+                <div class="sports-list">
+                  @for (sport of coach.sports; track sport) {
+                    <span class="badge badge--info">{{ sport }}</span>
+                  }
+                </div>
+              } @else {
+                <div class="no-sports">
+                  <mat-icon>sports</mat-icon>
+                  <span>Fără sporturi</span>
+                </div>
+              }
+              <div class="stripe-status" [class.active]="coach.stripeOnboardingComplete">
+                <mat-icon>{{ coach.stripeOnboardingComplete ? 'check_circle' : 'pending' }}</mat-icon>
+                <span>{{ coach.stripeOnboardingComplete ? 'Stripe OK' : 'Stripe pending' }}</span>
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+</section>

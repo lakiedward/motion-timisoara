@@ -1,0 +1,20 @@
+<div 
+  class="star-rating" 
+  [class.star-rating--readonly]="readonly"
+  [class.star-rating--small]="size === 'small'"
+  [class.star-rating--medium]="size === 'medium'"
+  [class.star-rating--large]="size === 'large'"
+  (mouseleave)="onMouseLeave()">
+  <span 
+    *ngFor="let star of stars"
+    class="star"
+    [class]="'star ' + getStarClass(star)"
+    (click)="onStarClick(star)"
+    (mouseenter)="onStarHover(star)"
+    [attr.aria-label]="'Rate ' + star + ' stars'">
+    {{ getStarIcon(star) }}
+  </span>
+</div>
+
+
+

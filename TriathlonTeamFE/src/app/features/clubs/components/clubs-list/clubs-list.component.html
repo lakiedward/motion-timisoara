@@ -1,0 +1,116 @@
+<div class="scroll-progress" [style.width.%]="scrollProgress"></div>
+
+<section class="clubs-hero">
+  <div class="clubs-hero__container">
+    <span class="clubs-hero__eyebrow">Comunitate</span>
+    <h1 class="clubs-hero__title">
+      Descoperă <span>Cluburile</span>
+    </h1>
+    <p class="clubs-hero__subtitle">
+      Cluburi partenere, antrenori dedicați și programe pentru toate nivelurile
+    </p>
+  </div>
+</section>
+
+<section class="clubs-section" id="cluburi">
+  <div class="clubs-section__container">
+    <header class="clubs-section__header">
+      <div class="clubs-section__title-area">
+        <h2 class="clubs-section__title">
+          <span class="count-badge" *ngIf="!isLoading()">{{ clubs().length }}</span>
+          {{ clubs().length === 1 ? 'Club Disponibil' : 'Cluburi Disponibile' }}
+        </h2>
+      </div>
+      <div class="clubs-section__controls">
+        <div class="sort-dropdown">
+          <select id="sortBy" [(ngModel)]="sortBy" (change)="onSortChange()">
+            <option value="">Recomandat</option>
+            <option value="name">Alfabetic</option>
+            <option value="city">Oraș</option>
+            <option value="coaches-desc">Antrenori ↓</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="clubs-grid" *ngIf="isLoading()">
+        <div class="skeleton-card" *ngFor="let skeleton of skeletonItems">
+          <div class="skeleton-card__avatar"></div>
+          <div class="skeleton-card__content">
+            <div class="skeleton-line wide"></div>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line short"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="clubs-grid" *ngIf="!isLoading() && clubs().length > 0">
+        <article
+          class="club-card club-card--clickable scroll-reveal"
+          *ngFor="let club of clubs(); trackBy: trackByClub"
+          role="link"
+          tabindex="0"
+          (click)="goToClub(club)"
+          (keydown.enter)="goToClub(club)"
+          (keydown.space)="goToClub(club)"
+        >
+          <div
+            class="club-card__hero"
+            [class.has-cover]="getClubHeroPhotoUrl(club.heroPhotoUrl)"
+            [style.background-image]="getClubHeroPhotoUrl(club.heroPhotoUrl) ? 'url(' + getClubHeroPhotoUrl(club.heroPhotoUrl) + ')' : null"
+          >
+            <div class="club-card__hero-overlay"></div>
+            <div class="club-card__logo">
+              <ng-container *ngIf="getClubLogoUrl(club.logoUrl) as logo; else logoFallback">
+                <img [src]="logo" [alt]="club.name" />
+              </ng-container>
+              <ng-template #logoFallback>
+                <span class="club-card__initials">{{ getInitials(club.name) }}</span>
+              </ng-template>
+            </div>
+
+            <div class="club-card__meta">
+              <h3 class="club-card__name">{{ club.name }}</h3>
+              <div class="club-card__subtitle">
+                <span *ngIf="club.city" class="pill">{{ club.city }}</span>
+                <span class="pill pill--muted">{{ club.coachCount }} {{ club.coachCount === 1 ? 'antrenor' : 'antrenori' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="club-card__content">
+            <p class="club-card__description" *ngIf="club.description">
+              {{ club.description }}
+            </p>
+
+            <div class="club-card__sports" *ngIf="club.sports?.length">
+              <span class="chip" *ngFor="let sport of club.sports">{{ sport.name }}</span>
+            </div>
+
+            <div class="club-card__footer" *ngIf="club.website">
+              <a
+                class="btn-link"
+                [href]="club.website"
+                target="_blank"
+                rel="noopener noreferrer"
+                (click)="$event.stopPropagation()"
+              >
+                Website
+              </a>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="empty-state" *ngIf="!isLoading() && isEmpty()">
+        <div class="empty-state__icon">🏢</div>
+        <h3 class="empty-state__title">Niciun club găsit</h3>
+        <p class="empty-state__text">
+          Momentan nu există cluburi disponibile.
+        </p>
+        <button class="btn-primary" routerLink="/contact">Contactează-ne</button>
+      </div>
+    </main>
+  </div>
+</section>

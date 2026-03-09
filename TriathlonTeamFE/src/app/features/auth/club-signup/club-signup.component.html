@@ -1,0 +1,462 @@
+<!-- Hero Section -->
+<section class="hero-club">
+  <div class="hero-background">
+    <picture>
+      <source srcset="/ui/img_20231130_112543.webp" type="image/webp">
+      <img
+        src="/ui/IMG_20231130_112543.jpg"
+        alt="Motion Timișoara - Club Sportiv"
+        loading="eager"
+        (load)="$any($event.target).classList.add('loaded')"
+        class="hero-bg-image"
+      />
+    </picture>
+    <div class="hero-overlay"></div>
+  </div>
+
+  <div class="hero-container">
+    <div class="hero-content">
+      <h1 class="hero-title">Înregistrează-ți clubul!</h1>
+      <p class="hero-subtitle">
+        Gestionează antrenori, cursuri și primește plăți online
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Registration Section -->
+<section class="club-section">
+  <div class="club-container">
+    <!-- Registration Complete -->
+    @if (registrationComplete()) {
+      <div class="club-card scroll-reveal scroll-reveal--fade-up">
+        <div class="success-content">
+          <div class="success-icon">
+            <mat-icon>check_circle</mat-icon>
+          </div>
+          <h2>Club creat cu succes!</h2>
+          <p class="success-message">Bine ai venit pe platforma Motion!</p>
+
+          <div class="branding-card">
+            <h3 class="branding-title">
+              <mat-icon>photo_camera</mat-icon>
+              Personalizează clubul
+            </h3>
+            <p class="branding-subtitle">Adaugă logo și o imagine de copertă (opțional). Se salvează automat după selectare.</p>
+
+            <div class="branding-grid">
+              <div class="branding-item">
+                <div class="branding-label">Logo</div>
+                <div class="branding-preview branding-preview--logo">
+                  @if (logoPreview()) {
+                    <img [src]="logoPreview()!" alt="Logo club preview" />
+                  } @else {
+                    <span class="branding-placeholder">Logo</span>
+                  }
+                </div>
+                <div class="branding-actions">
+                  <input #logoInput type="file" accept="image/*" hidden (change)="onLogoSelected($event)" />
+                  <button type="button" class="btn-secondary" (click)="logoInput.click()" [disabled]="logoUploading()">
+                    @if (logoUploading()) {
+                      <span class="spinner-small"></span>
+                      Se încarcă...
+                    } @else {
+                      {{ logoPreview() ? 'Schimbă logo' : 'Alege logo' }}
+                      <mat-icon>upload</mat-icon>
+                    }
+                  </button>
+                  @if (logoPreview()) {
+                    <button type="button" class="btn-text" (click)="removeLogo()" [disabled]="logoUploading()">
+                      <mat-icon>delete</mat-icon>
+                      Șterge
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <div class="branding-item">
+                <div class="branding-label">Hero photo</div>
+                <div class="branding-preview branding-preview--hero">
+                  @if (heroPhotoPreview()) {
+                    <img [src]="heroPhotoPreview()!" alt="Hero photo club preview" />
+                  } @else {
+                    <span class="branding-placeholder">Copertă</span>
+                  }
+                </div>
+                <div class="branding-actions">
+                  <input #heroInput type="file" accept="image/*" hidden (change)="onHeroPhotoSelected($event)" />
+                  <button type="button" class="btn-secondary" (click)="heroInput.click()" [disabled]="heroUploading()">
+                    @if (heroUploading()) {
+                      <span class="spinner-small"></span>
+                      Se încarcă...
+                    } @else {
+                      {{ heroPhotoPreview() ? 'Schimbă copertă' : 'Alege copertă' }}
+                      <mat-icon>upload</mat-icon>
+                    }
+                  </button>
+                  @if (heroPhotoPreview()) {
+                    <button type="button" class="btn-text" (click)="removeHeroPhoto()" [disabled]="heroUploading()">
+                      <mat-icon>delete</mat-icon>
+                      Șterge
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <p class="branding-hint">Poți face asta și mai târziu din Dashboard.</p>
+          </div>
+
+          @if (stripeOnboardingUrl()) {
+            <div class="stripe-card">
+              <mat-icon class="stripe-icon">account_balance</mat-icon>
+              <div class="stripe-text">
+                <h3>Configurează primirea plăților</h3>
+                <p>Pentru a primi plăți online, trebuie să îți conectezi contul Stripe.</p>
+              </div>
+            </div>
+            <button class="btn-primary" (click)="goToStripeOnboarding()">
+              Configurează Stripe
+              <mat-icon>open_in_new</mat-icon>
+            </button>
+          }
+
+          <button class="btn-secondary" (click)="goToDashboard()">
+            {{ stripeOnboardingUrl() ? 'Fac asta mai târziu' : 'Mergi la dashboard' }}
+            <mat-icon>arrow_forward</mat-icon>
+          </button>
+        </div>
+      </div>
+    } @else {
+      <div class="club-card scroll-reveal scroll-reveal--fade-up">
+        <a routerLink="/signup" class="back-to-home">
+          <mat-icon>arrow_back</mat-icon>
+          <span>Înapoi la alegere tip cont</span>
+        </a>
+        
+        <div class="club-card__header">
+          <span class="club-eyebrow">Înregistrare Club</span>
+          <h2>Creează cont de club</h2>
+          <p>Pasul {{ currentStep() + 1 }} din 3</p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-bar">
+          <div class="step" [class.active]="currentStep() >= 0" [class.completed]="currentStep() > 0">
+            <div class="step-number">1</div>
+            <span>Administrator</span>
+          </div>
+          <div class="step-line" [class.active]="currentStep() > 0"></div>
+          <div class="step" [class.active]="currentStep() >= 1" [class.completed]="currentStep() > 1">
+            <div class="step-number">2</div>
+            <span>Club</span>
+          </div>
+          <div class="step-line" [class.active]="currentStep() > 1"></div>
+          <div class="step" [class.active]="currentStep() >= 2">
+            <div class="step-number">3</div>
+            <span>Finalizare</span>
+          </div>
+        </div>
+
+        <!-- Step 1: Owner Info -->
+        @if (currentStep() === 0) {
+          <form [formGroup]="ownerForm" class="form-step">
+            <div class="step-info">
+              <mat-icon>person</mat-icon>
+              <p>Datele administratorului principal al clubului</p>
+            </div>
+
+            <div class="form-group">
+              <label for="ownerName">Nume administrator</label>
+              <input
+                type="text"
+                id="ownerName"
+                formControlName="ownerName"
+                placeholder="Ion Popescu"
+                autocomplete="name"
+              />
+              <app-form-error [control]="ownerForm.get('ownerName')"></app-form-error>
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input
+                type="email"
+                id="email"
+                formControlName="email"
+                placeholder="email@club.ro"
+                autocomplete="email"
+              />
+              <app-form-error [control]="ownerForm.get('email')"></app-form-error>
+            </div>
+
+            <div class="form-group">
+              <label for="password">Parolă</label>
+              <div class="password-input">
+                <input
+                  [type]="showPassword() ? 'text' : 'password'"
+                  id="password"
+                  formControlName="password"
+                  placeholder="Minim 6 caractere"
+                  autocomplete="new-password"
+                />
+                <button type="button" class="password-toggle" (click)="togglePasswordVisibility()">
+                  <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+              </div>
+              <app-form-error [control]="ownerForm.get('password')"></app-form-error>
+            </div>
+
+            <div class="form-group">
+              <label for="phone">Telefon</label>
+              <input
+                type="tel"
+                id="phone"
+                formControlName="phone"
+                placeholder="+40 7XX XXX XXX"
+                autocomplete="tel"
+              />
+              <app-form-error [control]="ownerForm.get('phone')"></app-form-error>
+            </div>
+
+            <div class="form-actions">
+              <a routerLink="/signup" class="btn-text">
+                <mat-icon>arrow_back</mat-icon>
+                Înapoi
+              </a>
+              <button type="button" class="btn-primary" (click)="nextStep()">
+                Continuă
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+            </div>
+          </form>
+        }
+
+        <!-- Step 2: Club Info -->
+        @if (currentStep() === 1) {
+          <form [formGroup]="clubForm" class="form-step">
+            <div class="step-info">
+              <mat-icon>business</mat-icon>
+              <p>Informații despre clubul sportiv</p>
+            </div>
+
+            <div class="form-group">
+              <label for="clubName">Numele clubului *</label>
+              <input
+                type="text"
+                id="clubName"
+                formControlName="clubName"
+                placeholder="Club Sportiv Motion"
+                autocomplete="organization"
+              />
+              <app-form-error [control]="clubForm.get('clubName')"></app-form-error>
+            </div>
+
+            <div class="form-group">
+              <label for="description">Descriere</label>
+              <textarea
+                id="description"
+                formControlName="description"
+                placeholder="Scurtă descriere a clubului..."
+                rows="3"
+              ></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="clubEmail">Email club</label>
+                <input
+                  type="email"
+                  id="clubEmail"
+                  formControlName="clubEmail"
+                  placeholder="contact@club.ro"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="clubPhone">Telefon club</label>
+                <input
+                  type="tel"
+                  id="clubPhone"
+                  formControlName="clubPhone"
+                  placeholder="+40 XXX XXX XXX"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="city">Oraș</label>
+              <input
+                type="text"
+                id="city"
+                formControlName="city"
+                placeholder="Timișoara"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="address">Adresă</label>
+              <input
+                type="text"
+                id="address"
+                formControlName="address"
+                placeholder="Str. Exemplu nr. 1"
+              />
+            </div>
+
+            <!-- Sports Selection -->
+            <div class="form-group sports-group">
+              <label>Sporturi oferite</label>
+              <p class="sports-hint">Selectează sporturile pe care le oferă clubul</p>
+              
+              @if (sportsLoading()) {
+                <div class="sports-loading">
+                  <span class="spinner-small"></span>
+                  Se încarcă sporturile...
+                </div>
+              } @else if (availableSports().length === 0) {
+                <div class="sports-empty">
+                  <mat-icon>info</mat-icon>
+                  <span>Nu există sporturi disponibile momentan.</span>
+                </div>
+              } @else {
+                <div class="sports-grid">
+                  @for (sport of availableSports(); track sport.id) {
+                    <button 
+                      type="button"
+                      class="sport-chip"
+                      [class.selected]="isSportSelected(sport.id)"
+                      (click)="toggleSport(sport.id)"
+                    >
+                      <mat-icon>{{ isSportSelected(sport.id) ? 'check_circle' : 'sports' }}</mat-icon>
+                      {{ sport.name }}
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn-text" (click)="prevStep()">
+                <mat-icon>arrow_back</mat-icon>
+                Înapoi
+              </button>
+              <button type="button" class="btn-primary" (click)="nextStep()">
+                Continuă
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+            </div>
+          </form>
+        }
+
+        <!-- Step 3: Review & Submit -->
+        @if (currentStep() === 2) {
+          <div class="review-step">
+            <h3>Verifică datele</h3>
+
+            <div class="review-section">
+              <h4><mat-icon>person</mat-icon> Administrator</h4>
+              <div class="review-item">
+                <span class="label">Nume:</span>
+                <span class="value">{{ ownerForm.get('ownerName')?.value }}</span>
+              </div>
+              <div class="review-item">
+                <span class="label">Email:</span>
+                <span class="value">{{ ownerForm.get('email')?.value }}</span>
+              </div>
+              <div class="review-item">
+                <span class="label">Telefon:</span>
+                <span class="value">{{ ownerForm.get('phone')?.value }}</span>
+              </div>
+            </div>
+
+            <div class="review-section">
+              <h4><mat-icon>business</mat-icon> Club</h4>
+              <div class="review-item">
+                <span class="label">Nume club:</span>
+                <span class="value">{{ clubForm.get('clubName')?.value }}</span>
+              </div>
+              @if (clubForm.get('city')?.value) {
+                <div class="review-item">
+                  <span class="label">Oraș:</span>
+                  <span class="value">{{ clubForm.get('city')?.value }}</span>
+                </div>
+              }
+              <div class="review-item">
+                <span class="label">Sporturi:</span>
+                <span class="value">
+                  @if (selectedSportIds().size === 0) {
+                    <span class="no-sports">Niciun sport selectat</span>
+                  } @else {
+                    @for (sport of availableSports(); track sport.id) {
+                      @if (isSportSelected(sport.id)) {
+                        <span class="sport-tag">{{ sport.name }}</span>
+                      }
+                    }
+                  }
+                </span>
+              </div>
+            </div>
+
+            <div class="stripe-notice">
+              <mat-icon>account_balance</mat-icon>
+              <p>După înregistrare, vei configura primirea plăților prin Stripe pentru a putea emite facturi și primi plăți online.</p>
+            </div>
+
+            <div class="terms-notice">
+              <mat-icon>info</mat-icon>
+              <p>
+                Prin crearea contului, accepți
+                <a href="/termeni" target="_blank">Termenii și Condițiile</a>
+                și
+                <a href="/confidentialitate" target="_blank">Politica de Confidențialitate</a>.
+              </p>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn-text" (click)="prevStep()">
+                <mat-icon>arrow_back</mat-icon>
+                Înapoi
+              </button>
+              <button
+                type="button"
+                class="btn-primary btn-submit"
+                [disabled]="isSubmitting()"
+                (click)="submit()"
+              >
+                @if (isSubmitting()) {
+                  <span class="spinner"></span>
+                  Se procesează...
+                } @else {
+                  <mat-icon>check</mat-icon>
+                  Creează clubul
+                }
+              </button>
+            </div>
+          </div>
+        }
+
+        <p class="club-redirect">
+          Ai deja cont?
+          <a routerLink="/login" class="club-link">Autentifică-te</a>
+        </p>
+      </div>
+    }
+
+    <!-- Trust Badges -->
+    <div class="club-trust scroll-reveal scroll-reveal--fade-up scroll-reveal--delay-100">
+      <div class="trust-badge">
+        <mat-icon>lock</mat-icon>
+        <span>Date securizate</span>
+      </div>
+      <div class="trust-badge">
+        <mat-icon>payments</mat-icon>
+        <span>Plăți Stripe</span>
+      </div>
+      <div class="trust-badge">
+        <mat-icon>groups</mat-icon>
+        <span>Gestionare antrenori</span>
+      </div>
+    </div>
+  </div>
+</section>

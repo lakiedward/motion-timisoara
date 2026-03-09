@@ -1,0 +1,192 @@
+<section class="coach-form-page">
+  <!-- Hero Section - Club Pattern -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--club">Club Manager</span>
+      <h1 class="hero-title">{{ isEditMode() ? 'Editează' : 'Creează' }} <span>Antrenor</span></h1>
+      <p class="hero-subtitle">
+        {{ isEditMode() ? 'Actualizează detaliile antrenorului și sporturile asociate.' : 'Completează detaliile și adaugă un antrenor în echipa clubului.' }}
+      </p>
+    </div>
+    <button class="back-btn" type="button" (click)="onCancel()">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      <span>Înapoi la listă</span>
+    </button>
+  </header>
+
+  <div class="page-layout">
+    <main class="main-content">
+      <!-- Section: Foto & Sporturi -->
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <mat-icon>person</mat-icon>
+              Foto & Sporturi
+            </h2>
+          </div>
+        </div>
+
+        <div class="media-grid">
+          <!-- Photo Upload -->
+          <div class="media-card">
+            <div class="media-card__header">
+              <mat-icon>photo_camera</mat-icon>
+              <span>Fotografie Antrenor</span>
+            </div>
+
+            <input type="file" #fileInput accept="image/*" (change)="onFileSelected($event)" style="display: none" />
+
+            <div class="hero-photo-container">
+              @if (photoPreview()) {
+                <div class="photo-previews">
+                  <div class="photo-preview-card">
+                    <div class="photo-preview-card__label">Previzualizare public (card)</div>
+                    <img [src]="photoPreview()" alt="Fotografie antrenor - card public" class="photo-preview-card__image" />
+                    <button
+                      mat-icon-button
+                      type="button"
+                      class="photo-preview__remove"
+                      (click)="removePhoto()"
+                      [disabled]="isSaving()"
+                      aria-label="Șterge fotografia"
+                    >
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+
+                  <div class="photo-preview-avatar">
+                    <div class="photo-preview-avatar__label">Previzualizare avatar (profil)</div>
+                    <div class="photo-preview-avatar__circle">
+                      <img [src]="photoPreview()" alt="Fotografie antrenor - avatar" />
+                    </div>
+                  </div>
+                </div>
+              } @else {
+                @if (isEditMode() && getExistingPhotoUrl()) {
+                  <div class="photo-previews">
+                    <div class="photo-preview-card">
+                      <div class="photo-preview-card__label">Foto curentă (card public)</div>
+                      <img [src]="getExistingPhotoUrl()" alt="Fotografie antrenor - card public" class="photo-preview-card__image" />
+                    </div>
+
+                    <div class="photo-preview-avatar">
+                      <div class="photo-preview-avatar__label">Foto curentă (avatar)</div>
+                      <div class="photo-preview-avatar__circle">
+                        <img [src]="getExistingPhotoUrl()" alt="Fotografie antrenor - avatar" />
+                      </div>
+                    </div>
+
+                    <button class="upload-btn" type="button" (click)="fileInput.click()" [disabled]="isSaving()">
+                      <mat-icon>cloud_upload</mat-icon>
+                      <span>Înlocuiește</span>
+                    </button>
+                  </div>
+                } @else {
+                  <button class="upload-btn" type="button" (click)="fileInput.click()" [disabled]="isSaving()">
+                    <mat-icon>cloud_upload</mat-icon>
+                    <span>Încarcă</span>
+                  </button>
+                }
+              }
+            </div>
+
+            <p class="media-hint">Opțional • Max 10MB • JPEG/PNG/GIF/WEBP</p>
+          </div>
+
+          <!-- Sports Selection -->
+          <div class="media-card">
+            <div class="media-card__header">
+              <mat-icon>sports</mat-icon>
+              <span>Sporturi</span>
+            </div>
+
+            <mat-select
+              [formControl]="form.controls.sportIds"
+              placeholder="Selectează sporturi"
+              multiple
+              [disabled]="sportsLoading() || isSaving()"
+            >
+              <mat-option *ngFor="let sport of availableSports(); trackBy: trackBySportId" [value]="sport.id">
+                {{ sport.name }}
+              </mat-option>
+            </mat-select>
+
+            <div class="empty-hint" *ngIf="!availableSports().length && !sportsLoading()">
+              <p>Nu există sporturi disponibile.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: Detalii cont -->
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <mat-icon>badge</mat-icon>
+              Detalii Cont
+            </h2>
+          </div>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="form-grid">
+          <mat-form-field appearance="fill">
+            <mat-label>Nume complet</mat-label>
+            <input matInput formControlName="name" required />
+            <mat-error *ngIf="form.controls.name.hasError('required')">Numele este obligatoriu</mat-error>
+            <mat-error *ngIf="form.controls.name.hasError('minlength')">Numele trebuie să aibă minim 3 caractere</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="fill">
+            <mat-label>Adresă email</mat-label>
+            <input matInput formControlName="email" type="email" required />
+            <mat-error *ngIf="form.controls.email.hasError('required')">Emailul este obligatoriu</mat-error>
+            <mat-error *ngIf="form.controls.email.hasError('email')">Introdu o adresă de email validă</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="fill">
+            <mat-label>{{ isEditMode() ? 'Parolă nouă (opțional)' : 'Parolă inițială' }}</mat-label>
+            <input matInput [type]="showPassword() ? 'text' : 'password'" formControlName="password" [required]="!isEditMode()" />
+            <button mat-icon-button matSuffix type="button" (click)="togglePasswordVisibility()">
+              <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <mat-hint *ngIf="!isEditMode()">Minim 8 caractere. Antrenorul poate schimba parola ulterior.</mat-hint>
+            <mat-hint *ngIf="isEditMode()">Lasă gol pentru a păstra parola curentă.</mat-hint>
+            <mat-error *ngIf="form.controls.password.hasError('required')">Parola este obligatorie</mat-error>
+            <mat-error *ngIf="form.controls.password.hasError('minlength')">Parola trebuie să aibă minim 8 caractere</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="fill">
+            <mat-label>Telefon (opțional)</mat-label>
+            <input matInput formControlName="phone" type="tel" placeholder="+40 7XX XXX XXX" />
+            <mat-hint>Format: 8-15 cifre, opțional cu +</mat-hint>
+            <mat-error *ngIf="form.controls.phone.hasError('phone')">Număr de telefon invalid</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" class="full-width">
+            <mat-label>Bio (opțional)</mat-label>
+            <textarea matInput formControlName="bio" rows="4"></textarea>
+          </mat-form-field>
+
+          <div class="form-actions full-width">
+            <button type="button" class="btn-secondary" (click)="onCancel()" [disabled]="isSaving()">
+              Renunță
+            </button>
+            <button type="submit" class="btn-primary" [disabled]="isSaving()">
+              <mat-icon aria-hidden="true">save</mat-icon>
+              {{ isSaving() ? 'Se salvează...' : (isEditMode() ? 'Salvează' : 'Creează') }}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <div class="tip-card" *ngIf="!isEditMode()">
+        <mat-icon>lightbulb</mat-icon>
+        <p>Verifică emailul și parola înainte de creare. Antrenorul își poate schimba parola ulterior.</p>
+      </div>
+    </main>
+  </div>
+</section>
+
+

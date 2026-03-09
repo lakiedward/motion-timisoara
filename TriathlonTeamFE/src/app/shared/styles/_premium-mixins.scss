@@ -1,0 +1,421 @@
+// ============================================================================
+// PREMIUM MIXINS - Motion Timișoara Design System
+// ============================================================================
+// Shared SCSS mixins for consistent premium styling across all pages
+// Created for: Checkout, Course Details, Coach Profile pages
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// 1. PREMIUM CARD MIXIN
+// ----------------------------------------------------------------------------
+// Creates a premium card with consistent styling, optional gradient bar
+//
+// @param {boolean} $with-gradient-bar - Add top gradient bar (default: true)
+// @param {boolean} $with-hover - Enable hover effects (default: true)
+//
+// Usage:
+//   .my-card { @include premium-card(); }
+//   .my-card { @include premium-card(false, false); } // No bar, no hover
+// ----------------------------------------------------------------------------
+@mixin premium-card($with-gradient-bar: true, $with-hover: true) {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  padding: clamp(1.5rem, 3vw, 2rem);
+  box-shadow: var(--shadow-2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+
+  @if $with-gradient-bar {
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: var(--gradient-blue);
+      z-index: 1;
+    }
+  }
+
+  @if $with-hover {
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-3);
+    }
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 2. PREMIUM BUTTON MIXIN
+// ----------------------------------------------------------------------------
+// Creates premium button styles with variants
+//
+// @param {string} $variant - Button variant: 'primary', 'secondary', 'outline'
+//
+// Usage:
+//   .btn-primary { @include premium-button('primary'); }
+//   .btn-outline { @include premium-button('outline'); }
+// ----------------------------------------------------------------------------
+@mixin premium-button($variant: 'primary') {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.25rem;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: var(--radius-sm);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+
+  @if $variant == 'primary' {
+    background: var(--gradient-blue);
+    color: #ffffff !important;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  @else if $variant == 'secondary' {
+    background: var(--blue-50);
+    color: var(--blue-700) !important;
+
+    &:hover:not(:disabled) {
+      background: var(--blue-100);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  @else if $variant == 'outline' {
+    background: transparent;
+    color: var(--blue-600) !important;
+    border: 2px solid var(--blue-600);
+
+    &:hover:not(:disabled) {
+      background: var(--blue-50);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 3. GLASSMORPHISM MIXIN
+// ----------------------------------------------------------------------------
+// Creates glass-morphism effect with backdrop blur
+//
+// @param {number} $blur - Blur amount (default: 10px)
+// @param {number} $opacity - Background opacity (default: 0.9)
+//
+// Usage:
+//   .glass-card { @include glassmorphism(); }
+//   .glass-card { @include glassmorphism(20px, 0.95); }
+// ----------------------------------------------------------------------------
+@mixin glassmorphism($blur: 10px, $opacity: 0.9) {
+  backdrop-filter: blur($blur);
+  -webkit-backdrop-filter: blur($blur);
+  background: rgba(255, 255, 255, $opacity);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
+
+// ----------------------------------------------------------------------------
+// 4. SCROLL REVEAL MIXIN
+// ----------------------------------------------------------------------------
+// Adds scroll reveal animation (fade-in from bottom)
+//
+// @param {number} $delay - Animation delay (default: 0ms)
+// @param {number} $distance - translateY distance (default: 30px)
+//
+// Usage:
+//   .reveal { @include scroll-reveal(); }
+//   .reveal { @include scroll-reveal(100ms, 50px); }
+//
+// Note: Requires JS to add 'revealed' class on scroll
+// ----------------------------------------------------------------------------
+@mixin scroll-reveal($delay: 0ms, $distance: 30px) {
+  opacity: 0;
+  transform: translateY($distance);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1) $delay;
+
+  &.revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 5. GRADIENT TEXT MIXIN
+// ----------------------------------------------------------------------------
+// Applies gradient to text using background-clip
+//
+// @param {gradient} $gradient - Gradient value (default: var(--gradient-blue))
+//
+// Usage:
+//   .gradient-title { @include gradient-text(); }
+//   .custom-gradient { @include gradient-text(linear-gradient(45deg, red, blue)); }
+// ----------------------------------------------------------------------------
+@mixin gradient-text($gradient: var(--gradient-blue)) {
+  background: $gradient;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
+}
+
+// ----------------------------------------------------------------------------
+// 6. PREMIUM BADGE MIXIN
+// ----------------------------------------------------------------------------
+// Creates premium badge/chip styling
+//
+// @param {color} $bg-color - Background color (default: var(--blue-50))
+// @param {color} $text-color - Text color (default: var(--blue-700))
+//
+// Usage:
+//   .badge { @include premium-badge(); }
+//   .badge-success { @include premium-badge(#dcfce7, #16a34a); }
+// ----------------------------------------------------------------------------
+@mixin premium-badge($bg-color: var(--blue-50), $text-color: var(--blue-700)) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.875rem;
+  background: $bg-color;
+  border-radius: 999px;
+  color: $text-color;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+// ----------------------------------------------------------------------------
+// 7. GRADIENT BORDER MIXIN
+// ----------------------------------------------------------------------------
+// Creates gradient border effect using pseudo-element
+//
+// @param {gradient} $gradient - Border gradient (default: var(--gradient-blue))
+// @param {number} $border-width - Border width (default: 2px)
+//
+// Usage:
+//   .card { @include gradient-border(); }
+//   .card { @include gradient-border(linear-gradient(45deg, red, blue), 3px); }
+// ----------------------------------------------------------------------------
+@mixin gradient-border($gradient: var(--gradient-blue), $border-width: 2px) {
+  position: relative;
+  background: #ffffff;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: $border-width;
+    background: $gradient;
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 8. PREMIUM PAGE BACKGROUND MIXIN
+// ----------------------------------------------------------------------------
+// Creates consistent premium background with gradient and radial overlays
+//
+// @param {boolean} $with-overlay - Add radial gradient overlays (default: true)
+//
+// Usage:
+//   :host { @include premium-page-background(); }
+// ----------------------------------------------------------------------------
+@mixin premium-page-background($with-overlay: true) {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%);
+  min-height: 100vh;
+  position: relative;
+
+  @if $with-overlay {
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(147, 197, 253, 0.15) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 9. INFO ITEM MIXIN (Label + Value pair)
+// ----------------------------------------------------------------------------
+// Creates consistent label/value styling for info displays
+//
+// Usage:
+//   .info-item { @include info-item(); }
+// ----------------------------------------------------------------------------
+@mixin info-item() {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+
+  &__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    line-height: 1;
+  }
+
+  &__value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.4;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 10. HOVER LIFT ANIMATION MIXIN
+// ----------------------------------------------------------------------------
+// Simple hover lift effect with shadow enhancement
+//
+// @param {number} $lift - translateY distance (default: -4px)
+//
+// Usage:
+//   .card { @include hover-lift(); }
+//   .card { @include hover-lift(-8px); }
+// ----------------------------------------------------------------------------
+@mixin hover-lift($lift: -4px) {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    transform: translateY($lift);
+    box-shadow: var(--shadow-3);
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 11. RESPONSIVE GRID MIXIN
+// ----------------------------------------------------------------------------
+// Creates responsive grid with auto-fit columns
+//
+// @param {size} $min-width - Minimum column width (default: 280px)
+// @param {size} $gap - Grid gap (default: 1.5rem)
+//
+// Usage:
+//   .grid { @include responsive-grid(); }
+//   .grid { @include responsive-grid(320px, 2rem); }
+// ----------------------------------------------------------------------------
+@mixin responsive-grid($min-width: 280px, $gap: 1.5rem) {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax($min-width, 1fr));
+  gap: $gap;
+}
+
+// ----------------------------------------------------------------------------
+// 12. SMOOTH REVEAL ANIMATION (Keyframes)
+// ----------------------------------------------------------------------------
+// Fade-in and slide-up animation
+// ----------------------------------------------------------------------------
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+// ----------------------------------------------------------------------------
+// END OF MIXINS
+// ----------------------------------------------------------------------------

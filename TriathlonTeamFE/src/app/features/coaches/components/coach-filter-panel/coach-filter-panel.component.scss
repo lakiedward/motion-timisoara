@@ -1,0 +1,307 @@
+// ============================================
+// COACH FILTER PANEL - UI Guidelines Applied
+// Variabilele sunt definite global în styles.css
+// ============================================
+
+:host {
+  display: block;
+}
+
+@media (max-width: 480px) {
+  .filter-panel {
+    padding: 1.25rem 1rem;
+  }
+}
+
+.filter-panel {
+  display: grid;
+  gap: 1.75rem;
+  padding: clamp(1.75rem, 4vw, 2.5rem);
+  
+  // Glassmorphism - UI Guidelines
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: var(--radius-card); // 24px
+  box-shadow: var(--shadow-card); // UI Guidelines
+  border: 1px solid var(--color-border-subtle);
+  
+  position: sticky;
+  top: 90px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+  box-sizing: border-box;
+
+  &:hover {
+    box-shadow: var(--shadow-card-hover); // UI Guidelines
+    transform: translateY(-2px);
+    border-color: rgba(37, 99, 235, 0.1);
+  }
+}
+
+// ============================================
+// HEADER - Titlu și descriere
+// ============================================
+.filter-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--color-border-default);
+  margin-bottom: 0.5rem;
+  
+  &__icon {
+    font-size: 2rem;
+    line-height: 1;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    padding: 0.75rem;
+    border-radius: 16px;
+    flex-shrink: 0;
+  }
+  
+  &__text {
+    flex: 1;
+  }
+  
+  &__title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--sport-text-dark);
+    margin: 0 0 0.25rem;
+    line-height: 1.3;
+  }
+  
+  &__subtitle {
+    font-size: 0.875rem;
+    color: var(--sport-text-muted);
+    margin: 0;
+    line-height: 1.4;
+  }
+}
+
+// ============================================
+// FILTER ROWS
+// ============================================
+.filter-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-label-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-label-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.filter-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--sport-text-dark);
+  margin: 0;
+}
+
+.filter-hint {
+  font-size: 0.8rem;
+  color: var(--sport-text-muted);
+  margin: 0 0 0.25rem;
+  font-style: italic;
+}
+
+.chip-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+// ============================================
+// FILTER STATUS - Număr filtre active
+// ============================================
+.filter-status {
+  display: flex;
+  justify-content: center;
+  padding-top: 0.5rem;
+  
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    color: #166534;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: var(--radius-btn);
+    border: 1px solid #86efac;
+    
+    &::before {
+      content: '✓';
+      font-size: 0.9rem;
+    }
+  }
+}
+
+.chip {
+  padding: 0.625rem 1.125rem;
+  border-radius: var(--radius-btn); // 50px pill - UI Guidelines
+  border: 2px solid #dbeafe;
+  background: linear-gradient(135deg, #eff6ff 0%, rgba(255, 255, 255, 0.9) 100%);
+  color: var(--sport-primary);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+    border-color: var(--sport-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+  }
+  
+  // Focus state - UI Guidelines Accessibility
+  &:focus {
+    outline: 2px solid var(--sport-primary);
+    outline-offset: 2px;
+  }
+  
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &.active {
+    background: var(--gradient-primary); // UI Guidelines
+    border-color: transparent;
+    color: var(--color-text-on-primary);
+    box-shadow: var(--shadow-btn); // UI Guidelines
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    }
+  }
+}
+
+select {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px; // UI Guidelines small elements
+  background: var(--sport-bg-light);
+  color: var(--sport-text-dark);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+
+  &:hover {
+    border-color: var(--sport-primary);
+    background: var(--sport-bg-white);
+  }
+
+  &:focus {
+    outline: 2px solid var(--sport-primary); // UI Guidelines
+    outline-offset: 2px;
+    border-color: var(--sport-primary);
+  }
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: stretch;
+  margin-top: 0.5rem;
+}
+
+.reset {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.75rem;
+  border-radius: var(--radius-btn);
+  border: 2px solid #e2e8f0;
+  background: var(--sport-bg-light);
+  color: var(--sport-text-muted);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &__icon {
+    font-size: 1.1rem;
+    transition: transform 0.3s ease;
+  }
+
+  &:hover:not(:disabled) {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+    
+    .reset__icon {
+      transform: rotate(-180deg);
+    }
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  
+  &:focus {
+    outline: 2px solid var(--sport-primary);
+    outline-offset: 2px;
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f8fafc;
+    border-color: #e2e8f0;
+  }
+}
+
+@media (max-width: 1024px) {
+  .filter-panel {
+    position: relative;
+    top: 0;
+    max-height: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+    
+    &__icon {
+      margin: 0 auto;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-panel {
+    padding: 1.5rem 1.25rem;
+    gap: 1.25rem;
+  }
+
+  .chip {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.85rem;
+  }
+
+  select {
+    font-size: 0.85rem;
+  }
+}
+

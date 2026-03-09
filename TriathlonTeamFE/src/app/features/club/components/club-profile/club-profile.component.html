@@ -1,0 +1,171 @@
+<section class="club-profile-page">
+  <!-- Hero Section -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--club">Club</span>
+      <h1 class="hero-title">Profil & <span>Setări</span></h1>
+      <p class="hero-subtitle">Editează detaliile publice, datele de contact și informațiile de facturare.</p>
+    </div>
+    <button class="back-btn" type="button" (click)="onCancel()">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Înapoi</span>
+    </button>
+  </header>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="isLoading()">
+    <div class="loading-spinner"></div>
+    <p>Se încarcă profilul...</p>
+  </div>
+
+  <div class="page-layout" *ngIf="!isLoading()">
+    <form [formGroup]="form" (ngSubmit)="save()" class="main-content">
+      <!-- Public Info -->
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <mat-icon>public</mat-icon>
+              Date publice
+            </h2>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <mat-form-field appearance="fill" class="full-width">
+            <mat-label>Nume club</mat-label>
+            <input matInput formControlName="name" required />
+            <mat-error *ngIf="form.get('name')?.hasError('required')">Numele este obligatoriu</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" class="full-width">
+            <mat-label>Descriere</mat-label>
+            <textarea matInput formControlName="description" rows="3"></textarea>
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" class="full-width">
+            <mat-label>Website</mat-label>
+            <input matInput formControlName="website" placeholder="https://..." />
+          </mat-form-field>
+        </div>
+      </section>
+
+      <!-- Contact -->
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <mat-icon>call</mat-icon>
+              Contact
+            </h2>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <mat-form-field appearance="fill">
+            <mat-label>Email</mat-label>
+            <input matInput formControlName="email" type="email" />
+            <mat-error *ngIf="form.get('email')?.hasError('email')">Email invalid</mat-error>
+          </mat-form-field>
+
+          <div class="toggle-field">
+            <mat-slide-toggle formControlName="publicEmailConsent" color="primary" aria-describedby="publicEmailConsentHint">
+              Afișează email-ul public
+            </mat-slide-toggle>
+            <p class="field-hint" id="publicEmailConsentHint">Dacă activezi această opțiune, adresa de email va fi vizibilă pentru toți vizitatorii pe pagina clubului.</p>
+          </div>
+
+          <!-- Privacy Notice / Withdrawal -->
+          <div class="privacy-notice" *ngIf="form.get('publicEmailConsent')?.value">
+            <div class="privacy-content">
+              <mat-icon class="privacy-icon">info</mat-icon>
+              <div>
+                <strong>Notificare de Confidențialitate</strong>
+                <p class="small-text">
+                  Consimțământul dumneavoastră pentru afișarea publică a adresei de email este înregistrat pentru audit.
+                  Puteți retrage acest consimțământ în orice moment apăsând butonul de mai jos sau dezactivând opțiunea de mai sus și salvând.
+                </p>
+              </div>
+            </div>
+            <button type="button" mat-stroked-button color="warn" (click)="withdrawConsent()" [disabled]="form.dirty || isSaving()">
+              <mat-icon>unpublished</mat-icon>
+              Retrage Consimțământul (GDPR)
+            </button>
+          </div>
+
+          <mat-form-field appearance="fill">
+            <mat-label>Telefon</mat-label>
+            <input matInput formControlName="phone" />
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" class="full-width">
+            <mat-label>Adresă</mat-label>
+            <input matInput formControlName="address" />
+          </mat-form-field>
+
+          <mat-form-field appearance="fill">
+            <mat-label>Oraș</mat-label>
+            <input matInput formControlName="city" />
+          </mat-form-field>
+        </div>
+      </section>
+
+      <!-- Billing -->
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <mat-icon>receipt_long</mat-icon>
+              Date facturare
+            </h2>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <mat-form-field appearance="fill" class="full-width">
+            <mat-label>Nume companie (Fiscal)</mat-label>
+            <input matInput formControlName="companyName" />
+          </mat-form-field>
+
+          <mat-form-field appearance="fill">
+            <mat-label>CUI / CIF</mat-label>
+            <input matInput formControlName="companyCui" />
+          </mat-form-field>
+
+          <mat-form-field appearance="fill">
+            <mat-label>Nr. Reg. Com.</mat-label>
+            <input matInput formControlName="companyRegNumber" />
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" class="full-width">
+            <mat-label>Adresă companie</mat-label>
+            <textarea matInput formControlName="companyAddress" rows="2"></textarea>
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" class="full-width">
+            <mat-label>Cont IBAN</mat-label>
+            <input matInput formControlName="bankAccount" />
+          </mat-form-field>
+
+          <mat-form-field appearance="fill">
+            <mat-label>Banca</mat-label>
+            <input matInput formControlName="bankName" />
+          </mat-form-field>
+        </div>
+      </section>
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" (click)="onCancel()" [disabled]="isSaving()">
+          Anulează
+        </button>
+        <button type="submit" class="btn-primary" [disabled]="form.invalid || isSaving() || form.pristine">
+          <mat-icon>save</mat-icon>
+          {{ isSaving() ? 'Se salvează...' : 'Salvează' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</section>
+
+

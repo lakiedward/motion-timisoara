@@ -1,0 +1,531 @@
+// ============================================================================
+// COURSE ANNOUNCEMENTS - Following UIGuidelines
+// ============================================================================
+// NO LOCAL VARIABLES - All styling via :root CSS custom properties
+// ============================================================================
+
+:host {
+  display: block;
+  font-family: var(--font-primary);
+}
+
+.course-announcements {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+// ============================================================================
+// MAIN CONTAINER
+// ============================================================================
+.announcements-container {
+  background: var(--sport-bg-white);
+  border-radius: var(--radius-card);
+  padding: 2rem;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
+// ============================================================================
+// SECTION HEADER - UIGuidelines Style
+// ============================================================================
+.section-header {
+  margin-bottom: 1.5rem;
+
+  &--left {
+    text-align: left;
+  }
+
+  &__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-primary);
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--sport-accent-dark);
+    background: rgba(245, 158, 11, 0.1);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    margin-bottom: 0.75rem;
+  }
+
+  &__title {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--sport-text-dark);
+    margin: 0;
+
+    span {
+      color: var(--sport-primary);
+    }
+  }
+
+  &__subtitle {
+    font-family: var(--font-primary);
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--sport-text-muted);
+    margin: 0.5rem 0 0;
+  }
+}
+
+// ============================================================================
+// BADGE NEW
+// ============================================================================
+.badge-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  background: var(--sport-accent);
+  color: var(--color-text-on-primary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 100px;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+  margin-left: 0.5rem;
+}
+
+// ============================================================================
+// CONTENT BODY
+// ============================================================================
+.announcements-body {
+  padding: 0;
+  margin-top: 1rem;
+}
+
+// ============================================================================
+// TEASER (Locked state)
+// ============================================================================
+.teaser-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: var(--sport-bg-light);
+  border: 2px dashed rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  .teaser-icon {
+    width: 52px;
+    height: 52px;
+    background: var(--gradient-primary);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-btn);
+
+    mat-icon {
+      font-size: 1.5rem;
+      width: 1.5rem;
+      height: 1.5rem;
+      color: var(--color-text-on-primary);
+    }
+  }
+
+  .teaser-content {
+    h3 {
+      margin: 0 0 0.25rem;
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--sport-text-dark);
+    }
+
+    p {
+      margin: 0;
+      font-family: var(--font-primary);
+      font-size: 0.875rem;
+      color: var(--sport-text-muted);
+      line-height: 1.5;
+    }
+  }
+}
+
+// ============================================================================
+// STATE MESSAGES
+// ============================================================================
+.state-message {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  font-family: var(--font-primary);
+
+  mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  span {
+    font-size: 0.875rem;
+  }
+
+  &.loading {
+    background: rgba(37, 99, 235, 0.05);
+    color: var(--sport-primary);
+  }
+
+  &.error {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+
+  &.empty {
+    flex-direction: column;
+    text-align: center;
+    padding: 2rem;
+    background: var(--sport-bg-light);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    border-radius: 16px;
+
+    mat-icon {
+      font-size: 2.5rem;
+      width: 2.5rem;
+      height: 2.5rem;
+      color: var(--sport-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      margin: 0;
+      color: var(--sport-text-muted);
+    }
+  }
+}
+
+// ============================================================================
+// FEED
+// ============================================================================
+.announcements-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+// ============================================================================
+// ANNOUNCEMENT CARD
+// ============================================================================
+.announcement-card {
+  background: var(--sport-bg-white);
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    border-color: var(--sport-primary);
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+  }
+
+  // Pinned card accent
+  &.is-pinned {
+    border-color: var(--sport-accent);
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.15);
+
+    .card-header {
+      background: rgba(245, 158, 11, 0.08);
+    }
+  }
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: var(--sport-bg-light);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.author-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.author-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-on-primary);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.author-details {
+  .author-name {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--sport-text-dark);
+  }
+
+  .author-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem;
+    font-family: var(--font-primary);
+    font-size: 0.75rem;
+    color: var(--sport-text-muted);
+    margin-top: 0.125rem;
+
+    .role-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.125rem 0.5rem;
+      background: rgba(37, 99, 235, 0.1);
+      color: var(--sport-primary);
+      font-weight: 600;
+      font-size: 0.625rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-radius: 100px;
+    }
+
+    .dot {
+      color: rgba(0, 0, 0, 0.1);
+    }
+  }
+}
+
+.pin-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.75rem;
+  background: rgba(245, 158, 11, 0.15);
+  border-radius: 100px;
+
+  mat-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+    color: var(--sport-accent);
+  }
+
+  span {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--sport-accent-dark);
+    text-transform: uppercase;
+  }
+}
+
+// ============================================================================
+// CARD CONTENT
+// ============================================================================
+.card-content {
+  padding: 1.25rem;
+
+  .content-text {
+    margin: 0;
+    font-family: var(--font-primary);
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    color: var(--sport-text-dark);
+    white-space: pre-wrap;
+  }
+}
+
+// ============================================================================
+// ATTACHMENTS
+// ============================================================================
+.card-attachments {
+  padding: 0 1.25rem 1.25rem;
+}
+
+.images-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+
+  img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid transparent;
+
+    &:hover {
+      transform: scale(1.02);
+      border-color: var(--sport-accent);
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+    }
+  }
+}
+
+.videos-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+
+  video {
+    width: 100%;
+    border-radius: 12px;
+    background: var(--sport-text-dark);
+  }
+
+  app-video-embed {
+    border-radius: 12px;
+    overflow: hidden;
+  }
+}
+
+// ============================================================================
+// INFINITE SCROLL ANCHOR
+// ============================================================================
+.infinite-anchor {
+  height: 1px;
+}
+
+// ============================================================================
+// RESPONSIVE - TABLET
+// ============================================================================
+@media (min-width: 768px) {
+  .images-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+
+    img {
+      height: 180px;
+    }
+  }
+
+  .card-header {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .card-content {
+    padding: 1.5rem;
+  }
+
+  .card-attachments {
+    padding: 0 1.5rem 1.5rem;
+  }
+}
+
+// ============================================================================
+// RESPONSIVE - MOBILE
+// ============================================================================
+@media (max-width: 640px) {
+  .announcements-container {
+    border-radius: 16px;
+    padding: 1.25rem;
+  }
+
+  // Section header adjustments for mobile
+  .section-header {
+    margin-bottom: 1rem;
+
+    &__eyebrow {
+      font-size: 0.75rem;
+      padding: 0.375rem 0.75rem;
+    }
+
+    &__title {
+      font-size: 1.25rem;
+    }
+
+    &__subtitle {
+      font-size: 0.875rem;
+    }
+  }
+
+  .teaser-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 1.5rem 1rem;
+
+    .teaser-icon {
+      width: 56px;
+      height: 56px;
+    }
+  }
+
+  .announcement-card {
+    border-radius: 14px;
+  }
+
+  .card-header {
+    padding: 0.875rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .author-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+
+  .author-details {
+    .author-name {
+      font-size: 0.875rem;
+    }
+
+    .author-meta {
+      font-size: 0.6875rem;
+    }
+  }
+
+  .pin-indicator {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 0.25rem;
+  }
+
+  .card-content {
+    padding: 1rem;
+
+    .content-text {
+      font-size: 0.875rem;
+    }
+  }
+
+  .card-attachments {
+    padding: 0 1rem 1rem;
+  }
+
+  .images-grid {
+    grid-template-columns: 1fr;
+    gap: 0.625rem;
+
+    img {
+      height: 180px;
+      border-radius: 10px;
+    }
+  }
+}

@@ -1,0 +1,136 @@
+<div class="activities-page">
+  <!-- Hero Section - Light & Clean (matches Tabere/Cursuri) -->
+  <section class="activities-hero">
+    <div class="activities-hero__container">
+      <span class="activities-hero__badge">Activități</span>
+      <h1 class="activities-hero__title">
+        Evenimente <span>Memorabile</span>
+      </h1>
+      <p class="activities-hero__subtitle">
+        Workshop-uri sportive, competiții și experiențe unice pentru copii pasionați de mișcare
+      </p>
+      
+      <!-- Quick Features -->
+      <div class="activities-hero__features">
+        <div class="feature-pill">
+          <mat-icon>event</mat-icon>
+          <span>Evenimente unice</span>
+        </div>
+        <div class="feature-pill">
+          <mat-icon>emoji_events</mat-icon>
+          <span>Competiții prietenoase</span>
+        </div>
+        <div class="feature-pill">
+          <mat-icon>diversity_3</mat-icon>
+          <span>Experiențe de grup</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Activities List -->
+  <section class="activities-content">
+    <div class="container">
+      @if (isLoading()) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Se încarcă activitățile...</p>
+        </div>
+      }
+
+      @if (hasError() && !isLoading()) {
+        <div class="empty-state">
+          <mat-icon>cloud_off</mat-icon>
+          <h3>Nu am putut încărca activitățile</h3>
+          <p>Încearcă să reîmprospătezi pagina mai târziu.</p>
+          <button class="btn-primary" (click)="loadActivities()">Reîncearcă</button>
+        </div>
+      }
+
+      @if (!isLoading() && !hasError() && activities().length === 0) {
+        <div class="empty-state">
+          <mat-icon>event_busy</mat-icon>
+          <h3>Nicio activitate programată</h3>
+          <p>Momentan nu avem activități programate. Revino în curând pentru noi evenimente!</p>
+          <a routerLink="/cursuri" class="btn-secondary">Vezi Cursurile</a>
+        </div>
+      }
+
+      @if (!isLoading() && !hasError() && activities().length > 0) {
+        <div class="activities-grid">
+          @for (activity of activities(); track activity.id) {
+            <article class="activity-card" [class.activity-card--past]="isPast(activity)" (click)="viewDetails(activity.id)">
+              <!-- Image -->
+              <div class="card-image">
+                @if (getHeroPhotoUrl(activity)) {
+                  <img [src]="getHeroPhotoUrl(activity)" [alt]="activity.name" loading="lazy">
+                } @else {
+                  <div class="placeholder-image">
+                    <span>🎯</span>
+                  </div>
+                }
+                <div class="sport-badge">{{ activity.sport.name }}</div>
+                @if (isPast(activity)) {
+                  <div class="past-badge">Încheiată</div>
+                }
+              </div>
+
+              <!-- Content -->
+              <div class="card-content">
+                <h3 class="activity-name">{{ activity.name }}</h3>
+                
+                <div class="activity-meta">
+                  <div class="meta-item">
+                    <mat-icon>event</mat-icon>
+                    <span>{{ formatDate(activity.activityDate) }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <mat-icon>schedule</mat-icon>
+                    <span>{{ formatTime(activity.startTime) }} - {{ formatTime(activity.endTime) }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <mat-icon>location_on</mat-icon>
+                    <span>{{ activity.location }}</span>
+                  </div>
+                </div>
+
+                <div class="card-footer">
+                  <div class="price">
+                    <span class="amount">{{ (activity.price / 100) | number:'1.0-0' }}</span>
+                    <span class="currency">{{ activity.currency }}</span>
+                  </div>
+                  
+                  <div class="spots">
+                    @if (isPast(activity)) {
+                      <span class="spots-past">Încheiată</span>
+                    } @else if (activity.capacity) {
+                      @if (activity.spotsLeft === 0) {
+                        <span class="spots-full">Sold Out</span>
+                      } @else if (activity.spotsLeft && activity.spotsLeft <= 5) {
+                        <span class="spots-limited">Ultimele {{ activity.spotsLeft }} locuri</span>
+                      } @else {
+                        <span class="spots-available">{{ activity.spotsLeft }} locuri</span>
+                      }
+                    }
+                  </div>
+                </div>
+
+                <div class="card-actions">
+                  <button class="btn-outline" (click)="viewDetails(activity.id); $event.stopPropagation()">
+                    Detalii
+                  </button>
+                  <button 
+                    class="btn-primary" 
+                    (click)="enroll(activity.id); $event.stopPropagation()"
+                    [disabled]="activity.spotsLeft === 0 || isPast(activity)">
+                    {{ isPast(activity) ? 'Încheiată' : activity.spotsLeft === 0 ? 'Sold Out' : 'Înscrie-te' }}
+                  </button>
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </div>
+  </section>
+</div>

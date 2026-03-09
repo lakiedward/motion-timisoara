@@ -1,0 +1,1 @@
+security scan: review BE/FE configs, auth, uploads, CORS, headers, secrets; summarize findings and recommendations.

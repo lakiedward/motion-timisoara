@@ -1,0 +1,304 @@
+<div class="course-detail-page">
+  <!-- Back Button -->
+  <div class="back-nav">
+    <button class="back-btn" routerLink="/cursuri">
+      <span class="back-icon">←</span>
+      Înapoi la cursuri
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <ng-container *ngIf="isLoading()">
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Se încarcă...</p>
+    </div>
+  </ng-container>
+
+  <!-- Error State -->
+  <ng-container *ngIf="hasError() && !isLoading()">
+    <div class="error-state">
+      <span class="error-icon">⚠️</span>
+      <h3>Cursul nu a fost găsit</h3>
+      <p>Cursul căutat nu există sau nu mai este disponibil.</p>
+      <button class="btn-primary" routerLink="/cursuri">Înapoi la cursuri</button>
+    </div>
+  </ng-container>
+
+  <!-- Course Content -->
+  <ng-container *ngIf="!isLoading() && !hasError() && course() as course">
+    <div class="course-layout">
+      <!-- Hero Section -->
+      <section class="hero-section">
+        <div class="hero-image">
+          <ng-container *ngIf="resolvedHeroPhotoUrl(); else placeholderHero">
+            <img [src]="resolvedHeroPhotoUrl()" [alt]="course.name">
+          </ng-container>
+          <ng-template #placeholderHero>
+            <div class="placeholder-hero">
+              <span>📚</span>
+            </div>
+          </ng-template>
+          <div class="hero-overlay"></div>
+        </div>
+        <div class="hero-content">
+          <span class="sport-badge">{{ sportLabel(course.sport) }}</span>
+          <h1>{{ course.name }}</h1>
+        </div>
+      </section>
+
+      <!-- Main Content Grid -->
+      <div class="content-grid">
+        <!-- Left Column - Details -->
+        <div class="main-content">
+          <!-- Key Info Cards -->
+          <div class="info-cards">
+            <div class="info-card">
+              <span class="info-icon">🎯</span>
+              <div class="info-text">
+                <span class="info-label">Nivel</span>
+                <span class="info-value">{{ levelLabel(course.level) }}</span>
+              </div>
+            </div>
+            
+            <div class="info-card">
+              <span class="info-icon">👶</span>
+              <div class="info-text">
+                <span class="info-label">Vârstă</span>
+                <span class="info-value">{{ ageRange(course) }}</span>
+              </div>
+            </div>
+            
+            <div class="info-card" *ngIf="course.location as location">
+              <span class="info-icon">📍</span>
+              <div class="info-text">
+                <span class="info-label">Locație</span>
+                <span class="info-value">{{ location.name }}</span>
+              </div>
+            </div>
+            
+            <div class="info-card info-card--capacity" *ngIf="capacityInfo() as capacity">
+              <span class="info-icon">👥</span>
+              <div class="info-text">
+                <span class="info-label">Capacitate</span>
+                <span class="info-value">
+                  <ng-container *ngIf="capacity.capacity != null">
+                    {{ capacity.capacity }} locuri
+                  </ng-container>
+                  <ng-container *ngIf="capacity.available != null">
+                    <span class="info-subvalue">({{ capacity.available }} disponibile)</span>
+                  </ng-container>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Week Calendar / Schedule -->
+          <section class="schedule-section" *ngIf="course.occurrences?.length">
+            <div class="section-header section-header--left">
+              <span class="section-header__eyebrow">📅 PROGRAM</span>
+              <h2 class="section-header__title">Program <span>săptămânal</span></h2>
+            </div>
+            <div class="section-body">
+              <app-week-calendar 
+                [occurrences]="course.occurrences"
+                [courseId]="course.id"
+              ></app-week-calendar>
+            </div>
+          </section>
+
+          <!-- Description -->
+          <section class="description-section" *ngIf="course.description">
+            <div class="section-header section-header--left">
+              <span class="section-header__eyebrow">ℹ️ DETALII</span>
+              <h2 class="section-header__title">Despre acest <span>curs</span></h2>
+            </div>
+            <div class="section-body">
+              <p>{{ course.description }}</p>
+            </div>
+          </section>
+
+          <!-- What We Learn -->
+          <section class="learn-section" *ngIf="course.whatWeLearn?.length">
+            <div class="section-header section-header--left">
+              <span class="section-header__eyebrow">🎓 CURRICULUM</span>
+              <h2 class="section-header__title">Ce <span>învățăm</span></h2>
+            </div>
+            <div class="section-body">
+              <ul class="learn-list">
+                <li *ngFor="let item of course.whatWeLearn">
+                  <span class="check-icon">✓</span>
+                  {{ item }}
+                </li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- Course Gallery -->
+          <section class="gallery-section" *ngIf="course.gallery?.length || course.heroPhotoUrl">
+            <div class="section-header section-header--left">
+              <span class="section-header__eyebrow">📸 GALERIE</span>
+              <h2 class="section-header__title">Galerie <span>foto</span></h2>
+            </div>
+            <div class="section-body">
+              <app-course-gallery 
+                [gallery]="course.gallery || []"
+                [heroPhotoUrl]="course.heroPhotoUrl"
+                [courseName]="course.name"
+              ></app-course-gallery>
+            </div>
+          </section>
+
+          <!-- Course Announcements -->
+          <app-course-announcements 
+            [courseId]="course.id" 
+            [courseName]="course.name">
+          </app-course-announcements>
+
+          <!-- Coach Section -->
+          <section class="coach-section" *ngIf="course.coach as coach">
+            <div class="section-header section-header--left">
+              <span class="section-header__eyebrow">👨‍🏫 INSTRUCTOR</span>
+              <h2 class="section-header__title">Antrenorul <span>tău</span></h2>
+            </div>
+            <div class="section-body">
+              <a class="coach-card" [routerLink]="['/antrenori', coach.id]">
+                <div class="coach-avatar">
+                  <ng-container *ngIf="resolvedCoachAvatarUrl(); else coachPlaceholder">
+                    <img [src]="resolvedCoachAvatarUrl()" [alt]="coach.name">
+                  </ng-container>
+                  <ng-template #coachPlaceholder>
+                    <span class="avatar-placeholder">{{ coach.name.charAt(0) }}</span>
+                  </ng-template>
+                </div>
+                <div class="coach-info">
+                  <h3>{{ coach.name }}</h3>
+                  <span class="coach-role">Antrenor {{ sportLabel(course.sport) }}</span>
+                </div>
+                <div class="coach-arrow">
+                  <span>→</span>
+                </div>
+              </a>
+            </div>
+          </section>
+
+          <!-- Location Map -->
+          <section class="location-section" *ngIf="course.location">
+            <div class="section-header section-header--left">
+              <span class="section-header__eyebrow">📍 LOCAȚIE</span>
+              <h2 class="section-header__title">Unde ne <span>întâlnim</span></h2>
+            </div>
+            <div class="section-body">
+              <app-location-map [location]="course.location"></app-location-map>
+            </div>
+          </section>
+        </div>
+
+        <!-- Right Column - Booking Card -->
+        <aside class="sidebar">
+          <div class="booking-card">
+            <!-- Section Header - UIGuidelines -->
+            <div class="section-header section-header--center">
+              <span class="section-header__eyebrow">🛒 ÎNSCRIERE</span>
+              <h2 class="section-header__title">Rezervă-ți <span>locul</span></h2>
+            </div>
+            <div class="booking-body">
+              <div class="price-section">
+                <span class="price-label">Preț per ședință</span>
+                <div class="price">
+                  <span class="amount">{{ (course.pricePerSession / 100) | number:'1.0-0' }}</span>
+                  <span class="currency">{{ course.currency }}</span>
+                </div>
+              </div>
+
+              <!-- Rating Section -->
+              <div class="rating-section" *ngIf="course.averageRating && course.totalRatings">
+                <div class="rating-stars">
+                  <app-star-rating 
+                    [rating]="course.averageRating" 
+                    [readonly]="true" 
+                    size="medium">
+                  </app-star-rating>
+                </div>
+                <div class="rating-info">
+                  <span class="rating-value">{{ course.averageRating | number:'1.1-1' }}</span>
+                  <span class="rating-count">({{ course.totalRatings }} review-uri)</span>
+                </div>
+              </div>
+
+              <!-- Spots Section -->
+              <div class="spots-section" *ngIf="capacityInfo() as capacity">
+                <div class="spots-info">
+                  <span class="spots-label">Locuri disponibile</span>
+                  <ng-container *ngIf="capacity.available === 0">
+                    <span class="spots-value sold-out">Sold Out</span>
+                  </ng-container>
+                  <ng-container *ngIf="capacity.available != null && capacity.available > 0 && capacity.available <= 5">
+                    <span class="spots-value limited">Ultimele {{ capacity.available }} locuri!</span>
+                  </ng-container>
+                  <ng-container *ngIf="capacity.available != null && capacity.available > 5">
+                    <span class="spots-value">{{ capacity.available }} din {{ capacity.capacity }}</span>
+                  </ng-container>
+                  <ng-container *ngIf="capacity.available == null && capacity.capacity != null">
+                    <span class="spots-value">{{ capacity.capacity }} locuri</span>
+                  </ng-container>
+                </div>
+                <div class="progress-bar" *ngIf="capacity.capacity && capacity.available != null">
+                  <div class="progress-fill" [style.width.%]="((capacity.capacity - capacity.available) / capacity.capacity) * 100"></div>
+                </div>
+              </div>
+
+              <button 
+                class="enroll-btn" 
+                (click)="onEnroll()">
+                <span>Înscrie-te acum</span>
+                <span class="btn-icon">→</span>
+              </button>
+
+              <button 
+                *ngIf="canRate"
+                class="rate-btn" 
+                (click)="onRateCourse()">
+                <span class="rate-icon">⭐</span>
+                {{ ratingButtonText }}
+              </button>
+
+              <div class="guarantee">
+                <span class="guarantee-icon">✓</span>
+                <span>Confirmare instantă</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- Mobile Fixed Bottom CTA -->
+      <div class="info-card--action-mobile">
+        <!-- Limited spots indicator -->
+        <span 
+          *ngIf="capacityInfo() as capacity"
+          class="mobile-spots"
+          [class.sold-out]="capacity.available === 0">
+          <ng-container *ngIf="capacity.available === 0">Sold Out</ng-container>
+          <ng-container *ngIf="capacity.available != null && capacity.available > 0 && capacity.available <= 5">
+            Ultimele {{ capacity.available }} locuri
+          </ng-container>
+        </span>
+        
+        <div class="mobile-price">
+          <span class="price-amount">{{ (course.pricePerSession / 100) | number:'1.0-0' }}</span>
+          <span class="price-currency">{{ course.currency }}</span>
+          <div class="price-per-session">per ședință</div>
+        </div>
+        
+        <button 
+          class="mobile-cta-btn" 
+          (click)="onEnroll()"
+          [disabled]="capacityInfo()?.available === 0">
+          <span>Înscrie-te</span>
+          <span class="btn-icon">→</span>
+        </button>
+      </div>
+    </div>
+  </ng-container>
+</div>

@@ -1,0 +1,2 @@
+window.STRIPE_PUBLISHABLE_KEY = 'pk_live_51SMpzG0lj0kEqgLXrA1jnHT7mjiOECq0AS1mpDfTfEhb0SQaAZOKIJtvTjjzPJlcYjHnIHniIbEyKr2Gkx04B3En004vaIFnMc';
+window.NG_APP_API_BASE_URL = 'https://api.motiontimisoara.com';

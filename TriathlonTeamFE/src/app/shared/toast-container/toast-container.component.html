@@ -1,0 +1,42 @@
+<div class="toast-container" [@staggerAnimation]>
+  <div 
+    *ngFor="let toast of toasts; trackBy: trackByToastId"
+    class="toast toast--{{ toast.type }}"
+    [@toastAnimation]
+  >
+    <div class="toast__icon">
+      <mat-icon>{{ getToastIcon(toast.type) }}</mat-icon>
+    </div>
+    
+    <div class="toast__content">
+      <div class="toast__title">{{ toast.title }}</div>
+      <div class="toast__message">{{ toast.message }}</div>
+    </div>
+    
+    <div class="toast__actions">
+      <button 
+        *ngIf="toast.action"
+        mat-button
+        class="toast__action-button"
+        (click)="onActionClick(toast)"
+      >
+        {{ toast.action.label }}
+      </button>
+      
+      <button 
+        mat-icon-button
+        class="toast__close-button"
+        (click)="remove(toast.id)"
+        aria-label="Închide notificarea"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+

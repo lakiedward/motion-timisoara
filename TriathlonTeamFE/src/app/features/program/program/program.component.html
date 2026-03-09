@@ -1,0 +1,86 @@
+﻿<div class="scroll-progress" [style.width.%]="scrollProgress"></div>
+
+<!-- Hero Section - Matching Homepage Style -->
+<section class="courses-hero">
+  <div class="courses-hero__container">
+    <span class="courses-hero__eyebrow">Programe</span>
+    <h1 class="courses-hero__title">
+      Alege-ți <span>Aventura</span>
+    </h1>
+    <p class="courses-hero__subtitle">
+      Cursuri și antrenamente adaptate pentru fiecare nivel și vârstă
+    </p>
+  </div>
+</section>
+
+<!-- Main Content Section -->
+<section class="courses-section" id="cursuri">
+  <div class="courses-section__container">
+    
+    <!-- Section Header -->
+    <header class="courses-section__header">
+      <div class="courses-section__title-area">
+        <h2 class="courses-section__title">
+          <span class="count-badge" *ngIf="!isLoading()">{{ courses().length }}</span>
+          {{ courses().length === 1 ? 'Curs Disponibil' : 'Cursuri Disponibile' }}
+        </h2>
+      </div>
+      <div class="courses-section__controls">
+        <div class="sort-dropdown">
+          <select id="sortBy" [(ngModel)]="sortBy" (change)="onSortChange()">
+            <option value="">Recomandate</option>
+            <option value="rating-desc">Rating ↓</option>
+            <option value="rating-asc">Rating ↑</option>
+            <option value="name">Alfabetic</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="courses-layout">
+      <!-- Filter Panel -->
+      <aside class="courses-filters">
+        <app-filter-panel
+          [locations]="locations()"
+          (filtersChange)="onFiltersChange($event)"
+        ></app-filter-panel>
+      </aside>
+
+      <!-- Results Area -->
+      <main class="courses-results">
+        <!-- Loading State -->
+        <div class="courses-grid" *ngIf="isLoading()">
+          <div class="skeleton-card" *ngFor="let skeleton of skeletonItems">
+            <div class="skeleton-card__image"></div>
+            <div class="skeleton-card__content">
+              <div class="skeleton-line wide"></div>
+              <div class="skeleton-line"></div>
+              <div class="skeleton-line short"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Courses Grid -->
+        <div class="courses-grid" *ngIf="!isLoading() && courses().length > 0">
+          <app-course-card
+            *ngFor="let course of courses()"
+            [course]="course"
+            (viewDetails)="viewCourseDetails($event)"
+            (enroll)="enroll($event)"
+          ></app-course-card>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="!isLoading() && isEmpty()">
+          <div class="empty-state__icon">🔍</div>
+          <h3 class="empty-state__title">Niciun curs găsit</h3>
+          <p class="empty-state__text">
+            Încearcă să modifici filtrele sau contactează-ne pentru informații despre programele viitoare.
+          </p>
+          <button class="btn-primary" routerLink="/contact">Contactează-ne</button>
+        </div>
+      </main>
+    </div>
+  </div>
+</section>

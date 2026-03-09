@@ -1,0 +1,527 @@
+:host {
+  display: block;
+}
+
+.my-clubs-page {
+  display: grid;
+  gap: 2rem;
+  padding-bottom: 4rem;
+}
+
+// ============================================
+// HERO SECTION - Coach Pattern (Green Theme)
+// ============================================
+.page-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 2.5rem;
+  background: linear-gradient(135deg, #ecfdf5 0%, var(--sport-bg-light) 50%, #eff6ff 100%);
+  border-radius: var(--radius-card);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--coach-border-color);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 800;
+  color: var(--sport-text-dark);
+  margin: 0.75rem 0 0.5rem;
+  letter-spacing: -0.02em;
+  
+  span {
+    color: #10b981;
+  }
+}
+
+.hero-subtitle {
+  font-size: 1rem;
+  color: var(--sport-text-muted);
+  margin: 0;
+}
+
+// ============================================
+// STATS ROW
+// ============================================
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--sport-bg-white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--coach-border-color);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  mat-icon {
+    font-size: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    color: white;
+  }
+  
+  &--blue { background: var(--gradient-primary); }
+  &--green { background: linear-gradient(135deg, var(--coach-border-color-hover) 0%, #34d399 100%); }
+  &--purple { background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%); }
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-number {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--sport-text-dark);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--sport-text-muted);
+  margin-top: 0.25rem;
+}
+
+// ============================================
+// BADGES
+// ============================================
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  
+  &--coach {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+    border: 1px solid var(--coach-border-color);
+  }
+
+  &--success {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #22c55e;
+  }
+
+  &--warning {
+    background: #fef9c3;
+    color: #854d0e;
+    border: 1px solid #fde047;
+  }
+}
+
+.content-grid {
+  display: grid;
+  gap: 2rem;
+}
+
+// ============================================
+// SECTIONS & CARDS
+// ============================================
+.section-card,
+.join-section,
+.clubs-section {
+  background: var(--sport-bg-white);
+  border-radius: var(--radius-card);
+  padding: 2rem; // Standard padding
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--coach-border-color);
+}
+
+// Join Section Specifics
+.join-section {
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+
+    .header-icon {
+      width: 3.5rem;
+      height: 3.5rem;
+      background: rgba(16, 185, 129, 0.1); // Green theme
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      mat-icon {
+        color: #10b981;
+        font-size: 2rem;
+        width: 2rem;
+        height: 2rem;
+      }
+    }
+
+    .header-text {
+      h2 {
+        font-family: var(--font-display);
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--sport-text-dark);
+        margin: 0 0 0.25rem 0;
+      }
+
+      p {
+        color: var(--sport-text-muted);
+        margin: 0;
+        font-size: 0.95rem;
+      }
+    }
+  }
+
+  .join-form {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    max-width: 600px;
+
+    .code-input {
+      flex: 1;
+      margin-bottom: 0;
+      
+      ::ng-deep .mat-mdc-text-field-wrapper {
+        background-color: white;
+      }
+    }
+
+    .code-input__field {
+      text-transform: uppercase;
+    }
+
+    .join-btn {
+      height: 56px;
+      border-radius: var(--radius-btn);
+      padding: 0 2rem;
+      background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+      color: white;
+      border: none;
+      font-weight: 600;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+
+      mat-icon {
+        margin-right: 0.25rem;
+      }
+
+      &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+      }
+
+      &:disabled {
+        background: #94a3b8;
+        box-shadow: none;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+// Clubs List Section
+.clubs-section {
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--sport-text-dark);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+
+      mat-icon {
+        color: #10b981;
+      }
+    }
+
+    .count-badge {
+      padding: 0.25rem 0.75rem;
+      background: #ecfdf5;
+      color: #059669;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+  }
+}
+
+// Clubs Grid
+.clubs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.5rem;
+}
+
+// ============================================
+// CLUB CARD (Updated Structure)
+// ============================================
+.club-card {
+  background: var(--sport-bg-white);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  border: 1px solid var(--coach-border-color);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-card);
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-card-hover);
+    border-color: #10b981;
+  }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #ecfdf5 0%, #eff6ff 100%);
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+
+  &__body {
+    padding: 1.5rem;
+    flex: 1;
+  }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    background: var(--sport-bg-light);
+    border-top: 1px solid var(--color-border-subtle);
+    font-size: 0.875rem;
+    color: var(--sport-text-muted);
+  }
+}
+
+.club-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--sport-bg-white);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.logo-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  color: white;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.club-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+  mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &--delete {
+    color: #ef4444;
+    &:hover:not(:disabled) { background: #fef2f2; }
+  }
+}
+
+.club-name {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--sport-text-dark);
+  margin: 0.75rem 0;
+}
+
+.club-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--sport-text-muted);
+
+    mat-icon {
+      font-size: 1.1rem;
+      width: 1.1rem;
+      height: 1.1rem;
+    }
+
+    &.active {
+      color: #10b981;
+    }
+  }
+}
+
+// Empty State
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: var(--sport-bg-white);
+  border-radius: 1rem;
+  
+  .empty-icon {
+    font-size: 4rem;
+    width: 4rem;
+    height: 4rem;
+    color: var(--sport-text-muted);
+    opacity: 0.5;
+    margin-bottom: 1.5rem;
+  }
+
+  h3 {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--sport-text-dark);
+    margin: 0 0 0.5rem 0;
+  }
+
+  p {
+    color: var(--sport-text-muted);
+    margin: 0;
+  }
+}
+
+// Loading Grid
+.loading-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.5rem;
+
+  .skeleton-card {
+    height: 200px;
+    background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%);
+    background-size: 200% 100%;
+    border-radius: 1rem;
+    animation: shimmer 1.5s infinite;
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+// Responsive
+@media (max-width: 640px) {
+  .page-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 2rem 1.5rem;
+    
+    &::before { display: none; }
+  }
+
+  .join-section {
+    .join-form {
+      flex-direction: column;
+      
+      .code-input, .join-btn {
+        width: 100%;
+      }
+      
+      .join-btn {
+        justify-content: center;
+      }
+    }
+  }
+}

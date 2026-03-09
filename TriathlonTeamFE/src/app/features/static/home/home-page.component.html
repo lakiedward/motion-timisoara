@@ -1,0 +1,198 @@
+<!-- High Performance Home Page -->
+
+<!-- Scroll Progress Bar -->
+<div class="scroll-progress" [style.width.%]="scrollProgress"></div>
+
+<!-- 1. Hero Section: "The Arena" -->
+<section class="elite-hero">
+  <div class="elite-hero__background">
+    <img
+      ngSrc="/ui/IMG_20250220_113320.jpg"
+      fill
+      priority="true"
+      alt="Athlete in action"
+      class="elite-hero__image"
+      (load)="$any($event.target).classList.add('loaded')"
+      decoding="async"
+    />
+  </div>
+
+  <div class="elite-hero__content">
+    <div class="elite-hero__text-wrapper">
+      <h1 class="elite-hero__headline">
+        <span>Building</span>
+        <span class="highlight">Future Champions</span>
+      </h1>
+      <p class="elite-hero__subhead">
+        Fun, professional triathlon training for kids. Swimming, cycling, running, and skiing programs designed to build confidence and skills.
+      </p>
+
+      <div class="elite-hero__actions">
+        <button type="button" class="btn-elite btn-elite--primary" routerLink="/register"
+                aria-label="Join the Team">
+          Join the Team
+        </button>
+        <button type="button" class="btn-elite btn-elite--outline" routerLink="/cursuri"
+                aria-label="View Programs">
+          View Programs
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. Performance Metrics Strip -->
+<section class="performance-strip">
+  <div class="elite-container">
+    <div class="performance-strip__grid">
+      <div class="performance-strip__item scroll-reveal" *ngFor="let highlight of resultHighlights; let i = index"
+           [class.scroll-reveal--delay-100]="i === 1"
+           [class.scroll-reveal--delay-200]="i === 2"
+           [class.scroll-reveal--delay-300]="i === 3">
+        <span class="performance-strip__value">{{ getDisplayValue(i) }}</span>
+        <span class="performance-strip__label">{{ highlight.label }}</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. Training Pathways (Programs) -->
+<section class="training-pathways" id="programs">
+  <div class="elite-container">
+    <div class="elite-section-header">
+      <span class="elite-eyebrow">Programs</span>
+      <h2 class="elite-title">Choose Your <span>Adventure</span></h2>
+      <p class="elite-subtitle">
+        Exciting training programs tailored for every stage of athletic development.
+      </p>
+    </div>
+
+    <ng-container *ngIf="!isLoadingPrograms(); else programsLoading">
+      <div class="training-pathways__grid" *ngIf="programs().length">
+        <article class="pathway-card scroll-reveal"
+                 *ngFor="let program of programs(); let i = index"
+                 [class.scroll-reveal--delay-100]="i % 3 === 1"
+                 [class.scroll-reveal--delay-200]="i % 3 === 2"
+                 [routerLink]="program.link">
+          
+          <div class="pathway-card__bg">
+            <img [src]="program.image" [alt]="program.title" loading="lazy" />
+          </div>
+          
+          <div class="pathway-card__tag" *ngIf="program.popularityTag">
+            {{ program.popularityTag === 'popular' ? 'Popular Choice' : 'New Season' }}
+          </div>
+
+          <div class="pathway-card__content">
+            <span class="pathway-card__icon">{{ program.categoryIcon }}</span>
+            <h3 class="pathway-card__title">{{ program.title }}</h3>
+            <p class="pathway-card__desc" title="{{ program.description }}">{{ program.description }}</p>
+            
+            <div class="pathway-card__action">
+              Learn More <mat-icon>arrow_forward</mat-icon>
+            </div>
+          </div>
+        </article>
+      </div>
+    </ng-container>
+
+    <ng-template #programsLoading>
+      <div class="training-pathways__grid">
+        <app-skeleton-loader [showImage]="true" *ngFor="let i of [1,2,3]"></app-skeleton-loader>
+      </div>
+    </ng-template>
+  </div>
+</section>
+
+<!-- 4. Elite Staff (Coaches) -->
+<section class="elite-staff" id="coaches">
+  <div class="elite-container">
+    <div class="elite-section-header elite-section-header--center">
+      <span class="elite-eyebrow">The Team</span>
+      <h2 class="elite-title">Meet Our <span>Coaches</span></h2>
+      <p class="elite-subtitle">
+        Friendly, certified professionals dedicated to unlocking your child's full potential.
+      </p>
+    </div>
+
+    <ng-container *ngIf="!isLoadingCoaches()">
+      <div class="elite-staff__grid" *ngIf="coaches().length">
+        <article class="elite-coach-card scroll-reveal"
+                 *ngFor="let coach of coaches(); let i = index"
+                 [class.scroll-reveal--delay-100]="i === 1"
+                 [class.scroll-reveal--delay-200]="i === 2"
+                 [class.scroll-reveal--delay-300]="i === 3"
+                 [routerLink]="['/antrenori', coach.id]">
+          
+          <div class="elite-coach-card__img">
+            <img *ngIf="coach.avatarUrl" 
+                 [src]="getCoachAvatarUrl(coach.avatarUrl)" 
+                 [alt]="coach.name" 
+                 loading="lazy"
+                 (error)="onCoachAvatarError($event)" />
+            <div class="elite-coach-card__initial" *ngIf="!coach.avatarUrl">
+              {{ coach.name.charAt(0) }}
+            </div>
+          </div>
+
+          <div class="elite-coach-card__info">
+            <h3 class="elite-coach-card__name">{{ coach.name }}</h3>
+            <span class="elite-coach-card__role">Head Coach</span> <!-- Placeholder role -->
+            
+            <div class="elite-coach-card__stats">
+              <div *ngIf="coach.activeCourseCount">
+                <mat-icon>school</mat-icon> {{ coach.activeCourseCount }} Programs
+              </div>
+              <div *ngIf="coach.averageRating">
+                <mat-icon>star</mat-icon> {{ coach.averageRating | number: '1.1-1' }}
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </ng-container>
+  </div>
+</section>
+
+<!-- 5. Success Stories (Testimonials) -->
+<section class="success-stories" id="testimonials">
+  <div class="elite-container">
+    <div class="elite-section-header">
+      <span class="elite-eyebrow">Community</span>
+      <h2 class="elite-title">Happy <span>Families</span></h2>
+    </div>
+
+    <div class="success-stories__grid">
+      <article class="story-card scroll-reveal" 
+               *ngFor="let testimonial of testimonials; let i = index"
+               [class.scroll-reveal--delay-100]="i === 1"
+               [class.scroll-reveal--delay-200]="i === 2">
+        
+        <p class="story-card__text">{{ testimonial.quote }}</p>
+
+        <div class="story-card__author">
+          <div class="story-card__author-avatar">
+            {{ testimonial.name.charAt(0) }}
+          </div>
+          <div class="story-card__author-info">
+            <h4>{{ testimonial.name }}</h4>
+            <span>{{ testimonial.role }}</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Footer CTA -->
+<section class="elite-cta">
+  <div class="elite-cta__content">
+    <h2>Start Your <span>Journey</span></h2>
+    <p>
+      Join the Motion community today and take the first step towards athletic excellence.
+    </p>
+    <button type="button" class="btn-elite btn-elite--primary" routerLink="/register">
+      Book Assessment
+    </button>
+  </div>
+</section>

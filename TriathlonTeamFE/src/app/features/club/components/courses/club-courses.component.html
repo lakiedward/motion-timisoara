@@ -1,0 +1,155 @@
+<section class="courses-page">
+  <!-- Hero Section -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--info" style="margin-bottom: 0.75rem;">Educație Sportivă</span>
+      <h1 class="hero-title">Cursuri <span>Club</span></h1>
+      <p class="hero-subtitle">Gestionează cursurile oferite de club</p>
+    </div>
+    <button class="hero-btn" (click)="addCourse()">
+      <mat-icon>add</mat-icon>
+      <span>Adaugă Curs</span>
+    </button>
+  </header>
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>school</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ courses().length }}</span>
+        <span class="stat-label">Cursuri totale</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--green">
+        <mat-icon>play_circle</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getActiveCourses() }}</span>
+        <span class="stat-label">Cursuri active</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>people</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getTotalCapacity() }}</span>
+        <span class="stat-label">Capacitate totală</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Courses Section -->
+  <section class="section-card">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>school</mat-icon>
+          Lista Cursurilor
+        </h2>
+        <span class="section-count">{{ courses().length }}</span>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-grid" *ngIf="isLoading()">
+      <div class="skeleton-card" *ngFor="let _ of [1, 2, 3]"></div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!isLoading() && courses().length === 0">
+      <mat-icon class="empty-state__icon">school</mat-icon>
+      <h3 class="empty-state__title">Niciun curs adăugat</h3>
+      <p class="empty-state__text">Adaugă cursuri pe care clubul sau antrenorii le pot oferi participanților.</p>
+      <button class="hero-btn" (click)="addCourse()">
+        <mat-icon>add</mat-icon>
+        <span>Adaugă primul curs</span>
+      </button>
+    </div>
+
+    <!-- Courses Grid -->
+    <div class="courses-grid" *ngIf="!isLoading() && courses().length > 0">
+      <article class="course-card" *ngFor="let course of courses(); trackBy: trackByCourse" [class.course-card--inactive]="!course.isActive">
+        <div class="course-card__header">
+          <div class="course-card__header-left">
+            <span class="badge badge--info">{{ course.sport }}</span>
+            <span class="badge" [class.badge--success]="course.isActive" [class.badge--neutral]="!course.isActive">
+              {{ course.isActive ? 'Activ' : 'Inactiv' }}
+            </span>
+          </div>
+
+          <div class="course-actions">
+            <button
+              class="action-btn action-btn--edit"
+              [disabled]="updatingCourseId() === course.id"
+              (click)="editCourse(course)"
+              matTooltip="Editează"
+            >
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button type="button"
+                    class="action-btn"
+                    [class.action-btn--success]="course.isActive"
+                    [class.action-btn--neutral]="!course.isActive"
+                    role="switch"
+                    [disabled]="updatingCourseId() === course.id"
+                    [attr.aria-checked]="course.isActive"
+                    (click)="toggleCourseStatus(course)"
+                    [attr.aria-label]="course.isActive ? 'Dezactivează curs' : 'Activează curs'"
+                    [matTooltip]="course.isActive ? 'Dezactivează curs' : 'Activează curs'">
+              <span class="mini-toggle" [class.mini-toggle--on]="course.isActive" [class.mini-toggle--off]="!course.isActive">
+                <span class="mini-toggle__track"></span>
+                <span class="mini-toggle__knob"></span>
+              </span>
+            </button>
+            <button
+              class="action-btn action-btn--delete"
+              [disabled]="updatingCourseId() === course.id"
+              (click)="deleteCourse(course)"
+              matTooltip="Șterge"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+        
+        <div class="course-card__body">
+          <h3 class="course-name">{{ course.name }}</h3>
+          <div class="course-meta">
+            <span class="meta-item">
+              <mat-icon>person</mat-icon>
+              {{ course.coachName }}
+            </span>
+            <span class="meta-item">
+              <mat-icon>location_on</mat-icon>
+              {{ course.locationName }}
+            </span>
+            <span class="meta-item" *ngIf="course.level">
+              <mat-icon>signal_cellular_alt</mat-icon>
+              {{ course.level }}
+            </span>
+            <span class="meta-item">
+              <mat-icon>child_care</mat-icon>
+              {{ formatAgeRange(course) }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="course-card__footer">
+          <div class="course-price">
+            <span class="price-value">{{ formatPrice(course.pricePerSession, course.currency) }}</span>
+            <span class="price-label">/ședință</span>
+          </div>
+          <div class="course-capacity" *ngIf="course.capacity">
+            <mat-icon>people</mat-icon>
+            <span>{{ course.capacity }} locuri</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>

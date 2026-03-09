@@ -1,0 +1,472 @@
+// ============================================
+// COACH ACTIVITY FORM - UIGuidelines Form Page Pattern
+// ============================================
+:host {
+  display: block;
+}
+
+.activity-form-page {
+  display: grid;
+  gap: 2rem;
+}
+
+// ============================================
+// HERO SECTION - Coach Pattern (Green Theme)
+// ============================================
+.page-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 2.5rem;
+  background: linear-gradient(135deg, #ecfdf5 0%, var(--sport-bg-light) 50%, #eff6ff 100%);
+  border-radius: var(--radius-card);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--coach-border-color);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 800;
+  color: var(--sport-text-dark);
+  margin: 0.75rem 0 0.5rem;
+  letter-spacing: -0.02em;
+  
+  span { color: #10b981; }
+}
+
+.hero-subtitle {
+  font-size: 1rem;
+  color: var(--sport-text-muted);
+  margin: 0;
+}
+
+// ============================================
+// BADGES
+// ============================================
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  
+  &--coach {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+    border: 1px solid var(--coach-border-color);
+  }
+}
+
+// ============================================
+// BACK BUTTON
+// ============================================
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: var(--sport-bg-white);
+  border-radius: var(--radius-btn);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  color: #10b981;
+  border: 2px solid #10b981;
+  position: relative;
+  z-index: 1;
+  
+  mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+  
+  &:hover {
+    background: #10b981;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--coach-border-color);
+  }
+}
+
+// ============================================
+// SECTION CARD
+// ============================================
+.section-card {
+  background: var(--sport-bg-white);
+  border-radius: var(--radius-card);
+  padding: 2rem;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--coach-border-color);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--sport-text-dark);
+  margin: 0;
+  
+  mat-icon {
+    color: #10b981;
+    font-size: 1.75rem;
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+// ============================================
+// FORM GRID
+// ============================================
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  
+  .full-width {
+    grid-column: 1 / -1;
+  }
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+// ============================================
+// MEDIA GRID & CARD
+// ============================================
+.media-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.media-card {
+  background: var(--sport-bg-light);
+  border-radius: 16px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--sport-text-dark);
+    
+    mat-icon {
+      color: #10b981;
+      font-size: 1.125rem;
+      width: 1.125rem;
+      height: 1.125rem;
+    }
+  }
+}
+
+// ============================================
+// PHOTO UPLOAD
+// ============================================
+.photo-upload-area {
+  min-height: 180px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sport-bg-white);
+  overflow: hidden;
+}
+
+.upload-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 180px;
+  padding: 1rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #10b981;
+  border: 2px dashed var(--coach-border-color);
+  background: var(--sport-bg-white);
+  
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+  }
+  
+  span {
+    font-size: 0.9375rem;
+    font-weight: 500;
+  }
+  
+  &:hover:not(.disabled) {
+    background: #ecfdf5;
+    border-color: #10b981;
+  }
+  
+  &.disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.photo-preview {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 12px;
+  }
+  
+  .photo-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, transparent 50%);
+    border-radius: 12px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  
+  &:hover .photo-overlay {
+    opacity: 1;
+  }
+  
+  .delete-photo-btn {
+    background: rgba(220, 38, 38, 0.9) !important;
+    color: white !important;
+    
+    &:hover {
+      background: #dc2626 !important;
+    }
+  }
+}
+
+.photo-hint {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--sport-text-muted);
+}
+
+// ============================================
+// TIP CARD
+// ============================================
+.tip-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-card);
+  color: white;
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  
+  mat-icon {
+    font-size: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    opacity: 0.9;
+  }
+  
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+}
+
+// ============================================
+// FORM ACTIONS
+// ============================================
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--sport-bg-light);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--coach-border-color);
+}
+
+.btn-secondary {
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-btn);
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: 2px solid var(--color-border-default);
+  color: var(--sport-text-muted);
+  background: var(--sport-bg-white);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &:hover:not(:disabled) {
+    border-color: var(--sport-text-muted);
+    color: var(--sport-text-dark);
+    transform: translateY(-2px);
+  }
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.75rem;
+  border-radius: var(--radius-btn);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  box-shadow: 0 4px 15px var(--coach-border-color);
+  
+  mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+  
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+  }
+  
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+// ============================================
+// LOADING STATE
+// ============================================
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  background: var(--sport-bg-white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  
+  p {
+    margin: 1rem 0 0;
+    color: var(--sport-text-muted);
+    font-size: 1rem;
+  }
+}
+
+// ============================================
+// MATERIAL FORM FIELD OVERRIDES
+// ============================================
+::ng-deep .mat-mdc-form-field {
+  .mat-mdc-text-field-wrapper {
+    background-color: var(--sport-bg-light);
+  }
+  
+  &.mat-focused .mat-mdc-text-field-wrapper {
+    background-color: var(--sport-bg-white);
+  }
+  
+  .mat-mdc-form-field-focus-overlay {
+    background-color: transparent;
+  }
+}
+
+// ============================================
+// RESPONSIVE
+// ============================================
+@media (max-width: 768px) {
+  .page-hero {
+    flex-direction: column;
+    text-align: center;
+    padding: 2rem 1.5rem;
+    
+    &::before { display: none; }
+  }
+  
+  .back-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .section-card {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-actions {
+    flex-direction: column-reverse;
+    
+    .btn-secondary,
+    .btn-primary {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}

@@ -1,0 +1,110 @@
+# =====================
+# General
+# =====================
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+*.log.*
+
+# Environment files
+.env
+.env.*
+.env*.local
+
+# IDE / Editors
+.idea/
+.vscode/
+.cursor/
+.windsurf/
+*.iws
+*.iml
+*.ipr
+*.sublime-workspace
+.history/
+.c9/
+*.launch
+.project
+.classpath
+.settings/
+.factorypath
+.springBeans
+.sts4-cache
+
+# =====================
+# Node / npm
+# =====================
+node_modules/
+npm-debug.log
+yarn-debug.*
+yarn-error.log
+
+# =====================
+# Backend (Kotlin / Gradle / Spring Boot)
+# =====================
+.gradle
+build/
+target/
+!**/src/main/**/build/
+!**/src/test/**/build/
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+.kotlin
+.apt_generated
+HELP.md
+
+# =====================
+# Frontend (Angular)
+# =====================
+dist/
+tmp/
+out-tsc/
+bazel-out/
+.angular/cache
+.sass-cache/
+/connect.lock
+coverage/
+libpeerconnection.log
+testem.log
+typings/
+
+# =====================
+# Mobile (Expo / React Native)
+# =====================
+.expo/
+web-build/
+expo-env.d.ts
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+*.tsbuildinfo
+.metro-health-check*
+TriathlonTeamMobile/ios/
+TriathlonTeamMobile/android/
+
+# =====================
+# Testing (Playwright)
+# =====================
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+playwright/.auth/
+
+# =====================
+# Logs
+# =====================
+logs/
+
+# =====================
+# Windows artifacts
+# =====================
+nul

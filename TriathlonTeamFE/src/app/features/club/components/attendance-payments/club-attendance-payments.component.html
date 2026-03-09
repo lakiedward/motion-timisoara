@@ -1,0 +1,194 @@
+<section class="attendance-page">
+  <ng-template #weekNavigation>
+    <div class="week-navigation">
+      <button
+        type="button"
+        class="nav-btn"
+        (click)="previousWeek()"
+        [disabled]="isLoading()"
+        matTooltip="Săptămâna anterioară"
+        aria-label="Săptămâna anterioară"
+      >
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <span class="week-label">{{ weekLabel }}</span>
+      <button
+        type="button"
+        class="nav-btn"
+        (click)="nextWeek()"
+        [disabled]="isLoading()"
+        matTooltip="Săptămâna următoare"
+        aria-label="Săptămâna următoare"
+      >
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+  </ng-template>
+
+  <!-- Hero Section -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--club">Club</span>
+      <h1 class="hero-title">Prezențe & <span>Plăți</span></h1>
+      <p class="hero-subtitle">Administrează prezențele și plățile pentru sesiunile tuturor cursurilor clubului</p>
+    </div>
+    <div class="hero-actions">
+      <ng-container *ngTemplateOutlet="weekNavigation"></ng-container>
+    </div>
+  </header>
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>event</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getTotalSessions() }}</span>
+        <span class="stat-label">Sesiuni săptămână</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--green">
+        <mat-icon>today</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getTodaySessions() }}</span>
+        <span class="stat-label">Sesiuni azi</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>people</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getTotalEnrolled() }}</span>
+        <span class="stat-label">Participanți total</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending Cash Payments -->
+  <section class="section-card" *ngIf="shouldShowPendingPaymentsSection()">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>payments</mat-icon>
+          Plăți cash în așteptare
+        </h2>
+        <span class="section-count" *ngIf="!clubPayments.isLoadingPayments() && !clubPayments.isPaymentsError()">{{ clubPayments.pendingPayments().length }}</span>
+      </div>
+    </div>
+
+    <ng-container *ngIf="clubPayments.isLoadingPayments(); else errorOrData">
+      <div class="loading-state">
+        <mat-progress-spinner diameter="20" mode="indeterminate"></mat-progress-spinner>
+        <span>Se încarcă plățile...</span>
+      </div>
+    </ng-container>
+
+    <ng-template #errorOrData>
+      <div *ngIf="clubPayments.isPaymentsError(); else data" class="error-state">
+        <mat-icon>error_outline</mat-icon>
+        <span>Eroare la încărcarea plăților.</span>
+        <button mat-raised-button color="primary" (click)="clubPayments.loadPendingPayments()">
+          Încearcă din nou
+        </button>
+      </div>
+
+      <ng-template #data>
+        <div class="pending-payments">
+          <div class="pending-payment-row" *ngFor="let p of clubPayments.pendingPayments(); trackBy: trackPaymentById">
+            <div class="pending-payment-main">
+              <div class="pending-payment-title">{{ p.childName }} <span class="muted">({{ p.parentName }})</span></div>
+              <div class="pending-payment-sub muted">{{ p | productLabel }} • {{ p.amount | currency:p.currency:'symbol':'1.0-0' }}</div>
+            </div>
+            <button mat-raised-button color="primary" (click)="confirmCashPayment(p.id)"
+              [disabled]="!p.allowMarkCash || isConfirming(p.id)"
+              [attr.aria-label]="getConfirmAriaLabel(p)">
+              <ng-container *ngIf="isConfirming(p.id); else btnText">
+                <mat-progress-spinner diameter="20" mode="indeterminate" class="inline-spinner"></mat-progress-spinner>
+              </ng-container>
+              <ng-template #btnText>Confirmă cash</ng-template>
+            </button>
+          </div>
+        </div>
+      </ng-template>
+    </ng-template>
+  </section>
+
+  <!-- Calendar Section -->
+  <section class="section-card">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>calendar_month</mat-icon>
+          Calendar Săptămânal
+        </h2>
+        <span class="section-count">{{ getTotalSessions() }} sesiuni</span>
+      </div>
+      <div class="section-header__right">
+        <ng-container *ngTemplateOutlet="weekNavigation"></ng-container>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-grid" *ngIf="isLoading()">
+      <div class="skeleton-card" *ngFor="let _ of [1, 2, 3, 4, 5, 6, 7]"></div>
+    </div>
+
+    <!-- Calendar Content -->
+    <div class="calendar-content" *ngIf="!isLoading()">
+      <div class="coach-section" *ngFor="let coach of calendar()?.coaches">
+        <h3 class="coach-name">
+          <mat-icon>person</mat-icon>
+          {{ coach.coachName }}
+        </h3>
+
+        <div class="week-grid">
+          <div class="day-column" *ngFor="let day of coach.days" [class.day-column--today]="isToday(day.date)">
+            <div class="day-header">
+              <div class="day-name">{{ day.dayOfWeek }}</div>
+              <div class="day-date">{{ day.date | date:'d MMM' }}</div>
+            </div>
+
+            <div class="sessions-container">
+              <div
+                class="session-card"
+                *ngFor="let session of day.sessions"
+                (click)="openAttendanceModal(session.occurrenceId)"
+                tabindex="0"
+                role="button"
+                matRipple
+              >
+                <div class="session-time">
+                  <mat-icon>schedule</mat-icon>
+                  {{ session.startsAt | date:'HH:mm' }}
+                </div>
+                <div class="session-name">{{ session.courseName }}</div>
+                <div class="session-count">
+                  <mat-icon>group</mat-icon>
+                  <span>{{ session.enrolledCount }} copii</span>
+                </div>
+              </div>
+
+              <div class="no-sessions" *ngIf="day.sessions.length === 0">
+                <mat-icon>event_busy</mat-icon>
+                <span>Fără sesiuni</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="!calendar()?.coaches || calendar()!.coaches.length === 0">
+        <mat-icon class="empty-state__icon">event_busy</mat-icon>
+        <h3 class="empty-state__title">Fără sesiuni</h3>
+        <p class="empty-state__text">Nu există sesiuni programate pentru această săptămână</p>
+      </div>
+    </div>
+  </section>
+</section>
+
+

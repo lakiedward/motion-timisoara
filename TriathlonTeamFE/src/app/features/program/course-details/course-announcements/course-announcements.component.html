@@ -1,0 +1,122 @@
+<section class="course-announcements">
+  <div class="announcements-container">
+    <!-- Section Header - UIGuidelines -->
+    <div class="section-header section-header--left">
+      <span class="section-header__eyebrow">
+        📢 ANUNȚURI
+        <span class="badge-new" *ngIf="hasNew()">✨ Nou</span>
+      </span>
+      <h2 class="section-header__title">Mesaje de la <span>antrenor</span></h2>
+      <p class="section-header__subtitle">Updates pentru {{ courseName || 'curs' }}</p>
+    </div>
+
+    <!-- Body -->
+    <div class="announcements-body">
+      <!-- Teaser for non-logged/non-parent or forbidden (not enrolled) -->
+      <div class="teaser-card" *ngIf="!isParentLoggedIn() || isForbidden()">
+        <div class="teaser-icon">
+          <mat-icon>lock</mat-icon>
+        </div>
+        <div class="teaser-content">
+          <h3>Doar pentru înscriși</h3>
+          <p>Anunțurile și fotografiile sunt disponibile părinților înscriși la acest curs.</p>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div class="state-message loading" *ngIf="isLoading() && !isForbidden() && isParentLoggedIn()">
+        <mat-icon>hourglass_bottom</mat-icon>
+        <span>Se încarcă anunțurile cursului...</span>
+      </div>
+
+      <!-- Error State -->
+      <div class="state-message error" *ngIf="hasError() && !isForbidden() && isParentLoggedIn()">
+        <mat-icon>error_outline</mat-icon>
+        <span>Nu am putut încărca anunțurile. Încearcă din nou.</span>
+      </div>
+
+      <!-- Feed -->
+      <div class="announcements-feed" *ngIf="!isLoading() && !hasError() && !isForbidden() && isParentLoggedIn() && visibleFeed().length; else emptyState">
+        <article 
+          class="announcement-card" 
+          [class.is-pinned]="a.pinned"
+          *ngFor="let a of visibleFeed(); trackBy: trackById">
+          
+          <!-- Card Header -->
+          <header class="card-header">
+            <div class="author-info">
+              <div class="author-avatar">{{ a.authorName.charAt(0) }}</div>
+              <div class="author-details">
+                <div class="author-name">{{ a.authorName }}</div>
+                <div class="author-meta">
+                  <span class="role-badge">{{ a.authorRole }}</span>
+                  <span class="dot">•</span>
+                  <span class="date">{{ a.createdAt | date:'d MMM yyyy, HH:mm' }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="pin-indicator" *ngIf="a.pinned">
+              <mat-icon>push_pin</mat-icon>
+              <span>Fixat</span>
+            </div>
+          </header>
+
+          <!-- Card Content -->
+          <div class="card-content">
+            <p class="content-text">{{ a.content }}</p>
+          </div>
+
+          <!-- Attachments -->
+          <div class="card-attachments" *ngIf="a.attachments?.length">
+            <!-- Images -->
+            <div class="images-grid" *ngIf="(a.attachments | imageOnly)?.length">
+              <img
+                *ngFor="let att of a.attachments | imageOnly; let i = index; trackBy: trackAttId"
+                [src]="imageUrl(a, att.id)"
+                [alt]="courseName || 'Anunț'"
+                loading="lazy"
+                (click)="openLightbox(a, i)"
+              />
+            </div>
+            
+            <!-- Videos -->
+            <div class="videos-grid" *ngIf="(a.attachments | videoOnly)?.length">
+              <ng-container *ngFor="let att of a.attachments | videoOnly; trackBy: trackAttId">
+                <ng-container *ngIf="att.type === 'VIDEO_FILE'; else linkVideo">
+                  <video
+                    [src]="videoUrl(a, att.id)"
+                    controls
+                    preload="metadata"
+                    [attr.aria-label]="'Video anunț pentru ' + (courseName || 'curs')"
+                  ></video>
+                </ng-container>
+                <ng-template #linkVideo>
+                  <app-video-embed [url]="att.url || ''"></app-video-embed>
+                </ng-template>
+              </ng-container>
+            </div>
+          </div>
+        </article>
+
+        <!-- Infinite scroll anchor -->
+        <div #infiniteAnchor class="infinite-anchor" aria-hidden="true"></div>
+      </div>
+
+      <!-- Empty State -->
+      <ng-template #emptyState>
+        <div class="state-message empty" *ngIf="!isForbidden() && isParentLoggedIn()">
+          <mat-icon>campaign</mat-icon>
+          <p>Nu există anunțuri pentru acest curs încă.</p>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <app-lightbox
+    [images]="lightboxImages()"
+    [open]="lightboxOpen()"
+    [initialIndex]="lightboxIndex()"
+    (closed)="closeLightbox()"
+  ></app-lightbox>
+</section>

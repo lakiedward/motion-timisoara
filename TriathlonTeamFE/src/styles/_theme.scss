@@ -1,0 +1,50 @@
+﻿@use '@angular/material' as mat;
+
+$primary-palette: mat.$indigo-palette;
+$accent-palette: mat.$green-palette;
+$warn-palette: mat.$orange-palette;
+
+$triathlon-theme: mat.define-light-theme((
+  color: (
+    primary: mat.define-palette($primary-palette, 700),
+    accent: mat.define-palette($accent-palette, 600),
+    warn: mat.define-palette($warn-palette, 700)
+  ),
+  typography: mat.define-typography-config(
+    $font-family: 'Inter', 'Roboto', sans-serif
+  )
+));
+
+@include mat.core();
+@include mat.all-component-themes($triathlon-theme);
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+
+  &--paid {
+    background-color: mat.get-color-from-palette($accent-palette, 600, 0.14);
+    color: mat.get-color-from-palette($accent-palette, 600);
+  }
+
+  &--pending {
+    background-color: mat.get-color-from-palette($primary-palette, 700, 0.14);
+    color: mat.get-color-from-palette($primary-palette, 700);
+  }
+
+  &--failed {
+    background-color: mat.get-color-from-palette($warn-palette, 700, 0.14);
+    color: mat.get-color-from-palette($warn-palette, 700);
+  }
+
+  &--partial {
+    background-color: mat.get-color-from-palette($primary-palette, 500, 0.14);
+    color: mat.get-color-from-palette($primary-palette, 500);
+  }
+}

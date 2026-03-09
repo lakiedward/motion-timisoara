@@ -1,0 +1,309 @@
+<div class="club-detail-page">
+  <!-- Back Button -->
+  <div class="back-nav">
+    <button class="back-btn" routerLink="/cluburi">
+      <span class="back-icon">←</span>
+      Înapoi la cluburi
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <ng-container *ngIf="isLoading()">
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Se încarcă...</p>
+    </div>
+  </ng-container>
+
+  <!-- Error State -->
+  <ng-container *ngIf="loadError() && !isLoading()">
+    <div class="error-state">
+      <span class="error-icon">⚠️</span>
+      <h3>Clubul nu a fost găsit</h3>
+      <p>Clubul căutat nu există sau nu mai este disponibil.</p>
+      <button class="btn-primary" routerLink="/cluburi">Înapoi la cluburi</button>
+    </div>
+  </ng-container>
+
+  <!-- Club Content -->
+  <ng-container *ngIf="!isLoading() && !loadError() && club() as club">
+    <div class="club-layout">
+      <!-- Hero Section -->
+      <section class="hero-section">
+        <div class="hero-image">
+          <ng-container *ngIf="heroPhotoUrl(); else placeholderHero">
+            <img [src]="heroPhotoUrl()!" [alt]="club.name">
+          </ng-container>
+          <ng-template #placeholderHero>
+            <div class="placeholder-hero">
+              <span>🏢</span>
+            </div>
+          </ng-template>
+          <div class="hero-overlay"></div>
+        </div>
+
+        <div class="hero-content">
+          <div class="hero-logo">
+            <ng-container *ngIf="logoUrl(); else logoFallback">
+              <img [src]="logoUrl()!" [alt]="'Logo ' + club.name">
+            </ng-container>
+            <ng-template #logoFallback>
+              <span class="logo-initials">{{ getInitials(club.name) }}</span>
+            </ng-template>
+          </div>
+
+          <div class="hero-text">
+            <span class="hero-badge">Club</span>
+            <h1>{{ club.name }}</h1>
+            <div class="hero-meta">
+              <span class="hero-pill" *ngIf="club.city">{{ club.city }}</span>
+              <span class="hero-pill hero-pill--muted">
+                {{ club.coachCount }} {{ club.coachCount === 1 ? 'antrenor' : 'antrenori' }}
+              </span>
+              <span class="hero-pill hero-pill--muted" *ngIf="club.sports?.length">
+                {{ club.sports.length }} {{ club.sports.length === 1 ? 'sport' : 'sporturi' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Content Grid -->
+      <div class="content-grid">
+        <!-- Left Column - Details -->
+        <div class="main-content">
+          <!-- Key Info Cards -->
+          <div class="info-cards">
+            <div class="info-card" *ngIf="club.city">
+              <span class="info-icon">📍</span>
+              <div class="info-text">
+                <span class="info-label">Oraș</span>
+                <span class="info-value">{{ club.city }}</span>
+              </div>
+            </div>
+
+            <div class="info-card">
+              <span class="info-icon">👥</span>
+              <div class="info-text">
+                <span class="info-label">Antrenori</span>
+                <span class="info-value">
+                  {{ club.coachCount }} {{ club.coachCount === 1 ? 'antrenor' : 'antrenori' }}
+                </span>
+              </div>
+            </div>
+
+            <div class="info-card" *ngIf="club.sports?.length">
+              <span class="info-icon">🏅</span>
+              <div class="info-text">
+                <span class="info-label">Sporturi</span>
+                <span class="info-value">
+                  {{ club.sports.length }} {{ club.sports.length === 1 ? 'sport' : 'sporturi' }}
+                </span>
+              </div>
+            </div>
+
+            <div class="info-card" *ngIf="club.website">
+              <span class="info-icon">🌐</span>
+              <div class="info-text">
+                <span class="info-label">Website</span>
+                <span class="info-value">Disponibil</span>
+              </div>
+            </div>
+
+            <div class="info-card" *ngIf="club.phone">
+              <span class="info-icon">📞</span>
+              <div class="info-text">
+                <span class="info-label">Telefon</span>
+                <span class="info-value">{{ club.phone }}</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Description -->
+          <section class="description-section" *ngIf="club.description">
+            <div class="section-header section-header--left">
+              <span class="section-header__eyebrow">ℹ️ DETALII</span>
+              <h2 class="section-header__title">Despre acest <span>club</span></h2>
+            </div>
+            <div class="section-body">
+              <div class="description-content" [class.description-collapsed]="!isDescriptionExpanded()">
+                <p>{{ club.description }}</p>
+              </div>
+
+              <button *ngIf="club.description.length > 500" class="read-more-btn" (click)="toggleDescription()">
+                {{ isDescriptionExpanded() ? 'Vezi mai puțin' : 'Vezi mai mult' }}
+                <span class="btn-icon">{{ isDescriptionExpanded() ? '↑' : '↓' }}</span>
+              </button>
+            </div>
+          </section>
+
+          <!-- Sports -->
+          <section class="sports-section" *ngIf="club.sports?.length">
+            <div class="section-header section-header--left">
+              <span class="section-header__eyebrow">🏅 SPORTURI</span>
+              <h2 class="section-header__title">Sporturi <span>disponibile</span></h2>
+            </div>
+            <div class="section-body">
+              <ul class="sports-list">
+                <li *ngFor="let sport of club.sports">
+                  <span class="check-icon">✓</span>
+                  {{ sport.name }}
+                </li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- Courses -->
+          <section class="courses-section" id="cursuri">
+            <div class="section-header section-header--left">
+              <span class="section-header__eyebrow">🏫 CURSURI</span>
+              <h2 class="section-header__title">Cursuri <span>club</span></h2>
+            </div>
+            <div class="section-body">
+              <div class="course-grid" *ngIf="courses().length; else noCourses">
+                <app-course-card *ngFor="let courseItem of courses(); trackBy: trackByCourse" [course]="courseItem"
+                  (viewDetails)="navigateToCourse($event)" (enroll)="enrollInCourse($event)"></app-course-card>
+              </div>
+              <ng-template #noCourses>
+                <p class="empty-text">Momentan nu există cursuri asociate acestui club.</p>
+              </ng-template>
+            </div>
+          </section>
+
+          <!-- Coaches -->
+          <section class="coaches-section" id="antrenori">
+            <div class="section-header section-header--left">
+              <span class="section-header__eyebrow">👨‍🏫 ECHIPĂ</span>
+              <h2 class="section-header__title">Antrenori <span>club</span></h2>
+            </div>
+            <div class="section-body">
+              <div class="coach-grid" *ngIf="coaches().length; else noCoaches">
+                <a class="coach-card" *ngFor="let coach of coaches()" [routerLink]="['/antrenori', coach.id]">
+                  <div class="coach-avatar">
+                    <ng-container *ngIf="coachAvatarUrl(coach.avatarUrl) as avatar; else coachPlaceholder">
+                      <img [src]="avatar" [alt]="coach.name">
+                    </ng-container>
+                    <ng-template #coachPlaceholder>
+                      <span class="avatar-placeholder">{{ getInitials(coach.name) }}</span>
+                    </ng-template>
+                  </div>
+                  <div class="coach-info">
+                    <h3>{{ coach.name }}</h3>
+                    <span class="coach-subtitle" *ngIf="coach.summary; else defaultCoachSubtitle">
+                      {{ coach.summary }}
+                    </span>
+                    <ng-template #defaultCoachSubtitle>
+                      <span class="coach-subtitle">Antrenor</span>
+                    </ng-template>
+                  </div>
+                  <div class="coach-arrow">
+                    <span>→</span>
+                  </div>
+                </a>
+              </div>
+              <ng-template #noCoaches>
+                <p class="empty-text">Momentan nu există antrenori asociați acestui club.</p>
+              </ng-template>
+            </div>
+          </section>
+
+          <!-- Website -->
+          <section class="website-section" *ngIf="club.website">
+            <div class="section-header section-header--left">
+              <span class="section-header__eyebrow">🌐 WEBSITE</span>
+              <h2 class="section-header__title">Mai multe <span>detalii</span></h2>
+            </div>
+            <div class="section-body">
+              <a class="website-link" [href]="club.website" target="_blank" rel="noopener noreferrer">
+                Deschide website-ul clubului
+                <span class="link-arrow">→</span>
+              </a>
+            </div>
+          </section>
+        </div>
+
+        <!-- Right Column - Action Card -->
+        <aside class="sidebar">
+          <div class="action-card">
+            <div class="section-header section-header--center">
+              <span class="section-header__eyebrow">🏢 CLUB</span>
+              <h2 class="section-header__title">Contact <span>rapid</span></h2>
+            </div>
+
+            <div class="card-body">
+              <div class="sidebar-logo">
+                <ng-container *ngIf="logoUrl(); else sidebarLogoFallback">
+                  <img [src]="logoUrl()!" [alt]="'Logo ' + club.name">
+                </ng-container>
+                <ng-template #sidebarLogoFallback>
+                  <span class="sidebar-initials">{{ getInitials(club.name) }}</span>
+                </ng-template>
+              </div>
+
+              <div class="sidebar-meta">
+                <span class="meta-line" *ngIf="club.city">
+                  <span class="meta-icon">📍</span>
+                  {{ club.city }}
+                </span>
+                <span class="meta-line">
+                  <span class="meta-icon">👥</span>
+                  {{ club.coachCount }} {{ club.coachCount === 1 ? 'antrenor' : 'antrenori' }}
+                </span>
+
+                <ng-container *ngIf="club.phone as phone">
+                  <a *ngIf="phoneHref(phone) as href; else plainPhone" class="meta-line meta-line--link" [href]="href">
+                    <span class="meta-icon">📞</span>
+                    {{ phone }}
+                  </a>
+                  <ng-template #plainPhone>
+                    <span class="meta-line">
+                      <span class="meta-icon">📞</span>
+                      {{ phone }}
+                    </span>
+                  </ng-template>
+                </ng-container>
+                <ng-container *ngIf="club.email as email">
+                  <a *ngIf="emailHref(email) as href; else plainEmail" class="meta-line meta-line--link" [href]="href" aria-label="Trimite email clubului">
+                    <span class="meta-icon">✉️</span>
+                    {{ email }}
+                  </a>
+                  <ng-template #plainEmail>
+                    <span class="meta-line">
+                      <span class="meta-icon">✉️</span>
+                      {{ email }}
+                    </span>
+                  </ng-template>
+                </ng-container>
+              </div>
+
+              <a *ngIf="club.website" class="primary-action" [href]="club.website" target="_blank"
+                rel="noopener noreferrer">
+                <span>Website</span>
+                <span class="btn-icon">→</span>
+              </a>
+
+              <div class="guarantee">
+                <span class="guarantee-icon">✓</span>
+                <span>Informații verificate</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- Mobile Fixed Bottom CTA -->
+      <div class="info-card--action-mobile" *ngIf="club.website">
+        <div class="mobile-info">
+          <span class="mobile-label">Website</span>
+          <span class="mobile-value">{{ club.name }}</span>
+        </div>
+
+        <a class="mobile-cta-btn" [href]="club.website" target="_blank" rel="noopener noreferrer">
+          <span>Deschide</span>
+          <span class="btn-icon">→</span>
+        </a>
+      </div>
+    </div>
+  </ng-container>
+</div>

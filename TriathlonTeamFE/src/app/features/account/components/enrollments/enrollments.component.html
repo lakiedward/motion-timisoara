@@ -1,0 +1,166 @@
+<div class="enrollments-page">
+  <!-- Hero Section - UIGuidelines TIP B (Sub-pagină cu Back Button) -->
+  <section class="page-hero">
+    <div class="page-hero__container">
+      <button mat-icon-button routerLink="/account" class="back-button" aria-label="Înapoi la cont">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <span class="page-hero__eyebrow">📋 Contul meu</span>
+      <h1 class="page-hero__title">Înscrieri & <span>Plăți</span></h1>
+      <p class="page-hero__subtitle">Vezi statusul înscriierilor realizate pentru copiii tăi și istoricul plăților asociate</p>
+    </div>
+  </section>
+
+  <!-- Loading State -->
+  <div class="state state--loading" *ngIf="isLoading()">
+    <div class="skeleton" *ngFor="let i of [1, 2, 3]"></div>
+  </div>
+
+  <!-- Error State -->
+  <div class="state state--error" *ngIf="!isLoading() && hasError()">
+    <mat-icon aria-hidden="true">error_outline</mat-icon>
+    <h2>Nu am putut încărca înscriierile</h2>
+    <p>Reîncarcă pagina sau contactează suportul dacă problema persistă.</p>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!isLoading() && !hasError() && !enrollments().length">
+    <mat-icon class="empty-state__icon">assignment_turned_in</mat-icon>
+    <h3 class="empty-state__title">Nu există înscrieri înregistrate</h3>
+    <p class="empty-state__text">Momentan nu există înscrieri înregistrate. Explorează cursurile, taberele și activitățile disponibile pentru a începe.</p>
+    <button class="btn-elite btn-elite--primary" routerLink="/cursuri">
+      <mat-icon>explore</mat-icon>
+      Vezi cursuri disponibile
+    </button>
+  </div>
+
+  <!-- Enrollments List -->
+  <div class="enrollments-container" *ngIf="!isLoading() && !hasError() && enrollments().length">
+    <div class="enrollments-grid">
+      <article
+        class="enrollment-card"
+        *ngFor="let enrollment of enrollments(); trackBy: trackByEnrollment"
+        [class.enrollment-card--camp]="enrollment.kind === 'camp'"
+        [class.enrollment-card--activity]="enrollment.kind === 'activity'"
+      >
+        <!-- Card Header -->
+        <div class="enrollment-card-header">
+          <span class="enrollment-badge" 
+                [class.enrollment-badge--camp]="enrollment.kind === 'camp'"
+                [class.enrollment-badge--activity]="enrollment.kind === 'activity'">
+            {{ enrollment.kind === 'camp' ? 'Tabără' : enrollment.kind === 'activity' ? 'Activitate' : 'Curs' }}
+          </span>
+          <span class="enrollment-status" [ngClass]="enrollmentStatusClass(enrollment.status)">
+            {{ enrollment.statusLabel }}
+          </span>
+        </div>
+
+        <!-- Pending Cash Payment Alert -->
+        <div class="pending-cash-alert" 
+             *ngIf="enrollment.paymentStatus === 'pending' && enrollment.paymentMethod === 'CASH'">
+          <mat-icon class="alert-icon">schedule</mat-icon>
+          <div class="alert-content">
+            <strong class="alert-title">Plata cash în așteptare</strong>
+            <p class="alert-message">Sesiunile vor fi activate după ce antrenorul confirmă primirea banilor.</p>
+          </div>
+        </div>
+
+        <!-- Card Main Info -->
+        <div class="enrollment-main-info">
+          <h2 class="enrollment-title">{{ enrollment.title }}</h2>
+          <div class="enrollment-details">
+            <div class="detail-item" *ngIf="enrollment.childName">
+              <mat-icon>person</mat-icon>
+              <span>{{ enrollment.childName }}</span>
+            </div>
+            <div class="detail-item" *ngIf="enrollment.period">
+              <mat-icon>schedule</mat-icon>
+              <span>{{ enrollment.period }}</span>
+            </div>
+            <div class="detail-item" *ngIf="enrollment.location">
+              <mat-icon>place</mat-icon>
+              <span>{{ enrollment.location }}</span>
+            </div>
+            <div class="detail-item" *ngIf="enrollment.nextOccurrence">
+              <mat-icon>event</mat-icon>
+              <span>Următor: {{ enrollment.nextOccurrence | date: 'd MMM y' : undefined : 'ro-RO' }}</span>
+            </div>
+            <div class="detail-item detail-item--sessions" 
+                 *ngIf="enrollment.kind === 'course' && (enrollment.remainingSessions != null || enrollment.purchasedSessions != null)">
+              <mat-icon [class.icon--warning]="isLowSessions(enrollment)">event_available</mat-icon>
+              <span [class.text--warning]="isLowSessions(enrollment)">
+                Sesiuni: {{ enrollment.remainingSessions || 0 }} / {{ enrollment.purchasedSessions || 0 }}
+                <span class="low-sessions-badge" *ngIf="isLowSessions(enrollment)">Atenție!</span>
+              </span>
+            </div>
+            <!-- Info badge pentru activități și tabere -->
+            <div class="detail-item detail-item--type" *ngIf="enrollment.kind === 'activity'">
+              <mat-icon>local_activity</mat-icon>
+              <span>Eveniment unic</span>
+            </div>
+            <div class="detail-item detail-item--type" *ngIf="enrollment.kind === 'camp'">
+              <mat-icon>terrain</mat-icon>
+              <span>Tabără</span>
+            </div>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <!-- Payment Section -->
+        <div class="enrollment-payment">
+          <div class="payment-info">
+            <div class="payment-details">
+              <span class="payment-label">Sumă Plată</span>
+              <div class="payment-amount-wrapper">
+                <span class="payment-amount">{{ paymentLabel(enrollment) }}</span>
+                <span class="payment-status" [ngClass]="paymentClass(enrollment.paymentStatus)">
+                  {{ enrollment.paymentStatusLabel || 'N/A' }}
+                </span>
+              </div>
+              <div class="payment-date" *ngIf="enrollment.paymentPaidAt || enrollment.paymentCreatedAt">
+                <mat-icon class="payment-date-icon">schedule</mat-icon>
+                <span class="payment-date-text">
+                  {{ enrollment.paymentPaidAt ? 
+                     (enrollment.paymentPaidAt | date: 'd MMM y, HH:mm' : undefined : 'ro-RO') : 
+                     (enrollment.paymentCreatedAt | date: 'd MMM y, HH:mm' : undefined : 'ro-RO') }}
+                </span>
+              </div>
+              <div
+                class="payment-extra"
+                *ngIf="enrollment.paymentStatus === 'pending' && enrollment.paymentMethod === 'CARD'"
+              >
+                <mat-icon class="payment-date-icon">hourglass_empty</mat-icon>
+                <span class="payment-date-text">
+                  Plata cu cardul este în curs de confirmare. Dacă statusul nu se actualizează, reîncarcă pagina sau
+                  reîncearcă plata.
+                </span>
+              </div>
+              <div
+                class="payment-extra payment-extra--error"
+                *ngIf="enrollment.paymentStatus === 'failed' && enrollment.paymentMethod === 'CARD'"
+              >
+                <mat-icon class="payment-date-icon">error</mat-icon>
+                <span class="payment-date-text">
+                  Plata cu cardul a eșuat. Suma nu a fost debitată, iar sesiunile nu sunt active. Poți încerca din nou
+                  cu același card sau alege plata cash.
+                </span>
+              </div>
+            </div>
+          </div>
+          <a
+            *ngIf="enrollment.invoiceUrl"
+            class="invoice-link"
+            [href]="enrollment.invoiceUrl"
+            target="_blank"
+            rel="noopener"
+            mat-button
+          >
+            <mat-icon>download</mat-icon>
+            Factură
+          </a>
+        </div>
+      </article>
+    </div>
+  </div>
+</div>

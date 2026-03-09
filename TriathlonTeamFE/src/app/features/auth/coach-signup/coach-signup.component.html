@@ -1,0 +1,325 @@
+<!-- Hero Section -->
+<section class="hero-coach">
+  <div class="hero-background">
+    <picture>
+      <source srcset="/ui/img_20250220_113246.webp" type="image/webp">
+      <img
+        src="/ui/IMG_20250220_113246.jpg"
+        alt="Motion Timișoara - Antrenor"
+        loading="eager"
+        (load)="$any($event.target).classList.add('loaded')"
+        class="hero-bg-image"
+      />
+    </picture>
+    <div class="hero-overlay"></div>
+  </div>
+
+  <div class="hero-container">
+    <div class="hero-content">
+      <h1 class="hero-title">Devino antrenor!</h1>
+      <p class="hero-subtitle">
+        Alătură-te echipei Motion și ajută copiii să-și atingă potențialul
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Registration Section -->
+<section class="coach-section">
+  <div class="coach-container">
+    <!-- Registration Complete -->
+    @if (registrationComplete()) {
+      <div class="coach-card scroll-reveal scroll-reveal--fade-up">
+        <div class="success-content">
+          <div class="success-icon">
+            <mat-icon>check_circle</mat-icon>
+          </div>
+          <h2>Cont creat cu succes!</h2>
+          <p class="success-message">Bine ai venit în echipa Motion Timișoara!</p>
+
+          @if (stripeOnboardingUrl()) {
+            <div class="stripe-card">
+              <mat-icon class="stripe-icon">account_balance</mat-icon>
+              <div class="stripe-text">
+                <h3>Configurează primirea plăților</h3>
+                <p>Pentru a primi plăți direct, conectează contul Stripe.</p>
+              </div>
+            </div>
+            <button class="btn-primary" (click)="goToStripeOnboarding()">
+              Configurează Stripe
+              <mat-icon>open_in_new</mat-icon>
+            </button>
+          }
+
+          <button class="btn-secondary" (click)="goToDashboard()">
+            {{ stripeOnboardingUrl() ? 'Fac asta mai târziu' : 'Mergi la dashboard' }}
+            <mat-icon>arrow_forward</mat-icon>
+          </button>
+        </div>
+      </div>
+    } @else {
+      <div class="coach-card scroll-reveal scroll-reveal--fade-up">
+        <a routerLink="/signup" class="back-to-home">
+          <mat-icon>arrow_back</mat-icon>
+          <span>Înapoi la alegere tip cont</span>
+        </a>
+        
+        <div class="coach-card__header">
+          <span class="coach-eyebrow">Înregistrare Antrenor</span>
+          <h2>Creează cont de antrenor</h2>
+          <p>Pasul {{ currentStep() + 1 }} din 3</p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-bar">
+          <div class="step" [class.active]="currentStep() >= 0" [class.completed]="currentStep() > 0">
+            <div class="step-number">1</div>
+            <span>Cod invitație</span>
+          </div>
+          <div class="step-line" [class.active]="currentStep() > 0"></div>
+          <div class="step" [class.active]="currentStep() >= 1" [class.completed]="currentStep() > 1">
+            <div class="step-number">2</div>
+            <span>Date cont</span>
+          </div>
+          <div class="step-line" [class.active]="currentStep() > 1"></div>
+          <div class="step" [class.active]="currentStep() >= 2">
+            <div class="step-number">3</div>
+            <span>Finalizare</span>
+          </div>
+        </div>
+
+      <!-- Step 1: Invitation Code -->
+      @if (currentStep() === 0) {
+        <form [formGroup]="invitationForm" class="form-step">
+          <div class="invitation-info">
+            <mat-icon>vpn_key</mat-icon>
+            <p>
+              Pentru a te înregistra ca antrenor, ai nevoie de un cod de invitație.
+              Contactează-ne dacă nu ai primit unul.
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label for="invitationCode">Cod de invitație</label>
+            <input
+              type="text"
+              id="invitationCode"
+              formControlName="invitationCode"
+              placeholder="COACH-XXXXXXXX"
+              autocomplete="off"
+              class="invitation-input"
+            />
+            <app-form-error [control]="invitationForm.get('invitationCode')"></app-form-error>
+          </div>
+
+          <div class="form-actions">
+            <a routerLink="/signup" class="btn-text">
+              <mat-icon>arrow_back</mat-icon>
+              Înapoi
+            </a>
+            <button type="button" class="btn-primary" (click)="nextStep()">
+              Continuă
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+        </form>
+      }
+
+      <!-- Step 2: Basic Info -->
+      @if (currentStep() === 1) {
+        <form [formGroup]="basicInfoForm" class="form-step">
+          <div class="form-group">
+            <label for="name">Nume complet</label>
+            <input
+              type="text"
+              id="name"
+              formControlName="name"
+              placeholder="Ion Popescu"
+              autocomplete="name"
+            />
+            <app-form-error [control]="basicInfoForm.get('name')"></app-form-error>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              formControlName="email"
+              placeholder="email@exemplu.com"
+              autocomplete="email"
+            />
+            <app-form-error [control]="basicInfoForm.get('email')"></app-form-error>
+          </div>
+
+          <div class="form-group">
+            <label for="password">Parolă</label>
+            <div class="password-input">
+              <input
+                [type]="showPassword() ? 'text' : 'password'"
+                id="password"
+                formControlName="password"
+                placeholder="Minim 6 caractere"
+                autocomplete="new-password"
+              />
+              <button type="button" class="password-toggle" (click)="togglePasswordVisibility()">
+                <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+            </div>
+            <app-form-error [control]="basicInfoForm.get('password')"></app-form-error>
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Telefon</label>
+            <input
+              type="tel"
+              id="phone"
+              formControlName="phone"
+              placeholder="+40 7XX XXX XXX"
+              autocomplete="tel"
+            />
+            <app-form-error [control]="basicInfoForm.get('phone')"></app-form-error>
+          </div>
+
+          <!-- Sports Selection -->
+          <div class="form-group sports-group">
+            <label>Sporturi pe care le antrenezi</label>
+            <p class="sports-hint">Selectează unul sau mai multe sporturi (opțional)</p>
+            
+            @if (sportsLoading()) {
+              <div class="sports-loading">
+                <span class="spinner-small"></span>
+                Se încarcă sporturile...
+              </div>
+            } @else if (availableSports().length === 0) {
+              <div class="sports-empty">
+                <mat-icon>info</mat-icon>
+                <span>Nu există sporturi disponibile momentan.</span>
+              </div>
+            } @else {
+              <div class="sports-grid">
+                @for (sport of availableSports(); track sport.id) {
+                  <button 
+                    type="button"
+                    class="sport-chip"
+                    [class.selected]="isSportSelected(sport.id)"
+                    (click)="toggleSport(sport.id)"
+                  >
+                    <mat-icon>{{ isSportSelected(sport.id) ? 'check_circle' : 'sports' }}</mat-icon>
+                    {{ sport.name }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-text" (click)="prevStep()">
+              <mat-icon>arrow_back</mat-icon>
+              Înapoi
+            </button>
+            <button type="button" class="btn-primary" (click)="nextStep()">
+              Continuă
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+        </form>
+      }
+
+      <!-- Step 3: Review & Submit -->
+      @if (currentStep() === 2) {
+        <div class="review-step">
+          <h2>Verifică datele</h2>
+
+          <div class="review-section">
+            <h3>Informații de bază</h3>
+            <div class="review-item">
+              <span class="label">Nume:</span>
+              <span class="value">{{ basicInfoForm.get('name')?.value }}</span>
+            </div>
+            <div class="review-item">
+              <span class="label">Email:</span>
+              <span class="value">{{ basicInfoForm.get('email')?.value }}</span>
+            </div>
+            <div class="review-item">
+              <span class="label">Telefon:</span>
+              <span class="value">{{ basicInfoForm.get('phone')?.value }}</span>
+            </div>
+            <div class="review-item">
+              <span class="label">Sporturi:</span>
+              <span class="value">
+                @if (selectedSportIds().size === 0) {
+                  <span class="no-sports">Niciun sport selectat</span>
+                } @else {
+                  @for (sport of availableSports(); track sport.id) {
+                    @if (isSportSelected(sport.id)) {
+                      <span class="sport-tag">{{ sport.name }}</span>
+                    }
+                  }
+                }
+              </span>
+            </div>
+          </div>
+
+          <div class="stripe-notice">
+            <mat-icon>account_balance</mat-icon>
+            <p>După înregistrare, vei putea configura primirea plăților prin Stripe.</p>
+          </div>
+
+          <div class="terms-notice">
+            <mat-icon>info</mat-icon>
+            <p>
+              Prin crearea contului, accepți
+              <a href="/termeni" target="_blank">Termenii și Condițiile</a>
+              și
+              <a href="/confidentialitate" target="_blank">Politica de Confidențialitate</a>.
+            </p>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-text" (click)="prevStep()">
+              <mat-icon>arrow_back</mat-icon>
+              Înapoi
+            </button>
+            <button
+              type="button"
+              class="btn-primary btn-submit"
+              [disabled]="isSubmitting()"
+              (click)="submit()"
+            >
+              @if (isSubmitting()) {
+                <span class="spinner"></span>
+                Se procesează...
+              } @else {
+                <mat-icon>check</mat-icon>
+                Creează contul
+              }
+            </button>
+          </div>
+        </div>
+      }
+
+        <p class="coach-redirect">
+          Ai deja cont?
+          <a routerLink="/login" class="coach-link">Autentifică-te</a>
+        </p>
+      </div>
+    }
+
+    <!-- Trust Badges -->
+    <div class="coach-trust scroll-reveal scroll-reveal--fade-up scroll-reveal--delay-100">
+      <div class="trust-badge">
+        <mat-icon>lock</mat-icon>
+        <span>Date securizate</span>
+      </div>
+      <div class="trust-badge">
+        <mat-icon>payments</mat-icon>
+        <span>Plăți directe</span>
+      </div>
+      <div class="trust-badge">
+        <mat-icon>support_agent</mat-icon>
+        <span>Suport dedicat</span>
+      </div>
+    </div>
+  </div>
+</section>

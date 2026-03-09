@@ -1,0 +1,974 @@
+// ============================================
+// ADMIN COURSE FORM - Standardized Styles
+// ============================================
+:host {
+  display: block;
+}
+
+.course-form-page {
+  display: grid;
+  gap: 2rem;
+  max-width: none; // Allow full width to match course list
+  margin: 0; // Remove auto margin since we are full width
+}
+
+// ============================================
+// HERO SECTION
+// ============================================
+.page-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 2rem 2.5rem;
+  background: linear-gradient(135deg, #eff6ff 0%, var(--sport-bg-light) 50%, #fffbeb 100%);
+  border-radius: var(--radius-card);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800;
+  color: var(--sport-text-dark);
+  margin: 0.5rem 0 0.25rem;
+  letter-spacing: -0.02em;
+
+  span {
+    color: var(--sport-accent);
+  }
+}
+
+.hero-subtitle {
+  font-size: 0.95rem;
+  color: var(--sport-text-muted);
+  margin: 0;
+}
+
+// ============================================
+// HERO BUTTONS
+// ============================================
+.hero-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  border-radius: var(--radius-btn);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 2;
+
+  mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  &--secondary {
+    background: var(--sport-bg-white);
+    color: var(--sport-accent);
+    border: 2px solid var(--sport-accent);
+    box-shadow: none;
+
+    &:hover {
+      background: var(--sport-bg-white);
+      color: var(--sport-accent);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+    }
+  }
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: var(--sport-bg-white);
+  color: var(--sport-primary);
+  border: 2px solid var(--sport-primary);
+  border-radius: var(--radius-btn);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  position: relative;
+  z-index: 2;
+
+  mat-icon {
+    font-size: 1.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  &:hover {
+    background: var(--sport-primary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  }
+
+  &--small {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8rem;
+  }
+}
+
+// ============================================
+// PAGE LAYOUT
+// ============================================
+.page-layout {
+  display: block;
+}
+
+.main-content {
+  display: grid;
+  gap: 1.5rem;
+}
+
+// ============================================
+// BADGES
+// ============================================
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  &--warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--sport-accent-dark);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+
+  &--success {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    color: #166534;
+    border: 1px solid #22c55e;
+  }
+
+  &--error {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+    border: 1px solid #ef4444;
+  }
+}
+
+// ============================================
+// ALERT
+// ============================================
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius-card);
+
+  &__icon {
+    flex-shrink: 0;
+    font-size: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  &__content {
+    flex: 1;
+  }
+
+  &__title {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--sport-text-dark);
+  }
+
+  &__text {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    margin: 0;
+    opacity: 0.9;
+  }
+
+  &--error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+
+    .alert__icon {
+      color: #ef4444;
+    }
+  }
+}
+
+// ============================================
+// SECTION CARD
+// ============================================
+.section-card {
+  background: var(--sport-bg-white);
+  border-radius: var(--radius-card);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--sport-text-dark);
+
+  mat-icon {
+    color: var(--sport-accent);
+  }
+}
+
+// ============================================
+// PICKER GRID (Coach)
+// ============================================
+.picker-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.picker-card {
+  padding: 1rem;
+  border-radius: var(--radius-card);
+  border: 1px solid rgba(245, 158, 11, 0.3); // Amber border
+  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%); // Amber tint
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+
+    mat-icon {
+      color: var(--sport-accent);
+    }
+  }
+
+  mat-select {
+    background: var(--sport-bg-white);
+    border-radius: 10px;
+    border: 2px solid var(--color-border-subtle);
+    padding: 0.75rem;
+    font-size: 0.9rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+
+    &:focus {
+      border-color: var(--sport-accent);
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+    }
+
+    ::ng-deep {
+
+      .mat-mdc-select-value,
+      .mat-mdc-select-value-text,
+      .mat-mdc-select-trigger {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        max-width: 100% !important;
+      }
+
+      .mat-mdc-select-arrow-wrapper {
+        flex-shrink: 0 !important;
+      }
+    }
+  }
+}
+
+// ============================================
+// MEDIA GRID (Coach + Photos)
+// ============================================
+// ============================================
+// MEDIA GRID (Photos)
+// ============================================
+.media-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.media-card {
+  background: var(--sport-bg-light); // Keep subtle
+  border: 1px solid rgba(245, 158, 11, 0.3); // Amber border
+  border-radius: 14px;
+  padding: 1.25rem;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  &--wide {
+    grid-column: 1 / -1;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--sport-text-dark);
+
+    mat-icon {
+      color: var(--sport-accent);
+      font-size: 1.125rem;
+      width: 1.125rem;
+      height: 1.125rem;
+    }
+  }
+
+  mat-select {
+    background: var(--sport-bg-white);
+    border-radius: 10px;
+    border: 2px solid var(--color-border-subtle);
+    padding: 0.75rem;
+    font-size: 0.9rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:focus {
+      border-color: var(--sport-primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    ::ng-deep {
+
+      .mat-mdc-select-value,
+      .mat-mdc-select-value-text,
+      .mat-mdc-select-trigger {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        max-width: 100% !important;
+      }
+
+      .mat-mdc-select-arrow-wrapper {
+        flex-shrink: 0 !important;
+      }
+    }
+  }
+}
+
+// ============================================
+// COACH DETAILS
+// ============================================
+.coach-details {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--sport-bg-white);
+  border-radius: 10px;
+  border: 1px solid var(--color-border-subtle);
+
+  .coach-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+
+    strong {
+      font-size: 0.9rem;
+      color: var(--sport-text-dark);
+    }
+
+    span {
+      font-size: 0.8rem;
+      color: var(--sport-text-muted);
+    }
+  }
+}
+
+.empty-hint {
+  padding: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--sport-text-muted);
+  text-align: center;
+  background: var(--sport-bg-white);
+  border-radius: 10px;
+  border: 2px dashed var(--color-border-default);
+
+  p {
+    margin: 0;
+  }
+}
+
+// ============================================
+// HERO PHOTO
+// ============================================
+.hero-photo-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// ============================================
+// UPLOAD BUTTON
+// ============================================
+.upload-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 100px;
+  padding: 1rem;
+  color: var(--sport-accent-dark);
+  border: 2px dashed rgba(245, 158, 11, 0.3); // Amber dashed
+  background: var(--sport-bg-white);
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #fffbeb; // Amber tint
+    border-color: var(--sport-accent);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  mat-icon {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+  }
+
+  span {
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+}
+
+.photo-preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--sport-bg-white);
+  border: 2px solid rgba(245, 158, 11, 0.3);
+
+  &__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &__remove {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 10;
+  }
+}
+
+.action-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+  mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &--delete {
+    color: #ef4444;
+
+    &:hover:not(:disabled) {
+      background: #fef2f2;
+      transform: translateY(-2px);
+    }
+  }
+}
+
+// ============================================
+// GALLERY GRID
+// ============================================
+// ============================================
+// GALLERY GRID - Large Cards
+// ============================================
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); // Responsive large cards
+  gap: 1rem;
+}
+
+.gallery-item {
+  position: relative;
+  width: 100%; // Fill grid cell
+  height: auto;
+  aspect-ratio: 4 / 3; // Standard card ratio
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--sport-bg-white);
+  border: 2px solid rgba(245, 158, 11, 0.3); // Amber border
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &:hover {
+    border-color: var(--sport-accent);
+    transform: translateY(-2px); // Lift effect
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+  }
+
+  &--new {
+    border-color: var(--sport-primary);
+    border-style: dashed;
+  }
+
+  &__delete {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+
+  &__order {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    background: rgba(245, 158, 11, 0.9); // Amber badge
+    color: var(--sport-text-dark);
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+  }
+}
+
+.gallery-add {
+  width: 100%; // Fill grid cell
+  height: 100%;
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed rgba(245, 158, 11, 0.3); // Amber
+  border-radius: 12px;
+  background: var(--sport-bg-white);
+  color: var(--sport-accent-dark);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  mat-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+  }
+
+  &:hover:not(:disabled) {
+    background: #fffbeb;
+    border-color: var(--sport-accent);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// ============================================
+// TIP CARD
+// ============================================
+.tip-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, var(--sport-primary) 0%, #3b82f6 100%);
+  border-radius: var(--radius-card);
+  color: white;
+
+  mat-icon {
+    font-size: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    opacity: 0.9;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+}
+
+// ============================================
+// RESPONSIVE
+// ============================================
+@media (max-width: 768px) {
+  .page-hero {
+    flex-direction: column;
+    text-align: center;
+    padding: 1.5rem;
+    gap: 1rem;
+
+    &::before {
+      display: none;
+    }
+  }
+
+  .back-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .media-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .media-card--wide {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .course-form-page {
+    gap: 1rem;
+  }
+
+  .section-card {
+    padding: 1rem;
+  }
+
+  .gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+}
+
+// ============================================
+// GALLERY CONTROLS - Pill Style Reorder
+// ============================================
+.gallery-item {
+  &__controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.75rem;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+
+    // Always visible on touch devices and small screens
+    @media (hover: none), (max-width: 768px) {
+      opacity: 1;
+    }
+  }
+
+  &:hover &__controls {
+    opacity: 1;
+  }
+}
+
+// Pill-style reorder control
+.reorder-pill {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 999px;
+  padding: 0.25rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(8px);
+
+  &__btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--sport-text-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    mat-icon {
+      font-size: 1.125rem;
+      width: 1.125rem;
+      height: 1.125rem;
+      transition: color 0.2s ease;
+    }
+
+    &:hover:not(:disabled):not(.reorder-pill__btn--disabled) {
+      mat-icon {
+        color: var(--sport-accent);
+      }
+    }
+
+    &:active:not(:disabled):not(.reorder-pill__btn--disabled) {
+      transform: scale(0.95);
+    }
+
+    &--disabled,
+    &:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      color: var(--sport-text-muted);
+    }
+
+    &--left {
+      margin-right: 0.125rem;
+    }
+
+    &--right {
+      margin-left: 0.125rem;
+    }
+  }
+
+  &__position {
+    padding: 0 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--sport-text-dark);
+    white-space: nowrap;
+    min-width: 50px;
+    text-align: center;
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Remove old order, drag styles
+.gallery-item__drag,
+.gallery-item__order {
+  display: none;
+}
+
+// ============================================
+// FIX DROPDOWN OVERLAY POSITIONING
+// ============================================
+// Fix overlay backdrop positioning for mat-select - only ensure it covers the viewport
+::ng-deep .cdk-overlay-backdrop.cdk-overlay-transparent-backdrop {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+// Fix overlay container - let CDK handle positioning but ensure proper viewport coverage
+::ng-deep .cdk-overlay-container {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  pointer-events: none !important;
+  z-index: 1000 !important;
+}
+
+// Ensure connected position bounding box doesn't interfere with positioning
+::ng-deep .cdk-overlay-connected-position-bounding-box {
+  position: absolute !important;
+}
+
+// Ensure overlay pane allows CDK to calculate position correctly
+::ng-deep .cdk-overlay-pane {
+  position: absolute !important;
+  pointer-events: auto !important;
+  
+  // Fix for mat-select panels - ensure they align correctly with their triggers
+  // This is especially important when mat-select is not in mat-form-field
+  .mat-mdc-select-panel {
+    // CDK should handle positioning, but we ensure no unwanted transforms
+    transform-origin: top left !important;
+    // Ensure no horizontal margin that could cause offset
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-top: 8px !important; // Only vertical spacing
+  }
+}
+
+// Ensure the connected position bounding box doesn't add offset
+::ng-deep .cdk-overlay-connected-position-bounding-box {
+  // Ensure no padding or margin that could affect positioning
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+// Fix mat-select panel styling without forcing position
+::ng-deep .mat-mdc-select-panel {
+  border-radius: 16px !important;
+  padding: 8px !important;
+  background: #ffffff !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+  margin-top: 8px !important;
+  animation: dropdownFadeIn 0.2s cubic-bezier(0, 0, 0.2, 1);
+  max-width: 100vw !important;
+  min-width: 0 !important;
+
+  .mat-mdc-option {
+    border-radius: 10px !important;
+    margin-bottom: 2px !important;
+    transition: all 0.2s ease !important;
+    min-height: 44px !important;
+
+    &:last-child { margin-bottom: 0 !important; }
+
+    .mdc-list-item__primary-text {
+      font-size: 0.9375rem !important;
+      font-weight: 500 !important;
+      color: var(--sport-text-dark) !important;
+    }
+
+    /* Selected State - Make it more visible */
+    &.mdc-list-item--selected:not(.mdc-list-item--disabled) {
+      background-color: rgba(245, 158, 11, 0.15) !important;
+      border: 2px solid rgba(245, 158, 11, 0.3) !important;
+      
+      .mdc-list-item__primary-text {
+        color: var(--sport-accent-dark) !important;
+        font-weight: 700 !important;
+      }
+
+      /* Custom checkmark/pseudo-checkbox color */
+      .mat-pseudo-checkbox-full.mat-pseudo-checkbox-checked {
+        background-color: var(--sport-accent) !important;
+        border-color: var(--sport-accent) !important;
+      }
+
+      /* Ensure checkmark is visible */
+      .mat-pseudo-checkbox {
+        opacity: 1 !important;
+        visibility: visible !important;
+      }
+    }
+
+    /* Hover State */
+    &:hover:not(.mdc-list-item--selected):not(.mdc-list-item--disabled) {
+      background-color: var(--sport-bg-light) !important;
+    }
+  }
+}
+
+// Specific fix for picker-card mat-select dropdown alignment
+// The issue is that CDK calculates position relative to viewport, but needs to account for card padding
+.picker-card {
+  mat-select {
+    // Ensure select has proper box model and positioning
+    box-sizing: border-box !important;
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    
+    ::ng-deep {
+      // Ensure the select trigger has proper positioning context
+      .mat-mdc-select-trigger {
+        position: relative !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+      }
+      
+      // Ensure text field wrapper doesn't add extra offset
+      .mat-mdc-text-field-wrapper {
+        box-sizing: border-box !important;
+        width: 100% !important;
+      }
+      
+      // Ensure the select value container doesn't add offset
+      .mat-mdc-select-value {
+        box-sizing: border-box !important;
+      }
+    }
+  }
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

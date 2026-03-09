@@ -1,0 +1,47 @@
+<div class="location-map">
+  <div class="location-info">
+    <div class="location-details">
+      <h3 class="location-name">{{ location.name }}</h3>
+      <p *ngIf="getLocationDisplayText() !== location.name" class="location-address">
+        {{ getLocationDisplayText() }}
+      </p>
+    </div>
+
+    <button 
+      type="button"
+      class="open-maps-btn"
+      (click)="openInGoogleMaps()"
+      mat-stroked-button
+    >
+      <mat-icon>open_in_new</mat-icon>
+      Deschide în Google Maps
+    </button>
+  </div>
+
+  <div class="map-container" *ngIf="hasCoordinates(); else noCoordinatesTemplate">
+    <div class="map-inner" #mapContainer></div>
+    
+    <!-- We removed the iframe and overlay, as Leaflet provides interactivity -->
+  </div>
+
+  <ng-template #noCoordinatesTemplate>
+    <div class="no-coordinates">
+      <div class="no-coordinates-content">
+        <mat-icon>location_searching</mat-icon>
+        <h4>Coordonate indisponibile</h4>
+        <p>Nu avem coordonatele exacte pentru această locație.</p>
+        <button 
+          type="button"
+          class="search-location-btn"
+          (click)="openInGoogleMaps()"
+          mat-raised-button
+          color="primary"
+        >
+          <mat-icon>search</mat-icon>
+          Caută locația
+        </button>
+      </div>
+    </div>
+  </ng-template>
+</div>
+

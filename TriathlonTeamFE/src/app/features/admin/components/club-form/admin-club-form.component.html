@@ -1,0 +1,217 @@
+<section class="club-form-page">
+  <!-- Hero Section -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--warning">Administrare</span>
+      <h1 class="hero-title">Editează <span>Club</span></h1>
+      <p class="hero-subtitle">Gestionează detaliile clubului, datele fiscale și sporturile.</p>
+    </div>
+    <div class="hero-actions">
+      <button class="hero-btn hero-btn--secondary" type="button" (click)="onCancel()">
+        <mat-icon>arrow_back</mat-icon>
+        <span>Înapoi la listă</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="isLoading()">
+    <div class="loading-spinner"></div>
+    <p>Se încarcă datele...</p>
+  </div>
+
+  <div class="page-layout" *ngIf="!isLoading() && club()">
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon stat-icon--blue">
+          <mat-icon>sports</mat-icon>
+        </div>
+        <div class="stat-info">
+          <span class="stat-number">{{ club()?.coachCount }}</span>
+          <span class="stat-label">Antrenori</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon--green">
+          <mat-icon>school</mat-icon>
+        </div>
+        <div class="stat-info">
+          <span class="stat-number">{{ club()?.courseCount }}</span>
+          <span class="stat-label">Cursuri</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon--amber">
+          <mat-icon>payment</mat-icon>
+        </div>
+        <div class="stat-info">
+          <span class="stat-number">{{ club()?.stripeConnected ? 'Activ' : 'Inactiv' }}</span>
+          <span class="stat-label">Stripe Connect</span>
+        </div>
+      </div>
+    </div>
+
+    <main class="main-content">
+      <form [formGroup]="form" (ngSubmit)="saveClub()" class="form-layout">
+        
+        <!-- General Info -->
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-header__left">
+              <h2 class="section-title">
+                <mat-icon>business</mat-icon>
+                Date Generale
+              </h2>
+            </div>
+            <div class="section-header__right">
+              <span class="badge" [class.badge--success]="club()?.active" [class.badge--error]="!club()?.active">
+                {{ club()?.active ? 'Activ' : 'Inactiv' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="logo-upload-section">
+            <div class="logo-container">
+              <img *ngIf="logoPreview() || club()?.hasLogo" 
+                   [src]="logoPreview() || getLogoUrl()" 
+                   alt="Logo Club" 
+                   (error)="$event.target.style.display='none'" />
+              <mat-icon *ngIf="!logoPreview() && !club()?.hasLogo">business</mat-icon>
+            </div>
+            <div>
+              <input type="file" #fileInput hidden accept="image/*" (change)="onLogoSelected($event)">
+              <button type="button" class="hero-btn hero-btn--secondary" (click)="fileInput.click()">
+                <mat-icon>cloud_upload</mat-icon>
+                <span>Încarcă Logo</span>
+              </button>
+              <p class="helper-text">
+                Format: PNG, JPG, WEBP. Max 5MB.
+              </p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <mat-form-field appearance="fill">
+              <mat-label>Nume Club</mat-label>
+              <input matInput formControlName="name" required>
+              <mat-error *ngIf="form.get('name')?.hasError('required')">Numele este obligatoriu</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="fill">
+              <mat-label>Email Contact</mat-label>
+              <input matInput formControlName="email" type="email" required>
+              <mat-error *ngIf="form.get('email')?.hasError('required')">Emailul este obligatoriu</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="fill">
+              <mat-label>Telefon</mat-label>
+              <input matInput formControlName="phone">
+            </mat-form-field>
+
+            <mat-form-field appearance="fill">
+              <mat-label>Website</mat-label>
+              <input matInput formControlName="website">
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="full-width">
+              <mat-label>Descriere</mat-label>
+              <textarea matInput formControlName="description" rows="3"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="full-width">
+              <mat-label>Adresă Sediu</mat-label>
+              <input matInput formControlName="address">
+            </mat-form-field>
+
+            <mat-form-field appearance="fill">
+              <mat-label>Oraș</mat-label>
+              <input matInput formControlName="city">
+            </mat-form-field>
+          </div>
+        </section>
+
+        <!-- Billing Info -->
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-header__left">
+              <h2 class="section-title">
+                <mat-icon>receipt_long</mat-icon>
+                Date Facturare
+              </h2>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <mat-form-field appearance="fill">
+              <mat-label>Nume Companie (Fiscal)</mat-label>
+              <input matInput formControlName="companyName">
+            </mat-form-field>
+
+            <mat-form-field appearance="fill">
+              <mat-label>CUI / CIF</mat-label>
+              <input matInput formControlName="companyCui">
+            </mat-form-field>
+
+            <mat-form-field appearance="fill">
+              <mat-label>Nr. Reg. Com.</mat-label>
+              <input matInput formControlName="companyRegNumber">
+            </mat-form-field>
+
+            <mat-form-field appearance="fill">
+              <mat-label>Banca</mat-label>
+              <input matInput formControlName="bankName">
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="full-width">
+              <mat-label>Cont IBAN</mat-label>
+              <input matInput formControlName="bankAccount">
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="full-width">
+              <mat-label>Adresă Companie</mat-label>
+              <textarea matInput formControlName="companyAddress" rows="2"></textarea>
+            </mat-form-field>
+          </div>
+        </section>
+
+        <!-- Sports Selection -->
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-header__left">
+              <h2 class="section-title">
+                <mat-icon>pool</mat-icon>
+                Sporturi Oferite
+              </h2>
+            </div>
+          </div>
+
+          <div class="sports-grid">
+            <div class="sport-checkbox" *ngFor="let sport of allSports()"
+                 [class.selected]="isSportSelected(sport.id)"
+                 (click)="toggleSport(sport.id, !isSportSelected(sport.id))">
+              <mat-checkbox 
+                [checked]="isSportSelected(sport.id)"
+                (change)="toggleSport(sport.id, $event.checked)"
+                (click)="$event.stopPropagation()">
+                {{ sport.name }}
+              </mat-checkbox>
+            </div>
+          </div>
+        </section>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button type="button" class="hero-btn hero-btn--secondary" (click)="onCancel()">
+            Anulează
+          </button>
+          <button type="submit" class="hero-btn" [disabled]="form.invalid || isSaving()">
+            <mat-icon>save</mat-icon>
+            {{ isSaving() ? 'Se salvează...' : 'Salvează Modificările' }}
+          </button>
+        </div>
+
+      </form>
+    </main>
+  </div>
+</section>

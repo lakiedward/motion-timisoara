@@ -1,0 +1,1 @@
+- [ ] Update FE auth models to remove token fields\n- [ ] Wire CSRF support: XSRF cookie/header + bootstrap fetch /api/auth/csrf\n- [ ] Adjust app config providers for XSRF\n- [ ] Verify AuthService types

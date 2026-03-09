@@ -1,0 +1,43 @@
+<div class="week-schedule">
+  <!-- Mobile scroll hint (only shows on mobile) -->
+  <div class="scroll-hint" #hintElement>
+    <span class="scroll-hint-text">Glisează pentru a vedea toate zilele</span>
+    <mat-icon class="scroll-hint-icon">swipe</mat-icon>
+  </div>
+  
+  <!-- Schedule Cards Container -->
+  <div class="schedule-container" #scrollContainer>
+    <div class="schedule-grid">
+      @for (day of calendarDays(); track trackByDay($index, day)) {
+        <div
+          class="day-card"
+          [class.is-today]="day.isToday"
+          [class.has-events]="day.occurrences.length > 0"
+        >
+          <!-- Day Header -->
+          <div class="day-header">
+            <span class="day-name">{{ day.dayName }}</span>
+            @if (day.isToday) {
+              <span class="today-label">Astăzi</span>
+            }
+          </div>
+
+          <!-- Day Content -->
+          <div class="day-content">
+            @if (day.occurrences.length > 0) {
+              <div class="time-slots">
+                @for (occurrence of day.occurrences; track trackByOccurrence($index, occurrence)) {
+                  <div class="time-slot">
+                    {{ formatTime(occurrence.startTime, occurrence.endTime) }}
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="no-events">—</div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

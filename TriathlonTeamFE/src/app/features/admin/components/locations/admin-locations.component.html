@@ -1,0 +1,167 @@
+<section class="locations-page" *ngIf="!isLoading(); else loadingState">
+  <!-- Hero Section - Admin Pattern -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--warning">Administrare</span>
+      <h1 class="hero-title">Gestionare <span>Locații</span></h1>
+      <p class="hero-subtitle">Administrează locațiile folosite pentru cursuri și antrenamente.</p>
+    </div>
+    <button class="hero-btn" type="button" (click)="openCreateDialog()">
+      <mat-icon aria-hidden="true">add_location</mat-icon>
+      <span>Adaugă locație</span>
+    </button>
+  </header>
+
+  <!-- Stats Cards -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>place</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ locations().length }}</span>
+        <span class="stat-label">Locații totale</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--cyan">
+        <mat-icon>pool</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getPoolCount() }}</span>
+        <span class="stat-label">Bazine</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--green">
+        <mat-icon>directions_run</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getTrackCount() }}</span>
+        <span class="stat-label">Piste</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Locations Section -->
+  <section class="section-card">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>place</mat-icon>
+          Lista Locații
+        </h2>
+        <span class="section-count">{{ filteredLocations().length }}</span>
+      </div>
+      <div class="chips chips--admin">
+        <button mat-stroked-button type="button" [attr.aria-pressed]="filter() === 'all'"
+          [class.active]="filter() === 'all'" (click)="setFilter('all')">
+          Toate
+        </button>
+        <button mat-stroked-button type="button" [attr.aria-pressed]="filter() === 'POOL'"
+          [class.active]="filter() === 'POOL'" (click)="setFilter('POOL')">
+          Bazine
+        </button>
+        <button mat-stroked-button type="button" [attr.aria-pressed]="filter() === 'TRACK'"
+          [class.active]="filter() === 'TRACK'" (click)="setFilter('TRACK')">
+          Piste
+        </button>
+        <button mat-stroked-button type="button" [attr.aria-pressed]="filter() === 'GYM'"
+          [class.active]="filter() === 'GYM'" (click)="setFilter('GYM')">
+          Săli
+        </button>
+      </div>
+    </div>
+
+    <!-- Locations Grid -->
+    <div class="locations-grid" *ngIf="filteredLocations().length; else emptyState">
+      <article class="location-card" *ngFor="let location of filteredLocations(); trackBy: trackByLocation">
+        <div class="location-card__header">
+          <div class="location-icon" [attr.data-type]="location.type">
+            <mat-icon>{{ getTypeIcon(location.type) }}</mat-icon>
+          </div>
+          <div class="location-actions">
+            <button class="action-btn action-btn--edit" (click)="openEditDialog(location)" matTooltip="Editează">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button class="action-btn action-btn--delete" [disabled]="deletingLocationId() === location.id"
+              (click)="deleteLocation(location)" matTooltip="Șterge">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <div class="location-card__body">
+          <span class="type-badge" [attr.data-type]="location.type">
+            {{ getTypeLabel(location.type) }}
+          </span>
+          <h3 class="location-name">{{ location.name }}</h3>
+          <div class="location-meta">
+            <span class="meta-item" *ngIf="location.address">
+              <mat-icon>location_on</mat-icon>
+              {{ location.address }}
+            </span>
+            <span class="meta-item meta-item--muted" *ngIf="!location.address">
+              <mat-icon>location_off</mat-icon>
+              Adresă nespecificată
+            </span>
+          </div>
+        </div>
+
+        <div class="location-card__footer">
+          <div class="coordinates-display" *ngIf="location.lat && location.lng">
+            <mat-icon>my_location</mat-icon>
+            <span class="coordinates">{{ location.lat | number: '1.4-4' }}, {{ location.lng | number: '1.4-4' }}</span>
+          </div>
+          <div class="no-coordinates" *ngIf="!location.lat || !location.lng">
+            <mat-icon>location_disabled</mat-icon>
+            <span>Fără coordonate</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>
+
+<ng-template #loadingState>
+  <div class="locations-page">
+    <div class="page-hero page-hero--skeleton">
+      <div class="hero-content">
+        <div class="skeleton skeleton--badge"></div>
+        <div class="skeleton skeleton--title"></div>
+        <div class="skeleton skeleton--subtitle"></div>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="skeleton-card skeleton-card--stat" *ngFor="let _ of [1, 2, 3]"></div>
+    </div>
+    <div class="section-card">
+      <div class="loading-grid">
+        <div class="skeleton-card" *ngFor="let _ of [1, 2, 3, 4, 5, 6]"></div>
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #emptyState>
+  <!-- No results for filter -->
+  <div class="empty-state" *ngIf="locations().length > 0">
+    <mat-icon class="empty-state__icon">filter_list_off</mat-icon>
+    <h3 class="empty-state__title">Nicio locație găsită pentru filtrul selectat</h3>
+    <p class="empty-state__text">Încearcă să schimbi criteriile de filtrare pentru a vedea mai multe rezultate.</p>
+    <button class="btn-elite btn-elite--primary" type="button" (click)="setFilter('all')">
+      Arată toate locațiile
+    </button>
+  </div>
+
+  <!-- No locations at all -->
+  <div class="empty-state" *ngIf="locations().length === 0">
+    <mat-icon class="empty-state__icon">place</mat-icon>
+    <h3 class="empty-state__title">Nicio locație înregistrată</h3>
+    <p class="empty-state__text">Începe prin a adăuga prima locație pentru cursuri și antrenamente.</p>
+    <button class="btn-elite btn-elite--primary" type="button" (click)="openCreateDialog()">
+      <mat-icon aria-hidden="true">add_location</mat-icon>
+      Adaugă prima locație
+    </button>
+  </div>
+</ng-template>

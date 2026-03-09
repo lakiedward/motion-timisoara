@@ -1,0 +1,511 @@
+<!-- ============================================
+     NEW HEADER - Flat Navigation with Dropdowns
+     Structure: [Logo 🏠] | [Programe ▼] | [Hartă] | [Antrenori] | [Despre ▼] | ... | [Contul meu ▼] | [Role Dropdowns] | [Avatar]
+     ============================================ -->
+
+<header 
+  class="header" 
+  [class.header--scrolled]="isScrolled"
+>
+  <div class="header__container">
+    <!-- ===== LEFT: Logo + Public Navigation ===== -->
+    <div class="header__left">
+      <!-- Mobile Menu Toggle -->
+      <button 
+        class="header__menu-toggle" 
+        (click)="toggleMenu()" 
+        aria-label="Meniu"
+        [class.open]="isMenuOpen"
+      >
+        <span class="hamburger">
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+      </button>
+
+      <!-- Logo/Home -->
+      <a class="header__logo" routerLink="/" aria-label="Pagina principală">
+        <img 
+          *ngIf="!hideLogoImg" 
+          src="/ui/logo.png" 
+          alt="Motion Timișoara" 
+          class="header__logo-img"
+          (error)="hideLogoImg = true"
+        />
+        <mat-icon *ngIf="hideLogoImg" class="header__home-icon">home</mat-icon>
+        <span class="header__logo-text">Acasă</span>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <nav class="header__nav">
+        <!-- Programe Dropdown -->
+        <div 
+          class="nav-dropdown"
+          (mouseenter)="openDropdown('programs')"
+          (mouseleave)="closeDropdown()"
+        >
+          <button 
+            class="nav-dropdown__trigger"
+            [class.active]="activeDropdown() === 'programs'"
+            (click)="toggleDropdown('programs')"
+          >
+            <span>{{ programsDropdown.label }}</span>
+            <mat-icon class="nav-dropdown__arrow">expand_more</mat-icon>
+          </button>
+          <div class="nav-dropdown__menu" [class.open]="activeDropdown() === 'programs'">
+            <a 
+              *ngFor="let item of programsDropdown.items"
+              class="nav-dropdown__item"
+              [routerLink]="item.path"
+              routerLinkActive="nav-dropdown__item--active"
+              [routerLinkActiveOptions]="getActiveOptions(item)"
+              (click)="closeAllMenus()"
+            >
+              <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
+              <span>{{ item.label }}</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Hartă Link -->
+        <a class="nav-link" routerLink="/harta" routerLinkActive="nav-link--active">
+          <mat-icon>map</mat-icon>
+          <span>Hartă</span>
+        </a>
+
+        <!-- Echipă Dropdown -->
+        <div 
+          class="nav-dropdown"
+          (mouseenter)="openDropdown('team')"
+          (mouseleave)="closeDropdown()"
+        >
+          <button 
+            class="nav-dropdown__trigger"
+            [class.active]="activeDropdown() === 'team' || isTeamRouteActive()"
+            (click)="toggleDropdown('team')"
+          >
+            <span>{{ teamDropdown.label }}</span>
+            <mat-icon class="nav-dropdown__arrow">expand_more</mat-icon>
+          </button>
+          <div class="nav-dropdown__menu" [class.open]="activeDropdown() === 'team'">
+            <a 
+              *ngFor="let item of teamDropdown.items"
+              class="nav-dropdown__item"
+              [routerLink]="item.path"
+              routerLinkActive="nav-dropdown__item--active"
+              [routerLinkActiveOptions]="getActiveOptions(item)"
+              (click)="closeAllMenus()"
+            >
+              <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
+              <span>{{ item.label }}</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Despre Dropdown -->
+        <div 
+          class="nav-dropdown"
+          (mouseenter)="openDropdown('about')"
+          (mouseleave)="closeDropdown()"
+        >
+          <button 
+            class="nav-dropdown__trigger"
+            [class.active]="activeDropdown() === 'about'"
+            (click)="toggleDropdown('about')"
+          >
+            <span>{{ aboutDropdown.label }}</span>
+            <mat-icon class="nav-dropdown__arrow">expand_more</mat-icon>
+          </button>
+          <div class="nav-dropdown__menu" [class.open]="activeDropdown() === 'about'">
+            <a 
+              *ngFor="let item of aboutDropdown.items"
+              class="nav-dropdown__item"
+              [routerLink]="item.path"
+              routerLinkActive="nav-dropdown__item--active"
+              [routerLinkActiveOptions]="getActiveOptions(item)"
+              (click)="closeAllMenus()"
+            >
+              <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
+              <span>{{ item.label }}</span>
+            </a>
+          </div>
+        </div>
+      </nav>
+    </div>
+
+    <!-- ===== RIGHT: User Navigation ===== -->
+    <div class="header__right">
+      <!-- Mobile-only: Simple avatar/login button -->
+      <ng-container *ngIf="currentUser$ | async as user; else mobileGuestBtn">
+        <a class="mobile-avatar" routerLink="/account" aria-label="Contul meu">
+          <ng-container *ngIf="getResolvedAvatarUrl(user) as avatarUrl; else mobileAvatarFallback">
+            <img class="avatar-img" [src]="avatarUrl" [alt]="user.name || user.email" (error)="onAvatarError($event)" />
+          </ng-container>
+          <ng-template #mobileAvatarFallback>
+            {{ getInitials(user.name || user.email) }}
+          </ng-template>
+        </a>
+      </ng-container>
+      <ng-template #mobileGuestBtn>
+        <a class="mobile-login-btn" routerLink="/login" aria-label="Autentificare">
+          Cont
+        </a>
+      </ng-template>
+
+      <!-- Desktop dropdowns -->
+      <ng-container *ngIf="currentUser$ | async as user; else guestActions">
+        <!-- Contul meu Dropdown -->
+        <div 
+          class="nav-dropdown nav-dropdown--right"
+          (mouseenter)="openDropdown('account')"
+          (mouseleave)="closeDropdown()"
+        >
+          <button 
+            class="nav-dropdown__trigger"
+            [class.active]="activeDropdown() === 'account'"
+            (click)="toggleDropdown('account')"
+          >
+            <mat-icon>person</mat-icon>
+            <span>{{ accountDropdown.label }}</span>
+            <mat-icon class="nav-dropdown__arrow">expand_more</mat-icon>
+          </button>
+          <div class="nav-dropdown__menu" [class.open]="activeDropdown() === 'account'">
+            <a 
+              *ngFor="let item of accountDropdown.items"
+              class="nav-dropdown__item"
+              [routerLink]="item.path"
+              routerLinkActive="nav-dropdown__item--active"
+              [routerLinkActiveOptions]="getActiveOptions(item)"
+              (click)="closeAllMenus()"
+            >
+              <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
+              <span>{{ item.label }}</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Coach Dropdown (if coach/admin) -->
+        <div 
+          *ngIf="canSeeCoach(user.role)"
+          class="nav-dropdown nav-dropdown--right nav-dropdown--coach"
+          (mouseenter)="openDropdown('coach')"
+          (mouseleave)="closeDropdown()"
+        >
+          <button 
+            class="nav-dropdown__trigger"
+            [class.active]="activeDropdown() === 'coach'"
+            (click)="toggleDropdown('coach')"
+          >
+            <mat-icon>sports</mat-icon>
+            <span>{{ coachDropdown.label }}</span>
+            <mat-icon class="nav-dropdown__arrow">expand_more</mat-icon>
+          </button>
+          <div class="nav-dropdown__menu" [class.open]="activeDropdown() === 'coach'">
+            <a 
+              *ngFor="let item of coachDropdown.items"
+              class="nav-dropdown__item"
+              [routerLink]="item.path"
+              routerLinkActive="nav-dropdown__item--active"
+              [routerLinkActiveOptions]="getActiveOptions(item)"
+              (click)="closeAllMenus()"
+            >
+              <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
+              <span>{{ item.label }}</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Club Dropdown (if club) -->
+        <div 
+          *ngIf="canSeeClub(user.role)"
+          class="nav-dropdown nav-dropdown--right nav-dropdown--club"
+          (mouseenter)="openDropdown('club')"
+          (mouseleave)="closeDropdown()"
+        >
+          <button 
+            class="nav-dropdown__trigger"
+            [class.active]="activeDropdown() === 'club'"
+            (click)="toggleDropdown('club')"
+          >
+            <mat-icon>business</mat-icon>
+            <span>{{ clubDropdown.label }}</span>
+            <mat-icon class="nav-dropdown__arrow">expand_more</mat-icon>
+          </button>
+          <div class="nav-dropdown__menu" [class.open]="activeDropdown() === 'club'">
+            <a 
+              *ngFor="let item of clubDropdown.items"
+              class="nav-dropdown__item"
+              [routerLink]="item.path"
+              routerLinkActive="nav-dropdown__item--active"
+              [routerLinkActiveOptions]="getActiveOptions(item)"
+              (click)="closeAllMenus()"
+            >
+              <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
+              <span>{{ item.label }}</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Admin Dropdown (if admin) -->
+        <div 
+          *ngIf="canSeeAdmin(user.role)"
+          class="nav-dropdown nav-dropdown--right nav-dropdown--admin"
+          (mouseenter)="openDropdown('admin')"
+          (mouseleave)="closeDropdown()"
+        >
+          <button 
+            class="nav-dropdown__trigger"
+            [class.active]="activeDropdown() === 'admin'"
+            (click)="toggleDropdown('admin')"
+          >
+            <mat-icon>admin_panel_settings</mat-icon>
+            <span>{{ adminDropdown.label }}</span>
+            <mat-icon class="nav-dropdown__arrow">expand_more</mat-icon>
+          </button>
+          <div class="nav-dropdown__menu" [class.open]="activeDropdown() === 'admin'">
+            <a 
+              *ngFor="let item of adminDropdown.items"
+              class="nav-dropdown__item"
+              [routerLink]="item.path"
+              routerLinkActive="nav-dropdown__item--active"
+              [routerLinkActiveOptions]="getActiveOptions(item)"
+              (click)="closeAllMenus()"
+            >
+              <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
+              <span>{{ item.label }}</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Avatar (User Profile & Logout) -->
+        <div 
+          class="nav-dropdown nav-dropdown--avatar"
+          (mouseenter)="openDropdown('user')"
+          (mouseleave)="closeDropdown()"
+        >
+          <button 
+            class="avatar-trigger"
+            [class.active]="activeDropdown() === 'user'"
+            (click)="toggleDropdown('user')"
+          >
+            <span class="avatar">
+              <ng-container *ngIf="getResolvedAvatarUrl(user) as avatarUrl; else avatarTriggerFallback">
+                <img class="avatar-img" [src]="avatarUrl" [alt]="user.name || user.email" (error)="onAvatarError($event)" />
+              </ng-container>
+              <ng-template #avatarTriggerFallback>
+                {{ getInitials(user.name || user.email) }}
+              </ng-template>
+            </span>
+            <mat-icon class="avatar-arrow">expand_more</mat-icon>
+          </button>
+          <div class="nav-dropdown__menu nav-dropdown__menu--avatar" [class.open]="activeDropdown() === 'user'">
+            <!-- User Info -->
+            <div class="user-info">
+              <span class="user-info__avatar">
+                <ng-container *ngIf="getResolvedAvatarUrl(user) as avatarUrl; else userInfoAvatarFallback">
+                  <img class="avatar-img" [src]="avatarUrl" [alt]="user.name || user.email" (error)="onAvatarError($event)" />
+                </ng-container>
+                <ng-template #userInfoAvatarFallback>
+                  {{ getInitials(user.name || user.email) }}
+                </ng-template>
+              </span>
+              <div class="user-info__details">
+                <span class="user-info__name">{{ user.name || 'Utilizator' }}</span>
+                <span class="user-info__email">{{ user.email }}</span>
+              </div>
+            </div>
+            <div class="nav-dropdown__divider"></div>
+            <button class="nav-dropdown__item nav-dropdown__item--logout" (click)="logout()">
+              <mat-icon>logout</mat-icon>
+              <span>Deconectare</span>
+            </button>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Guest Actions -->
+      <ng-template #guestActions>
+        <div 
+          class="nav-dropdown nav-dropdown--avatar"
+          (mouseenter)="openDropdown('guest')"
+          (mouseleave)="closeDropdown()"
+        >
+          <button 
+            class="avatar-trigger avatar-trigger--guest"
+            [class.active]="activeDropdown() === 'guest'"
+            (click)="toggleDropdown('guest')"
+          >
+            <span class="avatar-trigger__text">Cont</span>
+            <mat-icon class="avatar-arrow">expand_more</mat-icon>
+          </button>
+          <div class="nav-dropdown__menu nav-dropdown__menu--avatar" [class.open]="activeDropdown() === 'guest'">
+            <a 
+              class="nav-dropdown__item"
+              routerLink="/login"
+              (click)="closeAllMenus()"
+            >
+              <mat-icon>login</mat-icon>
+              <span>Autentificare</span>
+            </a>
+            <a 
+              class="nav-dropdown__item nav-dropdown__item--register"
+              routerLink="/register"
+              (click)="closeAllMenus()"
+            >
+              <mat-icon>person_add</mat-icon>
+              <span>Înregistrare</span>
+            </a>
+          </div>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================
+     MOBILE MENU OVERLAY
+     ============================================ -->
+<div 
+  class="mobile-overlay" 
+  [class.open]="isMenuOpen" 
+  (click)="closeMenu()"
+></div>
+
+<!-- ============================================
+     MOBILE MENU DRAWER
+     ============================================ -->
+<aside class="mobile-drawer" [class.open]="isMenuOpen">
+  <!-- Header -->
+  <div class="mobile-drawer__header">
+    <div class="mobile-drawer__brand">
+      <img *ngIf="!hideLogoImg" src="/ui/logo.png" alt="Motion" class="mobile-drawer__logo" />
+      <div class="mobile-drawer__title">
+        <span class="mobile-drawer__name">Motion Timișoara</span>
+      </div>
+    </div>
+    <button class="mobile-drawer__close" (click)="closeMenu()" aria-label="Închide">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  
+  <!-- User Info (if logged in) -->
+  <div class="mobile-drawer__user" *ngIf="currentUser$ | async as user">
+    <span class="mobile-drawer__avatar">
+      <ng-container *ngIf="getResolvedAvatarUrl(user) as avatarUrl; else mobileDrawerAvatarFallback">
+        <img class="avatar-img" [src]="avatarUrl" [alt]="user.name || user.email" (error)="onAvatarError($event)" />
+      </ng-container>
+      <ng-template #mobileDrawerAvatarFallback>
+        {{ getInitials(user.name || user.email) }}
+      </ng-template>
+    </span>
+    <div class="mobile-drawer__user-info">
+      <span class="mobile-drawer__user-name">{{ user.name || 'Utilizator' }}</span>
+      <span class="mobile-drawer__user-email">{{ user.email }}</span>
+    </div>
+  </div>
+  
+  <!-- Mobile Navigation -->
+  <nav class="mobile-drawer__nav">
+    <!-- Home -->
+    <a class="mobile-drawer__link" routerLink="/" routerLinkActive="mobile-drawer__link--active" [routerLinkActiveOptions]="{exact: true}" (click)="closeMenu()">
+      <mat-icon>home</mat-icon>
+      <span>Acasă</span>
+    </a>
+
+    <!-- Programe Section -->
+    <span class="mobile-drawer__section-title">Programe</span>
+    <a *ngFor="let item of programsDropdown.items" class="mobile-drawer__link" [routerLink]="item.path" routerLinkActive="mobile-drawer__link--active" [routerLinkActiveOptions]="getActiveOptions(item)" (click)="closeMenu()">
+      <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
+      <span>{{ item.label }}</span>
+    </a>
+
+    <!-- Direct Links -->
+    <span class="mobile-drawer__section-title">Explorează</span>
+    <a class="mobile-drawer__link" routerLink="/harta" routerLinkActive="mobile-drawer__link--active" (click)="closeMenu()">
+      <mat-icon>map</mat-icon>
+      <span>Hartă</span>
+    </a>
+    <a class="mobile-drawer__link" routerLink="/antrenori" routerLinkActive="mobile-drawer__link--active" (click)="closeMenu()">
+      <mat-icon>groups</mat-icon>
+      <span>Antrenori</span>
+    </a>
+    <a class="mobile-drawer__link" routerLink="/cluburi" routerLinkActive="mobile-drawer__link--active" (click)="closeMenu()">
+      <mat-icon>business</mat-icon>
+      <span>Cluburi</span>
+    </a>
+
+    <!-- Despre Section -->
+    <span class="mobile-drawer__section-title">Informații</span>
+    <a *ngFor="let item of aboutDropdown.items" class="mobile-drawer__link" [routerLink]="item.path" routerLinkActive="mobile-drawer__link--active" [routerLinkActiveOptions]="getActiveOptions(item)" (click)="closeMenu()">
+      <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
+      <span>{{ item.label }}</span>
+    </a>
+
+    <!-- Authenticated Sections -->
+    <ng-container *ngIf="currentUser$ | async as user">
+      <div class="mobile-drawer__divider"></div>
+
+      <!-- Contul meu -->
+      <span class="mobile-drawer__section-title">Contul meu</span>
+      <a *ngFor="let item of accountDropdown.items" class="mobile-drawer__link" [routerLink]="item.path" routerLinkActive="mobile-drawer__link--active" [routerLinkActiveOptions]="getActiveOptions(item)" (click)="closeMenu()">
+        <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
+        <span>{{ item.label }}</span>
+      </a>
+
+      <!-- Coach Section -->
+      <ng-container *ngIf="canSeeCoach(user.role)">
+        <div class="mobile-drawer__divider"></div>
+        <span class="mobile-drawer__section-title mobile-drawer__section-title--coach">Antrenor</span>
+        <a *ngFor="let item of coachDropdown.items" class="mobile-drawer__link" [routerLink]="item.path" routerLinkActive="mobile-drawer__link--active" [routerLinkActiveOptions]="getActiveOptions(item)" (click)="closeMenu()">
+          <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
+          <span>{{ item.label }}</span>
+        </a>
+      </ng-container>
+
+      <!-- Club Section -->
+      <ng-container *ngIf="canSeeClub(user.role)">
+        <div class="mobile-drawer__divider"></div>
+        <span class="mobile-drawer__section-title mobile-drawer__section-title--club">Club</span>
+        <a *ngFor="let item of clubDropdown.items" class="mobile-drawer__link" [routerLink]="item.path" routerLinkActive="mobile-drawer__link--active" [routerLinkActiveOptions]="getActiveOptions(item)" (click)="closeMenu()">
+          <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
+          <span>{{ item.label }}</span>
+        </a>
+      </ng-container>
+
+      <!-- Admin Section -->
+      <ng-container *ngIf="canSeeAdmin(user.role)">
+        <div class="mobile-drawer__divider"></div>
+        <span class="mobile-drawer__section-title mobile-drawer__section-title--admin">Administrare</span>
+        <a *ngFor="let item of adminDropdown.items" class="mobile-drawer__link" [routerLink]="item.path" routerLinkActive="mobile-drawer__link--active" [routerLinkActiveOptions]="getActiveOptions(item)" (click)="closeMenu()">
+          <mat-icon *ngIf="item.icon">{{ item.icon }}</mat-icon>
+          <span>{{ item.label }}</span>
+        </a>
+      </ng-container>
+    </ng-container>
+  </nav>
+
+  <div class="mobile-drawer__spacer"></div>
+
+  <!-- Footer Actions -->
+  <div class="mobile-drawer__footer">
+    <ng-container *ngIf="currentUser$ | async; else mobileGuestActions">
+      <button class="mobile-drawer__logout" (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        Deconectare
+      </button>
+    </ng-container>
+
+    <ng-template #mobileGuestActions>
+      <a class="mobile-drawer__link" routerLink="/login" (click)="closeMenu()">
+        <mat-icon>login</mat-icon>
+        <span>Autentificare</span>
+      </a>
+      <a class="mobile-drawer__cta" routerLink="/register" (click)="closeMenu()">
+        Creează cont gratuit
+      </a>
+    </ng-template>
+
+    <p class="mobile-drawer__copyright">© {{ currentYear }} Motion Timișoara</p>
+  </div>
+</aside>

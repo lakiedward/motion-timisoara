@@ -1,0 +1,126 @@
+<div class="announcements-page">
+  <!-- Hero Section - conform UIGuidelines -->
+  <section class="page-hero">
+    <div class="page-hero__container">
+      <button mat-icon-button routerLink="/account" class="back-button" aria-label="Înapoi la cont">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <span class="page-hero__eyebrow">📢 Contul meu</span>
+      <h1 class="page-hero__title">
+        Toate <span>Anunțurile</span>
+        <span class="badge badge--success" *ngIf="hasNew()">Nou</span>
+      </h1>
+      <p class="page-hero__subtitle">Mesaje de la antrenori pentru cursurile la care ești înscris</p>
+    </div>
+  </section>
+
+  <section class="announcements">
+    <header class="announcements__header" *ngIf="courses().length > 0">
+      <div class="filters">
+        <div *ngIf="useChips(); else selectFilter" class="chips">
+          <button mat-stroked-button color="primary" (click)="onSelectCourse(null)" [class.active]="!selectedCourseId()">Toate</button>
+          <mat-chip-listbox aria-label="Filtru cursuri">
+            <mat-chip-option
+              *ngFor="let c of courses()"
+              [selected]="selectedCourseId() === c.id"
+              (click)="onSelectCourse(c.id)"
+            >
+              {{ c.name }}
+            </mat-chip-option>
+          </mat-chip-listbox>
+        </div>
+        <ng-template #selectFilter>
+          <mat-form-field appearance="outline" class="course-select">
+            <mat-label>Curs</mat-label>
+            <mat-select [value]="selectedCourseId()" (valueChange)="onSelectCourse($event)">
+              <mat-option [value]="null">Toate</mat-option>
+              <mat-option *ngFor="let c of courses()" [value]="c.id">{{ c.name }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </ng-template>
+      </div>
+    </header>
+
+    <div class="state loading" *ngIf="isLoading()">
+      <mat-icon>hourglass_bottom</mat-icon>
+      <span>Se încarcă anunțurile...</span>
+    </div>
+
+    <div class="state error" *ngIf="hasError()">
+      <mat-icon>error_outline</mat-icon>
+      <span>Nu am putut încărca anunțurile. Încearcă din nou.</span>
+    </div>
+
+    <div class="feed" *ngIf="!isLoading() && !hasError() && visibleFeed().length; else emptyState">
+      <article class="card" *ngFor="let a of visibleFeed(); trackBy: trackById">
+        <header class="card__header">
+          <div class="author">
+            <div class="avatar">{{ a.authorName.charAt(0) }}</div>
+            <div>
+              <div class="name">{{ a.authorName }}</div>
+              <div class="meta">
+                <span class="role">{{ a.authorRole }}</span>
+                <span class="dot">•</span>
+                <span class="date">{{ a.createdAt | date:'medium' }}</span>
+                <ng-container *ngIf="a.courseName">
+                  <span class="dot">•</span>
+                  <span class="course">{{ a.courseName }}</span>
+                </ng-container>
+              </div>
+            </div>
+          </div>
+          <div class="pinned" *ngIf="a.pinned">
+            <mat-icon>push_pin</mat-icon>
+          </div>
+        </header>
+
+        <div class="card__content">{{ a.content }}</div>
+
+        <div class="attachments" *ngIf="a.attachments?.length">
+          <div class="images">
+            <img
+              *ngFor="let att of a.attachments | imageOnly; let i = index; trackBy: trackAttId"
+              [src]="imageUrl(a, att.id)"
+              [alt]="a.courseName || 'Anunț'"
+              loading="lazy"
+              (click)="openLightbox(a, i)"
+            />
+          </div>
+          <div class="videos">
+            <ng-container *ngFor="let att of a.attachments | videoOnly; trackBy: trackAttId">
+              <ng-container *ngIf="att.type === 'VIDEO_FILE'; else linkVideo">
+                <video
+                  [src]="videoUrl(a, att.id)"
+                  controls
+                  preload="metadata"
+                  [attr.aria-label]="'Video anunț pentru ' + (a.courseName || 'curs')"
+                ></video>
+              </ng-container>
+              <ng-template #linkVideo>
+                <app-video-embed [url]="att.url || ''"></app-video-embed>
+              </ng-template>
+            </ng-container>
+          </div>
+        </div>
+      </article>
+      <div #infiniteAnchor class="infinite-anchor" aria-hidden="true"></div>
+      <div class="end-of-feed" *ngIf="!hasMore() && feed().length">
+        Ai ajuns la finalul anunțurilor.
+      </div>
+    </div>
+
+    <ng-template #emptyState>
+      <div class="empty-state">
+        <mat-icon class="empty-state__icon">campaign</mat-icon>
+        <h3 class="empty-state__title">Nu există anunțuri încă</h3>
+        <p class="empty-state__text">Când antrenorii vor posta anunțuri, le vei vedea aici.</p>
+      </div>
+    </ng-template>
+    <app-lightbox
+      [images]="lightboxImages()"
+      [open]="lightboxOpen()"
+      [initialIndex]="lightboxIndex()"
+      (closed)="closeLightbox()"
+    ></app-lightbox>
+  </section>
+</div>

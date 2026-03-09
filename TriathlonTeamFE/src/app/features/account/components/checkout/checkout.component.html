@@ -1,0 +1,359 @@
+<div class="checkout-page">
+  <section class="page-hero">
+    <div class="page-hero__container">
+      <button mat-icon-button type="button" class="back-button" aria-label="Înapoi" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <span class="page-hero__eyebrow">🧾 Contul meu</span>
+      <h1 class="page-hero__title">Checkout <span *ngIf="product">{{ product.name }}</span></h1>
+      <p class="page-hero__subtitle">
+        Finalizează înscrierea și alege metoda de plată.
+      </p>
+    </div>
+  </section>
+
+  <section class="checkout-shell">
+    <div class="state state--error" *ngIf="!isLoadingProduct() && (loadError() || !product)">
+      <mat-icon class="state__icon" aria-hidden="true">error_outline</mat-icon>
+      <h2 class="state__title">Nu am putut pregăti checkout-ul</h2>
+      <p class="state__text">Verifică linkul și încearcă din nou.</p>
+    </div>
+
+    <ng-container *ngIf="!isLoadingProduct() && product">
+      <mat-horizontal-stepper
+        [orientation]="(stepperOrientation$ | async) ?? 'horizontal'"
+        #stepper
+        class="stepper"
+        [linear]="true"
+        (selectionChange)="onStepSelectionChange($event.selectedIndex)"
+      >
+      <!-- PASUL 1: Selecteaza copiii (MODIFICAT pentru multiple selection) -->
+      <mat-step [stepControl]="childForm" label="Copii">
+        <form [formGroup]="childForm" class="step">
+          <p class="intro-text">Selectează copiii:</p>
+          
+          <!-- Lista copii cu checkboxes -->
+          <div class="child-list" *ngIf="(children | async) as childrenList">
+            <div 
+              *ngFor="let child of childrenList" 
+              class="child-item" 
+              [class.selected]="isChildSelected(child.id)"
+              [class.disabled]="!isChildValid(child.id) && !isChildSelected(child.id)"
+            >
+              <mat-checkbox 
+                [checked]="isChildSelected(child.id)"
+                [disabled]="!isChildValid(child.id) && !isChildSelected(child.id)"
+                (change)="onChildSelectionChange(child.id, $event.checked)"
+              >
+                <div class="child-info">
+                  <span class="name">{{ child.name }}</span>
+                  <span class="age">{{ calculateAge(child.birthDate) }} ani ({{ child.birthDate | date: 'd MMM y' }})</span>
+                </div>
+              </mat-checkbox>
+              
+              <!-- Validari -->
+              <div *ngIf="isValidating()" class="validating">
+                <mat-spinner diameter="18"></mat-spinner>
+                <span>Se validează...</span>
+              </div>
+
+              <div *ngIf="getValidation(child.id) as validation" class="validation" 
+                   [class.success]="validation.isValid && validation.ageValid && validation.scheduleConflicts.length === 0"
+                   [class.warning]="validation.scheduleConflicts.length > 0 && validation.ageValid"
+                   [class.error]="!validation.ageValid">
+                <mat-icon *ngIf="validation.isValid && validation.ageValid && validation.scheduleConflicts.length === 0">check_circle</mat-icon>
+                <mat-icon *ngIf="validation.scheduleConflicts.length > 0 && validation.ageValid">warning</mat-icon>
+                <mat-icon *ngIf="!validation.ageValid">error</mat-icon>
+                <span>
+                  <ng-container *ngIf="!validation.ageValid">
+                    {{ validation.ageMessage }}
+                  </ng-container>
+                  <ng-container *ngIf="validation.ageValid && validation.scheduleConflicts.length === 0">
+                    Eligibil pentru curs
+                  </ng-container>
+                  <ng-container *ngIf="validation.scheduleConflicts.length > 0">
+                    Conflict orar cu {{ validation.scheduleConflicts[0].conflictingCourseName }} 
+                    ({{ validation.scheduleConflicts[0].dayOfWeek }}, {{ validation.scheduleConflicts[0].timeRange }})
+                  </ng-container>
+                </span>
+              </div>
+            </div>
+
+            <!-- Mesaj daca lista e goala -->
+            <div *ngIf="childrenList.length === 0 && !showAddChildForm()" class="empty-state">
+              <mat-icon>child_care</mat-icon>
+              <p>Nu ai copii adaugati inca. Adauga primul copil pentru a continua inscrierea.</p>
+            </div>
+          </div>
+
+          <!-- Formular adăugare copil inline -->
+          <div class="add-child-section" *ngIf="showAddChildForm()">
+            <h4>Adaugă copil nou</h4>
+            <div [formGroup]="newChildForm" class="add-child-form">
+              <mat-form-field appearance="outline">
+                <mat-label>Nume complet</mat-label>
+                <input matInput formControlName="name" autocomplete="off" />
+                <mat-error *ngIf="newChildForm.controls.name.hasError('required')">Camp obligatoriu</mat-error>
+                <mat-error *ngIf="newChildForm.controls.name.hasError('minlength')">Minim 2 caractere</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Data nasterii</mat-label>
+                <input matInput type="date" formControlName="birthDate" />
+                <mat-error *ngIf="newChildForm.controls.birthDate.hasError('required')">Camp obligatoriu</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Telefon urgență</mat-label>
+                <input matInput formControlName="emergencyPhone" placeholder="ex: +40700111222" />
+                <mat-error *ngIf="newChildForm.controls.emergencyPhone.hasError('required')">Camp obligatoriu</mat-error>
+                <mat-error *ngIf="newChildForm.controls.emergencyPhone.hasError('pattern')">Numar invalid</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>Alergii (opțional)</mat-label>
+                <textarea matInput formControlName="allergies" rows="2"></textarea>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>Contact urgență (opțional)</mat-label>
+                <input matInput formControlName="emergencyContactName" placeholder="Nume persoana" />
+              </mat-form-field>
+
+              <div class="form-actions">
+                <button mat-button type="button" (click)="cancelAddChild()">Anulează</button>
+                <button mat-flat-button color="primary" type="button" (click)="saveNewChild()" [disabled]="isSavingChild()">
+                  <mat-progress-spinner *ngIf="isSavingChild()" diameter="20" mode="indeterminate"></mat-progress-spinner>
+                  <span *ngIf="!isSavingChild()">Salvează</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Buton toggle pentru adăugare copil -->
+          <button 
+            mat-stroked-button 
+            type="button" 
+            class="add-child-toggle" 
+            (click)="toggleAddChildForm()" 
+            *ngIf="!showAddChildForm()"
+          >
+            <mat-icon>add</mat-icon>
+            Adaugă copil nou
+          </button>
+
+          <div class="actions">
+            <div class="alert-banner alert-banner--error" *ngIf="hasInvalidSelectedChildren()" aria-live="polite">
+              <mat-icon>error</mat-icon>
+              <span>Unul sau mai mulți copii selectați nu sunt eligibili pentru această înscriere. Deselectează copilul marcat cu eroare pentru a continua.</span>
+            </div>
+            <button 
+              mat-flat-button 
+              color="primary" 
+              matStepperNext 
+              [disabled]="selectedChildIds().length === 0 || hasInvalidSelectedChildren() || isValidating()"
+            >
+              Continua 
+              <span class="selection-counter" *ngIf="selectedChildIds().length > 0">
+                {{ selectedChildIds().length }}
+              </span>
+            </button>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- PASUL 2: Confirma detalii (MODIFICAT pentru lista copii) -->
+      <mat-step [stepControl]="confirmForm" label="Confirma detalii">
+        <form [formGroup]="confirmForm" class="step">
+          <h3>{{ product.name }}</h3>
+          
+          <!-- Session package selector for courses - MOVED HERE -->
+          <div class="session-selector-step2" *ngIf="kind === 'COURSE' && product?.pricePerSession" [formGroup]="paymentForm">
+            <h4 class="section-title">Selectează numărul de ședințe</h4>
+            <p class="section-subtitle">Alege câte ședințe dorești să cumperi pentru acest curs</p>
+            
+            <!-- Quick selection buttons -->
+            <div class="quick-select-buttons">
+              <button type="button" mat-stroked-button 
+                      [class.active]="paymentForm.value.sessionPackageSize === 5"
+                      (click)="setSessionCount(5)">
+                5 ședințe
+              </button>
+              <button type="button" mat-stroked-button 
+                      [class.active]="paymentForm.value.sessionPackageSize === 10"
+                      (click)="setSessionCount(10)">
+                10 ședințe
+              </button>
+              <button type="button" mat-stroked-button 
+                      [class.active]="paymentForm.value.sessionPackageSize === 20"
+                      (click)="setSessionCount(20)">
+                20 ședințe
+              </button>
+            </div>
+            
+            <!-- Custom input -->
+            <mat-form-field class="session-input" appearance="outline">
+              <mat-label>Sau introdu numărul dorit</mat-label>
+              <input matInput type="number" formControlName="sessionPackageSize" min="1" />
+              <mat-hint>Minim 1 ședință</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <!-- Lista copii selectați -->
+          <div class="selected-children" *ngIf="selectedChildIds().length > 0">
+            <h4>Copii înscriși:</h4>
+            <ul>
+              <li *ngFor="let childId of selectedChildIds()">
+                <span class="child-name">{{ childName(childId) }}</span>
+                <span class="child-price" *ngIf="kind === 'COURSE' && product.pricePerSession">
+                  {{ paymentForm.value.sessionPackageSize ?? 10 }} ședințe × {{ (product.pricePerSession! / 100) | currency: product.currency:'symbol-narrow':'1.0-0' }}
+                </span>
+                <span class="child-price" *ngIf="kind === 'CAMP' || !product.pricePerSession">
+                  {{ (product.price / 100) | currency: product.currency:'symbol-narrow':'1.0-0' }}
+                </span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Total price -->
+          <div class="total-price">
+            <strong>Total de plată</strong>
+            {{ (calculateTotal() / 100) | currency: product.currency:'symbol-narrow':'1.0-0' }}
+          </div>
+          
+          <mat-checkbox formControlName="rulesAccepted">
+            Am citit si accept regulile programului
+          </mat-checkbox>
+          
+          <div class="actions">
+            <button mat-button matStepperPrevious>Inapoi</button>
+            <button mat-flat-button color="primary" matStepperNext [disabled]="confirmForm.invalid">
+              Continua
+            </button>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- PASUL 3: Plata (Nemodificat) -->
+      <!-- PASUL 3: Date de facturare (nou, PF) -->
+      <mat-step [stepControl]="billingForm" label="Date de facturare">
+        <form [formGroup]="billingForm" class="step">
+          <div class="billing-section">
+            <h4 class="section-title">Detalii facturare (Persoană fizică)</h4>
+            <p class="section-subtitle">Completează datele tale. Factura va fi trimisă pe email după confirmarea plății.</p>
+
+            <div class="billing-grid">
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>Nume complet</mat-label>
+                <input matInput formControlName="name" autocomplete="name" />
+                <mat-error *ngIf="billingForm.controls.name.hasError('required')">Câmp obligatoriu</mat-error>
+                <mat-error *ngIf="billingForm.controls.name.hasError('minlength')">Minim 2 caractere</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>Email</mat-label>
+                <input matInput formControlName="email" autocomplete="email" />
+                <mat-error *ngIf="billingForm.controls.email.hasError('required')">Câmp obligatoriu</mat-error>
+                <mat-error *ngIf="billingForm.controls.email.hasError('email')">Email invalid</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>Adresă (stradă și număr)</mat-label>
+                <input matInput formControlName="addressLine1" autocomplete="address-line1" />
+                <mat-error *ngIf="billingForm.controls.addressLine1.hasError('required')">Câmp obligatoriu</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Oraș</mat-label>
+                <input matInput formControlName="city" autocomplete="address-level2" />
+                <mat-error *ngIf="billingForm.controls.city.hasError('required')">Câmp obligatoriu</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Cod poștal</mat-label>
+                <input matInput formControlName="postalCode" autocomplete="postal-code" />
+                <mat-error *ngIf="billingForm.controls.postalCode.hasError('required')">Câmp obligatoriu</mat-error>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button mat-button matStepperPrevious>Înapoi</button>
+            <button mat-flat-button color="primary" matStepperNext [disabled]="billingForm.invalid">
+              Continuă
+            </button>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- PASUL 4: Plata -->
+      <mat-step [stepControl]="paymentForm" label="Plata">
+        <form [formGroup]="paymentForm" class="step">
+          <!-- Payment summary -->
+          <div class="payment-summary">
+            <h4>Sumar comandă</h4>
+            <div class="summary-line" *ngIf="kind === 'COURSE' && product.pricePerSession">
+              <span>{{ paymentForm.value.sessionPackageSize ?? 10 }} ședințe × {{ (product.pricePerSession! / 100) | currency: product.currency:'symbol-narrow':'1.0-0' }}</span>
+              <span>{{ ((product.pricePerSession! * (paymentForm.value.sessionPackageSize ?? 10)) / 100) | currency: product.currency:'symbol-narrow':'1.0-0' }}</span>
+            </div>
+            <div class="summary-line" *ngIf="selectedChildIds().length > 1">
+              <span>{{ selectedChildIds().length }} copii</span>
+              <span></span>
+            </div>
+            <div class="summary-total">
+              <strong>Total:</strong>
+              <strong>{{ (totalPrice / 100) | currency: product.currency:'symbol-narrow':'1.0-0' }}</strong>
+            </div>
+          </div>
+
+          <div class="payment-options">
+            <p>Alege metoda de plata.</p>
+            <mat-radio-group formControlName="method">
+              <mat-radio-button *ngFor="let option of paymentOptions" [value]="option.value">
+                {{ option.label }}
+              </mat-radio-button>
+            </mat-radio-group>
+          </div>
+
+          <div class="card-container" *ngIf="paymentForm.value.method === 'CARD'">
+            <div #cardElement class="card-element"></div>
+            <div class="alert-banner alert-banner--error" *ngIf="paymentError" aria-live="polite">
+              <mat-icon>error</mat-icon>
+              <span>{{ paymentError }}</span>
+            </div>
+          </div>
+
+          <div class="cash-info" *ngIf="paymentForm.value.method === 'CASH'">
+            <mat-icon>info</mat-icon>
+            <span>Rezervarea va fi garantata, iar plata se face cash la check-in.</span>
+          </div>
+
+          <div class="actions">
+            <button mat-button matStepperPrevious>Inapoi</button>
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              (click)="submit()"
+              [disabled]="isProcessingPayment"
+            >
+              <mat-progress-spinner
+                *ngIf="isProcessingPayment"
+                mode="indeterminate"
+                diameter="18"
+              ></mat-progress-spinner>
+              <span *ngIf="!isProcessingPayment">Finalizeaza</span>
+            </button>
+          </div>
+        </form>
+      </mat-step>
+    </mat-horizontal-stepper>
+    </ng-container>
+  </section>
+
+  <div class="state state--loading" *ngIf="isLoadingProduct()">
+    <div class="skeleton skeleton-text--title"></div>
+    <div class="skeleton skeleton-text"></div>
+    <div class="skeleton skeleton-text--short"></div>
+  </div>
+</div>

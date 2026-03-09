@@ -1,0 +1,54 @@
+.home-hero__social-proof {
+  margin: 0;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  opacity: 0.7;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+// Specific styling for subtitle/location text like "Timișoara"
+.home-hero__subtitle {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 700;
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  letter-spacing: 0.05em;
+  text-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.4),
+    0 1px 4px rgba(0, 0, 0, 0.3);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+// Enhanced visibility for any location/subtitle text
+.hero-location-text,
+.hero-subtitle-text {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-weight: 800 !important;
+  text-shadow:
+    0 3px 12px rgba(0, 0, 0, 0.5),
+    0 1px 6px rgba(0, 0, 0, 0.4),
+    0 0 3px rgba(0, 0, 0, 0.3) !important;
+  letter-spacing: 0.08em;
+  opacity: 1 !important;
+  text-stroke: 0.5px rgba(0, 0, 0, 0.1);
+  -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.1);
+
+  // Ensure good contrast on all backgrounds
+  background: linear-gradient(135deg,
+    rgba(0, 0, 0, 0.1) 0%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.1) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  backdrop-filter: blur(2px);
+
+  // Add a subtle outline for better readability
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+
+  @media (max-width: 768px) {
+    font-size: clamp(1rem, 3vw, 1.2rem);
+    letter-spacing: 0.06em;
+  }
+}

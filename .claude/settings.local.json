@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /s \"c:\\Users\\lakie\\Desktop\\TriathlonTeamTimisoara\")",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(npm start)",
+      "Bash(timeout /t 10)",
+      "Bash(dir /s /b \"c:\\Users\\lakie\\Desktop\\TriathlonTeamTimisoara\")",
+      "Bash(dir /b \"c:\\Users\\lakie\\Desktop\\TriathlonTeamTimisoara\")",
+      "Bash(dir:*)",
+      "Bash(move \"DEBUG_DELETE_COURSE_ISSUE.md\" \"_archive-docs\\root-debug-fixes\"\" && move \"SOLUTION_401_DELETE_COURSE.md\" \"_archive-docsroot-debug-fixes\"\")",
+      "Bash(move \"FIX_DELETE_401_SUMMARY.md\" \"_archive-docs\\root-debug-fixes\"\" && move \"CHILD_ID_ENROLLMENT_FIX.md\" \"_archive-docsroot-debug-fixes\"\")",
+      "Bash(move \"CALENDAR_REACTIVITY_FIX.md\" \"_archive-docs\\root-debug-fixes\"\" && move \"SECURITY_FIXES_IMPLEMENTATION.md\" \"_archive-docsroot-debug-fixes\"\")",
+      "Bash(move \"TEST_COOKIE_AUTH.md\" \"_archive-docs\\root-debug-fixes\"\" && move \"COOKIE_AUTH_FIX.md\" \"_archive-docsroot-debug-fixes\"\")",
+      "Bash(move \"STRIPE_PAYMENT_DEBUGGING_REPORT.md\" \"_archive-docs\\root-debug-fixes\"\" && move \"STRIPE_PAYMENT_DEBUGGING_REPORT_REVISED.md\" \"_archive-docsroot-debug-fixes\"\")",
+      "Bash(nul)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(./gradlew clean build:*)",
+      "Bash(./gradlew compileKotlin:*)",
+      "Bash(./gradlew bootRun:*)",
+      "Bash(cat:*)",
+      "Bash(sed:*)",
+      "Bash(git checkout:*)",
+      "Bash(mv:*)",
+      "Bash(./gradlew build:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(done)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

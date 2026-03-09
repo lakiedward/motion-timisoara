@@ -1,0 +1,213 @@
+<section class="location-form-page">
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--club">Club Manager</span>
+      <h1 class="hero-title">{{ isEditMode() ? 'Editează' : 'Creează' }} <span>Locație</span></h1>
+      <p class="hero-subtitle">
+        {{
+          isEditMode()
+            ? 'Actualizează detaliile locației și coordonatele.'
+            : 'Completează detaliile și poziționează locația pe hartă.'
+        }}
+      </p>
+    </div>
+    <button class="back-btn" type="button" (click)="onCancel()">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      <span>Înapoi la listă</span>
+    </button>
+  </header>
+
+  @if (loadError()) {
+    <div class="alert alert--error">
+      <mat-icon class="alert__icon">error_outline</mat-icon>
+      <div class="alert__content">
+        <strong class="alert__title">Nu am putut încărca locația</strong>
+        <p class="alert__text">Reîncarcă pagina sau contactează administratorul pentru suport.</p>
+      </div>
+      <button class="back-btn back-btn--small" type="button" (click)="onCancel()">Înapoi la listă</button>
+    </div>
+  }
+
+  @if (!loadError()) {
+    <div class="page-layout">
+      <aside class="sidebar">
+        <div class="info-card">
+          <div class="info-card__header">
+            <div class="info-card__icon info-card__icon--indigo">
+              <mat-icon>map</mat-icon>
+            </div>
+            <div>
+              <h3 class="info-card__title">Hartă</h3>
+              <p class="info-card__subtitle">Selectează poziția pe hartă sau caută o adresă.</p>
+            </div>
+          </div>
+
+          @if (coordsText()) {
+            <div class="info-card__body">
+              <div class="coordinates-box">
+                <mat-icon>my_location</mat-icon>
+                <div>
+                  <span class="coordinates-label">Coordonate</span>
+                  <span class="coordinates-value">{{ coordsText() }}</span>
+                </div>
+              </div>
+            </div>
+          } @else {
+            <div class="empty-hint">
+              <mat-icon>location_searching</mat-icon>
+              <p>Nu există coordonate setate. Selectează o poziție pe hartă.</p>
+            </div>
+          }
+        </div>
+
+        <div class="info-card">
+          <div class="info-card__header">
+            <div class="info-card__icon info-card__icon--purple">
+              <mat-icon>location_on</mat-icon>
+            </div>
+            <div>
+              <h3 class="info-card__title">Rezumat locație</h3>
+              <p class="info-card__subtitle">Previzualizează informațiile.</p>
+            </div>
+          </div>
+
+          <div class="summary-list">
+            <div class="summary-item">
+              <span class="summary-label">Nume</span>
+              <span class="summary-value">{{ form.get('name')?.value || 'Necompletat' }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Tip</span>
+              <span class="summary-value">{{ getTypeLabel(form.get('type')?.value) || 'Selectează tipul' }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Adresă</span>
+              <span class="summary-value">{{ form.get('address')?.value || 'Nespecificată' }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Coordonate</span>
+              <span class="summary-value">
+                @if (coordsText()) {
+                  {{ coordsText() }}
+                } @else {
+                  Nu sunt setate
+                }
+              </span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-header__left">
+              <h2 class="section-title">
+                <mat-icon>search</mat-icon>
+                Căutare Adresă
+              </h2>
+            </div>
+          </div>
+
+          <div class="search-section">
+            <div class="search-row">
+              <input
+                type="text"
+                class="search-input"
+                [value]="searchQuery"
+                (input)="onSearchInput($event)"
+                (keyup.enter)="triggerSearch()"
+                placeholder="ex: Strada, oraș"
+              />
+              <button type="button" class="search-btn" (click)="triggerSearch()">
+                <mat-icon>search</mat-icon>
+                Caută
+              </button>
+            </div>
+            @if (searchResults().length > 0) {
+              <ul class="search-results">
+                @for (r of searchResults(); track r.display_name) {
+                  <li (click)="applySearchResult(r)">{{ r.display_name }}</li>
+                }
+              </ul>
+            }
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-header__left">
+              <h2 class="section-title">
+                <mat-icon>edit_location</mat-icon>
+                Detalii Locație
+              </h2>
+            </div>
+          </div>
+
+          <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="form-grid">
+            <mat-form-field appearance="fill">
+              <mat-label>Nume locație</mat-label>
+              <input matInput formControlName="name" required />
+              <mat-error *ngIf="form.controls.name.hasError('required')">Numele este obligatoriu</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="fill">
+              <mat-label>Tip</mat-label>
+              <mat-select formControlName="type" required>
+                <mat-option *ngFor="let t of types" [value]="t.value">{{ t.label }}</mat-option>
+              </mat-select>
+              <mat-error *ngIf="form.controls.type.hasError('required')">Selectează tipul</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="full-width">
+              <mat-label>Adresă</mat-label>
+              <input matInput formControlName="address" readonly />
+            </mat-form-field>
+
+            <div class="two-columns">
+              <mat-form-field appearance="fill" floatLabel="always">
+                <mat-label>Latitudine</mat-label>
+                <input matInput formControlName="lat" />
+              </mat-form-field>
+              <mat-form-field appearance="fill" floatLabel="always">
+                <mat-label>Longitudine</mat-label>
+                <input matInput formControlName="lng" />
+              </mat-form-field>
+            </div>
+          </form>
+        </section>
+
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-header__left">
+              <h2 class="section-title">
+                <mat-icon>map</mat-icon>
+                Selectează pe hartă
+              </h2>
+            </div>
+          </div>
+
+          <div class="map-wrapper">
+            <div class="map-container" id="club-location-form-map" aria-label="Selectează locația pe hartă"></div>
+            @if (!isMapReady()) {
+              <div class="map-loader">
+                <div class="spinner" aria-hidden="true"></div>
+                <span>Încărcăm harta…</span>
+              </div>
+            }
+          </div>
+        </section>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="onCancel()" [disabled]="isSaving()">
+            Renunță
+          </button>
+          <button type="submit" class="btn-primary" (click)="onSubmit()" [disabled]="isSaving()">
+            <mat-icon aria-hidden="true">save</mat-icon>
+            {{ isSaving() ? 'Se salvează...' : (isEditMode() ? 'Salvează locația' : 'Creează locația') }}
+          </button>
+        </div>
+      </main>
+    </div>
+  }
+</section>

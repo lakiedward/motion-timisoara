@@ -1,0 +1,72 @@
+<section class="filter-panel" [formGroup]="filterForm">
+  <!-- Header -->
+  <div class="filter-header">
+    <div class="filter-header__icon">🔍</div>
+    <div class="filter-header__text">
+      <h3 class="filter-header__title">Filtrează Antrenorii</h3>
+      <p class="filter-header__subtitle">Găsește antrenorul potrivit pentru tine</p>
+    </div>
+  </div>
+
+  <!-- Sport Filter -->
+  <div class="filter-row">
+    <div class="filter-label-row">
+      <span class="filter-label-icon">🏃</span>
+      <span class="filter-label">Alege sportul</span>
+    </div>
+    <p class="filter-hint">Selectează unul sau lasă gol pentru toți</p>
+    <div class="chip-group">
+      <button
+        type="button"
+        class="chip"
+        [class.active]="!filterForm.controls.sportId.value"
+        (click)="selectSport(null)"
+      >
+        ✨ Toate
+      </button>
+      <button
+        type="button"
+        class="chip"
+        *ngFor="let sport of sports()"
+        [class.active]="filterForm.controls.sportId.value === sport.id"
+        (click)="selectSport(sport)"
+      >
+        {{ sport.name }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Location Filter -->
+  <div class="filter-row">
+    <div class="filter-label-row">
+      <span class="filter-label-icon">📍</span>
+      <label class="filter-label" for="location">Locație</label>
+    </div>
+    <p class="filter-hint">Unde vrei să te antrenezi?</p>
+    <select id="location" formControlName="locationId">
+      <option value="">🌍 Toate locațiile</option>
+      <option *ngFor="let location of locations ?? []" [value]="location.id">{{ location.name }}</option>
+    </select>
+  </div>
+
+  <!-- Active Filters Count -->
+  <div class="filter-status" *ngIf="hasActiveFilters()">
+    <span class="filter-status__badge">
+      {{ activeFiltersCount() }} {{ activeFiltersCount() === 1 ? 'filtru activ' : 'filtre active' }}
+    </span>
+  </div>
+
+  <!-- Actions -->
+  <div class="filter-actions">
+    <button 
+      type="button" 
+      class="reset" 
+      (click)="resetFilters()"
+      [disabled]="!hasActiveFilters()"
+    >
+      <span class="reset__icon">↺</span>
+      Resetează filtrele
+    </button>
+  </div>
+</section>
+

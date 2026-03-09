@@ -1,0 +1,155 @@
+<section class="camp-form-page">
+  <!-- Hero Section -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--warning">Administrare</span>
+      <h1 class="hero-title">{{ isEditMode() ? 'Editează' : 'Creează' }} <span>Tabără</span></h1>
+      <p class="hero-subtitle">Gestionează detaliile, perioada și costurile pentru această tabără.</p>
+    </div>
+    <button class="hero-btn hero-btn--secondary" type="button" (click)="cancel()">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Înapoi la listă</span>
+    </button>
+  </header>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="isLoading()">
+    <div class="skeleton skeleton--card"></div>
+    <div class="skeleton skeleton--card"></div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="page-layout" *ngIf="!isLoading()">
+    <form [formGroup]="form" (ngSubmit)="submit()" class="page-layout">
+
+      <!-- COLUMN 1: Detalii Principale -->
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <mat-icon>camping</mat-icon>
+              Detalii Principale
+            </h2>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field form-field--full">
+            <label for="title">Nume Tabără</label>
+            <input id="title" type="text" formControlName="title" placeholder="Ex: Tabara de vară 2025" />
+            <div class="error-msg" *ngIf="isInvalid('title')">Numele este obligatoriu.</div>
+          </div>
+
+          <div class="form-field">
+            <label for="periodStart">Data Început</label>
+            <input id="periodStart" type="date" formControlName="periodStart" />
+            <div class="error-msg" *ngIf="isInvalid('periodStart')">Selectați data de început.</div>
+          </div>
+
+          <div class="form-field">
+            <label for="periodEnd">Data Sfârșit</label>
+            <input id="periodEnd" type="date" formControlName="periodEnd" />
+            <div class="error-msg" *ngIf="isInvalid('periodEnd')">Selectați data de final.</div>
+            <div class="error-msg" *ngIf="periodInvalid">Data de sfârșit trebuie să fie după data de început.</div>
+          </div>
+
+          <div class="form-field form-field--full">
+            <label for="locationText">Locație</label>
+            <input id="locationText" type="text" formControlName="locationText" placeholder="Ex: Brașov - Poiana" />
+          </div>
+        </div>
+      </section>
+
+      <!-- COLUMN 2: Costuri & Capacitate -->
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <mat-icon>payments</mat-icon>
+              Costuri și Capacitate
+            </h2>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="price">Preț (RON)</label>
+            <input id="price" type="number" formControlName="price" min="0" step="1" placeholder="Ex: 1500" />
+            <div class="error-msg" *ngIf="isInvalid('price')">Introduceți un preț valid.</div>
+          </div>
+
+          <div class="form-field">
+            <label for="capacity">Capacitate (Locuri)</label>
+            <input id="capacity" type="number" formControlName="capacity" min="1" placeholder="Ex: 30" />
+            <div class="hint-msg">Lăsați gol pentru locuri nelimitate.</div>
+            <div class="error-msg" *ngIf="isInvalid('capacity')">Capacitatea trebuie să fie > 0.</div>
+          </div>
+
+          <div class="form-field form-field--full">
+            <label class="checkbox-wrapper">
+              <input type="checkbox" formControlName="allowCash" />
+              <span>Permite plata cash / transfer bancar ulterior</span>
+            </label>
+            <div class="hint-msg" style="margin-left: 2.5rem;">Dacă este selectat, părinții pot rezerva locul fără plată
+              online imediată.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FULL WIDTH: Imagini -->
+      <section class="section-card section-card--full">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <mat-icon>photo_library</mat-icon>
+              Galerie Foto
+            </h2>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field form-field--full">
+            <label for="imageUrls">Link-uri Imagini (Unul pe rând)</label>
+            <textarea id="imageUrls" formControlName="imageUrls"
+              placeholder="https://exemplu.ro/poza1.jpg&#10;https://exemplu.ro/poza2.jpg"
+              style="font-family: monospace; font-size: 0.85rem; min-height: 80px;"></textarea>
+            <div class="hint-msg">Introduceți URL-uri publice, câte unul pe linie. Vor apărea mai jos.</div>
+          </div>
+        </div>
+
+        <!-- Live Preview Grid -->
+        <div class="gallery-grid" *ngIf="galleryPreview().length > 0">
+          <div class="gallery-item" *ngFor="let url of galleryPreview(); let i = index">
+            <img [src]="url" alt="Preview {{i + 1}}" onerror="this.src='assets/images/placeholder.jpg'" />
+          </div>
+        </div>
+      </section>
+
+      <!-- FULL WIDTH: Descriere -->
+      <section class="section-card section-card--full">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <mat-icon>article</mat-icon>
+              Descriere Detaliată
+            </h2>
+          </div>
+        </div>
+
+        <div class="form-field form-field--full">
+          <textarea id="description" formControlName="description"
+            placeholder="Descrieți activitățile, programul și echipamentul necesar..."></textarea>
+        </div>
+      </section>
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" (click)="cancel()" [disabled]="isSubmitting()">Renunță</button>
+        <button type="submit" class="btn-submit" [disabled]="isSubmitting()">
+          {{ isSubmitting() ? 'Se salvează...' : 'Salvează Tabăra' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+</section>

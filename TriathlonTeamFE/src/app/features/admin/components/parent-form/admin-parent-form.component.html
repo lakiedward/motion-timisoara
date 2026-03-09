@@ -1,0 +1,314 @@
+<section class="parent-form-page">
+  <!-- Hero Section - Admin Pattern -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--warning">Administrare</span>
+      <h1 class="hero-title">Editează <span>Părinte</span></h1>
+      <p class="hero-subtitle">Administrează datele părintelui și copiii asociați.</p>
+    </div>
+    <div class="hero-actions">
+      <button class="hero-btn hero-btn--secondary" type="button" (click)="onCancel()">
+        <mat-icon>arrow_back</mat-icon>
+        <span>Înapoi la listă</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Error Alert -->
+  <div class="alert alert--error" *ngIf="loadError()">
+    <mat-icon class="alert__icon">error_outline</mat-icon>
+    <div class="alert__content">
+      <strong class="alert__title">Nu am putut încărca datele</strong>
+      <p class="alert__text">Reîncarcă pagina sau contactează administratorul pentru suport.</p>
+    </div>
+    <button class="hero-btn hero-btn--secondary" type="button" (click)="onCancel()">Înapoi la listă</button>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="isLoading()">
+    <div class="loading-spinner"></div>
+    <p>Se încarcă datele...</p>
+  </div>
+
+  <!-- Main Content -->
+  <div class="page-layout" *ngIf="!loadError() && !isLoading()">
+    <main class="main-content">
+      
+      <!-- Section: Date Părinte -->
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <mat-icon>person</mat-icon>
+              Date Părinte
+            </h2>
+          </div>
+          <div class="section-header__right" *ngIf="user()">
+            <span class="badge" [class.badge--success]="user()!.enabled" [class.badge--error]="!user()!.enabled">
+              {{ user()!.enabled ? 'Activ' : 'Inactiv' }}
+            </span>
+          </div>
+        </div>
+        
+        <form [formGroup]="parentForm" (ngSubmit)="saveParent()" novalidate class="form-grid">
+          <!-- Name Field -->
+          <mat-form-field appearance="fill">
+            <mat-label>Nume complet</mat-label>
+            <input matInput formControlName="name" required />
+            <mat-error *ngIf="parentForm.controls.name.hasError('required')">
+              Numele este obligatoriu
+            </mat-error>
+            <mat-error *ngIf="parentForm.controls.name.hasError('minlength')">
+              Numele trebuie să aibă minim 3 caractere
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Email Field -->
+          <mat-form-field appearance="fill">
+            <mat-label>Adresă email</mat-label>
+            <input matInput formControlName="email" type="email" required />
+            <mat-error *ngIf="parentForm.controls.email.hasError('required')">
+              Emailul este obligatoriu
+            </mat-error>
+            <mat-error *ngIf="parentForm.controls.email.hasError('email')">
+              Introdu o adresă de email validă
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Phone Field -->
+          <mat-form-field appearance="fill">
+            <mat-label>Telefon</mat-label>
+            <input matInput formControlName="phone" type="tel" />
+            <mat-hint>Opțional</mat-hint>
+          </mat-form-field>
+
+          <!-- User Info -->
+          <div class="user-info" *ngIf="user()">
+            <div class="info-item">
+              <mat-icon>calendar_today</mat-icon>
+              <span>Înregistrat: {{ formatDate(user()!.createdAt) }}</span>
+            </div>
+            <div class="info-item" *ngIf="user()!.oauthProvider">
+              <mat-icon>login</mat-icon>
+              <span>Login: {{ user()!.oauthProvider }}</span>
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="form-actions full-width">
+            <button type="button" class="hero-btn hero-btn--secondary" (click)="onCancel()" [disabled]="isSaving()">
+              Anulează
+            </button>
+            <button type="submit" class="hero-btn" [disabled]="isSaving() || parentForm.pristine">
+              <mat-icon>save</mat-icon>
+              {{ isSaving() ? 'Se salvează...' : 'Salvează Părinte' }}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Section: Copii -->
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <mat-icon>child_care</mat-icon>
+              Copii
+            </h2>
+            <span class="section-count">{{ children().length }}</span>
+          </div>
+          <div class="section-header__right">
+            <button class="hero-btn hero-btn--small" type="button" (click)="startAddChild()" [disabled]="editingChildIndex() !== null">
+              <mat-icon>add</mat-icon>
+              <span>Adaugă Copil</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="children().length === 0">
+          <mat-icon>child_care</mat-icon>
+          <h3>Niciun copil adăugat</h3>
+          <p>Acest părinte nu are copii înregistrați.</p>
+          <button class="hero-btn hero-btn--small" type="button" (click)="startAddChild()">
+            <mat-icon>add</mat-icon>
+            <span>Adaugă primul copil</span>
+          </button>
+        </div>
+
+        <!-- Children List -->
+        <div class="children-list" *ngIf="children().length > 0">
+          <div class="child-card" *ngFor="let child of children(); let i = index" [class.editing]="child.isEditing">
+            
+            <!-- Child View Mode -->
+            <div class="child-view" *ngIf="!child.isEditing">
+              <div class="child-header">
+                <div class="child-avatar">
+                  <img *ngIf="child.hasPhoto && child.id && !child.photoPreview" 
+                       [src]="getChildPhotoUrl(child.id!)" 
+                       [alt]="child.name"
+                       (error)="$event.target.style.display='none'" />
+                  <img *ngIf="child.photoPreview" 
+                       [src]="child.photoPreview" 
+                       [alt]="child.name" />
+                  <span class="avatar-initials" *ngIf="!child.hasPhoto && !child.photoPreview">
+                    {{ getInitials(child.name) }}
+                  </span>
+                </div>
+                <div class="child-info">
+                  <h3 class="child-name">{{ child.name }}</h3>
+                  <div class="child-meta">
+                    <span class="meta-item">
+                      <mat-icon>cake</mat-icon>
+                      {{ calculateAge(child.birthDate) }} ani
+                    </span>
+                    <span class="meta-item" *ngIf="child.level">
+                      <mat-icon>trending_up</mat-icon>
+                      {{ child.level }}
+                    </span>
+                    <span class="meta-item" *ngIf="child.enrollmentsCount > 0">
+                      <mat-icon>school</mat-icon>
+                      {{ child.enrollmentsCount }} înscrieri
+                    </span>
+                  </div>
+                </div>
+                <div class="child-actions">
+                  <button class="action-btn action-btn--edit" matTooltip="Editează" (click)="startEditChild(i)" [disabled]="editingChildIndex() !== null">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button class="action-btn action-btn--delete" matTooltip="Șterge" (click)="deleteChild(i)" [disabled]="editingChildIndex() !== null">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </div>
+              
+              <div class="child-details">
+                <div class="detail-row" *ngIf="child.emergencyPhone">
+                  <mat-icon>phone</mat-icon>
+                  <span><strong>Contact urgență:</strong> {{ child.emergencyContactName || 'N/A' }} - {{ child.emergencyPhone }}</span>
+                </div>
+                <div class="detail-row" *ngIf="child.secondaryPhone">
+                  <mat-icon>phone_forwarded</mat-icon>
+                  <span><strong>Contact secundar:</strong> {{ child.secondaryContactName || 'N/A' }} - {{ child.secondaryPhone }}</span>
+                </div>
+                <div class="detail-row" *ngIf="child.allergies">
+                  <mat-icon>warning</mat-icon>
+                  <span><strong>Alergii:</strong> {{ child.allergies }}</span>
+                </div>
+                <div class="detail-row" *ngIf="child.tshirtSize">
+                  <mat-icon>checkroom</mat-icon>
+                  <span><strong>Mărime tricou:</strong> {{ child.tshirtSize }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Child Edit Mode -->
+            <div class="child-edit" *ngIf="child.isEditing">
+              <div class="edit-header">
+                <h3>{{ child.isNew ? 'Adaugă Copil Nou' : 'Editează ' + child.name }}</h3>
+              </div>
+              
+              <form [formGroup]="childForm" class="child-form-grid">
+                <!-- Photo Upload -->
+                <div class="photo-upload-section">
+                  <div class="photo-container">
+                    <img *ngIf="child.photoPreview" [src]="child.photoPreview" alt="Preview" class="photo-preview" />
+                    <img *ngIf="!child.photoPreview && child.hasPhoto && child.id" 
+                         [src]="getChildPhotoUrl(child.id!)" 
+                         alt="Preview" 
+                         class="photo-preview"
+                         (error)="$event.target.style.display='none'" />
+                    <div class="photo-placeholder" *ngIf="!child.photoPreview && !child.hasPhoto">
+                      <mat-icon>photo_camera</mat-icon>
+                    </div>
+                  </div>
+                  <input type="file" #photoInput accept="image/*" (change)="onChildPhotoSelected($event, i)" style="display: none" />
+                  <button type="button" class="upload-photo-btn" (click)="photoInput.click()">
+                    <mat-icon>cloud_upload</mat-icon>
+                    <span>{{ child.hasPhoto || child.photoPreview ? 'Schimbă foto' : 'Încarcă foto' }}</span>
+                  </button>
+                </div>
+
+                <!-- Basic Info -->
+                <mat-form-field appearance="fill">
+                  <mat-label>Nume copil</mat-label>
+                  <input matInput formControlName="name" required />
+                  <mat-error *ngIf="childForm.controls.name.hasError('required')">Numele este obligatoriu</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="fill">
+                  <mat-label>Data nașterii</mat-label>
+                  <input matInput [matDatepicker]="picker" formControlName="birthDate" required />
+                  <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+                  <mat-datepicker #picker></mat-datepicker>
+                  <mat-error *ngIf="childForm.controls.birthDate.hasError('required')">Data nașterii este obligatorie</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="fill">
+                  <mat-label>Nivel</mat-label>
+                  <mat-select formControlName="level">
+                    <mat-option value="">Neselectat</mat-option>
+                    <mat-option *ngFor="let level of levels" [value]="level">{{ level }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="fill">
+                  <mat-label>Mărime tricou</mat-label>
+                  <mat-select formControlName="tshirtSize">
+                    <mat-option value="">Neselectat</mat-option>
+                    <mat-option *ngFor="let size of tshirtSizes" [value]="size">{{ size }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <!-- Emergency Contact -->
+                <mat-form-field appearance="fill">
+                  <mat-label>Nume contact urgență</mat-label>
+                  <input matInput formControlName="emergencyContactName" />
+                </mat-form-field>
+
+                <mat-form-field appearance="fill">
+                  <mat-label>Telefon urgență</mat-label>
+                  <input matInput formControlName="emergencyPhone" required />
+                  <mat-error *ngIf="childForm.controls.emergencyPhone.hasError('required')">Telefonul este obligatoriu</mat-error>
+                  <mat-error *ngIf="childForm.controls.emergencyPhone.hasError('pattern')">Format invalid (ex: +40712345678)</mat-error>
+                </mat-form-field>
+
+                <!-- Secondary Contact -->
+                <mat-form-field appearance="fill">
+                  <mat-label>Nume contact secundar</mat-label>
+                  <input matInput formControlName="secondaryContactName" />
+                  <mat-hint>Opțional</mat-hint>
+                </mat-form-field>
+
+                <mat-form-field appearance="fill">
+                  <mat-label>Telefon secundar</mat-label>
+                  <input matInput formControlName="secondaryPhone" />
+                  <mat-hint>Opțional</mat-hint>
+                </mat-form-field>
+
+                <!-- Allergies -->
+                <mat-form-field appearance="fill" class="full-width">
+                  <mat-label>Alergii sau condiții medicale</mat-label>
+                  <textarea matInput formControlName="allergies" rows="2"></textarea>
+                  <mat-hint>Opțional</mat-hint>
+                </mat-form-field>
+
+                <!-- Actions -->
+                <div class="child-form-actions full-width">
+                  <button type="button" class="hero-btn hero-btn--secondary hero-btn--small" (click)="cancelEditChild(i)" [disabled]="isSaving()">
+                    Anulează
+                  </button>
+                  <button type="button" class="hero-btn hero-btn--small" (click)="saveChild(i)" [disabled]="isSaving()">
+                    <mat-icon>save</mat-icon>
+                    {{ isSaving() ? 'Se salvează...' : child.isNew ? 'Adaugă' : 'Salvează' }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</section>

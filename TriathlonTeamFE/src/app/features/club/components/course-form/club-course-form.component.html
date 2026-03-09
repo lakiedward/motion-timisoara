@@ -1,0 +1,340 @@
+<section class="course-form-page">
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--club">Club</span>
+      <h1 class="hero-title">{{ isEditMode() ? 'Editează' : 'Creează' }} <span>Curs</span></h1>
+      <p class="hero-subtitle">
+        {{ isEditMode() ? 'Actualizează detaliile cursului și salvează modificările.' : 'Alege un antrenor și completează detaliile cursului.' }}
+      </p>
+    </div>
+    <button class="back-btn" type="button" (click)="onCancel()">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      <span>Înapoi la listă</span>
+    </button>
+  </header>
+
+  <div class="alert alert--error" *ngIf="loadError()">
+    <mat-icon class="alert__icon">error_outline</mat-icon>
+    <div class="alert__content">
+      <strong class="alert__title">Nu am putut încărca antrenorii</strong>
+      <p class="alert__text">Reîncarcă pagina sau încearcă din nou mai târziu.</p>
+    </div>
+    <button class="back-btn back-btn--small" type="button" (click)="onCancel()">Înapoi</button>
+  </div>
+
+  <div class="page-layout" *ngIf="!loadError()">
+    <main class="main-content">
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <mat-icon>groups</mat-icon>
+              Antrenor & Plăți
+            </h2>
+          </div>
+        </div>
+
+        <div class="picker-grid">
+          <div class="picker-card">
+            <div class="picker-card__header">
+              <mat-icon>person</mat-icon>
+              <span>Antrenor</span>
+            </div>
+            <mat-select
+              [value]="selectedCoachUserId()"
+              (valueChange)="onCoachChange($event)"
+              placeholder="Selectează antrenor"
+              [disabled]="isLoading() || isSaving() || courseLoading()"
+            >
+              <mat-option *ngFor="let coach of coaches()" [value]="coach.userId">
+                {{ coach.name }} ({{ coach.email }})
+              </mat-option>
+            </mat-select>
+
+            <div class="empty-hint" *ngIf="!coaches().length && !isLoading()">
+              <p>Nu există antrenori. Creează unul mai întâi.</p>
+              <button class="link-btn" type="button" (click)="onCancel()">Mergi la listă</button>
+            </div>
+
+            <div class="coach-details" *ngIf="selectedCoach() as coach">
+              <div class="coach-info">
+                <strong>{{ coach.name }}</strong>
+                <span>{{ coach.email }}</span>
+              </div>
+              <span class="badge" [class.badge--success]="selectedCoachCanReceivePayments()" [class.badge--neutral]="!selectedCoachCanReceivePayments()">
+                {{ selectedCoachCanReceivePayments() ? 'Stripe OK' : 'Stripe lipsă' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="picker-card">
+            <div class="picker-card__header">
+              <mat-icon>payments</mat-icon>
+              <span>Cine încasează plățile online?</span>
+            </div>
+            <mat-select
+              [value]="paymentRecipient()"
+              (valueChange)="onPaymentRecipientChange($event)"
+              [disabled]="isSaving() || courseLoading()"
+            >
+              <mat-option value="CLUB">Club</mat-option>
+              <mat-option value="COACH" [disabled]="!selectedCoachCanReceivePayments()">Antrenor</mat-option>
+            </mat-select>
+            <p class="picker-hint" *ngIf="selectedCoach() && !selectedCoachCanReceivePayments()">
+              Antrenorul selectat are <strong>Stripe lipsă/inactiv</strong>. Nu poți seta încasările pe antrenor.
+            </p>
+            <p class="picker-hint">
+              Poți schimba ulterior această setare (după necesități).
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <mat-icon>photo_camera</mat-icon>
+              Media
+            </h2>
+          </div>
+        </div>
+
+        <div class="media-grid">
+          <div class="media-card media-card--wide">
+            <div class="media-card__header">
+              <mat-icon>image</mat-icon>
+              <span>Hero Photo</span>
+            </div>
+            <input
+              type="file"
+              #heroPhotoInput
+              accept="image/*"
+              (change)="onHeroPhotoSelected($event)"
+              style="display: none"
+            />
+
+            <div class="hero-photo-container">
+              <div class="photo-preview" *ngIf="heroPhotoPreview() || getHeroPhotoUrl()">
+                <img
+                  [src]="heroPhotoPreview() || getHeroPhotoUrl()"
+                  alt="Hero photo"
+                  class="photo-preview__image"
+                />
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="photo-preview__remove"
+                  (click)="removeHeroPhoto()"
+                  [disabled]="isSaving()"
+                >
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+              <button
+                class="upload-btn"
+                type="button"
+                (click)="heroPhotoInput.click()"
+                [disabled]="isSaving()"
+                *ngIf="!heroPhotoPreview() && !getHeroPhotoUrl()"
+              >
+                <mat-icon>cloud_upload</mat-icon>
+                <span>Încarcă</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="media-card media-card--wide">
+            <div class="media-card__header">
+              <mat-icon>photo_library</mat-icon>
+              <span>Galerie foto</span>
+            </div>
+
+            <div class="gallery-toolbar">
+              <div class="gallery-text">
+                <p class="gallery-hint" *ngIf="!isEditMode()">
+                  Poți selecta poze acum. Vor fi încărcate automat după ce creezi cursul.
+                </p>
+                <p class="gallery-hint" *ngIf="isEditMode()">
+                  Trage și plasează pentru a reordona fotografiile.
+                </p>
+                <p class="gallery-progress" *ngIf="galleryUploading() && galleryUploadProgressLabel() as label">
+                  Se încarcă {{ label }}...
+                </p>
+              </div>
+
+              <input
+                type="file"
+                #galleryInput
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                multiple
+                (change)="onGalleryFilesSelected($event)"
+                style="display: none"
+              />
+
+              <button
+                mat-stroked-button
+                type="button"
+                class="gallery-upload-button"
+                (click)="galleryInput.click()"
+                [disabled]="galleryBusy() || galleryOrderDirty()"
+              >
+                <mat-icon>add_photo_alternate</mat-icon>
+                {{ galleryUploading() ? 'Se încarcă...' : 'Selectează poze' }}
+              </button>
+            </div>
+
+            <div class="gallery-alert gallery-alert--error" *ngIf="galleryLoadError() && isEditMode()">
+              <mat-icon aria-hidden="true">error_outline</mat-icon>
+              <div>
+                <strong>Nu am putut încărca galeria</strong>
+                <p>Reîncarcă pagina sau încearcă din nou mai târziu.</p>
+              </div>
+            </div>
+
+            <div class="gallery-loading" *ngIf="galleryLoading() && isEditMode()">
+              <mat-icon class="spinning">hourglass_empty</mat-icon>
+              <p>Se încarcă fotografiile...</p>
+            </div>
+
+            <!-- Edit mode: server gallery -->
+            <div
+              *ngIf="isEditMode() && !galleryLoading() && !galleryLoadError() && galleryPhotos().length > 0"
+              cdkDropList
+              cdkDropListOrientation="mixed"
+              class="gallery-list"
+              [cdkDropListDisabled]="galleryBusy()"
+              (cdkDropListDropped)="onGalleryDrop($event)"
+            >
+              <div
+                *ngFor="let photo of galleryPhotos(); let i = index; trackBy: trackByPhotoId"
+                class="gallery-item"
+                cdkDrag
+                [cdkDragDisabled]="galleryBusy()"
+                [cdkDragStartDelay]="{touch: 200, mouse: 0}"
+                cdkDragPreviewClass="ttt-gallery-drag-preview"
+              >
+                <div class="gallery-item__drag">
+                  <mat-icon>drag_indicator</mat-icon>
+                </div>
+
+                <img
+                  [src]="getGalleryPhotoUrl(photo.id)"
+                  [alt]="'Fotografie ' + (i + 1)"
+                  class="gallery-item__image"
+                />
+
+                <div class="gallery-item__order">{{ i + 1 }}</div>
+
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="gallery-item__delete"
+                  (click)="deleteGalleryPhoto(photo.id)"
+                  [disabled]="galleryBusy() || galleryOrderDirty()"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <!-- Manual Order Save Actions -->
+            <div class="gallery-actions-bar" *ngIf="isEditMode() && galleryOrderDirty()">
+              <div class="gallery-actions-bar__hint">
+                <mat-icon>info</mat-icon>
+                <span>Ordinea a fost modificată dar nu este salvată.</span>
+              </div>
+              <div class="gallery-actions-bar__buttons">
+                <button
+                  mat-button
+                  type="button"
+                  (click)="cancelGalleryOrderChanges()"
+                  [disabled]="galleryBusy()"
+                >
+                  Renunță
+                </button>
+                <button
+                  mat-flat-button
+                  color="primary"
+                  type="button"
+                  (click)="saveGalleryOrder()"
+                  [disabled]="galleryBusy()"
+                >
+                  Salvează ordinea
+                </button>
+              </div>
+            </div>
+
+            <div class="gallery-empty" *ngIf="isEditMode() && !galleryLoading() && !galleryLoadError() && galleryPhotos().length === 0">
+              <mat-icon>photo_library</mat-icon>
+              <h3>Nu există fotografii în galerie</h3>
+              <p>Adaugă prima fotografie folosind butonul de mai sus.</p>
+            </div>
+
+            <!-- Create mode: pending gallery -->
+            <div
+              *ngIf="!isEditMode() && pendingGallery().length > 0"
+              cdkDropList
+              cdkDropListOrientation="mixed"
+              class="gallery-list"
+              [cdkDropListDisabled]="galleryBusy()"
+              (cdkDropListDropped)="onPendingGalleryDrop($event)"
+            >
+              <div
+                *ngFor="let photo of pendingGallery(); let i = index; trackBy: trackByPendingId"
+                class="gallery-item"
+                cdkDrag
+                [cdkDragDisabled]="galleryBusy()"
+                [cdkDragStartDelay]="{touch: 200, mouse: 0}"
+                cdkDragPreviewClass="ttt-gallery-drag-preview"
+              >
+                <div class="gallery-item__drag">
+                  <mat-icon>drag_indicator</mat-icon>
+                </div>
+
+                <img [src]="photo.dataUrl" [alt]="photo.fileName" class="gallery-item__image" />
+
+                <div class="gallery-item__order">{{ i + 1 }}</div>
+
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="gallery-item__delete"
+                  (click)="removePendingGalleryPhoto(photo.localId)"
+                  [disabled]="galleryBusy()"
+                >
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <div class="gallery-empty" *ngIf="!isEditMode() && pendingGallery().length === 0">
+              <mat-icon>photo_library</mat-icon>
+              <h3>Nu ai selectat poze</h3>
+              <p>Selectează poze pentru galerie (opțional). Le poți reordona înainte de a crea cursul.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-card">
+        <app-course-form
+          [courseId]="courseId()"
+          [externalSave]="true"
+          [externalData]="true"
+          [externalLoading]="courseLoading()"
+          [externalSaving]="isSaving()"
+          [externalLoadError]="courseLoadError()"
+          [externalCourse]="externalCourse()"
+          [showHeader]="false"
+          [compact]="true"
+          [showClubPaymentSection]="false"
+          (submit)="onSubmit($event)"
+          (cancel)="onCancel()"
+        ></app-course-form>
+      </section>
+    </main>
+  </div>
+</section>
+
+

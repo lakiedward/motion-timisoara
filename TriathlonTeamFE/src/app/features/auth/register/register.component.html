@@ -1,0 +1,154 @@
+﻿<div class="scroll-progress" [style.width.%]="scrollProgress"></div>
+
+<!-- Hero Section -->
+<section class="hero-register">
+  <div class="hero-background">
+    <picture>
+      <source srcset="/ui/img_20231130_112543.webp" type="image/webp">
+      <img
+        src="/ui/IMG_20231130_112543.jpg"
+        alt="Motion Timișoara - Înregistrare"
+        loading="eager"
+        (load)="$any($event.target).classList.add('loaded')"
+        class="hero-bg-image"
+      />
+    </picture>
+    <div class="hero-overlay"></div>
+  </div>
+
+  <div class="hero-container">
+    <div class="hero-content">
+      <h1 class="hero-title">Alătură-te comunității!</h1>
+      <p class="hero-subtitle">
+        Creează-ți cont gratuit și începe călătoria copilului tău spre un stil de viață activ și sănătos
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Register Form Section -->
+<section class="register-section">
+  <div class="register-container">
+    <div class="register-card scroll-reveal scroll-reveal--fade-up">
+      <a routerLink="/signup" class="back-to-home">
+        <mat-icon>arrow_back</mat-icon>
+        <span>Înapoi la alegere tip cont</span>
+      </a>
+      <div class="register-card__header">
+        <span class="register-eyebrow">Înregistrare Părinte</span>
+        <h2>Creează cont de părinte</h2>
+        <p>Completează datele pentru a începe</p>
+      </div>
+
+      <div class="social-register">
+        <app-google-signin-button
+          [label]="'Creeaza cont cu Google'"
+          [redirectUrl]="googleRedirectTarget"
+        ></app-google-signin-button>
+      </div>
+
+      <div class="register-divider">
+        <span>sau</span>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" class="register-form">
+        <div class="form-group">
+          <label for="name">Nume complet</label>
+          <input
+            id="name"
+            type="text"
+            formControlName="name"
+            placeholder="Numele tău complet"
+            class="form-input"
+          />
+          <app-form-error
+            [control]="form.controls.name"
+            [errorMessages]="{
+              'required': 'Numele este obligatoriu.',
+              'minlength': 'Introdu minim 3 caractere.'
+            }">
+          </app-form-error>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            placeholder="exemplu@mail.com"
+            class="form-input"
+          />
+          <app-form-error
+            [control]="form.controls.email"
+            [errorMessages]="{
+              'required': 'Emailul este obligatoriu.',
+              'email': 'Introdu un email valid.'
+            }">
+          </app-form-error>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Parola</label>
+          <input
+            id="password"
+            type="password"
+            formControlName="password"
+            placeholder="Alege o parolă sigură"
+            class="form-input"
+          />
+          <app-form-error
+            [control]="form.controls.password"
+            [errorMessages]="{
+              'required': 'Parola este obligatorie.',
+              'minlength': 'Parola trebuie să aibă minim 6 caractere.'
+            }">
+          </app-form-error>
+        </div>
+
+        <div class="form-group">
+          <label for="phone">Telefon</label>
+          <input
+            id="phone"
+            type="tel"
+            formControlName="phone"
+            placeholder="+40712345678"
+            class="form-input"
+          />
+          <app-form-error
+            [control]="form.controls.phone"
+            [errorMessages]="{
+              'required': 'Telefonul este obligatoriu.',
+              'pattern': 'Introdu un număr valid (8-15 cifre, opțional +).'
+            }">
+          </app-form-error>
+        </div>
+
+        <button type="submit" class="btn-primary" [disabled]="form.invalid || isSubmitting()">
+          {{ isSubmitting() ? 'Se procesează...' : 'Creează cont' }}
+        </button>
+      </form>
+
+      <p class="register-redirect">
+        Ai deja cont?
+        <a routerLink="/login" class="register-link">Autentifică-te</a>
+      </p>
+    </div>
+
+    <!-- Trust Badges -->
+    <div class="register-trust scroll-reveal scroll-reveal--fade-up scroll-reveal--delay-100">
+      <div class="trust-badge">
+        <mat-icon>lock</mat-icon>
+        <span>Date securizate</span>
+      </div>
+      <div class="trust-badge">
+        <mat-icon>verified_user</mat-icon>
+        <span>Înregistrare gratuită</span>
+      </div>
+      <div class="trust-badge">
+        <mat-icon>support_agent</mat-icon>
+        <span>Suport dedicat</span>
+      </div>
+    </div>
+  </div>
+</section>

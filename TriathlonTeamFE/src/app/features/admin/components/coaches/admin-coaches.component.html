@@ -1,0 +1,64 @@
+﻿<section class="admin-coaches" *ngIf="!isLoading(); else loadingState">
+  <header class="header">
+    <div>
+      <h1>Antrenori</h1>
+      <p>Gestioneaza antrenorii si trimite invitatii noi.</p>
+    </div>
+    <button mat-raised-button color="primary" (click)="openInvite()">
+      <mat-icon>person_add</mat-icon>
+      Invita antrenor
+    </button>
+  </header>
+
+  <table mat-table [dataSource]="coaches()" class="table" *ngIf="coaches().length; else emptyState">
+    <ng-container matColumnDef="name">
+      <th mat-header-cell *matHeaderCellDef>Nume</th>
+      <td mat-cell *matCellDef="let coach">{{ coach.name }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="email">
+      <th mat-header-cell *matHeaderCellDef>Email</th>
+      <td mat-cell *matCellDef="let coach">{{ coach.email }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="phone">
+      <th mat-header-cell *matHeaderCellDef>Telefon</th>
+      <td mat-cell *matCellDef="let coach">{{ coach.phone || '-' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="sports">
+      <th mat-header-cell *matHeaderCellDef>Sporturi</th>
+      <td mat-cell *matCellDef="let coach">
+        <mat-chip-set>
+          <mat-chip *ngFor="let sport of coach.sports">{{ sport }}</mat-chip>
+        </mat-chip-set>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef>Status</th>
+      <td mat-cell *matCellDef="let coach">
+        <span class="badge" [class.invited]="coach.status === 'INVITED'">
+          {{ coach.status === 'INVITED' ? 'Invitat' : 'Activ' }}
+        </span>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+  </table>
+</section>
+
+<ng-template #loadingState>
+  <div class="loading">
+    <div class="skeleton"></div>
+    <div class="skeleton"></div>
+  </div>
+</ng-template>
+
+<ng-template #emptyState>
+  <div class="empty">
+    <p>Nu exista antrenori inregistrati in acest moment.</p>
+    <button mat-stroked-button color="primary" (click)="openInvite()">Invita antrenor</button>
+  </div>
+</ng-template>

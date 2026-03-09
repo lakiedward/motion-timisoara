@@ -1,0 +1,373 @@
+:host {
+  display: block;
+  padding: calc(80px + 2rem) clamp(1rem, 4vw, 4rem) 4rem;
+  font-family: 'Inter', sans-serif;
+  
+  // === UI GUIDELINES - VARIABILE OBLIGATORII ===
+  --sport-primary: #2563eb;
+  --sport-secondary: #0ea5e9;
+  --sport-accent: #f59e0b;
+  --sport-bg-light: #f8fafc;
+  --sport-bg-white: #ffffff;
+  --sport-text-dark: #0f172a;
+  --sport-text-muted: #64748b;
+  
+  --gradient-primary: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
+  --gradient-warm: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  
+  // UI Guidelines Spacing & Radius
+  --section-spacing: 6rem;
+  --radius-card: 24px;
+  --radius-btn: 50px;
+  
+  // UI Guidelines Shadows
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 12px 30px rgba(37, 99, 235, 0.1);
+  --shadow-btn: 0 4px 12px rgba(37, 99, 235, 0.3);
+  
+  background: var(--sport-bg-white);
+  background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.camp-details {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2rem, 4vw, 3rem);
+  max-width: 1280px; // UI Guidelines
+  margin: 0 auto;
+}
+
+.state {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 3rem 1rem;
+  border-radius: var(--radius-card); // UI Guidelines
+  background: var(--sport-bg-white);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  box-shadow: var(--shadow-card); // UI Guidelines
+
+  &--loading {
+    min-height: 240px;
+    color: var(--sport-text-muted);
+  }
+
+  &--error {
+    gap: 1rem;
+    color: #b91c1c;
+
+    mat-icon {
+      font-size: 3rem;
+      width: 3rem;
+      height: 3rem;
+    }
+  }
+}
+
+.camp-details__header {
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.camp-details__hero {
+  position: relative;
+  width: 100%;
+  min-height: clamp(220px, 40vw, 340px);
+  border-radius: var(--radius-card); // UI Guidelines
+  overflow: hidden;
+  background: var(--gradient-primary); // UI Guidelines
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.8);
+  box-shadow: var(--shadow-card);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  &--placeholder mat-icon {
+    font-size: 4rem;
+    width: 4rem;
+    height: 4rem;
+  }
+}
+
+.camp-details__summary {
+  background: var(--sport-bg-white);
+  border-radius: var(--radius-card); // UI Guidelines
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  box-shadow: var(--shadow-card); // UI Guidelines
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &:hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
+.camp-details__labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-btn); // UI Guidelines
+  font-size: 0.875rem; // UI Guidelines
+  font-weight: 700;    // UI Guidelines
+  letter-spacing: 0.02em;
+
+  &--cash {
+    background: rgba(22, 163, 74, 0.12);
+    color: #166534;
+    border: 1px solid rgba(34, 197, 94, 0.35);
+  }
+
+  &--soldout {
+    background: rgba(185, 28, 28, 0.1);
+    color: #b91c1c;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+  }
+}
+
+.camp-details__summary h1 {
+  margin: 0;
+  font-family: 'Manrope', sans-serif; // UI Guidelines
+  font-size: clamp(2rem, 4vw, 2.75rem); // UI Guidelines EXACT!
+  font-weight: 800;                     // UI Guidelines EXACT!
+  line-height: 1.2;                     // UI Guidelines EXACT!
+  color: var(--sport-text-dark);
+}
+
+.camp-details__period,
+.camp-details__location,
+.camp-details__price {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0;
+  font-size: 1rem;
+  color: var(--sport-text-dark);
+
+  mat-icon {
+    font-size: 1.4rem;
+    width: 1.4rem;
+    height: 1.4rem;
+    color: var(--sport-primary); // UI Guidelines
+  }
+}
+
+.camp-details__summary-text {
+  margin: 0;
+  color: var(--sport-text-muted);
+  font-size: 1.125rem; // UI Guidelines
+  line-height: 1.6;    // UI Guidelines
+  max-width: 65ch;
+}
+
+.camp-details__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.enroll-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: var(--radius-btn) !important; // UI Guidelines
+  box-shadow: var(--shadow-btn);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+  }
+  
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.soldout-message {
+  margin: 0;
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+.payment-options {
+  border-radius: 16px; // UI Guidelines - smaller element
+  padding: 1.25rem;
+  // Glassmorphism - UI Guidelines
+  background: rgba(37, 99, 235, 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(37, 99, 235, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  p {
+    margin: 0;
+    font-weight: 600;
+    color: var(--sport-text-dark);
+    line-height: 1.6; // UI Guidelines
+    max-width: 60ch;
+  }
+}
+
+.payment-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.camp-details__content,
+.camp-details__gallery {
+  background: var(--sport-bg-white);
+  border-radius: var(--radius-card); // UI Guidelines
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  box-shadow: var(--shadow-card); // UI Guidelines
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &:hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
+.camp-details__content h2,
+.camp-details__gallery h2 {
+  margin-top: 0;
+  font-family: 'Manrope', sans-serif; // UI Guidelines
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800; // UI Guidelines
+  line-height: 1.2; // UI Guidelines
+  color: var(--sport-text-dark);
+}
+
+.rich-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  color: var(--sport-text-muted);
+
+  h3 {
+    margin: 0;
+    font-family: 'Manrope', sans-serif; // UI Guidelines
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--sport-primary); // UI Guidelines
+  }
+
+  p {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.6; // UI Guidelines
+    max-width: 70ch;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    li {
+      line-height: 1.6;
+    }
+    
+    li::marker {
+      color: var(--sport-primary); // UI Guidelines
+      font-size: 0.9rem;
+    }
+  }
+}
+
+.gallery-strip {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scroll-snap-type: x mandatory;
+
+  img {
+    width: clamp(220px, 45vw, 320px);
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: var(--radius-card); // UI Guidelines
+    flex: 0 0 auto;
+    scroll-snap-align: center;
+    box-shadow: var(--shadow-card); // UI Guidelines
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    &:hover {
+      transform: scale(1.02);
+      box-shadow: var(--shadow-card-hover);
+    }
+  }
+}
+
+@media (min-width: 960px) {
+  .camp-details__header {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .camp-details__hero {
+    min-height: clamp(280px, 32vw, 420px);
+  }
+}
+
+@media (max-width: 599px) {
+  .camp-details__summary {
+    padding: 1.5rem;
+  }
+
+  .payment-buttons {
+    flex-direction: column;
+  }
+
+  .gallery-strip {
+    gap: 0.75rem;
+
+    img {
+      width: 80vw;
+    }
+  }
+  
+  /* Mobile typography improvements */
+  .camp-details__summary-text {
+    max-width: none; /* Remove character limit on mobile */
+    line-height: 1.65; /* Improved line-height for mobile */
+  }
+  
+  .rich-text p {
+    max-width: none; /* Remove character limit on mobile */
+    line-height: 1.65; /* Improved line-height for mobile */
+  }
+  
+  .payment-options p {
+    max-width: none; /* Remove character limit on mobile */
+    line-height: 1.6; /* Improved line-height for mobile */
+  }
+}

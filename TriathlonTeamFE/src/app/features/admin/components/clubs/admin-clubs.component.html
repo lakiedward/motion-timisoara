@@ -1,0 +1,186 @@
+<section class="clubs-page">
+  <!-- Hero Section -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--warning" style="margin-bottom: 0.75rem;">Administrare</span>
+      <h1 class="hero-title">Gestionare <span>Cluburi</span></h1>
+      <p class="hero-subtitle">Administrează cluburile sportive înregistrate în platformă</p>
+    </div>
+  </header>
+
+  <!-- Stats Cards -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>business</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ clubs().length }}</span>
+        <span class="stat-label">Cluburi totale</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--green">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getActiveCount() }}</span>
+        <span class="stat-label">Cluburi active</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--amber">
+        <mat-icon>groups</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getTotalCoaches() }}</span>
+        <span class="stat-label">Antrenori totali</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--purple">
+        <mat-icon>school</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getTotalCourses() }}</span>
+        <span class="stat-label">Cursuri totale</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clubs Section -->
+  <section class="section-card">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>business</mat-icon>
+          Lista Cluburi
+        </h2>
+        <span class="section-count">{{ filteredClubs.length }}</span>
+      </div>
+      
+      <!-- Filter Chips -->
+      <div class="chips chips--admin">
+        <button mat-stroked-button 
+                [class.active]="filter() === 'all'"
+                (click)="setFilter('all')">
+          Toate
+        </button>
+        <button mat-stroked-button 
+                [class.active]="filter() === 'active'"
+                (click)="setFilter('active')">
+          Active
+        </button>
+        <button mat-stroked-button 
+                [class.active]="filter() === 'inactive'"
+                (click)="setFilter('inactive')">
+          Inactive
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+      <div class="loading-grid">
+        @for (_ of [1, 2, 3, 4, 5, 6]; track $index) {
+          <div class="skeleton-card"></div>
+        }
+      </div>
+    }
+
+    <!-- Empty State -->
+    @if (!isLoading() && clubs().length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-state__icon">business</mat-icon>
+        <h3 class="empty-state__title">Niciun club încă</h3>
+        <p class="empty-state__text">Cluburile se înregistrează prin pagina de înregistrare club.</p>
+      </div>
+    }
+
+    <!-- Clubs Grid -->
+    @if (!isLoading() && filteredClubs.length > 0) {
+      <div class="clubs-grid">
+        @for (club of filteredClubs; track club.id) {
+          <article class="club-card" [class.inactive]="!club.active">
+        <div class="club-card__header">
+          <div class="club-logo">
+            @if (club.hasLogo) {
+              <img [src]="getClubLogoUrl(club.id)" [alt]="club.name" />
+            } @else {
+              <div class="logo-fallback">
+                {{ getInitials(club.name) }}
+              </div>
+            }
+          </div>
+          <div class="club-actions">
+            <button class="action-btn action-btn--edit" 
+                    (click)="navigateToEdit(club)" 
+                    matTooltip="Editează">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button class="action-btn action-btn--toggle" 
+                    [class.action-btn--active]="club.active"
+                    (click)="toggleClubStatus(club)" 
+                    [matTooltip]="club.active ? 'Dezactivează' : 'Activează'">
+              <mat-icon>power_settings_new</mat-icon>
+            </button>
+            <button class="action-btn action-btn--delete" 
+                    (click)="deleteClub(club)" 
+                    matTooltip="Șterge">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+        
+        <div class="club-card__body">
+          <span class="badge" [class.badge--success]="club.active" [class.badge--neutral]="!club.active">
+            {{ club.active ? 'Activ' : 'Inactiv' }}
+          </span>
+          @if (club.stripeConnected) {
+            <span class="badge badge--info badge--stripe">
+            <mat-icon>payments</mat-icon> Stripe
+            </span>
+          }
+          <h3 class="club-name">{{ club.name }}</h3>
+          <div class="club-meta">
+            <span class="meta-item">
+              <mat-icon>email</mat-icon>
+              {{ club.email }}
+            </span>
+            @if (club.phone) {
+              <span class="meta-item">
+                <mat-icon>phone</mat-icon>
+                {{ club.phone }}
+              </span>
+            }
+            @if (club.address) {
+              <span class="meta-item">
+                <mat-icon>location_on</mat-icon>
+                {{ club.address }}
+              </span>
+            }
+            <span class="meta-item">
+              <mat-icon>calendar_today</mat-icon>
+              Înregistrat: {{ club.createdAt | date:'dd.MM.yyyy' }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="club-card__footer">
+          <div class="club-stats">
+            <div class="stat-badge">
+              <mat-icon>groups</mat-icon>
+              <span>{{ club.coachCount }} antrenori</span>
+            </div>
+            <div class="stat-badge">
+              <mat-icon>school</mat-icon>
+              <span>{{ club.courseCount }} cursuri</span>
+            </div>
+          </div>
+        </div>
+      </article>
+        }
+      </div>
+    }
+  </section>
+</section>

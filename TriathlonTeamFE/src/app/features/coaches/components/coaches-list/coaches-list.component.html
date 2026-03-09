@@ -1,0 +1,87 @@
+<div class="scroll-progress" [style.width.%]="scrollProgress"></div>
+
+<!-- Hero Section - Matching Homepage Style -->
+<section class="coaches-hero">
+  <div class="coaches-hero__container">
+    <span class="coaches-hero__eyebrow">Echipa</span>
+    <h1 class="coaches-hero__title">
+      Cunoaște-ți <span>Antrenorii</span>
+    </h1>
+    <p class="coaches-hero__subtitle">
+      Profesioniști dedicați, gata să te ghideze spre performanță
+    </p>
+  </div>
+</section>
+
+<!-- Main Content Section -->
+<section class="coaches-section" id="antrenori">
+  <div class="coaches-section__container">
+    
+    <!-- Section Header -->
+    <header class="coaches-section__header">
+      <div class="coaches-section__title-area">
+        <h2 class="coaches-section__title">
+          <span class="count-badge" *ngIf="!isLoading()">{{ coaches().length }}</span>
+          {{ coaches().length === 1 ? 'Antrenor Disponibil' : 'Antrenori Disponibili' }}
+        </h2>
+      </div>
+      <div class="coaches-section__controls">
+        <div class="sort-dropdown">
+          <select id="sortBy" [(ngModel)]="sortBy" (change)="onSortChange()">
+            <option value="">Recomandat</option>
+            <option value="rating-desc">Rating ↓</option>
+            <option value="rating-asc">Rating ↑</option>
+            <option value="name">Alfabetic</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="coaches-layout">
+      <!-- Filter Panel -->
+      <aside class="coaches-filters">
+        <app-coach-filter-panel 
+          [locations]="locations()" 
+          (filtersChange)="onFiltersChange($event)"
+        ></app-coach-filter-panel>
+      </aside>
+
+      <!-- Results Area -->
+      <main class="coaches-results">
+        <!-- Loading State -->
+        <div class="coaches-grid" *ngIf="isLoading()">
+          <div class="skeleton-card" *ngFor="let skeleton of skeletonItems">
+            <div class="skeleton-card__avatar"></div>
+            <div class="skeleton-card__content">
+              <div class="skeleton-line wide"></div>
+              <div class="skeleton-line"></div>
+              <div class="skeleton-line short"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coaches Grid -->
+        <div class="coaches-grid" *ngIf="!isLoading() && coaches().length > 0">
+          <app-coach-card
+            *ngFor="let coach of coaches(); trackBy: trackByCoach"
+            [coach]="coach"
+            [showSummary]="false"
+            (viewProfile)="viewCoachProfile($event)"
+          ></app-coach-card>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="!isLoading() && isEmpty()">
+          <div class="empty-state__icon">👤</div>
+          <h3 class="empty-state__title">Niciun antrenor găsit</h3>
+          <p class="empty-state__text">
+            Încearcă să modifici filtrele sau contactează-ne pentru mai multe informații.
+          </p>
+          <button class="btn-primary" routerLink="/contact">Contactează-ne</button>
+        </div>
+      </main>
+    </div>
+  </div>
+</section>
+

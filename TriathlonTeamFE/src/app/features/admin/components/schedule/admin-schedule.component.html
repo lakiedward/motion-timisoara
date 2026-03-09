@@ -1,0 +1,28 @@
+﻿<section class="admin-schedule" *ngIf="!isLoading(); else loadingState">
+  <h1>Program saptamanal</h1>
+  <div class="groups" *ngIf="groups().length; else emptyState">
+    <div class="group" *ngFor="let group of groups()">
+      <h2>{{ dayLabel(group.day) }}</h2>
+      <div class="occurrence" *ngFor="let occ of group.items">
+        <div>
+          <strong>{{ occ.courseName }}</strong>
+          <span>{{ occ.coachName }}</span>
+        </div>
+        <span>{{ occ.startTime | date: 'HH:mm' }} - {{ occ.endTime | date: 'HH:mm' }}</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<ng-template #loadingState>
+  <div class="loading">
+    <div class="skeleton"></div>
+    <div class="skeleton"></div>
+  </div>
+</ng-template>
+
+<ng-template #emptyState>
+  <div class="empty">
+    <p>Nu exista date pentru saptamana curenta.</p>
+  </div>
+</ng-template>

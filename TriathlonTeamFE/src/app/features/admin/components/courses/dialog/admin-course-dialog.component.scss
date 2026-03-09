@@ -1,0 +1,184 @@
+﻿:host {
+  /* Design system variables matching main pages */
+  --radius-sm: 8px;
+  --radius-lg: 16px;
+  --shadow-1: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-2: 0 12px 28px rgba(15, 23, 42, 0.10);
+  --amber-50: #fffbeb;
+  --amber-100: #fef3c7;
+  --amber-600: #d97706;
+  --amber-700: #b45309;
+  --gradient-warm: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+::ng-deep .mat-mdc-dialog-container {
+  --mdc-dialog-container-shape: var(--radius-lg) !important;
+}
+
+mat-dialog-title {
+  padding-bottom: 1rem !important;
+  border-bottom: 2px solid var(--amber-50);
+}
+
+.dialog-eyebrow {
+  display: inline-block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--amber-600);
+  background: var(--amber-50);
+  padding: 0.375rem 0.875rem;
+  border-radius: 999px;
+  margin-bottom: 0.75rem;
+}
+
+mat-dialog-title h1 {
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin: 0.5rem 0 0 !important;
+}
+
+.form {
+  display: grid;
+  gap: 1.25rem;
+  padding: 0.5rem 0;
+}
+
+/* Override Material form field styles */
+::ng-deep .mat-mdc-form-field {
+  width: 100%;
+}
+
+::ng-deep .mat-mdc-text-field-wrapper {
+  background: #f8fafc !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+::ng-deep .mat-mdc-form-field-focus-overlay {
+  background-color: transparent !important;
+}
+
+::ng-deep .mdc-text-field--filled {
+  background-color: #f8fafc !important;
+}
+
+::ng-deep .mat-mdc-form-field.mat-focused .mat-mdc-text-field-wrapper {
+  background: #ffffff !important;
+}
+
+::ng-deep .mdc-text-field--filled:not(.mdc-text-field--disabled) {
+  background-color: #f8fafc !important;
+}
+
+::ng-deep .mat-mdc-select {
+  background: transparent !important;
+}
+
+::ng-deep .mat-mdc-input-element {
+  color: #0f172a !important;
+}
+
+::ng-deep .mat-mdc-form-field-error {
+  color: #dc2626 !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+}
+
+.two-columns {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 720px) {
+  .two-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.days {
+  display: grid;
+  gap: 0.75rem;
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+}
+
+.days > span {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.day-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.day-checkboxes.invalid {
+  border: 2px dashed #fca5a5;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  background: #fef2f2;
+}
+
+::ng-deep .mat-mdc-checkbox {
+  --mdc-checkbox-selected-checkmark-color: #ffffff;
+  --mdc-checkbox-selected-icon-color: var(--amber-600);
+  --mdc-checkbox-unselected-icon-color: #94a3b8;
+}
+
+::ng-deep .mat-mdc-checkbox-label {
+  font-size: 0.95rem !important;
+  color: #334155 !important;
+  font-weight: 500 !important;
+}
+
+.error {
+  color: #dc2626;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+mat-dialog-actions {
+  padding: 1.5rem !important;
+  border-top: 2px solid #f1f5f9;
+  gap: 0.75rem !important;
+}
+
+::ng-deep mat-dialog-actions button {
+  font-weight: 600 !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 0.75rem 1.5rem !important;
+  transition: all 0.2s ease !important;
+}
+
+::ng-deep mat-dialog-actions button[mat-flat-button] {
+  background: var(--gradient-warm) !important;
+  box-shadow: var(--shadow-1) !important;
+}
+
+::ng-deep mat-dialog-actions button[mat-flat-button]:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3) !important;
+}
+
+::ng-deep mat-dialog-actions button[mat-button] {
+  color: #64748b !important;
+}
+
+::ng-deep mat-dialog-actions button[mat-button]:hover:not(:disabled) {
+  background: #fffbeb !important;
+  color: var(--amber-600) !important;
+}
+
+mat-progress-spinner {
+  margin-right: 0.5rem;
+  display: inline-block !important;
+}

@@ -1,0 +1,101 @@
+<div mat-dialog-title>
+  <span class="dialog-eyebrow">{{ data ? 'Editare' : 'Creare' }}</span>
+  <h1>{{ data ? 'Editeaza curs' : 'Creeaza curs' }}</h1>
+</div>
+<form [formGroup]="form" mat-dialog-content class="form">
+  <mat-form-field appearance="fill">
+    <mat-label>Coach</mat-label>
+    <mat-select formControlName="coachId" required>
+      <mat-option *ngFor="let coach of coaches()" [value]="coach.id">{{ coach.name }}</mat-option>
+    </mat-select>
+    <mat-error *ngIf="form.controls.coachId.hasError('required')">Selecteaza coach-ul</mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="fill">
+    <mat-label>Nume curs</mat-label>
+    <input matInput formControlName="name" required />
+    <mat-error *ngIf="form.controls.name.hasError('required')">Numele este obligatoriu</mat-error>
+  </mat-form-field>
+
+  <div class="two-columns">
+    <mat-form-field appearance="fill">
+      <mat-label>Sport</mat-label>
+      <mat-select formControlName="sport" required>
+        <mat-option *ngFor="let sport of sports()" [value]="sport.value">{{ sport.label }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="fill">
+      <mat-label>Nivel</mat-label>
+      <mat-select formControlName="level" required>
+        <mat-option value="incepator">Incepator</mat-option>
+        <mat-option value="intermediar">Intermediar</mat-option>
+        <mat-option value="avansat">Avansat</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div class="two-columns">
+    <mat-form-field appearance="fill">
+      <mat-label>Varsta minima</mat-label>
+      <input matInput type="number" formControlName="ageFrom" />
+    </mat-form-field>
+    <mat-form-field appearance="fill">
+      <mat-label>Varsta maxima</mat-label>
+      <input matInput type="number" formControlName="ageTo" />
+    </mat-form-field>
+  </div>
+
+  <div class="error" *ngIf="form.hasError('ageRange')">
+    Varsta minima trebuie sa fie mai mica sau egala cu varsta maxima
+  </div>
+
+  <div class="days">
+    <span>Zile recurenta</span>
+    <div
+      class="day-checkboxes"
+      formArrayName="days"
+      [class.invalid]="daysArray.invalid && daysArray.touched"
+    >
+      <mat-checkbox *ngFor="let day of weekDays; let i = index" [formControlName]="i">
+        {{ day.label }}
+      </mat-checkbox>
+    </div>
+    <div class="error" *ngIf="daysArray.invalid && daysArray.touched">
+      Selecteaza cel putin o zi
+    </div>
+  </div>
+
+  <div class="two-columns">
+    <mat-form-field appearance="fill">
+      <mat-label>Ora start</mat-label>
+      <input matInput type="time" formControlName="startTime" />
+    </mat-form-field>
+    <mat-form-field appearance="fill">
+      <mat-label>Ora final</mat-label>
+      <input matInput type="time" formControlName="endTime" />
+    </mat-form-field>
+  </div>
+
+  <div class="two-columns">
+    <mat-form-field appearance="fill">
+      <mat-label>Capacitate</mat-label>
+      <input matInput type="number" formControlName="capacity" />
+    </mat-form-field>
+    <mat-form-field appearance="fill">
+      <mat-label>Pret</mat-label>
+      <input matInput type="number" formControlName="price" />
+    </mat-form-field>
+  </div>
+</form>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()" [disabled]="isSubmitting()">Anuleaza</button>
+  <button mat-flat-button color="primary" (click)="submit()" [disabled]="isSubmitting()">
+    <mat-progress-spinner
+      *ngIf="isSubmitting()"
+      mode="indeterminate"
+      diameter="18"
+    ></mat-progress-spinner>
+    <span *ngIf="!isSubmitting()">Salveaza</span>
+  </button>
+</mat-dialog-actions>

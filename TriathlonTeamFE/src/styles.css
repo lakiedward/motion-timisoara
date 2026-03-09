@@ -1,0 +1,1983 @@
+/* You can add global styles to this file, and also import other style files */
+
+/* ==================== MATERIAL SYMBOLS ROUNDED ====================
+   Stiluri necesare pentru a folosi Material Symbols în loc de Material Icons
+   ====================================================================== */
+
+.material-symbols-rounded,
+.mat-icon {
+  font-family: 'Material Symbols Rounded' !important;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+
+  /* Default icon settings */
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+/* Filled variant */
+.mat-icon.filled,
+.material-symbols-rounded.filled {
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+/* ==================== MATERIAL CHIPS - UIGuidelines ====================
+   Stiluri globale pentru chips conform design system
+   =================================================================== */
+
+/* Reset Material chip styles */
+.mat-mdc-chip.mdc-evolution-chip {
+  --mdc-chip-container-shape-radius: 50px !important;
+  --mdc-chip-with-icon-selected-icon-size: 0 !important;
+  --mdc-chip-outline-width: 2px !important;
+  --mdc-chip-outline-color: #dbeafe !important;
+  --mdc-chip-elevated-container-color: transparent !important;
+  --mdc-chip-flat-selected-outline-width: 0 !important;
+
+  padding: 0.625rem 1.25rem !important;
+  border-radius: 50px !important;
+  border: 2px solid #dbeafe !important;
+  background: linear-gradient(135deg, #eff6ff 0%, rgba(255, 255, 255, 0.95) 100%) !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  min-height: 44px !important;
+  height: auto !important;
+  box-shadow: none !important;
+}
+
+.mat-mdc-chip.mdc-evolution-chip .mdc-evolution-chip__cell--primary {
+  overflow: visible !important;
+}
+
+.mat-mdc-chip.mdc-evolution-chip .mdc-evolution-chip__action--primary {
+  padding: 0 !important;
+}
+
+.mat-mdc-chip.mdc-evolution-chip .mdc-evolution-chip__text-label {
+  color: #2563eb !important;
+  font-weight: 600 !important;
+  font-family: var(--font-primary, 'Inter', sans-serif) !important;
+}
+
+.mat-mdc-chip.mdc-evolution-chip:hover {
+  border-color: #2563eb !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* Selected chip state */
+.mat-mdc-chip.mdc-evolution-chip.mat-mdc-chip-selected,
+.mat-mdc-chip.mdc-evolution-chip.mdc-evolution-chip--selected {
+  background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%) !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+}
+
+.mat-mdc-chip.mdc-evolution-chip.mat-mdc-chip-selected .mdc-evolution-chip__text-label,
+.mat-mdc-chip.mdc-evolution-chip.mdc-evolution-chip--selected .mdc-evolution-chip__text-label {
+  color: white !important;
+}
+
+/* Hide checkmark graphic */
+.mat-mdc-chip .mdc-evolution-chip__graphic {
+  display: none !important;
+  width: 0 !important;
+  margin: 0 !important;
+}
+
+.mat-mdc-chip .mdc-evolution-chip__checkmark {
+  display: none !important;
+}
+
+/* Focus overlay reset */
+.mat-mdc-chip .mat-mdc-chip-focus-overlay {
+  background: transparent !important;
+}
+
+/* ==================== FILTER BUTTONS (Toate button) ==================== */
+
+/* Buton "Toate" în context de filtre - pill style */
+.chips button.mdc-button--outlined,
+.chips .mat-mdc-outlined-button,
+.filter-row button.mdc-button--outlined,
+button.mdc-button--outlined[mat-stroked-button] {
+  --mdc-outlined-button-container-shape: 50px !important;
+  --mdc-outlined-button-outline-color: #dbeafe !important;
+
+  padding: 0.625rem 1.25rem !important;
+  border-radius: 50px !important;
+  border: 2px solid #dbeafe !important;
+  background: linear-gradient(135deg, #eff6ff 0%, rgba(255, 255, 255, 0.95) 100%) !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  font-family: var(--font-primary, 'Inter', sans-serif) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  min-height: 44px !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.chips button.mdc-button--outlined .mdc-button__label,
+.chips .mat-mdc-outlined-button .mdc-button__label {
+  color: #2563eb !important;
+  font-weight: 600 !important;
+}
+
+.chips button.mdc-button--outlined:hover,
+.chips .mat-mdc-outlined-button:hover {
+  border-color: #2563eb !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* Buton activ/selectat */
+.chips button.mdc-button--outlined.active,
+.chips .mat-mdc-outlined-button.active {
+  background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%) !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+}
+
+.chips button.mdc-button--outlined.active .mdc-button__label,
+.chips .mat-mdc-outlined-button.active .mdc-button__label {
+  color: white !important;
+}
+
+/* ==================== BADGE & STATUS SYSTEM ====================
+   Standardized badges as per UIGuidelines
+   ================================================================ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.badge--success {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.badge--warning {
+  background: #fef9c3;
+  color: #854d0e;
+  border: 1px solid #fde047;
+}
+
+.badge--error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.badge--info {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.badge--neutral {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+/* ==================== GLOBAL MATERIAL THEME ====================
+   Use site's blue (#2563eb) instead of Material's default purple/blue
+   ============================================================== */
+
+/* Primary color for all Material components */
+.mat-primary {
+  --mdc-theme-primary: #2563eb;
+  --mat-option-selected-state-layer-color: #2563eb;
+  --mat-option-focus-state-layer-opacity: 0.08;
+  --mat-option-hover-state-layer-opacity: 0.04;
+}
+
+/* Buttons */
+.mat-mdc-raised-button.mat-primary,
+.mat-mdc-unelevated-button.mat-primary {
+  --mdc-filled-button-container-color: #2563eb;
+  --mdc-filled-button-label-text-color: #ffffff;
+}
+
+.mat-mdc-outlined-button.mat-primary {
+  --mdc-outlined-button-outline-color: #2563eb;
+  --mdc-outlined-button-label-text-color: #2563eb;
+}
+
+/* Select dropdowns - use site's blue */
+.mat-mdc-select-panel {
+  .mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled) {
+    background-color: #2563eb !important;
+    color: white !important;
+
+    .mdc-list-item__primary-text {
+      color: white !important;
+    }
+  }
+
+  .mat-mdc-option.mat-mdc-option-active {
+    background-color: rgba(37, 99, 235, 0.08) !important;
+    color: #2563eb !important;
+  }
+
+  .mat-mdc-option:hover:not(.mdc-list-item--disabled) {
+    background-color: rgba(37, 99, 235, 0.04) !important;
+  }
+}
+
+/* Form fields */
+.mat-mdc-form-field.mat-focused {
+
+  .mdc-notched-outline__leading,
+  .mdc-notched-outline__notch,
+  .mdc-notched-outline__trailing {
+    border-color: #2563eb !important;
+  }
+
+  .mdc-floating-label {
+    color: #2563eb !important;
+  }
+
+  .mat-mdc-select-arrow {
+    color: #2563eb !important;
+  }
+}
+
+/* Fix pentru problemele cu Material Design în dialoguri */
+.mat-mdc-dialog-container {
+  .mat-mdc-form-field {
+    .mat-mdc-form-field-label {
+      color: rgba(0, 0, 0, 0.6) !important;
+      font-size: 14px !important;
+      opacity: 1 !important;
+    }
+
+    .mat-mdc-form-field-label.mdc-floating-label--float-above {
+      color: #2563eb !important;
+      font-size: 12px !important;
+    }
+
+    .mdc-floating-label {
+      color: rgba(0, 0, 0, 0.6) !important;
+      opacity: 1 !important;
+    }
+
+    &.mat-focused .mdc-floating-label {
+      color: #2563eb !important;
+    }
+
+    .mat-mdc-select-arrow {
+      color: rgba(0, 0, 0, 0.54) !important;
+    }
+
+    /* Elimină săgețile plutitoare din câmpurile de input */
+    &.mat-form-field-type-mat-input .mat-mdc-form-field-icon-suffix {
+      display: none !important;
+    }
+  }
+}
+
+:root {
+  /* ============================================ */
+  /* UI GUIDELINES - DESIGN SYSTEM TOKENS        */
+  /* ============================================ */
+
+  /* Primary Brand Colors - OFFICIAL */
+  --sport-primary: #2563eb;
+  --sport-secondary: #0ea5e9;
+  --sport-accent: #f59e0b;
+  --sport-accent-dark: #b45309;
+  /* WCAG AA accessible for text */
+  --sport-bg-light: #f8fafc;
+  --sport-bg-white: #ffffff;
+  --sport-text-dark: #0f172a;
+  --sport-text-muted: #64748b;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
+  --gradient-warm: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+
+  /* Blue background token (must be defined before hero tokens that reference it) */
+  --sport-bg-blue-50: #eff6ff;
+
+  /* Hero background tokens */
+  --hero-bg-start: var(--sport-bg-blue-50);
+  --hero-bg-end: #eef2ff;
+
+  --primary-shadow-blue: rgba(37, 99, 235, 0.3);
+  --primary-shadow-blue-hover: rgba(37, 99, 235, 0.4);
+  --shadow-primary: 0 4px 15px var(--primary-shadow-blue);
+  --shadow-primary-hover: 0 8px 25px var(--primary-shadow-blue-hover);
+
+  /* Spacing */
+  --section-spacing: 6rem;
+
+  /* Border Radius */
+  --radius-card: 24px;
+  --radius-btn: 50px;
+
+  /* Shadows - stronger for better contrast on light backgrounds */
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --shadow-card-hover: 0 12px 30px rgba(37, 99, 235, 0.15);
+  --shadow-btn: 0 4px 12px rgba(37, 99, 235, 0.3);
+
+  /* Fonts */
+  --font-primary: 'Inter', sans-serif;
+  --font-display: 'Manrope', sans-serif;
+
+  /* Semantic Colors (Dark Mode Ready) */
+  --color-surface-base: var(--sport-bg-white);
+  --color-surface-raised: var(--sport-bg-white);
+  --color-surface-sunken: var(--sport-bg-light);
+  --color-text-primary: var(--sport-text-dark);
+  --color-text-secondary: var(--sport-text-muted);
+  --color-text-on-primary: #ffffff;
+  --color-border-subtle: rgba(0, 0, 0, 0.03);
+  --color-border-default: rgba(0, 0, 0, 0.08);
+
+  /* Shared Theme Tokens */
+  --primary-border-blue: rgba(37, 99, 235, 0.3);
+  --sport-primary-alpha-10: rgba(37, 99, 235, 0.1);
+  --sport-primary-alpha-30: rgba(37, 99, 235, 0.3);
+  --sport-primary-alpha-60: rgba(37, 99, 235, 0.6);
+  --sport-primary-alpha-90: rgba(37, 99, 235, 0.9);
+  /* --sport-bg-blue-50 moved above to resolve forward reference */
+  --sport-primary-fallback: #1e40af;
+  --sport-text: var(--color-text-primary);
+  --sport-bg-card: var(--sport-bg-white);
+  --color-border: var(--color-border-default);
+  --color-border-blue: rgba(37, 99, 235, 0.3);
+
+  /* Club Theme Tokens */
+  --club-border-color: rgba(37, 99, 235, 0.3);
+  --club-border-color-hover: #2563eb;
+
+  /* Coach Theme Tokens */
+  --coach-border-color: rgba(16, 185, 129, 0.3);
+  --coach-border-color-hover: #10b981;
+
+  /* Z-Index Layers */
+  --z-negative: -1;
+  --z-normal: 1;
+  --z-dropdown: 50;
+  --z-sticky: 100;
+  --z-overlay: 200;
+  --z-modal: 300;
+  --z-toast: 400;
+  --z-tooltip: 500;
+
+  @media (max-width: 768px) {
+    --section-spacing: 4rem;
+  }
+
+  /* ============================================ */
+  /* LEGACY ALIASES (pentru backward compatibility) */
+  /* ============================================ */
+  --color-bg: #ffffff;
+  --color-text: #0f172a;
+  --color-muted: #64748b;
+  --color-primary: #2563eb;
+  --color-accent: #f59e0b;
+  --brand-500: #2563eb;
+  --brand-600: #1d4ed8;
+  --brand-700: #1e40af;
+  --brand-gradient: var(--gradient-primary);
+
+  /* Spacing scale (px) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-8: 48px;
+  --space-premium: 64px;
+  --space-section: 96px;
+  --space-section-mobile: 64px;
+
+  /* Card/list gaps */
+  --gap-mobile: 14px;
+  /* keep within 12–16px */
+  --gap-premium: 24px;
+
+  /* Radius & elevation */
+  --radius-sm: 8px;
+  --radius: 12px;
+  /* unified radius */
+  --radius-lg: 16px;
+  --shadow: 0 6px 18px rgba(2, 6, 23, 0.08);
+  /* unified subtle elevation */
+  --shadow-strong: 0 12px 28px rgba(2, 6, 23, 0.12);
+
+  /* Premium shadows - softer, more elegant */
+  --shadow-premium: 0 2px 16px rgba(0, 0, 0, 0.04);
+  --shadow-premium-hover: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --shadow-premium-strong: 0 12px 48px rgba(0, 0, 0, 0.10);
+
+  /* Surfaces */
+  --surface: #ffffff;
+  --surface-2: #f7f9fc;
+  --surface-premium: #fafbfc;
+  --text: #0b1220;
+  --muted: #5b6472;
+
+  /* Premium borders */
+  --border-premium: 1px solid rgba(0, 0, 0, 0.06);
+  --border-premium-hover: 1px solid rgba(33, 103, 255, 0.2);
+
+  /* Typography tokens — mobile-first */
+  --font-ui: 'Inter',
+  'Segoe UI',
+  Roboto,
+  'Helvetica Neue',
+  Arial,
+  sans-serif;
+  --font-display: 'Manrope',
+  'Inter',
+  system-ui,
+  -apple-system,
+  'Segoe UI',
+  Roboto,
+  Arial,
+  sans-serif;
+  --fs-h1: 36px;
+  --fs-h2: 28px;
+  --fs-h3: 22px;
+  --fs-body: 16px;
+  --fs-body-large: 18px;
+  --fs-caption: 14px;
+  --fs-small: 13px;
+  --lh-tight: 1.3;
+  --lh-normal: 1.4;
+  --lh-relaxed: 1.5;
+  --letter-spacing-tight: -0.02em;
+  --letter-spacing-normal: 0;
+
+  /* Desktop typography overrides */
+  --fs-h1-desktop: 56px;
+  --fs-h2-desktop: 40px;
+  --fs-h3-desktop: 28px;
+}
+
+/* Desktop typography */
+@media (min-width: 768px) {
+  :root {
+    --fs-h1: var(--fs-h1-desktop);
+    --fs-h2: var(--fs-h2-desktop);
+    --fs-h3: var(--fs-h3-desktop);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  overflow-x: clip;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+}
+
+html {
+  font-family: var(--font-ui);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: inherit;
+  font-size: var(--fs-body);
+  line-height: var(--lh-normal);
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+h1,
+.h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-h1);
+  line-height: var(--lh-tight);
+  margin: 0 0 var(--space-4);
+}
+
+h2,
+.h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-h2);
+  line-height: var(--lh-tight);
+  margin: 0 0 var(--space-3);
+}
+
+p {
+  margin: 0 0 var(--space-3);
+}
+
+small,
+.caption {
+  font-size: var(--fs-caption);
+  line-height: var(--lh-relaxed);
+}
+
+/* Spacing utilities */
+.stack-1>*+* {
+  margin-top: var(--space-1);
+}
+
+.stack-2>*+* {
+  margin-top: var(--space-2);
+}
+
+.stack-3>*+* {
+  margin-top: var(--space-3);
+}
+
+.stack-4>*+* {
+  margin-top: var(--space-4);
+}
+
+.stack-5>*+* {
+  margin-top: var(--space-5);
+}
+
+.gap-mobile {
+  gap: var(--gap-mobile);
+}
+
+/******** Accessibility ********/
+:focus-visible {
+  outline: 3px solid var(--sport-primary);
+  outline-offset: 3px;
+}
+
+/* Reduced Motion - Respect user preferences */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/******** Buttons ********/
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  min-height: 44px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-primary {
+  background: var(--brand-500);
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-secondary {
+  border: 1px solid var(--brand-500);
+  color: var(--brand-500);
+  background: transparent;
+}
+
+.btn-tertiary {
+  background: transparent;
+  color: var(--brand-500);
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/******** Cards ********/
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.card-body {
+  padding: var(--space-5);
+}
+
+/******** Images & media ********/
+.cover-center {
+  object-fit: cover;
+  object-position: center;
+}
+
+.ratio-16x9 {
+  aspect-ratio: 16 / 9;
+}
+
+.media {
+  position: relative;
+  overflow: hidden;
+}
+
+.media>img,
+.media>picture,
+.media>video {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.media.overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 60%);
+  pointer-events: none;
+}
+
+/* Clamp multi-line descriptions to 3 lines */
+.clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.clamp-4 {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.clamp-5 {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Prevent horizontal overflow on mobile - use clip to allow internal scrolling */
+@media (max-width: 768px) {
+  body {
+    overflow-x: clip;
+    width: 100%;
+    max-width: 100%;
+    padding-top: env(safe-area-inset-top);
+  }
+
+  app-root {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    /* Removed overflow-x: hidden to allow internal horizontal scrolling (e.g., calendar swipe) */
+  }
+
+  /* Ensure content doesn't get hidden behind fixed header */
+  .layout-main {
+    padding-top: 80px;
+    /* Account for fixed header height */
+  }
+}
+
+.error-snackbar {
+  background-color: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+
+/* Standardize Angular Material primary to brand */
+.mat-mdc-button.mat-primary {
+  --mdc-text-button-label-text-color: var(--brand-600);
+}
+
+.mat-mdc-outlined-button.mat-primary,
+.mat-mdc-stroked-button.mat-primary {
+  --mdc-outlined-button-label-text-color: var(--brand-600);
+  --mdc-outlined-button-outline-color: var(--brand-600);
+}
+
+.mat-mdc-unelevated-button.mat-primary,
+.mat-mdc-raised-button.mat-primary,
+.mat-mdc-fab.mat-primary,
+.mat-mdc-mini-fab.mat-primary {
+  --mdc-filled-button-container-color: var(--brand-500);
+  --mdc-filled-button-label-text-color: #ffffff;
+}
+
+/* Icon buttons brand color */
+.mat-mdc-icon-button.mat-primary {
+  --mdc-icon-button-icon-color: var(--brand-600);
+}
+
+/* Unify button shape and label weight */
+.mat-mdc-button-base {
+  border-radius: var(--radius) !important;
+  font-weight: 600;
+  min-height: 44px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* Default touch target and icon-button sizes (desktop/tablet) */
+.mat-mdc-icon-button {
+  width: 44px;
+  height: 44px;
+}
+
+.mat-mdc-button-touch-target {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius);
+}
+
+/* Consistent brand-colored focus ring and size for Material buttons */
+.mat-mdc-button-base .mat-focus-indicator,
+.mat-mdc-icon-button .mat-focus-indicator {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius);
+  pointer-events: none;
+}
+
+.mat-mdc-button-base:focus-visible .mat-focus-indicator,
+.mat-mdc-icon-button:focus-visible .mat-focus-indicator {
+  box-shadow: 0 0 0 3px var(--brand-500);
+}
+
+/* Improve mobile fit for buttons */
+@media (max-width: 600px) {
+  .mat-mdc-button-base {
+    min-height: 40px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .mat-mdc-icon-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .mat-mdc-button-touch-target {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Custom Tooltip Styles */
+.custom-tooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  max-width: 250px;
+  word-wrap: break-word;
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.custom-tooltip--visible {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+/* Tooltip arrows */
+.custom-tooltip::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 6px solid transparent;
+}
+
+.custom-tooltip--top::before {
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-top-color: rgba(0, 0, 0, 0.9);
+}
+
+.custom-tooltip--bottom::before {
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-bottom-color: rgba(0, 0, 0, 0.9);
+}
+
+.custom-tooltip--left::before {
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left-color: rgba(0, 0, 0, 0.9);
+}
+
+.custom-tooltip--right::before {
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-right-color: rgba(0, 0, 0, 0.9);
+}
+
+/* ============================================ */
+/* MODERN DIALOG STYLES - SITE CONSISTENT */
+/* ============================================ */
+
+/* Dialog backdrop with blur effect */
+.cdk-overlay-dark-backdrop {
+  background: rgba(15, 23, 42, 0.5) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+/* Base dialog container styles - applies to ALL dialogs */
+.mat-mdc-dialog-container {
+  --mdc-dialog-container-shape: var(--radius-lg, 16px);
+  border-radius: var(--radius-lg, 16px) !important;
+  box-shadow:
+    0 25px 80px rgba(15, 23, 42, 0.2),
+    0 10px 30px rgba(15, 23, 42, 0.1),
+    0 0 0 1px rgba(15, 23, 42, 0.05) !important;
+  overflow: hidden !important;
+}
+
+.mat-mdc-dialog-container .mdc-dialog__surface {
+  border-radius: var(--radius-lg, 16px) !important;
+  background: #ffffff !important;
+  overflow: hidden !important;
+}
+
+/* Dialog title styling */
+.mat-mdc-dialog-container .mdc-dialog__title {
+  padding: 1.5rem 1.5rem 0 1.5rem !important;
+  font-family: var(--font-display, 'Manrope', sans-serif) !important;
+  font-size: 1.375rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.3 !important;
+  margin: 0 !important;
+  border-bottom: none !important;
+}
+
+.mat-mdc-dialog-container .mdc-dialog__title::before {
+  display: none !important;
+  /* Remove default Material icon placeholder */
+}
+
+/* Dialog content styling */
+.mat-mdc-dialog-container .mdc-dialog__content {
+  padding: 1.25rem 1.5rem !important;
+  font-family: var(--font-ui, 'Inter', sans-serif) !important;
+  font-size: 0.9375rem !important;
+  line-height: 1.6 !important;
+  color: #334155 !important;
+  max-height: 70vh !important;
+  overflow-y: auto !important;
+}
+
+/* Dialog actions styling */
+.mat-mdc-dialog-container .mdc-dialog__actions {
+  padding: 1rem 1.5rem 1.5rem !important;
+  gap: 0.75rem !important;
+  border-top: 1px solid rgba(148, 163, 184, 0.15) !important;
+  background: linear-gradient(to bottom, rgba(248, 250, 252, 0) 0%, rgba(248, 250, 252, 0.5) 100%) !important;
+}
+
+/* Dialog buttons - primary action */
+.mat-mdc-dialog-container .mdc-dialog__actions .mat-mdc-button.mat-primary,
+.mat-mdc-dialog-container .mdc-dialog__actions .mat-mdc-raised-button.mat-primary,
+.mat-mdc-dialog-container .mdc-dialog__actions .mat-mdc-unelevated-button.mat-primary {
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%) !important;
+  color: white !important;
+  border-radius: var(--radius, 12px) !important;
+  font-weight: 600 !important;
+  padding: 0.625rem 1.25rem !important;
+  min-height: 42px !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
+  transition: all 0.2s ease !important;
+}
+
+.mat-mdc-dialog-container .mdc-dialog__actions .mat-mdc-button.mat-primary:hover,
+.mat-mdc-dialog-container .mdc-dialog__actions .mat-mdc-raised-button.mat-primary:hover,
+.mat-mdc-dialog-container .mdc-dialog__actions .mat-mdc-unelevated-button.mat-primary:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35) !important;
+}
+
+/* Dialog buttons - secondary/cancel action */
+.mat-mdc-dialog-container .mdc-dialog__actions .mat-mdc-button:not(.mat-primary):not(.mat-warn),
+.mat-mdc-dialog-container .mdc-dialog__actions .mat-mdc-stroked-button:not(.mat-primary):not(.mat-warn) {
+  color: #64748b !important;
+  border-radius: var(--radius, 12px) !important;
+  font-weight: 600 !important;
+  padding: 0.625rem 1.25rem !important;
+  min-height: 42px !important;
+  transition: all 0.2s ease !important;
+}
+
+.mat-mdc-dialog-container .mdc-dialog__actions .mat-mdc-button:not(.mat-primary):not(.mat-warn):hover,
+.mat-mdc-dialog-container .mdc-dialog__actions .mat-mdc-stroked-button:not(.mat-primary):not(.mat-warn):hover {
+  background: rgba(100, 116, 139, 0.08) !important;
+  color: #334155 !important;
+}
+
+/* Dialog buttons - warn/danger action */
+.mat-mdc-dialog-container .mdc-dialog__actions .mat-mdc-button.mat-warn,
+.mat-mdc-dialog-container .mdc-dialog__actions .mat-mdc-raised-button.mat-warn {
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%) !important;
+  color: white !important;
+  border-radius: var(--radius, 12px) !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25) !important;
+}
+
+/* Form fields inside dialogs */
+.mat-mdc-dialog-container .mat-mdc-form-field {
+  width: 100% !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.mat-mdc-dialog-container .mat-mdc-form-field .mdc-text-field--outlined .mdc-notched-outline {
+  border-radius: var(--radius-sm, 8px) !important;
+}
+
+.mat-mdc-dialog-container .mat-mdc-form-field .mat-mdc-text-field-wrapper {
+  background: #f8fafc !important;
+  border-radius: var(--radius-sm, 8px) !important;
+}
+
+.mat-mdc-dialog-container .mat-mdc-form-field.mat-focused .mat-mdc-text-field-wrapper {
+  background: #ffffff !important;
+}
+
+/* Scrollbar styling for dialog content */
+.mat-mdc-dialog-container .mdc-dialog__content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.mat-mdc-dialog-container .mdc-dialog__content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mat-mdc-dialog-container .mdc-dialog__content::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 3px;
+}
+
+.mat-mdc-dialog-container .mdc-dialog__content::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
+}
+
+/* Special class for modern styled dialogs */
+.modern-dialog .mat-mdc-dialog-container {
+  --mdc-dialog-container-shape: 16px;
+}
+
+/* Mobile responsive dialog */
+@media (max-width: 600px) {
+  .mat-mdc-dialog-container {
+    margin: 16px !important;
+    max-width: calc(100vw - 32px) !important;
+    border-radius: var(--radius, 12px) !important;
+  }
+
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    border-radius: var(--radius, 12px) !important;
+  }
+
+  .mat-mdc-dialog-container .mdc-dialog__title {
+    padding: 1.25rem 1.25rem 0 1.25rem !important;
+    font-size: 1.25rem !important;
+  }
+
+  .mat-mdc-dialog-container .mdc-dialog__content {
+    padding: 1rem 1.25rem !important;
+    max-height: 60vh !important;
+  }
+
+  .mat-mdc-dialog-container .mdc-dialog__actions {
+    padding: 0.875rem 1.25rem 1.25rem !important;
+    flex-direction: column-reverse !important;
+  }
+
+  .mat-mdc-dialog-container .mdc-dialog__actions .mat-mdc-button,
+  .mat-mdc-dialog-container .mdc-dialog__actions .mat-mdc-raised-button,
+  .mat-mdc-dialog-container .mdc-dialog__actions .mat-mdc-unelevated-button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+}
+
+/* ============================================ */
+/* ATTENDANCE MODAL PANEL */
+/* ============================================ */
+.attendance-modal-panel .mat-mdc-dialog-container {
+  --mdc-dialog-container-shape: 12px;
+  border-radius: 12px !important;
+  padding: 0 !important;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.2) !important;
+  background: transparent;
+  border-right: none !important;
+}
+
+.attendance-modal-panel .mdc-dialog__surface {
+  border-radius: 12px !important;
+  overflow: hidden;
+  border: none !important;
+  background: #ffffff !important;
+  /* Solid background to prevent edge contrast */
+  border-right: none !important;
+}
+
+.attendance-modal-panel .mat-mdc-dialog-container .mdc-dialog__content {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  border: none !important;
+  background: #ffffff !important;
+  border-right: none !important;
+}
+
+/* Ensure overlay panel itself doesn't introduce a hairline */
+.attendance-modal-panel {
+  background: transparent !important;
+  border: none !important;
+  /* Ensure centering on desktop */
+  margin-left: auto !important;
+  margin-right: auto !important;
+  align-self: center !important;
+}
+
+/* Extra guard: center the panel within the overlay wrapper */
+.cdk-global-overlay-wrapper .attendance-modal-panel {
+  margin: auto !important;
+}
+
+.attendance-modal-panel .mat-mdc-dialog-container .mdc-dialog__title {
+  padding: 0 !important;
+}
+
+.attendance-modal-panel .mat-mdc-dialog-container .mdc-dialog__actions {
+  padding: 0 !important;
+}
+
+/* Ensure proper display on mobile */
+@media (max-width: 768px) {
+  .attendance-modal-panel .mat-mdc-dialog-container {
+    max-width: 100vw !important;
+    width: 100vw !important;
+    max-height: 100vh !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .attendance-modal-panel .mdc-dialog__surface {
+    border-radius: 0 !important;
+    max-height: 100vh !important;
+  }
+}
+
+/* Desktop alignment guard: center overlay container */
+@media (min-width: 769px) {
+  .cdk-global-overlay-wrapper {
+    justify-content: center !important;
+    align-items: center !important;
+  }
+}
+
+/* ============================================================================
+   MOBILE FIXED ELEMENTS COORDINATION
+   ============================================================================
+   Prevents conflicts between FAB, fixed buttons, and footer on mobile
+   Z-Index hierarchy: Fixed button (9999) > FAB (9998) > Footer (1)
+   ============================================================================ */
+
+/* Force app-footer to always be below fixed elements */
+app-footer {
+  position: relative;
+  z-index: 1 !important;
+  isolation: isolate;
+  /* Create new stacking context */
+  display: block;
+  /* Ensure no inline gaps */
+  margin: 0;
+  /* Remove any default margins */
+}
+
+@media (max-width: 900px) {
+
+  /* When on course-details page with fixed enrollment button */
+  app-course-details~app-fab-account .fab-account,
+  body:has(app-course-details .info-card--action-mobile) app-fab-account .fab-account {
+    bottom: calc(1.5rem + 85px) !important;
+    /* Above fixed button */
+    z-index: 9998 !important;
+    /* Below fixed button but above footer */
+  }
+
+  @media (max-width: 480px) {
+
+    app-course-details~app-fab-account .fab-account,
+    body:has(app-course-details .info-card--action-mobile) app-fab-account .fab-account {
+      bottom: calc(1rem + 85px) !important;
+    }
+  }
+
+  /* Ensure footer stays below fixed elements - NO PADDING */
+  body:has(.info-card--action-mobile) app-footer {
+    margin-bottom: 0 !important;
+    /* Remove any bottom margin */
+    padding-bottom: 0 !important;
+    /* NO padding - button covers footer */
+    position: relative !important;
+    z-index: 1 !important;
+    /* Below fixed button and FAB */
+    isolation: isolate !important;
+    /* Prevent z-index leaking */
+  }
+
+  body:has(.info-card--action-mobile) app-footer * {
+    /* Force all footer children to respect parent stacking context */
+    position: relative;
+    z-index: auto !important;
+  }
+
+  body:has(.info-card--action-mobile) app-footer .footer {
+    position: relative !important;
+    z-index: 1 !important;
+    margin-bottom: 0 !important;
+  }
+
+  body:has(.info-card--action-mobile) app-footer .footer-container {
+    padding-bottom: 2rem !important;
+    /* Normal padding - button will cover part of it */
+    position: relative !important;
+    z-index: 0 !important;
+  }
+
+  /* Add safe padding to layout when fixed bottom elements exist */
+  body:has(.info-card--action-mobile) .layout-main {
+    padding-bottom: 20px !important;
+    /* Reduced since footer has its own padding */
+  }
+
+  /* Ensure fixed button is always on top with solid background */
+  .info-card--action-mobile {
+    z-index: 99999 !important;
+    /* Extremely high - above everything including modals */
+    background: #ffffff !important;
+    /* Solid white - no transparency */
+    position: fixed !important;
+    isolation: isolate !important;
+    /* Create own stacking context */
+    transform: translateZ(0) !important;
+    /* Force GPU acceleration and new layer */
+    will-change: transform !important;
+
+    /* Force opaque background with multiple layers */
+    &::before,
+    &::after {
+      background: #ffffff !important;
+    }
+  }
+}
+
+/* ==================== MODAL BACKDROP - UIGuidelines ====================
+   Stiluri pentru backdrop-ul modal/dialog conform design system
+   =================================================================== */
+
+.cdk-overlay-backdrop.cdk-overlay-dark-backdrop {
+  background: rgba(15, 23, 42, 0.5) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Modal container styling */
+.cdk-overlay-pane {
+
+  /* Ensure modals have proper shadow */
+  .mat-mdc-dialog-container {
+    border-radius: 16px !important;
+    box-shadow: 0 25px 80px rgba(15, 23, 42, 0.2) !important;
+    overflow: hidden;
+  }
+}
+
+/* ==================== MOBILE PAGE-HERO - Compact ====================
+   Reduce spacing for page-hero sections on mobile
+   =================================================================== */
+
+@media (max-width: 768px) {
+
+  .page-hero,
+  section.page-hero,
+  [class*="page-hero"] {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+    margin-top: 0 !important;
+  }
+
+  .page-hero__container {
+    padding: 0 1rem !important;
+  }
+
+  .page-hero__title {
+    font-size: 1.5rem !important;
+    margin-bottom: 0.5rem !important;
+    margin-top: 0 !important;
+  }
+
+  .page-hero__subtitle {
+    font-size: 0.875rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .page-hero__eyebrow {
+    font-size: 0.75rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  /* Back button adjustment */
+  .page-hero .back-button,
+  .page-hero button[routerlink] {
+    margin-bottom: 0.5rem !important;
+  }
+}
+
+/* ==================== GLOBAL GALLERY DRAG & DROP ====================
+   Styling for the drag preview, which is rendered in the overlay container
+   (outside of component styles).
+   ==================================================================== */
+.ttt-gallery-drag-preview {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  /* Lift effect */
+  border-radius: 12px;
+  opacity: 0.95;
+  cursor: grabbing;
+  z-index: 1000;
+  transform: scale(1.05);
+  /* Slight zoom */
+  background: #ffffff;
+  /* Ensure opaque background */
+  border: 2px solid rgba(99, 102, 241, 0.6);
+  /* Brand border */
+  display: flex;
+  /* Maintain layout if needed */
+  overflow: hidden;
+  /* Respect border radius */
+}
+
+/* Ensure images inside preview fill the container properly */
+.ttt-gallery-drag-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Hide action buttons during drag */
+.ttt-gallery-drag-preview button {
+  display: none !important;
+}
+
+/* Ensure drag handle/indicator is visible or hidden as desired */
+.ttt-gallery-drag-preview .gallery-item__drag {
+  display: flex;
+}
+
+/* ==================== GLOBAL ADMIN USERS CHIPS ==================== 
+   Migrated from AdminUsersComponent to avoid ::ng-deep 
+   ================================================================== */
+
+.chips.chips--admin button.mat-mdc-outlined-button {
+  --mdc-outlined-button-container-shape: 50px !important;
+  --mdc-outlined-button-outline-color: var(--color-border-default) !important;
+
+  border-radius: 50px !important;
+  padding: 0.5rem 1.25rem !important;
+  min-height: 40px !important;
+  height: 40px !important;
+  border: 2px solid var(--color-border-default) !important;
+  background: var(--sport-bg-white) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: none !important;
+}
+
+.chips.chips--admin button.mat-mdc-outlined-button .mdc-button__label {
+  color: var(--sport-text-muted) !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+}
+
+.chips.chips--admin button.mat-mdc-outlined-button:hover:not(.active) {
+  border-color: var(--sport-accent) !important;
+  background: #fffbeb !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15) !important;
+}
+
+.chips.chips--admin button.mat-mdc-outlined-button:hover:not(.active) .mdc-button__label {
+  color: var(--sport-accent-dark) !important;
+}
+
+.chips.chips--admin button.mat-mdc-outlined-button.active {
+  background: var(--gradient-warm) !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3) !important;
+}
+
+.chips.chips--admin button.mat-mdc-outlined-button.active .mdc-button__label {
+color: white !important;
+font-weight: 700 !important;
+}
+
+/* Force Amber even for role-chips if they were targeted before */
+.chips.chips--admin.role-chips button.active {
+background: var(--gradient-warm) !important;
+box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3) !important;
+}
+
+/* ============================================================================
+GLOBAL FORM COMPONENTS - UI GUIDELINES COMPLIANT
+============================================================================
+Centralized styling for all form elements (inputs, selects, textareas)
+These styles apply automatically to all Angular Material form fields
+============================================================================ */
+
+/* === Form Layout === */
+.form-layout {
+display: flex;
+flex-direction: column;
+gap: 2rem;
+}
+
+.form-section {
+background: var(--sport-bg-white);
+border-radius: var(--radius-card);
+box-shadow: var(--shadow-card);
+padding: 2rem;
+border: 1px solid var(--color-border-subtle);
+}
+
+.form-section__title {
+display: flex;
+align-items: center;
+gap: 0.5rem;
+margin: 0 0 1.5rem;
+font-family: var(--font-display);
+font-size: 1.25rem;
+font-weight: 700;
+color: var(--sport-text-dark);
+}
+
+.form-section__title mat-icon {
+color: var(--sport-primary);
+}
+
+.form-grid {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+gap: 1.5rem;
+}
+
+.form-grid--single {
+grid-template-columns: 1fr;
+}
+
+.form-grid--two {
+grid-template-columns: repeat(2, 1fr);
+}
+
+@media (max-width: 640px) {
+.form-section {
+padding: 1.25rem;
+}
+
+.form-grid,
+.form-grid--two {
+grid-template-columns: 1fr;
+}
+}
+
+/* === Angular Material Form Field Customization === */
+.mat-mdc-form-field {
+width: 100%;
+}
+
+/* Form field wrapper background */
+.mat-mdc-text-field-wrapper {
+background: var(--sport-bg-white) !important;
+border-radius: 12px !important;
+}
+
+/* Outlined text field border */
+.mdc-text-field--outlined {
+.mdc-notched-outline__leading,
+.mdc-notched-outline__notch,
+.mdc-notched-outline__trailing {
+border-color: var(--color-border-default) !important;
+}
+}
+
+.mdc-text-field--outlined:hover .mdc-notched-outline__leading,
+.mdc-text-field--outlined:hover .mdc-notched-outline__notch,
+.mdc-text-field--outlined:hover .mdc-notched-outline__trailing {
+border-color: var(--sport-primary) !important;
+}
+
+/* Input height standardization */
+.mat-mdc-form-field-infix {
+min-height: 50px !important;
+padding: 0.75rem 0 !important;
+}
+
+/* Error state styling */
+.mat-mdc-form-field.mat-form-field-invalid {
+.mdc-notched-outline__leading,
+.mdc-notched-outline__notch,
+.mdc-notched-outline__trailing {
+border-color: #dc2626 !important;
+}
+}
+
+.mat-mdc-form-field-error {
+font-size: 0.75rem;
+color: #dc2626 !important;
+}
+
+/* Success indicator (valid fields) */
+.mat-mdc-form-field .valid-indicator {
+color: #16a34a;
+}
+
+/* === Form Hero (Back Button + Title) === */
+.form-hero {
+display: flex;
+flex-direction: column;
+gap: 1rem;
+padding: 2rem;
+background: linear-gradient(135deg, var(--sport-bg-blue-50) 0%, var(--sport-bg-light) 50%, #fffbeb 100%);
+border-radius: var(--radius-card);
+box-shadow: var(--shadow-card);
+}
+
+.form-hero .hero-content {
+display: flex;
+flex-direction: column;
+gap: 0.5rem;
+}
+
+.form-hero .hero-title {
+font-family: var(--font-display);
+font-size: 1.75rem;
+font-weight: 800;
+color: var(--sport-text-dark);
+margin: 0;
+}
+
+.form-hero .hero-title span {
+background: var(--gradient-primary);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+background-clip: text;
+}
+
+/* Back button in form hero */
+.back-btn {
+display: inline-flex;
+align-items: center;
+gap: 0.5rem;
+padding: 0.5rem 1rem;
+background: transparent;
+border: 1px solid var(--color-border-default);
+border-radius: var(--radius-btn);
+color: var(--sport-text-muted);
+font-weight: 500;
+cursor: pointer;
+transition: all 0.2s ease;
+width: fit-content;
+}
+
+.back-btn mat-icon {
+font-size: 1.25rem;
+width: 1.25rem;
+height: 1.25rem;
+}
+
+.back-btn:hover {
+background: var(--sport-bg-white);
+border-color: var(--sport-primary);
+color: var(--sport-primary);
+}
+
+@media (max-width: 640px) {
+.form-hero {
+padding: 1.25rem;
+}
+
+.form-hero .hero-title {
+font-size: 1.5rem;
+}
+}
+
+/* === Form Actions (Submit/Cancel buttons) === */
+.form-actions {
+display: flex;
+justify-content: flex-end;
+gap: 1rem;
+padding-top: 1rem;
+border-top: 1px solid var(--color-border-subtle);
+}
+
+.form-actions .btn-secondary,
+.form-actions button[type="button"]:not(.btn-primary) {
+display: inline-flex;
+align-items: center;
+gap: 0.5rem;
+padding: 0.75rem 1.5rem;
+background: transparent;
+color: var(--sport-text-muted);
+border: 2px solid var(--color-border-default);
+border-radius: var(--radius-btn);
+font-weight: 600;
+cursor: pointer;
+transition: all 0.2s ease;
+}
+
+.form-actions .btn-secondary:hover,
+.form-actions button[type="button"]:not(.btn-primary):hover {
+border-color: var(--sport-primary);
+color: var(--sport-primary);
+}
+
+.form-actions .btn-primary,
+.form-actions button[type="submit"] {
+display: inline-flex;
+align-items: center;
+gap: 0.5rem;
+padding: 0.75rem 1.5rem;
+background: var(--gradient-primary);
+color: white;
+border: none;
+border-radius: var(--radius-btn);
+font-weight: 600;
+cursor: pointer;
+transition: all 0.2s ease;
+box-shadow: var(--shadow-primary);
+}
+
+.form-actions .btn-primary:hover:not(:disabled),
+.form-actions button[type="submit"]:hover:not(:disabled) {
+transform: translateY(-2px);
+box-shadow: var(--shadow-primary-hover);
+}
+
+.form-actions .btn-primary:disabled,
+.form-actions button[type="submit"]:disabled {
+opacity: 0.5;
+cursor: not-allowed;
+}
+
+/* ============================================
+   ZONE THEMES - Club (Blue), Coach (Green), Admin (Amber)
+   ============================================ */
+
+/* Club theme - Blue (default, also explicit class) */
+.form-actions--club .btn-primary,
+.form-actions--club button[type="submit"],
+.btn-primary--club {
+  background: var(--gradient-primary) !important;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3) !important;
+}
+
+.form-actions--club .btn-primary:hover:not(:disabled),
+.form-actions--club button[type="submit"]:hover:not(:disabled),
+.btn-primary--club:hover:not(:disabled) {
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4) !important;
+}
+
+/* Coach theme - Green */
+.form-actions--coach .btn-primary,
+.form-actions--coach button[type="submit"],
+.btn-primary--coach {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%) !important;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3) !important;
+}
+
+.form-actions--coach .btn-primary:hover:not(:disabled),
+.form-actions--coach button[type="submit"]:hover:not(:disabled),
+.btn-primary--coach:hover:not(:disabled) {
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4) !important;
+}
+
+/* Admin theme - Amber */
+.form-actions--admin .btn-primary,
+.form-actions--admin button[type="submit"],
+.btn-primary--admin {
+  background: var(--gradient-warm) !important;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3) !important;
+}
+
+.form-actions--admin .btn-primary:hover:not(:disabled),
+.form-actions--admin button[type="submit"]:hover:not(:disabled),
+.btn-primary--admin:hover:not(:disabled) {
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4) !important;
+}
+
+/* Toggle buttons per zone */
+.toggle-btn--club.active,
+.toggle-btn--club[aria-pressed="true"] {
+  background: var(--gradient-primary) !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+}
+
+.toggle-btn--coach.active,
+.toggle-btn--coach[aria-pressed="true"] {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%) !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+}
+
+.toggle-btn--admin.active,
+.toggle-btn--admin[aria-pressed="true"] {
+  background: var(--gradient-warm) !important;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3) !important;
+}
+
+/* Icon buttons per zone */
+.icon-btn--club:hover {
+  border-color: var(--sport-primary) !important;
+  color: var(--sport-primary) !important;
+  background: rgba(37, 99, 235, 0.05) !important;
+}
+
+.icon-btn--coach:hover {
+  border-color: #10b981 !important;
+  color: #10b981 !important;
+  background: rgba(16, 185, 129, 0.05) !important;
+}
+
+.icon-btn--admin:hover {
+  border-color: #f59e0b !important;
+  color: #f59e0b !important;
+  background: rgba(245, 158, 11, 0.05) !important;
+}
+
+/* Badge per zone */
+.badge--club {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.badge--coach {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.badge--admin {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+@media (max-width: 640px) {
+.form-actions {
+flex-direction: column-reverse;
+gap: 0.75rem;
+}
+
+.form-actions .btn-secondary,
+.form-actions .btn-primary,
+.form-actions button {
+width: 100%;
+justify-content: center;
+}
+}
+
+/* === Media Upload Grid === */
+.media-grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+gap: 1rem;
+}
+
+.media-card {
+position: relative;
+aspect-ratio: 4/3;
+border-radius: var(--radius);
+overflow: hidden;
+border: 1px solid var(--color-border-default);
+}
+
+.media-card img {
+width: 100%;
+height: 100%;
+object-fit: cover;
+}
+
+.media-card__overlay {
+position: absolute;
+inset: 0;
+background: rgba(0, 0, 0, 0.5);
+display: flex;
+align-items: center;
+justify-content: center;
+opacity: 0;
+transition: opacity 0.2s ease;
+}
+
+.media-card:hover .media-card__overlay {
+opacity: 1;
+}
+
+.upload-card {
+aspect-ratio: 4/3;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 0.5rem;
+border: 2px dashed var(--color-border-default);
+border-radius: var(--radius);
+background: var(--sport-bg-light);
+cursor: pointer;
+transition: all 0.2s ease;
+}
+
+.upload-card mat-icon {
+font-size: 2rem;
+width: 2rem;
+height: 2rem;
+color: var(--sport-text-muted);
+}
+
+.upload-card span {
+font-size: 0.875rem;
+color: var(--sport-text-muted);
+}
+
+.upload-card:hover {
+border-color: var(--sport-primary);
+background: rgba(37, 99, 235, 0.05);
+}
+
+.upload-card:hover mat-icon,
+.upload-card:hover span {
+color: var(--sport-primary);
+}
+
+/* === Toggle Buttons (for boolean options) === */
+.toggle-btn {
+display: inline-flex;
+align-items: center;
+gap: 0.5rem;
+padding: 0.5rem 1rem;
+background: var(--sport-bg-light);
+border: 2px solid var(--color-border-default);
+border-radius: var(--radius-btn);
+font-weight: 600;
+font-size: 0.875rem;
+color: var(--sport-text-muted);
+cursor: pointer;
+transition: all 0.2s ease;
+}
+
+.toggle-btn:hover {
+border-color: var(--sport-primary);
+color: var(--sport-primary);
+}
+
+.toggle-btn.active,
+.toggle-btn[aria-pressed="true"] {
+background: var(--gradient-primary);
+border-color: transparent;
+color: white;
+box-shadow: var(--shadow-primary);
+}
+
+/* === Icon Buttons (for actions like delete, edit) === */
+.icon-btn {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+width: 36px;
+height: 36px;
+padding: 0;
+background: var(--sport-bg-white);
+border: 1px solid var(--color-border-default);
+border-radius: 50%;
+color: var(--sport-text-muted);
+cursor: pointer;
+transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+background: var(--sport-bg-light);
+border-color: var(--sport-primary);
+color: var(--sport-primary);
+}
+
+.icon-btn--danger:hover {
+background: #fef2f2;
+border-color: #dc2626;
+color: #dc2626;
+}
+
+.icon-btn--success:hover {
+background: #f0fdf4;
+border-color: #16a34a;
+color: #16a34a;
+}
+
+/* === Inline Form Row (label + input side by side) === */
+.form-row-inline {
+display: flex;
+align-items: center;
+gap: 1rem;
+}
+
+.form-row-inline label {
+flex: 0 0 auto;
+min-width: 120px;
+font-weight: 600;
+color: var(--sport-text-dark);
+}
+
+.form-row-inline .mat-mdc-form-field {
+flex: 1;
+}
+
+@media (max-width: 640px) {
+.form-row-inline {
+flex-direction: column;
+align-items: stretch;
+gap: 0.5rem;
+}
+
+.form-row-inline label {
+min-width: auto;
+}
+}
+
+/* === Select/Dropdown Styling === */
+.mat-mdc-select-panel {
+border-radius: var(--radius) !important;
+box-shadow: var(--shadow-card) !important;
+}
+
+.mat-mdc-select-panel .mat-mdc-option {
+min-height: 44px !important;
+font-size: 0.9375rem !important;
+}
+
+/* === Textarea Styling === */
+.mat-mdc-form-field textarea.mat-mdc-input-element {
+min-height: 100px;
+resize: vertical;
+}
+
+/* === Checkbox & Radio Styling === */
+.mat-mdc-checkbox,
+.mat-mdc-radio-button {
+--mdc-checkbox-selected-checkmark-color: white;
+--mdc-checkbox-selected-focus-icon-color: var(--sport-primary);
+--mdc-checkbox-selected-hover-icon-color: var(--sport-primary);
+--mdc-checkbox-selected-icon-color: var(--sport-primary);
+--mdc-checkbox-selected-pressed-icon-color: var(--sport-primary);
+--mdc-radio-selected-icon-color: var(--sport-primary);
+--mdc-radio-selected-hover-icon-color: var(--sport-primary);
+--mdc-radio-selected-pressed-icon-color: var(--sport-primary);
+}
+
+/* === Form Hint Text === */
+.form-hint {
+font-size: 0.75rem;
+color: var(--sport-text-muted);
+margin-top: 0.25rem;
+}
+
+/* === Required Field Indicator === */
+.required-indicator {
+color: #dc2626;
+margin-left: 0.25rem;
+}
+
+/* === Fieldset & Legend (for grouped inputs) === */
+.form-fieldset {
+border: 1px solid var(--color-border-default);
+border-radius: var(--radius);
+padding: 1.5rem;
+margin: 0;
+}
+
+.form-fieldset legend {
+font-weight: 600;
+color: var(--sport-text-dark);
+padding: 0 0.5rem;
+font-size: 0.875rem;
+}

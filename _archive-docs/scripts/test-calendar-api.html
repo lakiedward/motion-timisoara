@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Calendar API</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+    }
+    .controls {
+      margin-bottom: 20px;
+    }
+    input {
+      padding: 8px 12px;
+      margin-right: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    button {
+      padding: 8px 20px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    pre {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .error {
+      color: #dc2626;
+      background: #fef2f2;
+      padding: 10px;
+      border-radius: 4px;
+      border-left: 4px solid #dc2626;
+    }
+    .success {
+      color: #059669;
+      background: #f0fdf4;
+      padding: 10px;
+      border-radius: 4px;
+      border-left: 4px solid #059669;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🗓️ Test Calendar API</h1>
+    
+    <div class="controls">
+      <label>Token: </label>
+      <input type="text" id="token" placeholder="JWT Token" style="width: 400px;">
+      <br><br>
+      <label>API URL: </label>
+      <input type="text" id="apiUrl" value="http://localhost:8081" style="width: 300px;">
+      <br><br>
+      <button onclick="testCalendar()">Test /api/parent/calendar</button>
+      <button onclick="testOverview()">Test /api/parent/overview</button>
+      <button onclick="testEnrollments()">Test /api/parent/enrollments</button>
+    </div>
+
+    <h2>Results:</h2>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    async function testCalendar() {
+      const token = document.getElementById('token').value;
+      const apiUrl = document.getElementById('apiUrl').value;
+      
+      if (!token) {
+        showError('Please enter JWT token');
+        return;
+      }
+
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + 60);
+
+      const url = `${apiUrl}/api/parent/calendar?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+
+      try {
+        showInfo(`🔄 Calling: ${url}`);
+        
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showSuccess(`✅ Success! Got ${data.length} events`);
+          showJson(data);
+        } else {
+          showError(`❌ Error ${response.status}: ${JSON.stringify(data)}`);
+        }
+      } catch (error) {
+        showError(`❌ Network error: ${error.message}`);
+      }
+    }
+
+    async function testOverview() {
+      const token = document.getElementById('token').value;
+      const apiUrl = document.getElementById('apiUrl').value;
+      
+      if (!token) {
+        showError('Please enter JWT token');
+        return;
+      }
+
+      const url = `${apiUrl}/api/parent/overview`;
+
+      try {
+        showInfo(`🔄 Calling: ${url}`);
+        
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showSuccess(`✅ Success! Got ${data.enrollments.length} enrollments, ${data.payments.length} payments`);
+          showJson(data);
+        } else {
+          showError(`❌ Error ${response.status}: ${JSON.stringify(data)}`);
+        }
+      } catch (error) {
+        showError(`❌ Network error: ${error.message}`);
+      }
+    }
+
+    async function testEnrollments() {
+      const token = document.getElementById('token').value;
+      const apiUrl = document.getElementById('apiUrl').value;
+      
+      if (!token) {
+        showError('Please enter JWT token');
+        return;
+      }
+
+      const url = `${apiUrl}/api/parent/enrollments`;
+
+      try {
+        showInfo(`🔄 Calling: ${url}`);
+        
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showSuccess(`✅ Success! Got ${data.length} enrollments`);
+          showJson(data);
+        } else {
+          showError(`❌ Error ${response.status}: ${JSON.stringify(data)}`);
+        }
+      } catch (error) {
+        showError(`❌ Network error: ${error.message}`);
+      }
+    }
+
+    function showError(message) {
+      document.getElementById('result').innerHTML = `<div class="error">${message}</div>`;
+    }
+
+    function showSuccess(message) {
+      document.getElementById('result').innerHTML = `<div class="success">${message}</div>`;
+    }
+
+    function showInfo(message) {
+      document.getElementById('result').innerHTML = `<div>${message}</div>`;
+    }
+
+    function showJson(data) {
+      const current = document.getElementById('result').innerHTML;
+      document.getElementById('result').innerHTML = current + `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+    }
+
+    // Auto-fill token from localStorage if available
+    window.addEventListener('load', () => {
+      const storedToken = localStorage.getItem('auth_token');
+      if (storedToken) {
+        document.getElementById('token').value = storedToken;
+      }
+    });
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+

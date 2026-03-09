@@ -1,0 +1,159 @@
+<section class="activities-page">
+  <!-- Hero Section - Admin Pattern -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--warning">Administrare</span>
+      <h1 class="hero-title">Gestionare <span>Activități</span></h1>
+      <p class="hero-subtitle">Evenimente punctuale și activități speciale</p>
+    </div>
+    <button class="hero-btn" (click)="goToCreate()">
+      <mat-icon>add</mat-icon>
+      <span>Activitate Nouă</span>
+    </button>
+  </header>
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>event</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ activities().length }}</span>
+        <span class="stat-label">Total activități</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--green">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getActiveCount() }}</span>
+        <span class="stat-label">Active</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--amber">
+        <mat-icon>group</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getTotalEnrollments() }}</span>
+        <span class="stat-label">Înscrieri totale</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activities Section -->
+  <section class="section-card">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>event_note</mat-icon>
+          Lista Activități
+        </h2>
+        <span class="section-count">{{ activities().length }}</span>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+      <div class="loading-grid">
+        @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+          <div class="skeleton-card"></div>
+        }
+      </div>
+    }
+
+    <!-- Error State -->
+    @if (hasError()) {
+      <div class="empty-state">
+        <mat-icon class="empty-state__icon empty-state__icon--error">error_outline</mat-icon>
+        <h3 class="empty-state__title">Eroare la încărcare</h3>
+        <p class="empty-state__text">Nu am putut încărca lista de activități.</p>
+        <button class="hero-btn hero-btn--secondary" (click)="loadActivities()">
+          <mat-icon>refresh</mat-icon>
+          <span>Încearcă din nou</span>
+        </button>
+      </div>
+    }
+
+    <!-- Empty State -->
+    @if (!isLoading() && !hasError() && activities().length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-state__icon">event</mat-icon>
+        <h3 class="empty-state__title">Nicio activitate încă</h3>
+        <p class="empty-state__text">Creează prima activitate pentru a începe.</p>
+        <button class="hero-btn" (click)="goToCreate()">
+          <mat-icon>add</mat-icon>
+          <span>Creează activitate</span>
+        </button>
+      </div>
+    }
+
+    <!-- Activities Grid -->
+    @if (!isLoading() && !hasError() && activities().length > 0) {
+      <div class="activities-grid">
+        @for (activity of activities(); track trackByActivity($index, activity)) {
+          <article class="activity-card" [class.activity-card--inactive]="!activity.active">
+            <div class="activity-card__header">
+              <div class="activity-icon" [attr.data-sport]="activity.sportName">
+                <mat-icon>event</mat-icon>
+              </div>
+              <div class="activity-card__actions">
+                <button class="action-btn action-btn--edit" (click)="editActivity(activity)" matTooltip="Editează">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button class="action-btn action-btn--toggle" 
+                        [class.action-btn--active]="activity.active"
+                        [disabled]="updatingActivityId() === activity.id"
+                        (click)="toggleStatus(activity)" 
+                        [matTooltip]="activity.active ? 'Dezactivează' : 'Activează'">
+                  <mat-icon>power_settings_new</mat-icon>
+                </button>
+                <button class="action-btn action-btn--delete" (click)="deleteActivity(activity)" 
+                        [disabled]="updatingActivityId() === activity.id" matTooltip="Șterge">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <div class="activity-card__body">
+              <h3 class="activity-card__name">{{ activity.name }}</h3>
+              <span class="badge" [class.badge--success]="activity.active" [class.badge--neutral]="!activity.active">
+                {{ activity.active ? 'Activ' : 'Inactiv' }}
+              </span>
+              
+              <div class="activity-card__meta">
+                <div class="meta-item">
+                  <mat-icon>calendar_today</mat-icon>
+                  <span>{{ formatDate(activity.activityDate) }}</span>
+                </div>
+                <div class="meta-item">
+                  <mat-icon>schedule</mat-icon>
+                  <span>{{ activity.startTime }} - {{ activity.endTime }}</span>
+                </div>
+                <div class="meta-item">
+                  <mat-icon>location_on</mat-icon>
+                  <span>{{ activity.location }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="activity-card__footer">
+              <div class="activity-card__stats">
+                <div class="stat-mini">
+                  <mat-icon>group</mat-icon>
+                  <span>{{ activity.enrolledCount }}/{{ activity.capacity || '∞' }}</span>
+                </div>
+                <div class="stat-mini stat-mini--price">
+                  <mat-icon>payments</mat-icon>
+                  <span>{{ (activity.price / 100) | number:'1.0-0' }} {{ activity.currency }}</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+</section>

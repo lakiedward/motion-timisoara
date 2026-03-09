@@ -1,0 +1,384 @@
+<!-- Location Picker Component -->
+<div class="location-picker" [class.location-picker--has-value]="selectedLocation()">
+  
+  <!-- Selected Location Display -->
+  @if (selectedLocation(); as loc) {
+  <div class="selected-location">
+    <div class="selected-location__info">
+      <div class="selected-location__icon">
+        <mat-icon>{{ getTypeIcon(selectedLocation()!.type) }}</mat-icon>
+      </div>
+      <div class="selected-location__details">
+        <span class="selected-location__name">{{ selectedLocation()!.name }}</span>
+        <span class="selected-location__address">
+          {{ selectedLocation()!.city || 'Fără oraș' }}
+          @if (selectedLocation()!.address) { • {{ selectedLocation()!.address }} }
+        </span>
+      </div>
+    </div>
+    @if (enableMapPicker) {
+      <button type="button" class="selected-location__map" (click)="toggleMapPanel()" matTooltip="Alege pe hartă">
+        <mat-icon>map</mat-icon>
+      </button>
+    }
+    <button type="button" class="selected-location__clear" (click)="clearSelection()" matTooltip="Schimbă locația">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+} @else {
+    <div class="picker-container">
+      <!-- City Filter -->
+      @if (showCityFilter) {
+        <div class="city-filter">
+          <mat-form-field appearance="outline" class="city-select">
+            <mat-label>Filtru oraș (opțional)</mat-label>
+            <mat-select [value]="selectedCity()" (selectionChange)="onCityChange($event.value)">
+              <mat-option value="">Toate orașele</mat-option>
+              @for (city of cities(); track city) {
+                <mat-option [value]="city">{{ city }}</mat-option>
+              }
+            </mat-select>
+            <mat-icon matPrefix>location_city</mat-icon>
+          </mat-form-field>
+        </div>
+      }
+
+      <!-- Search Input -->
+      <div class="search-container">
+        <mat-form-field appearance="outline" class="search-field">
+          @if (showLabel) {
+            <mat-label>{{ label }}</mat-label>
+          }
+          <input 
+            matInput 
+            [placeholder]="placeholder"
+            [value]="searchQuery()"
+            (input)="onSearchInput($any($event.target).value)"
+            (focus)="openDropdown()"
+            autocomplete="off"
+          />
+          <mat-icon matPrefix>search</mat-icon>
+          @if (isLoading()) {
+          <mat-spinner matSuffix diameter="20"></mat-spinner>
+        }
+        </mat-form-field>
+
+        @if (enableMapPicker) {
+          <div class="map-picker-actions">
+            <button type="button" class="map-picker-btn" (click)="toggleMapPanel()">
+              <mat-icon>map</mat-icon>
+              <span>Alege pe hartă</span>
+            </button>
+          </div>
+        }
+
+        <!-- Dropdown -->
+        @if (showDropdown()) {
+        <div class="locations-dropdown">
+          <!-- Recent Locations -->
+          @if (displayLocations().showRecent) {
+          <div class="dropdown-section">
+            <span class="dropdown-section__title">
+              <mat-icon>history</mat-icon>
+              Recente
+            </span>
+            @for (loc of displayLocations().recent; track loc.id) {
+              <button 
+                type="button"
+                class="location-option"
+                (click)="selectLocation(loc)"
+              >
+                <mat-icon class="location-option__icon">{{ getTypeIcon(loc.type) }}</mat-icon>
+                <div class="location-option__info">
+                  <span class="location-option__name">{{ loc.name }}</span>
+                  <span class="location-option__address">
+                    {{ loc.city || 'Fără oraș' }}
+                    @if (loc.address) { • {{ loc.address }} }
+                  </span>
+                </div>
+                <mat-icon class="location-option__star">star</mat-icon>
+              </button>
+            }
+          </div>
+          }
+
+          <!-- All Locations / Search Results -->
+          <div class="dropdown-section">
+            @if (searchQuery().length < 2) {
+              <span class="dropdown-section__title">
+                <mat-icon>place</mat-icon>
+                {{ selectedCity() ? 'Locații în ' + selectedCity() : 'Căutare în toate orașele' }}
+              </span>
+            } @else {
+              <span class="dropdown-section__title">
+                <mat-icon>search</mat-icon>
+                Rezultate căutare
+              </span>
+            }
+
+            <div class="locations-list">
+              @for (loc of displayLocations().results; track loc.id) {
+                <button 
+                  type="button"
+                  class="location-option"
+                  (click)="selectLocation(loc)"
+                >
+                  <mat-icon class="location-option__icon">{{ getTypeIcon(loc.type) }}</mat-icon>
+                  <div class="location-option__info">
+                    <span class="location-option__name">{{ loc.name }}</span>
+                    <span class="location-option__address">
+                      {{ loc.city || 'Fără oraș' }}
+                      @if (loc.address) { • {{ loc.address }} }
+                    </span>
+                  </div>
+                </button>
+              }
+
+              <!-- Empty state -->
+              @if (displayLocations().results.length === 0 && !isLoading()) {
+                <div class="empty-results">
+                  <mat-icon>location_off</mat-icon>
+                  @if (searchQuery().length >= 2) {
+                    <span>Nicio locație găsită pentru "{{ searchQuery() }}"</span>
+                  } @else {
+                    @if (selectedCity()) {
+                      <span>Nicio locație în {{ selectedCity() }}</span>
+                    } @else {
+                      <span>Tastează minim 2 litere pentru a căuta în toate orașele sau selectează un oraș.</span>
+                    }
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Add New Location Button -->
+          <div class="dropdown-footer">
+            <button type="button" class="add-location-btn" (click)="openCreateLocationPage()">
+              <mat-icon>add_location</mat-icon>
+              <span>Adaugă locație nouă (cu hartă)</span>
+            </button>
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+}
+
+  <!-- Backdrop -->
+  @if (showDropdown()) {
+  <div class="dropdown-backdrop" (click)="closeDropdown()"></div>
+}
+</div>
+
+@if (showMapPanel()) {
+<div class="map-picker-overlay" (click)="closeMapPanel()">
+  <div class="map-picker-modal" #mapPickerPanel (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>
+        <mat-icon>map</mat-icon>
+        Alege locația de pe hartă
+      </h3>
+      <button type="button" class="modal-close" (click)="closeMapPanel()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="map-modal-body">
+      <div class="map-filter-bar">
+        <mat-form-field appearance="outline" class="map-filter-city">
+          <mat-label>Oraș (opțional)</mat-label>
+          <mat-select [value]="mapCity()" (selectionChange)="onMapCityChange($event.value)">
+            <mat-option value="">Toate orașele</mat-option>
+            @for (city of cities(); track city) {
+              <mat-option [value]="city">{{ city }}</mat-option>
+            }
+          </mat-select>
+          <mat-icon matPrefix>location_city</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="map-filter-search">
+          <mat-label>Caută locație</mat-label>
+          <input
+            matInput
+            [value]="mapQuery()"
+            (input)="onMapSearchInput($any($event.target).value)"
+            placeholder="Nume / adresă"
+          />
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="map-layout">
+        <aside class="locations-sidebar">
+          <div class="sidebar-header">
+            <h2 class="sidebar-title">
+              <span class="sidebar-title__icon">📍</span>
+              Locații
+            </h2>
+            <span class="location-count">{{ filteredMapLocations().length }} locații</span>
+          </div>
+
+          <div class="map-locations-list" *ngIf="!mapIsLoading()">
+            @for (location of filteredMapLocations(); track location.id) {
+              <button
+                type="button"
+                class="location-card"
+                [class.active]="selectedLocation()?.id === location.id"
+                (click)="pickLocationFromMap(location)"
+              >
+                <div class="location-card__header">
+                  <div class="location-card__icon"><span>📍</span></div>
+                  <div class="location-card__info">
+                    <h3 class="location-card__name">{{ location.name }}</h3>
+                    <p class="location-card__address">{{ location.city }} {{ location.address }}</p>
+                  </div>
+                </div>
+                @if (location.lat == null || location.lng == null) {
+                  <div class="location-card__empty">
+                    <span class="empty-icon">🗺️</span>
+                    <span>Fără coordonate (se poate selecta, dar nu apare marker)</span>
+                  </div>
+                }
+              </button>
+            }
+
+            @if (!mapIsLoading() && filteredMapLocations().length === 0) {
+              <div class="empty-state">
+                <div class="empty-state__icon">🗺️</div>
+                <h3 class="empty-state__title">Nicio locație găsită</h3>
+                <p class="empty-state__text">Schimbă filtrul sau caută alt text.</p>
+              </div>
+            }
+          </div>
+
+          <div class="sidebar-loading" *ngIf="mapIsLoading()">
+            <div class="skeleton-card" *ngFor="let i of [1,2,3]"></div>
+          </div>
+        </aside>
+
+        <div class="map-wrapper">
+          <div class="map-container" [id]="mapElementId"></div>
+
+          <div *ngIf="mapIsLoading()" class="map-overlay map-overlay--loading">
+            <p class="loading-text">Se încarcă harta...</p>
+          </div>
+
+          <div *ngIf="mapError()" class="map-overlay map-overlay--error">
+            <p class="error-text">{{ mapError() }}</p>
+          </div>
+
+          <div class="map-controls" *ngIf="!mapIsLoading() && !mapError()">
+            <button class="map-control-btn" type="button" (click)="mapZoomIn()" title="Zoom in">
+              <span>+</span>
+            </button>
+            <button class="map-control-btn" type="button" (click)="mapZoomOut()" title="Zoom out">
+              <span>−</span>
+            </button>
+            <button class="map-control-btn" type="button" (click)="mapResetView()" title="Resetează vederea">
+              <span>⟲</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+}
+
+<!-- Create Location Form (Modal-like) -->
+@if (showCreateForm()) {
+<div class="create-location-overlay">
+  <div class="create-location-modal">
+    <div class="modal-header">
+      <h3>
+        <mat-icon>add_location</mat-icon>
+        Adaugă locație nouă
+      </h3>
+      <button type="button" class="modal-close" (click)="cancelCreate()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Location Type -->
+      <div class="form-section">
+        <label class="form-label">Tip locație</label>
+        <div class="type-selector">
+          @for (type of locationTypes; track type.value) {
+            <button 
+              type="button"
+              class="type-option"
+              [class.type-option--selected]="selectedType === type.value"
+              (click)="selectedType = type.value"
+            >
+              <mat-icon>{{ type.icon }}</mat-icon>
+              <span>{{ type.label }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Name & City -->
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Nume locație *</mat-label>
+          <input matInput [(ngModel)]="newLocation.name" placeholder="ex: Bazin Olimpic">
+          <mat-icon matPrefix>edit</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Oraș / Localitate (opțional)</mat-label>
+          <input matInput [(ngModel)]="newLocation.city" placeholder="ex: Timișoara (aprox.)">
+          <mat-icon matPrefix>location_city</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <!-- Address -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Adresă</mat-label>
+        <input matInput [(ngModel)]="newLocation.address" placeholder="ex: Bulevardul Cetății nr. 1">
+        <mat-icon matPrefix>home</mat-icon>
+      </mat-form-field>
+
+      <!-- GPS Coordinates -->
+      <div class="form-section">
+        <label class="form-label">
+          Coordonate GPS 
+          <span class="hint">(pentru hartă)</span>
+        </label>
+        <div class="form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Latitudine</mat-label>
+            <input matInput type="number" step="0.000001" [(ngModel)]="newLocation.lat" placeholder="ex: 45.7489">
+            <mat-icon matPrefix>my_location</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Longitudine</mat-label>
+            <input matInput type="number" step="0.000001" [(ngModel)]="newLocation.lng" placeholder="ex: 21.2087">
+            <mat-icon matPrefix>my_location</mat-icon>
+          </mat-form-field>
+        </div>
+        <p class="form-help">
+          <mat-icon>info</mat-icon>
+          Găsește coordonatele pe <a href="https://www.google.com/maps" target="_blank">Google Maps</a> (click dreapta → "Ce este aici?")
+        </p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary" (click)="cancelCreate()">Anulează</button>
+      <button 
+        type="button" 
+        class="btn-primary" 
+        (click)="saveNewLocation()"
+        [disabled]="!newLocation.name.trim() || isLoading()"
+      >
+        <mat-icon>save</mat-icon>
+        Creează locația
+      </button>
+    </div>
+  </div>
+</div>
+}

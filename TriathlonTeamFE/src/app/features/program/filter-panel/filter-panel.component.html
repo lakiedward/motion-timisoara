@@ -1,0 +1,170 @@
+﻿<section class="filter-panel" [formGroup]="filterForm">
+  <!-- Header -->
+  <div class="filter-header">
+    <div class="filter-header__icon">🎯</div>
+    <div class="filter-header__text">
+      <h3 class="filter-header__title">Găsește Cursul Perfect</h3>
+      <p class="filter-header__subtitle">Filtrează după preferințele tale</p>
+    </div>
+  </div>
+
+  <!-- Sport Filter -->
+  <div class="filter-row">
+    <div class="filter-label-row">
+      <span class="filter-label-icon">🏊</span>
+      <span class="filter-label">Ce sport te interesează?</span>
+      <button 
+        type="button" 
+        class="clear-btn" 
+        *ngIf="filterForm.controls.sport.value"
+        (click)="clearSport()"
+        title="Șterge selecția"
+      >✕</button>
+    </div>
+    <div class="chip-group">
+      <button
+        type="button"
+        class="chip"
+        [class.active]="!filterForm.controls.sport.value"
+        (click)="clearSport()"
+      >
+        ✨ Toate
+      </button>
+      <button
+        type="button"
+        class="chip"
+        *ngFor="let sport of sports()"
+        [class.active]="filterForm.controls.sport.value === sport.value"
+        (click)="selectSport(sport)"
+      >
+        {{ sport.label }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Day Filter -->
+  <div class="filter-row">
+    <div class="filter-label-row">
+      <span class="filter-label-icon">📅</span>
+      <span class="filter-label">În ce zile ești disponibil?</span>
+      <button 
+        type="button" 
+        class="clear-btn" 
+        *ngIf="filterForm.controls.daysOfWeek.value?.length"
+        (click)="clearDays()"
+        title="Șterge zilele"
+      >✕</button>
+    </div>
+    <p class="filter-hint">Poți selecta mai multe zile</p>
+    <div class="chip-group chip-group--days">
+      <button
+        type="button"
+        class="chip chip--day"
+        *ngFor="let day of days"
+        [class.active]="isDaySelected(day.value)"
+        (click)="selectDay(day)"
+      >
+        {{ day.label }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Level Filter -->
+  <div class="filter-row">
+    <div class="filter-label-row">
+      <span class="filter-label-icon">📊</span>
+      <span class="filter-label">Ce nivel ai?</span>
+      <button 
+        type="button" 
+        class="clear-btn" 
+        *ngIf="filterForm.controls.level.value"
+        (click)="clearLevel()"
+        title="Șterge nivelul"
+      >✕</button>
+    </div>
+    <div class="chip-group">
+      <button
+        type="button"
+        class="chip"
+        *ngFor="let level of levels()"
+        [class.active]="filterForm.controls.level.value === level.value"
+        (click)="selectLevel(level)"
+      >
+        {{ level.label }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Age Filter -->
+  <div class="filter-row">
+    <div class="filter-label-row">
+      <span class="filter-label-icon">👶</span>
+      <span class="filter-label">Vârsta copilului</span>
+      <button 
+        type="button" 
+        class="clear-btn" 
+        *ngIf="filterForm.controls.childAge.value"
+        (click)="clearAge()"
+        title="Șterge vârsta"
+      >✕</button>
+    </div>
+    <p class="filter-hint">Selectează un interval sau introdu vârsta exactă</p>
+    <div class="chip-group">
+      <button
+        type="button"
+        class="chip"
+        *ngFor="let ageGroup of ageGroups"
+        [class.active]="filterForm.controls.childAge.value === ageGroup.value"
+        (click)="selectAgeGroup(ageGroup)"
+      >
+        {{ ageGroup.label }}
+      </button>
+    </div>
+    <div class="age-input-container">
+      <div class="age-input-row">
+        <input
+          id="childAge"
+          type="number"
+          min="3"
+          max="20"
+          placeholder="Introdu vârsta..."
+          formControlName="childAge"
+          class="age-input"
+        />
+        <span class="age-input-suffix">ani</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Location Filter -->
+  <div class="filter-row">
+    <div class="filter-label-row">
+      <span class="filter-label-icon">📍</span>
+      <label class="filter-label" for="location">Unde vrei să te antrenezi?</label>
+    </div>
+    <select id="location" formControlName="locationId">
+      <option value="">🌍 Toate locațiile</option>
+      <option *ngFor="let location of locations ?? []" [value]="location.id">{{ location.name }}</option>
+    </select>
+  </div>
+
+  <!-- Active Filters Count -->
+  <div class="filter-status" *ngIf="hasActiveFilters()">
+    <span class="filter-status__badge">
+      ✓ {{ activeFiltersCount() }} {{ activeFiltersCount() === 1 ? 'filtru activ' : 'filtre active' }}
+    </span>
+  </div>
+
+  <!-- Actions -->
+  <div class="filter-actions">
+    <button 
+      type="button" 
+      class="reset" 
+      (click)="resetFilters()"
+      [disabled]="!hasActiveFilters()"
+    >
+      <span class="reset__icon">↺</span>
+      Resetează toate filtrele
+    </button>
+  </div>
+</section>

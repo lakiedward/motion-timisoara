@@ -1,0 +1,103 @@
+<section class="course-photos">
+  <header class="course-photos__header">
+    <div>
+      <span class="course-photos__breadcrumb">Galerie Fotografii</span>
+      <h1>Gestionare Fotografii Curs</h1>
+      <p>Adaugă, șterge sau reordonează fotografiile galeriei cursului.</p>
+    </div>
+    <button mat-stroked-button type="button" (click)="goBack()">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      Înapoi la cursuri
+    </button>
+  </header>
+
+  <div class="course-photos__alert course-photos__alert--error" *ngIf="loadError()">
+    <mat-icon aria-hidden="true">error_outline</mat-icon>
+    <div>
+      <h2>Nu am putut încărca fotografiile</h2>
+      <p>Reîncarcă pagina sau contactează administratorul pentru suport.</p>
+    </div>
+    <button mat-stroked-button type="button" (click)="goBack()">Înapoi la cursuri</button>
+  </div>
+
+  <div class="course-photos__content" *ngIf="!loadError()">
+    <div class="upload-card">
+      <header>
+        <div>
+          <h2>Încarcă Fotografie Nouă</h2>
+          <p>Adaugă o fotografie în galerie</p>
+        </div>
+        <mat-icon aria-hidden="true">add_photo_alternate</mat-icon>
+      </header>
+
+      <input
+        type="file"
+        #photoInput
+        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+        (change)="onFileSelected($event)"
+        style="display: none"
+      />
+
+      <button
+        mat-raised-button
+        color="primary"
+        type="button"
+        (click)="photoInput.click()"
+        [disabled]="isUploading()"
+      >
+        <mat-icon>upload</mat-icon>
+        {{ isUploading() ? 'Se încarcă...' : 'Selectează fotografie' }}
+      </button>
+
+      <p class="upload-card__hint">Max 5MB. Format: JPEG, PNG, GIF, WEBP</p>
+    </div>
+
+    <div class="photos-grid" *ngIf="!isLoading() && photos().length > 0">
+      <div class="photos-grid__header">
+        <h2>Fotografii ({{ photos().length }})</h2>
+        <p>Trage și plasează pentru a reordona</p>
+      </div>
+
+      <div cdkDropList class="photos-list" (cdkDropListDropped)="onDrop($event)">
+        <div
+          *ngFor="let photo of photos()"
+          class="photo-item"
+          cdkDrag
+        >
+          <div class="photo-item__drag-handle" cdkDragHandle>
+            <mat-icon>drag_indicator</mat-icon>
+          </div>
+
+          <img
+            [src]="getPhotoUrl(photo)"
+            [alt]="'Fotografie ' + (photo.displayOrder + 1)"
+            class="photo-item__image"
+          />
+
+          <div class="photo-item__order">{{ photo.displayOrder + 1 }}</div>
+
+          <button
+            mat-icon-button
+            type="button"
+            class="photo-item__delete"
+            (click)="deletePhoto(photo.id)"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="photos-grid__empty" *ngIf="!isLoading() && photos().length === 0">
+      <mat-icon>photo_library</mat-icon>
+      <h3>Nu există fotografii în galerie</h3>
+      <p>Adaugă prima fotografie folosind butonul de mai sus.</p>
+    </div>
+
+    <div class="photos-grid__loading" *ngIf="isLoading()">
+      <mat-icon class="spinning">hourglass_empty</mat-icon>
+      <p>Se încarcă fotografiile...</p>
+    </div>
+  </div>
+</section>
+

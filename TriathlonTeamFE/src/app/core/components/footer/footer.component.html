@@ -1,0 +1,80 @@
+<footer class="footer">
+  <div class="footer-container">
+    <div class="footer-content">
+      <!-- Brand & Contact Section -->
+      <div class="footer-section footer-brand">
+        <a class="brand-logo" routerLink="/" aria-label="M Motion Timișoara - Acasă">
+          <span class="logo-mark">M</span>
+          <span class="logo-text">Motion Timișoara</span>
+        </a>
+        <p class="brand-description">
+          Club dedicat copiilor și adulților pasionați de sport multidisciplinar, cu programe adaptate pentru toate nivelurile.
+        </p>
+
+        <div class="contact-info">
+          <a href="tel:+40750420455" class="contact-link" aria-label="Sună la 0750 420 455">
+            <mat-icon class="icon-colored">call</mat-icon>
+            <span>0750 420 455</span>
+          </a>
+          <a href="mailto:office@motiontimisoara.com" class="contact-link" aria-label="Trimite email la office@motiontimisoara.com">
+            <mat-icon class="icon-colored">mail</mat-icon>
+            <span>office@motiontimisoara.com</span>
+          </a>
+          <div class="contact-link">
+            <mat-icon class="icon-colored">location_on</mat-icon>
+            <span>Strada Blaise Pascal 37, Dumbravita</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <div class="footer-section footer-nav">
+        <h3 class="section-title">Navigare</h3>
+        <nav class="nav-links">
+          <a *ngFor="let link of navigationLinks" [routerLink]="link.path" class="nav-link">
+            {{ link.label }}
+          </a>
+        </nav>
+      </div>
+
+      <!-- Programs Links -->
+      <div class="footer-section footer-programs">
+        <h3 class="section-title">Programe</h3>
+        <nav class="nav-links">
+          <a *ngFor="let link of programLinks" [routerLink]="link.path" class="nav-link">
+            {{ link.label }}
+          </a>
+        </nav>
+      </div>
+
+      <!-- Social Media -->
+      <div class="footer-section footer-social">
+        <h3 class="section-title">Conectează-te cu noi</h3>
+        <div class="social-links">
+          <a
+            *ngFor="let social of socialLinks"
+            [href]="social.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            [attr.aria-label]="social.label"
+            class="social-link"
+          >
+            <mat-icon class="icon-colored">{{ social.icon }}</mat-icon>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Bottom -->
+    <div class="footer-bottom">
+      <div class="footer-bottom-content">
+        <p class="copyright">&copy; {{ currentYear }} M Motion Timișoara. Toate drepturile rezervate.</p>
+        <nav class="legal-links">
+          <a *ngFor="let link of legalLinks" [routerLink]="link.path" class="legal-link">
+            {{ link.label }}
+          </a>
+        </nav>
+      </div>
+    </div>
+  </div>
+</footer>

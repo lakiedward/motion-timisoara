@@ -1,0 +1,274 @@
+<div class="account-page">
+  <!-- Loading State -->
+  <div class="state state--loading" *ngIf="isLoading()">
+    <div class="skeleton skeleton-text--title"></div>
+    <div class="skeleton skeleton-text"></div>
+    <div class="skeleton skeleton-text--short"></div>
+  </div>
+
+  <!-- Error State -->
+  <div class="state state--error" *ngIf="!isLoading() && hasError()">
+    <mat-icon class="state__icon" aria-hidden="true">error_outline</mat-icon>
+    <h2 class="state__title">Nu am putut încărca informațiile contului</h2>
+    <p class="state__text">Reîncarcă pagina sau contactează echipa de suport.</p>
+  </div>
+
+  <!-- ==================== STAFF VIEW (Coach/Admin) ==================== -->
+  <ng-container *ngIf="!isLoading() && !hasError() && isStaff()">
+    <section class="page-hero page-hero--staff">
+      <div class="page-hero__container">
+        <span class="page-hero__eyebrow">⚙️ Setări Cont</span>
+        <h1 class="page-hero__title">Bine ai venit, <span>{{ parentName() || 'Utilizator' }}</span>!</h1>
+        <p class="page-hero__subtitle">
+          Conectat ca <strong>{{ userRole() === 'COACH' ? 'Antrenor' : 'Administrator' }}</strong>
+        </p>
+      </div>
+    </section>
+
+    <div class="staff-account-container">
+      <div class="staff-card">
+        <div class="staff-card__icon">
+          <mat-icon>{{ userRole() === 'COACH' ? 'sports' : 'admin_panel_settings' }}</mat-icon>
+        </div>
+        <div class="staff-card__content">
+          <h3 class="staff-card__title">{{ parentName() || 'Utilizator' }}</h3>
+          <p class="staff-card__role">{{ userRole() === 'COACH' ? 'Antrenor' : 'Administrator' }}</p>
+        </div>
+      </div>
+
+      <div class="staff-links">
+        <a class="staff-link" [routerLink]="userRole() === 'COACH' ? ['/coach'] : ['/admin']">
+          <mat-icon>dashboard</mat-icon>
+          <div class="staff-link__content">
+            <span class="staff-link__label">Dashboard {{ userRole() === 'COACH' ? 'Antrenor' : 'Admin' }}</span>
+            <span class="staff-link__description">Accesează panoul principal</span>
+          </div>
+          <mat-icon class="staff-link__arrow">arrow_forward</mat-icon>
+        </a>
+        <a class="staff-link" routerLink="/">
+          <mat-icon>public</mat-icon>
+          <div class="staff-link__content">
+            <span class="staff-link__label">Vezi Site-ul Public</span>
+            <span class="staff-link__description">Vizualizează site-ul ca vizitator</span>
+          </div>
+          <mat-icon class="staff-link__arrow">arrow_forward</mat-icon>
+        </a>
+      </div>
+
+      <p class="staff-note">
+        <mat-icon>info</mat-icon>
+        Această secțiune este pentru setările contului tău. Pentru a gestiona cursurile, prezențele și anunțurile, accesează dashboard-ul de {{ userRole() === 'COACH' ? 'antrenor' : 'administrator' }}.
+      </p>
+    </div>
+  </ng-container>
+
+  <!-- ==================== PARENT VIEW ==================== -->
+  <ng-container *ngIf="!isLoading() && !hasError() && !isStaff()">
+    <!-- Hero Section -->
+    <section class="page-hero">
+      <div class="page-hero__container">
+        <span class="page-hero__eyebrow">👤 Contul meu</span>
+        <h1 class="page-hero__title">Bine ai venit{{ parentName() ? ', ' : '' }}<span>{{ parentName() || '' }}</span>!</h1>
+        <p class="page-hero__subtitle" *ngIf="childNames().length; else noChildrenHero">
+          Copiii înregistrați: <strong>{{ childNames().join(', ') }}</strong>
+        </p>
+        <ng-template #noChildrenHero>
+          <p class="page-hero__subtitle">
+            Nu ai adăugat încă un profil de copil. Folosește meniul pentru a începe.
+          </p>
+        </ng-template>
+
+        <!-- Quick Stats -->
+        <div class="hero-stats">
+          <div class="stat-card">
+            <div class="stat-icon-wrapper">
+              <mat-icon class="stat-icon">family_restroom</mat-icon>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ children().length }}</span>
+              <span class="stat-label">Copii</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-wrapper">
+              <mat-icon class="stat-icon">event</mat-icon>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value">{{ upcomingEventsCount() }}</span>
+              <span class="stat-label">Evenimente</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Container -->
+    <div class="account-container">
+      <!-- Sidebar Navigation -->
+      <aside class="account-sidebar">
+        <h3 class="sidebar-title">Acces Rapid</h3>
+        <nav class="sidebar-nav">
+          <a
+            *ngFor="let link of links"
+            [routerLink]="link.routerLink"
+            routerLinkActive="active"
+            class="sidebar-link"
+          >
+            <mat-icon class="sidebar-link-icon">{{ link.icon }}</mat-icon>
+            <div class="sidebar-link-content">
+              <span class="sidebar-link-label">
+                {{ link.label }}
+                <span
+                  *ngIf="link.routerLink[0] === '/account/announcements' && hasNewAnnouncements()"
+                  class="badge-new"
+                >Nou</span>
+              </span>
+              <span class="sidebar-link-description">{{ link.description }}</span>
+            </div>
+          </a>
+        </nav>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="account-main">
+        <!-- Pending Cash Payments Alert -->
+        <section class="alert-card alert-card--warning" *ngIf="pendingCashPayments().length">
+          <div class="alert-icon-wrapper">
+            <mat-icon class="alert-icon">schedule</mat-icon>
+          </div>
+          <div class="alert-content">
+            <h3 class="alert-title">Plăți cash în așteptare</h3>
+            <p class="alert-message">
+              {{ pendingCashPayments().length === 1 ? 'O plată cash așteaptă' : pendingCashPayments().length + ' plăți cash așteaptă' }} 
+              confirmarea antrenorului. Sesiunile vor fi activate după primirea banilor.
+            </p>
+            <button mat-stroked-button routerLink="/account/enrollments" class="alert-action">
+              Vezi detalii
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+        </section>
+
+        <section class="announcements-card card" *ngIf="recentAnnouncements().length">
+          <div class="section-header section-header--card">
+            <span class="section-header__eyebrow">📢 Notificări</span>
+            <h2 class="section-header__title">Anunțuri <span>recente</span></h2>
+            <p class="section-header__subtitle">Ultimele mesaje de la antrenori</p>
+          </div>
+          <mat-divider></mat-divider>
+          <div class="card-body">
+            <div class="announcements-list">
+              <div
+                class="announcement-item"
+                *ngFor="let a of recentAnnouncements().slice(0,3); trackBy: trackByAnnouncement"
+                [routerLink]="['/account/announcements']"
+                [queryParams]="a.courseId ? { courseId: a.courseId } : {}"
+              >
+                <div class="announcement-title">{{ a.courseName || 'Curs' }}</div>
+                <div class="announcement-meta">
+                  <span class="announcement-date">{{ a.createdAt | date:'mediumDate' }}</span>
+                  <span class="announcement-dot">•</span>
+                  <span class="announcement-author">{{ a.authorName }}</span>
+                </div>
+                <div class="announcement-content">{{ a.content }}</div>
+              </div>
+            </div>
+            <button mat-stroked-button routerLink="/account/announcements" class="announcements-view-all">
+              Vezi toate anunțurile
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+        </section>
+
+        <!-- Sessions Overview Card -->
+        <section class="sessions-card card" *ngIf="hasActiveCourses()">
+          <div class="section-header section-header--card">
+            <span class="section-header__eyebrow">📊 Statistici</span>
+            <h2 class="section-header__title">Sesiuni <span>Rămase</span></h2>
+            <p class="section-header__subtitle">Sesiunile disponibile pentru cursurile active</p>
+          </div>
+          <mat-divider></mat-divider>
+          <div class="card-body">
+            <div class="sessions-list">
+              <div class="session-item" *ngFor="let enrollment of activeCoursesWithSessions(); trackBy: trackByEnrollment">
+                <div class="session-info">
+                  <div class="session-child">{{ enrollment.childName }}</div>
+                  <div class="session-course">{{ enrollment.title }}</div>
+                </div>
+                <div class="session-count" [class.session-count--low]="isLowSessions(enrollment)">
+                  <mat-icon *ngIf="isLowSessions(enrollment)" class="warning-icon">warning</mat-icon>
+                  <span class="session-numbers">{{ enrollment.remainingSessions ?? 0 }} / {{ enrollment.purchasedSessions ?? 0 }}</span>
+                </div>
+              </div>
+            </div>
+            <button mat-stroked-button routerLink="/account/enrollments" class="sessions-view-all">
+              Vezi toate înscriierile
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+          </div>
+        </section>
+
+        <!-- Calendar Section -->
+        <section class="calendar-section card">
+          <div class="section-header section-header--card">
+            <span class="section-header__eyebrow">📅 Program</span>
+            <h2 class="section-header__title">Calendar <span>Evenimente</span></h2>
+            <p class="section-header__subtitle">Vezi toate cursurile și taberele programate pentru copiii tăi</p>
+          </div>
+          <mat-divider></mat-divider>
+          <div class="card-body">
+            <app-calendar [events]="calendarEvents()"></app-calendar>
+          </div>
+        </section>
+
+        <!-- Children Cards -->
+        <section class="children-section card" *ngIf="children().length">
+          <div class="section-header section-header--card section-header--with-action">
+            <div class="section-header__content">
+              <span class="section-header__eyebrow">👶 Familie</span>
+              <h2 class="section-header__title">Profil <span>Copii</span></h2>
+            </div>
+            <button class="btn-elite btn-elite--outline" type="button" (click)="addChild()">
+              <mat-icon>add</mat-icon>
+              Adaugă copil
+            </button>
+          </div>
+          <mat-divider></mat-divider>
+          <div class="children-grid">
+            <article
+              class="child-card"
+              *ngFor="let child of children()"
+              (click)="navigateToChild(child.id)"
+            >
+              <div class="child-card-header">
+                <div class="child-avatar">
+                  <mat-icon>person</mat-icon>
+                </div>
+                <div class="child-info">
+                  <h3 class="child-name">{{ child.name }}</h3>
+                  <p class="child-birth-date">{{ child.birthDate | date: 'd MMMM y' }}</p>
+                </div>
+              </div>
+              <button mat-button class="child-card-action">
+                Vezi profil
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+            </article>
+          </div>
+        </section>
+
+        <!-- Add Child CTA if no children -->
+        <section class="empty-state" *ngIf="!children().length">
+          <mat-icon class="empty-state__icon">family_restroom</mat-icon>
+          <h3 class="empty-state__title">Adaugă primul copil</h3>
+          <p class="empty-state__text">Pentru a te înscrie la cursuri, trebuie să adaugi mai întâi un profil de copil.</p>
+          <button class="btn-elite btn-elite--primary" (click)="addChild()">
+            <mat-icon>add</mat-icon>
+            Adaugă copil acum
+          </button>
+        </section>
+      </main>
+    </div>
+  </ng-container>
+  <!-- End Parent View -->
+</div>

@@ -1,0 +1,258 @@
+:host {
+  display: block;
+}
+
+.location-map {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: white;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.location-info {
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  background: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem;
+  }
+}
+
+.location-details {
+  flex: 1;
+
+  .location-name {
+    margin: 0 0 0.25rem 0;
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--sport-text-dark);
+  }
+
+  .location-address {
+    margin: 0;
+    color: var(--sport-text-muted);
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+}
+
+.open-maps-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border-radius: 10px;
+  font-family: var(--font-primary);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--sport-primary);
+  border: 2px solid #dbeafe;
+  background: transparent;
+
+  mat-icon {
+    font-size: 1.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  &:hover {
+    background: #eff6ff;
+    border-color: var(--sport-primary);
+    transform: translateY(-2px);
+  }
+}
+
+.map-container {
+  position: relative;
+  width: 100%;
+  height: 450px;
+  overflow: hidden;
+  background: #f1f5f9;
+
+  @media (max-width: 768px) {
+    height: 350px;
+  }
+
+  @media (max-width: 480px) {
+    height: 300px;
+  }
+
+  .map-inner {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.no-coordinates {
+  padding: 3rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sport-bg-light);
+  text-align: center;
+}
+
+.no-coordinates-content {
+  max-width: 400px;
+
+  mat-icon {
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+    color: var(--sport-text-muted);
+    opacity: 0.5;
+    margin-bottom: 1rem;
+  }
+
+  h4 {
+    margin: 0 0 0.5rem 0;
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--sport-text-dark);
+  }
+
+  p {
+    margin: 0 0 1.5rem 0;
+    color: var(--sport-text-muted);
+    line-height: 1.6;
+    font-size: 0.9375rem;
+  }
+
+  .search-location-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    border-radius: var(--radius-btn);
+
+    mat-icon {
+      font-size: 1.125rem;
+      width: 1.125rem;
+      height: 1.125rem;
+      margin: 0;
+      opacity: 1;
+      color: inherit;
+    }
+  }
+}
+
+// ============================================
+// LEAFLET CUSTOMIZATIONS
+// ============================================
+:host ::ng-deep {
+  // Custom marker
+  .custom-marker {
+    background: transparent;
+    border: none;
+
+    .marker-pin {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gradient-primary);
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+      span {
+        transform: rotate(45deg);
+        font-size: 1.25rem;
+      }
+    }
+
+    &:hover .marker-pin {
+      transform: rotate(-45deg) scale(1.1);
+    }
+  }
+
+  // Custom popup
+  .custom-popup {
+    .leaflet-popup-content-wrapper {
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .leaflet-popup-content {
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .leaflet-popup-tip {
+      background: white;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  // Popup content
+  .map-popup {
+    padding: 1.25rem;
+    min-width: 220px;
+    font-family: var(--font-primary);
+
+    &__title {
+      font-family: var(--font-display);
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--sport-text-dark);
+      margin: 0 0 0.375rem 0;
+      line-height: 1.3;
+    }
+
+    &__address {
+      font-size: 0.8125rem;
+      color: var(--sport-text-muted);
+      margin: 0 0 1rem;
+      line-height: 1.4;
+    }
+
+    &__link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--sport-primary);
+      text-decoration: none;
+      transition: all 0.2s ease;
+      padding: 0.5rem 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: var(--font-primary);
+
+      &:hover {
+        gap: 0.625rem;
+        text-decoration: underline;
+      }
+    }
+  }
+
+  // Leaflet attribution
+  .leaflet-control-attribution {
+    font-size: 0.6875rem;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(4px);
+    border-radius: 8px 0 0 0;
+    padding: 0.25rem 0.5rem;
+  }
+}

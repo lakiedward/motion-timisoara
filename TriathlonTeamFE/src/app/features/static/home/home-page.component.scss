@@ -1,0 +1,807 @@
+// ============================================
+// HOMEPAGE - UI Guidelines Applied
+// ============================================
+
+:host {
+  display: block;
+  background-color: var(--sport-bg-white);
+  color: var(--sport-text-dark);
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+
+
+}
+
+// ====================
+// Scroll Progress Bar
+// ====================
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 6px;
+  background: var(--gradient-primary);
+  z-index: 1100;
+  transition: width 0.1s ease;
+  border-radius: 0 4px 4px 0;
+}
+
+// ====================
+// Typography & Utilities
+// ====================
+.elite-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+
+  @media (max-width: 768px) {
+    padding: 0 0.75rem;
+  }
+}
+
+.elite-section-header {
+  margin-bottom: 3.5rem;
+  text-align: center;
+
+  &--center {
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.elite-eyebrow {
+  display: inline-block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--sport-accent);
+  margin-bottom: 0.75rem;
+  background: rgba(245, 158, 11, 0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+}
+
+.elite-title {
+  font-family: 'Manrope', sans-serif; // UI Guidelines
+  font-size: clamp(2rem, 4vw, 2.75rem); // UI Guidelines
+  font-weight: 800; // UI Guidelines
+  line-height: 1.2; // UI Guidelines
+  margin: 0 0 1rem;
+  color: var(--sport-text-dark);
+  letter-spacing: -0.02em;
+
+  @media (max-width: 768px) {
+    font-size: 2rem;
+  }
+
+  span {
+    color: var(--sport-primary);
+    position: relative;
+    display: inline-block;
+  }
+}
+
+.elite-subtitle {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--sport-text-muted);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.btn-elite {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 2rem;
+  font-weight: 600;
+  border-radius: var(--radius-btn); // UI Guidelines
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 1rem;
+
+  // Focus state - UI Guidelines
+  &:focus {
+    outline: 2px solid var(--sport-primary);
+    outline-offset: 2px;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &--primary {
+    background: var(--gradient-primary); // UI Guidelines
+    color: white;
+    border: none;
+    box-shadow: var(--shadow-btn); // UI Guidelines
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    }
+  }
+
+  &--outline {
+    background: white;
+    color: var(--sport-primary);
+    border: 2px solid var(--sport-primary);
+
+    &:hover {
+      background: rgba(37, 99, 235, 0.05);
+      transform: translateY(-2px);
+    }
+  }
+}
+
+// ====================
+// 1. Hero Section: "Friendly Energy"
+// ====================
+.elite-hero {
+  position: relative;
+  min-height: 90vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding-top: 80px;
+  background: var(--sport-bg-white);
+  background-image: radial-gradient(#e2e8f0 1px, transparent 1px); // Dot pattern
+  background-size: 32px 32px;
+
+  &__background {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 55%;
+    height: 100%;
+    z-index: 0;
+    border-radius: 0 0 0 80px;
+    overflow: hidden;
+
+    @media (max-width: 992px) {
+      width: 100%;
+      height: 40%;
+      top: 0;
+      border-radius: 0 0 30px 30px;
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, rgba(248, 250, 252, 1) 0%, rgba(248, 250, 252, 0) 20%);
+
+      @media (max-width: 992px) {
+        background: linear-gradient(to bottom, rgba(248, 250, 252, 0) 0%, rgba(248, 250, 252, 1) 100%);
+      }
+    }
+  }
+
+  &__content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+
+    @media (max-width: 992px) {
+      grid-template-columns: 1fr;
+      margin-top: 15vh;
+      text-align: center;
+    }
+  }
+
+  &__text-wrapper {
+    max-width: 600px;
+    position: relative;
+    z-index: 20;
+
+    @media (max-width: 992px) {
+      margin: 0 auto;
+    }
+  }
+
+  &__headline {
+    font-family: 'Manrope', sans-serif; // UI Guidelines
+    font-size: clamp(2.5rem, 5vw, 3rem); // UI Guidelines EXACT!
+    font-weight: 800; // UI Guidelines EXACT!
+    line-height: 1.1; // UI Guidelines EXACT!
+    margin-bottom: 1.5rem;
+    color: var(--sport-text-dark);
+
+    span {
+      display: block;
+
+      &.highlight {
+        color: var(--sport-primary);
+        position: relative;
+        display: inline-block;
+
+        &::after {
+          content: '🚀';
+          font-size: 0.6em;
+          position: absolute;
+          top: -10px;
+          right: -40px;
+          animation: float 3s ease-in-out infinite;
+        }
+      }
+    }
+  }
+
+  &__subhead {
+    font-size: 1.125rem; // UI Guidelines
+    line-height: 1.6; // UI Guidelines
+    color: var(--sport-text-muted);
+    margin-bottom: 2.5rem;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 1rem;
+    position: relative;
+    z-index: 20;
+
+    @media (max-width: 992px) {
+      justify-content: center;
+      margin-bottom: 4rem;
+    }
+  }
+}
+
+// ====================
+// 2. Performance Metrics (Friendly Stats)
+// ====================
+.performance-strip {
+  position: relative;
+  z-index: 10;
+  margin-top: -3rem;
+  margin-bottom: var(--section-spacing); // UI Guidelines
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    padding: 0 0.5rem;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr 1fr; // 2 columns exactly
+      gap: 0.75rem;
+    }
+  }
+
+  &__item {
+    background: white;
+    padding: 2rem;
+    text-align: center;
+    border-radius: var(--radius-card); // UI Guidelines
+    box-shadow: var(--shadow-card); // UI Guidelines
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+
+    @media (max-width: 768px) {
+      padding: 1rem; // Compact padding
+    }
+
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-card-hover); // UI Guidelines
+    }
+  }
+
+  &__value {
+    font-family: 'Manrope', sans-serif; // UI Guidelines
+    display: block;
+    font-size: 2.5rem;
+
+    @media (max-width: 768px) {
+      font-size: 2rem; // Slightly smaller number for density
+    }
+
+    font-weight: 800;
+    color: var(--sport-primary);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+
+  &__label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--sport-text-muted);
+  }
+}
+
+// ====================
+// 3. Training Pathways (Programs)
+// ====================
+.training-pathways {
+  padding-bottom: var(--section-spacing); // UI Guidelines
+  background: var(--sport-bg-white);
+  background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+  background-size: 32px 32px;
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem; // UI Guidelines
+
+    @media (max-width: 768px) {
+      gap: 1rem;
+    }
+  }
+}
+
+.pathway-card {
+  background: white;
+  border-radius: var(--radius-card); // UI Guidelines
+  overflow: hidden;
+  box-shadow: var(--shadow-card); // UI Guidelines
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+
+  &:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-card-hover); // UI Guidelines
+    border-color: rgba(37, 99, 235, 0.1);
+
+    .pathway-card__bg img {
+      transform: scale(1.05);
+    }
+
+    .pathway-card__action {
+      color: var(--sport-primary);
+      gap: 0.75rem;
+    }
+  }
+
+  &__bg {
+    height: 220px;
+
+    @media (max-width: 768px) {
+      height: 160px;
+    }
+
+    overflow: hidden;
+    position: relative;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+  }
+
+  &__tag {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: white;
+    color: var(--sport-primary);
+    padding: 0.35rem 0.85rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+  }
+
+  &__content {
+    padding: 1.5rem;
+
+    @media (max-width: 768px) {
+      padding: 1.1rem;
+    }
+
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: white;
+  }
+
+  &__icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.85rem;
+    display: block;
+    margin-top: -3.25rem; // Pull icon up to overlap image
+    position: relative;
+    z-index: 2;
+    background: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  &__title {
+    font-family: 'Manrope', sans-serif; // UI Guidelines
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 0.6rem;
+    color: var(--sport-text-dark);
+    // Keep cards compact even with long titles
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  &__desc {
+    color: var(--sport-text-muted);
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 1.1rem;
+    flex: 1;
+    // Keep cards compact even with long descriptions (API content)
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+
+    @media (max-width: 768px) {
+      -webkit-line-clamp: 2;
+    }
+  }
+
+  &__action {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    color: var(--sport-text-dark);
+    transition: all 0.3s ease;
+    margin-top: auto;
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
+// ====================
+// 4. Friendly Staff (Coaches)
+// ====================
+.elite-staff {
+  padding: var(--section-spacing) 0; // UI Guidelines
+  background: var(--sport-bg-white);
+  background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+  background-size: 32px 32px;
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 2rem; // UI Guidelines
+
+    @media (max-width: 768px) {
+      gap: 1rem;
+    }
+  }
+}
+
+.elite-coach-card {
+  background: white;
+  border-radius: var(--radius-card); // UI Guidelines
+  padding: 1.5rem;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+
+  text-align: center;
+  box-shadow: var(--shadow-card); // UI Guidelines
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+
+  &:hover {
+    transform: translateY(-5px);
+    border-color: rgba(37, 99, 235, 0.1);
+    box-shadow: var(--shadow-card-hover); // UI Guidelines
+
+    .elite-coach-card__img {
+      transform: scale(1.05);
+      border-color: var(--sport-primary);
+    }
+  }
+
+  &__img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    margin: 0 auto 1.5rem;
+    overflow: hidden;
+    border: 4px solid var(--sport-bg-light);
+    transition: all 0.3s ease;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .elite-coach-card__initial {
+      width: 100%;
+      height: 100%;
+      background: var(--gradient-primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      font-weight: 700;
+    }
+  }
+
+  &__name {
+    font-family: 'Manrope', sans-serif; // UI Guidelines
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--sport-text-dark);
+    margin: 0 0 0.25rem;
+  }
+
+  &__role {
+    color: var(--sport-primary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  &__stats {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--sport-bg-light);
+
+    div {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.875rem;
+      color: var(--sport-text-muted);
+
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+        color: var(--sport-accent);
+      }
+    }
+  }
+}
+
+// ====================
+// 5. Success Stories (Testimonials)
+// ====================
+.success-stories {
+  padding: var(--section-spacing) 0; // UI Guidelines
+  background: var(--sport-bg-white);
+  background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+  background-size: 32px 32px;
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem; // UI Guidelines
+
+    @media (max-width: 768px) {
+      gap: 1rem;
+    }
+  }
+}
+
+.story-card {
+  background: white;
+  padding: 2.5rem;
+
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+  }
+
+  border-radius: var(--radius-card); // UI Guidelines
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  box-shadow: var(--shadow-card); // UI Guidelines
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-3px);
+  }
+
+  &::before {
+    content: '"';
+    position: absolute;
+    top: 1rem;
+    left: 1.5rem;
+    font-family: serif;
+    font-size: 4rem;
+    line-height: 1;
+    color: var(--sport-primary);
+    opacity: 0.2;
+  }
+
+  &__text {
+    font-size: 1.125rem;
+    line-height: 1.6;
+    color: var(--sport-text-dark);
+    margin-bottom: 2rem;
+    font-style: italic;
+    position: relative;
+    z-index: 1;
+  }
+
+  &__author {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    &-avatar {
+      width: 48px;
+      height: 48px;
+      background: var(--gradient-warm);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+      font-size: 1.25rem;
+    }
+
+    &-info {
+      h4 {
+        margin: 0;
+        font-weight: 700;
+        color: var(--sport-text-dark);
+        font-size: 1rem;
+      }
+
+      span {
+        font-size: 0.875rem;
+        color: var(--sport-text-muted);
+      }
+    }
+  }
+}
+
+// ====================
+// 6. Footer CTA
+// ====================
+.elite-cta {
+  padding: var(--section-spacing) 0; // UI Guidelines
+  background: var(--gradient-primary);
+  text-align: center;
+  color: white;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -20%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
+    animation: rotate 20s linear infinite;
+  }
+
+  &__content {
+    max-width: 700px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  h2 {
+    font-family: 'Manrope', sans-serif; // UI Guidelines
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+
+    span {
+      color: var(--sport-accent);
+    }
+  }
+
+  p {
+    font-size: 1.125rem; // UI Guidelines
+    line-height: 1.6; // UI Guidelines
+    margin-bottom: 2.5rem;
+    opacity: 0.9;
+  }
+
+  .btn-elite--primary {
+    background: white;
+    color: var(--sport-primary);
+    font-size: 1.125rem;
+    padding: 1.25rem 3rem;
+
+    &:hover {
+      background: var(--sport-bg-light);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+  }
+}
+
+// ====================
+// Animations
+// ====================
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &.revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  &--delay-100.revealed {
+    transition-delay: 0.1s;
+  }
+
+  &--delay-200.revealed {
+    transition-delay: 0.2s;
+  }
+
+  &--delay-300.revealed {
+    transition-delay: 0.3s;
+  }
+}

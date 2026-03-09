@@ -1,0 +1,547 @@
+// ============================================
+// CLUB COURSES - Following UIGuidelines.md
+// ============================================
+:host {
+  display: block;
+}
+
+.courses-page {
+  display: grid;
+  gap: 2rem;
+}
+
+// ============================================
+// HERO SECTION
+// ============================================
+.page-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 2.5rem;
+  background: linear-gradient(135deg, #eff6ff 0%, var(--sport-bg-light) 50%, #eef2ff 100%);
+  border-radius: var(--radius-card);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.1) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 800;
+  color: var(--sport-text-dark);
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.02em;
+  
+  span { color: var(--sport-primary); }
+}
+
+.hero-subtitle {
+  font-size: 1rem;
+  color: var(--sport-text-muted);
+  margin: 0;
+}
+
+.hero-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-btn);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+  position: relative;
+  z-index: 1;
+  
+  mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
+  }
+}
+
+// ============================================
+// STATS ROW
+// ============================================
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--sport-bg-white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  mat-icon {
+    font-size: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    color: white;
+  }
+  
+  &--blue { background: var(--gradient-primary); }
+  &--amber { background: var(--gradient-warm, linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)); }
+  &--green { background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%); }
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-number {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--sport-text-dark);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--sport-text-muted);
+  margin-top: 0.25rem;
+}
+
+// ============================================
+// SECTION CARD
+// ============================================
+.section-card {
+  background: var(--sport-bg-white);
+  border-radius: var(--radius-card);
+  padding: 2rem;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(37, 99, 235, 0.3);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--sport-text-dark);
+  margin: 0;
+  
+  mat-icon {
+    color: var(--sport-primary);
+    font-size: 1.75rem;
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+.section-count {
+  padding: 0.25rem 0.75rem;
+  background: #eff6ff;
+  color: var(--sport-primary);
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+// ============================================
+// COURSES GRID
+// ============================================
+.courses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 2rem;
+}
+
+.course-card {
+  background: var(--sport-bg-white);
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &:hover {
+    border-color: var(--sport-primary);
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-4px);
+  }
+  
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+  
+  &__body {
+    padding: 1.5rem;
+  }
+  
+  &__footer {
+    padding: 1rem 1.5rem;
+    background: var(--sport-bg-light);
+    border-top: 1px solid var(--color-border-subtle);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  &--inactive {
+    opacity: 0.85;
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    
+    .course-card__header {
+      background: #f1f5f9;
+      filter: grayscale(0.5);
+    }
+    
+    .badge--success {
+      background: #e2e8f0;
+      color: #64748b;
+    }
+  }
+}
+
+.course-card__header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.course-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  
+  mat-icon {
+    font-size: 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+  
+  &--edit {
+    color: var(--sport-primary);
+    &:hover { background: #eff6ff; }
+  }
+  
+  &--delete {
+    color: #ef4444;
+    &:hover { background: #fef2f2; }
+  }
+
+  &--success {
+    color: #22c55e;
+    &:hover { background: #f0fdf4; }
+  }
+  
+  &--warning {
+    color: var(--sport-accent);
+    &:hover { background: #fff7ed; }
+  }
+  
+  &--neutral {
+    color: var(--sport-text-muted);
+    &:hover { background: var(--sport-bg-light); }
+  }
+}
+
+// ============================================
+// MINI TOGGLE ANIMATION
+// ============================================
+.mini-toggle {
+  position: relative;
+  width: 24px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+
+  &__track {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: #cbd5e1; // Slate-300
+    border-radius: 99px;
+    transition: background-color 0.2s ease;
+  }
+
+  &__knob {
+    position: absolute;
+    left: 2px;
+    width: 10px;
+    height: 10px;
+    background-color: white;
+    border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+  }
+
+  &--on {
+    .mini-toggle__track {
+      background-color: #22c55e; // Green-500
+    }
+    .mini-toggle__knob {
+      transform: translateX(10px);
+    }
+  }
+
+  &--off {
+    .mini-toggle__track {
+      background-color: #cbd5e1;
+    }
+  }
+}
+
+.course-name {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--sport-text-dark);
+  margin: 0 0 0.5rem;
+}
+
+.course-description {
+  font-size: 0.9rem;
+  color: var(--sport-text-muted);
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+
+.course-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--sport-text-muted);
+  font-size: 0.9rem;
+  
+  mat-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+    color: var(--sport-primary);
+  }
+}
+
+.course-price {
+  .price-value {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--sport-text-dark);
+  }
+  
+  .price-label {
+    font-size: 0.8rem;
+    color: var(--sport-text-muted);
+  }
+}
+
+.course-capacity {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--sport-text-muted);
+  font-size: 0.9rem;
+  margin-left: auto;
+  
+  mat-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+// ============================================
+// EMPTY & LOADING STATES
+// ============================================
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  
+  &__icon {
+    font-size: 4rem;
+    width: 4rem;
+    height: 4rem;
+    color: var(--sport-text-muted);
+    opacity: 0.5;
+    margin-bottom: 1.5rem;
+  }
+  
+  &__title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--sport-text-dark);
+    margin: 0 0 0.5rem;
+  }
+  
+  &__text {
+    color: var(--sport-text-muted);
+    margin: 0 0 2rem;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.loading-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 2rem;
+}
+
+.skeleton-card {
+  height: 300px;
+  background: #f1f5f9;
+  border-radius: var(--radius-card);
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+// ============================================
+// BADGES
+// ============================================
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  
+  &--info {
+    background: #eff6ff;
+    color: #3b82f6;
+  }
+  
+  &--warning {
+    background: #fff7ed;
+    color: var(--sport-accent-dark, #b45309);
+  }
+  
+  &--success {
+    background: #f0fdf4;
+    color: #22c55e;
+  }
+  
+  &--neutral {
+    background: #f1f5f9;
+    color: #64748b;
+  }
+}
+
+// ============================================
+// RESPONSIVE
+// ============================================
+@media (max-width: 768px) {
+  .page-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 2rem;
+    
+    &::before { display: none; }
+  }
+  
+  .hero-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

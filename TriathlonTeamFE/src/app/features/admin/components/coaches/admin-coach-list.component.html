@@ -1,0 +1,274 @@
+﻿<section class="coach-page">
+  <!-- Hero Section - Matching User Theme -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--warning">Administrare</span>
+      <h1 class="hero-title">Gestionare <span>Antrenori</span></h1>
+      <p class="hero-subtitle">Administrează echipa și codurile de invitație</p>
+    </div>
+    <div class="hero-actions">
+      <button class="hero-btn" (click)="generateInvitationCode()">
+        <mat-icon>mail</mat-icon>
+        <span>Invită Antrenor</span>
+      </button>
+      <button class="hero-btn hero-btn--secondary" (click)="createCoach()">
+        <mat-icon>person_add</mat-icon>
+        <span>Creează Antrenor</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Stats Cards -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>groups</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ coaches().length }}</span>
+        <span class="stat-label">Antrenori activi</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--amber">
+        <mat-icon>vpn_key</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getActiveCodesCount() }}</span>
+        <span class="stat-label">Coduri active</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--green">
+        <mat-icon>school</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getTotalCourses() }}</span>
+        <span class="stat-label">Cursuri totale</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invitation Codes Section -->
+  <section class="section-card" *ngIf="invitationCodes().length > 0">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>vpn_key</mat-icon>
+          Coduri de Invitație
+        </h2>
+        <span class="section-count">{{ invitationCodes().length }}</span>
+      </div>
+      
+      <!-- Standardized Chip Filter Group -->
+      <div class="chips chips--admin">
+        <button mat-stroked-button 
+                [class.active]="codeFilter() === 'recent'"
+                (click)="setCodeFilter('recent')">
+          Recente
+        </button>
+        <button mat-stroked-button 
+                [class.active]="codeFilter() === 'active'"
+                (click)="setCodeFilter('active')">
+          Active
+        </button>
+        <button mat-stroked-button 
+                [class.active]="codeFilter() === 'used'"
+                (click)="setCodeFilter('used')">
+          Folosite
+        </button>
+        <button mat-stroked-button 
+                [class.active]="codeFilter() === 'all'"
+                (click)="setCodeFilter('all')">
+          Toate
+        </button>
+      </div>
+    </div>
+    
+    <div class="codes-grid">
+      <div class="invitation-card" *ngFor="let code of filteredInvitationCodes()" 
+           [class.expired]="code.expired" 
+           [class.used]="!code.valid">
+        <div class="invitation-card__header">
+          <!-- Global Badge Styles -->
+          <span class="badge" 
+                [class.badge--success]="code.valid && !code.expired"
+                [class.badge--error]="code.expired"
+                [class.badge--neutral]="!code.valid && !code.expired">
+            {{ code.expired ? 'Expirat' : (code.valid ? 'Activ' : 'Folosit') }}
+          </span>
+          <button class="delete-btn" (click)="deleteInvitationCode(code)" matTooltip="Șterge">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <div class="invitation-card__code">
+          <code>{{ code.code }}</code>
+          <button class="copy-btn" (click)="copyCode(code.code)" matTooltip="Copiază">
+            <mat-icon>content_copy</mat-icon>
+          </button>
+        </div>
+        <div class="invitation-card__footer">
+          <div class="meta-item">
+            <mat-icon>schedule</mat-icon>
+            <span>{{ code.createdAt | date:'dd.MM.yyyy' }}</span>
+          </div>
+          <div class="meta-item" *ngIf="code.usedByEmail">
+            <mat-icon>person</mat-icon>
+            <span>{{ code.usedByEmail }}</span>
+          </div>
+          <div class="uses-counter">{{ code.currentUses }}/{{ code.maxUses }}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Coaches Section -->
+  <section class="section-card">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>groups</mat-icon>
+          Echipa de Antrenori
+        </h2>
+        <span class="section-count">
+          {{ hasCoachFilters() ? (filteredCoaches().length + ' / ' + coaches().length) : coaches().length }}
+        </span>
+      </div>
+
+      <!-- Filters -->
+      <div class="section-header__right" *ngIf="!isLoading() && coaches().length > 0">
+        <div class="coach-filters">
+          <div class="filter-field filter-field--search">
+            <mat-icon>search</mat-icon>
+            <input
+              type="text"
+              [value]="coachSearch()"
+              (input)="setCoachSearch(($any($event.target)).value)"
+              placeholder="Caută (nume, email, telefon)..."
+            />
+            <button
+              type="button"
+              class="field-clear"
+              *ngIf="coachSearch()"
+              (click)="setCoachSearch('')"
+              matTooltip="Șterge căutarea"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+
+          <div class="filter-field filter-field--city" *ngIf="coachCities().length > 0">
+            <mat-icon>location_on</mat-icon>
+            <select
+              [value]="coachCity()"
+              (change)="setCoachCity(($any($event.target)).value)"
+              aria-label="Filtru oraș"
+            >
+              <option value="">Toate orașele</option>
+              <option *ngFor="let city of coachCities()" [value]="city">{{ city }}</option>
+            </select>
+            <button
+              type="button"
+              class="field-clear"
+              *ngIf="coachCity()"
+              (click)="setCoachCity('')"
+              matTooltip="Șterge filtrul de oraș"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            class="filter-reset"
+            *ngIf="hasCoachFilters()"
+            (click)="resetCoachFilters()"
+          >
+            Resetează
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-grid" *ngIf="isLoading()">
+      <div class="skeleton-card" *ngFor="let _ of [1, 2, 3, 4, 5, 6]"></div>
+    </div>
+
+    <!-- Empty State (Standardized) -->
+    <div class="empty-state" *ngIf="!isLoading() && coaches().length === 0">
+      <mat-icon class="empty-state__icon">groups</mat-icon>
+      <h3 class="empty-state__title">Niciun antrenor încă</h3>
+      <p class="empty-state__text">Generează un cod de invitație și trimite-l unui antrenor pentru a se înregistra.</p>
+      <button class="hero-btn" (click)="generateInvitationCode()">
+        <mat-icon>person_add</mat-icon>
+        <span>Invită primul antrenor</span>
+      </button>
+    </div>
+
+    <!-- Empty State (Filters) -->
+    <div class="empty-state" *ngIf="!isLoading() && coaches().length > 0 && filteredCoaches().length === 0">
+      <mat-icon class="empty-state__icon">search_off</mat-icon>
+      <h3 class="empty-state__title">Niciun antrenor găsit</h3>
+      <p class="empty-state__text">Încearcă să modifici orașul sau termenul de căutare.</p>
+      <button class="hero-btn hero-btn--secondary" (click)="resetCoachFilters()">
+        <mat-icon>refresh</mat-icon>
+        <span>Resetează filtrele</span>
+      </button>
+    </div>
+
+    <!-- Coaches Grid (Card-based) -->
+    <div class="coaches-grid" *ngIf="!isLoading() && filteredCoaches().length > 0">
+      <article class="coach-card" *ngFor="let coach of filteredCoaches()">
+        <div class="coach-card__header">
+          <div class="coach-avatar">
+            <img *ngIf="coach.hasPhoto" [src]="getCoachPhotoUrl(coach.id)" [alt]="coach.name" />
+            <div class="avatar-fallback" *ngIf="!coach.hasPhoto">
+              {{ getInitials(coach.name) }}
+            </div>
+          </div>
+          <div class="coach-actions">
+            <button class="action-btn action-btn--edit" (click)="editCoach(coach)" matTooltip="Editează">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button class="action-btn action-btn--delete" (click)="deleteCoach(coach)" matTooltip="Șterge">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+        
+        <div class="coach-card__body">
+          <h3 class="coach-name">{{ coach.name }}</h3>
+          <div class="coach-meta">
+            <span class="meta-item">
+              <mat-icon>email</mat-icon>
+              {{ coach.email }}
+            </span>
+            <span class="meta-item" *ngIf="coach.phone">
+              <mat-icon>phone</mat-icon>
+              {{ coach.phone }}
+            </span>
+            <span class="meta-item" *ngIf="coach.cities?.length">
+              <mat-icon>location_on</mat-icon>
+              {{ coach.cities?.join(', ') }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="coach-card__footer">
+          <div class="sports-list" *ngIf="coach.sports.length > 0">
+            <span class="badge badge--warning" *ngFor="let sport of coach.sports">{{ sport.name }}</span>
+          </div>
+          <div class="no-sports" *ngIf="coach.sports.length === 0">
+            <mat-icon>sports</mat-icon>
+            <span>Fără sporturi</span>
+          </div>
+          <div class="course-count">
+            <mat-icon>school</mat-icon>
+            <span>{{ coach.courseCount }} cursuri</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>

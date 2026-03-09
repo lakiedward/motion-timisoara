@@ -1,0 +1,191 @@
+<section class="announcements-page">
+  <!-- Hero Section - Coach Pattern -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--coach">Antrenor</span>
+      <h1 class="hero-title">Anunțuri <span>{{ courseName() || 'Curs' }}</span></h1>
+      <p class="hero-subtitle">Publică mesaje, imagini (max 10, ≤4MB) și videoclipuri (max 2).</p>
+    </div>
+    <a class="back-btn" routerLink="/coach/courses">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Înapoi la cursuri</span>
+    </a>
+  </header>
+
+  <!-- Section Card: Composer -->
+  <section class="section-card">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>edit_note</mat-icon>
+          Composer
+        </h2>
+      </div>
+    </div>
+
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>Mesaj</mat-label>
+      <textarea
+        matInput
+        rows="4"
+        [ngModel]="content()"
+        (ngModelChange)="content.set($event)"
+        placeholder="Scrie un mesaj pentru curs..."
+      ></textarea>
+    </mat-form-field>
+
+    <!-- Attachments -->
+    <div class="attachments">
+      <!-- Images -->
+      <div class="attachment-section">
+        <div class="attachment-title">
+          <mat-icon>image</mat-icon>
+          <span>Imagini</span>
+          <small>Max {{ maxImages }} imagini, ≤4MB fiecare</small>
+        </div>
+        <div class="attachment-actions">
+          <input type="file" #imageInput multiple accept="image/*" (change)="onSelectImages($event)" style="display:none" />
+          <button mat-stroked-button type="button" (click)="imageInput.click()">
+            <mat-icon>add_photo_alternate</mat-icon>
+            Adaugă imagini
+          </button>
+        </div>
+        <div class="preview-grid" *ngIf="selectedImages().length">
+          <div class="preview" *ngFor="let img of selectedImages(); let i = index; trackBy: trackByIndex">
+            <img [src]="img.dataUrl" alt="Previzualizare imagine" />
+            <button mat-icon-button type="button" class="remove" (click)="removeSelectedImage(i)">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Video Links -->
+      <div class="attachment-section">
+        <div class="attachment-title">
+          <mat-icon>videocam</mat-icon>
+          <span>Link-uri video</span>
+          <small>Max {{ maxVideoLinks }} link-uri</small>
+        </div>
+        <div class="video-row" *ngFor="let v of videoUrls(); let i = index; trackBy: trackByIndex">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>URL video</mat-label>
+            <input matInput [ngModel]="videoUrls()[i]" (ngModelChange)="updateVideoUrl(i, $event)" placeholder="https://youtu.be/..." />
+          </mat-form-field>
+          <button mat-icon-button type="button" (click)="removeVideoField(i)" [disabled]="videoUrls().length <= 1">
+            <mat-icon>remove_circle</mat-icon>
+          </button>
+        </div>
+        <button mat-stroked-button type="button" (click)="addVideoField()" [disabled]="videoUrls().length >= maxVideoLinks">
+          <mat-icon>add</mat-icon>
+          Adaugă link video
+        </button>
+      </div>
+
+      <!-- Video Files -->
+      <div class="attachment-section">
+        <div class="attachment-title">
+          <mat-icon>smartphone</mat-icon>
+          <span>Videoclipuri din galerie</span>
+          <small>Max {{ maxVideos }} videoclipuri, ≤150MB fiecare (linkuri + fișiere)</small>
+        </div>
+        <div class="attachment-actions">
+          <input type="file" #videoInput multiple accept="video/*" (change)="onSelectVideos($event)" style="display:none" />
+          <button mat-stroked-button type="button" (click)="videoInput.click()">
+            <mat-icon>add</mat-icon>
+            Adaugă videoclip
+          </button>
+        </div>
+        <div class="preview-grid" *ngIf="selectedVideos().length">
+          <div class="preview" *ngFor="let v of selectedVideos(); let i = index; trackBy: trackByIndex">
+            <video [src]="v.previewUrl" controls></video>
+            <button mat-icon-button type="button" class="remove" (click)="removeSelectedVideo(i)">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pin Option -->
+      <div class="pin-option">
+        <mat-checkbox [ngModel]="pinAfterPost()" (ngModelChange)="pinAfterPost.set($event)">Fixează după publicare</mat-checkbox>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn-secondary" (click)="post(true)" [disabled]="!canPost() || isPosting()">
+        <mat-icon>push_pin</mat-icon>
+        Publică și fixează
+      </button>
+      <button type="button" class="btn-primary" (click)="post(false)" [disabled]="!canPost() || isPosting()">
+        <mat-icon>send</mat-icon>
+        Publică
+      </button>
+    </div>
+  </section>
+
+  <!-- Section Card: List -->
+  <section class="section-card">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>campaign</mat-icon>
+          Anunțuri Curente
+        </h2>
+        <span class="section-count" *ngIf="sortedList().length">{{ sortedList().length }}</span>
+      </div>
+      <div class="section-header__right" *ngIf="isLoading()">
+        <mat-progress-spinner diameter="20" mode="indeterminate"></mat-progress-spinner>
+      </div>
+    </div>
+
+    <div class="error" *ngIf="hasError()">Nu am putut încărca anunțurile.</div>
+
+    <article class="announcement-card" *ngFor="let a of sortedList(); trackBy: trackById">
+      <header class="announcement-header">
+        <div class="title">
+          <mat-icon *ngIf="a.pinned" color="primary">push_pin</mat-icon>
+          <span class="meta">{{ a.authorName }} • {{ a.createdAt | date: 'short' }}</span>
+        </div>
+        <div class="item-actions">
+          <button mat-icon-button type="button" (click)="togglePin(a)" matTooltip="{{ a.pinned ? 'Unpin' : 'Pin' }}">
+            <mat-icon>{{ a.pinned ? 'bookmark_remove' : 'bookmark_add' }}</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" type="button" (click)="delete(a)" matTooltip="Șterge">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      </header>
+
+      <div class="content">{{ a.content }}</div>
+
+      <ng-container *ngIf="(a.attachments | imageOnly) as imgs">
+        <div class="images-grid" *ngIf="imgs.length > 0">
+          <div class="img" *ngFor="let att of imgs; trackBy: trackAttId">
+            <img [src]="imageUrl(a, att.id)" alt="Imagine anunț" />
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="(a.attachments | videoOnly) as vids">
+        <div class="videos-grid" *ngIf="vids.length > 0">
+          <ng-container *ngFor="let att of vids; trackBy: trackAttId">
+            <ng-container *ngIf="att.type === 'VIDEO_FILE'; else linkVideo">
+              <video [src]="videoUrl(a, att.id)" controls preload="metadata"></video>
+            </ng-container>
+            <ng-template #linkVideo>
+              <app-video-embed [url]="att.url || ''"></app-video-embed>
+            </ng-template>
+          </ng-container>
+        </div>
+      </ng-container>
+    </article>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!isLoading() && !sortedList().length">
+      <mat-icon>campaign</mat-icon>
+      <h3>Nu există anunțuri</h3>
+      <p>Folosește composer-ul de mai sus pentru a crea primul anunț.</p>
+    </div>
+  </section>
+</section>

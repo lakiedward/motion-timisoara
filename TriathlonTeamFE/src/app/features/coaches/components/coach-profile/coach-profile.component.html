@@ -1,0 +1,154 @@
+﻿<div class="coach-detail-page">
+  <!-- Back Button -->
+  <div class="back-nav">
+    <button class="back-btn" routerLink="/antrenori">
+      <span class="back-icon">←</span>
+      Înapoi la antrenori
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <ng-container *ngIf="isLoading()">
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Se încarcă...</p>
+    </div>
+  </ng-container>
+
+  <!-- Error State -->
+  <ng-container *ngIf="hasError() && !isLoading()">
+    <div class="error-state">
+      <span class="error-icon">⚠️</span>
+      <h3>Antrenorul nu a fost găsit</h3>
+      <p>Antrenorul căutat nu există sau nu mai este disponibil.</p>
+      <button class="btn-primary" routerLink="/antrenori">Înapoi la antrenori</button>
+    </div>
+  </ng-container>
+
+  <!-- Coach Content -->
+  <ng-container *ngIf="!isLoading() && !hasError() && coach() as coach">
+    <div class="coach-layout">
+      <!-- Profile Header -->
+      <section class="profile-header">
+        <div class="profile-avatar">
+          <img [src]="getCoachPhotoUrl(coach.id)" [alt]="coach.name">
+        </div>
+        <div class="profile-info">
+          <span class="role-badge">Antrenor</span>
+          <h1>{{ coach.name }}</h1>
+          <p class="headline" *ngIf="coach.headline">{{ coach.headline }}</p>
+          <div class="profile-stats">
+            <div class="stat" *ngIf="courses().length">
+              <span class="stat-value">{{ courses().length }}</span>
+              <span class="stat-label">Cursuri</span>
+            </div>
+            <div class="stat" *ngIf="coach.focusAreas?.length as focusCount">
+              <span class="stat-value">{{ focusCount }}</span>
+              <span class="stat-label">Specializări</span>
+            </div>
+            <div class="stat" *ngIf="coach.averageRating">
+              <span class="stat-value">{{ coach.averageRating | number:'1.1-1' }}</span>
+              <span class="stat-label">Rating</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Content Grid -->
+      <div class="content-grid">
+        <!-- Left Column - Details -->
+        <div class="main-content">
+          <!-- Specializări Section -->
+          <section class="specializations-section" *ngIf="coach.focusAreas?.length">
+            <div class="section-header section-header--left">
+              <span class="section-header__eyebrow">🎯 EXPERTIZĂ</span>
+              <h2 class="section-header__title">Specializări <span>profesionale</span></h2>
+            </div>
+            <div class="section-body">
+              <ul class="specializations-list">
+                <li *ngFor="let area of coach.focusAreas">
+                  <span class="check-icon">✓</span>
+                  {{ area }}
+                </li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- Biography -->
+          <section class="biography-section">
+            <div class="section-header section-header--left">
+              <span class="section-header__eyebrow">👤 BIOGRAFIE</span>
+              <h2 class="section-header__title">Despre <span>antrenor</span></h2>
+            </div>
+            <div class="section-body">
+              <p *ngIf="biography(); else noBio">{{ biography() }}</p>
+              <ng-template #noBio>
+                <p class="empty-bio">Antrenorul nostru nu are încă o biografie detaliată disponibilă.</p>
+              </ng-template>
+            </div>
+          </section>
+
+          <!-- Courses Section -->
+          <section class="courses-section" *ngIf="courses().length">
+            <div class="section-header section-header--left">
+              <span class="section-header__eyebrow">🏫 CURSURI</span>
+              <h2 class="section-header__title">Cursuri <span>predate</span></h2>
+            </div>
+            <div class="section-body">
+              <div class="course-grid">
+                <app-course-card
+                  *ngFor="let courseItem of courses(); trackBy: trackByCourse"
+                  [course]="courseItem"
+                  (viewDetails)="navigateToCourse($event)"
+                  (enroll)="enrollInCourse($event)"
+                ></app-course-card>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Right Column - Actions Card -->
+        <aside class="sidebar">
+          <div class="action-card">
+            <div class="section-header section-header--center">
+              <span class="section-header__eyebrow">⭐ RATING</span>
+              <h2 class="section-header__title">Evaluare <span>antrenor</span></h2>
+            </div>
+            <div class="card-body">
+              <!-- Rating Display -->
+              <div class="rating-display" *ngIf="coach.averageRating && coach.totalRatings">
+                <app-star-rating 
+                  [rating]="coach.averageRating" 
+                  [readonly]="true" 
+                  size="medium">
+                </app-star-rating>
+                <div class="rating-text">
+                  <span class="rating-value">{{ coach.averageRating | number:'1.1-1' }}</span>
+                  <span class="rating-count">({{ coach.totalRatings }} review-uri)</span>
+                </div>
+              </div>
+
+              <div class="no-rating" *ngIf="!coach.averageRating || !coach.totalRatings">
+                <span class="no-rating-icon">⭐</span>
+                <span>Fără evaluări încă</span>
+              </div>
+
+              <button 
+                *ngIf="canRate"
+                class="rate-btn" 
+                (click)="onRateCoach()">
+                <span class="rate-icon">⭐</span>
+                {{ ratingButtonText }}
+              </button>
+
+              <div class="verified-badge">
+                <span class="badge-icon">✓</span>
+                <span>Antrenor verificat</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </ng-container>
+</div>

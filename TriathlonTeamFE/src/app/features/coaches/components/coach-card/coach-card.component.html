@@ -1,0 +1,84 @@
+<article class="coach-card" *ngIf="coach" [ngClass]="accentClass" (click)="onCardClick()">
+  <!-- Hero image section with coach photo -->
+  <div class="coach-card__hero">
+    <img 
+      [src]="coachPhotoUrl" 
+      [alt]="coach.name" 
+      loading="lazy" 
+      decoding="async"
+      (error)="onPhotoError($event)"
+      class="coach-card__hero-image"
+    />
+    <div class="coach-card__hero-overlay"></div>
+    
+    <!-- Sports specialization badge -->
+    <div class="coach-card__category" *ngIf="coach.disciplines.length > 0">
+      {{ primarySportConfig.icon }}
+    </div>
+    
+    <!-- Sports count/name tag -->
+    <div class="coach-card__tag">{{ sportsBadgeText }}</div>
+    
+    <!-- Coach name and rating on hero -->
+    <div class="coach-card__hero-content">
+      <h3 class="coach-card__title">{{ coach.name }}</h3>
+      
+      <!-- Rating on hero (if available) -->
+      <div class="coach-card__rating" *ngIf="coach.averageRating && coach.totalRatings">
+        <span class="rating-value">{{ coach.averageRating | number:'1.1-1' }}</span>
+        <span class="rating-star">★</span>
+        <span class="rating-count">({{ coach.totalRatings }})</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="coach-card__content">
+    <!-- Summary description -->
+    <p class="coach-card__summary" *ngIf="showSummary && coach.summary">
+      {{ coach.summary }}
+    </p>
+
+    <!-- Sport disciplines badges -->
+    <div class="coach-card__badges" *ngIf="coach.disciplines.length > 0">
+      <div class="discipline-badge" *ngFor="let discipline of coach.disciplines">
+        <span class="sport-icon">{{ getSportIcon(discipline.sport.code) }}</span>
+        <div class="discipline-info">
+          <span class="sport-name">{{ discipline.sport.name }}</span>
+          <span class="levels" *ngIf="discipline.levels && discipline.levels.length > 0">
+            {{ discipline.levels.join(' • ') }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Locations -->
+    <div class="location-info" *ngIf="coach.locations.length > 0">
+      <span class="location-icon">📍</span>
+      <div class="location-details">
+        <span class="location-label">Locații disponibile</span>
+        <span class="location-name">{{ locationsText }}</span>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="coach-card__stats">
+      <div class="stat-item" *ngIf="coach.locations.length > 0">
+        <span class="stat-icon">🏢</span>
+        <span class="stat-value">{{ coach.locations.length }} locați{{ coach.locations.length > 1 ? 'i' : 'e' }}</span>
+      </div>
+      <div class="stat-item" *ngIf="coach.activeCourseCount">
+        <span class="stat-icon">📚</span>
+        <span class="stat-value">{{ coach.activeCourseCount }} curs{{ coach.activeCourseCount > 1 ? 'uri' : '' }}</span>
+      </div>
+    </div>
+
+    <!-- Footer with action -->
+    <div class="coach-card__footer">
+      <button type="button" class="btn-primary" (click)="onViewProfile($event)">
+        Vezi profil complet
+        <span class="btn-icon">→</span>
+      </button>
+    </div>
+  </div>
+</article>
+

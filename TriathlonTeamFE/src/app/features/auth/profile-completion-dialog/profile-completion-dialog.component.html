@@ -1,0 +1,52 @@
+<div class="dialog-header">
+  <div class="icon-container">
+    <mat-icon class="welcome-icon">person_check</mat-icon>
+  </div>
+  <h2 class="dialog-title">Completează profilul</h2>
+  <p class="dialog-subtitle">
+    Un ultim pas pentru a finaliza înregistrarea! Adaugă numărul tău de telefon pentru a primi notificări importante despre activitățile copilului.
+  </p>
+</div>
+
+<form class="dialog-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <mat-form-field appearance="outline" class="premium-field">
+    <mat-label>Nume complet</mat-label>
+    <mat-icon matPrefix class="field-icon">person</mat-icon>
+    <input matInput formControlName="name" autocomplete="name" placeholder="Ex: Ion Popescu" />
+    <app-form-error [control]="form.controls.name"></app-form-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="premium-field">
+    <mat-label>Număr de telefon</mat-label>
+    <mat-icon matPrefix class="field-icon">phone</mat-icon>
+    <input matInput formControlName="phone" autocomplete="tel" placeholder="+40 XXX XXX XXX" />
+    <mat-hint>Format: +40 sau 07XX XXX XXX</mat-hint>
+    <app-form-error [control]="form.controls.phone"></app-form-error>
+  </mat-form-field>
+
+  <div class="security-notice">
+    <mat-icon class="security-icon">lock</mat-icon>
+    <span>Datele tale sunt securizate și confidențiale</span>
+  </div>
+
+  <button
+    mat-flat-button
+    color="primary"
+    type="submit"
+    class="submit-button"
+    [disabled]="form.invalid || isSubmitting()"
+  >
+    @if (isSubmitting()) {
+      <ng-container>
+        <mat-icon class="spinner">hourglass_empty</mat-icon>
+        Se salvează...
+      </ng-container>
+    } @else {
+      <ng-container>
+        Salvează și continuă
+        <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+      </ng-container>
+    }
+  </button>
+</form>
+

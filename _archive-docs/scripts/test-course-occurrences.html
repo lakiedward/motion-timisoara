@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Course Occurrences</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .result {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        pre {
+            background: #fff;
+            padding: 10px;
+            border: 1px solid #ddd;
+            overflow-x: auto;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 10px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Course Occurrences</h1>
+    
+    <div>
+        <label>Course ID: <input type="text" id="courseId" value="34f866d0-ed18-46ce-acb7-a92d9131f6e1" style="width: 300px;"></label>
+        <br><br>
+        <button onclick="testScheduleAPI()">Test /api/public/schedule</button>
+        <button onclick="testCourseDetailAPI()">Test /api/public/courses/{id}</button>
+    </div>
+
+    <div id="result"></div>
+
+    <script>
+        const BASE_URL = 'http://localhost:8081';
+        
+        async function testScheduleAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Loading schedule...</p>';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/public/schedule?size=100`);
+                const data = await response.json();
+                
+                const courseId = document.getElementById('courseId').value;
+                const course = data.content.find(item => item.course.id === courseId);
+                
+                if (!course) {
+                    resultDiv.innerHTML = `<div class="error"><h3>Course not found in schedule!</h3></div>`;
+                    return;
+                }
+                
+                const dayNames = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă'];
+                
+                let html = '<div class="result success"><h3>Course found in schedule!</h3>';
+                html += `<p><strong>Name:</strong> ${course.course.name}</p>`;
+                html += `<p><strong>Next Occurrences Count:</strong> ${course.nextOccurrences.length}</p>`;
+                
+                html += '<table><tr><th>#</th><th>Date/Time</th><th>Day of Week</th></tr>';
+                course.nextOccurrences.forEach((occ, idx) => {
+                    const date = new Date(occ);
+                    const dayOfWeek = dayNames[date.getDay()];
+                    html += `<tr><td>${idx + 1}</td><td>${date.toLocaleString('ro-RO')}</td><td>${dayOfWeek}</td></tr>`;
+                });
+                html += '</table>';
+                
+                // Show unique days
+                const uniqueDays = new Set();
+                course.nextOccurrences.forEach(occ => {
+                    const date = new Date(occ);
+                    uniqueDays.add(dayNames[date.getDay()]);
+                });
+                html += `<p><strong>Unique Days:</strong> ${Array.from(uniqueDays).join(', ')}</p>`;
+                
+                html += '<h4>Full Response:</h4>';
+                html += `<pre>${JSON.stringify(course, null, 2)}</pre>`;
+                html += '</div>';
+                
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h3>Error:</h3><p>${error.message}</p></div>`;
+            }
+        }
+        
+        async function testCourseDetailAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Loading course details...</p>';
+            
+            try {
+                const courseId = document.getElementById('courseId').value;
+                const response = await fetch(`${BASE_URL}/api/public/courses/${courseId}`);
+                const data = await response.json();
+                
+                const dayNames = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă'];
+                
+                let html = '<div class="result success"><h3>Course Details</h3>';
+                html += `<p><strong>Name:</strong> ${data.name}</p>`;
+                html += `<p><strong>Occurrences Count:</strong> ${data.occurrences ? data.occurrences.length : 0}</p>`;
+                
+                if (data.occurrences && data.occurrences.length > 0) {
+                    html += '<table><tr><th>#</th><th>Start Time</th><th>End Time</th><th>Day of Week</th></tr>';
+                    data.occurrences.forEach((occ, idx) => {
+                        const date = new Date(occ.startTime);
+                        const dayOfWeek = dayNames[date.getDay()];
+                        html += `<tr><td>${idx + 1}</td><td>${new Date(occ.startTime).toLocaleString('ro-RO')}</td><td>${new Date(occ.endTime).toLocaleString('ro-RO')}</td><td>${dayOfWeek}</td></tr>`;
+                    });
+                    html += '</table>';
+                    
+                    // Show unique days
+                    const uniqueDays = new Set();
+                    data.occurrences.forEach(occ => {
+                        const date = new Date(occ.startTime);
+                        uniqueDays.add(dayNames[date.getDay()]);
+                    });
+                    html += `<p><strong>Unique Days:</strong> ${Array.from(uniqueDays).join(', ')}</p>`;
+                }
+                
+                html += '<h4>Full Response:</h4>';
+                html += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                html += '</div>';
+                
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h3>Error:</h3><p>${error.message}</p></div>`;
+            }
+        }
+    </script>
+</body>
+</html>
+

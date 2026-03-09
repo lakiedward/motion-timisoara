@@ -1,0 +1,499 @@
+:host {
+  display: block;
+}
+
+.coach-form-page {
+  display: grid;
+  gap: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+// ============================================
+// HERO SECTION (Club style)
+// ============================================
+.page-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 2rem 2.5rem;
+  background: linear-gradient(135deg, #eff6ff 0%, var(--sport-bg-light) 50%, #eef2ff 100%);
+  border-radius: var(--radius-card);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--club-border-color);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800;
+  color: var(--sport-text-dark);
+  margin: 0.5rem 0 0.25rem;
+  letter-spacing: -0.02em;
+
+  span {
+    color: #6366f1;
+  }
+}
+
+.hero-subtitle {
+  font-size: 0.95rem;
+  color: var(--sport-text-muted);
+  margin: 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  &--club {
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+    color: #3730a3;
+    border: 1px solid #6366f1;
+  }
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: var(--sport-bg-white);
+  color: #4f46e5;
+  border: 2px solid #6366f1;
+  border-radius: var(--radius-btn);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  position: relative;
+  z-index: 2;
+
+  mat-icon {
+    font-size: 1.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// ============================================
+// MAIN CONTENT
+// ============================================
+.page-layout {
+  display: block;
+}
+
+.main-content {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.section-card {
+  background: var(--sport-bg-white);
+  border-radius: var(--radius-card);
+  padding: 2rem;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--club-border-color);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--sport-text-dark);
+  margin: 0;
+
+  mat-icon {
+    color: #6366f1;
+    font-size: 1.75rem;
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+// ============================================
+// MEDIA GRID (Photo + Sports)
+// ============================================
+.media-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.media-card {
+  background: #f8fafc;
+  border: 1px solid var(--club-border-color);
+  border-radius: 14px;
+  padding: 1.25rem;
+  min-height: 180px;
+}
+
+.media-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 800;
+  color: var(--sport-text-dark);
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+
+  mat-icon {
+    color: #6366f1;
+  }
+}
+
+.hero-photo-container {
+  display: grid;
+  place-items: center;
+  min-height: 140px;
+  border-radius: 12px;
+  border: 1px dashed rgba(99, 102, 241, 0.35);
+  background: rgba(99, 102, 241, 0.05);
+  overflow: hidden;
+  position: relative;
+  padding: 0.75rem;
+}
+
+.upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.25);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.photo-preview__remove {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(15, 23, 42, 0.7) !important;
+  color: #fff !important;
+}
+
+.photo-previews {
+  display: grid;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+// Responsive aspect-ratio media container (used for flexible previews, e.g. course hero photo)
+.photo-preview-responsive {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--sport-bg-white);
+  border: 2px solid var(--club-border-color);
+}
+
+// Fixed-height thumbnail container used specifically for the coach public card preview
+.photo-preview-card {
+  position: relative;
+  width: 100%;
+  height: 280px; // matches public coach card hero height
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.18);
+}
+
+.photo-preview-card__label,
+.photo-preview-avatar__label {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #4f46e5;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.photo-preview-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-preview-avatar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 0.5rem;
+  padding-bottom: 0.25rem;
+}
+
+.photo-preview-avatar__circle {
+  width: 160px; // matches public coach profile avatar size
+  height: 160px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 4px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.15);
+  background: rgba(15, 23, 42, 0.08);
+}
+
+.photo-preview-avatar__circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.media-hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: var(--sport-text-muted);
+}
+
+mat-select {
+  width: 100%;
+}
+
+.empty-hint {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--sport-bg-white);
+  color: var(--sport-text-muted);
+  font-size: 0.875rem;
+}
+
+// ============================================
+// FORM
+// ============================================
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--primary-border-blue);
+}
+
+.btn-secondary {
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-btn);
+  border: 2px solid var(--color-border-default);
+  background: var(--sport-bg-white);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    border-color: #6366f1;
+    color: #6366f1;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-btn);
+  border: none;
+  background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+  transition: all 0.2s ease;
+
+  mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+:host ::ng-deep {
+  .mat-mdc-form-field {
+    width: 100%;
+  }
+
+  .mat-mdc-text-field-wrapper {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+  }
+
+  .mat-mdc-form-field-focus-overlay {
+    background-color: transparent !important;
+  }
+
+  .mat-mdc-input-element {
+    color: #0f172a !important;
+  }
+
+  .mat-mdc-form-field.mat-focused .mat-mdc-text-field-wrapper {
+    background: #ffffff !important;
+  }
+
+  .mat-mdc-form-field-error {
+    color: #dc2626 !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+  }
+}
+
+.tip-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius-card);
+  background: #eef2ff;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  color: #3730a3;
+
+  mat-icon {
+    color: #6366f1;
+  }
+
+  p {
+    margin: 0;
+    color: var(--sport-text-dark);
+    opacity: 0.9;
+  }
+}
+
+@media (max-width: 900px) {
+  .media-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    justify-content: stretch;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .photo-preview-card {
+    height: 220px;
+  }
+
+  .photo-preview-avatar__circle {
+    width: 120px;
+    height: 120px;
+  }
+}
+
+

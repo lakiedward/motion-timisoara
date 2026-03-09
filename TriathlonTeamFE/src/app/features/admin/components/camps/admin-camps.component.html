@@ -1,0 +1,155 @@
+<section class="camps-page">
+  <!-- Hero Section - Admin Pattern -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--warning">Administrare</span>
+      <h1 class="hero-title">Gestionare <span>Tabere</span></h1>
+      <p class="hero-subtitle">Administrați programul și înscrierile pentru tabere</p>
+    </div>
+    <button class="hero-btn" (click)="goToCreate()">
+      <mat-icon>add</mat-icon>
+      <span>Tabără Nouă</span>
+    </button>
+  </header>
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>holiday_village</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ camps().length }}</span>
+        <span class="stat-label">Total tabere</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--green">
+        <mat-icon>event_available</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getActiveCount() }}</span>
+        <span class="stat-label">Active</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--amber">
+        <mat-icon>group</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getTotalEnrollments() }}</span>
+        <span class="stat-label">Înscrieri totale</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Camps Section -->
+  <section class="section-card">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>holiday_village</mat-icon>
+          Lista Tabere
+        </h2>
+        <span class="section-count">{{ camps().length }}</span>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+      <div class="loading-grid">
+        @for (i of [1, 2, 3, 4]; track i) {
+          <div class="skeleton-card"></div>
+        }
+      </div>
+    }
+
+    <!-- Error State -->
+    @if (hasError()) {
+      <div class="empty-state">
+        <mat-icon class="empty-state__icon empty-state__icon--error">error_outline</mat-icon>
+        <h3 class="empty-state__title">Eroare la încărcare</h3>
+        <p class="empty-state__text">Nu am putut încărca lista de tabere.</p>
+        <button class="hero-btn hero-btn--secondary" (click)="loadCamps()">
+          <mat-icon>refresh</mat-icon>
+          <span>Încearcă din nou</span>
+        </button>
+      </div>
+    }
+
+    <!-- Empty State -->
+    @if (!isLoading() && !hasError() && camps().length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-state__icon">holiday_village</mat-icon>
+        <h3 class="empty-state__title">Nicio tabără încă</h3>
+        <p class="empty-state__text">Creează prima tabără pentru a începe.</p>
+        <button class="hero-btn" (click)="goToCreate()">
+          <mat-icon>add</mat-icon>
+          <span>Creează tabără</span>
+        </button>
+      </div>
+    }
+
+    <!-- Camps Grid -->
+    @if (!isLoading() && !hasError() && camps().length > 0) {
+      <div class="camps-grid">
+        @for (camp of camps(); track trackByCamp($index, camp)) {
+          <article class="camp-card" [class.camp-card--inactive]="statusLabel(camp) !== 'Activ'">
+            <div class="camp-card__header">
+              <div class="camp-icon">
+                <mat-icon>holiday_village</mat-icon>
+              </div>
+              <div class="camp-card__actions">
+                <button class="action-btn action-btn--edit" (click)="editCamp(camp)" matTooltip="Editează">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button class="action-btn action-btn--delete" (click)="archiveCamp(camp)" matTooltip="Șterge">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <div class="camp-card__body">
+              <h3 class="camp-card__name">{{ camp.title }}</h3>
+              <span class="badge" [class.badge--success]="statusLabel(camp) === 'Activ'" [class.badge--neutral]="statusLabel(camp) !== 'Activ'">
+                {{ statusLabel(camp) }}
+              </span>
+              
+              <div class="camp-card__meta">
+                <div class="meta-item">
+                  <mat-icon>date_range</mat-icon>
+                  <span>{{ camp.periodStart | date: 'd MMM' }} - {{ camp.periodEnd | date: 'd MMM yyyy' }}</span>
+                </div>
+                @if (camp.locationText) {
+                  <div class="meta-item">
+                    <mat-icon>location_on</mat-icon>
+                    <span>{{ camp.locationText }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="camp-card__footer">
+              <div class="camp-card__stats">
+                <div class="stat-mini">
+                  <mat-icon>group</mat-icon>
+                  <span>{{ enrollmentSummary(camp) }}</span>
+                </div>
+                <div class="stat-mini stat-mini--price">
+                  <mat-icon>payments</mat-icon>
+                  <span>{{ (camp.price / 100) | currency: 'RON':'symbol-narrow':'1.0-0' }}</span>
+                </div>
+                @if (camp.allowCash) {
+                  <div class="stat-mini stat-mini--cash">
+                    <mat-icon>local_atm</mat-icon>
+                    <span>Cash</span>
+                  </div>
+                }
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+</section>

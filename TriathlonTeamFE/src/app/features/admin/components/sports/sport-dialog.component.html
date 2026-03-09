@@ -1,0 +1,52 @@
+<div mat-dialog-title class="dialog-title">
+  <span class="badge badge--warning">{{ isEditMode() ? 'Editare' : 'Creare' }}</span>
+  <h2 class="dialog-title__heading">
+    {{ isEditMode() ? 'Editează' : 'Adaugă' }} <span>Sport</span>
+  </h2>
+  <p class="dialog-title__subtitle">
+    Numele este vizibil în platformă. Codul se generează automat din nume.
+  </p>
+</div>
+
+<form [formGroup]="form" mat-dialog-content class="form">
+  <mat-form-field appearance="fill">
+    <mat-label>Nume sport</mat-label>
+    <input matInput formControlName="name" required autocomplete="off" />
+    <mat-error *ngIf="form.controls['name'].hasError('required')">Numele este obligatoriu</mat-error>
+    <mat-error *ngIf="form.controls['name'].hasError('minlength')">
+      Numele trebuie să aibă minim 2 caractere
+    </mat-error>
+    <mat-hint>Ex: Înot, Cycling, Alergare</mat-hint>
+  </mat-form-field>
+
+  <div class="code-preview" aria-label="Cod generat">
+    <div class="code-preview__label">Cod generat</div>
+    <code class="code-preview__value">{{ codePreview() || '—' }}</code>
+    <p class="code-preview__hint">Se actualizează automat și este folosit intern pentru referințe.</p>
+  </div>
+
+  <div class="error" *ngIf="form.errors?.['submit']">A apărut o eroare. Te rugăm să încerci din nou.</div>
+</form>
+
+<mat-dialog-actions align="end" class="actions">
+  <button
+    mat-stroked-button
+    type="button"
+    class="btn-secondary"
+    (click)="cancel()"
+    [disabled]="isSubmitting()"
+  >
+    Anulează
+  </button>
+  <button
+    mat-flat-button
+    type="button"
+    class="btn-primary"
+    (click)="submit()"
+    [disabled]="isSubmitting() || form.invalid"
+  >
+    <mat-progress-spinner *ngIf="isSubmitting()" mode="indeterminate" diameter="18"></mat-progress-spinner>
+    <span>{{ isEditMode() ? 'Salvează' : 'Creează' }}</span>
+  </button>
+</mat-dialog-actions>
+

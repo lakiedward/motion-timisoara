@@ -1,0 +1,228 @@
+<!-- Page Wrapper with Dot Pattern Background -->
+<div class="map-page">
+
+<!-- Hero Section - TIP A: Pagină Principală (Centrat) -->
+<section class="page-hero">
+  <div class="page-hero__container">
+    <span class="page-hero__eyebrow">📍 LOCAȚII</span>
+    <h1 class="page-hero__title">Explorează <span>Harta</span></h1>
+    <p class="page-hero__subtitle">
+      Descoperă locațiile unde se desfășoară antrenamentele noastre în România.
+    </p>
+  </div>
+  
+  <!-- Ambient Orbs -->
+  <div class="hero-orb hero-orb--1"></div>
+  <div class="hero-orb hero-orb--2"></div>
+</section>
+
+<!-- Main Content -->
+<section class="map-section">
+  <div class="map-section__container">
+    
+    <!-- Filter Chips -->
+    <div class="filter-bar" *ngIf="sports().length > 0 || availableCities().length > 0">
+      <div class="filter-group" *ngIf="sports().length > 0">
+        <div class="filter-bar__label">
+          <span class="filter-icon">🏊</span>
+          <span>Sport:</span>
+        </div>
+        <div class="filter-select">
+          <select [value]="selectedSport() || ''" (change)="selectSport(($any($event.target)).value || null)">
+            <option value="">✨ Toate</option>
+            <option *ngFor="let sport of sports()" [value]="sport.id">{{ sport.name }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-group" *ngIf="availableCities().length > 0">
+        <div class="filter-bar__label">
+          <span class="filter-icon">🏙️</span>
+          <span>Oraș:</span>
+        </div>
+        <div class="filter-select">
+          <select [value]="selectedCity()" (change)="selectCity(($any($event.target)).value)">
+            <option value="">🌍 Toate orașele</option>
+            <option *ngFor="let city of availableCities()" [value]="city">{{ city }}</option>
+          </select>
+        </div>
+      </div>
+
+      <button
+        class="chip chip--reset"
+        type="button"
+        *ngIf="selectedSport() || selectedCity()"
+        (click)="resetFilters()"
+      >
+        Resetează filtrele
+      </button>
+    </div>
+
+    <!-- Map + Locations Layout -->
+    <div class="map-layout">
+      
+      <!-- Locations Sidebar -->
+      <aside class="locations-sidebar">
+        <div class="sidebar-header">
+          <h2 class="sidebar-title">
+            <span class="sidebar-title__icon">📍</span>
+            Locații
+          </h2>
+          <span class="location-count">{{ filteredLocations().length }} locații</span>
+        </div>
+        
+        <!-- Loading State -->
+        <div *ngIf="isLoading()" class="sidebar-loading">
+          <div class="skeleton-card" *ngFor="let i of [1,2,3]"></div>
+        </div>
+        
+        <!-- Location Cards -->
+        <div class="locations-list" *ngIf="!isLoading()">
+          <div 
+            *ngFor="let location of filteredLocations(); trackBy: trackByLocationId" 
+            class="location-card"
+            [class.active]="selectedLocation() === location.id"
+            (click)="selectLocation(location)"
+            (mouseenter)="highlightLocation(location)"
+            (mouseleave)="unhighlightLocation()">
+            
+            <div class="location-card__header">
+              <div class="location-card__icon">
+                <span>📍</span>
+              </div>
+              <div class="location-card__info">
+                <h3 class="location-card__name">{{ location.name }}</h3>
+                <p class="location-card__address">{{ location.city }} {{ location.address }}</p>
+              </div>
+            </div>
+            
+            <div class="location-card__courses" *ngIf="getLocationCourses(location.id).length > 0">
+              <div class="courses-label">
+                <span class="courses-icon">🎯</span>
+                <span>{{ getLocationCourses(location.id).length }} cursuri disponibile</span>
+              </div>
+              <div class="courses-tags">
+                <span 
+                  *ngFor="let course of getLocationCourses(location.id).slice(0, 3)" 
+                  class="course-tag">
+                  {{ course.sport.name }}
+                </span>
+                <span 
+                  *ngIf="getLocationCourses(location.id).length > 3" 
+                  class="course-tag course-tag--more">
+                  +{{ getLocationCourses(location.id).length - 3 }}
+                </span>
+              </div>
+            </div>
+
+            <div class="location-card__courses" *ngIf="getLocationCourses(location.id).length === 0 && getLocationActivities(location.id).length > 0">
+              <div class="courses-label">
+                <span class="courses-icon">🎯</span>
+                <span>{{ getLocationActivities(location.id).length }} activități disponibile</span>
+              </div>
+              <div class="courses-tags">
+                <span 
+                  *ngFor="let activity of getLocationActivities(location.id).slice(0, 3)" 
+                  class="course-tag">
+                  {{ activity.sport.name }}
+                </span>
+                <span 
+                  *ngIf="getLocationActivities(location.id).length > 3" 
+                  class="course-tag course-tag--more">
+                  +{{ getLocationActivities(location.id).length - 3 }}
+                </span>
+              </div>
+            </div>
+            
+            <a *ngIf="getLocationCourses(location.id).length > 0" [routerLink]="['/cursuri']" [queryParams]="{locationId: location.id}" class="location-card__link">
+              Vezi cursurile
+              <span class="link-arrow">→</span>
+            </a>
+
+            <a *ngIf="getLocationCourses(location.id).length === 0 && getLocationActivities(location.id).length > 0" [routerLink]="['/activitati']" class="location-card__link">
+              Vezi activitățile
+              <span class="link-arrow">→</span>
+            </a>
+          </div>
+          
+          <!-- Empty State -->
+          <div *ngIf="filteredLocations().length === 0" class="empty-state">
+            <div class="empty-state__icon">🗺️</div>
+            <h3 class="empty-state__title">Nicio locație găsită</h3>
+            <p class="empty-state__text">Nu există locații pentru filtrul selectat.</p>
+            <button class="btn-elite btn-elite--outline" (click)="resetFilters()">
+              Resetează filtrele
+            </button>
+          </div>
+        </div>
+      </aside>
+      
+      <!-- Map Container -->
+      <div class="map-wrapper">
+        <div class="map-container" #mapContainer></div>
+        
+        <!-- Loading Overlay -->
+        <div *ngIf="isLoading()" class="map-overlay map-overlay--loading">
+          <div class="loading-spinner">
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring"></div>
+          </div>
+          <p class="loading-text">Se încarcă harta...</p>
+        </div>
+        
+        <!-- Error Overlay -->
+        <div *ngIf="error()" class="map-overlay map-overlay--error">
+          <div class="error-icon">⚠️</div>
+          <p class="error-text">{{ error() }}</p>
+          <button class="btn-elite btn-elite--primary" (click)="retry()">
+            Încearcă din nou
+          </button>
+        </div>
+        
+        <!-- Map Controls -->
+        <div class="map-controls" *ngIf="!isLoading() && !error()">
+          <button class="map-control-btn" (click)="zoomIn()" title="Zoom in">
+            <span>+</span>
+          </button>
+          <button class="map-control-btn" (click)="zoomOut()" title="Zoom out">
+            <span>−</span>
+          </button>
+          <button class="map-control-btn" (click)="resetView()" title="Resetează vederea">
+            <span>⟲</span>
+          </button>
+        </div>
+        
+        <!-- Map Legend -->
+        <div class="map-legend" *ngIf="!isLoading() && !error()">
+          <div class="legend-item">
+            <span class="legend-marker"></span>
+            <span class="legend-text">Locație cu cursuri/activități</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Stats Section -->
+    <div class="stats-section" *ngIf="!isLoading()">
+      <div class="stat-card">
+        <div class="stat-card__icon">📍</div>
+        <div class="stat-card__value">{{ locations().length }}</div>
+        <div class="stat-card__label">Locații</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon">🎯</div>
+        <div class="stat-card__value">{{ courses().length + activities().length }}</div>
+        <div class="stat-card__label">Cursuri/Activități Active</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon">🏊</div>
+        <div class="stat-card__value">{{ sports().length }}</div>
+        <div class="stat-card__label">Sporturi</div>
+      </div>
+    </div>
+    
+  </div>
+</section>
+
+</div><!-- /.map-page -->

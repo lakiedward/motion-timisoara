@@ -1,0 +1,99 @@
+<div class="scroll-progress" [style.width.%]="scrollProgress"></div>
+
+<!-- Hero Section - UIGuidelines Compliant -->
+<section class="page-hero">
+  <div class="page-hero__container">
+    <button mat-icon-button routerLink="/account" class="back-button" aria-label="Înapoi la cont">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <span class="page-hero__eyebrow">👶 Contul meu</span>
+    <h1 class="page-hero__title">Profil <span>Copii</span></h1>
+    <p class="page-hero__subtitle">
+      Gestionează informațiile și înscriierile copiilor tăi
+    </p>
+  </div>
+</section>
+
+<!-- Main Content Section -->
+<section class="children-section">
+  <div class="elite-container">
+    
+    <!-- Action Header -->
+    <div class="section-header-row scroll-reveal">
+      <div class="section-header section-header--left">
+        <span class="section-header__eyebrow">👨‍👩‍👧‍👦 Familie</span>
+        <h2 class="section-header__title">Copiii <span>Înregistrați</span></h2>
+        <p class="section-header__subtitle">Gestionează profilurile și înscriierile</p>
+      </div>
+      <button class="btn-elite btn-elite--primary" (click)="openAdd()">
+        <mat-icon>add</mat-icon>
+        Adaugă copil
+      </button>
+    </div>
+
+    <!-- Children Cards -->
+    <div class="children-grid" *ngIf="children().length; else empty">
+      <article class="child-card scroll-reveal" 
+               *ngFor="let child of children(); let i = index"
+               [class.scroll-reveal--delay-100]="i % 3 === 1"
+               [class.scroll-reveal--delay-200]="i % 3 === 2">
+        <div class="child-card-header">
+          <div class="child-avatar">
+            <mat-icon>person</mat-icon>
+          </div>
+          <div class="child-main-info">
+            <h2 class="child-name">{{ child.name }}</h2>
+            <p class="child-meta">
+              <mat-icon>cake</mat-icon>
+              {{ child.birthDate | date: 'd MMM y' }} · {{ calculateAge(child.birthDate) }} ani
+            </p>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <!-- Detalii importante (doar dacă există) -->
+        <div class="child-details" *ngIf="child.emergencyPhone || child.allergies">
+          <div class="detail-item" *ngIf="child.emergencyPhone">
+            <mat-icon>phone</mat-icon>
+            <span>{{ child.emergencyPhone }}</span>
+          </div>
+          <div class="detail-item" *ngIf="child.allergies">
+            <mat-icon>medical_information</mat-icon>
+            <span>{{ child.allergies }}</span>
+          </div>
+        </div>
+
+        <mat-divider *ngIf="child.emergencyPhone || child.allergies"></mat-divider>
+
+        <div class="child-card-actions">
+          <button class="btn-elite btn-elite--outline" (click)="openEdit(child)">
+            <mat-icon>edit</mat-icon>
+            Editează
+          </button>
+          <button class="btn-elite btn-elite--ghost" routerLink="/account/attendance">
+            <mat-icon>event_available</mat-icon>
+            Prezențe
+          </button>
+          <button mat-icon-button color="warn" (click)="deleteChild(child)" matTooltip="Șterge">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      </article>
+    </div>
+
+    <!-- Empty State -->
+    <ng-template #empty>
+      <div class="empty-state scroll-reveal">
+        <mat-icon class="empty-state__icon">family_restroom</mat-icon>
+        <h3 class="empty-state__title">Fără copii înregistrați</h3>
+        <p class="empty-state__text">Adaugă un profil de copil pentru a începe.</p>
+        <button class="btn-elite btn-elite--primary" (click)="openAdd()">
+          <mat-icon>add</mat-icon>
+          Adaugă primul copil
+        </button>
+      </div>
+    </ng-template>
+
+  </div>
+</section>

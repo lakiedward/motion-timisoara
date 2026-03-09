@@ -1,0 +1,67 @@
+<div class="course-gallery" *ngIf="hasImages()">
+  <div class="gallery-header" *ngIf="imageCount() > 1">
+    <div class="image-counter">
+      {{ currentImageNumber() }} / {{ imageCount() }}
+    </div>
+  </div>
+
+  <div class="gallery-main">
+    <div class="main-image-container">
+      <img 
+        *ngIf="currentImage()"
+        [src]="currentImage()" 
+        [alt]="getImageAlt(currentIndex())"
+        class="main-image"
+        (error)="onImageError($event)"
+      />
+      <div *ngIf="!currentImage()" class="no-image-placeholder">
+        <mat-icon>image_not_supported</mat-icon>
+        <span>Imagine indisponibilă</span>
+      </div>
+      
+      <!-- Navigation arrows -->
+      <button 
+        *ngIf="imageCount() > 1"
+        class="nav-button nav-previous" 
+        [disabled]="!canGoPrevious()"
+        (click)="goToPrevious()"
+        aria-label="Imaginea anterioară"
+      >
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      
+      <button 
+        *ngIf="imageCount() > 1"
+        class="nav-button nav-next" 
+        [disabled]="!canGoNext()"
+        (click)="goToNext()"
+        aria-label="Imaginea următoare"
+      >
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+
+    <!-- Thumbnail strip -->
+    <div class="thumbnail-strip" *ngIf="imageCount() > 1">
+      <div class="thumbnails-container">
+        <div 
+          *ngFor="let image of getAllImages(); let i = index; trackBy: trackByIndex"
+          [class.active]="i === currentIndex()"
+          class="thumbnail"
+          (click)="goToImage(i)"
+        >
+          <img 
+            *ngIf="image"
+            [src]="image" 
+            [alt]="getImageAlt(i)"
+            class="thumbnail-image"
+            (error)="onImageError($event)"
+          />
+          <div *ngIf="!image" class="thumbnail-placeholder">
+            <mat-icon>image</mat-icon>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

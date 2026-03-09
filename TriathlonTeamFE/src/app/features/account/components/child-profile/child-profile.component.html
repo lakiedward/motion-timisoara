@@ -1,0 +1,144 @@
+<!-- Hero Section - UIGuidelines Hero Tip B (Sub-page with Back Button) -->
+<section class="page-hero" *ngIf="!isLoading(); else loading">
+  <div class="page-hero__container">
+    <button mat-icon-button type="button" (click)="cancel()" class="back-button" aria-label="Înapoi la copii">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <span class="page-hero__eyebrow">👶 Contul meu</span>
+    <h1 class="page-hero__title">{{ isNew() ? 'Adaugă' : 'Editează' }} <span>Copil</span></h1>
+    <p class="page-hero__subtitle">Completează informațiile pentru profilul copilului</p>
+  </div>
+</section>
+
+<!-- Main Content -->
+<section class="child-profile-content" *ngIf="!isLoading()">
+  <div class="profile-container">
+    <!-- Profile Hero Card (only for edit mode) -->
+    <div class="profile-hero-card" *ngIf="!isNew()">
+      <div class="avatar">
+        <img *ngIf="photoUrl(); else initials" [src]="photoUrl()!" alt="Foto copil" (error)="onPhotoError()" />
+        <ng-template #initials>
+          <mat-icon>person</mat-icon>
+        </ng-template>
+        <label class="upload-btn">
+          <input type="file" accept="image/*" (change)="onPhotoSelected($event)" />
+          <mat-icon>photo_camera</mat-icon>
+        </label>
+      </div>
+      <div class="profile-meta">
+        <div class="meta-row">
+          <span class="meta-label">Vârstă</span>
+          <span class="meta-value">{{ age() ?? '-' }} ani</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Nivel</span>
+          <span class="meta-value">{{ form.controls.level.value || 'Nesetat' }}</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">GDPR</span>
+          <span class="meta-value" [class.ok]="form.controls.gdprConsent.value">{{ form.controls.gdprConsent.value ? 'Semnat' : 'Lipsă' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="form-card">
+      <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+        <div class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Nume copil</mat-label>
+            <input matInput formControlName="name" autocomplete="off" />
+            <mat-error *ngIf="form.controls.name.hasError('required')">Câmp obligatoriu</mat-error>
+            <mat-error *ngIf="form.controls.name.hasError('minlength')">Introdu minim 2 caractere</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Nivel</mat-label>
+            <mat-select formControlName="level">
+              <mat-option [value]="''">Nesetat</mat-option>
+              <mat-option value="incepator">Începător</mat-option>
+              <mat-option value="intermediar">Intermediar</mat-option>
+              <mat-option value="avansat">Avansat</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Data nașterii</mat-label>
+            <input matInput type="date" formControlName="birthDate" />
+            <mat-error *ngIf="form.controls.birthDate.hasError('required')">Câmp obligatoriu</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Alergii / condiții medicale</mat-label>
+            <textarea matInput formControlName="allergies" rows="3"></textarea>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Contact de urgență</mat-label>
+            <input matInput formControlName="emergencyContactName" placeholder="Nume persoană" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Telefon de urgență</mat-label>
+            <input matInput formControlName="emergencyPhone" placeholder="ex: +40700111222" />
+            <mat-error *ngIf="form.controls.emergencyPhone.hasError('required')">Câmp obligatoriu</mat-error>
+            <mat-error *ngIf="form.controls.emergencyPhone.hasError('pattern')">Număr invalid</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Contact secundar</mat-label>
+            <input matInput formControlName="secondaryContactName" placeholder="Nume persoană" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Telefon secundar</mat-label>
+            <input matInput formControlName="secondaryPhone" placeholder="ex: +40700..." />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Mărime tricou</mat-label>
+            <mat-select formControlName="tshirtSize">
+              <mat-option [value]="''">Nesetat</mat-option>
+              <mat-option value="XXS">XXS</mat-option>
+              <mat-option value="XS">XS</mat-option>
+              <mat-option value="S">S</mat-option>
+              <mat-option value="M">M</mat-option>
+              <mat-option value="L">L</mat-option>
+              <mat-option value="XL">XL</mat-option>
+              <mat-option value="XXL">XXL</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <mat-checkbox formControlName="gdprConsent" [disabled]="true">
+          Acord GDPR semnat
+        </mat-checkbox>
+
+        <div class="form-actions">
+          <button mat-stroked-button type="button" (click)="cancel()" class="btn-outline">Anulează</button>
+          <button mat-flat-button color="primary" type="submit" class="btn-elite btn-elite--primary" [disabled]="submitState() === 'loading'">
+            <mat-icon *ngIf="submitState() !== 'loading'" aria-hidden="true">save</mat-icon>
+            <mat-progress-spinner
+              *ngIf="submitState() === 'loading'"
+              diameter="20"
+              mode="indeterminate"
+            ></mat-progress-spinner>
+            <span>{{ submitState() === 'loading' ? 'Se salvează...' : 'Salvează' }}</span>
+          </button>
+        </div>
+
+        <p class="form-error" *ngIf="submitState() === 'error'">
+          Salvarea a eșuat. Încearcă din nou.
+        </p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<ng-template #loading>
+  <div class="loading-state">
+    <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
+    <p>Se incarca profilul copilului...</p>
+    <p class="error" *ngIf="loadError()">Nu am putut incarca informatiile. Verifica conexiunea si reincearca.</p>
+  </div>
+</ng-template>

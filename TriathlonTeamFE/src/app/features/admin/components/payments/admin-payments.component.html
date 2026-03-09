@@ -1,0 +1,197 @@
+<section class="payments-page">
+  <!-- Hero Section - Admin Pattern -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--warning">Administrare</span>
+      <h1 class="hero-title">Gestionare <span>Plăți</span></h1>
+      <p class="hero-subtitle">Confirmă plățile cash și monitorizează tranzacțiile</p>
+    </div>
+    <button class="hero-btn" (click)="exportCsv()">
+      <mat-icon>download</mat-icon>
+      <span>Export CSV</span>
+    </button>
+  </header>
+
+  <!-- Stats Cards -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>payments</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ payments().length }}</span>
+        <span class="stat-label">Total plăți</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--amber">
+        <mat-icon>hourglass_empty</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getPendingCount() }}</span>
+        <span class="stat-label">În așteptare</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--green">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getSucceededCount() }}</span>
+        <span class="stat-label">Finalizate</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <section class="section-card">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>filter_list</mat-icon>
+          Filtre
+        </h2>
+      </div>
+    </div>
+    
+    <div class="filters-grid" [formGroup]="filterForm">
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Tip</mat-label>
+        <mat-select formControlName="kind">
+          <mat-option value="">Toate</mat-option>
+          <mat-option value="COURSE">Cursuri</mat-option>
+          <mat-option value="CAMP">Tabere</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Status</mat-label>
+        <mat-select formControlName="status">
+          <mat-option value="">Toate</mat-option>
+          <mat-option value="PENDING">În așteptare</mat-option>
+          <mat-option value="SUCCEEDED">Finalizate</mat-option>
+          <mat-option value="FAILED">Eșuate</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Metodă</mat-label>
+        <mat-select formControlName="method">
+          <mat-option value="">Toate</mat-option>
+          <mat-option value="CARD">Card</mat-option>
+          <mat-option value="CASH">Cash</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Antrenor</mat-label>
+        <mat-select formControlName="coachId">
+          <mat-option value="">Toți</mat-option>
+          <mat-option *ngFor="let coach of coaches()" [value]="coach.id">{{ coach.name }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>De la</mat-label>
+        <input matInput type="date" formControlName="from" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Până la</mat-label>
+        <input matInput type="date" formControlName="to" />
+      </mat-form-field>
+    </div>
+  </section>
+
+  <!-- Payments List Section -->
+  <section class="section-card">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>receipt_long</mat-icon>
+          Lista Plăților
+        </h2>
+        <span class="section-count">{{ payments().length }}</span>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-grid" *ngIf="isLoading()">
+      <div class="skeleton-card" *ngFor="let _ of [1, 2, 3, 4, 5, 6]"></div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!isLoading() && payments().length === 0">
+      <mat-icon class="empty-state__icon">payments</mat-icon>
+      <h3 class="empty-state__title">Nu există plăți</h3>
+      <p class="empty-state__text">Nu există plăți care să corespundă filtrelor selectate.</p>
+      <button class="hero-btn" (click)="filterForm.reset()">
+        <mat-icon>refresh</mat-icon>
+        <span>Resetează filtrele</span>
+      </button>
+    </div>
+
+    <!-- Payments Grid -->
+    <div class="payments-grid" *ngIf="!isLoading() && payments().length > 0">
+      <article class="payment-card" *ngFor="let payment of payments()">
+        <!-- Card Header -->
+        <div class="payment-card__header">
+          <div class="child-avatar">
+            <mat-icon>person</mat-icon>
+          </div>
+          <div class="card-info">
+            <h3 class="child-name">{{ payment.childName }}</h3>
+            <p class="parent-name">{{ payment.parentName }}</p>
+          </div>
+          <span 
+            class="badge" 
+            [class.badge--warning]="payment.status === 'PENDING'"
+            [class.badge--success]="payment.status === 'SUCCEEDED'"
+            [class.badge--error]="payment.status === 'FAILED'">
+            {{ payment.status === 'PENDING' ? 'În așteptare' : 
+               payment.status === 'SUCCEEDED' ? 'Finalizată' : 'Eșuată' }}
+          </span>
+        </div>
+
+        <!-- Card Body -->
+        <div class="payment-card__body">
+          <div class="info-row">
+            <div class="meta-item">
+              <mat-icon>school</mat-icon>
+              <span>{{ payment.productName || 'N/A' }}</span>
+            </div>
+            <div class="meta-item" *ngIf="payment.coachName">
+              <mat-icon>person</mat-icon>
+              <span>{{ payment.coachName }}</span>
+            </div>
+          </div>
+
+          <div class="payment-details">
+            <div class="detail-chip">
+              <mat-icon>payments</mat-icon>
+              <span class="method-badge" [class.method-badge--cash]="payment.paymentMethod === 'CASH'">
+                {{ payment.paymentMethod === 'CASH' ? 'Cash' : 'Card' }}
+              </span>
+            </div>
+            <div class="detail-chip detail-chip--amount">
+              <mat-icon>attach_money</mat-icon>
+              <span>{{ (payment.amount / 100) | currency: payment.currency:'symbol-narrow':'1.0-0' }}</span>
+            </div>
+            <div class="detail-chip">
+              <mat-icon>schedule</mat-icon>
+              <span>{{ payment.updatedAt | date: 'd MMM y' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card Footer/Actions -->
+        <div class="payment-card__footer" *ngIf="payment.allowMarkCash">
+          <button class="confirm-btn" (click)="markCash(payment)">
+            <mat-icon>check_circle</mat-icon>
+            <span>Confirmă primire cash</span>
+          </button>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>

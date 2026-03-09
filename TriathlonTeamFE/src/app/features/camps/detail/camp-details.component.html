@@ -1,0 +1,117 @@
+<section class="camp-details">
+  <div class="state state--loading" *ngIf="isLoading()">
+    <mat-icon>autorenew</mat-icon>
+    <p>Se incarca detaliile taberei...</p>
+  </div>
+
+  <div class="state state--error" *ngIf="!isLoading() && hasError()">
+    <mat-icon>error_outline</mat-icon>
+    <h2>Nu am putut incarca detaliile taberei</h2>
+    <p>Reincarca pagina sau contacteaza echipa pentru asistenta.</p>
+  </div>
+
+  <ng-container *ngIf="!isLoading() && !hasError() && camp() as camp">
+    <header class="camp-details__header">
+      <div class="camp-details__hero" *ngIf="camp.heroImageUrl; else heroPlaceholder">
+        <img [src]="camp.heroImageUrl" [alt]="camp.title" />
+      </div>
+      <ng-template #heroPlaceholder>
+        <div class="camp-details__hero camp-details__hero--placeholder">
+          <mat-icon aria-hidden="true">landscape</mat-icon>
+        </div>
+      </ng-template>
+
+      <div class="camp-details__summary">
+        <div class="camp-details__labels">
+          <span class="badge badge--soldout" *ngIf="camp.soldOut">Sold out</span>
+          <span class="badge badge--cash" *ngIf="camp.allowCash">Plata cash disponibila</span>
+        </div>
+
+        <h1>{{ camp.title }}</h1>
+
+        <p class="camp-details__period">
+          <mat-icon aria-hidden="true">calendar_today</mat-icon>
+          <span>{{ camp.startDate | date: 'd MMMM' }} - {{ camp.endDate | date: 'd MMMM y' }}</span>
+        </p>
+
+        <p class="camp-details__location">
+          <mat-icon aria-hidden="true">location_on</mat-icon>
+          <span>{{ camp.location }}</span>
+        </p>
+
+        <p class="camp-details__price">
+          <mat-icon aria-hidden="true">payments</mat-icon>
+          <span>{{ (camp.price / 100) | currency: camp.currency:'symbol-narrow':'1.0-0' }}</span>
+        </p>
+
+        <p class="camp-details__summary-text" *ngIf="camp.summary">
+          {{ camp.summary }}
+        </p>
+
+        <div class="camp-details__actions">
+          <button
+            mat-raised-button
+            color="primary"
+            class="enroll-button"
+            (click)="onEnroll()"
+            [disabled]="isSoldOut()"
+          >
+            <mat-icon aria-hidden="true">event_available</mat-icon>
+            <span>Inscrie-te la tabara</span>
+          </button>
+
+          <p class="soldout-message" *ngIf="isSoldOut()">Tabara este momentan epuizata.</p>
+
+          <div class="payment-options" *ngIf="showPaymentOptions()">
+            <p>Alege metoda de plata:</p>
+            <div class="payment-buttons">
+              <button mat-stroked-button color="primary" (click)="selectPayment('card')">
+                Plata cu cardul
+              </button>
+              <button
+                mat-stroked-button
+                color="accent"
+                *ngIf="camp.allowCash"
+                (click)="selectPayment('cash')"
+              >
+                Plata cash
+              </button>
+              <button mat-button type="button" (click)="cancelPaymentSelection()">
+                Renunta
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="camp-details__content">
+      <h2>Detalii despre tabara</h2>
+      <ng-container *ngIf="descriptionBlocks().length; else noDescription">
+        <div class="rich-text">
+          <ng-container *ngFor="let block of descriptionBlocks()">
+            <h3 *ngIf="block.type === 'heading'">{{ block.text }}</h3>
+            <p *ngIf="block.type === 'paragraph'">{{ block.text }}</p>
+            <ul *ngIf="block.type === 'list'">
+              <li *ngFor="let item of block.items">{{ item }}</li>
+            </ul>
+          </ng-container>
+        </div>
+      </ng-container>
+      <ng-template #noDescription>
+        <p>Detaliile complete ale taberei vor fi publicate in curand.</p>
+      </ng-template>
+    </section>
+
+    <section class="camp-details__gallery" *ngIf="hasGallery() && camp.gallery?.length">
+      <h2>Galerie foto</h2>
+      <div class="gallery-strip">
+        <img
+          *ngFor="let image of camp.gallery; trackBy: trackByImage"
+          [src]="image"
+          [alt]="camp.title"
+        />
+      </div>
+    </section>
+  </ng-container>
+</section>

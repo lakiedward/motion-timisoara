@@ -1,0 +1,698 @@
+:host {
+  display: block;
+}
+
+.course-form-page {
+  display: grid;
+  gap: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.page-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 2rem 2.5rem;
+  background: linear-gradient(135deg, var(--sport-bg-blue-50) 0%, var(--sport-bg-light) 50%, #eef2ff 100%);
+  border-radius: var(--radius-card);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--sport-primary-alpha-30);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, var(--sport-primary-alpha-10) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800;
+  color: var(--sport-text-dark);
+  margin: 0.5rem 0 0.25rem;
+  letter-spacing: -0.02em;
+
+  span {
+    color: var(--sport-primary);
+  }
+}
+
+.hero-subtitle {
+  font-size: 0.95rem;
+  color: var(--sport-text-muted);
+  margin: 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  &--club {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: var(--sport-primary);
+    border: 1px solid var(--sport-primary);
+  }
+
+  &--success {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #22c55e;
+  }
+
+  &--neutral {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+  }
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: var(--sport-bg-white);
+  color: var(--sport-primary);
+  border: 2px solid var(--sport-primary);
+  border-radius: var(--radius-btn);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  position: relative;
+  z-index: 2;
+
+  mat-icon {
+    font-size: 1.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  &:hover:not(:disabled) {
+    background: var(--gradient-primary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+  }
+
+  &--small {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8rem;
+  }
+}
+
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius-card);
+
+  &__icon {
+    flex-shrink: 0;
+    font-size: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  &__content {
+    flex: 1;
+  }
+
+  &__title {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    color: var(--sport-text-dark);
+  }
+
+  &__text {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    margin: 0;
+    opacity: 0.9;
+  }
+
+  &--error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+
+    .alert__icon {
+      color: #ef4444;
+    }
+  }
+}
+
+.page-layout {
+  display: block;
+}
+
+.main-content {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.section-card {
+  background: var(--sport-bg-white);
+  border-radius: var(--radius-card);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--sport-primary-alpha-30);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--sport-text-dark);
+
+  mat-icon {
+    color: var(--sport-primary);
+  }
+}
+
+.picker-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.picker-card {
+  padding: 1rem;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--sport-primary-alpha-30);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+
+    mat-icon {
+      color: var(--sport-primary);
+    }
+  }
+}
+
+.coach-details {
+  margin-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.coach-info {
+  display: grid;
+  gap: 0.25rem;
+  strong {
+    color: var(--sport-text-dark);
+  }
+  span {
+    font-size: 0.875rem;
+    color: var(--sport-text-muted);
+  }
+}
+
+.empty-hint {
+  margin-top: 0.75rem;
+  color: var(--sport-text-muted);
+  font-size: 0.9rem;
+}
+
+.picker-hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: var(--sport-text-muted);
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0.25rem 0 0;
+  color: var(--sport-primary);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.media-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.media-card {
+  background: #f8fafc;
+  border: 1px solid var(--sport-primary-alpha-30);
+  border-radius: 14px;
+  padding: 1.25rem;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  &--wide {
+    grid-column: 1 / -1;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--sport-text-dark);
+
+    mat-icon {
+      color: var(--sport-primary);
+      font-size: 1.125rem;
+      width: 1.125rem;
+      height: 1.125rem;
+    }
+  }
+}
+
+.hero-photo-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 100px;
+  padding: 1rem;
+  color: var(--sport-primary);
+  border: 2px dashed var(--sport-primary-alpha-30);
+  background: var(--sport-bg-white);
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #eef2ff;
+    border-color: var(--sport-primary);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  mat-icon {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+  }
+
+  span {
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+}
+
+.photo-preview {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--sport-bg-white);
+  border: 2px solid var(--sport-primary-alpha-30);
+
+  &__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &__remove {
+    /* Keep icon perfectly centered when using a custom-size mat-icon-button */
+    --mat-icon-button-state-layer-size: 28px;
+    --mat-icon-button-icon-size: 16px;
+    /* Keep the larger default touch target for accessibility */
+    --mat-icon-button-touch-target-size: 48px;
+
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: rgba(220, 38, 38, 0.9) !important;
+    color: #ffffff !important;
+    border-radius: 6px;
+    z-index: 10;
+
+    mat-icon {
+      width: var(--mat-icon-button-icon-size);
+      height: var(--mat-icon-button-icon-size);
+      font-size: var(--mat-icon-button-icon-size);
+    }
+  }
+}
+
+.gallery-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.gallery-text {
+  flex: 1;
+  min-width: 240px;
+}
+
+.gallery-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--sport-text-muted);
+}
+
+.gallery-progress {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--sport-primary);
+}
+
+.gallery-upload-button {
+  white-space: nowrap;
+}
+
+.gallery-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+
+  mat-icon {
+    flex-shrink: 0;
+  }
+
+  strong {
+    display: block;
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0.25rem 0 0;
+    font-size: 0.85rem;
+    opacity: 0.9;
+  }
+
+  &--error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+
+    mat-icon {
+      color: #ef4444;
+    }
+  }
+}
+
+.gallery-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  color: var(--sport-text-muted);
+  font-size: 0.9rem;
+
+  mat-icon {
+    color: var(--sport-primary);
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.gallery-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.gallery-item {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--sport-bg-white);
+  border: 2px solid var(--sport-primary-alpha-30);
+  /* Step 4: Add explicit cursor for drag-anywhere */
+  cursor: grab;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: var(--sport-primary-alpha-60);
+    box-shadow: var(--shadow-card);
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.gallery-item__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  /* Prevent user selecting the image while dragging */
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.gallery-item__drag {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background: rgba(0, 0, 0, 0.55);
+  color: #ffffff;
+  border-radius: 6px;
+  padding: 0.25rem;
+  backdrop-filter: blur(8px);
+  /* Visual affordance only now */
+  pointer-events: none;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.gallery-item__order {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0.5rem;
+  background: var(--sport-primary-alpha-90);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.gallery-item__delete {
+  /* Keep icon perfectly centered when using a custom-size mat-icon-button */
+  --mat-icon-button-state-layer-size: 32px;
+  --mat-icon-button-icon-size: 18px;
+  /* Keep the larger default touch target for accessibility */
+  --mat-icon-button-touch-target-size: 48px;
+
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(0, 0, 0, 0.55) !important;
+  color: #ffffff !important;
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
+
+  mat-icon {
+    width: var(--mat-icon-button-icon-size);
+    height: var(--mat-icon-button-icon-size);
+    font-size: var(--mat-icon-button-icon-size);
+  }
+
+  &:hover:not(:disabled) {
+    background: rgba(220, 38, 38, 0.9) !important;
+  }
+}
+
+.gallery-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  color: var(--sport-text-muted);
+  background: var(--sport-bg-white);
+  border-radius: 12px;
+  border: 1px dashed var(--color-border-subtle);
+
+  mat-icon {
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+    color: #cbd5e1;
+    margin-bottom: 0.5rem;
+  }
+
+  h3 {
+    margin: 0.25rem 0 0.5rem;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--sport-text-dark);
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    max-width: 520px;
+  }
+}
+
+/* --- Drag & Drop Improvements --- */
+
+/* 1. Placeholder: Shows where item will land */
+.cdk-drag-placeholder {
+  opacity: 0.5;
+  background: rgba(241, 245, 249, 0.5);
+  border: 2px dashed #94a3b8;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+/* Hide original content in placeholder for cleaner look */
+.cdk-drag-placeholder * {
+  visibility: hidden;
+}
+
+/* 2. Fluid animations for siblings moving out of way */
+.gallery-list.cdk-drop-list-dragging .gallery-item:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Animation for dropping item into place */
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* 3. Manual Save Actions Bar */
+.gallery-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--sport-bg-blue-50); /* Blue-50 */
+  border: 1px solid var(--sport-primary-alpha-30);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+
+  &__hint {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--sport-primary-fallback); /* Blue-800 */
+    font-weight: 600;
+    font-size: 0.9rem;
+
+    mat-icon {
+      color: var(--sport-primary);
+    }
+  }
+
+  &__buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+}
+
+.spinning {
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .media-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .media-card--wide {
+    grid-column: auto;
+  }
+}

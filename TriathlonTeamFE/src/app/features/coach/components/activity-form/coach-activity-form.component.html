@@ -1,0 +1,234 @@
+<section class="activity-form-page">
+  <!-- Hero Section - Coach Pattern -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--coach">Antrenor</span>
+      <h1 class="hero-title">{{ isEditMode() ? 'Editează' : 'Creează' }} <span>Activitate</span></h1>
+      <p class="hero-subtitle">{{ isEditMode() ? 'Modifică detaliile activității' : 'Completează datele pentru noua activitate' }}</p>
+    </div>
+    <button class="back-btn" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Înapoi la activități</span>
+    </button>
+  </header>
+
+  <!-- Loading -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Se încarcă...</p>
+    </div>
+  }
+
+  <!-- Form Content -->
+  @if (!isLoading()) {
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <!-- Section Card: Media -->
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <mat-icon>photo_camera</mat-icon>
+              Media
+            </h2>
+          </div>
+        </div>
+        
+        <div class="media-grid">
+          <div class="media-card">
+            <div class="media-card__header">
+              <mat-icon>image</mat-icon>
+              <span>Poză Activitate</span>
+            </div>
+            <div class="photo-upload-area">
+              @if (heroPhoto()) {
+                <div class="photo-preview">
+                  <img [src]="heroPhoto()" alt="Poză activitate">
+                  <div class="photo-overlay">
+                    <button mat-icon-button type="button" (click)="deletePhoto()" [disabled]="isUploadingPhoto()" class="delete-photo-btn">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <label class="upload-btn" [class.disabled]="isUploadingPhoto()">
+                  <input type="file" accept="image/*" (change)="onPhotoSelected($event)" hidden>
+                  @if (isUploadingPhoto()) {
+                    <mat-spinner diameter="32"></mat-spinner>
+                  } @else {
+                    <mat-icon>add_photo_alternate</mat-icon>
+                    <span>Adaugă poză</span>
+                  }
+                </label>
+              }
+            </div>
+            <small class="photo-hint">Imaginea va fi afișată ca poză principală. Max 5MB.</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section Card: Detalii de Bază -->
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <mat-icon>info</mat-icon>
+              Detalii de Bază
+            </h2>
+          </div>
+        </div>
+        
+        <div class="form-grid">
+          <!-- Name -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Nume activitate</mat-label>
+            <input matInput formControlName="name" placeholder="ex: Workshop Înot">
+            @if (form.get('name')?.hasError('required') && form.get('name')?.touched) {
+              <mat-error>Numele este obligatoriu</mat-error>
+            }
+          </mat-form-field>
+
+          <!-- Description -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Descriere</mat-label>
+            <textarea matInput formControlName="description" rows="3" placeholder="Descriere opțională"></textarea>
+          </mat-form-field>
+
+          <!-- Sport -->
+          <mat-form-field appearance="outline">
+            <mat-label>Sport</mat-label>
+            <mat-select formControlName="sport">
+              @for (sport of sports(); track sport.code) {
+                <mat-option [value]="sport.code">{{ sport.name }}</mat-option>
+              }
+            </mat-select>
+            @if (form.get('sport')?.hasError('required') && form.get('sport')?.touched) {
+              <mat-error>Sportul este obligatoriu</mat-error>
+            }
+          </mat-form-field>
+
+          <!-- Location -->
+          <mat-form-field appearance="outline">
+            <mat-label>Locație</mat-label>
+            <mat-select formControlName="locationId">
+              @for (location of locations(); track location.id) {
+                <mat-option [value]="location.id">{{ location.name }}</mat-option>
+              }
+            </mat-select>
+            @if (form.get('locationId')?.hasError('required') && form.get('locationId')?.touched) {
+              <mat-error>Locația este obligatorie</mat-error>
+            }
+          </mat-form-field>
+        </div>
+      </section>
+
+      <!-- Section Card: Programare -->
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <mat-icon>schedule</mat-icon>
+              Programare
+            </h2>
+          </div>
+        </div>
+        
+        <div class="form-grid">
+          <!-- Date -->
+          <mat-form-field appearance="outline">
+            <mat-label>Data</mat-label>
+            <input matInput type="date" formControlName="activityDate">
+            @if (form.get('activityDate')?.hasError('required') && form.get('activityDate')?.touched) {
+              <mat-error>Data este obligatorie</mat-error>
+            }
+          </mat-form-field>
+
+          <!-- Start Time -->
+          <mat-form-field appearance="outline">
+            <mat-label>Ora de început</mat-label>
+            <input matInput type="text" formControlName="startTime" placeholder="HH:MM" maxlength="5" autocomplete="off"
+                   pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$" (input)="formatTimeInput($event, 'startTime')">
+            @if (form.get('startTime')?.hasError('required') && form.get('startTime')?.touched) {
+              <mat-error>Ora de început este obligatorie</mat-error>
+            }
+            @if (form.get('startTime')?.hasError('pattern') && form.get('startTime')?.touched) {
+              <mat-error>Format invalid (ex: 21:00)</mat-error>
+            }
+            <mat-hint>Format 24h (ex: 09:00, 21:00)</mat-hint>
+          </mat-form-field>
+
+          <!-- End Time -->
+          <mat-form-field appearance="outline">
+            <mat-label>Ora de sfârșit</mat-label>
+            <input matInput type="text" formControlName="endTime" placeholder="HH:MM" maxlength="5" autocomplete="off"
+                   pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$" (input)="formatTimeInput($event, 'endTime')">
+            @if (form.get('endTime')?.hasError('required') && form.get('endTime')?.touched) {
+              <mat-error>Ora de sfârșit este obligatorie</mat-error>
+            }
+            @if (form.get('endTime')?.hasError('pattern') && form.get('endTime')?.touched) {
+              <mat-error>Format invalid (ex: 22:00)</mat-error>
+            }
+            <mat-hint>Format 24h (ex: 10:00, 22:00)</mat-hint>
+          </mat-form-field>
+        </div>
+      </section>
+
+      <!-- Section Card: Preț & Capacitate -->
+      <section class="section-card">
+        <div class="section-header">
+          <div class="section-header__left">
+            <h2 class="section-title">
+              <mat-icon>payments</mat-icon>
+              Preț & Capacitate
+            </h2>
+          </div>
+        </div>
+        
+        <div class="form-grid">
+          <!-- Price -->
+          <mat-form-field appearance="outline">
+            <mat-label>Preț (RON)</mat-label>
+            <input matInput type="number" formControlName="price" min="0" step="0.01">
+            @if (form.get('price')?.hasError('required') && form.get('price')?.touched) {
+              <mat-error>Prețul este obligatoriu</mat-error>
+            }
+          </mat-form-field>
+
+          <!-- Capacity -->
+          <mat-form-field appearance="outline">
+            <mat-label>Capacitate (opțional)</mat-label>
+            <input matInput type="number" formControlName="capacity" min="1" placeholder="Nelimitat">
+          </mat-form-field>
+
+          <!-- Active -->
+          <div class="checkbox-field">
+            <mat-checkbox formControlName="active" color="primary">
+              Activitate activă
+            </mat-checkbox>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tip Card -->
+      <div class="tip-card">
+        <mat-icon>lightbulb</mat-icon>
+        <p>Asigură-te că locația și ora sunt disponibile înainte de a publica activitatea.</p>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" (click)="goBack()">
+          Anulează
+        </button>
+        <button type="submit" class="btn-primary" [disabled]="isSaving()">
+          @if (isSaving()) {
+            <mat-spinner diameter="20"></mat-spinner>
+          } @else {
+            <mat-icon>save</mat-icon>
+            {{ isEditMode() ? 'Salvează' : 'Creează' }}
+          }
+        </button>
+      </div>
+    </form>
+  }
+</section>

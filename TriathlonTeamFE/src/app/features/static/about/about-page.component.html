@@ -1,0 +1,324 @@
+<div class="scroll-progress" [style.width.%]="scrollProgress"></div>
+
+<!-- Hero Section - Matching Homepage Style -->
+<section class="about-hero">
+  <div class="about-hero__container">
+    <div class="about-hero__content">
+      <span class="about-hero__badge">Despre Noi</span>
+      <h1 class="about-hero__title">
+        Povestea <span>Motion</span>
+      </h1>
+      <p class="about-hero__subtitle">
+        Din 2014, formăm campioni și construim caractere. Suntem o familie de antrenori dedicați, 
+        părinți implicați și copii care învață să fie cei mai buni.
+      </p>
+    </div>
+    
+    <!-- Stats -->
+    <div class="about-hero__stats">
+      <div class="stat-box">
+        <span class="stat-box__number">10+</span>
+        <span class="stat-box__label">Ani experiență</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-box__number">150+</span>
+        <span class="stat-box__label">Copii activi</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-box__number">15+</span>
+        <span class="stat-box__label">Antrenori</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Mission Section - Simple & Clean -->
+<section class="about-mission">
+  <div class="about-container">
+    <div class="mission-simple">
+      <div class="mission-item">
+        <span class="mission-icon">🎯</span>
+        <h3>Coaching Empatic</h3>
+        <p>Adaptăm antrenamentul la fiecare copil</p>
+      </div>
+      <div class="mission-item">
+        <span class="mission-icon">🤝</span>
+        <h3>Parteneriat cu Părinții</h3>
+        <p>Colaborare strânsă cu familiile</p>
+      </div>
+      <div class="mission-item">
+        <span class="mission-icon">📈</span>
+        <h3>Progres Constant</h3>
+        <p>Evaluări periodice și feedback</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Story Section -->
+<section class="about-story">
+  <div class="about-container">
+    <div class="story-layout">
+      <div class="story-content">
+        <span class="section-tag">Povestea noastră</span>
+        <h2>Din 2014, formăm<br>viitorul sportului</h2>
+        <p>
+          Am pornit ca un grup mic de antrenori cu o viziune mare: să aducem triathlonul 
+          și sporturile multidisciplinare la copiii din Timișoara.
+        </p>
+        <p>
+          Astăzi suntem o comunitate de peste 150 de sportivi tineri, susținuți de 
+          antrenori certificați și părinți dedicați. Am organizat zeci de tabere, 
+          am participat la competiții naționale și am format campioni.
+        </p>
+        
+        <div class="story-highlights">
+          <div class="highlight-item">
+            <mat-icon>emoji_events</mat-icon>
+            <span>Premii la competiții naționale</span>
+          </div>
+          <div class="highlight-item">
+            <mat-icon>calendar_today</mat-icon>
+            <span>Tabere în fiecare vacanță</span>
+          </div>
+          <div class="highlight-item">
+            <mat-icon>favorite</mat-icon>
+            <span>Comunitate unită</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="story-image">
+        <picture>
+          <source srcset="/ui/img_20231201_111751.webp" type="image/webp">
+          <img src="/ui/IMG_20231201_111751.jpg" alt="Antrenament la bazin" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        </picture>
+        <div class="image-badge">
+          <span class="image-badge__number">10+</span>
+          <span class="image-badge__label">ani de excelență</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Values Section - Compact Grid -->
+<section class="about-values">
+  <div class="about-container">
+    <div class="values-header">
+      <span class="section-tag">Valorile noastre</span>
+      <h2>Ce ne definește</h2>
+    </div>
+    
+    <div class="values-grid">
+      <div class="value-item">
+        <span class="value-item__emoji">🤝</span>
+        <h3>Fair-play</h3>
+        <p>Respect pentru adversari și regulile jocului</p>
+      </div>
+      <div class="value-item">
+        <span class="value-item__emoji">🛡️</span>
+        <h3>Siguranță</h3>
+        <p>Proceduri clare pentru antrenamente sigure</p>
+      </div>
+      <div class="value-item">
+        <span class="value-item__emoji">📚</span>
+        <h3>Educație</h3>
+        <p>Workshop-uri și sesiuni cu specialiști</p>
+      </div>
+      <div class="value-item">
+        <span class="value-item__emoji">🌟</span>
+        <h3>Comunitate</h3>
+        <p>Părinți și voluntari activi în clubul nostru</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Team Features Section -->
+<section class="about-team">
+  <div class="about-container">
+    <div class="team-header">
+      <span class="section-tag">Echipa noastră</span>
+      <h2>Profesioniști dedicați</h2>
+      <p>Antrenori certificați cu experiență în lucrul cu copiii</p>
+    </div>
+    
+    <div class="team-features">
+      <div class="feature-card">
+        <div class="feature-card__icon">
+          <mat-icon>verified</mat-icon>
+        </div>
+        <h3>Certificări ITU</h3>
+        <p>Toți antrenorii au certificări internaționale și sunt actualizați cu cele mai noi metodologii</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-card__icon">
+          <mat-icon>medical_services</mat-icon>
+        </div>
+        <h3>Echipă Medicală</h3>
+        <p>Colaborăm cu kinetoterapeuți, medici sportivi și nutriționiști</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-card__icon">
+          <mat-icon>groups</mat-icon>
+        </div>
+        <h3>Lead Coaches</h3>
+        <p>Fiecare disciplină e coordonată de un antrenor principal cu experiență</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-card__icon">
+          <mat-icon>school</mat-icon>
+        </div>
+        <h3>Suport Părinți</h3>
+        <p>Sesiuni de informare și comunicare transparentă cu familiile</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Photo Dump Section - Memories Gallery -->
+<section class="photo-dump">
+  <div class="about-container">
+    <div class="photo-dump__header">
+      <span class="section-tag">Momente din viața clubului</span>
+      <h2>📸 Photo Dump</h2>
+      <p>Amintiri de la antrenamente, tabere și competiții</p>
+    </div>
+    
+    <div class="photo-grid">
+      <!-- Row 1 -->
+      <div class="photo-item photo-item--tall">
+        <img src="/ui/DSC_1323.JPG" alt="Antrenament înot" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        <div class="photo-caption">🏊 Lecții de înot - tehnica contează!</div>
+      </div>
+      <div class="photo-item">
+        <img src="/ui/IMG-20190805-WA0023.jpg" alt="Tabără vară 2019" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        <div class="photo-caption">☀️ Tabără de vară - distracție garantată</div>
+      </div>
+      <div class="photo-item">
+        <img src="/ui/IMG-20210817-WA0025.jpg" alt="Copii fericiți" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        <div class="photo-caption">😊 Zâmbete după antrenament</div>
+      </div>
+      
+      <!-- Row 2 -->
+      <div class="photo-item photo-item--wide">
+        <img src="/ui/IMG-20220818-WA0040.jpg" alt="Grup la bazin" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        <div class="photo-caption">🤝 Echipa noastră - spirit de grup</div>
+      </div>
+      <div class="photo-item photo-item--tall">
+        <img src="/ui/DSC_1419.JPG" alt="Înot liber" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        <div class="photo-caption">💪 Antrenament intensiv</div>
+      </div>
+      
+      <!-- Row 3 -->
+      <div class="photo-item">
+        <img src="/ui/20210713_105231.jpg" alt="Ciclism" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        <div class="photo-caption">🚴 Ture de bicicletă</div>
+      </div>
+      <div class="photo-item">
+        <img src="/ui/IMG-20190806-WA0023.jpg" alt="Activități tabără" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        <div class="photo-caption">🎯 Activități diverse</div>
+      </div>
+      <div class="photo-item photo-item--wide">
+        <img src="/ui/IMG-20200630-WA0042.jpg" alt="Grup outdoor" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        <div class="photo-caption">🌲 Aventuri în natură</div>
+      </div>
+      
+      <!-- Row 4 -->
+      <div class="photo-item photo-item--tall">
+        <img src="/ui/DSC_1686.JPG" alt="Competiție" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        <div class="photo-caption">🏆 La competiții</div>
+      </div>
+      <div class="photo-item">
+        <img src="/ui/IMG-20190820-WA0009.jpg" alt="Alergare" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        <div class="photo-caption">🏃 Alergare - disciplină și rezistență</div>
+      </div>
+      <div class="photo-item">
+        <img src="/ui/IMG-20220815-WA0006.jpg" alt="Tabără 2022" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        <div class="photo-caption">⛺ Tabăra de vară 2022</div>
+      </div>
+      
+      <!-- Row 5 -->
+      <div class="photo-item">
+        <img src="/ui/FB_IMG_1520142254809.jpg" alt="Moment special" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        <div class="photo-caption">✨ Momente memorabile</div>
+      </div>
+      <div class="photo-item photo-item--wide">
+        <img src="/ui/IMG-20220827-WA0041.jpg" alt="Grup mare" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        <div class="photo-caption">👨‍👩‍👧‍👦 Familia Motion</div>
+      </div>
+      <div class="photo-item">
+        <img src="/ui/DSC_0486.JPG" alt="Acțiune" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        <div class="photo-caption">💦 În acțiune!</div>
+      </div>
+      
+      <!-- Row 6 -->
+      <div class="photo-item photo-item--tall">
+        <img src="/ui/DSC_1589.JPG" alt="Tehnica înot" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        <div class="photo-caption">🎓 Învățăm corect de la început</div>
+      </div>
+      <div class="photo-item">
+        <img src="/ui/IMG-20190821-WA0010.jpg" alt="Aventură" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        <div class="photo-caption">🌊 Aventură și curaj</div>
+      </div>
+      <div class="photo-item">
+        <img src="/ui/IMG-20210817-WA0040.jpg" alt="Prietenie" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        <div class="photo-caption">❤️ Prietenii adevărate</div>
+      </div>
+      
+      <!-- Row 7 -->
+      <div class="photo-item">
+        <img src="/ui/20230516_184053.jpg" alt="Sesiune foto" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        <div class="photo-caption">📷 Sesiune foto 2023</div>
+      </div>
+      <div class="photo-item photo-item--wide">
+        <img src="/ui/IMG-20200702-WA0022.jpg" alt="Antrenament grup" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        <div class="photo-caption">🏅 Toți suntem campioni!</div>
+      </div>
+      <div class="photo-item">
+        <img src="/ui/DSC_0870.JPG" alt="Start" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        <div class="photo-caption">🚀 Pregătiți, pe locuri, START!</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section - Bold -->
+<section class="about-cta">
+  <div class="about-container">
+    <div class="cta-box">
+      <div class="cta-content">
+        <h2>Gata să începi aventura?</h2>
+        <p>Prima lecție e pe noi! Vino să vezi cum arată un antrenament și cunoaște echipa.</p>
+        
+        <div class="cta-benefits">
+          <span><mat-icon>check</mat-icon> Evaluare gratuită</span>
+          <span><mat-icon>check</mat-icon> Fără obligații</span>
+          <span><mat-icon>check</mat-icon> Program flexibil</span>
+        </div>
+        
+        <div class="cta-actions">
+          <a routerLink="/register" class="cta-btn cta-btn--primary">
+            <mat-icon>sports</mat-icon>
+            Începe acum
+          </a>
+          <a routerLink="/contact" class="cta-btn cta-btn--secondary">
+            <mat-icon>chat</mat-icon>
+            Întreabă-ne orice
+          </a>
+        </div>
+      </div>
+      
+      <div class="cta-visual">
+        <picture>
+          <source srcset="/ui/20221013_183129.webp" type="image/webp">
+          <img src="/ui/20221013_183129.jpg" alt="Copii fericiți la antrenament" loading="lazy" (load)="$any($event.target).classList.add('loaded')" />
+        </picture>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,57 @@
+<div class="rating-dialog">
+  <h2 mat-dialog-title>{{ dialogTitle }}</h2>
+
+  <mat-dialog-content>
+    <div class="entity-info">
+      <p class="entity-name">{{ data.entityName }}</p>
+    </div>
+
+    <div class="rating-section">
+      <label class="rating-label">Rating:</label>
+      <app-star-rating
+        [rating]="rating"
+        [readonly]="false"
+        size="large"
+        (ratingChange)="onRatingChange($event)">
+      </app-star-rating>
+      <p class="rating-text" *ngIf="rating > 0">{{ rating }} din 5 stele</p>
+    </div>
+
+    <div class="comment-section">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Comentariu (opțional)</mat-label>
+        <textarea
+          matInput
+          [(ngModel)]="comment"
+          placeholder="Împărtășește-ți experiența..."
+          rows="4"
+          maxlength="500"
+          [disabled]="isSubmitting">
+        </textarea>
+        <mat-hint align="end">{{ comment.length }} / 500</mat-hint>
+      </mat-form-field>
+    </div>
+
+    <div class="error-message" *ngIf="error">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ error }}</span>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="onCancel()" [disabled]="isSubmitting">
+      Anulează
+    </button>
+    <button 
+      mat-raised-button 
+      color="primary" 
+      (click)="onSubmit()" 
+      [disabled]="isSubmitting || rating === 0">
+      <span *ngIf="!isSubmitting">{{ submitButtonText }}</span>
+      <span *ngIf="isSubmitting">Se trimite...</span>
+    </button>
+  </mat-dialog-actions>
+</div>
+
+
+

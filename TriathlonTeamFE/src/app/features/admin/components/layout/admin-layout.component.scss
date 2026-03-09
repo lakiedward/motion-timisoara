@@ -1,0 +1,58 @@
+// ============================================
+// ADMIN LAYOUT - Using Unified Header
+// Variables are inherited from styles.css :root
+// ============================================
+
+:host {
+  display: block;
+  min-height: 100vh;
+  // Background with subtle dot pattern per UIGuidelines
+  background-color: var(--sport-bg-white);
+  background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+  background-size: 32px 32px;
+  color: var(--sport-text-dark);
+  
+  --admin-header-height: 80px; // UIGuidelines: Navbar height 80px
+  // Shadows now use global values from styles.css (0.08 opacity)
+}
+
+.admin-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--admin-header-height); // Space for fixed unified header
+}
+
+// ============================================
+// MAIN CONTENT AREA
+// ============================================
+.admin-content {
+  flex: 1 1 auto;
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  width: 100%;
+}
+
+.admin-container {
+  max-width: 1280px; // UIGuidelines: Container Width 1280px
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  :host { --admin-header-height: 64px; }
+
+  // Mobile: avoid double horizontal padding (content + container)
+  // Target ~16px total lateral padding (provided by .admin-content)
+  .admin-content {
+    padding: 1rem;
+  }
+
+  .admin-container {
+    padding: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  :host { --admin-header-height: 56px; }
+}

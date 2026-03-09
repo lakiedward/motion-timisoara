@@ -1,0 +1,70 @@
+:host {
+  --star-color: #fbbf24;
+  --star-empty-color: #d1d5db;
+  --star-hover-color: #f59e0b;
+}
+
+.star-rating {
+  display: inline-flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.star {
+  color: var(--star-empty-color);
+  transition: all 0.2s ease;
+  cursor: default;
+  line-height: 1;
+  user-select: none;
+
+  &--full {
+    color: var(--star-color);
+  }
+
+  &--half {
+    color: var(--star-color);
+  }
+
+  &--empty {
+    color: var(--star-empty-color);
+  }
+}
+
+// Interactive mode
+.star-rating:not(.star-rating--readonly) {
+  .star {
+    cursor: pointer;
+    
+    &:hover {
+      transform: scale(1.1);
+    }
+
+    &--full:hover,
+    &--half:hover {
+      color: var(--star-hover-color);
+    }
+  }
+}
+
+// Size variants
+.star-rating--small .star {
+  font-size: 1rem;
+}
+
+.star-rating--medium .star {
+  font-size: 1.25rem;
+}
+
+.star-rating--large .star {
+  font-size: 1.75rem;
+}
+
+// Readonly mode
+.star-rating--readonly {
+  .star {
+    cursor: default;
+  }
+}
+
+
+

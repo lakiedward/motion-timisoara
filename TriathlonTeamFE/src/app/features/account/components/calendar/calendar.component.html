@@ -1,0 +1,109 @@
+<div class="calendar">
+  <!-- Calendar Header -->
+  <div class="calendar-header">
+    <button
+      mat-icon-button
+      class="calendar-nav-button"
+      (click)="previousMonth()"
+      aria-label="Luna anterioară"
+    >
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <h3 class="calendar-title">{{ currentMonthYear() }}</h3>
+    <button
+      mat-icon-button
+      class="calendar-nav-button"
+      (click)="nextMonth()"
+      aria-label="Luna următoare"
+    >
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
+
+  <!-- Calendar Grid -->
+  <div class="calendar-grid">
+    <!-- Day Names -->
+    <div class="calendar-day-names">
+      <div class="day-name" *ngFor="let day of dayNames">{{ day }}</div>
+    </div>
+
+    <!-- Calendar Days -->
+    <div class="calendar-days">
+      <button
+        type="button"
+        class="calendar-day"
+        *ngFor="let day of calendarDays()"
+        [class.calendar-day--other-month]="!day.isCurrentMonth"
+        [class.calendar-day--today]="day.isToday"
+        [class.calendar-day--has-events]="day.events.length > 0"
+        [class.calendar-day--selected]="selectedDate() && isSameDay(day.date, selectedDate()!)"
+        (click)="selectDay(day)"
+        [disabled]="day.events.length === 0"
+      >
+        <span class="day-number">{{ day.date.getDate() }}</span>
+        <div class="event-markers" *ngIf="day.events.length > 0">
+          <span
+            *ngFor="let event of day.events.slice(0, 3)"
+            class="event-marker"
+            [ngClass]="getEventTypeClass(event.type)"
+            [matTooltip]="event.title"
+          ></span>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- Event Legend -->
+  <div class="calendar-legend">
+    <div class="legend-item">
+      <span class="legend-marker legend-marker--course"></span>
+      <span class="legend-label">Curs</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-marker legend-marker--camp"></span>
+      <span class="legend-label">Tabără</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-marker legend-marker--attendance"></span>
+      <span class="legend-label">Prezență</span>
+    </div>
+  </div>
+
+  <!-- Selected Day Events -->
+  <div class="selected-events" *ngIf="selectedDayEvents().length > 0">
+    <h4 class="selected-events-title">
+      Evenimente pe {{ selectedDate() | date: 'd MMMM y' : undefined : 'ro-RO' }}
+    </h4>
+    <div class="events-list">
+      <article
+        class="event-card"
+        *ngFor="let event of selectedDayEvents(); trackBy: trackByEvent"
+        [class.event-card--course]="event.type === 'course'"
+        [class.event-card--camp]="event.type === 'camp'"
+        [class.event-card--attendance]="event.type === 'attendance'"
+      >
+        <div class="event-card-header">
+          <span class="event-type">
+            {{ event.type === 'course' ? 'Curs' : event.type === 'camp' ? 'Tabără' : 'Prezență' }}
+          </span>
+          <h5 class="event-title">{{ event.title }}</h5>
+        </div>
+        <div class="event-card-details">
+          <span class="event-detail" *ngIf="event.time">
+            <mat-icon>schedule</mat-icon>
+            {{ event.time }}
+          </span>
+          <span class="event-detail" *ngIf="event.location">
+            <mat-icon>place</mat-icon>
+            {{ event.location }}
+          </span>
+          <span class="event-detail" *ngIf="event.childName">
+            <mat-icon>person</mat-icon>
+            {{ event.childName }}
+          </span>
+        </div>
+      </article>
+    </div>
+  </div>
+</div>
+

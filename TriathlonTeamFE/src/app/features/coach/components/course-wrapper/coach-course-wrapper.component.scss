@@ -1,0 +1,510 @@
+// ============================================
+// COACH COURSE FORM - Admin-like Structure with Green Theme
+// ============================================
+:host {
+  display: block;
+  --coach-accent-rgb: 16, 185, 129;
+}
+
+.course-form-page {
+  display: grid;
+  gap: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+// ============================================
+// HERO SECTION
+// ============================================
+.page-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 2rem 2.5rem;
+  background: linear-gradient(135deg, #ecfdf5 0%, var(--sport-bg-light) 50%, #eff6ff 100%);
+  border-radius: var(--radius-card);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(var(--coach-accent-rgb), 0.3);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800;
+  color: var(--sport-text-dark);
+  margin: 0.5rem 0 0.25rem;
+  letter-spacing: -0.02em;
+  
+  span { color: #10b981; }
+}
+
+.hero-subtitle {
+  font-size: 0.95rem;
+  color: var(--sport-text-muted);
+  margin: 0;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: var(--sport-bg-white);
+  color: #10b981;
+  border: 2px solid #10b981;
+  border-radius: var(--radius-btn);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  position: relative;
+  z-index: 1;
+  
+  mat-icon {
+    font-size: 1.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+  
+  &:hover {
+    background: #10b981;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  }
+  
+  &--small {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8rem;
+  }
+}
+
+// ============================================
+// BADGES
+// ============================================
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  
+  &--coach {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+    border: 1px solid rgba(var(--coach-accent-rgb), 0.3);
+  }
+}
+
+// ============================================
+// ALERT
+// ============================================
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius-card);
+  
+  &__icon {
+    flex-shrink: 0;
+    font-size: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+  
+  &__content { flex: 1; }
+  
+  &__title {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+  
+  &__text {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    margin: 0;
+    opacity: 0.9;
+  }
+  
+  &--error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    .alert__icon { color: #ef4444; }
+  }
+}
+
+// ============================================
+// PAGE LAYOUT
+// ============================================
+.page-layout {
+  display: block;
+}
+
+.main-content {
+  display: grid;
+  gap: 1.5rem;
+}
+
+// ============================================
+// SECTION CARD
+// ============================================
+.section-card {
+  background: var(--sport-bg-white);
+  border-radius: var(--radius-card);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(var(--coach-accent-rgb), 0.3);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+  
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--sport-text-dark);
+  margin: 0;
+  
+  mat-icon {
+    color: #10b981;
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+// ============================================
+// MEDIA GRID (Photos)
+// ============================================
+.media-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.media-card {
+  background: var(--sport-bg-light);
+  border-radius: 16px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  
+  &--wide {
+    grid-column: 1 / -1;
+  }
+  
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--sport-text-dark);
+    
+    mat-icon {
+      color: #10b981;
+      font-size: 1.125rem;
+      width: 1.125rem;
+      height: 1.125rem;
+    }
+  }
+}
+
+// ============================================
+// HERO PHOTO
+// ============================================
+.hero-photo-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// ============================================
+// UPLOAD BUTTON
+// ============================================
+.upload-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 100px;
+  padding: 1rem;
+  color: #10b981;
+  border: 2px dashed rgba(var(--coach-accent-rgb), 0.3);
+  background: var(--sport-bg-white);
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #ecfdf5;
+    border-color: #10b981;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  mat-icon {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+  }
+  
+  span {
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+}
+
+.photo-preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--sport-bg-white);
+  border: 2px solid var(--color-border-subtle);
+  
+  &__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  &__remove {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: rgba(220, 38, 38, 0.9) !important;
+    color: #ffffff !important;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    z-index: 10;
+    
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+// ============================================
+// GALLERY GRID
+// ============================================
+.gallery-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.gallery-item {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--sport-bg-white);
+  border: 2px solid var(--color-border-subtle);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  &:hover {
+    border-color: #10b981;
+    transform: scale(1.05);
+  }
+  
+  &--new {
+    border-color: #10b981;
+    border-style: dashed;
+  }
+  
+  &__delete {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: rgba(220, 38, 38, 0.9) !important;
+    color: #ffffff !important;
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    
+    mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+    }
+  }
+  
+  &:hover &__delete {
+    opacity: 1;
+  }
+  
+  &__order {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    background: rgba(16, 185, 129, 0.9);
+    color: white;
+    font-size: 0.625rem;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 4px;
+  }
+}
+
+.gallery-add {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed rgba(var(--coach-accent-rgb), 0.3);
+  border-radius: 10px;
+  background: var(--sport-bg-white);
+  color: #10b981;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  mat-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+  
+  &:hover:not(:disabled) {
+    background: #ecfdf5;
+    border-color: #10b981;
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// ============================================
+// TIP CARD
+// ============================================
+.tip-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  border-radius: var(--radius-card);
+  color: white;
+  
+  mat-icon {
+    font-size: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    opacity: 0.9;
+  }
+  
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+}
+
+// ============================================
+// RESPONSIVE
+// ============================================
+@media (max-width: 768px) {
+  .page-hero {
+    flex-direction: column;
+    text-align: center;
+    padding: 1.5rem;
+    gap: 1rem;
+    
+    &::before { display: none; }
+  }
+  
+  .back-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .media-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .media-card--wide {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .course-form-page {
+    gap: 1rem;
+  }
+  
+  .section-card {
+    padding: 1rem;
+  }
+  
+  .gallery-item,
+  .gallery-add {
+    width: 56px;
+    height: 56px;
+  }
+}
+

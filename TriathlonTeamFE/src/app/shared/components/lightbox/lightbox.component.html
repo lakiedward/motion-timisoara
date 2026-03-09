@@ -1,0 +1,46 @@
+<div class="lightbox" *ngIf="open">
+  <div class="backdrop" (click)="close()"></div>
+  
+  <!-- Toolbar (Top) -->
+  <div class="toolbar">
+    <span class="counter">{{ index() + 1 }} / {{ images.length }}</span>
+    <button class="btn-icon close-btn" type="button" (click)="close()" aria-label="Închide">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Prev Button (Desktop) -->
+    <button 
+      class="nav-btn prev" 
+      type="button" 
+      (click)="prev($event)" 
+      aria-label="Anterior"
+      *ngIf="images.length > 1"
+    >
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+
+    <!-- Image Container -->
+    <div class="image-wrapper" (click)="$event.stopPropagation()">
+      <img 
+        class="image" 
+        [src]="images[index()]" 
+        alt="Imagine anunț" 
+        draggable="false"
+      />
+    </div>
+
+    <!-- Next Button (Desktop) -->
+    <button 
+      class="nav-btn next" 
+      type="button" 
+      (click)="next($event)" 
+      aria-label="Următor"
+      *ngIf="images.length > 1"
+    >
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
+</div>

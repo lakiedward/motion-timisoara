@@ -1,0 +1,146 @@
+spring:
+  application:
+    name: TriathlonTeamBE
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/triathlon}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      # SECURITY: Use 'validate' in production to prevent accidental schema changes
+      # Use 'update' only in development with caution
+      ddl-auto: ${HIBERNATE_DDL_AUTO:validate}
+    open-in-view: false
+    properties:
+      hibernate:
+        # Show SQL only in development
+        show_sql: ${HIBERNATE_SHOW_SQL:false}
+        format_sql: true
+  flyway:
+    # SECURITY: Enable Flyway by default for controlled schema migrations
+    enabled: ${FLYWAY_ENABLED:true}
+    baseline-on-migrate: true
+    baseline-version: 0
+    # Skip validation to allow checksum repair (can re-enable after fix)
+    validate-on-migrate: false
+  jackson:
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+    time-zone: ${APP_TIME_ZONE:Europe/Bucharest}
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
+    default-encoding: UTF-8
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:}
+            client-secret: ${GOOGLE_CLIENT_SECRET:}
+            scope:
+              - openid
+              - profile
+              - email
+            redirect-uri: ${OAUTH_REDIRECT_URI:{baseUrl}/login/oauth2/code/{registrationId}}
+            client-name: Google
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            user-name-attribute: sub
+server:
+  port: ${PORT:8081}
+  ssl:
+    enabled: ${SERVER_SSL_ENABLED:false}
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:4200}
+  jwt:
+    # SECURITY: No default value - must be set via environment variable
+    # Generate a strong secret: openssl rand -base64 64
+    secret: ${JWT_SECRET}
+    # Access token expiration: 15 minutes for security
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:15}
+    # Refresh token expiration: 30 days (extended from 7)
+    refresh-expiration-days: ${JWT_REFRESH_EXPIRATION_DAYS:30}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:4201,http://localhost:8081,https://motiontimisoara.com,https://www.motiontimisoara.com}
+  cookie:
+    # Cookie domain for cross-subdomain auth (e.g., motiontimisoara.com)
+    # Leave empty for localhost, set to yourdomain.com in production (NO leading dot)
+    domain: ${COOKIE_DOMAIN:}
+  time-zone: ${APP_TIME_ZONE:Europe/Bucharest}
+  use-secure-cookies: ${USE_SECURE_COOKIES:true}
+  storage:
+    bucket-name: ${BUCKET_NAME:}
+    access-key: ${BUCKET_ACCESS_KEY:}
+    secret-key: ${BUCKET_SECRET_KEY:}
+    endpoint: ${BUCKET_ENDPOINT:https://storage.railway.app}
+    region: ${BUCKET_REGION:us-east-1}
+    presigned-url-expiry-minutes: ${STORAGE_PRESIGNED_EXPIRY_MINUTES:60}
+  mail:
+    enabled: ${APP_MAIL_ENABLED:false}
+    to: ${APP_MAIL_TO:office@motiontimisoara.com}
+  oauth:
+    success-redirect: ${OAUTH_SUCCESS_REDIRECT:http://localhost:4200/auth/callback}
+    failure-redirect: ${OAUTH_FAILURE_REDIRECT:http://localhost:4200/login?error=oauth_failed}
+  security:
+    # Trusted proxies for IP extraction (comma-separated IPs)
+    # If empty, trust no proxies (X-Forwarded-For will be ignored)
+    trusted-proxies: ${TRUSTED_PROXIES:}
+    rate-limit:
+      auth-max-attempts: ${RATE_LIMIT_AUTH_MAX_ATTEMPTS:5}
+      auth-window-seconds: ${RATE_LIMIT_AUTH_WINDOW_SECONDS:900}
+      public-max-attempts: ${RATE_LIMIT_PUBLIC_MAX_ATTEMPTS:60}
+      public-window-seconds: ${RATE_LIMIT_PUBLIC_WINDOW_SECONDS:60}
+      contact-max-attempts: ${RATE_LIMIT_CONTACT_MAX_ATTEMPTS:3}
+      contact-window-seconds: ${RATE_LIMIT_CONTACT_WINDOW_SECONDS:600}
+      dsar-max-attempts: ${RATE_LIMIT_DSAR_MAX_ATTEMPTS:5}
+      dsar-window-seconds: ${RATE_LIMIT_DSAR_WINDOW_SECONDS:3600}
+stripe:
+  # OPTIONAL: Stripe integration for payments
+  # Set these environment variables only if you want to enable Stripe payments
+  # Get your keys from https://dashboard.stripe.com/apikeys
+  # If not set, Stripe integration will be disabled (payment endpoints won't work)
+  secret-key: ${STRIPE_SECRET_KEY:NOT_CONFIGURED}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:NOT_CONFIGURED}
+  # Stripe Connect webhook secret for connected account events
+  connect-webhook-secret: ${STRIPE_CONNECT_WEBHOOK_SECRET:NOT_CONFIGURED}
+
+# SmartBill integration for invoicing
+smartbill:
+  enabled: ${SMARTBILL_ENABLED:false}
+  api-url: ${SMARTBILL_API_URL:https://ws.smartbill.ro/SPCG/rest}
+  username: ${SMARTBILL_USERNAME:}
+  token: ${SMARTBILL_TOKEN:}
+  company-cif: ${SMARTBILL_COMPANY_CIF:}
+  series-name: ${SMARTBILL_SERIES_NAME:FCT}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    com.club.triathlon.web: INFO
+    com.club.triathlon.security: WARN
+    org.springframework.web: INFO
+    org.springframework.security: WARN
+    org.apache.catalina: WARN
+    org.apache.coyote: WARN
+    org.apache.tomcat: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{36}] - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{36}] - %msg%n"
+  file:
+    name: logs/triathlon-app.log
+

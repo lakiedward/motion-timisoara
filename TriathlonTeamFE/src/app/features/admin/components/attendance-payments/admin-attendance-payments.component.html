@@ -1,0 +1,66 @@
+<section class="attendance-list" *ngIf="!isLoading(); else loadingState">
+  <header class="attendance-list__header">
+    <div>
+      <h1>Prezențe & Plăți</h1>
+      <p>Administrează prezențele și plățile pentru sesiunile săptămânii.</p>
+    </div>
+    <div class="week-navigation">
+      <button mat-icon-button (click)="previousWeek()" [disabled]="isLoading()">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <span class="week-label">{{ weekLabel }}</span>
+      <button mat-icon-button (click)="nextWeek()" [disabled]="isLoading()">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+  </header>
+
+  <div class="calendar-content">
+    <div class="coach-section" *ngFor="let coach of calendar()?.coaches">
+      <h3 class="coach-name">{{ coach.coachName }}</h3>
+      
+      <div class="week-grid">
+        <div class="day-column" *ngFor="let day of coach.days" [class.is-today]="isToday(day.date)">
+          <div class="day-header">
+            <div class="day-name">{{ day.dayOfWeek }}</div>
+            <div class="day-date">{{ day.date | date:'d MMM' }}</div>
+          </div>
+          
+          <div class="sessions-container">
+            <div 
+              class="session-card" 
+              *ngFor="let session of day.sessions"
+              (click)="openAttendanceModal(session.occurrenceId)"
+              tabindex="0"
+              role="button"
+            >
+              <div class="session-time">{{ session.startsAt | date:'HH:mm' }}</div>
+              <div class="session-name">{{ session.courseName }}</div>
+              <div class="session-count">
+                <mat-icon>group</mat-icon>
+                <span>{{ session.enrolledCount }}</span>
+              </div>
+            </div>
+            
+            <div class="no-sessions" *ngIf="day.sessions.length === 0">
+              <span>Fără sesiuni</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="attendance-list__state" *ngIf="!calendar()?.coaches || calendar()!.coaches.length === 0">
+      <mat-icon style="font-size: 4rem; width: 4rem; height: 4rem; color: #93c5fd; margin: 0 auto;">
+        event_busy
+      </mat-icon>
+      <p>Nu există sesiuni programate pentru această săptămână</p>
+    </div>
+  </div>
+</section>
+
+<ng-template #loadingState>
+  <div class="attendance-list__state">
+    <div class="skeleton" *ngFor="let _ of [1, 2, 3, 4, 5]"></div>
+  </div>
+</ng-template>

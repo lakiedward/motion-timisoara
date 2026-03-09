@@ -1,0 +1,171 @@
+<div class="scroll-progress" [style.width.%]="scrollProgress"></div>
+
+<!-- Hero Section - UIGuidelines Hero Tip B (Sub-page with Back Button) -->
+<section class="page-hero">
+  <div class="page-hero__container">
+    <button mat-icon-button routerLink="/account" class="back-button" aria-label="Înapoi la cont">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <span class="page-hero__eyebrow">📊 Contul meu</span>
+    <h1 class="page-hero__title">Istoric <span>Prezențe</span></h1>
+    <p class="page-hero__subtitle">
+      Urmărește participarea copiilor la cursuri și tabere
+    </p>
+  </div>
+</section>
+
+<!-- Main Content Section -->
+<section class="attendance-content">
+  <div class="premium-container">
+    <!-- Child Selector with Stats -->
+    <div class="selector-card scroll-reveal" *ngIf="hasChildren()">
+      <div class="selector-header">
+        <mat-icon class="selector-icon">family_restroom</mat-icon>
+        <div class="selector-content" *ngIf="children().length > 1; else singleChild">
+          <label class="selector-label" for="childSelect">Selectează copilul</label>
+          <select
+            id="childSelect"
+            class="selector-dropdown"
+            [ngModel]="selectedChildId()"
+            (ngModelChange)="onChildChange($event)"
+          >
+            <option *ngFor="let child of children()" [value]="child.id">
+              {{ child.name }}
+            </option>
+          </select>
+        </div>
+        <ng-template #singleChild>
+          <div class="selector-single">
+            <span class="selector-label">Copil</span>
+            <span class="selector-name">{{ selectedChildName() }}</span>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- Overall Stats -->
+      <div class="overall-stats" *ngIf="!isLoading() && attendance().length">
+        <div class="stat-item">
+          <span class="stat-value">{{ totalPresent() }}</span>
+          <span class="stat-label">Total Prezent</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ totalAbsent() }}</span>
+          <span class="stat-label">Total Absent</span>
+        </div>
+        <div class="stat-item stat-item--highlight">
+          <span class="stat-value">{{ overallAttendanceRate() }}%</span>
+          <span class="stat-label">Rată Globală</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="state state--loading" *ngIf="isLoading()">
+      <div class="skeleton" *ngFor="let item of [1, 2, 3]"></div>
+    </div>
+
+    <!-- Error State -->
+    <div class="state state--error" *ngIf="!isLoading() && hasError()">
+      <mat-icon class="state-icon">error_outline</mat-icon>
+      <h3>Nu am putut încărca prezențele</h3>
+      <p>Verifică conexiunea sau contactează suportul.</p>
+      <button mat-flat-button color="primary" (click)="retry()">
+        Încearcă din nou
+      </button>
+    </div>
+
+    <!-- Empty State - No Children -->
+    <div class="empty-state" *ngIf="!isLoading() && !hasError() && !hasChildren()">
+      <mat-icon class="empty-state__icon">family_restroom</mat-icon>
+      <h3 class="empty-state__title">Nu există copii înregistrați</h3>
+      <p class="empty-state__text">Adaugă un profil de copil pentru a vedea prezențele.</p>
+      <button class="btn-elite btn-elite--primary" routerLink="/account/children">
+        <mat-icon>add</mat-icon>
+        Adaugă copil
+      </button>
+    </div>
+
+    <!-- Empty State - No Attendance -->
+    <div class="empty-state" *ngIf="!isLoading() && !hasError() && hasChildren() && !attendance().length">
+      <mat-icon class="empty-state__icon">event_available</mat-icon>
+      <h3 class="empty-state__title">Fără prezențe înregistrate</h3>
+      <p class="empty-state__text">Prezențele vor apărea aici după participarea la cursuri.</p>
+    </div>
+
+    <!-- Attendance Cards -->
+    <div class="attendance-grid" *ngIf="!isLoading() && !hasError() && attendance().length">
+      <article class="course-card scroll-reveal" 
+               *ngFor="let course of attendance(); trackBy: trackByCourse; let i = index"
+               [class.scroll-reveal--delay-100]="i % 3 === 1"
+               [class.scroll-reveal--delay-200]="i % 3 === 2">
+        <div class="course-card-header">
+          <div class="course-title-section">
+            <mat-icon class="course-icon">school</mat-icon>
+            <h2 class="course-title">{{ course.name }}</h2>
+          </div>
+          <div class="course-rate" [class.course-rate--good]="attendanceRate(course) >= 80">
+            {{ attendanceRate(course) }}%
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="course-stats">
+          <div class="stat">
+            <mat-icon class="stat-icon stat-icon--present">check_circle</mat-icon>
+            <span class="stat-value">{{ countPresent(course) }}</span>
+            <span class="stat-label">Prezent</span>
+          </div>
+          <div class="stat">
+            <mat-icon class="stat-icon stat-icon--absent">cancel</mat-icon>
+            <span class="stat-value">{{ countAbsent(course) }}</span>
+            <span class="stat-label">Absent</span>
+          </div>
+          <div class="stat">
+            <mat-icon class="stat-icon">event</mat-icon>
+            <span class="stat-value">{{ course.sessions.length }}</span>
+            <span class="stat-label">Total Sesiuni</span>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <!-- Sessions List -->
+        <div class="sessions-header">
+          <h3>Istoric Recent</h3>
+          <span class="sessions-count">{{ Math.min(10, course.sessions.length) }} din {{ course.sessions.length }} sesiuni</span>
+        </div>
+        <div class="sessions-list">
+          <div
+            class="session-item"
+            *ngFor="let session of getVisibleSessions(course); trackBy: trackBySession"
+            [class.session-item--present]="session.status === 'present'"
+            [class.session-item--absent]="session.status === 'absent'"
+          >
+            <div class="session-status-icon">
+              <mat-icon *ngIf="session.status === 'present'">check_circle</mat-icon>
+              <mat-icon *ngIf="session.status === 'absent'">cancel</mat-icon>
+              <mat-icon *ngIf="session.status === 'excused'">event_busy</mat-icon>
+            </div>
+            <div class="session-info">
+              <span class="session-date">
+                {{ session.date ? (session.date | date: 'EEEE, d MMMM y' : undefined : 'ro-RO') : 'Dată indisponibilă' }}
+              </span>
+              <span class="session-status-label">{{ session.statusLabel }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Show more button if more than 10 sessions -->
+        <button 
+          *ngIf="course.sessions.length > 10" 
+          mat-stroked-button 
+          class="show-all-button"
+          (click)="toggleShowAll(course.id)"
+        >
+          {{ isExpanded(course.id) ? 'Arată mai puține' : 'Arată toate (' + course.sessions.length + ')' }}
+        </button>
+      </article>
+    </div>
+  </div>
+</section>

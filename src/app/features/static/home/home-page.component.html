@@ -1,0 +1,154 @@
+<div class="home-container">
+  <!-- Hero Section -->
+  <section class="hero-revolut">
+    <div class="hero-bg" data-parallax="0.5">
+      <div class="overlay"></div>
+      <img src="/ui/DSC_1419.JPG" alt="Hero Background" class="hero-image" priority>
+    </div>
+
+    <div class="hero-content">
+      <h1 class="hero-title" [@fadeIn]>
+        DEZVOLTĂ<br>
+        <span class="text-gradient">CAMPIONII</span> DE MÂINE
+      </h1>
+      
+      <p class="hero-subtitle" [@fadeIn]>
+        Triatlon, înot, ciclism și atletism. Antrenamente profesionale pentru copii și juniori în Timișoara.
+        Alătură-te echipei Motion!
+      </p>
+
+      <div class="hero-actions" [@fadeIn]>
+        <button mat-flat-button color="primary" class="cta-button primary" (click)="quickEnrollment()">
+          <mat-icon>bolt</mat-icon>
+          Înscrie-te Acum
+        </button>
+        <button mat-stroked-button class="cta-button secondary" (click)="scrollToSection('programe')">
+          Vezi Programele
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats Strip (Integrated in Hero) -->
+    <div class="stats-strip scroll-reveal">
+      <div class="stat-item" *ngFor="let stat of resultHighlights; let i = index">
+        <div class="stat-value">{{ getDisplayValue(i) }}</div>
+        <div class="stat-label">{{ stat.label }}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Programs Section -->
+  <section id="programe" class="programs-section">
+    <div class="container">
+      <div class="section-header scroll-reveal">
+        <h2 class="section-title">Programele Noastre</h2>
+        <p class="section-desc">Descoperă cursurile adaptate pentru fiecare vârstă și nivel de pregătire.</p>
+      </div>
+
+      <div class="programs-grid" [@staggerFade]="programs().length">
+        <!-- Loading State -->
+        <ng-container *ngIf="loadingPrograms">
+          <app-skeleton-loader type="card" *ngFor="let i of [1,2,3]"></app-skeleton-loader>
+        </ng-container>
+
+        <!-- Programs Cards -->
+        <div class="program-card glass-card" *ngFor="let program of programs()">
+          <div class="card-image">
+            <img [ngSrc]="program.image" [alt]="program.title" width="400" height="300" priority>
+            <div class="category-badge" [class]="program.accent">
+              {{ program.categoryIcon }} {{ program.categoryLabel }}
+            </div>
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">{{ program.title }}</h3>
+            <p class="card-desc">{{ program.description }}</p>
+            <div class="card-meta">
+              <span class="age-tag">
+                <mat-icon>child_care</mat-icon>
+                {{ program.ageRange }}
+              </span>
+            </div>
+            <a [routerLink]="program.link" class="card-link">
+              Vezi Detalii <mat-icon>arrow_forward</mat-icon>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Motion Section (Icons Grid) -->
+  <section class="features-section">
+    <div class="container">
+      <div class="section-header scroll-reveal">
+        <h2 class="section-title">De ce Motion?</h2>
+      </div>
+      
+      <div class="features-grid">
+        <div class="feature-card scroll-reveal" *ngFor="let highlight of resultHighlights">
+          <div class="feature-icon" [class]="highlight.accent">
+            <mat-icon>{{ highlight.icon }}</mat-icon>
+          </div>
+          <h4 class="feature-title">{{ highlight.label }}</h4>
+          <p class="feature-desc">{{ highlight.description }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Moments/Gallery Section -->
+  <section class="moments-section">
+    <div class="container">
+      <div class="section-header scroll-reveal">
+        <h2 class="section-title">Momente din Activitate</h2>
+      </div>
+
+      <div class="moments-grid scroll-reveal">
+        <div class="moment-card" *ngFor="let moment of moments; let i = index" 
+             (click)="openLightbox(i)">
+          <img [src]="moment.image" [alt]="moment.title" loading="lazy">
+          <div class="moment-overlay">
+            <div class="moment-info">
+              <span class="moment-tag">{{ moment.categoryIcon }} {{ moment.tags?.[0] }}</span>
+              <h3>{{ moment.title }}</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="final-cta">
+    <div class="cta-content scroll-reveal">
+      <h2>Începe Călătoria Astăzi</h2>
+      <p>Alătură-te unei comunități de peste 150 de tineri sportivi.</p>
+      <button mat-raised-button color="primary" class="cta-large" (click)="quickEnrollment()">
+        Vreau să mă înscriu
+      </button>
+    </div>
+  </section>
+
+  <!-- Lightbox -->
+  <div class="lightbox" *ngIf="showLightbox" (click)="closeLightbox()">
+    <button class="close-btn" (click)="closeLightbox()">
+      <mat-icon>close</mat-icon>
+    </button>
+    
+    <button class="nav-btn prev" (click)="$event.stopPropagation(); previousImage()">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    
+    <div class="lightbox-content" (click)="$event.stopPropagation()">
+      <img [src]="moments[currentImageIndex].image" class="lightbox-img">
+      <div class="lightbox-caption">
+        <h3>{{ moments[currentImageIndex].title }}</h3>
+        <p>{{ moments[currentImageIndex].description }}</p>
+      </div>
+    </div>
+
+    <button class="nav-btn next" (click)="$event.stopPropagation(); nextImage()">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
+</div>

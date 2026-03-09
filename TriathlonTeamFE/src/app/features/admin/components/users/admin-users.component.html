@@ -1,0 +1,238 @@
+<section class="users-page">
+  <!-- Hero Section - Admin Pattern -->
+  <header class="page-hero">
+    <div class="hero-content">
+      <span class="badge badge--warning">Administrare</span>
+      <h1 class="hero-title">Gestionare <span>Utilizatori</span></h1>
+      <p class="hero-subtitle">Vizualizează și administrează toți utilizatorii platformei</p>
+    </div>
+  </header>
+
+  <!-- Stats Cards -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--blue">
+        <mat-icon>people</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ users().length }}</span>
+        <span class="stat-label">Total utilizatori</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--green">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getActiveCount() }}</span>
+        <span class="stat-label">Activi</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon--amber">
+        <mat-icon>family_restroom</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-number">{{ getParentsCount() }}</span>
+        <span class="stat-label">Părinți</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Users List Section -->
+  <section class="section-card">
+    <div class="section-header">
+      <div class="section-header__left">
+        <h2 class="section-title">
+          <mat-icon>people</mat-icon>
+          Lista Utilizatori
+        </h2>
+        <span class="section-count">{{ filteredUsers.length }}</span>
+      </div>
+      <div class="filters-row">
+        <div class="chips chips--admin">
+          <button mat-stroked-button
+                  [class.active]="filter() === 'all'"
+                  (click)="setFilter('all')">
+            Toți
+          </button>
+          <button mat-stroked-button
+                  [class.active]="filter() === 'active'"
+                  (click)="setFilter('active')">
+            Activi
+          </button>
+          <button mat-stroked-button
+                  [class.active]="filter() === 'inactive'"
+                  (click)="setFilter('inactive')">
+            Inactivi
+          </button>
+        </div>
+        <div class="chips chips--admin role-chips">
+          <button mat-stroked-button
+                  [class.active]="roleFilter() === 'all'"
+                  (click)="setRoleFilter('all')">
+            Toate rolurile
+          </button>
+          <button mat-stroked-button
+                  [class.active]="roleFilter() === 'PARENT'"
+                  (click)="setRoleFilter('PARENT')">
+            Părinți
+          </button>
+          <button mat-stroked-button
+                  [class.active]="roleFilter() === 'COACH'"
+                  (click)="setRoleFilter('COACH')">
+            Antrenori
+          </button>
+          <button mat-stroked-button
+                  [class.active]="roleFilter() === 'CLUB'"
+                  (click)="setRoleFilter('CLUB')">
+            Cluburi
+          </button>
+          <button mat-stroked-button
+                  [class.active]="roleFilter() === 'ADMIN'"
+                  (click)="setRoleFilter('ADMIN')">
+            Admini
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+      <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Se încarcă utilizatorii...</p>
+      </div>
+    }
+
+    <!-- Empty State -->
+    @if (!isLoading() && filteredUsers.length === 0) {
+      <div class="empty-state">
+        <mat-icon>people_outline</mat-icon>
+        <h3>Niciun utilizator găsit</h3>
+        <p>Nu există utilizatori care să corespundă filtrelor selectate.</p>
+      </div>
+    }
+
+    <!-- Users Grid -->
+    @if (!isLoading() && filteredUsers.length > 0) {
+      <div class="entity-grid">
+        @for (user of filteredUsers; track user.id) {
+          <div class="entity-card" [class.inactive]="!user.enabled" [class.editing]="editingUser()?.id === user.id">
+            <!-- Card Header -->
+            <div class="entity-card__header">
+              <div class="entity-avatar">
+                @if (getResolvedAvatarUrl(user); as avatarUrl) {
+                  <img [src]="avatarUrl" [alt]="user.name" class="avatar-img" loading="lazy" decoding="async" (error)="onAvatarError(user)" />
+                } @else {
+                  <span class="avatar-initials">{{ getInitials(user.name) }}</span>
+                }
+                @if (user.oauthProvider) {
+                  <span class="oauth-badge" [matTooltip]="'Login cu ' + user.oauthProvider">
+                    <mat-icon>{{ user.oauthProvider === 'google' ? 'g_mobiledata' : 'login' }}</mat-icon>
+                  </span>
+                }
+              </div>
+              <div class="entity-info">
+                <h3 class="entity-name">{{ user.name }}</h3>
+                <span class="entity-email">{{ user.email }}</span>
+              </div>
+              <div class="entity-actions">
+                <button class="action-btn action-btn--edit"
+                        matTooltip="Editează"
+                        (click)="startEdit(user)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button class="action-btn action-btn--toggle"
+                        [class.action-btn--active]="user.enabled"
+                        [matTooltip]="user.enabled ? 'Dezactivează' : 'Activează'"
+                        (click)="toggleUserStatus(user)"
+                        [disabled]="user.role === 'ADMIN'">
+                  <mat-icon>power_settings_new</mat-icon>
+                </button>
+                <button class="action-btn action-btn--delete"
+                        matTooltip="Șterge"
+                        (click)="deleteUser(user)"
+                        [disabled]="user.role === 'ADMIN'">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <!-- Card Body -->
+            <div class="entity-card__body">
+              <div class="entity-meta">
+                <span class="badge" [ngClass]="getRoleBadgeClass(user.role)">
+                  {{ getRoleLabel(user.role) }}
+                </span>
+                <span class="badge" [class.badge--success]="user.enabled" [class.badge--error]="!user.enabled">
+                  {{ user.enabled ? 'Activ' : 'Inactiv' }}
+                </span>
+              </div>
+
+              <div class="entity-stats">
+                @if (user.phone) {
+                  <div class="stat-item">
+                    <mat-icon>phone</mat-icon>
+                    <span>{{ user.phone }}</span>
+                  </div>
+                }
+                <div class="stat-item">
+                  <mat-icon>child_care</mat-icon>
+                  <span>{{ user.childrenCount }} copii</span>
+                </div>
+                <div class="stat-item">
+                  <mat-icon>school</mat-icon>
+                  <span>{{ user.enrollmentsCount }} înscrieri</span>
+                </div>
+                <div class="stat-item">
+                  <mat-icon>calendar_today</mat-icon>
+                  <span>{{ formatDate(user.createdAt) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Edit Form (Inline) -->
+            @if (editingUser()?.id === user.id) {
+              <div class="edit-form">
+                <div class="form-grid">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Nume</mat-label>
+                    <input matInput [(ngModel)]="editForm.name" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Email</mat-label>
+                    <input matInput [(ngModel)]="editForm.email" type="email" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Telefon</mat-label>
+                    <input matInput [(ngModel)]="editForm.phone" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Rol</mat-label>
+                    <mat-select [(ngModel)]="editForm.role">
+                      @for (role of roles; track role) {
+                        <mat-option [value]="role">{{ getRoleLabel(role) }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+                <div class="form-actions">
+                  <button mat-stroked-button (click)="cancelEdit()">Anulează</button>
+                  <button mat-flat-button class="save-btn" (click)="saveUser()" [disabled]="isSaving()">
+                    @if (isSaving()) {
+                      <mat-icon class="spinning">sync</mat-icon>
+                    } @else {
+                      <mat-icon>save</mat-icon>
+                    }
+                    Salvează
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </section>
+</section>

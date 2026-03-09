@@ -1,0 +1,70 @@
+{
+  "name": "triathlon-team-fe",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "dotenv -e .env.local -- ng serve --port 4200",
+    "start:ssl": "dotenv -e .env.local -- ng serve --port 4200 --ssl",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "serve:ssr:TriathlonTeamFE": "node dist/TriathlonTeamFE/server/server.mjs",
+    "lint:content": "node scripts/check-content.js",
+    "optimize:images": "node scripts/optimize-images.js"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "singleQuote": true,
+    "overrides": [
+      {
+        "files": "*.html",
+        "options": {
+          "parser": "angular"
+        }
+      }
+    ]
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/animations": "^20.3.1",
+    "@angular/cdk": "^20.2.7",
+    "@angular/common": "^20.3.1",
+    "@angular/compiler": "^20.3.1",
+    "@angular/core": "^20.3.1",
+    "@angular/forms": "^20.3.1",
+    "@angular/material": "^20.2.7",
+    "@angular/platform-browser": "^20.3.1",
+    "@angular/platform-server": "^20.3.1",
+    "@angular/router": "^20.3.1",
+    "@angular/ssr": "^20.3.1",
+    "@stomp/stompjs": "^7.0.0",
+    "@stripe/stripe-js": "^7.9.0",
+    "@types/leaflet": "^1.9.21",
+    "@types/stripe-v3": "^3.1.33",
+    "express": "^5.1.0",
+    "leaflet": "^1.9.4",
+    "rxjs": "~7.8.0",
+    "sockjs-client": "^1.6.1",
+    "tslib": "^2.3.0",
+    "zone.js": "~0.15.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^20.3.1",
+    "@angular/cli": "^20.3.1",
+    "@angular/compiler-cli": "^20.3.1",
+    "@playwright/test": "^1.56.1",
+    "@types/express": "^5.0.1",
+    "@types/jasmine": "~5.1.0",
+    "@types/node": "^20.17.19",
+    "@types/sockjs-client": "^1.5.4",
+    "dotenv-cli": "^10.0.0",
+    "jasmine-core": "~5.9.0",
+    "karma": "~6.4.0",
+    "karma-chrome-launcher": "~3.2.0",
+    "karma-coverage": "~2.2.0",
+    "karma-jasmine": "~5.1.0",
+    "karma-jasmine-html-reporter": "~2.1.0",
+    "sharp": "^0.34.4",
+    "typescript": "~5.9.2"
+  }
+}

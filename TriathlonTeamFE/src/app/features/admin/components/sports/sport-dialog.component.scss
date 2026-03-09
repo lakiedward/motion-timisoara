@@ -1,0 +1,218 @@
+// ============================================
+// ADMIN SPORT DIALOG - Consistent with Admin Theme
+// ============================================
+:host {
+  display: block;
+}
+
+:host ::ng-deep .mat-mdc-dialog-container {
+  --mdc-dialog-container-shape: var(--radius-card) !important;
+}
+
+.dialog-title {
+  padding-bottom: 1rem !important;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.dialog-title__heading {
+  margin: 0.75rem 0 0.5rem;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--sport-text-dark);
+  letter-spacing: -0.02em;
+
+  span {
+    color: var(--sport-accent);
+  }
+}
+
+.dialog-title__subtitle {
+  margin: 0;
+  color: var(--sport-text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.form {
+  display: grid;
+  gap: 1.25rem;
+  padding: 0.75rem 0 0;
+}
+
+// ============================================
+// Form Styling (Material overrides)
+// ============================================
+:host ::ng-deep .mat-mdc-form-field {
+  width: 100%;
+
+  /* Force premium look - match standardized pattern */
+  .mat-mdc-text-field-wrapper {
+    background-color: var(--sport-bg-white) !important;
+    border: 1px solid var(--color-border-default) !important;
+    border-radius: 12px !important;
+    padding: 0 16px !important;
+    transition: all 0.2s ease !important;
+    box-shadow: none !important;
+
+    /* Hide default Material elements */
+    .mdc-notched-outline,
+    .mdc-line-ripple {
+      display: none !important;
+    }
+  }
+
+  /* States */
+  &:hover:not(.mat-focused):not(.mat-form-field-invalid) .mat-mdc-text-field-wrapper {
+    border-color: rgba(245, 158, 11, 0.5) !important;
+    background-color: #fffbeb !important;
+  }
+
+  &.mat-focused .mat-mdc-text-field-wrapper {
+    border-color: var(--sport-accent) !important;
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1) !important;
+    background-color: var(--sport-bg-white) !important;
+  }
+
+  &.mat-form-field-invalid {
+    .mat-mdc-text-field-wrapper {
+      border-color: #ef4444 !important;
+      &:hover { background-color: #fef2f2 !important; }
+    }
+    &.mat-focused .mat-mdc-text-field-wrapper {
+      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1) !important;
+    }
+  }
+
+  /* Force background even for filled variant */
+  .mdc-text-field--filled {
+    background-color: transparent !important;
+    &::before, &::after { display: none !important; }
+  }
+}
+
+:host ::ng-deep .mat-mdc-form-field-infix {
+  min-height: 50px !important;
+  padding: 1.25rem 0 0.5rem !important;
+}
+
+:host ::ng-deep .mat-mdc-input-element {
+  color: var(--sport-text-dark) !important;
+  font-family: var(--font-primary) !important;
+  font-weight: 500 !important;
+}
+
+:host ::ng-deep .mdc-floating-label {
+  font-family: var(--font-primary) !important;
+  color: var(--sport-text-muted) !important;
+  font-weight: 500 !important;
+}
+
+:host ::ng-deep .mat-mdc-form-field.mat-focused .mdc-floating-label {
+  color: var(--sport-accent-dark) !important;
+  font-weight: 600 !important;
+}
+
+.code-preview {
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  background: var(--sport-bg-light); // Cleaner, subtle background
+  border: 1px solid var(--color-border-subtle);
+  margin-top: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.code-preview__label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sport-accent-dark);
+  margin-bottom: 0; // Handled by gap
+}
+
+.code-preview__value {
+  display: inline-block;
+  align-self: flex-start;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--sport-text-dark);
+  background: white;
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  min-width: 120px;
+}
+
+.code-preview__hint {
+  margin: 0; // Handled by gap
+  font-size: 0.85rem;
+  color: var(--sport-text-muted);
+}
+
+.error {
+  color: var(--color-error, #ef4444);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.actions {
+  padding: 1.25rem 0 0 !important;
+  margin: 0 !important;
+  gap: 0.75rem !important;
+  border-top: 1px solid var(--color-border-subtle);
+
+  @media (max-width: 640px) {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+}
+
+// Buttons - Admin (Amber)
+.btn-primary {
+  background: var(--gradient-warm) !important;
+  color: white !important;
+  border-radius: var(--radius-btn) !important;
+  font-weight: 700 !important;
+  min-height: 48px;
+  padding: 0.75rem 1.5rem !important;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3) !important;
+  transition: all 0.2s ease !important;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4) !important;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+  }
+
+  mat-progress-spinner {
+    margin-right: 0.5rem;
+    display: inline-block !important;
+  }
+}
+
+:host ::ng-deep .btn-primary circle {
+  stroke: #ffffff;
+}
+
+.btn-secondary {
+  background: var(--sport-bg-white) !important;
+  border-radius: var(--radius-btn) !important;
+  border: 2px solid rgba(245, 158, 11, 0.35) !important;
+  color: var(--sport-text-dark) !important;
+  font-weight: 700 !important;
+  min-height: 48px;
+  padding: 0.75rem 1.5rem !important;
+  transition: all 0.2s ease !important;
+
+  &:hover:not(:disabled) {
+    background: #fffbeb !important;
+    border-color: rgba(245, 158, 11, 0.55) !important;
+  }
+}

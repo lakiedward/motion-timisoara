@@ -1,0 +1,89 @@
+<div mat-dialog-title>
+  <span class="dialog-eyebrow">{{ data ? 'Editare' : 'Creare' }}</span>
+  <h1>{{ data ? 'Editeaza locatie' : 'Creeaza locatie' }}</h1>
+</div>
+
+<form [formGroup]="form" mat-dialog-content class="form">
+  <!-- Search Section -->
+  <div class="search-section">
+    <span>Cauta adresa</span>
+    <div class="search-row">
+      <input
+        type="text"
+        class="search-input"
+        [value]="searchQuery"
+        (input)="onSearchInput($event)"
+        (keyup.enter)="triggerSearch()"
+        placeholder="ex: Strada, oras"
+      />
+      <button type="button" mat-stroked-button color="primary" (click)="triggerSearch()">
+        <mat-icon>search</mat-icon>
+        Cauta
+      </button>
+    </div>
+    <ul class="search-results" *ngIf="searchResults().length > 0">
+      <li *ngFor="let r of searchResults()" (click)="applySearchResult(r)">
+        {{ r.display_name }}
+      </li>
+    </ul>
+  </div>
+
+  <!-- Name Field -->
+  <mat-form-field appearance="fill">
+    <mat-label>Nume locatie</mat-label>
+    <input matInput formControlName="name" required />
+    <mat-error *ngIf="form.controls.name.hasError('required')">Numele este obligatoriu</mat-error>
+  </mat-form-field>
+
+  <!-- Type Field -->
+  <mat-form-field appearance="fill">
+    <mat-label>Tip</mat-label>
+    <mat-select formControlName="type" required>
+      <mat-option *ngFor="let t of types" [value]="t.value">{{ t.label }}</mat-option>
+    </mat-select>
+    <mat-error *ngIf="form.controls.type.hasError('required')">Selecteaza tipul</mat-error>
+  </mat-form-field>
+
+  <!-- Address Field -->
+  <mat-form-field appearance="fill">
+    <mat-label>Adresa</mat-label>
+    <input matInput formControlName="address" />
+  </mat-form-field>
+
+  <!-- Coordinates -->
+  <div class="two-columns">
+    <mat-form-field appearance="fill">
+      <mat-label>Latitudine</mat-label>
+      <input matInput formControlName="lat" />
+    </mat-form-field>
+    <mat-form-field appearance="fill">
+      <mat-label>Longitudine</mat-label>
+      <input matInput formControlName="lng" />
+    </mat-form-field>
+  </div>
+
+  <!-- Map Section -->
+  <div class="map-wrapper">
+    <div class="map-container" id="admin-location-dialog-map" aria-label="Selecteaza locatia pe harta"></div>
+    <div class="map-center-pin" aria-hidden="true">
+      <mat-icon>place</mat-icon>
+    </div>
+    <div class="map-loader" *ngIf="!isMapReady()">
+      <div class="spinner" aria-hidden="true"></div>
+      <span>Încărcăm harta…</span>
+    </div>
+  </div>
+</form>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()" [disabled]="isSubmitting()">Anuleaza</button>
+  <button mat-flat-button color="primary" (click)="submit()" [disabled]="isSubmitting()">
+    <mat-progress-spinner
+      *ngIf="isSubmitting()"
+      mode="indeterminate"
+      diameter="18"
+    ></mat-progress-spinner>
+    <span *ngIf="!isSubmitting()">Salveaza</span>
+  </button>
+</mat-dialog-actions>
+

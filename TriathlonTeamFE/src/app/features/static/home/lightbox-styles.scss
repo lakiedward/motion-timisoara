@@ -1,0 +1,305 @@
+// Lightbox Styles
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  
+  &--active {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+.lightbox__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(8px);
+}
+
+.lightbox__container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 2rem;
+  max-width: 90vw;
+  max-height: 90vh;
+  margin: 0 auto;
+}
+
+.lightbox__close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2001;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.7);
+    transform: scale(1.1);
+  }
+  
+  mat-icon {
+    font-size: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+}
+
+.lightbox__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 2001;
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.7);
+    transform: translateY(-50%) scale(1.1);
+  }
+  
+  &--prev {
+    left: 1rem;
+  }
+  
+  &--next {
+    right: 1rem;
+  }
+  
+  mat-icon {
+    font-size: 1.8rem;
+    width: 1.8rem;
+    height: 1.8rem;
+  }
+}
+
+.lightbox__image-container {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  max-height: 70vh;
+  margin-bottom: 1rem;
+}
+
+.lightbox__image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.lightbox__loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+}
+
+.lightbox__content {
+  text-align: center;
+  color: white;
+  max-width: 600px;
+}
+
+.lightbox__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  color: white;
+}
+
+.lightbox__description {
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0 0 1rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.lightbox__metadata {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 1rem;
+}
+
+.lightbox__info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.8);
+  
+  mat-icon {
+    font-size: 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    color: rgba(255, 255, 255, 0.7);
+  }
+}
+
+.lightbox__counter {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+// Moments card enhancements - removed deprecated wrapper
+
+.moments-card__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(37, 99, 235, 0.9) 0%,
+    rgba(59, 130, 246, 0.8) 50%,
+    rgba(147, 51, 234, 0.9) 100%
+  );
+  opacity: 0;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1; /* Keep below captions but above image */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none; /* Do not block interactions with content */
+}
+
+.moments-card__overlay-content {
+  text-align: center;
+  color: white;
+  transform: translateY(20px);
+  transition: transform 0.3s ease;
+}
+
+.moments-card__zoom-icon {
+  font-size: 3rem;
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.9;
+}
+
+.moments-card__overlay-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.moments-card__info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  color: rgba(226, 232, 240, 0.8);
+  
+  mat-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+    color: rgba(226, 232, 240, 0.7);
+  }
+}
+
+// Ensure images are properly positioned
+.moments-card img {
+  filter: brightness(0.95);
+  transition: filter 0.3s ease;
+}
+
+.moments-card:hover {
+  .moments-card__overlay {
+    opacity: 1;
+  }
+  
+  .moments-card__overlay-content {
+    transform: translateY(0);
+  }
+  
+  img {
+    filter: brightness(1);
+  }
+}
+
+// Mobile lightbox adjustments
+@media (max-width: 768px) {
+  .lightbox__container {
+    padding: 1rem;
+  }
+  
+  .lightbox__close {
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 40px;
+    height: 40px;
+  }
+  
+  .lightbox__nav {
+    width: 48px;
+    height: 48px;
+    
+    &--prev {
+      left: 0.5rem;
+    }
+    
+    &--next {
+      right: 0.5rem;
+    }
+    
+    mat-icon {
+      font-size: 1.5rem;
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+  }
+  
+  .lightbox__content {
+    max-width: 100%;
+  }
+  
+  .lightbox__title {
+    font-size: 1.25rem;
+  }
+  
+  .lightbox__metadata {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}

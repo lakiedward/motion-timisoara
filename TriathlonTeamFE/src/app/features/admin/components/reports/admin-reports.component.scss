@@ -1,0 +1,49 @@
+:host {
+  display: block;
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  position: relative;
+  overflow: hidden;
+  
+  /* Amber accent */
+  --amber: #f59e0b;
+  --gradient-mixed: linear-gradient(90deg, #2563eb 0%, #f59e0b 100%);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--gradient-mixed);
+  }
+}
+
+header {
+  margin-bottom: 1.5rem;
+}
+
+header h1 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  color: #0f172a;
+}
+
+header p {
+  margin: 0;
+  color: #475569;
+}
+
+.admin-reports__placeholder {
+  display: grid;
+  place-items: center;
+  padding: 2.5rem 1rem;
+  border: 1px dashed rgba(245, 158, 11, 0.4);
+  border-radius: 1rem;
+  color: #d97706;
+  background: rgba(245, 158, 11, 0.08);
+}

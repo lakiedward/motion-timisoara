@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Delete Course</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, button {
+            padding: 10px;
+            font-size: 14px;
+        }
+        input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+        }
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Delete Course API</h1>
+    
+    <div class="form-group">
+        <label for="apiUrl">API Base URL:</label>
+        <input type="text" id="apiUrl" value="https://triathlonteambe-production.up.railway.app" placeholder="https://triathlonteambe-production.up.railway.app">
+    </div>
+
+    <div class="form-group">
+        <label for="token">JWT Token (din localStorage sau din browser console):</label>
+        <input type="password" id="token" placeholder="eyJhbGciOiJIUzUxMiJ9...">
+        <small>Deschide Console (F12) și scrie: localStorage.getItem('access_token')</small>
+    </div>
+
+    <div class="form-group">
+        <label for="courseId">Course ID (UUID):</label>
+        <input type="text" id="courseId" placeholder="123e4567-e89b-12d3-a456-426614174000">
+    </div>
+
+    <button onclick="testGetCourses()">Test GET /api/admin/courses</button>
+    <button onclick="deleteCourse()" class="delete-btn">Test DELETE /api/admin/courses/{id}</button>
+
+    <div id="result"></div>
+
+    <script>
+        function getHeaders() {
+            const token = document.getElementById('token').value.trim();
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+                console.log('Token added to request:', token.substring(0, 20) + '...');
+            } else {
+                console.warn('No token provided!');
+            }
+            
+            return headers;
+        }
+
+        async function testGetCourses() {
+            const apiUrl = document.getElementById('apiUrl').value.trim();
+            const resultDiv = document.getElementById('result');
+            
+            resultDiv.textContent = 'Se încarcă...';
+            resultDiv.className = '';
+            
+            try {
+                console.log('Making GET request to:', `${apiUrl}/api/admin/courses`);
+                console.log('Headers:', getHeaders());
+                
+                const response = await fetch(`${apiUrl}/api/admin/courses`, {
+                    method: 'GET',
+                    headers: getHeaders(),
+                    credentials: 'include'
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', [...response.headers.entries()]);
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.textContent = `✓ SUCCESS (${response.status}):\n\n${JSON.stringify(data, null, 2)}`;
+                    resultDiv.className = 'success';
+                } else {
+                    resultDiv.textContent = `✗ ERROR (${response.status}):\n\n${JSON.stringify(data, null, 2)}`;
+                    resultDiv.className = 'error';
+                }
+            } catch (error) {
+                console.error('Request error:', error);
+                resultDiv.textContent = `✗ NETWORK ERROR:\n\n${error.message}\n\n${error.stack}`;
+                resultDiv.className = 'error';
+            }
+        }
+
+        async function deleteCourse() {
+            const apiUrl = document.getElementById('apiUrl').value.trim();
+            const courseId = document.getElementById('courseId').value.trim();
+            const resultDiv = document.getElementById('result');
+            
+            if (!courseId) {
+                alert('Te rog introdu un Course ID');
+                return;
+            }
+            
+            if (!confirm(`Sigur vrei să ștergi cursul cu ID: ${courseId}?`)) {
+                return;
+            }
+            
+            resultDiv.textContent = 'Se șterge cursul...';
+            resultDiv.className = '';
+            
+            try {
+                const url = `${apiUrl}/api/admin/courses/${courseId}`;
+                console.log('Making DELETE request to:', url);
+                console.log('Headers:', getHeaders());
+                
+                const response = await fetch(url, {
+                    method: 'DELETE',
+                    headers: getHeaders(),
+                    credentials: 'include'
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', [...response.headers.entries()]);
+                
+                // DELETE typically returns 204 No Content on success
+                if (response.status === 204) {
+                    resultDiv.textContent = `✓ SUCCESS (${response.status}):\n\nCursul a fost șters cu succes!`;
+                    resultDiv.className = 'success';
+                } else {
+                    let errorText;
+                    try {
+                        const data = await response.json();
+                        errorText = JSON.stringify(data, null, 2);
+                    } catch {
+                        errorText = await response.text();
+                    }
+                    
+                    resultDiv.textContent = `✗ ERROR (${response.status}):\n\n${errorText}`;
+                    resultDiv.className = 'error';
+                }
+            } catch (error) {
+                console.error('Request error:', error);
+                resultDiv.textContent = `✗ NETWORK ERROR:\n\n${error.message}\n\n${error.stack}`;
+                resultDiv.className = 'error';
+            }
+        }
+
+        // Auto-load token from localStorage if available
+        window.addEventListener('DOMContentLoaded', () => {
+            try {
+                const token = localStorage.getItem('access_token');
+                if (token) {
+                    document.getElementById('token').value = token;
+                    console.log('Token loaded from localStorage');
+                }
+            } catch (e) {
+                console.log('Could not access localStorage:', e);
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+
