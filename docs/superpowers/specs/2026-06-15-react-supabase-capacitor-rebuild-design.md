@@ -27,7 +27,7 @@ The Angular app is mid-migration to Supabase and **not fully functional**: it re
 ## 2. Scope
 
 ### In scope
-- New React app at `TriathlonTeamApp/` — web + Capacitor (Android + iOS).
+- New React app at `motiontimisoaraApp/` — web + Capacitor (Android + iOS).
 - Full UI/UX parity with the Angular app (every screen in the inventory) with a modern redesign.
 - **Backend completion** on the existing Supabase project: comprehensive RLS, storage policies, a minimal set of Edge Functions / Postgres RPCs, and migration of the remaining legacy `/api` features (ratings, announcements, locations/sports) onto Supabase.
 - Stripe payments + Stripe Connect onboarding (coach + club).
@@ -72,7 +72,7 @@ A single `Platform` abstraction (`Capacitor.isNativePlatform()`) gates native-on
 
 ```
 motion-timisoara/
-├── TriathlonTeamApp/                 # NEW — the unified React + Capacitor app
+├── motiontimisoaraApp/               # NEW — the unified React + Capacitor app
 │   ├── index.html
 │   ├── capacitor.config.ts
 │   ├── vite.config.ts
@@ -252,10 +252,16 @@ Even as "one tranșă," implementation is ordered so each phase is independently
 - **Prerender + Leaflet/Stripe** — browser-only libs must be guarded so prerender/SSG doesn't choke.
 - **No live Supabase project configured** — needs creating/linking + applying migrations + seeding before integration testing.
 
-## 15. Open Questions (to resolve during/just before implementation)
-- Which Supabase project hosts this app? (none configured yet — create new, or point at an existing one?) Needed before phase 4 integration testing.
-- Push-notification provider keys (FCM/APNs) and Apple Developer account for iOS signing — required for phases 9–10.
-- Confirm the new directory name `TriathlonTeamApp` (vs e.g. `web`/`app`).
+## 15. Resolved Decisions & Remaining Open Questions
+
+**Resolved (2026-06-15):**
+- **Supabase project:** create a **new** project for Motion Timisoara. Provisioned at **Phase 4** (integration testing) — confirming cost at that point — so no idle billable resource during Phases 1–3. Phases 1–3 scaffold against env placeholders; migrations are validated locally (`supabase` CLI / local stack) until then.
+- **Directory name:** `motiontimisoaraApp/`.
+- **Proceed mode:** write the implementation plan, then begin **Phase 1 autonomously** (ultracode) without per-step approval.
+
+**Still open (needed for later phases, not blocking Phases 1–3):**
+- Push-notification provider keys (FCM for Android / APNs for iOS) — required for Phase 9–10 push wiring.
+- Apple Developer account + signing assets for iOS Codemagic builds — required for Phase 10.
 
 ---
 
