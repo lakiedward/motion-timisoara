@@ -75,6 +75,57 @@ export function completeProfile(userId: string, input: { name: string; phone: st
   return supabase.from('profiles').update({ name: input.name, phone: input.phone }).eq('id', userId)
 }
 
+export interface RegisterCoachInput {
+  email: string
+  password: string
+  name: string
+  phone?: string
+  invitationCode: string
+  bio?: string
+  sportIds?: string[]
+}
+
+export interface RegisterClubInput {
+  email: string
+  password: string
+  name: string
+  phone?: string
+  clubName: string
+  clubDescription?: string
+  clubCity?: string
+  clubEmail?: string
+  clubPhone?: string
+  sportIds?: string[]
+}
+
+/** Calls the register-coach Edge Function, then signs the new coach in. */
+export async function registerCoach(input: RegisterCoachInput) {
+  const { error } = await supabase.functions.invoke('register-coach', { body: input })
+  if (error) return { error: await edgeError(error) }
+  return supabase.auth.signInWithPassword({ email: input.email, password: input.password })
+}
+
+/** Calls the register-club Edge Function, then signs the new club owner in. */
+export async function registerClub(input: RegisterClubInput) {
+  const { error } = await supabase.functions.invoke('register-club', { body: input })
+  if (error) return { error: await edgeError(error) }
+  return supabase.auth.signInWithPassword({ email: input.email, password: input.password })
+}
+
+/** Extracts a human message from an Edge Function error response. */
+async function edgeError(error: unknown): Promise<{ message: string }> {
+  const ctx = (error as { context?: Response })?.context
+  if (ctx && typeof ctx.json === 'function') {
+    try {
+      const body = await ctx.json()
+      if (body?.error) return { message: body.error as string }
+    } catch {
+      /* ignore */
+    }
+  }
+  return { message: (error as { message?: string })?.message ?? 'A apărut o eroare.' }
+}
+
 /** Default landing route for a role after login. */
 export function roleHome(role: Role): string {
   switch (role) {
