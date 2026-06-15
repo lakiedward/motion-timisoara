@@ -72,9 +72,13 @@ export function Header() {
           <Button variant="ghost" asChild>
             <Link to="/login">Autentificare</Link>
           </Button>
-          <Button asChild>
-            <Link to="/signup">Înregistrare</Link>
-          </Button>
+          <Link
+            to="/signup"
+            className="inline-flex items-center rounded-full px-5 py-2 text-sm font-bold text-white shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all hover:-translate-y-0.5"
+            style={{ background: 'var(--gradient-primary)' }}
+          >
+            Înregistrare
+          </Link>
         </div>
 
         <Sheet open={open} onOpenChange={setOpen}>
@@ -113,9 +117,13 @@ export function Header() {
                 </Button>
               </SheetClose>
               <SheetClose asChild>
-                <Button asChild>
-                  <Link to="/signup">Înregistrare</Link>
-                </Button>
+                <Link
+                  to="/signup"
+                  className="inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-bold text-white shadow-[0_4px_15px_rgba(37,99,235,0.3)]"
+                  style={{ background: 'var(--gradient-primary)' }}
+                >
+                  Înregistrare
+                </Link>
               </SheetClose>
             </div>
           </SheetContent>

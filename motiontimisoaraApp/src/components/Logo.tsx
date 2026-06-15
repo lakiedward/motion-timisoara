@@ -9,7 +9,10 @@ interface LogoProps {
 export function Logo({ className, showText = true }: LogoProps) {
   return (
     <span className={cn('inline-flex items-center gap-2 font-display font-bold', className)}>
-      <span className="bg-primary text-primary-foreground grid size-9 shrink-0 place-items-center rounded-xl shadow-sm">
+      <span
+        className="grid size-9 shrink-0 place-items-center rounded-xl text-white shadow-sm"
+        style={{ background: 'var(--gradient-primary)' }}
+      >
         <svg
           viewBox="0 0 24 24"
           className="size-5"

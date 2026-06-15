@@ -3,108 +3,107 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* "Sportiv energic": deep azure/teal primary + warm energetic highlight, cool neutrals. */
+/* ============================================================
+   Motion Timisoara design tokens — mirrors the original site's
+   UIGuidelines.md: Blue (#2563eb) -> Sky (#0ea5e9) gradient brand,
+   Amber (#f59e0b) accent, Manrope (display) + Inter (body).
+   ============================================================ */
 :root {
   --radius: 0.75rem;
 
-  --background: oklch(0.99 0.004 240);
-  --foreground: oklch(0.2 0.03 250);
+  --background: #ffffff;
+  --foreground: #0f172a;
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.03 250);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.03 250);
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
 
-  --primary: oklch(0.54 0.16 236);
-  --primary-foreground: oklch(0.99 0.01 240);
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
 
-  --secondary: oklch(0.96 0.012 240);
-  --secondary-foreground: oklch(0.28 0.04 250);
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
 
-  --muted: oklch(0.96 0.012 240);
-  --muted-foreground: oklch(0.52 0.025 250);
+  --muted: #f8fafc;
+  --muted-foreground: #64748b;
 
-  --accent: oklch(0.95 0.02 236);
-  --accent-foreground: oklch(0.3 0.06 240);
+  --accent: #eff6ff;
+  --accent-foreground: #1d4ed8;
 
-  --highlight: oklch(0.72 0.18 52);
-  --highlight-foreground: oklch(0.99 0.02 80);
+  /* Brand extras (from UIGuidelines core tokens) */
+  --sky: #0ea5e9;
+  --highlight: #f59e0b;
+  --highlight-foreground: #ffffff;
+  --success: #22c55e;
+  --success-foreground: #ffffff;
 
-  --success: oklch(0.63 0.14 152);
-  --success-foreground: oklch(0.99 0.01 150);
+  --destructive: #ef4444;
 
-  --destructive: oklch(0.58 0.24 27.3);
+  --border: rgba(15, 23, 42, 0.08);
+  --input: rgba(15, 23, 42, 0.12);
+  --ring: #2563eb;
 
-  --border: oklch(0.91 0.012 240);
-  --input: oklch(0.91 0.012 240);
-  --ring: oklch(0.54 0.16 236);
+  --gradient-primary: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
+  --gradient-warm: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  --gradient-green: linear-gradient(135deg, #10b981 0%, #34d399 100%);
 
-  --chart-1: oklch(0.54 0.16 236);
-  --chart-2: oklch(0.6 0.13 200);
-  --chart-3: oklch(0.72 0.18 52);
-  --chart-4: oklch(0.63 0.14 152);
-  --chart-5: oklch(0.62 0.2 300);
+  --chart-1: #2563eb;
+  --chart-2: #0ea5e9;
+  --chart-3: #f59e0b;
+  --chart-4: #22c55e;
+  --chart-5: #8b5cf6;
 
-  --sidebar: oklch(0.985 0.005 240);
-  --sidebar-foreground: oklch(0.2 0.03 250);
-  --sidebar-primary: oklch(0.54 0.16 236);
-  --sidebar-primary-foreground: oklch(0.99 0.01 240);
-  --sidebar-accent: oklch(0.95 0.02 236);
-  --sidebar-accent-foreground: oklch(0.3 0.06 240);
-  --sidebar-border: oklch(0.91 0.012 240);
-  --sidebar-ring: oklch(0.54 0.16 236);
+  --sidebar: #f8fafc;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eff6ff;
+  --sidebar-accent-foreground: #1d4ed8;
+  --sidebar-border: rgba(15, 23, 42, 0.08);
+  --sidebar-ring: #2563eb;
 
   --font-sans: 'Inter Variable', system-ui, sans-serif;
-  --font-display: 'Sora Variable', 'Inter Variable', system-ui, sans-serif;
+  --font-display: 'Manrope Variable', 'Inter Variable', sans-serif;
 }
 
 .dark {
-  --background: oklch(0.17 0.02 250);
-  --foreground: oklch(0.96 0.008 240);
-
-  --card: oklch(0.21 0.025 250);
-  --card-foreground: oklch(0.96 0.008 240);
-  --popover: oklch(0.21 0.025 250);
-  --popover-foreground: oklch(0.96 0.008 240);
-
-  --primary: oklch(0.68 0.15 235);
-  --primary-foreground: oklch(0.17 0.03 250);
-
-  --secondary: oklch(0.27 0.03 250);
-  --secondary-foreground: oklch(0.96 0.008 240);
-
-  --muted: oklch(0.27 0.03 250);
-  --muted-foreground: oklch(0.7 0.02 245);
-
-  --accent: oklch(0.3 0.05 240);
-  --accent-foreground: oklch(0.96 0.008 240);
-
-  --highlight: oklch(0.74 0.17 55);
-  --highlight-foreground: oklch(0.18 0.03 60);
-
-  --success: oklch(0.7 0.14 153);
-  --success-foreground: oklch(0.17 0.02 150);
-
-  --destructive: oklch(0.7 0.19 22);
-
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.68 0.15 235);
-
-  --chart-1: oklch(0.68 0.15 235);
-  --chart-2: oklch(0.7 0.12 200);
-  --chart-3: oklch(0.74 0.17 55);
-  --chart-4: oklch(0.7 0.14 153);
-  --chart-5: oklch(0.7 0.18 300);
-
-  --sidebar: oklch(0.21 0.025 250);
-  --sidebar-foreground: oklch(0.96 0.008 240);
-  --sidebar-primary: oklch(0.68 0.15 235);
-  --sidebar-primary-foreground: oklch(0.17 0.03 250);
-  --sidebar-accent: oklch(0.3 0.05 240);
-  --sidebar-accent-foreground: oklch(0.96 0.008 240);
-  --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.68 0.15 235);
+  --background: #0b1220;
+  --foreground: #e2e8f0;
+  --card: #111a2e;
+  --card-foreground: #e2e8f0;
+  --popover: #111a2e;
+  --popover-foreground: #e2e8f0;
+  --primary: #3b82f6;
+  --primary-foreground: #0b1220;
+  --secondary: #1e293b;
+  --secondary-foreground: #e2e8f0;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #1e293b;
+  --accent-foreground: #bfdbfe;
+  --sky: #38bdf8;
+  --highlight: #fbbf24;
+  --highlight-foreground: #0b1220;
+  --success: #34d399;
+  --success-foreground: #0b1220;
+  --destructive: #f87171;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: #3b82f6;
+  --chart-1: #3b82f6;
+  --chart-2: #38bdf8;
+  --chart-3: #fbbf24;
+  --chart-4: #34d399;
+  --chart-5: #a78bfa;
+  --sidebar: #111a2e;
+  --sidebar-foreground: #e2e8f0;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #0b1220;
+  --sidebar-accent: #1e293b;
+  --sidebar-accent-foreground: #bfdbfe;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #3b82f6;
 }
 
 @theme inline {
@@ -127,6 +126,7 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-sky: var(--sky);
   --color-highlight: var(--highlight);
   --color-highlight-foreground: var(--highlight-foreground);
   --color-success: var(--success);
@@ -151,6 +151,10 @@
 
   --font-sans: var(--font-sans);
   --font-display: var(--font-display);
+
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --shadow-card-hover: 0 12px 30px rgba(37, 99, 235, 0.15);
+  --shadow-btn-primary: 0 4px 15px rgba(37, 99, 235, 0.3);
 }
 
 @layer base {
@@ -164,5 +168,34 @@
   h2,
   h3 {
     font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  /* Primary brand gradient pill CTA (UIGuidelines .btn-cta--primary) */
+  .btn-cta {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-7 py-3 text-base font-bold transition-all;
+  }
+  .btn-cta--primary {
+    background: var(--gradient-primary);
+    color: #fff;
+    box-shadow: var(--shadow-btn-primary);
+  }
+  .btn-cta--primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(37, 99, 235, 0.4);
+  }
+  .btn-cta--outline {
+    @apply border-2 bg-transparent text-foreground;
+  }
+  .btn-cta--outline:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+  /* Eyebrow label (amber, uppercase) used above section titles */
+  .eyebrow {
+    @apply inline-block text-xs font-bold tracking-[0.15em] uppercase;
+    color: var(--highlight);
   }
 }
