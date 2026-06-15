@@ -89,6 +89,35 @@ export async function deleteInviteCode(id: string) {
   if (error) throw error
 }
 
+export interface CreatedCoach {
+  userId: string
+  email: string
+  tempPassword: string
+}
+
+/** Creates a standalone coach account (no club) via the create-managed-coach EF. */
+export async function createCoachAccount(input: {
+  name: string
+  email: string
+  phone?: string
+}): Promise<CreatedCoach> {
+  const { data, error } = await supabase.functions.invoke('create-managed-coach', { body: input })
+  if (error) {
+    let msg = 'Nu am putut crea antrenorul.'
+    const ctx = (error as { context?: Response })?.context
+    if (ctx && typeof ctx.json === 'function') {
+      try {
+        const b = await ctx.json()
+        if (b?.error) msg = b.error as string
+      } catch {
+        /* ignore */
+      }
+    }
+    throw new Error(msg)
+  }
+  return data as CreatedCoach
+}
+
 // ===== Clubs / Courses (overview) =====
 export async function getAllClubs(): Promise<Pick<Tables<'clubs'>, 'id' | 'name' | 'city' | 'email'>[]> {
   const { data, error } = await supabase.from('clubs').select('id, name, city, email').order('name')
