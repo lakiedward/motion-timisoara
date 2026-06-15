@@ -18,6 +18,12 @@ import AdminClubsPage from '@/features/admin/AdminClubsPage'
 import AdminCoursesPage from '@/features/admin/AdminCoursesPage'
 import AdminSportsPage from '@/features/admin/AdminSportsPage'
 import AdminInviteCodesPage from '@/features/admin/AdminInviteCodesPage'
+import ClubLayout from '@/features/club/ClubLayout'
+import ClubDashboard from '@/features/club/ClubDashboard'
+import ClubProfilePage from '@/features/club/ClubProfilePage'
+import ClubCoachesPage from '@/features/club/ClubCoachesPage'
+import ClubAnnouncementsPage from '@/features/club/ClubAnnouncementsPage'
+import PortalComingSoon from '@/features/PortalComingSoon'
 import HomePage from '@/features/public/HomePage'
 import ProgramPage from '@/features/public/ProgramPage'
 import CourseDetailsPage from '@/features/public/CourseDetailsPage'
@@ -122,6 +128,22 @@ export const router = createBrowserRouter([
               { path: '/admin/courses', element: <AdminCoursesPage /> },
               { path: '/admin/sports', element: <AdminSportsPage /> },
               { path: '/admin/codes', element: <AdminInviteCodesPage /> },
+            ],
+          },
+        ],
+      },
+      {
+        element: <RequireRole roles={['CLUB']} />,
+        children: [
+          {
+            element: <ClubLayout />,
+            children: [
+              { path: '/club', element: <ClubDashboard /> },
+              { path: '/club/profile', element: <ClubProfilePage /> },
+              { path: '/club/coaches', element: <ClubCoachesPage /> },
+              { path: '/club/announcements', element: <ClubAnnouncementsPage /> },
+              { path: '/club/courses', element: <PortalComingSoon title="Cursuri club" /> },
+              { path: '/club/locations', element: <PortalComingSoon title="Locații club" /> },
             ],
           },
         ],
