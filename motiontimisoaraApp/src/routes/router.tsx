@@ -6,7 +6,11 @@ import CoachLayout from '@/features/coach/CoachLayout'
 import CoachDashboard from '@/features/coach/CoachDashboard'
 import CoachCoursesPage from '@/features/coach/CoachCoursesPage'
 import CourseFormPage from '@/features/coach/CourseFormPage'
-import PortalComingSoon from '@/features/PortalComingSoon'
+import CoachActivitiesPage from '@/features/coach/CoachActivitiesPage'
+import ActivityFormPage from '@/features/coach/ActivityFormPage'
+import CoachLocationsPage from '@/features/coach/CoachLocationsPage'
+import LocationFormPage from '@/features/coach/LocationFormPage'
+import CoachAttendancePage from '@/features/coach/CoachAttendancePage'
 import HomePage from '@/features/public/HomePage'
 import ProgramPage from '@/features/public/ProgramPage'
 import CourseDetailsPage from '@/features/public/CourseDetailsPage'
@@ -88,9 +92,13 @@ export const router = createBrowserRouter([
               { path: '/coach/courses', element: <CoachCoursesPage /> },
               { path: '/coach/courses/new', element: <CourseFormPage /> },
               { path: '/coach/courses/:id/edit', element: <CourseFormPage /> },
-              { path: '/coach/activities', element: <PortalComingSoon title="Activități" /> },
-              { path: '/coach/locations', element: <PortalComingSoon title="Locații" /> },
-              { path: '/coach/attendance', element: <PortalComingSoon title="Prezență" /> },
+              { path: '/coach/activities', element: <CoachActivitiesPage /> },
+              { path: '/coach/activities/new', element: <ActivityFormPage /> },
+              { path: '/coach/activities/:id/edit', element: <ActivityFormPage /> },
+              { path: '/coach/locations', element: <CoachLocationsPage /> },
+              { path: '/coach/locations/new', element: <LocationFormPage /> },
+              { path: '/coach/locations/:id/edit', element: <LocationFormPage /> },
+              { path: '/coach/attendance', element: <CoachAttendancePage /> },
             ],
           },
         ],
