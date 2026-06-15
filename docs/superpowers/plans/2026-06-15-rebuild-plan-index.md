@@ -6,7 +6,7 @@ The rebuild is delivered in phases. Each phase has its own detailed implementati
 
 | Phase | Plan | Status |
 |------|------|--------|
-| 1. Foundation | [2026-06-15-phase-1-foundation.md](2026-06-15-phase-1-foundation.md) | **Authored — executing** |
+| 1. Foundation | [2026-06-15-phase-1-foundation.md](2026-06-15-phase-1-foundation.md) | **✅ Done** |
 | 2. Design system | _(to author at phase start)_ | Pending |
 | 3. Auth | _(to author)_ | Pending |
 | 4. Public site (+ live Supabase project) | _(to author)_ | Pending |
