@@ -1,13 +1,15 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, CalendarDays, MapPin, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { getCourse, publicUrl } from '@/api/public'
+import { getCourseRatingSummary, getMyCourseRating, submitCourseRating } from '@/api/ratings'
 import { formatRon } from '@/lib/money'
 import { useAuth } from '@/lib/auth-context'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StarRating } from '@/components/StarRating'
 import { SPORT_ICON } from './sport-icons'
 
 const WEEKDAYS = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă']
@@ -16,9 +18,28 @@ export default function CourseDetailsPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const qc = useQueryClient()
   const { data: course, isLoading } = useQuery({
     queryKey: ['course', id],
     queryFn: () => getCourse(id),
+  })
+  const { data: rating } = useQuery({
+    queryKey: ['course-rating', id],
+    queryFn: () => getCourseRatingSummary(id),
+  })
+  const { data: myRating } = useQuery({
+    queryKey: ['my-course-rating', id, user?.id],
+    queryFn: () => getMyCourseRating(id),
+    enabled: !!user,
+  })
+  const rate = useMutation({
+    mutationFn: (r: number) => submitCourseRating(id, r),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['course-rating', id] })
+      qc.invalidateQueries({ queryKey: ['my-course-rating', id] })
+      toast.success('Mulțumim pentru evaluare!')
+    },
+    onError: () => toast.error('Nu am putut salva evaluarea.'),
   })
 
   if (isLoading) {
@@ -153,6 +174,22 @@ export default function CourseDetailsPage() {
             <p className="text-muted-foreground mt-3 text-center text-xs">
               Plată online sau cash, gestionată din contul tău.
             </p>
+
+            {rating && rating.count > 0 && (
+              <div className="mt-5 flex items-center gap-2 border-t pt-4">
+                <StarRating value={rating.avg} size={18} />
+                <span className="text-muted-foreground text-sm">
+                  {rating.avg.toFixed(1)} · {rating.count}{' '}
+                  {rating.count === 1 ? 'evaluare' : 'evaluări'}
+                </span>
+              </div>
+            )}
+            {user?.role === 'PARENT' && (
+              <div className="mt-4 border-t pt-4">
+                <p className="text-muted-foreground mb-1.5 text-sm font-medium">Nota ta</p>
+                <StarRating value={myRating ?? 0} onChange={(r) => rate.mutate(r)} />
+              </div>
+            )}
           </div>
         </aside>
       </div>
