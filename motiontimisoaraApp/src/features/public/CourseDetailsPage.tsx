@@ -1,0 +1,172 @@
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { ArrowLeft, CalendarDays, MapPin, Users } from 'lucide-react'
+import { toast } from 'sonner'
+
+import { getCourse, publicUrl } from '@/api/public'
+import { formatRon } from '@/lib/money'
+import { useAuth } from '@/lib/auth-context'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { SPORT_ICON } from './sport-icons'
+
+const WEEKDAYS = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă']
+
+export default function CourseDetailsPage() {
+  const { id = '' } = useParams()
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  const { data: course, isLoading } = useQuery({
+    queryKey: ['course', id],
+    queryFn: () => getCourse(id),
+  })
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-5xl space-y-4 px-6 py-12">
+        <Skeleton className="h-8 w-1/2" />
+        <Skeleton className="h-64 w-full rounded-3xl" />
+      </div>
+    )
+  }
+  if (!course) {
+    return (
+      <div className="mx-auto max-w-5xl px-6 py-20 text-center">
+        <p className="text-muted-foreground">Cursul nu a fost găsit.</p>
+        <Link to="/cursuri" className="text-primary mt-4 inline-block font-semibold">
+          ← Înapoi la cursuri
+        </Link>
+      </div>
+    )
+  }
+
+  const hero = [...(course.course_photos ?? [])].sort((a, b) => a.display_order - b.display_order)[0]
+  const img = publicUrl('course-photos', hero?.storage_path ?? null)
+  const icon = SPORT_ICON[course.sport?.code ?? ''] ?? '🎽'
+  const sessions = [...(course.occurrences ?? [])].sort(
+    (a, b) => +new Date(a.starts_at) - +new Date(b.starts_at)
+  )
+
+  const onEnroll = () => {
+    if (!user) {
+      navigate(`/login?returnUrl=${encodeURIComponent(`/cursuri/${course.id}`)}`)
+    } else {
+      toast.info('Înscrierea va fi disponibilă în curând (checkout — Faza 5).')
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-6xl px-6 py-10">
+      <Link to="/cursuri" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm">
+        <ArrowLeft className="size-4" /> Înapoi la cursuri
+      </Link>
+
+      <div className="mt-6 grid gap-8 lg:grid-cols-[1.6fr_1fr]">
+        <div>
+          <div className="relative aspect-video overflow-hidden rounded-3xl">
+            {img ? (
+              <img src={img} alt={course.name} className="size-full object-cover" />
+            ) : (
+              <div className="from-primary/15 to-highlight/15 text-primary flex size-full items-center justify-center bg-gradient-to-br text-7xl">
+                {icon}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center gap-2">
+            {course.sport && <Badge>{course.sport.name}</Badge>}
+            {course.level && <Badge variant="outline">{course.level}</Badge>}
+          </div>
+          <h1 className="font-display mt-3 text-3xl font-extrabold text-foreground md:text-4xl">
+            {course.name}
+          </h1>
+
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {course.age_from != null && (
+              <InfoTile icon={<Users className="size-4" />} label="Vârstă" value={`${course.age_from}–${course.age_to} ani`} />
+            )}
+            <InfoTile icon={<MapPin className="size-4" />} label="Locație" value={course.location?.name ?? '—'} />
+            {course.capacity != null && (
+              <InfoTile icon={<Users className="size-4" />} label="Capacitate" value={`${course.capacity} locuri`} />
+            )}
+          </div>
+
+          {course.description && (
+            <div className="mt-8">
+              <h2 className="font-display text-xl font-bold">Despre curs</h2>
+              <p className="text-muted-foreground mt-2 leading-relaxed">{course.description}</p>
+            </div>
+          )}
+
+          {sessions.length > 0 && (
+            <div className="mt-8">
+              <h2 className="font-display text-xl font-bold">Program</h2>
+              <ul className="mt-3 space-y-2">
+                {sessions.slice(0, 8).map((s) => {
+                  const d = new Date(s.starts_at)
+                  return (
+                    <li key={s.id} className="bg-card flex items-center gap-3 rounded-2xl border p-3 text-sm">
+                      <CalendarDays className="text-primary size-4" />
+                      <span className="font-medium">{WEEKDAYS[d.getDay()]}</span>
+                      <span className="text-muted-foreground">
+                        {d.toLocaleDateString('ro-RO')} ·{' '}
+                        {d.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )}
+
+          {course.coach && (
+            <div className="mt-8">
+              <h2 className="font-display text-xl font-bold">Antrenor</h2>
+              <Link
+                to={`/antrenori/${course.coach.id}`}
+                className="bg-card hover:bg-accent mt-3 flex items-center gap-3 rounded-2xl border p-4 transition-colors"
+              >
+                <span className="bg-primary grid size-12 place-items-center rounded-full font-bold text-white">
+                  {course.coach.name.charAt(0)}
+                </span>
+                <span className="font-semibold">{course.coach.name}</span>
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Booking sidebar */}
+        <aside className="lg:sticky lg:top-24 lg:self-start">
+          <div className="bg-card shadow-card rounded-3xl border p-6">
+            <div className="font-display text-3xl font-extrabold">
+              {formatRon(course.price)}
+              <span className="text-muted-foreground text-base font-normal"> / lună</span>
+            </div>
+            {course.price_per_session > 0 && (
+              <p className="text-muted-foreground mt-1 text-sm">
+                {formatRon(course.price_per_session)} / ședință
+              </p>
+            )}
+            <button onClick={onEnroll} className="btn-cta btn-cta--primary mt-5 w-full">
+              Înscrie-te
+            </button>
+            <p className="text-muted-foreground mt-3 text-center text-xs">
+              Plată online sau cash, gestionată din contul tău.
+            </p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  )
+}
+
+function InfoTile({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="bg-muted/60 rounded-2xl p-3">
+      <div className="text-muted-foreground flex items-center gap-1 text-xs">
+        {icon} {label}
+      </div>
+      <div className="mt-1 text-sm font-semibold">{value}</div>
+    </div>
+  )
+}

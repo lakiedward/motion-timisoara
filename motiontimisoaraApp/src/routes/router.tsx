@@ -3,6 +3,19 @@ import RootLayout from '@/routes/RootLayout'
 import CoreLayout from '@/layout/CoreLayout'
 import { RequireAuth } from '@/routes/guards'
 import HomePage from '@/features/public/HomePage'
+import ProgramPage from '@/features/public/ProgramPage'
+import CourseDetailsPage from '@/features/public/CourseDetailsPage'
+import ActivitiesPage from '@/features/public/ActivitiesPage'
+import ActivityDetailPage from '@/features/public/ActivityDetailPage'
+import CampsPage from '@/features/public/CampsPage'
+import CampDetailsPage from '@/features/public/CampDetailsPage'
+import CoachesPage from '@/features/public/CoachesPage'
+import CoachProfilePage from '@/features/public/CoachProfilePage'
+import ClubsPage from '@/features/public/ClubsPage'
+import ClubDetailPage from '@/features/public/ClubDetailPage'
+import MapPage from '@/features/public/MapPage'
+import AboutPage from '@/features/public/AboutPage'
+import ContactPage from '@/features/public/ContactPage'
 import UiGalleryPage from '@/features/dev/UiGalleryPage'
 import NotFoundPage from '@/features/NotFoundPage'
 import LoginPage from '@/features/auth/LoginPage'
@@ -23,6 +36,19 @@ export const router = createBrowserRouter([
         element: <CoreLayout />,
         children: [
           { path: '/', element: <HomePage /> },
+          { path: '/cursuri', element: <ProgramPage /> },
+          { path: '/cursuri/:id', element: <CourseDetailsPage /> },
+          { path: '/activitati', element: <ActivitiesPage /> },
+          { path: '/activitati/:id', element: <ActivityDetailPage /> },
+          { path: '/tabere', element: <CampsPage /> },
+          { path: '/tabere/:slug', element: <CampDetailsPage /> },
+          { path: '/antrenori', element: <CoachesPage /> },
+          { path: '/antrenori/:id', element: <CoachProfilePage /> },
+          { path: '/cluburi', element: <ClubsPage /> },
+          { path: '/cluburi/:id', element: <ClubDetailPage /> },
+          { path: '/harta', element: <MapPage /> },
+          { path: '/despre', element: <AboutPage /> },
+          { path: '/contact', element: <ContactPage /> },
           { path: '/dev/ui', element: <UiGalleryPage /> },
           {
             element: <RequireAuth />,
@@ -30,7 +56,6 @@ export const router = createBrowserRouter([
           },
         ],
       },
-      // Auth routes — full-page, outside the public shell
       { path: '/login', element: <LoginPage /> },
       { path: '/signup', element: <SignupChoicePage /> },
       { path: '/register', element: <RegisterPage /> },

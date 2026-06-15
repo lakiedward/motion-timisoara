@@ -9,7 +9,7 @@ The rebuild is delivered in phases. Each phase has its own detailed implementati
 | 1. Foundation | [2026-06-15-phase-1-foundation.md](2026-06-15-phase-1-foundation.md) | **✅ Done** |
 | 2. Design system | [2026-06-15-phase-2-design-system.md](2026-06-15-phase-2-design-system.md) | **✅ Done** |
 | 3. Auth | login/register/forgot/reset/OAuth + guards + coach & club signup wizards (register-coach/register-club EFs deployed) | **✅ Done** (verified e2e) |
-| 4. Public site (+ live Supabase project) | _(to author)_ | Pending |
+| 4. Public site | home + courses + course detail + activities + camps + coaches + clubs + map + about + contact, all on real Supabase data | **Done** (ratings/announcements display deferred) |
 | 5. Parent / Account (+ checkout) | _(to author)_ | Pending |
 | 6. Coach portal | _(to author)_ | Pending |
 | 7. Club portal | _(to author)_ | Pending |
