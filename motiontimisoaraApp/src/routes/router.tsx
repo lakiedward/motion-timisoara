@@ -1,9 +1,18 @@
 import { createBrowserRouter } from 'react-router-dom'
 import RootLayout from '@/routes/RootLayout'
 import CoreLayout from '@/layout/CoreLayout'
+import { RequireAuth } from '@/routes/guards'
 import HomePage from '@/features/public/HomePage'
 import UiGalleryPage from '@/features/dev/UiGalleryPage'
 import NotFoundPage from '@/features/NotFoundPage'
+import LoginPage from '@/features/auth/LoginPage'
+import RegisterPage from '@/features/auth/RegisterPage'
+import SignupChoicePage from '@/features/auth/SignupChoicePage'
+import ForgotPasswordPage from '@/features/auth/ForgotPasswordPage'
+import ResetPasswordPage from '@/features/auth/ResetPasswordPage'
+import OAuthCallbackPage from '@/features/auth/OAuthCallbackPage'
+import SignupComingSoon from '@/features/auth/SignupComingSoon'
+import AccountPlaceholder from '@/features/account/AccountPlaceholder'
 
 export const router = createBrowserRouter([
   {
@@ -14,8 +23,21 @@ export const router = createBrowserRouter([
         children: [
           { path: '/', element: <HomePage /> },
           { path: '/dev/ui', element: <UiGalleryPage /> },
+          {
+            element: <RequireAuth />,
+            children: [{ path: '/account', element: <AccountPlaceholder /> }],
+          },
         ],
       },
+      // Auth routes — full-page, outside the public shell
+      { path: '/login', element: <LoginPage /> },
+      { path: '/signup', element: <SignupChoicePage /> },
+      { path: '/register', element: <RegisterPage /> },
+      { path: '/register-coach', element: <SignupComingSoon kind="coach" /> },
+      { path: '/register-club', element: <SignupComingSoon kind="club" /> },
+      { path: '/forgot-password', element: <ForgotPasswordPage /> },
+      { path: '/reset-password', element: <ResetPasswordPage /> },
+      { path: '/auth/callback', element: <OAuthCallbackPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },
