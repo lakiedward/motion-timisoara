@@ -74,6 +74,21 @@ export async function getChildAttendance(childId: string): Promise<AttendanceRow
   return (data ?? []) as unknown as AttendanceRow[]
 }
 
+/** Course announcements for courses the parent's children are enrolled in (RLS-scoped). */
+export type CourseAnnouncementRow = Tables<'course_announcements'> & {
+  course: Pick<Tables<'courses'>, 'id' | 'name'> | null
+}
+
+export async function getMyCourseAnnouncements(): Promise<CourseAnnouncementRow[]> {
+  const { data, error } = await supabase
+    .from('course_announcements')
+    .select('*, course:courses(id,name)')
+    .order('pinned', { ascending: false })
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []) as unknown as CourseAnnouncementRow[]
+}
+
 export function childAge(birthDate: string): number {
   const d = new Date(birthDate)
   const now = new Date()

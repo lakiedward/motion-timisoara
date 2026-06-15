@@ -54,6 +54,7 @@ import ChildrenPage from '@/features/account/ChildrenPage'
 import ChildFormPage from '@/features/account/ChildFormPage'
 import EnrollmentsPage from '@/features/account/EnrollmentsPage'
 import AttendancePage from '@/features/account/AttendancePage'
+import AnnouncementsPage from '@/features/account/AnnouncementsPage'
 
 export const router = createBrowserRouter([
   {
@@ -89,6 +90,7 @@ export const router = createBrowserRouter([
                   { path: '/account/child/:id', element: <ChildFormPage /> },
                   { path: '/account/enrollments', element: <EnrollmentsPage /> },
                   { path: '/account/attendance', element: <AttendancePage /> },
+                  { path: '/account/announcements', element: <AnnouncementsPage /> },
                 ],
               },
             ],

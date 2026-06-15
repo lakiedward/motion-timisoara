@@ -7,6 +7,7 @@ const NAV = [
   { to: '/account/children', label: 'Copiii mei', end: false },
   { to: '/account/enrollments', label: 'Înscrieri', end: false },
   { to: '/account/attendance', label: 'Prezență', end: false },
+  { to: '/account/announcements', label: 'Anunțuri', end: false },
 ]
 
 export default function AccountLayout() {
