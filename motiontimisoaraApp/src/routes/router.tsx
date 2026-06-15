@@ -26,7 +26,12 @@ import ResetPasswordPage from '@/features/auth/ResetPasswordPage'
 import OAuthCallbackPage from '@/features/auth/OAuthCallbackPage'
 import CoachSignupPage from '@/features/auth/CoachSignupPage'
 import ClubSignupPage from '@/features/auth/ClubSignupPage'
-import AccountPlaceholder from '@/features/account/AccountPlaceholder'
+import AccountLayout from '@/features/account/AccountLayout'
+import ParentDashboard from '@/features/account/ParentDashboard'
+import ChildrenPage from '@/features/account/ChildrenPage'
+import ChildFormPage from '@/features/account/ChildFormPage'
+import EnrollmentsPage from '@/features/account/EnrollmentsPage'
+import AttendancePage from '@/features/account/AttendancePage'
 
 export const router = createBrowserRouter([
   {
@@ -52,7 +57,19 @@ export const router = createBrowserRouter([
           { path: '/dev/ui', element: <UiGalleryPage /> },
           {
             element: <RequireAuth />,
-            children: [{ path: '/account', element: <AccountPlaceholder /> }],
+            children: [
+              {
+                element: <AccountLayout />,
+                children: [
+                  { path: '/account', element: <ParentDashboard /> },
+                  { path: '/account/children', element: <ChildrenPage /> },
+                  { path: '/account/child/new', element: <ChildFormPage /> },
+                  { path: '/account/child/:id', element: <ChildFormPage /> },
+                  { path: '/account/enrollments', element: <EnrollmentsPage /> },
+                  { path: '/account/attendance', element: <AttendancePage /> },
+                ],
+              },
+            ],
           },
         ],
       },
