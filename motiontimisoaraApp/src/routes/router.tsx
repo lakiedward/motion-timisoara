@@ -1,7 +1,12 @@
 import { createBrowserRouter } from 'react-router-dom'
 import RootLayout from '@/routes/RootLayout'
 import CoreLayout from '@/layout/CoreLayout'
-import { RequireAuth } from '@/routes/guards'
+import { RequireAuth, RequireRole } from '@/routes/guards'
+import CoachLayout from '@/features/coach/CoachLayout'
+import CoachDashboard from '@/features/coach/CoachDashboard'
+import CoachCoursesPage from '@/features/coach/CoachCoursesPage'
+import CourseFormPage from '@/features/coach/CourseFormPage'
+import PortalComingSoon from '@/features/PortalComingSoon'
 import HomePage from '@/features/public/HomePage'
 import ProgramPage from '@/features/public/ProgramPage'
 import CourseDetailsPage from '@/features/public/CourseDetailsPage'
@@ -69,6 +74,23 @@ export const router = createBrowserRouter([
                   { path: '/account/attendance', element: <AttendancePage /> },
                 ],
               },
+            ],
+          },
+        ],
+      },
+      {
+        element: <RequireRole roles={['COACH', 'ADMIN']} />,
+        children: [
+          {
+            element: <CoachLayout />,
+            children: [
+              { path: '/coach', element: <CoachDashboard /> },
+              { path: '/coach/courses', element: <CoachCoursesPage /> },
+              { path: '/coach/courses/new', element: <CourseFormPage /> },
+              { path: '/coach/courses/:id/edit', element: <CourseFormPage /> },
+              { path: '/coach/activities', element: <PortalComingSoon title="Activități" /> },
+              { path: '/coach/locations', element: <PortalComingSoon title="Locații" /> },
+              { path: '/coach/attendance', element: <PortalComingSoon title="Prezență" /> },
             ],
           },
         ],
