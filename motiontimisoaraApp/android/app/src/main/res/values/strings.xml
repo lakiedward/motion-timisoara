@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Motion Timisoara</string>
+    <string name="title_activity_main">Motion Timisoara</string>
+    <string name="package_name">com.motiontimisoara.app</string>
+    <string name="custom_url_scheme">com.motiontimisoara.app</string>
+</resources>
