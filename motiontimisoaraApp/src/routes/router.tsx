@@ -11,6 +11,13 @@ import ActivityFormPage from '@/features/coach/ActivityFormPage'
 import CoachLocationsPage from '@/features/coach/CoachLocationsPage'
 import LocationFormPage from '@/features/coach/LocationFormPage'
 import CoachAttendancePage from '@/features/coach/CoachAttendancePage'
+import AdminLayout from '@/features/admin/AdminLayout'
+import AdminDashboard from '@/features/admin/AdminDashboard'
+import AdminUsersPage from '@/features/admin/AdminUsersPage'
+import AdminClubsPage from '@/features/admin/AdminClubsPage'
+import AdminCoursesPage from '@/features/admin/AdminCoursesPage'
+import AdminSportsPage from '@/features/admin/AdminSportsPage'
+import AdminInviteCodesPage from '@/features/admin/AdminInviteCodesPage'
 import HomePage from '@/features/public/HomePage'
 import ProgramPage from '@/features/public/ProgramPage'
 import CourseDetailsPage from '@/features/public/CourseDetailsPage'
@@ -99,6 +106,22 @@ export const router = createBrowserRouter([
               { path: '/coach/locations/new', element: <LocationFormPage /> },
               { path: '/coach/locations/:id/edit', element: <LocationFormPage /> },
               { path: '/coach/attendance', element: <CoachAttendancePage /> },
+            ],
+          },
+        ],
+      },
+      {
+        element: <RequireRole roles={['ADMIN']} />,
+        children: [
+          {
+            element: <AdminLayout />,
+            children: [
+              { path: '/admin', element: <AdminDashboard /> },
+              { path: '/admin/users', element: <AdminUsersPage /> },
+              { path: '/admin/clubs', element: <AdminClubsPage /> },
+              { path: '/admin/courses', element: <AdminCoursesPage /> },
+              { path: '/admin/sports', element: <AdminSportsPage /> },
+              { path: '/admin/codes', element: <AdminInviteCodesPage /> },
             ],
           },
         ],
