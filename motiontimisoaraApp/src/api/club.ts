@@ -74,6 +74,40 @@ export async function getClubCoaches(clubId: string): Promise<ClubCoach[]> {
     }))
 }
 
+export interface CreateManagedCoachInput {
+  email: string
+  name: string
+  phone?: string
+  bio?: string
+  sportIds?: string[]
+}
+export interface CreateManagedCoachResult {
+  userId: string
+  email: string
+  tempPassword: string
+}
+
+/** Creates a coach account directly (club roster) via the Edge Function. */
+export async function createManagedCoach(
+  input: CreateManagedCoachInput
+): Promise<CreateManagedCoachResult> {
+  const { data, error } = await supabase.functions.invoke('create-managed-coach', { body: input })
+  if (error) {
+    let msg = 'Nu am putut crea antrenorul.'
+    const ctx = (error as { context?: Response })?.context
+    if (ctx && typeof ctx.json === 'function') {
+      try {
+        const b = await ctx.json()
+        if (b?.error) msg = b.error as string
+      } catch {
+        /* ignore */
+      }
+    }
+    throw new Error(msg)
+  }
+  return data as CreateManagedCoachResult
+}
+
 export async function removeClubCoach(clubId: string, coachProfileId: string) {
   const { error } = await supabase
     .from('club_coaches')
