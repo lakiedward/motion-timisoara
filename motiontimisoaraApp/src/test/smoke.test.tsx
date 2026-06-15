@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
-import App from '@/App'
+import HomePage from '@/features/public/HomePage'
 
-test('renders the brand heading', () => {
-  render(<App />)
+test('home page renders the brand heading', () => {
+  render(<HomePage />)
   expect(screen.getByRole('heading', { name: 'Motion Timisoara' })).toBeInTheDocument()
 })
