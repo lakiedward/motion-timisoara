@@ -23,7 +23,10 @@ import ClubDashboard from '@/features/club/ClubDashboard'
 import ClubProfilePage from '@/features/club/ClubProfilePage'
 import ClubCoachesPage from '@/features/club/ClubCoachesPage'
 import ClubAnnouncementsPage from '@/features/club/ClubAnnouncementsPage'
-import PortalComingSoon from '@/features/PortalComingSoon'
+import ClubCoursesPage from '@/features/club/ClubCoursesPage'
+import ClubCourseFormPage from '@/features/club/ClubCourseFormPage'
+import ClubLocationsPage from '@/features/club/ClubLocationsPage'
+import ClubLocationFormPage from '@/features/club/ClubLocationFormPage'
 import HomePage from '@/features/public/HomePage'
 import ProgramPage from '@/features/public/ProgramPage'
 import CourseDetailsPage from '@/features/public/CourseDetailsPage'
@@ -144,8 +147,12 @@ export const router = createBrowserRouter([
               { path: '/club/profile', element: <ClubProfilePage /> },
               { path: '/club/coaches', element: <ClubCoachesPage /> },
               { path: '/club/announcements', element: <ClubAnnouncementsPage /> },
-              { path: '/club/courses', element: <PortalComingSoon title="Cursuri club" /> },
-              { path: '/club/locations', element: <PortalComingSoon title="Locații club" /> },
+              { path: '/club/courses', element: <ClubCoursesPage /> },
+              { path: '/club/courses/new', element: <ClubCourseFormPage /> },
+              { path: '/club/courses/:id/edit', element: <ClubCourseFormPage /> },
+              { path: '/club/locations', element: <ClubLocationsPage /> },
+              { path: '/club/locations/new', element: <ClubLocationFormPage /> },
+              { path: '/club/locations/:id/edit', element: <ClubLocationFormPage /> },
             ],
           },
         ],
