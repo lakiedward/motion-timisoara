@@ -93,7 +93,9 @@ export type CoachListItem = Tables<'coach_profiles'> & {
 export async function getCoaches(): Promise<CoachListItem[]> {
   const { data, error } = await supabase
     .from('coach_profiles')
-    .select('*, profile:profiles(id,name,avatar_url), coach_sports(sport:sports(id,code,name))')
+    .select(
+      'id, user_id, bio, avatar_url, photo_storage_path, profile:profiles(id,name,avatar_url), coach_sports(sport:sports(id,code,name))'
+    )
   if (error) throw error
   return (data ?? []) as unknown as CoachListItem[]
 }
@@ -101,7 +103,9 @@ export async function getCoaches(): Promise<CoachListItem[]> {
 export async function getCoachByUserId(userId: string): Promise<CoachListItem | null> {
   const { data, error } = await supabase
     .from('coach_profiles')
-    .select('*, profile:profiles(id,name,avatar_url), coach_sports(sport:sports(id,code,name))')
+    .select(
+      'id, user_id, bio, avatar_url, photo_storage_path, profile:profiles(id,name,avatar_url), coach_sports(sport:sports(id,code,name))'
+    )
     .eq('user_id', userId)
     .single()
   if (error) return null
@@ -115,7 +119,9 @@ export type ClubListItem = Tables<'clubs'> & {
 export async function getPublicClubs(): Promise<ClubListItem[]> {
   const { data, error } = await supabase
     .from('clubs')
-    .select('*, club_sports(sport:sports(id,code,name))')
+    .select(
+      'id, owner_user_id, name, description, logo_storage_path, hero_photo_storage_path, website, phone, email, public_email_consent, address, city, created_at, club_sports(sport:sports(id,code,name))'
+    )
     .order('name')
   if (error) throw error
   return (data ?? []) as unknown as ClubListItem[]
@@ -124,7 +130,9 @@ export async function getPublicClubs(): Promise<ClubListItem[]> {
 export async function getPublicClub(id: string): Promise<ClubListItem | null> {
   const { data, error } = await supabase
     .from('clubs')
-    .select('*, club_sports(sport:sports(id,code,name))')
+    .select(
+      'id, owner_user_id, name, description, logo_storage_path, hero_photo_storage_path, website, phone, email, public_email_consent, address, city, created_at, club_sports(sport:sports(id,code,name))'
+    )
     .eq('id', id)
     .single()
   if (error) return null
