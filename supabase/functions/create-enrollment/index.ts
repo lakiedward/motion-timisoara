@@ -21,6 +21,15 @@ interface EnrollmentRequest {
   };
 }
 
+function ageOf(birthDate: string): number {
+  const d = new Date(birthDate);
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+  return age;
+}
+
 serve(
   withCors(async (req: Request) => {
     if (req.method !== "POST") {
@@ -52,7 +61,7 @@ serve(
     // Validate all children belong to parent
     const { data: children, error: childErr } = await supabaseAdmin
       .from("children")
-      .select("id, name, parent_id")
+      .select("id, name, parent_id, birth_date")
       .in("id", childIds);
     if (childErr || !children?.length) {
       return new Response(
@@ -128,7 +137,7 @@ serve(
     if (kind === "COURSE") {
       const { data: course } = await supabaseAdmin
         .from("courses")
-        .select("price_per_session, currency, capacity")
+        .select("price_per_session, currency, capacity, age_from, age_to, active")
         .eq("id", entityId)
         .single();
       if (!course) {
@@ -137,9 +146,34 @@ serve(
           { status: 400, headers: { "Content-Type": "application/json" } },
         );
       }
+      if (!course.active) {
+        return new Response(
+          JSON.stringify({ error: "Course is not active" }),
+          { status: 400, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      for (const child of children) {
+        const age = ageOf(child.birth_date);
+        if (course.age_from != null && age < course.age_from) {
+          return new Response(
+            JSON.stringify({
+              error: `Vârsta minimă este ${course.age_from} ani (${child.name} are ${age})`,
+            }),
+            { status: 400, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (course.age_to != null && age > course.age_to) {
+          return new Response(
+            JSON.stringify({
+              error: `Vârsta maximă este ${course.age_to} ani (${child.name} are ${age})`,
+            }),
+            { status: 400, headers: { "Content-Type": "application/json" } },
+          );
+        }
+      }
       entityPrice = course.price_per_session * effectiveSessionPackageSize;
       paymentCurrency = course.currency;
-      if (newEnrollmentCount > 0 && course.capacity) {
+      if (newEnrollmentCount > 0 && course.capacity != null) {
         const { count } = await supabaseAdmin
           .from("enrollments")
           .select("id", { count: "exact", head: true })
@@ -179,11 +213,28 @@ serve(
       entityPrice = camp.price;
       paymentCurrency = camp.currency;
       effectiveSessionPackageSize = 1;
+      if (newEnrollmentCount > 0 && camp.capacity != null) {
+        const { count } = await supabaseAdmin
+          .from("enrollments")
+          .select("id", { count: "exact", head: true })
+          .eq("kind", "CAMP")
+          .eq("entity_id", entityId)
+          .in("status", ["PENDING", "ACTIVE"]);
+        const available = camp.capacity - (count ?? 0);
+        if (available < newEnrollmentCount) {
+          return new Response(
+            JSON.stringify({
+              error: `Not enough spots. Requested: ${newEnrollmentCount}, Available: ${available}`,
+            }),
+            { status: 400, headers: { "Content-Type": "application/json" } },
+          );
+        }
+      }
     } else {
       // ACTIVITY
       const { data: activity } = await supabaseAdmin
         .from("activities")
-        .select("price, currency, capacity")
+        .select("price, currency, capacity, active")
         .eq("id", entityId)
         .single();
       if (!activity) {
@@ -192,82 +243,165 @@ serve(
           { status: 400, headers: { "Content-Type": "application/json" } },
         );
       }
+      if (!activity.active) {
+        return new Response(
+          JSON.stringify({ error: "Activity is not active" }),
+          { status: 400, headers: { "Content-Type": "application/json" } },
+        );
+      }
       entityPrice = activity.price;
       paymentCurrency = activity.currency;
       effectiveSessionPackageSize = 1;
+      if (newEnrollmentCount > 0 && activity.capacity != null) {
+        const { count } = await supabaseAdmin
+          .from("enrollments")
+          .select("id", { count: "exact", head: true })
+          .eq("kind", "ACTIVITY")
+          .eq("entity_id", entityId)
+          .in("status", ["PENDING", "ACTIVE"]);
+        const available = activity.capacity - (count ?? 0);
+        if (available < newEnrollmentCount) {
+          return new Response(
+            JSON.stringify({
+              error: `Not enough spots. Requested: ${newEnrollmentCount}, Available: ${available}`,
+            }),
+            { status: 400, headers: { "Content-Type": "application/json" } },
+          );
+        }
+      }
     }
 
     const now = new Date().toISOString();
-    const savedEnrollments: any[] = [];
+    const savedEnrollments: { id: string }[] = [];
 
     for (const child of children) {
-      // Create enrollment
-      const { data: enrollment, error: enrollErr } = await supabaseAdmin
-        .from("enrollments")
-        .insert({
-          kind,
-          entity_id: entityId,
-          child_id: child.id,
+      const existing = existingByChild.get(child.id) ?? [];
+      // CARD retries reuse the unpaid PENDING draft instead of inserting a duplicate.
+      const pendingDraft =
+        paymentMethod === "CARD"
+          ? existing.find((e: { status: string }) => e.status === "PENDING")
+          : undefined;
+
+      let enrollment: { id: string };
+
+      if (pendingDraft) {
+        enrollment = { id: pendingDraft.id };
+
+        const paymentPatch: Record<string, unknown> = {
+          method: paymentMethod,
+          amount: entityPrice,
+          currency: paymentCurrency,
+          status: "PENDING",
+          updated_at: now,
+        };
+        if (billingDetails) {
+          paymentPatch.billing_name = billingDetails.name;
+          paymentPatch.billing_email = billingDetails.email;
+          paymentPatch.billing_address_line1 = billingDetails.addressLine1;
+          paymentPatch.billing_city = billingDetails.city;
+          paymentPatch.billing_postal_code = billingDetails.postalCode;
+          paymentPatch.billing_country = "RO";
+        }
+
+        const { data: payments } = await supabaseAdmin
+          .from("payments")
+          .select("id, status")
+          .eq("enrollment_id", enrollment.id);
+
+        if (payments?.some((p: { status: string }) => p.status === "SUCCEEDED")) {
+          return new Response(
+            JSON.stringify({ error: `Child already enrolled: ${child.name}` }),
+            { status: 409, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        const unpaid = payments?.find((p: { status: string }) => p.status === "PENDING");
+        const failedRow = payments?.find(
+          (p: { status: string }) => p.status === "FAILED" || p.status === "CANCELLED",
+        );
+        const reusable = unpaid ?? failedRow;
+        if (reusable) {
+          await supabaseAdmin.from("payments").update(paymentPatch).eq("id", reusable.id);
+        } else if (!payments?.length) {
+          await supabaseAdmin.from("payments").insert({
+            enrollment_id: enrollment.id,
+            ...paymentPatch,
+            created_at: now,
+          });
+        } else {
+          // Unexpected statuses only — refresh the newest row rather than insert a duplicate
+          // (create-payment-intent uses .single()).
+          const newest = payments[payments.length - 1];
+          await supabaseAdmin.from("payments").update(paymentPatch).eq("id", newest.id);
+        }
+      } else {
+        const { data: created, error: enrollErr } = await supabaseAdmin
+          .from("enrollments")
+          .insert({
+            kind,
+            entity_id: entityId,
+            child_id: child.id,
+            status: "PENDING",
+            created_at: now,
+            purchased_sessions: 0,
+            remaining_sessions: 0,
+            sessions_used: 0,
+          })
+          .select("id")
+          .single();
+
+        if (enrollErr || !created) {
+          return new Response(
+            JSON.stringify({ error: "Failed to create enrollment" }),
+            { status: 500, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        enrollment = created;
+
+        const paymentData: Record<string, unknown> = {
+          enrollment_id: enrollment.id,
+          method: paymentMethod,
+          amount: entityPrice,
+          currency: paymentCurrency,
           status: "PENDING",
           created_at: now,
-          purchased_sessions: 0,
-          remaining_sessions: 0,
-          sessions_used: 0,
-        })
-        .select("id")
-        .single();
+          updated_at: now,
+        };
 
-      if (enrollErr || !enrollment) {
-        return new Response(
-          JSON.stringify({ error: "Failed to create enrollment" }),
-          { status: 500, headers: { "Content-Type": "application/json" } },
-        );
-      }
+        if (paymentMethod === "CARD" && billingDetails) {
+          paymentData.billing_name = billingDetails.name;
+          paymentData.billing_email = billingDetails.email;
+          paymentData.billing_address_line1 = billingDetails.addressLine1;
+          paymentData.billing_city = billingDetails.city;
+          paymentData.billing_postal_code = billingDetails.postalCode;
+          paymentData.billing_country = "RO";
+        }
 
-      // Create payment record
-      const paymentData: any = {
-        enrollment_id: enrollment.id,
-        method: paymentMethod,
-        amount: entityPrice,
-        currency: paymentCurrency,
-        status: "PENDING",
-        created_at: now,
-        updated_at: now,
-      };
+        await supabaseAdmin.from("payments").insert(paymentData);
 
-      if (paymentMethod === "CARD" && billingDetails) {
-        paymentData.billing_name = billingDetails.name;
-        paymentData.billing_email = billingDetails.email;
-        paymentData.billing_address_line1 = billingDetails.addressLine1;
-        paymentData.billing_city = billingDetails.city;
-        paymentData.billing_postal_code = billingDetails.postalCode;
-        paymentData.billing_country = "RO";
-      }
-
-      await supabaseAdmin.from("payments").insert(paymentData);
-
-      // For CASH payments, broadcast notification
-      if (paymentMethod === "CASH") {
-        if (kind === "COURSE") {
-          await supabaseAdmin.channel("admin:pending-cash-payments").send({
-            type: "broadcast",
-            event: "pending_cash_payment",
-            payload: {
-              enrollmentId: enrollment.id,
-              sessionCount: effectiveSessionPackageSize,
-              courseId: entityId,
-            },
-          });
-        } else if (kind === "ACTIVITY") {
-          await supabaseAdmin.channel("admin:pending-activity-payments").send({
-            type: "broadcast",
-            event: "pending_activity_payment",
-            payload: {
-              enrollmentId: enrollment.id,
-              activityId: entityId,
-              childName: child.name,
-            },
-          });
+        // For CASH payments, broadcast notification
+        if (paymentMethod === "CASH") {
+          if (kind === "COURSE") {
+            await supabaseAdmin.channel("admin:pending-cash-payments").send({
+              type: "broadcast",
+              event: "pending_cash_payment",
+              payload: {
+                enrollmentId: enrollment.id,
+                sessionCount: effectiveSessionPackageSize,
+                courseId: entityId,
+              },
+            });
+          } else if (kind === "ACTIVITY") {
+            await supabaseAdmin.channel("admin:pending-activity-payments").send({
+              type: "broadcast",
+              event: "pending_activity_payment",
+              payload: {
+                enrollmentId: enrollment.id,
+                activityId: entityId,
+                childName: child.name,
+              },
+            });
+          }
         }
       }
 
@@ -275,9 +409,12 @@ serve(
     }
 
     const primaryId = savedEnrollments[0]?.id;
+    // One enrollment + payment per child; callers must settle every id.
+    const enrollmentIds = savedEnrollments.map((e: { id: string }) => e.id);
     return new Response(
       JSON.stringify({
-        enrollmentId: primaryId,
+        enrollmentId: primaryId, // kept for backwards compatibility
+        enrollmentIds,
         requiresPaymentIntent: paymentMethod === "CARD",
       }),
       { status: 200, headers: { "Content-Type": "application/json" } },

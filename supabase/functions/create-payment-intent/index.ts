@@ -5,7 +5,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { supabaseAdmin, getUser } from "../_shared/supabase.ts";
 import { withCors } from "../_shared/cors.ts";
-import { getStripe, calculatePlatformFee } from "../_shared/stripe.ts";
+import { getStripe, calculatePlatformFee, cancelOpenPaymentIntent } from "../_shared/stripe.ts";
 
 serve(
   withCors(async (req: Request) => {
@@ -173,10 +173,31 @@ serve(
 
     const stripe = getStripe();
     const amountInBani = payment.amount;
+    const currencyLower = currency.toLowerCase();
+
+    // Always cancel any open prior intent before creating a new one. Reusing an
+    // old PI can leave Connect routing/fees out of date; leaving it open lets an
+    // old client_secret still be confirmed after a retry.
+    if (payment.gateway_txn_id) {
+      try {
+        const existing = await stripe.paymentIntents.retrieve(payment.gateway_txn_id);
+        if (existing.status === "succeeded") {
+          // Webhook may still be catching up — do NOT 409 (client would roll back
+          // the draft while Stripe already charged).
+          return new Response(
+            JSON.stringify({ clientSecret: existing.client_secret, alreadySucceeded: true }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        await cancelOpenPaymentIntent(existing.id);
+      } catch (err) {
+        console.error("Failed to inspect existing PaymentIntent:", payment.gateway_txn_id, err);
+      }
+    }
 
     const params: any = {
       amount: amountInBani,
-      currency: currency.toLowerCase(),
+      currency: currencyLower,
       metadata: {
         enrollmentId: enrollment.id,
         paymentId: payment.id,

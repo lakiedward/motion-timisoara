@@ -85,6 +85,12 @@ export async function getCampBySlug(slug: string): Promise<Tables<'camps'> | nul
   return data
 }
 
+export async function getCamp(id: string): Promise<Tables<'camps'> | null> {
+  const { data, error } = await supabase.from('camps').select('*').eq('id', id).single()
+  if (error) return null
+  return data
+}
+
 export type CoachListItem = Tables<'coach_profiles'> & {
   profile: CoachMini | null
   coach_sports: { sport: SportRow | null }[]

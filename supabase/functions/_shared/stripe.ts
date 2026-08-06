@@ -44,3 +44,26 @@ export function calculatePlatformFee(amount: number): PlatformFeeBreakdown {
     recipientAmount,
   };
 }
+
+/**
+ * Cancel a PaymentIntent that is still open. No-ops if already terminal or missing.
+ * Used by draft rollback and intent reuse so orphan client secrets cannot be charged.
+ */
+export async function cancelOpenPaymentIntent(intentId: string | null | undefined): Promise<void> {
+  if (!intentId) return;
+  try {
+    const stripe = getStripe();
+    const existing = await stripe.paymentIntents.retrieve(intentId);
+    const cancellable = new Set([
+      "requires_payment_method",
+      "requires_confirmation",
+      "requires_action",
+      "requires_capture",
+    ]);
+    if (cancellable.has(existing.status)) {
+      await stripe.paymentIntents.cancel(intentId);
+    }
+  } catch (err) {
+    console.error("cancelOpenPaymentIntent failed:", intentId, err);
+  }
+}
