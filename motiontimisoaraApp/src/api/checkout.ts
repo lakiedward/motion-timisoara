@@ -101,7 +101,7 @@ export function cancelDraftEnrollment(enrollmentIds: string[]): Promise<{ succes
   return invoke<{ success: boolean }>('cancel-draft-enrollment', { enrollmentIds })
 }
 
-export type EnrollmentReadyOutcome = 'ready' | 'failed' | 'timeout'
+export type EnrollmentReadyOutcome = 'ready' | 'failed' | 'partial' | 'timeout'
 
 /**
  * Subscribes to the stripe-webhook broadcast that flips enrollments to ACTIVE.
@@ -136,6 +136,7 @@ export function listenForEnrollmentReady(
 
   const outcome = new Promise<EnrollmentReadyOutcome>((resolve) => {
     const pending = new Set(enrollmentIds)
+    const failed = new Set<string>()
     const channel = supabase.channel(`user:${userId}:payments`)
     let settled = false
 
@@ -147,11 +148,18 @@ export function listenForEnrollmentReady(
       resolve(result)
     }
 
+    const settleWhenIdle = () => {
+      if (pending.size > 0) return
+      if (failed.size === 0) finish('ready')
+      else if (failed.size === enrollmentIds.length) finish('failed')
+      else finish('partial')
+    }
+
     startWaiting = () => {
       if (settled || timer) return
       // Already received every event while confirms were in flight.
       if (pending.size === 0) {
-        finish('ready')
+        settleWhenIdle()
         return
       }
       timer = setTimeout(() => finish('timeout'), timeoutMs)
@@ -162,18 +170,20 @@ export function listenForEnrollmentReady(
       settled = true
       if (timer) clearTimeout(timer)
       supabase.removeChannel(channel)
-      // Leave outcome pending only if nobody awaits it — resolve as timeout so
-      // callers that race outcome do not hang forever.
       resolve('timeout')
     }
 
     channel
       .on('broadcast', { event: 'enrollment_ready' }, ({ payload }) => {
         pending.delete((payload as { enrollmentId: string }).enrollmentId)
-        if (pending.size === 0) finish('ready')
+        settleWhenIdle()
       })
       .on('broadcast', { event: 'payment_failed' }, ({ payload }) => {
-        if (pending.has((payload as { enrollmentId: string }).enrollmentId)) finish('failed')
+        const id = (payload as { enrollmentId: string }).enrollmentId
+        if (!pending.has(id)) return
+        pending.delete(id)
+        failed.add(id)
+        settleWhenIdle()
       })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') resolveSubscribed()

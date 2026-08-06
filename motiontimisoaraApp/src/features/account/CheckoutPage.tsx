@@ -197,6 +197,8 @@ function CheckoutWizard({
     if ((cashBlocked || !allowCash) && method === 'CASH' && stripeConfigured) setMethod('CARD')
   }, [cashBlocked, allowCash, method])
 
+  const paymentAvailable = stripeConfigured || (allowCash && !cashBlocked)
+
   const steps = method === 'CARD' ? ['Copii', 'Detalii', 'Facturare', 'Plată'] : ['Copii', 'Detalii', 'Plată']
   const lastStep = steps.length - 1
 
@@ -241,6 +243,9 @@ function CheckoutWizard({
             ? 'Există o înscriere neplătită; alege plata cu cardul.'
             : 'Plata cash nu este disponibilă pentru această ofertă.'
         )
+      }
+      if (!paymentAvailable) {
+        throw new Error('Nu există o metodă de plată disponibilă pentru această înscriere.')
       }
       if (!capacityOk) {
         throw new Error('Nu mai sunt locuri suficiente pentru selecția ta.')
@@ -325,6 +330,8 @@ function CheckoutWizard({
         toast.success('Plată confirmată. Înscrierea este activă.')
       } else if (outcome === 'failed') {
         toast.error('Plata a fost respinsă. Verifică în secțiunea Înscrieri.')
+      } else if (outcome === 'partial') {
+        toast.message('Unele plăți s-au confirmat, altele nu. Verifică în Înscrieri.')
       } else {
         toast.message('Plata a fost trimisă. Confirmarea poate dura câteva momente.')
       }
@@ -609,6 +616,12 @@ function CheckoutWizard({
                 <span>Cash, la antrenor {cashBlocked && '(indisponibil — există o înscriere neplătită)'}</span>
               </label>
             )}
+            {!paymentAvailable && (
+              <p className="text-destructive text-sm">
+                Nu există o metodă de plată disponibilă pentru această înscriere. Contactează clubul
+                sau încearcă mai târziu.
+              </p>
+            )}
           </div>
 
           {method === 'CARD' ? (
@@ -639,7 +652,10 @@ function CheckoutWizard({
             Continuă
           </Button>
         ) : (
-          <Button onClick={() => finalize.mutate()} disabled={busy || selected.length === 0}>
+          <Button
+            onClick={() => finalize.mutate()}
+            disabled={busy || selected.length === 0 || !paymentAvailable}
+          >
             {busy && <Loader2 className="mr-2 size-4 animate-spin" />}
             {busy ? (progress ?? 'Se procesează…') : 'Finalizează'}
           </Button>

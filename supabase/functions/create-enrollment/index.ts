@@ -21,6 +21,15 @@ interface EnrollmentRequest {
   };
 }
 
+function ageOf(birthDate: string): number {
+  const d = new Date(birthDate);
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+  return age;
+}
+
 serve(
   withCors(async (req: Request) => {
     if (req.method !== "POST") {
@@ -52,7 +61,7 @@ serve(
     // Validate all children belong to parent
     const { data: children, error: childErr } = await supabaseAdmin
       .from("children")
-      .select("id, name, parent_id")
+      .select("id, name, parent_id, birth_date")
       .in("id", childIds);
     if (childErr || !children?.length) {
       return new Response(
@@ -128,7 +137,7 @@ serve(
     if (kind === "COURSE") {
       const { data: course } = await supabaseAdmin
         .from("courses")
-        .select("price_per_session, currency, capacity")
+        .select("price_per_session, currency, capacity, age_from, age_to, active")
         .eq("id", entityId)
         .single();
       if (!course) {
@@ -136,6 +145,31 @@ serve(
           JSON.stringify({ error: "Course not found" }),
           { status: 400, headers: { "Content-Type": "application/json" } },
         );
+      }
+      if (!course.active) {
+        return new Response(
+          JSON.stringify({ error: "Course is not active" }),
+          { status: 400, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      for (const child of children) {
+        const age = ageOf(child.birth_date);
+        if (course.age_from != null && age < course.age_from) {
+          return new Response(
+            JSON.stringify({
+              error: `Vârsta minimă este ${course.age_from} ani (${child.name} are ${age})`,
+            }),
+            { status: 400, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (course.age_to != null && age > course.age_to) {
+          return new Response(
+            JSON.stringify({
+              error: `Vârsta maximă este ${course.age_to} ani (${child.name} are ${age})`,
+            }),
+            { status: 400, headers: { "Content-Type": "application/json" } },
+          );
+        }
       }
       entityPrice = course.price_per_session * effectiveSessionPackageSize;
       paymentCurrency = course.currency;
@@ -200,12 +234,18 @@ serve(
       // ACTIVITY
       const { data: activity } = await supabaseAdmin
         .from("activities")
-        .select("price, currency, capacity")
+        .select("price, currency, capacity, active")
         .eq("id", entityId)
         .single();
       if (!activity) {
         return new Response(
           JSON.stringify({ error: "Activity not found" }),
+          { status: 400, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      if (!activity.active) {
+        return new Response(
+          JSON.stringify({ error: "Activity is not active" }),
           { status: 400, headers: { "Content-Type": "application/json" } },
         );
       }
@@ -276,14 +316,23 @@ serve(
         }
 
         const unpaid = payments?.find((p: { status: string }) => p.status === "PENDING");
-        if (unpaid) {
-          await supabaseAdmin.from("payments").update(paymentPatch).eq("id", unpaid.id);
-        } else {
+        const failedRow = payments?.find(
+          (p: { status: string }) => p.status === "FAILED" || p.status === "CANCELLED",
+        );
+        const reusable = unpaid ?? failedRow;
+        if (reusable) {
+          await supabaseAdmin.from("payments").update(paymentPatch).eq("id", reusable.id);
+        } else if (!payments?.length) {
           await supabaseAdmin.from("payments").insert({
             enrollment_id: enrollment.id,
             ...paymentPatch,
             created_at: now,
           });
+        } else {
+          // Unexpected statuses only — refresh the newest row rather than insert a duplicate
+          // (create-payment-intent uses .single()).
+          const newest = payments[payments.length - 1];
+          await supabaseAdmin.from("payments").update(paymentPatch).eq("id", newest.id);
         }
       } else {
         const { data: created, error: enrollErr } = await supabaseAdmin
