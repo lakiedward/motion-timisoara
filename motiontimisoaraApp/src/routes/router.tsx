@@ -58,6 +58,7 @@ import ChildFormPage from '@/features/account/ChildFormPage'
 import EnrollmentsPage from '@/features/account/EnrollmentsPage'
 import AttendancePage from '@/features/account/AttendancePage'
 import AnnouncementsPage from '@/features/account/AnnouncementsPage'
+import CheckoutPage from '@/features/account/CheckoutPage'
 
 export const router = createBrowserRouter([
   {
@@ -94,6 +95,7 @@ export const router = createBrowserRouter([
                   { path: '/account/enrollments', element: <EnrollmentsPage /> },
                   { path: '/account/attendance', element: <AttendancePage /> },
                   { path: '/account/announcements', element: <AnnouncementsPage /> },
+                  { path: '/account/checkout', element: <CheckoutPage /> },
                 ],
               },
             ],
