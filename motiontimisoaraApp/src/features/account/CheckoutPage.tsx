@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Elements, CardElement, useElements, useStripe } from '@stripe/react-stripe-js'
@@ -193,6 +193,10 @@ function CheckoutWizard({
   const allowCash = validation?.allowCash ?? kind !== 'CAMP'
   const cashBlocked = selected.some((cid) => verdictFor(cid)?.severity === 'warning')
 
+  useEffect(() => {
+    if (cashBlocked && method === 'CASH' && stripeConfigured) setMethod('CARD')
+  }, [cashBlocked, method])
+
   const steps = method === 'CARD' ? ['Copii', 'Detalii', 'Facturare', 'Plată'] : ['Copii', 'Detalii', 'Plată']
   const lastStep = steps.length - 1
 
@@ -207,8 +211,12 @@ function CheckoutWizard({
     billing.city.trim().length > 1 &&
     billing.postalCode.trim().length > 2
 
-  const capacityOk =
-    validation?.capacity.available == null || validation.capacity.available >= selected.length
+  const capacityOk = (() => {
+    if (validation?.capacity.available == null) return true
+    // PENDING (warning) children already hold a seat — don't count them again on retry.
+    const newSeatsNeeded = selected.filter((cid) => verdictFor(cid)?.severity !== 'warning').length
+    return validation.capacity.available >= newSeatsNeeded
+  })()
 
   const canAdvance = (() => {
     if (step === 0) {
@@ -226,6 +234,9 @@ function CheckoutWizard({
     mutationFn: async () => {
       if (method === 'CARD' && !billingValid) {
         throw new Error('Completează datele de facturare')
+      }
+      if (method === 'CASH' && cashBlocked) {
+        throw new Error('Există o înscriere neplătită; alege plata cu cardul.')
       }
       if (!capacityOk) {
         throw new Error('Nu mai sunt locuri suficiente pentru selecția ta.')
@@ -436,7 +447,8 @@ function CheckoutWizard({
 
           {validation && !capacityOk && (
             <p className="text-destructive text-sm">
-              Locuri insuficiente: mai sunt {validation.capacity.available}, ai selectat {selected.length}.
+              Locuri insuficiente: mai sunt {validation.capacity.available}, ai nevoie de{' '}
+              {selected.filter((cid) => verdictFor(cid)?.severity !== 'warning').length}.
             </p>
           )}
 
