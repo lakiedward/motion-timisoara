@@ -10,6 +10,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { supabaseAdmin, getUser } from "../_shared/supabase.ts";
 import { withCors } from "../_shared/cors.ts";
+import { cancelOpenPaymentIntent } from "../_shared/stripe.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -52,12 +53,18 @@ serve(
       // Never delete a draft whose money already moved.
       const { data: payments } = await supabaseAdmin
         .from("payments")
-        .select("id, status")
+        .select("id, status, gateway_txn_id")
         .eq("enrollment_id", enrollment.id);
 
       if (payments?.some((p) => p.status === "SUCCEEDED")) {
         skipped.push({ id: enrollment.id, reason: "payment_succeeded" });
         continue;
+      }
+
+      // Cancel any open Stripe intents before deleting rows — otherwise an old
+      // client_secret can still be confirmed after the draft is gone.
+      for (const payment of payments ?? []) {
+        await cancelOpenPaymentIntent(payment.gateway_txn_id);
       }
 
       await supabaseAdmin.from("payments").delete().eq("enrollment_id", enrollment.id);

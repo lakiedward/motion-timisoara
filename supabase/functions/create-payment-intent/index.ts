@@ -5,7 +5,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { supabaseAdmin, getUser } from "../_shared/supabase.ts";
 import { withCors } from "../_shared/cors.ts";
-import { getStripe, calculatePlatformFee } from "../_shared/stripe.ts";
+import { getStripe, calculatePlatformFee, cancelOpenPaymentIntent } from "../_shared/stripe.ts";
 
 serve(
   withCors(async (req: Request) => {
@@ -173,10 +173,44 @@ serve(
 
     const stripe = getStripe();
     const amountInBani = payment.amount;
+    const currencyLower = currency.toLowerCase();
+
+    // Reuse an open intent on CARD retry; cancel stale ones before creating a new PI
+    // so an old client_secret cannot double-charge the same enrollment.
+    if (payment.gateway_txn_id) {
+      try {
+        const existing = await stripe.paymentIntents.retrieve(payment.gateway_txn_id);
+        if (existing.status === "succeeded") {
+          return new Response(
+            JSON.stringify({ error: "Payment already succeeded" }),
+            { status: 409, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        const reusable = new Set([
+          "requires_payment_method",
+          "requires_confirmation",
+          "requires_action",
+        ]);
+        if (
+          reusable.has(existing.status) &&
+          existing.client_secret &&
+          existing.amount === amountInBani &&
+          existing.currency === currencyLower
+        ) {
+          return new Response(
+            JSON.stringify({ clientSecret: existing.client_secret }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        await cancelOpenPaymentIntent(existing.id);
+      } catch (err) {
+        console.error("Failed to inspect existing PaymentIntent:", payment.gateway_txn_id, err);
+      }
+    }
 
     const params: any = {
       amount: amountInBani,
-      currency: currency.toLowerCase(),
+      currency: currencyLower,
       metadata: {
         enrollmentId: enrollment.id,
         paymentId: payment.id,
