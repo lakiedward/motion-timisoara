@@ -139,7 +139,7 @@ serve(
       }
       entityPrice = course.price_per_session * effectiveSessionPackageSize;
       paymentCurrency = course.currency;
-      if (newEnrollmentCount > 0 && course.capacity) {
+      if (newEnrollmentCount > 0 && course.capacity != null) {
         const { count } = await supabaseAdmin
           .from("enrollments")
           .select("id", { count: "exact", head: true })
@@ -179,7 +179,7 @@ serve(
       entityPrice = camp.price;
       paymentCurrency = camp.currency;
       effectiveSessionPackageSize = 1;
-      if (newEnrollmentCount > 0 && camp.capacity) {
+      if (newEnrollmentCount > 0 && camp.capacity != null) {
         const { count } = await supabaseAdmin
           .from("enrollments")
           .select("id", { count: "exact", head: true })
@@ -212,7 +212,7 @@ serve(
       entityPrice = activity.price;
       paymentCurrency = activity.currency;
       effectiveSessionPackageSize = 1;
-      if (newEnrollmentCount > 0 && activity.capacity) {
+      if (newEnrollmentCount > 0 && activity.capacity != null) {
         const { count } = await supabaseAdmin
           .from("enrollments")
           .select("id", { count: "exact", head: true })

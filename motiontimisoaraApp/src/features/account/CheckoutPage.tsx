@@ -182,7 +182,7 @@ function CheckoutWizard({
 
   // Badges are shown for every child, so validate the whole list.
   const childIds = useMemo(() => children.map((c) => c.id), [children])
-  const { data: validation, isSuccess: validationReady } = useQuery({
+  const { data: validation, isSuccess: validationReady, isError: validationFailed, error: validationError, refetch: refetchValidation } = useQuery({
     queryKey: ['validate-enrollment', kind, offering.id, childIds],
     queryFn: () => validateEnrollment(kind, offering.id, childIds),
     enabled: childIds.length > 0,
@@ -194,8 +194,8 @@ function CheckoutWizard({
   const cashBlocked = selected.some((cid) => verdictFor(cid)?.severity === 'warning')
 
   useEffect(() => {
-    if (cashBlocked && method === 'CASH' && stripeConfigured) setMethod('CARD')
-  }, [cashBlocked, method])
+    if ((cashBlocked || !allowCash) && method === 'CASH' && stripeConfigured) setMethod('CARD')
+  }, [cashBlocked, allowCash, method])
 
   const steps = method === 'CARD' ? ['Copii', 'Detalii', 'Facturare', 'Plată'] : ['Copii', 'Detalii', 'Plată']
   const lastStep = steps.length - 1
@@ -235,8 +235,12 @@ function CheckoutWizard({
       if (method === 'CARD' && !billingValid) {
         throw new Error('Completează datele de facturare')
       }
-      if (method === 'CASH' && cashBlocked) {
-        throw new Error('Există o înscriere neplătită; alege plata cu cardul.')
+      if (method === 'CASH' && (cashBlocked || !allowCash)) {
+        throw new Error(
+          cashBlocked
+            ? 'Există o înscriere neplătită; alege plata cu cardul.'
+            : 'Plata cash nu este disponibilă pentru această ofertă.'
+        )
       }
       if (!capacityOk) {
         throw new Error('Nu mai sunt locuri suficiente pentru selecția ta.')
@@ -443,6 +447,18 @@ function CheckoutWizard({
                 </label>
               )
             })
+          )}
+
+          {validationFailed && (
+            <div className="border-destructive/40 bg-destructive/5 space-y-2 rounded-lg border p-3 text-sm">
+              <p className="text-destructive">
+                Nu am putut verifica eligibilitatea:{' '}
+                {validationError instanceof Error ? validationError.message : 'încearcă din nou.'}
+              </p>
+              <Button type="button" variant="outline" size="sm" onClick={() => refetchValidation()}>
+                Reîncearcă
+              </Button>
+            </div>
           )}
 
           {validation && !capacityOk && (
