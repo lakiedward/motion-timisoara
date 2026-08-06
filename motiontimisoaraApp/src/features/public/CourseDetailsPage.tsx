@@ -7,10 +7,9 @@ import { getCourse, publicUrl } from '@/api/public'
 import { getCourseRatingSummary, getMyCourseRating, submitCourseRating } from '@/api/ratings'
 import { formatRon } from '@/lib/money'
 import { useAuth } from '@/lib/auth-context'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StarRating } from '@/components/StarRating'
-import { SPORT_ICON } from './sport-icons'
+import { SPORT_COLOR, SPORT_COLOR_FALLBACK, SPORT_ICON } from './sport-icons'
 
 const WEEKDAYS = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă']
 
@@ -64,6 +63,7 @@ export default function CourseDetailsPage() {
   const hero = [...(course.course_photos ?? [])].sort((a, b) => a.display_order - b.display_order)[0]
   const img = publicUrl('course-photos', hero?.storage_path ?? null)
   const icon = SPORT_ICON[course.sport?.code ?? ''] ?? '🎽'
+  const sportColor = SPORT_COLOR[course.sport?.code ?? ''] ?? SPORT_COLOR_FALLBACK
   const sessions = [...(course.occurrences ?? [])].sort(
     (a, b) => +new Date(a.starts_at) - +new Date(b.starts_at)
   )
@@ -77,32 +77,62 @@ export default function CourseDetailsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
-      <Link to="/cursuri" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm">
-        <ArrowLeft className="size-4" /> Înapoi la cursuri
-      </Link>
-
-      <div className="mt-6 grid gap-8 lg:grid-cols-[1.6fr_1fr]">
-        <div>
-          <div className="relative aspect-video overflow-hidden rounded-3xl">
-            {img ? (
-              <img src={img} alt={course.name} className="size-full object-cover" />
-            ) : (
-              <div className="from-primary/15 to-highlight/15 text-primary flex size-full items-center justify-center bg-gradient-to-br text-7xl">
-                {icon}
-              </div>
-            )}
+    <div>
+      {/* HERO — full-bleed photo (or sport-tinted fallback) with title/badges overlaid */}
+      <section className="relative h-[46vh] min-h-[320px] overflow-hidden md:h-[52vh]">
+        {img ? (
+          <img src={img} alt={course.name} className="absolute inset-0 size-full object-cover" />
+        ) : (
+          <div
+            className="absolute inset-0 flex items-center justify-center text-8xl opacity-90"
+            style={{ background: `linear-gradient(135deg, ${sportColor} 0%, #0f172a 140%)` }}
+          >
+            {icon}
           </div>
+        )}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(to top, rgba(15,23,42,0.88) 0%, rgba(15,23,42,0.25) 48%, transparent 72%)',
+          }}
+        />
 
-          <div className="mt-6 flex flex-wrap items-center gap-2">
-            {course.sport && <Badge>{course.sport.name}</Badge>}
-            {course.level && <Badge variant="outline">{course.level}</Badge>}
+        <Link
+          to="/cursuri"
+          className="absolute top-6 left-6 inline-flex items-center gap-1.5 rounded-full bg-black/30 px-3.5 py-2 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-black/45"
+        >
+          <ArrowLeft className="size-4" /> Înapoi la cursuri
+        </Link>
+
+        <div className="absolute inset-x-0 bottom-0">
+          <div className="mx-auto max-w-6xl px-6 pb-7">
+            <div className="flex flex-wrap items-center gap-2">
+              {course.sport && (
+                <span
+                  className="rounded-full px-3 py-1 text-xs font-bold text-white"
+                  style={{ backgroundColor: sportColor }}
+                >
+                  {course.sport.name}
+                </span>
+              )}
+              {course.level && (
+                <span className="rounded-full border border-white/40 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm">
+                  {course.level}
+                </span>
+              )}
+            </div>
+            <h1 className="font-display mt-3 text-4xl font-extrabold text-white md:text-5xl">
+              {course.name}
+            </h1>
           </div>
-          <h1 className="font-display mt-3 text-3xl font-extrabold text-foreground md:text-4xl">
-            {course.name}
-          </h1>
+        </div>
+      </section>
 
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="mx-auto max-w-6xl px-6 py-10">
+        <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
+          <div>
+          <div className="bg-card shadow-card divide-border flex flex-wrap divide-x overflow-hidden rounded-2xl border">
             {course.age_from != null && (
               <InfoTile icon={<Users className="size-4" />} label="Vârstă" value={`${course.age_from}–${course.age_to} ani`} />
             )}
@@ -158,7 +188,9 @@ export default function CourseDetailsPage() {
 
         {/* Booking sidebar */}
         <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="bg-card shadow-card rounded-3xl border p-6">
+          <div className="bg-card shadow-card overflow-hidden rounded-3xl border">
+            <div className="h-1.5" style={{ background: 'var(--gradient-primary)' }} />
+            <div className="p-6">
             <div className="font-display text-3xl font-extrabold">
               {formatRon(course.price)}
               <span className="text-muted-foreground text-base font-normal"> / lună</span>
@@ -190,8 +222,10 @@ export default function CourseDetailsPage() {
                 <StarRating value={myRating ?? 0} onChange={(r) => rate.mutate(r)} />
               </div>
             )}
+            </div>
           </div>
         </aside>
+      </div>
       </div>
     </div>
   )
@@ -199,11 +233,12 @@ export default function CourseDetailsPage() {
 
 function InfoTile({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="bg-muted/60 rounded-2xl p-3">
-      <div className="text-muted-foreground flex items-center gap-1 text-xs">
-        {icon} {label}
+    <div className="flex flex-1 min-w-[9rem] items-center gap-2.5 p-4">
+      <span className="text-primary">{icon}</span>
+      <div>
+        <div className="text-muted-foreground text-xs">{label}</div>
+        <div className="text-sm font-bold text-foreground">{value}</div>
       </div>
-      <div className="mt-1 text-sm font-semibold">{value}</div>
     </div>
   )
 }
