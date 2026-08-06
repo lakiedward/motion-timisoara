@@ -67,7 +67,7 @@ export function validateEnrollment(
   return invoke<ValidationResponse>('validate-enrollment', { kind, entityId, childIds })
 }
 
-export function createEnrollment(input: {
+export async function createEnrollment(input: {
   kind: EnrollmentKind
   entityId: string
   childIds: string[]
@@ -75,7 +75,22 @@ export function createEnrollment(input: {
   sessionPackageSize?: number
   billingDetails?: BillingDetails
 }): Promise<CreateEnrollmentResponse> {
-  return invoke<CreateEnrollmentResponse>('create-enrollment', input)
+  const data = await invoke<CreateEnrollmentResponse>('create-enrollment', input)
+  // Older deployments returned only enrollmentId; always settle every child.
+  const enrollmentIds =
+    data.enrollmentIds?.length > 0
+      ? data.enrollmentIds
+      : data.enrollmentId
+        ? [data.enrollmentId]
+        : []
+  if (enrollmentIds.length === 0) {
+    throw new Error('Nu s-au creat înscrieri. Încearcă din nou.')
+  }
+  return {
+    enrollmentId: data.enrollmentId ?? enrollmentIds[0],
+    enrollmentIds,
+    requiresPaymentIntent: data.requiresPaymentIntent,
+  }
 }
 
 export function createPaymentIntent(enrollmentId: string): Promise<{ clientSecret: string }> {
@@ -86,33 +101,59 @@ export function cancelDraftEnrollment(enrollmentIds: string[]): Promise<{ succes
   return invoke<{ success: boolean }>('cancel-draft-enrollment', { enrollmentIds })
 }
 
+export type EnrollmentReadyOutcome = 'ready' | 'failed' | 'timeout'
+
 /**
- * Waits for the stripe-webhook broadcast that flips the enrollment to ACTIVE.
+ * Subscribes to the stripe-webhook broadcast that flips enrollments to ACTIVE.
+ *
+ * Call this *before* confirming card payments so events that land during
+ * confirmCardPayment are not missed. Await `whenSubscribed`, run confirms,
+ * then call `startWaiting()` and await `outcome`.
  *
  * Card confirmation succeeding client-side only means Stripe accepted the
  * charge — the enrollment is still PENDING until the webhook lands. We give it
- * `timeoutMs` and then fall through: the payment is real either way, so a
- * timeout is reported as "processing", never as a failure.
+ * `timeoutMs` (from startWaiting) and then fall through: the payment is real
+ * either way, so a timeout is reported as "processing", never as a failure.
  */
-export function waitForEnrollmentReady(
+export function listenForEnrollmentReady(
   userId: string,
   enrollmentIds: string[],
   timeoutMs = 15000
-): Promise<'ready' | 'failed' | 'timeout'> {
-  return new Promise((resolve) => {
+): {
+  whenSubscribed: Promise<void>
+  startWaiting: () => void
+  outcome: Promise<EnrollmentReadyOutcome>
+} {
+  let resolveSubscribed!: () => void
+  const whenSubscribed = new Promise<void>((resolve) => {
+    resolveSubscribed = resolve
+  })
+
+  let timer: ReturnType<typeof setTimeout> | undefined
+  let startWaiting!: () => void
+
+  const outcome = new Promise<EnrollmentReadyOutcome>((resolve) => {
     const pending = new Set(enrollmentIds)
     const channel = supabase.channel(`user:${userId}:payments`)
     let settled = false
 
-    const finish = (outcome: 'ready' | 'failed' | 'timeout') => {
+    const finish = (result: EnrollmentReadyOutcome) => {
       if (settled) return
       settled = true
-      clearTimeout(timer)
+      if (timer) clearTimeout(timer)
       supabase.removeChannel(channel)
-      resolve(outcome)
+      resolve(result)
     }
 
-    const timer = setTimeout(() => finish('timeout'), timeoutMs)
+    startWaiting = () => {
+      if (settled || timer) return
+      // Already received every event while confirms were in flight.
+      if (pending.size === 0) {
+        finish('ready')
+        return
+      }
+      timer = setTimeout(() => finish('timeout'), timeoutMs)
+    }
 
     channel
       .on('broadcast', { event: 'enrollment_ready' }, ({ payload }) => {
@@ -122,6 +163,21 @@ export function waitForEnrollmentReady(
       .on('broadcast', { event: 'payment_failed' }, ({ payload }) => {
         if (pending.has((payload as { enrollmentId: string }).enrollmentId)) finish('failed')
       })
-      .subscribe()
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') resolveSubscribed()
+      })
   })
+
+  return { whenSubscribed, startWaiting, outcome }
+}
+
+/** @deprecated Prefer listenForEnrollmentReady so subscribe starts before confirms. */
+export function waitForEnrollmentReady(
+  userId: string,
+  enrollmentIds: string[],
+  timeoutMs = 15000
+): Promise<EnrollmentReadyOutcome> {
+  const listener = listenForEnrollmentReady(userId, enrollmentIds, timeoutMs)
+  listener.startWaiting()
+  return listener.outcome
 }

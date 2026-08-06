@@ -275,9 +275,12 @@ serve(
     }
 
     const primaryId = savedEnrollments[0]?.id;
+    // One enrollment + payment per child; callers must settle every id.
+    const enrollmentIds = savedEnrollments.map((e: { id: string }) => e.id);
     return new Response(
       JSON.stringify({
-        enrollmentId: primaryId,
+        enrollmentId: primaryId, // kept for backwards compatibility
+        enrollmentIds,
         requiresPaymentIntent: paymentMethod === "CARD",
       }),
       { status: 200, headers: { "Content-Type": "application/json" } },

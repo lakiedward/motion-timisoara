@@ -9,8 +9,8 @@ import {
   cancelDraftEnrollment,
   createEnrollment,
   createPaymentIntent,
+  listenForEnrollmentReady,
   validateEnrollment,
-  waitForEnrollmentReady,
   type BillingDetails,
   type EnrollmentKind,
   type PaymentMethod,
@@ -206,8 +206,17 @@ function CheckoutWizard({
     billing.city.trim().length > 1 &&
     billing.postalCode.trim().length > 2
 
+  const capacityOk =
+    validation?.capacity.available == null || validation.capacity.available >= selected.length
+
   const canAdvance = (() => {
-    if (step === 0) return selected.length > 0 && !selected.some((c) => verdictFor(c)?.eligible === false)
+    if (step === 0) {
+      return (
+        selected.length > 0 &&
+        capacityOk &&
+        !selected.some((c) => verdictFor(c)?.eligible === false)
+      )
+    }
     if (step === 1) return accepted && total > 0
     if (steps[step] === 'Facturare') return billingValid
     return true
@@ -217,6 +226,9 @@ function CheckoutWizard({
     mutationFn: async () => {
       if (method === 'CARD' && !billingValid) {
         throw new Error('Completează datele de facturare')
+      }
+      if (!capacityOk) {
+        throw new Error('Nu mai sunt locuri suficiente pentru selecția ta.')
       }
 
       setProgress('Se creează înscrierile…')
@@ -241,6 +253,16 @@ function CheckoutWizard({
       // payment per intent via metadata.paymentId, so a shared intent would
       // leave every child but one unpaid.
       const ids = created.enrollmentIds
+
+      // Subscribe before confirms so webhook broadcasts during payment are not missed.
+      const listener = user ? listenForEnrollmentReady(user.id, ids) : null
+      if (listener) {
+        await Promise.race([
+          listener.whenSubscribed,
+          new Promise<void>((resolve) => setTimeout(resolve, 3000)),
+        ])
+      }
+
       for (let i = 0; i < ids.length; i++) {
         setProgress(ids.length > 1 ? `Se procesează plata ${i + 1} din ${ids.length}…` : 'Se procesează plata…')
         const { clientSecret } = await createPaymentIntent(ids[i])
@@ -260,14 +282,20 @@ function CheckoutWizard({
           },
         })
         if (error) {
-          // Roll back only what has not been paid for.
+          // Roll back only unpaid drafts. Paid seats stay; parent checks Înscrieri.
           await cancelDraftEnrollment(ids.slice(i)).catch(() => undefined)
+          if (i > 0) {
+            throw new Error(
+              `Plata a reușit pentru ${i} din ${ids.length} copii. Restul au fost anulate — verifică în Înscrieri.`
+            )
+          }
           throw new Error(error.message ?? 'Plata a eșuat')
         }
       }
 
       setProgress('Confirmăm plata…')
-      const outcome = user ? await waitForEnrollmentReady(user.id, ids) : 'timeout'
+      if (listener) listener.startWaiting()
+      const outcome = listener ? await listener.outcome : 'timeout'
       return { ids, outcome }
     },
     onSuccess: ({ outcome }) => {
