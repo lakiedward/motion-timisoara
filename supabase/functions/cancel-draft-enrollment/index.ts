@@ -10,7 +10,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { supabaseAdmin, getUser } from "../_shared/supabase.ts";
 import { withCors } from "../_shared/cors.ts";
-import { cancelOpenPaymentIntent } from "../_shared/stripe.ts";
+import { cancelOpenPaymentIntent, getStripe } from "../_shared/stripe.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -50,7 +50,7 @@ serve(
         continue;
       }
 
-      // Never delete a draft whose money already moved.
+      // Never delete a draft whose money already moved (local or Stripe).
       const { data: payments } = await supabaseAdmin
         .from("payments")
         .select("id, status, gateway_txn_id")
@@ -58,6 +58,24 @@ serve(
 
       if (payments?.some((p) => p.status === "SUCCEEDED")) {
         skipped.push({ id: enrollment.id, reason: "payment_succeeded" });
+        continue;
+      }
+
+      let stripeAlreadyPaid = false;
+      for (const payment of payments ?? []) {
+        if (!payment.gateway_txn_id) continue;
+        try {
+          const existing = await getStripe().paymentIntents.retrieve(payment.gateway_txn_id);
+          if (existing.status === "succeeded") {
+            stripeAlreadyPaid = true;
+            break;
+          }
+        } catch (err) {
+          console.error("Failed to inspect PaymentIntent before draft cancel:", payment.gateway_txn_id, err);
+        }
+      }
+      if (stripeAlreadyPaid) {
+        skipped.push({ id: enrollment.id, reason: "stripe_succeeded" });
         continue;
       }
 

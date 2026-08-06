@@ -175,30 +175,17 @@ serve(
     const amountInBani = payment.amount;
     const currencyLower = currency.toLowerCase();
 
-    // Reuse an open intent on CARD retry; cancel stale ones before creating a new PI
-    // so an old client_secret cannot double-charge the same enrollment.
+    // Always cancel any open prior intent before creating a new one. Reusing an
+    // old PI can leave Connect routing/fees out of date; leaving it open lets an
+    // old client_secret still be confirmed after a retry.
     if (payment.gateway_txn_id) {
       try {
         const existing = await stripe.paymentIntents.retrieve(payment.gateway_txn_id);
         if (existing.status === "succeeded") {
+          // Webhook may still be catching up — do NOT 409 (client would roll back
+          // the draft while Stripe already charged).
           return new Response(
-            JSON.stringify({ error: "Payment already succeeded" }),
-            { status: 409, headers: { "Content-Type": "application/json" } },
-          );
-        }
-        const reusable = new Set([
-          "requires_payment_method",
-          "requires_confirmation",
-          "requires_action",
-        ]);
-        if (
-          reusable.has(existing.status) &&
-          existing.client_secret &&
-          existing.amount === amountInBani &&
-          existing.currency === currencyLower
-        ) {
-          return new Response(
-            JSON.stringify({ clientSecret: existing.client_secret }),
+            JSON.stringify({ clientSecret: existing.client_secret, alreadySucceeded: true }),
             { status: 200, headers: { "Content-Type": "application/json" } },
           );
         }

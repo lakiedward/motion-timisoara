@@ -93,8 +93,12 @@ export async function createEnrollment(input: {
   }
 }
 
-export function createPaymentIntent(enrollmentId: string): Promise<{ clientSecret: string }> {
-  return invoke<{ clientSecret: string }>('create-payment-intent', { enrollmentId })
+export function createPaymentIntent(
+  enrollmentId: string
+): Promise<{ clientSecret: string; alreadySucceeded?: boolean }> {
+  return invoke<{ clientSecret: string; alreadySucceeded?: boolean }>('create-payment-intent', {
+    enrollmentId,
+  })
 }
 
 export function cancelDraftEnrollment(enrollmentIds: string[]): Promise<{ success: boolean }> {

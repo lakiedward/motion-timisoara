@@ -286,7 +286,8 @@ function CheckoutWizard({
       for (let i = 0; i < ids.length; i++) {
         setProgress(ids.length > 1 ? `Se procesează plata ${i + 1} din ${ids.length}…` : 'Se procesează plata…')
         try {
-          const { clientSecret } = await createPaymentIntent(ids[i])
+          const { clientSecret, alreadySucceeded } = await createPaymentIntent(ids[i])
+          if (alreadySucceeded) continue
           const { error } = await stripe.confirmCardPayment(clientSecret, {
             payment_method: {
               card,
