@@ -122,6 +122,7 @@ export function listenForEnrollmentReady(
 ): {
   whenSubscribed: Promise<void>
   startWaiting: () => void
+  dispose: () => void
   outcome: Promise<EnrollmentReadyOutcome>
 } {
   let resolveSubscribed!: () => void
@@ -131,6 +132,7 @@ export function listenForEnrollmentReady(
 
   let timer: ReturnType<typeof setTimeout> | undefined
   let startWaiting!: () => void
+  let dispose!: () => void
 
   const outcome = new Promise<EnrollmentReadyOutcome>((resolve) => {
     const pending = new Set(enrollmentIds)
@@ -155,6 +157,16 @@ export function listenForEnrollmentReady(
       timer = setTimeout(() => finish('timeout'), timeoutMs)
     }
 
+    dispose = () => {
+      if (settled) return
+      settled = true
+      if (timer) clearTimeout(timer)
+      supabase.removeChannel(channel)
+      // Leave outcome pending only if nobody awaits it — resolve as timeout so
+      // callers that race outcome do not hang forever.
+      resolve('timeout')
+    }
+
     channel
       .on('broadcast', { event: 'enrollment_ready' }, ({ payload }) => {
         pending.delete((payload as { enrollmentId: string }).enrollmentId)
@@ -168,7 +180,7 @@ export function listenForEnrollmentReady(
       })
   })
 
-  return { whenSubscribed, startWaiting, outcome }
+  return { whenSubscribed, startWaiting, dispose, outcome }
 }
 
 /** @deprecated Prefer listenForEnrollmentReady so subscribe starts before confirms. */

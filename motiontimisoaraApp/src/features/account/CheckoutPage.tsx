@@ -16,7 +16,7 @@ import {
   type PaymentMethod,
 } from '@/api/checkout'
 import { childAge, createChild, getMyChildren } from '@/api/account'
-import { getActivity, getCampBySlug, getCourse } from '@/api/public'
+import { getActivity, getCamp, getCampBySlug, getCourse } from '@/api/public'
 import { useAuth } from '@/lib/auth-context'
 import { formatRon } from '@/lib/money'
 import { stripeConfigured, stripePromise } from '@/lib/stripe'
@@ -67,8 +67,8 @@ export default function CheckoutPage() {
   const { data: offering, isLoading } = useQuery({
     queryKey: ['checkout-offering', kind, id, slug],
     queryFn: async (): Promise<Offering | null> => {
-      if (kind === 'CAMP' && slug) {
-        const camp = await getCampBySlug(slug)
+      if (kind === 'CAMP') {
+        const camp = slug ? await getCampBySlug(slug) : id ? await getCamp(id) : null
         return camp
           ? { id: camp.id, title: camp.title, unitPrice: Number(camp.price) || 0, perSession: false, packages: [] }
           : null
@@ -79,7 +79,7 @@ export default function CheckoutPage() {
           ? { id: activity.id, title: activity.name, unitPrice: Number(activity.price) || 0, perSession: false, packages: [] }
           : null
       }
-      if (id) {
+      if (kind === 'COURSE' && id) {
         const course = await getCourse(id)
         return course
           ? {
@@ -182,7 +182,7 @@ function CheckoutWizard({
 
   // Badges are shown for every child, so validate the whole list.
   const childIds = useMemo(() => children.map((c) => c.id), [children])
-  const { data: validation } = useQuery({
+  const { data: validation, isSuccess: validationReady } = useQuery({
     queryKey: ['validate-enrollment', kind, offering.id, childIds],
     queryFn: () => validateEnrollment(kind, offering.id, childIds),
     enabled: childIds.length > 0,
@@ -212,11 +212,10 @@ function CheckoutWizard({
 
   const canAdvance = (() => {
     if (step === 0) {
-      return (
-        selected.length > 0 &&
-        capacityOk &&
-        !selected.some((c) => verdictFor(c)?.eligible === false)
-      )
+      if (selected.length === 0) return false
+      // Block until eligibility/capacity are known — do not treat missing validation as OK.
+      if (childIds.length > 0 && !validationReady) return false
+      return capacityOk && !selected.some((c) => verdictFor(c)?.eligible === false)
     }
     if (step === 1) return accepted && total > 0
     if (steps[step] === 'Facturare') return billingValid
@@ -285,6 +284,7 @@ function CheckoutWizard({
           })
           if (error) throw new Error(error.message ?? 'Plata a eșuat')
         } catch (err) {
+          listener?.dispose()
           // Roll back only unpaid drafts. Paid seats stay; parent checks Înscrieri.
           await cancelDraftEnrollment(ids.slice(i)).catch(() => undefined)
           if (i > 0) {
