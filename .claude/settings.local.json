@@ -27,7 +27,14 @@
       "Bash(./gradlew build:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npm ci)",
+      "Bash(ls /c/Users/lakie/Desktop/motion-timisoara/TriathlonTeamFE/.env*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:4200)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill //PID 65604 //F)",
+      "Bash(curl -s http://127.0.0.1:4200)"
     ],
     "deny": [],
     "ask": []
