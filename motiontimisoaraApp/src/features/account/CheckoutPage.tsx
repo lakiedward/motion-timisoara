@@ -189,7 +189,8 @@ function CheckoutWizard({
   })
 
   const verdictFor = (childId: string) => validation?.results.find((r) => r.childId === childId)
-  const allowCash = validation?.allowCash ?? true
+  // Camps may disallow cash — never flash the option before validation resolves.
+  const allowCash = validation?.allowCash ?? kind !== 'CAMP'
   const cashBlocked = selected.some((cid) => verdictFor(cid)?.severity === 'warning')
 
   const steps = method === 'CARD' ? ['Copii', 'Detalii', 'Facturare', 'Plată'] : ['Copii', 'Detalii', 'Plată']
@@ -265,23 +266,25 @@ function CheckoutWizard({
 
       for (let i = 0; i < ids.length; i++) {
         setProgress(ids.length > 1 ? `Se procesează plata ${i + 1} din ${ids.length}…` : 'Se procesează plata…')
-        const { clientSecret } = await createPaymentIntent(ids[i])
-        const { error } = await stripe.confirmCardPayment(clientSecret, {
-          payment_method: {
-            card,
-            billing_details: {
-              name: billing.name,
-              email: billing.email,
-              address: {
-                line1: billing.addressLine1,
-                city: billing.city,
-                postal_code: billing.postalCode,
-                country: 'RO',
+        try {
+          const { clientSecret } = await createPaymentIntent(ids[i])
+          const { error } = await stripe.confirmCardPayment(clientSecret, {
+            payment_method: {
+              card,
+              billing_details: {
+                name: billing.name,
+                email: billing.email,
+                address: {
+                  line1: billing.addressLine1,
+                  city: billing.city,
+                  postal_code: billing.postalCode,
+                  country: 'RO',
+                },
               },
             },
-          },
-        })
-        if (error) {
+          })
+          if (error) throw new Error(error.message ?? 'Plata a eșuat')
+        } catch (err) {
           // Roll back only unpaid drafts. Paid seats stay; parent checks Înscrieri.
           await cancelDraftEnrollment(ids.slice(i)).catch(() => undefined)
           if (i > 0) {
@@ -289,7 +292,7 @@ function CheckoutWizard({
               `Plata a reușit pentru ${i} din ${ids.length} copii. Restul au fost anulate — verifică în Înscrieri.`
             )
           }
-          throw new Error(error.message ?? 'Plata a eșuat')
+          throw err instanceof Error ? err : new Error('Plata a eșuat')
         }
       }
 
@@ -431,7 +434,7 @@ function CheckoutWizard({
             })
           )}
 
-          {validation && !validation.capacity.sufficient && (
+          {validation && !capacityOk && (
             <p className="text-destructive text-sm">
               Locuri insuficiente: mai sunt {validation.capacity.available}, ai selectat {selected.length}.
             </p>

@@ -179,6 +179,23 @@ serve(
       entityPrice = camp.price;
       paymentCurrency = camp.currency;
       effectiveSessionPackageSize = 1;
+      if (newEnrollmentCount > 0 && camp.capacity) {
+        const { count } = await supabaseAdmin
+          .from("enrollments")
+          .select("id", { count: "exact", head: true })
+          .eq("kind", "CAMP")
+          .eq("entity_id", entityId)
+          .in("status", ["PENDING", "ACTIVE"]);
+        const available = camp.capacity - (count ?? 0);
+        if (available < newEnrollmentCount) {
+          return new Response(
+            JSON.stringify({
+              error: `Not enough spots. Requested: ${newEnrollmentCount}, Available: ${available}`,
+            }),
+            { status: 400, headers: { "Content-Type": "application/json" } },
+          );
+        }
+      }
     } else {
       // ACTIVITY
       const { data: activity } = await supabaseAdmin
@@ -195,79 +212,147 @@ serve(
       entityPrice = activity.price;
       paymentCurrency = activity.currency;
       effectiveSessionPackageSize = 1;
+      if (newEnrollmentCount > 0 && activity.capacity) {
+        const { count } = await supabaseAdmin
+          .from("enrollments")
+          .select("id", { count: "exact", head: true })
+          .eq("kind", "ACTIVITY")
+          .eq("entity_id", entityId)
+          .in("status", ["PENDING", "ACTIVE"]);
+        const available = activity.capacity - (count ?? 0);
+        if (available < newEnrollmentCount) {
+          return new Response(
+            JSON.stringify({
+              error: `Not enough spots. Requested: ${newEnrollmentCount}, Available: ${available}`,
+            }),
+            { status: 400, headers: { "Content-Type": "application/json" } },
+          );
+        }
+      }
     }
 
     const now = new Date().toISOString();
-    const savedEnrollments: any[] = [];
+    const savedEnrollments: { id: string }[] = [];
 
     for (const child of children) {
-      // Create enrollment
-      const { data: enrollment, error: enrollErr } = await supabaseAdmin
-        .from("enrollments")
-        .insert({
-          kind,
-          entity_id: entityId,
-          child_id: child.id,
+      const existing = existingByChild.get(child.id) ?? [];
+      // CARD retries reuse the unpaid PENDING draft instead of inserting a duplicate.
+      const pendingDraft =
+        paymentMethod === "CARD"
+          ? existing.find((e: { status: string }) => e.status === "PENDING")
+          : undefined;
+
+      let enrollment: { id: string };
+
+      if (pendingDraft) {
+        enrollment = { id: pendingDraft.id };
+
+        const paymentPatch: Record<string, unknown> = {
+          method: paymentMethod,
+          amount: entityPrice,
+          currency: paymentCurrency,
+          status: "PENDING",
+          updated_at: now,
+        };
+        if (billingDetails) {
+          paymentPatch.billing_name = billingDetails.name;
+          paymentPatch.billing_email = billingDetails.email;
+          paymentPatch.billing_address_line1 = billingDetails.addressLine1;
+          paymentPatch.billing_city = billingDetails.city;
+          paymentPatch.billing_postal_code = billingDetails.postalCode;
+          paymentPatch.billing_country = "RO";
+        }
+
+        const { data: payments } = await supabaseAdmin
+          .from("payments")
+          .select("id, status")
+          .eq("enrollment_id", enrollment.id);
+
+        if (payments?.some((p: { status: string }) => p.status === "SUCCEEDED")) {
+          return new Response(
+            JSON.stringify({ error: `Child already enrolled: ${child.name}` }),
+            { status: 409, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        const unpaid = payments?.find((p: { status: string }) => p.status === "PENDING");
+        if (unpaid) {
+          await supabaseAdmin.from("payments").update(paymentPatch).eq("id", unpaid.id);
+        } else {
+          await supabaseAdmin.from("payments").insert({
+            enrollment_id: enrollment.id,
+            ...paymentPatch,
+            created_at: now,
+          });
+        }
+      } else {
+        const { data: created, error: enrollErr } = await supabaseAdmin
+          .from("enrollments")
+          .insert({
+            kind,
+            entity_id: entityId,
+            child_id: child.id,
+            status: "PENDING",
+            created_at: now,
+            purchased_sessions: 0,
+            remaining_sessions: 0,
+            sessions_used: 0,
+          })
+          .select("id")
+          .single();
+
+        if (enrollErr || !created) {
+          return new Response(
+            JSON.stringify({ error: "Failed to create enrollment" }),
+            { status: 500, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        enrollment = created;
+
+        const paymentData: Record<string, unknown> = {
+          enrollment_id: enrollment.id,
+          method: paymentMethod,
+          amount: entityPrice,
+          currency: paymentCurrency,
           status: "PENDING",
           created_at: now,
-          purchased_sessions: 0,
-          remaining_sessions: 0,
-          sessions_used: 0,
-        })
-        .select("id")
-        .single();
+          updated_at: now,
+        };
 
-      if (enrollErr || !enrollment) {
-        return new Response(
-          JSON.stringify({ error: "Failed to create enrollment" }),
-          { status: 500, headers: { "Content-Type": "application/json" } },
-        );
-      }
+        if (paymentMethod === "CARD" && billingDetails) {
+          paymentData.billing_name = billingDetails.name;
+          paymentData.billing_email = billingDetails.email;
+          paymentData.billing_address_line1 = billingDetails.addressLine1;
+          paymentData.billing_city = billingDetails.city;
+          paymentData.billing_postal_code = billingDetails.postalCode;
+          paymentData.billing_country = "RO";
+        }
 
-      // Create payment record
-      const paymentData: any = {
-        enrollment_id: enrollment.id,
-        method: paymentMethod,
-        amount: entityPrice,
-        currency: paymentCurrency,
-        status: "PENDING",
-        created_at: now,
-        updated_at: now,
-      };
+        await supabaseAdmin.from("payments").insert(paymentData);
 
-      if (paymentMethod === "CARD" && billingDetails) {
-        paymentData.billing_name = billingDetails.name;
-        paymentData.billing_email = billingDetails.email;
-        paymentData.billing_address_line1 = billingDetails.addressLine1;
-        paymentData.billing_city = billingDetails.city;
-        paymentData.billing_postal_code = billingDetails.postalCode;
-        paymentData.billing_country = "RO";
-      }
-
-      await supabaseAdmin.from("payments").insert(paymentData);
-
-      // For CASH payments, broadcast notification
-      if (paymentMethod === "CASH") {
-        if (kind === "COURSE") {
-          await supabaseAdmin.channel("admin:pending-cash-payments").send({
-            type: "broadcast",
-            event: "pending_cash_payment",
-            payload: {
-              enrollmentId: enrollment.id,
-              sessionCount: effectiveSessionPackageSize,
-              courseId: entityId,
-            },
-          });
-        } else if (kind === "ACTIVITY") {
-          await supabaseAdmin.channel("admin:pending-activity-payments").send({
-            type: "broadcast",
-            event: "pending_activity_payment",
-            payload: {
-              enrollmentId: enrollment.id,
-              activityId: entityId,
-              childName: child.name,
-            },
-          });
+        // For CASH payments, broadcast notification
+        if (paymentMethod === "CASH") {
+          if (kind === "COURSE") {
+            await supabaseAdmin.channel("admin:pending-cash-payments").send({
+              type: "broadcast",
+              event: "pending_cash_payment",
+              payload: {
+                enrollmentId: enrollment.id,
+                sessionCount: effectiveSessionPackageSize,
+                courseId: entityId,
+              },
+            });
+          } else if (kind === "ACTIVITY") {
+            await supabaseAdmin.channel("admin:pending-activity-payments").send({
+              type: "broadcast",
+              event: "pending_activity_payment",
+              payload: {
+                enrollmentId: enrollment.id,
+                activityId: entityId,
+                childName: child.name,
+              },
+            });
+          }
         }
       }
 
