@@ -1,6 +1,10 @@
 import '@testing-library/jest-dom/vitest'
 import { vi } from 'vitest'
 
+// Supabase client reads these at module load; Vitest has no .env by default.
+vi.stubEnv('VITE_SUPABASE_URL', 'http://127.0.0.1:54321')
+vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'test-anon-key')
+
 // jsdom doesn't implement IntersectionObserver — stub it for components like ScrollReveal.
 class IntersectionObserverStub {
   observe() {}
