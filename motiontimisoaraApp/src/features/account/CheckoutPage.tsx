@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Elements, CardElement, useElements, useStripe } from '@stripe/react-stripe-js'
@@ -192,14 +192,13 @@ function CheckoutWizard({
   // Camps may disallow cash — never flash the option before validation resolves.
   const allowCash = validation?.allowCash ?? kind !== 'CAMP'
   const cashBlocked = selected.some((cid) => verdictFor(cid)?.severity === 'warning')
-
-  useEffect(() => {
-    if ((cashBlocked || !allowCash) && method === 'CASH' && stripeConfigured) setMethod('CARD')
-  }, [cashBlocked, allowCash, method])
+  // Prefer card when cash is unavailable — derive instead of syncing in an effect.
+  const activeMethod: PaymentMethod =
+    (cashBlocked || !allowCash) && method === 'CASH' && stripeConfigured ? 'CARD' : method
 
   const paymentAvailable = stripeConfigured || (allowCash && !cashBlocked)
 
-  const steps = method === 'CARD' ? ['Copii', 'Detalii', 'Facturare', 'Plată'] : ['Copii', 'Detalii', 'Plată']
+  const steps = activeMethod === 'CARD' ? ['Copii', 'Detalii', 'Facturare', 'Plată'] : ['Copii', 'Detalii', 'Plată']
   const lastStep = steps.length - 1
 
   const unitPrice = Number.isFinite(offering.unitPrice) ? offering.unitPrice : 0
@@ -234,10 +233,10 @@ function CheckoutWizard({
 
   const finalize = useMutation({
     mutationFn: async () => {
-      if (method === 'CARD' && !billingValid) {
+      if (activeMethod === 'CARD' && !billingValid) {
         throw new Error('Completează datele de facturare')
       }
-      if (method === 'CASH' && (cashBlocked || !allowCash)) {
+      if (activeMethod === 'CASH' && (cashBlocked || !allowCash)) {
         throw new Error(
           cashBlocked
             ? 'Există o înscriere neplătită; alege plata cu cardul.'
@@ -256,12 +255,12 @@ function CheckoutWizard({
         kind,
         entityId: offering.id,
         childIds: selected,
-        paymentMethod: method,
+        paymentMethod: activeMethod,
         sessionPackageSize: offering.perSession ? packageSize : undefined,
-        billingDetails: method === 'CARD' ? billing : undefined,
+        billingDetails: activeMethod === 'CARD' ? billing : undefined,
       })
 
-      if (method === 'CASH') return { ids: created.enrollmentIds, outcome: 'cash' as const }
+      if (activeMethod === 'CASH') return { ids: created.enrollmentIds, outcome: 'cash' as const }
 
       const card = elements?.getElement(CardElement)
       if (!stripe || !card) {
@@ -310,10 +309,11 @@ function CheckoutWizard({
           await cancelDraftEnrollment(ids.slice(i)).catch(() => undefined)
           if (i > 0) {
             throw new Error(
-              `Plata a reușit pentru ${i} din ${ids.length} copii. Restul au fost anulate — verifică în Înscrieri.`
+              `Plata a reușit pentru ${i} din ${ids.length} copii. Restul au fost anulate — verifică în Înscrieri.`,
+              { cause: err }
             )
           }
-          throw err instanceof Error ? err : new Error('Plata a eșuat')
+          throw err instanceof Error ? err : new Error('Plata a eșuat', { cause: err })
         }
       }
 
@@ -600,7 +600,7 @@ function CheckoutWizard({
             <label className="flex items-center gap-3 text-sm">
               <input
                 type="radio"
-                checked={method === 'CARD'}
+                checked={activeMethod === 'CARD'}
                 disabled={!stripeConfigured}
                 onChange={() => switchMethod('CARD')}
               />
@@ -610,7 +610,7 @@ function CheckoutWizard({
               <label className="flex items-center gap-3 text-sm">
                 <input
                   type="radio"
-                  checked={method === 'CASH'}
+                  checked={activeMethod === 'CASH'}
                   disabled={cashBlocked}
                   onChange={() => switchMethod('CASH')}
                 />
@@ -625,7 +625,7 @@ function CheckoutWizard({
             )}
           </div>
 
-          {method === 'CARD' ? (
+          {activeMethod === 'CARD' ? (
             <div className="bg-card shadow-card rounded-3xl p-5">
               <Label className="mb-3 block">Date card</Label>
               <div className="rounded-xl border p-3">
