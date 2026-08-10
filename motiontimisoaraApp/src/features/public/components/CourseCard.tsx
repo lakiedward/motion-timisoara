@@ -2,13 +2,12 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, MapPin } from 'lucide-react'
 
 import { formatRon } from '@/lib/money'
-import { publicUrl, type CourseListItem } from '@/api/public'
+import { courseHeroUrl, type CourseListItem } from '@/api/public'
 import { Badge } from '@/components/ui/badge'
 import { SPORT_ICON } from '../sport-icons'
 
 export function CourseCard({ course }: { course: CourseListItem }) {
-  const hero = [...(course.course_photos ?? [])].sort((a, b) => a.display_order - b.display_order)[0]
-  const img = publicUrl('course-photos', hero?.storage_path ?? null)
+  const img = courseHeroUrl(course)
   const icon = SPORT_ICON[course.sport?.code ?? ''] ?? '🎽'
 
   return (
