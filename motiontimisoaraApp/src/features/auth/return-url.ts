@@ -1,16 +1,11 @@
 import { useSearchParams } from 'react-router-dom'
 
 /**
- * A destination is only honoured when it is a path inside this app: it must
- * start with a single "/" that is not followed by another "/" or a "\".
- *
- * That rejects absolute URLs ("https://evil.com"), protocol-relative hosts
- * ("//evil.com"), the backslash spelling browsers normalise into one
- * ("/\evil.com"), and script payloads ("javascript:..."). Without this a
- * crafted link could bounce a visitor straight off the site on page load,
- * since some of these destinations are navigated to without any interaction.
+ * A base the app is never served from, used only to resolve candidate
+ * destinations. Anything that resolves to a different origin was pointing off
+ * this site, however it was spelled.
  */
-const INTERNAL_PATH = /^\/(?![/\\])/
+const PROBE_BASE = 'https://internal.invalid'
 
 /**
  * Where to send someone once they finish authenticating.
@@ -20,13 +15,31 @@ const INTERNAL_PATH = /^\/(?![/\\])/
  * of the register pages, so every link along that chain has to carry the
  * destination or the visitor lands in their dashboard instead of the course
  * they came for.
+ *
+ * The value comes from the address bar, and some of the pages that read it
+ * navigate on load with no interaction at all, so it is validated here rather
+ * than at each call site. Matching the shape of a path with a pattern is not
+ * enough: "/%09/evil.com" decodes to a tab, and URL parsing then strips the tab
+ * and leaves "//evil.com" — a protocol-relative jump off the site. So the
+ * candidate is put through the same parser the browser uses and kept only if it
+ * still belongs to this app afterwards.
  */
 export function useReturnUrl(): string | undefined {
   const [params] = useSearchParams()
   // `redirect` is the older spelling, still produced by some links.
   const raw = params.get('returnUrl') || params.get('redirect')
-  if (!raw || !INTERNAL_PATH.test(raw)) return undefined
-  return raw
+  if (!raw || !raw.startsWith('/')) return undefined
+
+  let resolved: URL
+  try {
+    resolved = new URL(raw, PROBE_BASE)
+  } catch {
+    return undefined
+  }
+  if (resolved.origin !== PROBE_BASE) return undefined
+
+  // Hand back the parsed form, so whatever the parser stripped stays stripped.
+  return resolved.pathname + resolved.search + resolved.hash
 }
 
 /** Appends the destination to an auth route so the next hop keeps it. */
