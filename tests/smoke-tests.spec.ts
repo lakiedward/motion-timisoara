@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test'
 
+import { isLocalPreview } from './helpers/target'
+
 /**
  * Smoke tests for the React app (Romanian public routes).
  *
@@ -9,9 +11,6 @@ import { test, expect } from '@playwright/test'
  * React copy assertions (headings, labels) run only against the local preview.
  * Against production they skip, because that host may still serve the Angular app.
  */
-
-const isLocalHttp = (baseURL: string | undefined) =>
-  !!baseURL && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(baseURL)
 
 test.describe('Smoke — health', () => {
   test('homepage is UP', async ({ page }) => {
@@ -51,7 +50,7 @@ test.describe('Smoke — health', () => {
   })
 
   test('HTTPS only when not running against local preview', async ({ page, baseURL }) => {
-    test.skip(isLocalHttp(baseURL), 'Local preview uses http://localhost')
+    test.skip(isLocalPreview(baseURL), 'Local preview uses http://localhost')
 
     await page.goto('/')
     expect(page.url()).toMatch(/^https:\/\//)
@@ -81,7 +80,7 @@ test.describe('Smoke — Romanian routes', () => {
     expect(response?.status()).toBeLessThan(400)
     expect(page.url()).toContain('/cursuri')
     test.skip(
-      !isLocalHttp(baseURL),
+      !isLocalPreview(baseURL),
       'React heading copy is asserted on the local preview, not on the still-Angular production host'
     )
     await page.waitForLoadState('domcontentloaded')
@@ -92,7 +91,7 @@ test.describe('Smoke — Romanian routes', () => {
     const response = await page.goto('/login')
     expect(response?.status()).toBeLessThan(400)
     test.skip(
-      !isLocalHttp(baseURL),
+      !isLocalPreview(baseURL),
       'React login copy is asserted on the local preview, not on the still-Angular production host'
     )
     await expect(page.getByRole('heading', { name: /Bine ai revenit|Autentific/i })).toBeVisible()
@@ -104,7 +103,7 @@ test.describe('Smoke — Romanian routes', () => {
     const response = await page.goto('/register')
     expect(response?.status()).toBeLessThan(400)
     test.skip(
-      !isLocalHttp(baseURL),
+      !isLocalPreview(baseURL),
       'React register copy is asserted on the local preview, not on the still-Angular production host'
     )
     await expect(page.getByRole('heading', { name: /Creează cont/i })).toBeVisible()
@@ -141,17 +140,20 @@ test.describe('Smoke — console & performance', () => {
     expect(consoleErrors.length).toBeLessThan(5)
   })
 
-  test('homepage reaches DOMContentLoaded within 5s', async ({ page }) => {
+  // The local preview is a dev server that compiles routes on demand, so these
+  // stopwatches only guard against a hang there. The tight figures are the ones
+  // the deployed build has to meet.
+  test('homepage reaches DOMContentLoaded within budget', async ({ page, baseURL }) => {
     const start = Date.now()
     await page.goto('/')
     await page.waitForLoadState('domcontentloaded')
-    expect(Date.now() - start).toBeLessThan(5000)
+    expect(Date.now() - start).toBeLessThan(isLocalPreview(baseURL) ? 30_000 : 5_000)
   })
 
-  test('/cursuri reaches DOMContentLoaded within 15s', async ({ page }) => {
+  test('/cursuri reaches DOMContentLoaded within budget', async ({ page, baseURL }) => {
     const start = Date.now()
     await page.goto('/cursuri')
     await page.waitForLoadState('domcontentloaded')
-    expect(Date.now() - start).toBeLessThan(15000)
+    expect(Date.now() - start).toBeLessThan(isLocalPreview(baseURL) ? 30_000 : 15_000)
   })
 })
