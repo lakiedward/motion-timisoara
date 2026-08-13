@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 import { AuthLayout } from './AuthLayout'
+import { useReturnUrl } from './return-url'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,12 +22,11 @@ const schema = z.object({
 type Values = z.infer<typeof schema>
 
 export default function OAuthCallbackPage() {
-  const [params] = useSearchParams()
   const navigate = useNavigate()
   const { refresh } = useAuth()
   const [phase, setPhase] = useState<Phase>('loading')
   const [pending, setPending] = useState<AppUser | null>(null)
-  const returnUrl = params.get('returnUrl') || params.get('redirect') || undefined
+  const returnUrl = useReturnUrl()
 
   const {
     register,
