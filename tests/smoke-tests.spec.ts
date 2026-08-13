@@ -134,8 +134,11 @@ test.describe('Smoke — console & performance', () => {
       consoleErrors.push(text)
     })
 
+    // Waiting on the rendered hero rather than networkidle: the dev server keeps
+    // an HMR socket open and the page embeds third-party iframes, so "the network
+    // went quiet" never reliably arrives and the wait times out under load.
     await page.goto('/')
-    await page.waitForLoadState('networkidle')
+    await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible()
 
     expect(consoleErrors.length).toBeLessThan(5)
   })

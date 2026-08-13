@@ -62,6 +62,37 @@ async function hasHorizontalOverflow(page: Page): Promise<boolean> {
   })
 }
 
+/**
+ * Navigate and wait for the course data to land.
+ *
+ * At domcontentloaded this SPA is still the loading skeleton — the cards arrive
+ * later via React Query and are the widest thing on the page, so measuring the
+ * layout before then would grade the skeleton and miss overflow that real
+ * content introduces. Both '/' and '/cursuri' render cards from the same
+ * listing query, so wait for that response; '/cursuri' additionally resolves
+ * into either a grid or an empty state, which is a stronger signal still.
+ */
+async function gotoSettled(page: Page, route: string): Promise<void> {
+  // Registered before goto so a fast response cannot be missed. The catch keeps
+  // the helper from hanging if the app ever stops issuing the query — the
+  // assertions that follow still run and would report the real problem.
+  const listing = page
+    .waitForResponse((response) => response.url().includes('/rest/v1/courses'), {
+      timeout: DATA_TIMEOUT,
+    })
+    .catch(() => null)
+
+  await page.goto(route)
+  await listing
+  await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible()
+
+  if (route === '/cursuri') {
+    const cards = page.getByRole('article')
+    const emptyState = page.getByText('Nu am găsit cursuri', { exact: false })
+    await expect(cards.first().or(emptyState)).toBeVisible({ timeout: DATA_TIMEOUT })
+  }
+}
+
 test.describe('Production readiness — critical user flows', () => {
   test('homepage renders the public shell and the hero', async ({ page, baseURL }) => {
     const response = await page.goto('/')
@@ -156,6 +187,8 @@ test.describe('Production readiness — critical user flows', () => {
     test.skip(await emptyState.isVisible(), 'No published course to open')
 
     const title = (await firstCard.getByRole('heading').first().textContent())?.trim() ?? ''
+    // An empty title would make the heading assertion below match anything.
+    expect(title, 'course card should carry a name').not.toBe('')
     await firstCard.getByRole('link', { name: 'Detalii' }).click()
 
     await expect(page).toHaveURL(/\/cursuri\/[0-9a-f-]{36}$/i)
@@ -333,8 +366,7 @@ test.describe('Production readiness — responsive design', () => {
     await expect(page.locator('header nav').first()).toBeHidden()
 
     for (const route of ['/', '/cursuri']) {
-      await page.goto(route)
-      await page.waitForLoadState('domcontentloaded')
+      await gotoSettled(page, route)
       expect(await hasHorizontalOverflow(page), `${route} overflows at 375px`).toBe(false)
     }
   })
@@ -345,8 +377,15 @@ test.describe('Production readiness — responsive design', () => {
 
     test.skip(!isLocalPreview(baseURL), 'React header is asserted on the local preview only')
 
+    // The desktop nav must stay collapsed below the lg breakpoint, not merely
+    // sit next to a visible burger.
     await expect(page.getByRole('button', { name: 'Meniu' })).toBeVisible()
-    expect(await hasHorizontalOverflow(page), '/ overflows at 768px').toBe(false)
+    await expect(page.locator('header nav').first()).toBeHidden()
+
+    for (const route of ['/', '/cursuri']) {
+      await gotoSettled(page, route)
+      expect(await hasHorizontalOverflow(page), `${route} overflows at 768px`).toBe(false)
+    }
   })
 
   test('desktop 1440x900 shows the full nav without horizontal scroll', async ({
@@ -364,8 +403,7 @@ test.describe('Production readiness — responsive design', () => {
     ).toBeVisible()
 
     for (const route of ['/', '/cursuri']) {
-      await page.goto(route)
-      await page.waitForLoadState('domcontentloaded')
+      await gotoSettled(page, route)
       expect(await hasHorizontalOverflow(page), `${route} overflows at 1440px`).toBe(false)
     }
   })
