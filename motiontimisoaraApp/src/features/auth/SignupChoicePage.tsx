@@ -1,7 +1,10 @@
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { Building2, ChevronRight, Dumbbell, UserRound } from 'lucide-react'
 
 import { AuthLayout } from './AuthLayout'
+import { useReturnUrl, withReturnUrl } from './return-url'
+import { roleHome } from '@/api/auth'
+import { useAuth } from '@/lib/auth-context'
 
 const CHOICES = [
   {
@@ -25,6 +28,20 @@ const CHOICES = [
 ]
 
 export default function SignupChoicePage() {
+  const { user, loading } = useAuth()
+  const returnUrl = useReturnUrl()
+
+  // Someone already signed in has nothing to choose here; send them to their own
+  // dashboard rather than showing "create an account".
+  if (loading) {
+    return (
+      <div className="grid min-h-dvh place-items-center">
+        <div className="border-primary size-8 animate-spin rounded-full border-2 border-t-transparent" />
+      </div>
+    )
+  }
+  if (user) return <Navigate to={returnUrl || roleHome(user.role)} replace />
+
   return (
     <AuthLayout
       title="Creează un cont"
@@ -32,18 +49,20 @@ export default function SignupChoicePage() {
       footer={
         <>
           Ai deja cont?{' '}
-          <Link to="/login" className="text-primary font-semibold">
+          <Link to={withReturnUrl('/login', returnUrl)} className="text-primary font-semibold">
             Autentifică-te
           </Link>
         </>
       }
     >
-      <div className="space-y-3">
+      {/* auto-rows-fr keeps the three cards the same height even when one
+          description wraps onto an extra line, which it does on narrow phones. */}
+      <div className="grid auto-rows-fr gap-3">
         {CHOICES.map((c) => (
           <Link
             key={c.to}
-            to={c.to}
-            className="hover:border-primary/40 hover:bg-accent flex items-center gap-4 rounded-2xl border p-4 transition-colors"
+            to={withReturnUrl(c.to, returnUrl)}
+            className="hover:border-primary/40 hover:bg-accent focus-visible:border-ring focus-visible:ring-ring/50 flex h-full items-center gap-4 rounded-2xl border p-4 outline-none transition-colors focus-visible:ring-[3px]"
           >
             <span className="bg-primary/10 text-primary grid size-11 shrink-0 place-items-center rounded-xl">
               <c.icon className="size-5" />
