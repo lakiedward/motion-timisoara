@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Elements, CardElement, useElements, useStripe } from '@stripe/react-stripe-js'
@@ -163,7 +163,9 @@ function CheckoutWizard({
   const [selected, setSelected] = useState<string[]>([])
   const [packageSize, setPackageSize] = useState(DEFAULT_PACKAGE)
   const [accepted, setAccepted] = useState(false)
-  const [method, setMethod] = useState<PaymentMethod>(stripeConfigured ? initialMethod : 'CASH')
+  const [chosenMethod, setMethod] = useState<PaymentMethod>(
+    stripeConfigured ? initialMethod : 'CASH'
+  )
   // RequireAuth resolves the session before this renders, so the profile is
   // available for prefill on first paint — no effect needed.
   const [billing, setBilling] = useState<BillingDetails>(() => ({
@@ -193,9 +195,13 @@ function CheckoutWizard({
   const allowCash = validation?.allowCash ?? kind !== 'CAMP'
   const cashBlocked = selected.some((cid) => verdictFor(cid)?.severity === 'warning')
 
-  useEffect(() => {
-    if ((cashBlocked || !allowCash) && method === 'CASH' && stripeConfigured) setMethod('CARD')
-  }, [cashBlocked, allowCash, method])
+  // Cash can stop being payable after validation resolves — a camp that
+  // disallows it, or a child that comes back with a warning. Derive the method
+  // in render rather than correcting the state from an effect: the effect left
+  // one render in which the form still showed CASH after it had become
+  // unpayable, and only the submit guard caught it.
+  const cashUnavailable = (cashBlocked || !allowCash) && stripeConfigured
+  const method: PaymentMethod = cashUnavailable && chosenMethod === 'CASH' ? 'CARD' : chosenMethod
 
   const paymentAvailable = stripeConfigured || (allowCash && !cashBlocked)
 
@@ -310,7 +316,8 @@ function CheckoutWizard({
           await cancelDraftEnrollment(ids.slice(i)).catch(() => undefined)
           if (i > 0) {
             throw new Error(
-              `Plata a reușit pentru ${i} din ${ids.length} copii. Restul au fost anulate — verifică în Înscrieri.`
+              `Plata a reușit pentru ${i} din ${ids.length} copii. Restul au fost anulate — verifică în Înscrieri.`,
+              { cause: err }
             )
           }
           throw err instanceof Error ? err : new Error('Plata a eșuat')
