@@ -1,319 +1,465 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test'
+
+import { isLocalPreview } from './helpers/target'
 
 /**
- * Test Suite: Production Readiness
- * Verifies the site is ready for production.
- * The frontend uses the Supabase SDK for all backend communication
- * (auth, database queries, storage, realtime).
+ * Production readiness for the React app (Romanian public routes).
+ *
+ * Local:  BASE_URL=http://localhost:3017 npx playwright test tests/production-readiness.spec.ts
+ * Prod:   npx playwright test tests/production-readiness.spec.ts
+ *         (default baseURL = https://www.motiontimisoara.com)
+ *
+ * The route table lives in motiontimisoaraApp/src/routes/router.tsx and is
+ * Romanian end to end (/cursuri, /login, /register, …). Data comes from
+ * Supabase over PostgREST, so listing assertions wait for the network instead
+ * of asserting on a fixed row count.
+ *
+ * Checks that describe the React build or HTTPS-only hardening are gated on the
+ * target: React copy is asserted on the local preview, TLS hardening only off it.
  */
 
-test.describe('Production Readiness - Critical User Flows', () => {
+/** Public pages reachable from the header, with the label that links to them. */
+const HEADER_ROUTES = [
+  { path: '/cursuri', label: 'Cursuri' },
+  { path: '/activitati', label: 'Activități' },
+  { path: '/tabere', label: 'Tabere' },
+  { path: '/harta', label: 'Hartă' },
+  { path: '/antrenori', label: 'Antrenori' },
+  { path: '/cluburi', label: 'Cluburi' },
+  { path: '/despre', label: 'Despre' },
+  { path: '/contact', label: 'Contact' },
+] as const
 
-  test('Homepage loads successfully with all key elements', async ({ page }) => {
-    await page.goto('/');
+/** Every public page a visitor can reach without an account. */
+const PUBLIC_ROUTES = [
+  '/',
+  ...HEADER_ROUTES.map((route) => route.path),
+  '/login',
+  '/signup',
+  '/register',
+] as const
 
-    // Verify page title
-    await expect(page).toHaveTitle(/Motion Timișoara/);
+/** Copy rendered by NotFoundPage — the catch-all every unknown path falls into. */
+const NOT_FOUND_COPY = 'Pagina nu a fost găsită'
 
-    // Verify the logo is visible
-    await expect(page.locator('img[alt*="logo" i], img[src*="logo"]').first()).toBeVisible();
+/** Courses are fetched from Supabase after hydration; allow for a cold round trip. */
+const DATA_TIMEOUT = 40_000
 
-    // Verify navigation exists
-    const nav = page.locator('nav, header').first();
-    await expect(nav).toBeVisible();
+/** Origin of a URL, or an empty string when it cannot be parsed. */
+function originOf(url: string | undefined): string {
+  try {
+    return new URL(url ?? '').origin
+  } catch {
+    return ''
+  }
+}
 
-    // Verify main navigation links exist
-    await expect(page.getByRole('link', { name: /cursuri|acasă|despre/i })).toBeVisible();
+/** Widest element on the page must not exceed the viewport at any breakpoint. */
+async function hasHorizontalOverflow(page: Page): Promise<boolean> {
+  return page.evaluate(() => {
+    const doc = document.documentElement
+    return doc.scrollWidth > doc.clientWidth + 1
+  })
+}
 
-    // Log any console errors for debugging
-    page.on('console', msg => {
-      if (msg.type() === 'error') {
-        console.log(`Console error on homepage: ${msg.text()}`);
-      }
-    });
-  });
+/**
+ * Navigate and wait for the course data to land.
+ *
+ * At domcontentloaded this SPA is still the loading skeleton — the cards arrive
+ * later via React Query and are the widest thing on the page, so measuring the
+ * layout before then would grade the skeleton and miss overflow that real
+ * content introduces. Both '/' and '/cursuri' render cards from the same
+ * listing query, so wait for that response; '/cursuri' additionally resolves
+ * into either a grid or an empty state, which is a stronger signal still.
+ */
+async function gotoSettled(page: Page, route: string): Promise<void> {
+  // Registered before goto so a fast response cannot be missed. The catch keeps
+  // the helper from hanging if the app ever stops issuing the query — the
+  // assertions that follow still run and would report the real problem.
+  const listing = page
+    .waitForResponse((response) => response.url().includes('/rest/v1/courses'), {
+      timeout: DATA_TIMEOUT,
+    })
+    .catch(() => null)
 
-  test('Courses page displays course listings', async ({ page }) => {
-    await page.goto('/courses');
+  await page.goto(route)
+  await listing
+  await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible()
 
-    // Wait for page to load (data now comes from Supabase)
-    await page.waitForLoadState('networkidle');
+  if (route === '/cursuri') {
+    const cards = page.getByRole('article')
+    const emptyState = page.getByText('Nu am găsit cursuri', { exact: false })
+    await expect(cards.first().or(emptyState)).toBeVisible({ timeout: DATA_TIMEOUT })
+  }
+}
 
-    // Verify courses heading exists
-    await expect(page.locator('h1, h2').filter({ hasText: /cursuri|course/i }).first()).toBeVisible();
+test.describe('Production readiness — critical user flows', () => {
+  test('homepage renders the public shell and the hero', async ({ page, baseURL }) => {
+    const response = await page.goto('/')
+    expect(response?.status()).toBe(200)
 
-    // Verify at least one course card or an informational message is present
-    const hasCourses = await page.locator('mat-card, .course-card, [class*="course"]').count() > 0;
-    const hasMessage = await page.locator('text=/nu există|no courses|încă nu/i').isVisible().catch(() => false);
+    await expect(page.locator('header').first()).toBeVisible()
+    await expect(page.locator('footer').first()).toBeVisible()
 
-    expect(hasCourses || hasMessage).toBeTruthy();
-  });
+    test.skip(!isLocalPreview(baseURL), 'React copy is asserted on the local preview only')
 
-  test('Login page is accessible and functional', async ({ page }) => {
-    await page.goto('/auth/login');
+    // Brand wordmark in the header links home.
+    await expect(page.getByRole('link', { name: 'Acasă' })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Vezi programele' })).toHaveAttribute(
+      'href',
+      '/cursuri'
+    )
+  })
 
-    // Verify login form exists
-    await expect(page.locator('form').first()).toBeVisible();
+  test('header exposes every public Romanian route', async ({ page, baseURL }) => {
+    await page.goto('/')
+    test.skip(!isLocalPreview(baseURL), 'React header is asserted on the local preview only')
 
-    // Verify authentication fields
-    const emailInput = page.locator('input[type="email"], input[name="email"], input[formControlName="email"]').first();
-    const passwordInput = page.locator('input[type="password"], input[name="password"], input[formControlName="password"]').first();
-
-    await expect(emailInput).toBeVisible();
-    await expect(passwordInput).toBeVisible();
-
-    // Verify login button
-    const loginButton = page.getByRole('button', { name: /login|autentificare|conectare/i }).first();
-    await expect(loginButton).toBeVisible();
-
-    // Verify registration link exists
-    await expect(page.getByRole('link', { name: /înregistrare|register|sign up/i })).toBeVisible();
-  });
-
-  test('Registration page is accessible', async ({ page }) => {
-    await page.goto('/auth/register');
-
-    // Verify registration form exists
-    await expect(page.locator('form').first()).toBeVisible();
-
-    // Verify name field
-    await expect(page.locator('input[name*="name" i], input[formControlName*="name" i]').first()).toBeVisible();
-
-    // Verify email field
-    await expect(page.locator('input[type="email"]').first()).toBeVisible();
-
-    // Verify password field
-    await expect(page.locator('input[type="password"]').first()).toBeVisible();
-  });
-
-  test('Navigation between main pages works', async ({ page }) => {
-    await page.goto('/');
-
-    // Navigate to courses
-    const coursesLink = page.getByRole('link', { name: /cursuri|courses/i }).first();
-    await coursesLink.click();
-    await page.waitForURL(/.*courses.*/);
-    await expect(page).toHaveURL(/.*courses.*/);
-
-    // Navigate back to homepage
-    const homeLink = page.getByRole('link', { name: /acasă|home|motion/i }).first();
-    await homeLink.click();
-    await page.waitForLoadState('networkidle');
-  });
-
-  test('Public course details are viewable', async ({ page }) => {
-    await page.goto('/courses');
-    await page.waitForLoadState('networkidle');
-
-    // Find the first available course
-    const firstCourse = page.locator('mat-card, .course-card, [class*="course"]').first();
-    const courseExists = await firstCourse.isVisible().catch(() => false);
-
-    if (courseExists) {
-      // Click on the first course
-      await firstCourse.click();
-
-      // Verify we navigated to course details
-      await page.waitForLoadState('networkidle');
-
-      // Verify course information is present
-      await expect(page.locator('h1, h2').first()).toBeVisible();
+    const nav = page.locator('header nav').first()
+    for (const route of HEADER_ROUTES) {
+      await expect(nav.getByRole('link', { name: route.label, exact: true })).toHaveAttribute(
+        'href',
+        route.path
+      )
     }
-  });
+  })
 
-  test('Site handles 404 pages gracefully', async ({ page }) => {
-    const response = await page.goto('/this-page-does-not-exist-xyz123');
+  test('header navigation moves between pages and back home', async ({ page, baseURL }) => {
+    await page.goto('/')
+    test.skip(!isLocalPreview(baseURL), 'React header is asserted on the local preview only')
 
-    // Verify page loads (either 404 or redirect)
-    expect(response?.status()).toBeLessThan(500);
+    await page.locator('header nav').getByRole('link', { name: 'Cursuri', exact: true }).click()
+    await expect(page).toHaveURL(/\/cursuri$/)
+    await expect(page.getByRole('heading', { name: 'Cursuri', level: 1 })).toBeVisible()
 
-    // Verify page is not blank
-    const bodyContent = await page.locator('body').textContent();
-    expect(bodyContent?.length).toBeGreaterThan(0);
-  });
-});
+    await page.getByRole('link', { name: 'Acasă' }).click()
+    await expect(page).toHaveURL(/\/$/)
+  })
 
-test.describe('Production Readiness - Security & Performance', () => {
+  // One test per route rather than a single sweep: each route then gets its own
+  // timeout and its own failure line, instead of the whole table going red on
+  // whichever page happened to be slow.
+  for (const route of PUBLIC_ROUTES) {
+    test(`${route} renders its own page without uncaught errors`, async ({ page, baseURL }) => {
+      test.skip(!isLocalPreview(baseURL), 'React route table is asserted on the local preview only')
 
-  test('Security headers are present', async ({ page }) => {
-    const response = await page.goto('/');
+      const errors: string[] = []
+      page.on('pageerror', (error) => errors.push(error.message))
 
-    // Verify response is OK
-    expect(response?.status()).toBe(200);
+      const response = await page.goto(route)
+      expect(response?.status(), `${route} should be served`).toBe(200)
 
-    // Verify Content-Type is HTML
-    const contentType = response?.headers()['content-type'];
-    expect(contentType).toContain('text/html');
-  });
+      await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible()
+      await expect(
+        page.locator('body'),
+        `${route} should not fall through to 404`
+      ).not.toContainText(NOT_FOUND_COPY)
+      expect(errors, `${route} raised uncaught errors`).toEqual([])
+    })
+  }
 
-  test('Supabase configuration is properly set', async ({ page }) => {
-    await page.goto('/');
+  test('courses listing loads course data at /cursuri', async ({ page, baseURL }) => {
+    test.slow(isLocalPreview(baseURL), 'The dev server compiles the route on first hit')
 
-    // Verify Supabase meta tags are present and configured
-    const supabaseUrl = await page.locator('meta[name="supabase-url"]').getAttribute('content');
-    const supabaseAnonKey = await page.locator('meta[name="supabase-anon-key"]').getAttribute('content');
+    const response = await page.goto('/cursuri')
+    expect(response?.status()).toBe(200)
 
-    expect(supabaseUrl).toBeTruthy();
-    expect(supabaseUrl).toContain('supabase.co');
-    expect(supabaseAnonKey).toBeTruthy();
-    expect(supabaseAnonKey!.length).toBeGreaterThan(10);
-  });
+    test.skip(!isLocalPreview(baseURL), 'React listing is asserted on the local preview only')
 
-  test('Content Security Policy allows Supabase connections', async ({ page }) => {
-    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Cursuri', level: 1 })).toBeVisible()
 
-    // Verify that the CSP meta tag includes supabase.co in connect-src
-    const cspContent = await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content');
+    // Either the grid resolved with cards, or the page states there is nothing to show.
+    const cards = page.getByRole('article')
+    const emptyState = page.getByText('Nu am găsit cursuri', { exact: false })
+    await expect(cards.first().or(emptyState)).toBeVisible({ timeout: DATA_TIMEOUT })
+  })
 
-    if (cspContent) {
-      // CSP should allow connections to supabase.co
-      expect(cspContent).toContain('supabase.co');
+  test('course details open from the listing', async ({ page, baseURL }) => {
+    test.slow(isLocalPreview(baseURL), 'The dev server compiles the route on first hit')
+
+    await page.goto('/cursuri')
+    test.skip(!isLocalPreview(baseURL), 'React listing is asserted on the local preview only')
+
+    const firstCard = page.getByRole('article').first()
+    const emptyState = page.getByText('Nu am găsit cursuri', { exact: false })
+    await expect(firstCard.or(emptyState)).toBeVisible({ timeout: DATA_TIMEOUT })
+    test.skip(await emptyState.isVisible(), 'No published course to open')
+
+    const title = (await firstCard.getByRole('heading').first().textContent())?.trim() ?? ''
+    // An empty title would make the heading assertion below match anything.
+    expect(title, 'course card should carry a name').not.toBe('')
+    await firstCard.getByRole('link', { name: 'Detalii' }).click()
+
+    await expect(page).toHaveURL(/\/cursuri\/[0-9a-f-]{36}$/i)
+    await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible({
+      timeout: DATA_TIMEOUT,
+    })
+  })
+
+  test('login page renders the sign-in form at /login', async ({ page, baseURL }) => {
+    const response = await page.goto('/login')
+    expect(response?.status()).toBe(200)
+
+    test.skip(!isLocalPreview(baseURL), 'React auth copy is asserted on the local preview only')
+
+    await expect(page.getByRole('heading', { name: 'Bine ai revenit' })).toBeVisible()
+    await expect(page.locator('form')).toBeVisible()
+    await expect(page.getByLabel('Email')).toBeVisible()
+    await expect(page.getByLabel('Parolă')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Autentificare' })).toBeVisible()
+    // Visitors without an account are routed to the role picker.
+    await expect(page.getByRole('link', { name: 'Înregistrează-te' })).toHaveAttribute(
+      'href',
+      '/signup'
+    )
+    await expect(page.getByRole('link', { name: 'Ai uitat parola?' })).toHaveAttribute(
+      'href',
+      '/forgot-password'
+    )
+  })
+
+  test('register page renders the parent sign-up form at /register', async ({ page, baseURL }) => {
+    const response = await page.goto('/register')
+    expect(response?.status()).toBe(200)
+
+    test.skip(!isLocalPreview(baseURL), 'React auth copy is asserted on the local preview only')
+
+    await expect(page.getByRole('heading', { name: /Creează cont/ })).toBeVisible()
+    for (const label of ['Nume complet', 'Email', 'Telefon', 'Parolă']) {
+      await expect(page.getByLabel(label)).toBeVisible()
     }
-  });
+    await expect(page.getByRole('button', { name: 'Creează cont' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Autentifică-te' })).toHaveAttribute(
+      'href',
+      '/login'
+    )
+  })
 
-  test('No mixed content warnings', async ({ page }) => {
-    const mixedContentWarnings: string[] = [];
+  test('unknown route renders the Romanian 404 page', async ({ page, baseURL }) => {
+    const response = await page.goto('/aceasta-pagina-nu-exista-xyz123')
 
-    page.on('console', msg => {
-      if (msg.text().includes('Mixed Content') || msg.text().includes('insecure')) {
-        mixedContentWarnings.push(msg.text());
+    // The SPA serves index.html for deep links, so the router — not the host — answers.
+    expect(response?.status()).toBeLessThan(500)
+    await expect(page.locator('body')).not.toBeEmpty()
+
+    test.skip(!isLocalPreview(baseURL), 'React 404 copy is asserted on the local preview only')
+    await expect(page.getByText(NOT_FOUND_COPY)).toBeVisible()
+  })
+})
+
+test.describe('Production readiness — security & performance', () => {
+  test('document is served as HTML without a stack fingerprint', async ({ page }) => {
+    const response = await page.goto('/')
+    expect(response?.status()).toBe(200)
+
+    const headers = response?.headers() ?? {}
+    expect(headers['content-type']).toContain('text/html')
+    expect(headers['x-powered-by'], 'host should not advertise its stack').toBeUndefined()
+  })
+
+  test('public traffic is HTTPS with HSTS', async ({ page, baseURL }) => {
+    test.skip(isLocalPreview(baseURL), 'Local preview is served over plain http://localhost')
+
+    const response = await page.goto('/')
+    expect(page.url()).toMatch(/^https:\/\//)
+    expect(response?.headers()['strict-transport-security']).toBeTruthy()
+  })
+
+  test('every third-party request is made over HTTPS', async ({ page, baseURL }) => {
+    test.slow(isLocalPreview(baseURL), 'The dev server compiles the route on first hit')
+
+    const ownOrigin = originOf(baseURL)
+    const insecure: string[] = []
+    page.on('request', (request) => {
+      const url = request.url()
+      if (!url.startsWith('http://')) return
+      // The local preview itself is plain http; only third parties are graded here.
+      if (originOf(url) === ownOrigin) return
+      insecure.push(url)
+    })
+
+    await page.goto('/cursuri')
+    await expect(page.getByRole('article').first().or(page.getByText('Nu am găsit cursuri'))).toBeVisible({
+      timeout: DATA_TIMEOUT,
+    })
+
+    expect(insecure, 'third-party requests must not downgrade to http://').toEqual([])
+  })
+
+  test('Supabase answers without server errors', async ({ page, baseURL }) => {
+    test.slow(isLocalPreview(baseURL), 'The dev server compiles the route on first hit')
+
+    const supabase: { url: string; status: number }[] = []
+    page.on('response', (response) => {
+      if (response.url().includes('.supabase.co/')) {
+        supabase.push({ url: response.url(), status: response.status() })
       }
-    });
+    })
 
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.goto('/cursuri')
+    await expect(page.getByRole('article').first().or(page.getByText('Nu am găsit cursuri'))).toBeVisible({
+      timeout: DATA_TIMEOUT,
+    })
 
-    expect(mixedContentWarnings).toHaveLength(0);
-  });
+    // The listing is Supabase-backed: no calls at all means the client never booted.
+    expect(supabase.length, 'the courses page should query Supabase').toBeGreaterThan(0)
+    expect(
+      supabase.filter((r) => r.status >= 500),
+      'Supabase returned server errors'
+    ).toEqual([])
+  })
 
-  test('Page loads within acceptable time', async ({ page }) => {
-    const startTime = Date.now();
-    await page.goto('/');
-    await page.waitForLoadState('domcontentloaded');
-    const loadTime = Date.now() - startTime;
+  test('no mixed-content warnings are reported', async ({ page }) => {
+    const warnings: string[] = []
+    page.on('console', (message) => {
+      if (/mixed content/i.test(message.text())) warnings.push(message.text())
+    })
 
-    // Page should load in less than 5 seconds
-    expect(loadTime).toBeLessThan(5000);
-  });
+    await page.goto('/')
+    await page.waitForLoadState('domcontentloaded')
 
-  test('Images load successfully', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    expect(warnings).toEqual([])
+  })
 
-    // Verify important images loaded
-    const images = page.locator('img[src]');
-    const imageCount = await images.count();
+  test('homepage reaches DOMContentLoaded within budget', async ({ page, baseURL }) => {
+    // Against the Vite dev server this stopwatch measures on-demand compilation,
+    // not the shipped bundle, so locally it is only a "did not hang" guard. The
+    // 5s figure is the budget the deployed build actually has to meet.
+    const budget = isLocalPreview(baseURL) ? 30_000 : 5_000
 
-    if (imageCount > 0) {
-      // Check the first image (usually the logo)
-      const firstImage = images.first();
-      await expect(firstImage).toBeVisible();
+    const start = Date.now()
+    await page.goto('/')
+    await page.waitForLoadState('domcontentloaded')
 
-      // Verify the image has a valid src attribute
-      const src = await firstImage.getAttribute('src');
-      expect(src).toBeTruthy();
-      expect(src?.length).toBeGreaterThan(0);
+    expect(Date.now() - start).toBeLessThan(budget)
+  })
+
+  test('homepage imagery actually decodes', async ({ page, baseURL }) => {
+    test.slow(isLocalPreview(baseURL), 'The dev server compiles the route on first hit')
+
+    await page.goto('/')
+    test.skip(!isLocalPreview(baseURL), 'React hero is asserted on the local preview only')
+
+    const hero = page.locator('img').first()
+    await expect(hero).toBeVisible()
+    await expect
+      .poll(() => hero.evaluate((img: HTMLImageElement) => img.naturalWidth), {
+        timeout: DATA_TIMEOUT,
+      })
+      .toBeGreaterThan(0)
+  })
+})
+
+test.describe('Production readiness — responsive design', () => {
+  test.beforeEach(({ baseURL }) => {
+    test.slow(isLocalPreview(baseURL), 'The dev server compiles each route on first hit')
+  })
+
+  test('mobile 375x812 collapses the nav without horizontal scroll', async ({ page, baseURL }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    await page.goto('/')
+
+    test.skip(!isLocalPreview(baseURL), 'React header is asserted on the local preview only')
+
+    await expect(page.getByRole('button', { name: 'Meniu' })).toBeVisible()
+    await expect(page.locator('header nav').first()).toBeHidden()
+
+    for (const route of ['/', '/cursuri']) {
+      await gotoSettled(page, route)
+      expect(await hasHorizontalOverflow(page), `${route} overflows at 375px`).toBe(false)
     }
-  });
+  })
 
-  test('Supabase connectivity check', async ({ page }) => {
-    // Monitor requests to Supabase when loading a data-driven page
-    const supabaseRequests: { url: string; method: string; status?: number }[] = [];
+  test('tablet 768x1024 keeps the collapsed nav', async ({ page, baseURL }) => {
+    await page.setViewportSize({ width: 768, height: 1024 })
+    await page.goto('/')
 
-    page.on('response', response => {
-      if (response.url().includes('supabase.co')) {
-        supabaseRequests.push({
-          url: response.url(),
-          method: response.request().method(),
-          status: response.status(),
-        });
-      }
-    });
+    test.skip(!isLocalPreview(baseURL), 'React header is asserted on the local preview only')
 
-    await page.goto('/courses');
-    await page.waitForLoadState('networkidle');
+    // The desktop nav must stay collapsed below the lg breakpoint, not merely
+    // sit next to a visible burger.
+    await expect(page.getByRole('button', { name: 'Meniu' })).toBeVisible()
+    await expect(page.locator('header nav').first()).toBeHidden()
 
-    // Log Supabase requests for debugging
-    if (supabaseRequests.length > 0) {
-      console.log(`Supabase requests detected: ${supabaseRequests.length}`);
-      for (const req of supabaseRequests) {
-        console.log(`  ${req.method} ${req.url} -> ${req.status}`);
-      }
-
-      // Verify none of the Supabase requests returned server errors
-      const serverErrors = supabaseRequests.filter(r => r.status && r.status >= 500);
-      expect(serverErrors).toHaveLength(0);
+    for (const route of ['/', '/cursuri']) {
+      await gotoSettled(page, route)
+      expect(await hasHorizontalOverflow(page), `${route} overflows at 768px`).toBe(false)
     }
-  });
-});
+  })
 
-test.describe('Production Readiness - Responsive Design', () => {
+  test('desktop 1440x900 shows the full nav without horizontal scroll', async ({
+    page,
+    baseURL,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/')
 
-  test('Site is mobile-friendly', async ({ page }) => {
-    // Set mobile viewport
-    await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto('/');
+    test.skip(!isLocalPreview(baseURL), 'React header is asserted on the local preview only')
 
-    // Verify logo is visible on mobile
-    await expect(page.locator('img[alt*="logo" i], img[src*="logo"]').first()).toBeVisible();
+    await expect(page.locator('header nav').first()).toBeVisible()
+    await expect(
+      page.locator('header nav').getByRole('link', { name: 'Cursuri', exact: true })
+    ).toBeVisible()
 
-    // Verify navigation exists (may be a hamburger menu)
-    const nav = page.locator('nav, header, button[aria-label*="menu" i]').first();
-    await expect(nav).toBeVisible();
-  });
+    for (const route of ['/', '/cursuri']) {
+      await gotoSettled(page, route)
+      expect(await hasHorizontalOverflow(page), `${route} overflows at 1440px`).toBe(false)
+    }
+  })
+})
 
-  test('Desktop layout works correctly', async ({ page }) => {
-    // Set desktop viewport
-    await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.goto('/');
+test.describe('Production readiness — data integrity', () => {
+  test('login rejects an empty submit with Romanian validation messages', async ({
+    page,
+    baseURL,
+  }) => {
+    await page.goto('/login')
+    test.skip(!isLocalPreview(baseURL), 'React validation copy is asserted on the local preview only')
 
-    // Verify content displays correctly
-    await expect(page.locator('body').first()).toBeVisible();
-  });
+    await page.getByRole('button', { name: 'Autentificare' }).click()
 
-  test('Tablet layout works correctly', async ({ page }) => {
-    // Set tablet viewport
-    await page.setViewportSize({ width: 768, height: 1024 });
-    await page.goto('/');
+    await expect(page.getByText('Email invalid')).toBeVisible()
+    await expect(page.getByText('Minim 6 caractere')).toBeVisible()
+    // A rejected submit must not leave the page or hit the auth endpoint.
+    await expect(page).toHaveURL(/\/login$/)
+  })
 
-    // Verify page loads
-    await expect(page.locator('body').first()).toBeVisible();
-  });
-});
+  test('register rejects an empty submit on every required field', async ({ page, baseURL }) => {
+    await page.goto('/register')
+    test.skip(!isLocalPreview(baseURL), 'React validation copy is asserted on the local preview only')
 
-test.describe('Production Readiness - Data Integrity', () => {
+    await page.getByRole('button', { name: 'Creează cont' }).click()
 
-  test('Forms have proper validation', async ({ page }) => {
-    await page.goto('/auth/login');
+    for (const message of [
+      'Minim 3 caractere',
+      'Email invalid',
+      'Număr de telefon invalid',
+      'Minim 6 caractere',
+    ]) {
+      await expect(page.getByText(message)).toBeVisible()
+    }
+    await expect(page).toHaveURL(/\/register$/)
+  })
 
-    // Try to submit an empty form
-    const submitButton = page.getByRole('button', { name: /login|autentificare|conectare/i }).first();
-    await submitButton.click();
+  test('outbound links on our own pages are safe', async ({ page, baseURL }) => {
+    test.skip(!isLocalPreview(baseURL), 'React pages are asserted on the local preview only')
+    const ownOrigin = originOf(baseURL)
 
-    // Verify validation messages appear or the form was not submitted
-    const emailInput = page.locator('input[type="email"]').first();
-    const isInvalid = await emailInput.evaluate(el => (el as HTMLInputElement).validity.valid === false);
+    for (const route of ['/', '/despre', '/contact']) {
+      await page.goto(route)
+      const links = await page.locator('a[href^="http"]').evaluateAll((anchors, origin) => {
+        return (anchors as HTMLAnchorElement[])
+          .filter((a) => new URL(a.href).origin !== origin)
+          .map((a) => ({ href: a.href, target: a.target, rel: a.rel }))
+      }, ownOrigin)
 
-    // At least one field should be invalid
-    expect(isInvalid).toBeTruthy();
-  });
-
-  test('External links open correctly', async ({ page }) => {
-    await page.goto('/');
-
-    // Find external links (optional)
-    const externalLinks = page.locator('a[href^="http"]:not([href*="motiontimisoara"])');
-    const count = await externalLinks.count();
-
-    if (count > 0) {
-      const firstExternalLink = externalLinks.first();
-      const href = await firstExternalLink.getAttribute('href');
-      const target = await firstExternalLink.getAttribute('target');
-
-      // External links should have target="_blank"
-      if (href && !href.includes('motiontimisoara.com')) {
-        expect(target).toBe('_blank');
+      for (const link of links) {
+        expect(link.href, `${route}: ${link.href} must use https`).toMatch(/^https:\/\//)
+        if (link.target === '_blank') {
+          expect(link.rel, `${route}: ${link.href} needs rel="noopener"`).toContain('noopener')
+        }
       }
     }
-  });
-});
+  })
+})
