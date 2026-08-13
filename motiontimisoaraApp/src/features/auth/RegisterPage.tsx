@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -7,6 +7,7 @@ import { MailCheck } from 'lucide-react'
 
 import { AuthLayout } from './AuthLayout'
 import { GoogleSignInButton } from './GoogleSignInButton'
+import { useReturnUrl, withReturnUrl } from './return-url'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,12 +23,11 @@ const schema = z.object({
 type Values = z.infer<typeof schema>
 
 export default function RegisterPage() {
-  const [params] = useSearchParams()
   const navigate = useNavigate()
   const { refresh } = useAuth()
   const [serverError, setServerError] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
-  const returnUrl = params.get('returnUrl') || params.get('redirect') || undefined
+  const returnUrl = useReturnUrl()
 
   const {
     register,
@@ -66,7 +66,7 @@ export default function RegisterPage() {
             apoi autentifică-te.
           </p>
           <Button asChild className="w-full">
-            <Link to="/login">Mergi la autentificare</Link>
+            <Link to={withReturnUrl('/login', returnUrl)}>Mergi la autentificare</Link>
           </Button>
         </div>
       </AuthLayout>
@@ -80,7 +80,7 @@ export default function RegisterPage() {
       footer={
         <>
           Ai deja cont?{' '}
-          <Link to="/login" className="text-primary font-semibold">
+          <Link to={withReturnUrl('/login', returnUrl)} className="text-primary font-semibold">
             Autentifică-te
           </Link>
         </>

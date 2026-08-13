@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query'
 
 import { AuthLayout } from './AuthLayout'
 import { StepDots, SportPicker } from './wizard-bits'
+import { useReturnUrl, withReturnUrl } from './return-url'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -32,6 +33,7 @@ const STEP_FIELDS: (keyof Values)[][] = [['invitationCode'], ['name', 'email', '
 
 export default function CoachSignupPage() {
   const navigate = useNavigate()
+  const returnUrl = useReturnUrl()
   const { refresh } = useAuth()
   const [step, setStep] = useState(0)
   const [sportIds, setSportIds] = useState<string[]>([])
@@ -67,7 +69,7 @@ export default function CoachSignupPage() {
       return
     }
     await refresh()
-    navigate('/account')
+    navigate(returnUrl || '/account')
   }
 
   return (
@@ -75,7 +77,7 @@ export default function CoachSignupPage() {
       title="Înregistrare antrenor"
       subtitle="Necesită un cod de invitație"
       footer={
-        <Link to="/signup" className="text-primary font-semibold">
+        <Link to={withReturnUrl('/signup', returnUrl)} className="text-primary font-semibold">
           Înapoi
         </Link>
       }

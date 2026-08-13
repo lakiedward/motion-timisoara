@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 import { AuthLayout } from './AuthLayout'
 import { GoogleSignInButton } from './GoogleSignInButton'
+import { useReturnUrl, withReturnUrl } from './return-url'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,11 +20,10 @@ const schema = z.object({
 type Values = z.infer<typeof schema>
 
 export default function LoginPage() {
-  const [params] = useSearchParams()
   const navigate = useNavigate()
   const { refresh } = useAuth()
   const [serverError, setServerError] = useState<string | null>(null)
-  const returnUrl = params.get('returnUrl') || params.get('redirect') || undefined
+  const returnUrl = useReturnUrl()
 
   const {
     register,
@@ -54,7 +54,7 @@ export default function LoginPage() {
       footer={
         <>
           Nu ai cont?{' '}
-          <Link to="/signup" className="text-primary font-semibold">
+          <Link to={withReturnUrl('/signup', returnUrl)} className="text-primary font-semibold">
             Înregistrează-te
           </Link>
         </>
