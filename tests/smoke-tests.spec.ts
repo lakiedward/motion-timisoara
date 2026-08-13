@@ -6,6 +6,8 @@ import { test, expect } from '@playwright/test'
  * Local:  BASE_URL=http://localhost:3017 npx playwright test tests/smoke-tests.spec.ts
  * Prod:   npx playwright test tests/smoke-tests.spec.ts
  *         (default baseURL = https://www.motiontimisoara.com)
+ * React copy assertions (headings, labels) run only against the local preview.
+ * Against production they skip, because that host may still serve the Angular app.
  */
 
 const isLocalHttp = (baseURL: string | undefined) =>
@@ -74,24 +76,37 @@ test.describe('Smoke — Romanian routes', () => {
     await expect(page.getByText(/Motion Timișoara/i).first()).toBeVisible()
   })
 
-  test('courses list loads at /cursuri', async ({ page }) => {
-    await page.goto('/cursuri')
+  test('courses list loads at /cursuri', async ({ page, baseURL }) => {
+    const response = await page.goto('/cursuri')
+    expect(response?.status()).toBeLessThan(400)
+    expect(page.url()).toContain('/cursuri')
+    test.skip(
+      !isLocalHttp(baseURL),
+      'React heading copy is asserted on the local preview, not on the still-Angular production host'
+    )
     await page.waitForLoadState('domcontentloaded')
     await expect(page.getByRole('heading', { name: 'Cursuri' })).toBeVisible()
-    expect(page.url()).toContain('/cursuri')
   })
 
-  test('login page loads at /login', async ({ page }) => {
+  test('login page loads at /login', async ({ page, baseURL }) => {
     const response = await page.goto('/login')
     expect(response?.status()).toBeLessThan(400)
+    test.skip(
+      !isLocalHttp(baseURL),
+      'React login copy is asserted on the local preview, not on the still-Angular production host'
+    )
     await expect(page.getByRole('heading', { name: /Bine ai revenit|Autentific/i })).toBeVisible()
     await expect(page.getByLabel('Email')).toBeVisible()
-    await expect(page.getByLabel('Parolă')).toBeVisible()
+    await expect(page.getByLabel(/Parolă|Parola/)).toBeVisible()
   })
 
-  test('register page loads at /register', async ({ page }) => {
+  test('register page loads at /register', async ({ page, baseURL }) => {
     const response = await page.goto('/register')
     expect(response?.status()).toBeLessThan(400)
+    test.skip(
+      !isLocalHttp(baseURL),
+      'React register copy is asserted on the local preview, not on the still-Angular production host'
+    )
     await expect(page.getByRole('heading', { name: /Creează cont/i })).toBeVisible()
   })
 
