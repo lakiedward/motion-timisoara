@@ -24,3 +24,6 @@ Dedicated confirmed test users on Supabase project `motion-timisoara` (`ehdzafad
 | ADMIN | `uiaudit.admin@motiontimisoara.test` | `/admin` |
 
 Parent has a child named `Copil Audit`. Coach has a `coach_profiles` row. Club owns `Club Audit Motion`. Do not use these accounts for destructive admin, payments, or messages. Never guess credentials for real staff/parent accounts.
+
+### Coach registration spec and invite codes
+UI spec criteria for `/register-coach` belong on section `motion-react:page:/register-coach:section:toata-pagina`. Tracker rejects `spec_approved_at` and any non-`unreviewed` verdict on page rows. The page only length-checks the invite code (≥5) until final submit; Edge Function `register-coach` is what looks up `coach_invitation_codes` and increments `current_uses`. Spec and smoke walks must not submit a real invitation code.
