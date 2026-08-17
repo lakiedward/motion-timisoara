@@ -236,6 +236,22 @@ test.describe('Production readiness — critical user flows', () => {
     )
   })
 
+  test('signup page announces that a club stays inactive until an administrator approves it', async ({
+    page,
+    baseURL,
+  }) => {
+    const response = await page.goto('/signup')
+    expect(response?.status()).toBe(200)
+
+    test.skip(!isLocalPreview(baseURL), 'React auth copy is asserted on the local preview only')
+
+    await expect(page.getByRole('heading', { name: 'Creează un cont' })).toBeVisible()
+    await expect(page.getByRole('link', { name: /Club/ })).toContainText(
+      'Rămâne inactiv până la aprobarea administratorului',
+    )
+    await expect(page.getByRole('link', { name: 'Autentifică-te' })).toBeVisible()
+  })
+
   test('unknown route renders the Romanian 404 page', async ({ page, baseURL }) => {
     const response = await page.goto('/aceasta-pagina-nu-exista-xyz123')
 

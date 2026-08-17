@@ -81,7 +81,7 @@ export default function ClubSignupPage() {
   return (
     <AuthLayout
       title="Înregistrare club"
-      subtitle="Creează contul administratorului și clubul"
+      subtitle="Clubul rămâne inactiv până la aprobarea administratorului."
       footer={
         <Link to={withReturnUrl('/signup', returnUrl)} className="text-primary font-semibold">
           Înapoi
@@ -158,7 +158,8 @@ export default function ClubSignupPage() {
               </div>
             </div>
             <p className="text-muted-foreground text-xs">
-              Configurarea Stripe pentru încasări se face din panoul de club, după înregistrare.
+              Clubul rămâne inactiv până la aprobarea administratorului. Configurarea Stripe pentru
+              încasări se face din panoul de club, după ce clubul este aprobat.
             </p>
           </div>
         )}
