@@ -39,3 +39,15 @@ Auth is JWT in **HttpOnly cookies** and CSRF is enforced (`CookieCsrfTokenReposi
 ### Repo quirks
 - `TriathlonTeamFE/.angular/cache/**` (Vite dep-optimizer cache) is **tracked in git**. Running `ng serve`/`ng build` rewrites it and pollutes `git status`. Do not commit that churn — `git checkout -- TriathlonTeamFE/.angular && git clean -fdq TriathlonTeamFE/.angular` before committing.
 - Backend unit tests: `sh ./gradlew test` (H2 in-memory). Three `AuditServiceTest` cases fail on a clean checkout due to pre-existing test-code bugs (Kotlin non-null `ArgumentCaptor.value` NPE and Mockito matcher misuse), unrelated to environment; the other 29 pass.
+
+### Motion React UI-audit accounts (do not guess other passwords)
+The audited web UI is **motion-react** (`motiontimisoaraApp`, preview port `3017`) on Supabase project **motion-timisoara** (`ehdzafadshbaaghzdzdo`). Point `VITE_SUPABASE_URL` at `https://ehdzafadshbaaghzdzdo.supabase.co` and take the anon key from MCP `get_publishable_keys` (do not commit it). Dedicated confirmed test users, password for all four: `MotionUiAudit-2026!Aa`
+
+| Role | Email | Lands on |
+| --- | --- | --- |
+| PARENT | `uiaudit.parent@motiontimisoara.test` | `/account` |
+| COACH | `uiaudit.coach@motiontimisoara.test` | `/coach` |
+| CLUB | `uiaudit.club@motiontimisoara.test` | `/club` |
+| ADMIN | `uiaudit.admin@motiontimisoara.test` | `/admin` |
+
+Parent has a child named `Copil Audit`. Coach has a `coach_profiles` row. Club owns `Club Audit Motion`. Do not use these accounts for destructive admin, payments, or messages. Never guess credentials for real staff/parent accounts.
