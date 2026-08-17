@@ -23,7 +23,7 @@ const CHOICES = [
     to: '/register-club',
     icon: Building2,
     title: 'Club',
-    desc: 'Administrează antrenori, cursuri și încasări. Clubul rămâne inactiv până la aprobarea administratorului.',
+    desc: 'Gestionează cursuri și încasări. Rămâne inactiv până la aprobarea administratorului.',
   },
 ]
 
@@ -57,12 +57,12 @@ export default function SignupChoicePage() {
     >
       {/* auto-rows-fr keeps the three cards the same height even when one
           description wraps onto an extra line, which it does on narrow phones. */}
-      <div className="grid auto-rows-fr gap-3">
+      <div className="grid auto-rows-fr gap-2 sm:gap-3">
         {CHOICES.map((c) => (
           <Link
             key={c.to}
             to={withReturnUrl(c.to, returnUrl)}
-            className="hover:border-primary/40 hover:bg-accent focus-visible:border-ring focus-visible:ring-ring/50 flex h-full items-center gap-4 rounded-2xl border p-4 outline-none transition-colors focus-visible:ring-[3px]"
+            className="hover:border-primary/40 hover:bg-accent focus-visible:border-ring focus-visible:ring-ring/50 flex h-full items-center gap-3 rounded-2xl border p-3 outline-none transition-colors focus-visible:ring-[3px] sm:gap-4 sm:p-4"
           >
             <span className="bg-primary/10 text-primary grid size-11 shrink-0 place-items-center rounded-xl">
               <c.icon className="size-5" />

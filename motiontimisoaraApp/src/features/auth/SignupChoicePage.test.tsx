@@ -19,7 +19,7 @@ function renderSignup(path = '/signup') {
 test('Club card says the club stays inactive until an administrator approves it', () => {
   renderSignup()
   expect(screen.getByRole('link', { name: /Club/ })).toHaveTextContent(
-    /Clubul rămâne inactiv până la aprobarea administratorului/,
+    /rămâne inactiv până la aprobarea administratorului/i,
   )
 })
 

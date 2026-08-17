@@ -41,16 +41,16 @@ export function AuthLayout({ title, subtitle, children, footer }: AuthLayoutProp
 
       <div className="flex items-start justify-center p-6 lg:items-center">
         <div className="w-full max-w-sm">
-          <div className="mb-8 lg:hidden">
+          <div className="mb-3 sm:mb-8 lg:hidden">
             <Link to="/">
               <Logo />
             </Link>
           </div>
           <h1 className="font-display text-2xl font-extrabold text-foreground">{title}</h1>
           {subtitle && <p className="text-muted-foreground mt-1.5 text-sm">{subtitle}</p>}
-          <div className="mt-6">{children}</div>
+          <div className="mt-4 sm:mt-6">{children}</div>
           {footer && (
-            <div className="text-muted-foreground mt-6 text-center text-sm">{footer}</div>
+            <div className="text-muted-foreground mt-4 text-center text-sm sm:mt-6">{footer}</div>
           )}
         </div>
       </div>

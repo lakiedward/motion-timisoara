@@ -247,7 +247,7 @@ test.describe('Production readiness — critical user flows', () => {
 
     await expect(page.getByRole('heading', { name: 'Creează un cont' })).toBeVisible()
     await expect(page.getByRole('link', { name: /Club/ })).toContainText(
-      'Clubul rămâne inactiv până la aprobarea administratorului',
+      'Rămâne inactiv până la aprobarea administratorului',
     )
     await expect(page.getByRole('link', { name: 'Autentifică-te' })).toBeVisible()
   })
