@@ -39,7 +39,7 @@ export function AuthLayout({ title, subtitle, children, footer }: AuthLayoutProp
         </div>
       </div>
 
-      <div className="flex items-center justify-center p-6">
+      <div className="flex items-start justify-center p-6 lg:items-center">
         <div className="w-full max-w-sm">
           <div className="mb-8 lg:hidden">
             <Link to="/">

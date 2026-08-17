@@ -23,7 +23,7 @@ const CHOICES = [
     to: '/register-club',
     icon: Building2,
     title: 'Club',
-    desc: 'Administrează antrenori, cursuri și încasări.',
+    desc: 'Administrează antrenori, cursuri și încasări. Clubul rămâne inactiv până la aprobarea administratorului.',
   },
 ]
 
