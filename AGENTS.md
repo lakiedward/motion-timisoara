@@ -51,3 +51,7 @@ The audited web UI is **motion-react** (`motiontimisoaraApp`, preview port `3017
 | ADMIN | `uiaudit.admin@motiontimisoara.test` | `/admin` |
 
 Parent has a child named `Copil Audit`. Coach has a `coach_profiles` row. Club owns `Club Audit Motion`. Do not use these accounts for destructive admin, payments, or messages. Never guess credentials for real staff/parent accounts.
+
+### Team Tracker UI-spec conventions (Supabase `ntjzghsbrzkvpkniotaj`, project_id 16)
+- Spec criteria for a page live in `tt_ui_surface_criteria` attached to the page's **section** surface (`motion-react:page:<route>:section:toata-pagina`), NOT the `kind='page'` surface — the page surfaces have zero criteria by design, so counting criteria on them always yields 0.
+- Criterion text convention: prefix `DE PASTRAT —` (behavior to keep), `DE REPARAT —` (spec decision not yet true in the app), or `STARE NEVERIFICATĂ ÎN SESIUNE —` (state deliberately not forced), each ending with a `Verificare: …` sentence. `kind` is one of `visual`/`functional`/`state`/`a11y`.
