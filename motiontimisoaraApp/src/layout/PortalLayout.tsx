@@ -23,11 +23,12 @@ const navItemClass = ({ isActive }: { isActive: boolean }) =>
     'focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-primary',
     isActive
       ? 'bg-primary/10 text-primary'
-      : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
+      : 'text-muted-foreground hover:bg-secondary hover:text-foreground [&:hover]:bg-secondary [&:hover]:text-foreground',
   )
 
 const logoutClassName = cn(
-  'text-destructive min-h-11 w-full cursor-pointer justify-start',
+  'text-destructive flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-xl px-3 text-sm font-medium',
+  'hover:bg-secondary [&:hover]:bg-secondary',
   'focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-primary',
 )
 
@@ -117,9 +118,9 @@ export function PortalLayout({
         </div>
         <div className="border-t p-3">
           {profileTo && firstName ? <ProfileNameLink to={profileTo} name={firstName} className="mb-1" /> : null}
-          <Button variant="ghost" className={logoutClassName} onClick={onLogout}>
-            <LogOut /> Deconectare
-          </Button>
+          <button type="button" className={logoutClassName} onClick={onLogout}>
+            <LogOut className="size-4" /> Deconectare
+          </button>
         </div>
       </aside>
 
@@ -148,9 +149,9 @@ export function PortalLayout({
                 <ProfileNameLink to={profileTo} name={firstName} onNavigate={closeSheet} className="mb-1" />
               ) : null}
               <SheetClose asChild>
-                <Button variant="ghost" className={logoutClassName} onClick={onLogout}>
-                  <LogOut /> Deconectare
-                </Button>
+                <button type="button" className={logoutClassName} onClick={onLogout}>
+                  <LogOut className="size-4" /> Deconectare
+                </button>
               </SheetClose>
             </div>
           </SheetContent>
