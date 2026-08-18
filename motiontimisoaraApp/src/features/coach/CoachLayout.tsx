@@ -11,5 +11,5 @@ const NAV: PortalNavItem[] = [
 ]
 
 export default function CoachLayout() {
-  return <PortalLayout nav={NAV} roleLabel="Antrenor" />
+  return <PortalLayout nav={NAV} roleLabel="Antrenor" profileTo="/coach/profile" />
 }

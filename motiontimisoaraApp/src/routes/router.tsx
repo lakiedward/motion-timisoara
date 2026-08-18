@@ -11,6 +11,7 @@ import ActivityFormPage from '@/features/coach/ActivityFormPage'
 import CoachLocationsPage from '@/features/coach/CoachLocationsPage'
 import LocationFormPage from '@/features/coach/LocationFormPage'
 import CoachAttendancePage from '@/features/coach/CoachAttendancePage'
+import CoachOwnProfilePage from '@/features/coach/CoachOwnProfilePage'
 import AdminLayout from '@/features/admin/AdminLayout'
 import AdminDashboard from '@/features/admin/AdminDashboard'
 import AdminUsersPage from '@/features/admin/AdminUsersPage'
@@ -119,6 +120,7 @@ export const router = createBrowserRouter([
               { path: '/coach/locations/new', element: <LocationFormPage /> },
               { path: '/coach/locations/:id/edit', element: <LocationFormPage /> },
               { path: '/coach/attendance', element: <CoachAttendancePage /> },
+              { path: '/coach/profile', element: <CoachOwnProfilePage /> },
             ],
           },
         ],

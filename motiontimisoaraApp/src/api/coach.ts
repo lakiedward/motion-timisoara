@@ -252,3 +252,55 @@ export async function markAttendance(
     )
   if (error) throw error
 }
+
+export async function getMyCoachProfile() {
+  const coachId = await uid()
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('name, phone, email')
+    .eq('id', coachId)
+    .single()
+  if (profileError) throw profileError
+
+  const { data: coach, error: coachError } = await supabase
+    .from('coach_profiles')
+    .select('id, bio')
+    .eq('user_id', coachId)
+    .maybeSingle()
+  if (coachError) throw coachError
+
+  return {
+    name: profile.name,
+    phone: profile.phone,
+    email: profile.email,
+    bio: coach?.bio ?? '',
+  }
+}
+
+export async function updateMyCoachProfile(input: {
+  name: string
+  phone: string | null
+  bio: string | null
+}) {
+  const coachId = await uid()
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .update({ name: input.name, phone: input.phone })
+    .eq('id', coachId)
+  if (profileError) throw profileError
+
+  const { data: updated, error: coachError } = await supabase
+    .from('coach_profiles')
+    .update({ bio: input.bio })
+    .eq('user_id', coachId)
+    .select('id')
+  if (coachError) throw coachError
+
+  if (!updated?.length) {
+    const { error: insertError } = await supabase
+      .from('coach_profiles')
+      .insert({ user_id: coachId, bio: input.bio })
+    if (insertError) throw insertError
+  }
+}
+
