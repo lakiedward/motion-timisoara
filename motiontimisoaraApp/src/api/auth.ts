@@ -13,20 +13,21 @@ export interface AppUser {
   needsProfileCompletion: boolean
 }
 
-/** Loads the current session's profile row, or null if signed out. */
-export async function loadAppUser(): Promise<AppUser | null> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  if (!session) return null
+export const PROFILE_LOAD_ERROR = 'Nu am putut încărca profilul.'
 
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, email, name, role, phone, avatar_url')
-    .eq('id', session.user.id)
-    .single()
-  if (error || !data) return null
+export type LoadAppUserResult =
+  | { status: 'signed_out' }
+  | { status: 'ok'; user: AppUser }
+  | { status: 'error'; message: string }
 
+function toAppUser(data: {
+  id: string
+  email: string
+  name: string
+  role: string
+  phone: string | null
+  avatar_url: string | null
+}): AppUser {
   return {
     id: data.id,
     email: data.email,
@@ -36,6 +37,29 @@ export async function loadAppUser(): Promise<AppUser | null> {
     avatarUrl: data.avatar_url,
     needsProfileCompletion: !data.phone,
   }
+}
+
+/** Loads the current session's profile, distinguishing signed-out from a failed fetch. */
+export async function loadAppUserResult(): Promise<LoadAppUserResult> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  if (!session) return { status: 'signed_out' }
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, email, name, role, phone, avatar_url')
+    .eq('id', session.user.id)
+    .single()
+  if (error || !data) return { status: 'error', message: PROFILE_LOAD_ERROR }
+
+  return { status: 'ok', user: toAppUser(data) }
+}
+
+/** Loads the current session's profile row, or null if signed out or the profile cannot be read. */
+export async function loadAppUser(): Promise<AppUser | null> {
+  const result = await loadAppUserResult()
+  return result.status === 'ok' ? result.user : null
 }
 
 export function signInWithPassword(email: string, password: string) {
