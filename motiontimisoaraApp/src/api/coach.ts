@@ -289,10 +289,18 @@ export async function updateMyCoachProfile(input: {
     .eq('id', coachId)
   if (profileError) throw profileError
 
-  const { error: coachError } = await supabase
+  const { data: updated, error: coachError } = await supabase
     .from('coach_profiles')
     .update({ bio: input.bio })
     .eq('user_id', coachId)
+    .select('id')
   if (coachError) throw coachError
+
+  if (!updated?.length) {
+    const { error: insertError } = await supabase
+      .from('coach_profiles')
+      .insert({ user_id: coachId, bio: input.bio })
+    if (insertError) throw insertError
+  }
 }
 
