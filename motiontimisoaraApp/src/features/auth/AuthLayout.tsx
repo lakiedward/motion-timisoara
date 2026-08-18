@@ -29,11 +29,11 @@ export function AuthLayout({ title, subtitle, children, footer }: AuthLayoutProp
           </Link>
           <div>
             <h2 className="font-display text-4xl leading-tight font-extrabold">
-              Creștem campionii de mâine
+              Sportul copilului tău, într-un singur cont
             </h2>
             <p className="mt-3 max-w-sm text-white/85">
-              Triatlon pentru copii în Timișoara — înot, ciclism și alergare, alături de antrenori
-              dedicați.
+              Cluburi, antrenori și cursuri sportive pentru copii în Timișoara — găsești, înscrii
+              și plătești într-un singur loc.
             </p>
           </div>
         </div>
