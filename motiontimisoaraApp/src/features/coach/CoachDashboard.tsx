@@ -8,35 +8,60 @@ import { Button } from '@/components/ui/button'
 
 export default function CoachDashboard() {
   const { user } = useAuth()
-  const { data: courses = [] } = useQuery({ queryKey: ['my-courses'], queryFn: getMyCourses })
+  const firstName = user?.name?.trim().split(/\s+/)[0]
+  const {
+    data: courses = [],
+    isError,
+    isSuccess,
+  } = useQuery({
+    queryKey: ['my-courses'],
+    queryFn: getMyCourses,
+    retry: false,
+  })
   const active = courses.filter((c) => c.active).length
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="font-display text-3xl font-extrabold text-foreground">
-            Salut, {user?.name?.split(' ')[0]}!
+            Salut{firstName ? `, ${firstName}` : ''}!
           </h1>
           <p className="text-muted-foreground mt-1">Panoul tău de antrenor.</p>
         </div>
-        <Button asChild>
+        <Button asChild className="h-11 min-h-11 w-full px-5 md:w-auto">
           <Link to="/coach/courses/new">
             <Plus /> Curs nou
           </Link>
         </Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Stat value={courses.length} label="Cursuri" />
-        <Stat value={active} label="Cursuri active" />
-        <Link
-          to="/coach/courses"
-          className="bg-primary text-primary-foreground flex items-center justify-between rounded-3xl p-6 transition-transform hover:-translate-y-1"
-        >
-          <span className="font-display font-bold">Gestionează cursuri</span>
-          <GraduationCap className="size-5" />
-        </Link>
+      <div className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-3">
+          {isError ? (
+            <p
+              role="alert"
+              className="bg-card text-muted-foreground shadow-card rounded-3xl p-6 sm:col-span-2"
+            >
+              Nu am putut încărca cursurile.
+            </p>
+          ) : (
+            <>
+              <Stat value={courses.length} label="Cursuri" />
+              <Stat value={active} label="Cursuri active" />
+            </>
+          )}
+          <Link
+            to="/coach/courses"
+            className="bg-primary text-primary-foreground flex items-center justify-between rounded-3xl p-6 transition-transform hover:-translate-y-1"
+          >
+            <span className="font-display font-bold">Gestionează cursuri</span>
+            <GraduationCap className="size-5" />
+          </Link>
+        </div>
+        {isSuccess && courses.length === 0 ? (
+          <p className="text-muted-foreground">Nu ai încă niciun curs.</p>
+        ) : null}
       </div>
     </div>
   )
