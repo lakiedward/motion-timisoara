@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, XCircle } from 'lucide-react'
@@ -28,9 +28,27 @@ export default function ClubStripePage() {
     retry: false,
   })
   const [busy, setBusy] = useState(false)
+  const refreshStarted = useRef(false)
+
+  const goToOnboarding = useCallback(async () => {
+    setBusy(true)
+    try {
+      const url = await startStripeOnboarding()
+      window.location.assign(url)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Nu am putut deschide configurarea Stripe.')
+      setBusy(false)
+    }
+  }, [])
 
   useEffect(() => {
-    if (!isReturn && !isRefresh) return
+    if (!isRefresh || refreshStarted.current) return
+    refreshStarted.current = true
+    void goToOnboarding()
+  }, [isRefresh, goToOnboarding])
+
+  useEffect(() => {
+    if (!isReturn) return
     let cancelled = false
     ;(async () => {
       try {
@@ -43,18 +61,7 @@ export default function ClubStripePage() {
     return () => {
       cancelled = true
     }
-  }, [isReturn, isRefresh, qc])
-
-  const goToOnboarding = async () => {
-    setBusy(true)
-    try {
-      const url = await startStripeOnboarding()
-      window.location.assign(url)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Nu am putut deschide configurarea Stripe.')
-      setBusy(false)
-    }
-  }
+  }, [isReturn, qc])
 
   const goToDashboard = async () => {
     setBusy(true)

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -6,7 +6,11 @@ import { vi } from 'vitest'
 
 import ClubStripePage from './ClubStripePage'
 import { getMyClub, type Club } from '@/api/club'
-import { getStripeDashboardLink, startStripeOnboarding } from '@/api/stripe-connect'
+import {
+  getStripeDashboardLink,
+  refreshStripeStatus,
+  startStripeOnboarding,
+} from '@/api/stripe-connect'
 
 vi.mock('@/api/club', () => ({
   getMyClub: vi.fn(),
@@ -21,6 +25,11 @@ vi.mock('@/api/stripe-connect', () => ({
 const mockedGetMyClub = vi.mocked(getMyClub)
 const mockedStart = vi.mocked(startStripeOnboarding)
 const mockedDashboard = vi.mocked(getStripeDashboardLink)
+const mockedRefresh = vi.mocked(refreshStripeStatus)
+
+beforeEach(() => {
+  vi.clearAllMocks()
+})
 
 function renderPage(path = '/club/stripe') {
   const queryClient = new QueryClient({
@@ -77,6 +86,35 @@ test('setup page shows Neconfigurat and starts onboarding on click', async () =>
   expect(mockedStart).toHaveBeenCalled()
   expect(assign).toHaveBeenCalledWith('https://connect.stripe.com/setup/test')
   vi.unstubAllGlobals()
+})
+
+test('refresh route starts a new onboarding link instead of only refreshing status', async () => {
+  mockedGetMyClub.mockResolvedValue(club())
+  mockedStart.mockResolvedValue('https://connect.stripe.com/setup/refresh')
+  const assign = vi.fn()
+  vi.stubGlobal('location', { ...window.location, assign })
+
+  renderPage('/club/stripe/onboarding/refresh')
+  await waitFor(() => expect(mockedStart).toHaveBeenCalled())
+  expect(assign).toHaveBeenCalledWith('https://connect.stripe.com/setup/refresh')
+  expect(mockedRefresh).not.toHaveBeenCalled()
+  vi.unstubAllGlobals()
+})
+
+test('return route refreshes Connect status and does not start onboarding', async () => {
+  mockedGetMyClub.mockResolvedValue(club())
+  mockedRefresh.mockResolvedValue({
+    hasAccount: true,
+    onboardingComplete: false,
+    chargesEnabled: false,
+    payoutsEnabled: false,
+    requiresAction: true,
+  })
+
+  renderPage('/club/stripe/onboarding/complete')
+  expect(await screen.findByRole('heading', { name: 'Configurare plăți' })).toBeInTheDocument()
+  await waitFor(() => expect(mockedRefresh).toHaveBeenCalled())
+  expect(mockedStart).not.toHaveBeenCalled()
 })
 
 test('configured club offers the Stripe dashboard link', async () => {
