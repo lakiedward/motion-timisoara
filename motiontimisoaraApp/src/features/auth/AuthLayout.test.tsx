@@ -46,8 +46,9 @@ test('photo panel stays readable if the background image is removed', () => {
 test('photo panel is desktop-only and compact logo wraps the 36px mark', () => {
   const { container } = renderLayout()
   const photoPanel = container.querySelector('img[src="/ui/20230516_184053.webp"]')?.parentElement
-  expect(photoPanel?.className).toMatch(/\bhidden\b/)
-  expect(photoPanel?.className).toMatch(/\blg:block\b/)
+  const photoClasses = photoPanel?.className.split(/\s+/) ?? []
+  expect(photoClasses).toContain('hidden')
+  expect(photoClasses).toContain('lg:block')
 
   const compactWrap = container.querySelector('.lg\\:hidden')
   expect(compactWrap).toBeTruthy()
