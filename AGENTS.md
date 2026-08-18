@@ -27,3 +27,6 @@ Parent has a child named `Copil Audit`. Coach has a `coach_profiles` row. Club o
 
 ### Coach registration spec and invite codes
 UI spec criteria for `/register-coach` belong on section `motion-react:page:/register-coach:section:toata-pagina`. Tracker rejects `spec_approved_at` and any non-`unreviewed` verdict on page rows. The page only length-checks the invite code (≥5) until final submit; Edge Function `register-coach` is what looks up `coach_invitation_codes` and increments `current_uses`. Spec and smoke walks must not submit a real invitation code.
+
+### Club registration spec
+UI spec criteria for `/register-club` belong on section `motion-react:page:/register-club:section:toata-pagina`. The wizard does not collect company/CUI/IBAN fields, even though Edge Function `register-club` accepts them. A successful submit creates a `clubs` row immediately; that table has no `is_active`. Spec and smoke walks must not submit a new unique email.
