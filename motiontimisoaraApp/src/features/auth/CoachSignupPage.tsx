@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, type FormEvent } from 'react'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { fetchSports } from '@/api/sports'
-import { registerCoach } from '@/api/auth'
+import { registerCoach, roleHome } from '@/api/auth'
 import { useAuth } from '@/lib/auth-context'
 
 const schema = z.object({
@@ -30,11 +30,13 @@ const schema = z.object({
 type Values = z.infer<typeof schema>
 
 const STEP_FIELDS: (keyof Values)[][] = [['invitationCode'], ['name', 'email', 'phone', 'password']]
+/** The confirmation step — the only one allowed to register anything. */
+const CONFIRM_STEP = 2
 
 export default function CoachSignupPage() {
   const navigate = useNavigate()
   const returnUrl = useReturnUrl()
-  const { refresh } = useAuth()
+  const { user, loading, refresh } = useAuth()
   const [step, setStep] = useState(0)
   const [sportIds, setSportIds] = useState<string[]>([])
   const [serverError, setServerError] = useState<string | null>(null)
@@ -69,8 +71,30 @@ export default function CoachSignupPage() {
       return
     }
     await refresh()
-    navigate(returnUrl || '/account')
+    // This page only ever creates coaches, so their panel is the destination
+    // unless the visitor was already on their way somewhere specific.
+    navigate(returnUrl || roleHome('COACH'))
   }
+
+  // Enter inside a field submits the form. On the first two steps that has to
+  // move the wizard along, never register the coach.
+  const onFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (step < CONFIRM_STEP) void next()
+    else void handleSubmit(onSubmit)()
+  }
+
+  if (loading) {
+    return (
+      <AuthLayout title="Înregistrare antrenor" subtitle="Necesită un cod de invitație">
+        <p className="text-muted-foreground text-sm">Se verifică sesiunea…</p>
+      </AuthLayout>
+    )
+  }
+
+  // Someone already signed in cannot create a second account from here; send
+  // them where they were headed, or to the panel their role belongs to.
+  if (user) return <Navigate to={returnUrl || roleHome(user.role)} replace />
 
   return (
     <AuthLayout
@@ -88,7 +112,7 @@ export default function CoachSignupPage() {
           {serverError}
         </p>
       )}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+      <form onSubmit={onFormSubmit} className="space-y-4" noValidate>
         {step === 0 && (
           <div className="space-y-1.5">
             <Label htmlFor="invitationCode">Cod de invitație</Label>
@@ -128,7 +152,7 @@ export default function CoachSignupPage() {
           </>
         )}
 
-        {step === 2 && (
+        {step === CONFIRM_STEP && (
           <div className="space-y-2 text-sm">
             <p className="text-muted-foreground">Verifică datele înainte de finalizare:</p>
             <div className="bg-muted space-y-1 rounded-2xl p-4">
@@ -155,12 +179,22 @@ export default function CoachSignupPage() {
               Înapoi
             </Button>
           )}
-          {step < 2 ? (
+          {step < CONFIRM_STEP ? (
             <Button type="button" className="flex-1" onClick={next}>
               Continuă
             </Button>
           ) : (
-            <Button type="submit" className="flex-1" disabled={isSubmitting}>
+            // Both buttons render in the same slot, so React hands the new one
+            // the DOM node the previous click landed on. A type="submit" here
+            // would inherit that click and register the coach the moment the
+            // confirmation step appeared, so registering stays an explicit
+            // onClick that only a second, deliberate press can reach.
+            <Button
+              type="button"
+              className="flex-1"
+              disabled={isSubmitting}
+              onClick={() => void handleSubmit(onSubmit)()}
+            >
               {isSubmitting ? 'Se creează…' : 'Finalizează'}
             </Button>
           )}
