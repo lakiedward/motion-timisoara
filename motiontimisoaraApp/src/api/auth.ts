@@ -101,8 +101,33 @@ export interface RegisterClubInput {
 /** Calls the register-coach Edge Function, then signs the new coach in. */
 export async function registerCoach(input: RegisterCoachInput) {
   const { error } = await supabase.functions.invoke('register-coach', { body: input })
-  if (error) return { error: await edgeError(error) }
+  if (error) {
+    const { message } = await edgeError(error)
+    return { error: { message: coachRegisterMessage(message) } }
+  }
   return supabase.auth.signInWithPassword({ email: input.email, password: input.password })
+}
+
+/**
+ * register-coach answers in English ("Invalid invitation code"), and the signup
+ * form puts whatever comes back straight in front of the coach, so the cases
+ * someone can actually hit are translated before they reach the screen.
+ * Anything unrecognised becomes a plain Romanian sentence rather than leaking
+ * an internal message.
+ */
+function coachRegisterMessage(raw: string): string {
+  const m = raw.toLowerCase()
+  if (m.includes('invitation code expired')) {
+    return 'Codul de invitație a expirat. Cere unul nou clubului.'
+  }
+  if (m.includes('invitation code fully used')) {
+    return 'Codul de invitație a fost deja folosit de numărul maxim de ori.'
+  }
+  if (m.includes('invalid invitation code')) return 'Cod de invitație invalid.'
+  if (m.includes('already been registered') || m.includes('already registered')) {
+    return 'Există deja un cont cu acest email.'
+  }
+  return 'Nu am putut crea contul. Verifică datele și încearcă din nou.'
 }
 
 /** Calls the register-club Edge Function, then signs the new club owner in. */
