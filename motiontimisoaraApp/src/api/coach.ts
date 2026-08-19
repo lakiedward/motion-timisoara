@@ -197,19 +197,138 @@ export async function setLocationActive(id: string, is_active: boolean) {
 
 // ===== Attendance =====
 export type CoachSession = Tables<'course_occurrences'> & {
-  course: { id: string; name: string } | null
+  course: { id: string; name: string; location: { name: string } | null } | null
+  enrolled_count: number
+  attendance_recorded: boolean
 }
 
-export async function getCoachSessions(): Promise<CoachSession[]> {
+/** Ședințele mai vechi de atâtea zile stau strânse în spatele lui „Vezi mai mult”. */
+export const PAST_VISIBLE_DAYS = 14
+
+/** Câte ședințe aducem din fiecare grup. Peste atât, lista o spune pe ecran. */
+export const SESSION_GROUP_LIMIT = 100
+
+export interface CoachSessionGroups {
+  /** Ședințele care urmează, cea mai apropiată prima. */
+  upcoming: CoachSession[]
+  /** Ședințele trecute, cea mai recentă prima. */
+  past: CoachSession[]
+  /** Câte dintre `past` intră în fereastra de PAST_VISIBLE_DAYS; sunt primele din listă. */
+  pastRecentCount: number
+  /** Un grup a atins limita de încărcare, deci există ședințe neafișate. */
+  truncated: boolean
+}
+
+const SESSION_SELECT = '*, course:courses!inner(id, name, coach_id, location:locations(name))'
+
+const PAGE_SIZE = 1000
+/** Plasă de siguranță: 100k rânduri sunt cu mult peste orice antrenor real. */
+const MAX_PAGES = 100
+
+/**
+ * PostgREST taie răspunsul la un număr fix de rânduri, așa că un `in(...)` peste
+ * multe ședințe poate pierde rânduri fără să spună. Parcurgem paginile până se
+ * termină. La eroare ne oprim cu ce am strâns: marcajele de pe card sunt un
+ * semnal secundar, nu merită să cadă toată lista de ședințe din cauza lor.
+ *
+ * Interogarea trebuie să aibă `order` pe o coloană unică. Fără el, `range` e
+ * LIMIT/OFFSET peste o mulțime neordonată, iar Postgres n-are voie să păstreze
+ * aceeași ordine între două cereri: paginile următoare ar putea sări sau repeta
+ * rânduri exact când paginarea chiar contează.
+ */
+async function selectAllPages<T>(
+  run: (from: number, to: number) => PromiseLike<{ data: unknown; error: unknown }>
+): Promise<T[]> {
+  const rows: T[] = []
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const from = page * PAGE_SIZE
+    const { data, error } = await run(from, from + PAGE_SIZE - 1)
+    if (error) return rows
+    const batch = (data ?? []) as T[]
+    rows.push(...batch)
+    if (batch.length < PAGE_SIZE) break
+  }
+  return rows
+}
+
+export async function getCoachSessions(): Promise<CoachSessionGroups> {
   const coachId = await uid()
-  const { data, error } = await supabase
-    .from('course_occurrences')
-    .select('*, course:courses!inner(id, name, coach_id)')
-    .eq('course.coach_id', coachId)
-    .order('starts_at', { ascending: false })
-    .limit(60)
-  if (error) throw error
-  return (data ?? []) as unknown as CoachSession[]
+  const now = Date.now()
+  const nowIso = new Date(now).toISOString()
+  const pastCutoff = now - PAST_VISIBLE_DAYS * 24 * 60 * 60 * 1000
+
+  const [upcomingRes, pastRes] = await Promise.all([
+    supabase
+      .from('course_occurrences')
+      .select(SESSION_SELECT)
+      .eq('course.coach_id', coachId)
+      .gte('starts_at', nowIso)
+      .order('starts_at', { ascending: true })
+      .limit(SESSION_GROUP_LIMIT + 1),
+    supabase
+      .from('course_occurrences')
+      .select(SESSION_SELECT)
+      .eq('course.coach_id', coachId)
+      .lt('starts_at', nowIso)
+      .order('starts_at', { ascending: false })
+      .limit(SESSION_GROUP_LIMIT + 1),
+  ])
+  if (upcomingRes.error) throw upcomingRes.error
+  if (pastRes.error) throw pastRes.error
+
+  const rawUpcoming = (upcomingRes.data ?? []) as unknown as CoachSession[]
+  const rawPast = (pastRes.data ?? []) as unknown as CoachSession[]
+  const truncated =
+    rawUpcoming.length > SESSION_GROUP_LIMIT || rawPast.length > SESSION_GROUP_LIMIT
+
+  const upcoming = rawUpcoming.slice(0, SESSION_GROUP_LIMIT)
+  const past = rawPast.slice(0, SESSION_GROUP_LIMIT)
+  // `past` e descrescător, deci ședințele din fereastră sunt exact primele.
+  const pastRecentCount = past.filter((s) => new Date(s.starts_at).getTime() >= pastCutoff).length
+  const all = [...upcoming, ...past]
+  if (!all.length) return { upcoming, past, pastRecentCount, truncated }
+
+  const courseIds = [...new Set(all.map((s) => s.course?.id).filter(Boolean))] as string[]
+  const occurrenceIds = all.map((s) => s.id)
+  const [enrollmentRows, attendanceRows] = await Promise.all([
+    selectAllPages<{ entity_id: string }>((from, to) =>
+      supabase
+        .from('enrollments')
+        .select('entity_id')
+        .eq('kind', 'COURSE')
+        .eq('status', 'ACTIVE')
+        .in('entity_id', courseIds)
+        .order('id', { ascending: true })
+        .range(from, to)
+    ),
+    selectAllPages<{ occurrence_id: string }>((from, to) =>
+      supabase
+        .from('attendance')
+        .select('occurrence_id')
+        .in('occurrence_id', occurrenceIds)
+        .order('id', { ascending: true })
+        .range(from, to)
+    ),
+  ])
+
+  const enrolled = new Map<string, number>()
+  for (const row of enrollmentRows) {
+    enrolled.set(row.entity_id, (enrolled.get(row.entity_id) ?? 0) + 1)
+  }
+  const marked = new Set(attendanceRows.map((r) => r.occurrence_id))
+
+  const decorate = (s: CoachSession): CoachSession => ({
+    ...s,
+    enrolled_count: s.course ? (enrolled.get(s.course.id) ?? 0) : 0,
+    attendance_recorded: marked.has(s.id),
+  })
+
+  return {
+    upcoming: upcoming.map(decorate),
+    past: past.map(decorate),
+    pastRecentCount,
+    truncated,
+  }
 }
 
 export interface RosterEntry {
