@@ -199,6 +199,18 @@ test('cardul folosește inelul de focus din sistemul de design și forma de card
   expect(card.className).toMatch(/shadow-card/)
 })
 
+// Regresie: `overflow-y` calculează `overflow-x: auto`, deci lista care derulează
+// taie inelul de focus dacă n-are spațiu lateral. A apărut o dată, pe stânga.
+test('lista care derulează lasă loc lateral inelului de focus', async () => {
+  mockedGetCoachSessions.mockResolvedValue(groups({ upcoming: [session({ id: 's1' })] }))
+  const { container } = renderPage()
+  await screen.findByRole('button', { name: /Înot începători/ })
+  const scroller = container.querySelector('[class*="overflow-y-auto"]')
+  expect(scroller).not.toBeNull()
+  expect(scroller!.className).toMatch(/md:px-/)
+  expect(scroller!.className).not.toMatch(/md:pr-\d/)
+})
+
 test('cele două coloane pornesc de la 768 px, nu de la 1024', async () => {
   mockedGetCoachSessions.mockResolvedValue(groups({ upcoming: [session({ id: 's1' })] }))
   const { container } = renderPage()

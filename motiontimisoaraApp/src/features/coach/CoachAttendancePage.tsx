@@ -160,7 +160,10 @@ export default function CoachAttendancePage() {
       ) : total ? (
         <div className="grid gap-6 md:grid-cols-[1fr_1.2fr]">
           {/* Ședințe */}
-          <div className="space-y-2 md:max-h-[70vh] md:overflow-y-auto md:pr-1">
+          {/* `overflow-y` forțează și `overflow-x`, deci lista are nevoie de padding
+              lateral ca să nu taie inelul de focus; marginea negativă o readuce la
+              aceeași aliniere cu titlul de deasupra. */}
+          <div className="space-y-2 md:-mx-1.5 md:max-h-[70vh] md:overflow-y-auto md:px-1.5">
             <h2 className="text-muted-foreground text-sm font-semibold">
               Ședințe ({upcoming.length + visiblePast.length})
             </h2>
