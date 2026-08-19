@@ -164,6 +164,25 @@ test('eroarea la încărcarea copiilor are mesaj propriu și Reîncearcă', asyn
   expect(screen.queryByText(/Niciun copil înscris/)).not.toBeInTheDocument()
 })
 
+// Regresie (Bugbot): un refetch eșuat după o salvare nu are voie să arunce lista
+// deja încărcată. Antrenorul ponta pe telefon, semnalul pica o clipă și pierdea
+// toți copiii de pe ecran, în mijlocul pontajului.
+test('un refetch eșuat păstrează copiii deja încărcați, fără să arate eroarea', async () => {
+  const user = userEvent.setup()
+  mockedSessions.mockResolvedValue(oSedinta())
+  mockedRoster.mockResolvedValueOnce(trioCopii()).mockRejectedValue(new Error('blip'))
+  renderPage()
+  expect(await screen.findByText('Ana Dumitrescu')).toBeInTheDocument()
+
+  const randLuca = screen.getByText('Luca Georgescu').closest('li')!
+  await user.click(within(randLuca).getByRole('button', { name: 'Prezent' }))
+  await waitFor(() => expect(mockedRoster).toHaveBeenCalledTimes(2))
+
+  expect(screen.getByText('Ana Dumitrescu')).toBeInTheDocument()
+  expect(screen.getByText('Luca Georgescu')).toBeInTheDocument()
+  expect(screen.queryByText(/Nu am putut încărca lista de copii/)).not.toBeInTheDocument()
+})
+
 // --- Criteriul 664: starea goală explică cine face înscrierile ---
 test('lista goală de copii explică rolul părinților și nu oferă niciun buton', async () => {
   renderCatalog([])

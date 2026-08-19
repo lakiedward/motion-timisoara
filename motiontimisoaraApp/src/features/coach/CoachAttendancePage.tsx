@@ -124,7 +124,7 @@ export default function CoachAttendancePage() {
         <Skeleton key={i} className="h-20 rounded-3xl lg:h-16" />
       ))}
     </div>
-  ) : rosterError ? (
+  ) : rosterError && !roster.length ? (
     <div role="alert" className="rounded-3xl border border-dashed py-16 text-center">
       <p className="text-foreground font-medium">Nu am putut încărca lista de copii.</p>
       <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetchRoster()}>
