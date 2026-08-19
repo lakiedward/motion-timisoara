@@ -12,5 +12,5 @@ const NAV: PortalNavItem[] = [
 ]
 
 export default function ClubLayout() {
-  return <PortalLayout nav={NAV} roleLabel="Club" />
+  return <PortalLayout nav={NAV} roleLabel="Club" profileTo="/club/profile" />
 }
