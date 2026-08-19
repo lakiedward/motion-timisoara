@@ -230,6 +230,11 @@ const MAX_PAGES = 100
  * multe ședințe poate pierde rânduri fără să spună. Parcurgem paginile până se
  * termină. La eroare ne oprim cu ce am strâns: marcajele de pe card sunt un
  * semnal secundar, nu merită să cadă toată lista de ședințe din cauza lor.
+ *
+ * Interogarea trebuie să aibă `order` pe o coloană unică. Fără el, `range` e
+ * LIMIT/OFFSET peste o mulțime neordonată, iar Postgres n-are voie să păstreze
+ * aceeași ordine între două cereri: paginile următoare ar putea sări sau repeta
+ * rânduri exact când paginarea chiar contează.
  */
 async function selectAllPages<T>(
   run: (from: number, to: number) => PromiseLike<{ data: unknown; error: unknown }>
@@ -293,10 +298,16 @@ export async function getCoachSessions(): Promise<CoachSessionGroups> {
         .eq('kind', 'COURSE')
         .eq('status', 'ACTIVE')
         .in('entity_id', courseIds)
+        .order('id', { ascending: true })
         .range(from, to)
     ),
     selectAllPages<{ occurrence_id: string }>((from, to) =>
-      supabase.from('attendance').select('occurrence_id').in('occurrence_id', occurrenceIds).range(from, to)
+      supabase
+        .from('attendance')
+        .select('occurrence_id')
+        .in('occurrence_id', occurrenceIds)
+        .order('id', { ascending: true })
+        .range(from, to)
     ),
   ])
 
