@@ -11,7 +11,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 export default function CoachCoursesPage() {
   const qc = useQueryClient()
-  const { data: courses = [], isLoading } = useQuery({ queryKey: ['my-courses'], queryFn: getMyCourses })
+  const { data: courses = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ['my-courses'],
+    queryFn: getMyCourses,
+    retry: false,
+  })
 
   const toggle = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) => setCourseActive(id, active),
@@ -21,9 +25,9 @@ export default function CoachCoursesPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <h1 className="font-display text-2xl font-bold text-foreground">Cursurile mele</h1>
-        <Button asChild>
+        <Button asChild className="h-11 min-h-11 w-full md:w-auto">
           <Link to="/coach/courses/new">
             <Plus /> Curs nou
           </Link>
@@ -36,6 +40,16 @@ export default function CoachCoursesPage() {
             <Skeleton key={i} className="h-32 rounded-3xl" />
           ))}
         </div>
+      ) : isError && courses.length === 0 ? (
+        <div
+          role="alert"
+          className="rounded-3xl border border-dashed py-16 text-center"
+        >
+          <p className="text-foreground font-medium">Nu am putut încărca cursurile.</p>
+          <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetch()}>
+            Reîncearcă
+          </Button>
+        </div>
       ) : courses.length ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {courses.map((c) => (
@@ -43,6 +57,7 @@ export default function CoachCoursesPage() {
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <h3 className="font-display text-lg font-bold">{c.name}</h3>
+                  <p className="text-muted-foreground mt-0.5 text-sm">{c.location?.name ?? '—'}</p>
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {c.sport && <Badge>{c.sport.name}</Badge>}
                     <Badge variant={c.active ? 'success' : 'outline'}>
@@ -64,7 +79,7 @@ export default function CoachCoursesPage() {
                 </Button>
                 <Button
                   size="sm"
-                  variant="ghost"
+                  variant="outline"
                   disabled={toggle.isPending}
                   onClick={() => toggle.mutate({ id: c.id, active: !c.active })}
                 >
