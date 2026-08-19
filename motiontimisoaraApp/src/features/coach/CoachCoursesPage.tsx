@@ -14,6 +14,7 @@ export default function CoachCoursesPage() {
   const { data: courses = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['my-courses'],
     queryFn: getMyCourses,
+    retry: false,
   })
 
   const toggle = useMutation({
