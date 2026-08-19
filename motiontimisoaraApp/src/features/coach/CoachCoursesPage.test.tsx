@@ -18,13 +18,14 @@ function renderPage() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
-  return render(
+  const view = render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>
         <CoachCoursesPage />
       </MemoryRouter>
     </QueryClientProvider>,
   )
+  return { ...view, queryClient }
 }
 
 function course(overrides: Partial<CoachCourse>): CoachCourse {
@@ -89,6 +90,16 @@ test('failed load shows error and retry, not the empty list', async () => {
   expect(screen.queryByRole('link', { name: /creează primul curs/i })).not.toBeInTheDocument()
   expect(screen.getByRole('heading', { name: 'Cursurile mele' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: /curs nou/i })).toBeInTheDocument()
+})
+
+test('refetch error keeps cached cards instead of the error screen', async () => {
+  mockedGetMyCourses.mockResolvedValueOnce([course({ id: '1', name: 'Înot — audit UI' })])
+  const { queryClient } = renderPage()
+  expect(await screen.findByRole('heading', { name: 'Înot — audit UI' })).toBeInTheDocument()
+  mockedGetMyCourses.mockRejectedValueOnce(new Error('500'))
+  await queryClient.invalidateQueries({ queryKey: ['my-courses'] })
+  expect(await screen.findByRole('heading', { name: 'Înot — audit UI' })).toBeInTheDocument()
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 })
 
 test('retry refetches courses', async () => {

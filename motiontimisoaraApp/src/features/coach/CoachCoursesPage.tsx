@@ -40,7 +40,7 @@ export default function CoachCoursesPage() {
             <Skeleton key={i} className="h-32 rounded-3xl" />
           ))}
         </div>
-      ) : isError ? (
+      ) : isError && courses.length === 0 ? (
         <div
           role="alert"
           className="rounded-3xl border border-dashed py-16 text-center"
