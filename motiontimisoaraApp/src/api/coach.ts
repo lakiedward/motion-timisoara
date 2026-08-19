@@ -334,41 +334,72 @@ export async function getCoachSessions(): Promise<CoachSessionGroups> {
 export interface RosterEntry {
   child_id: string
   child_name: string
+  child_birth_date: string
   status: 'PRESENT' | 'ABSENT' | null
 }
 
+type EnrolledChild = { child: { id: string; name: string; birth_date: string } | null }
+
 export async function getSessionRoster(courseId: string, occurrenceId: string): Promise<RosterEntry[]> {
-  const { data: enrollments } = await supabase
-    .from('enrollments')
-    .select('child:children(id, name)')
-    .eq('kind', 'COURSE')
-    .eq('entity_id', courseId)
-    .eq('status', 'ACTIVE')
-  const { data: attendance } = await supabase
-    .from('attendance')
-    .select('child_id, status')
-    .eq('occurrence_id', occurrenceId)
-  const attMap = new Map((attendance ?? []).map((a) => [a.child_id, a.status]))
-  return ((enrollments ?? []) as unknown as { child: { id: string; name: string } | null }[])
+  const [enrollmentsRes, attendanceRes] = await Promise.all([
+    supabase
+      .from('enrollments')
+      .select('child:children(id, name, birth_date)')
+      .eq('kind', 'COURSE')
+      .eq('entity_id', courseId)
+      .eq('status', 'ACTIVE'),
+    supabase.from('attendance').select('child_id, status').eq('occurrence_id', occurrenceId),
+  ])
+  // Aici prezența e tot conținutul ecranului, nu un marcaj secundar: dacă o parte
+  // lipsește, antrenorul trebuie să vadă o eroare, nu o listă care pare completă.
+  if (enrollmentsRes.error) throw enrollmentsRes.error
+  if (attendanceRes.error) throw attendanceRes.error
+
+  const attMap = new Map((attendanceRes.data ?? []).map((a) => [a.child_id, a.status]))
+  return ((enrollmentsRes.data ?? []) as unknown as EnrolledChild[])
     .filter((e) => e.child)
     .map((e) => ({
       child_id: e.child!.id,
       child_name: e.child!.name,
+      child_birth_date: e.child!.birth_date,
       status: (attMap.get(e.child!.id) as 'PRESENT' | 'ABSENT' | undefined) ?? null,
     }))
+    // Interogarea nu garantează nicio ordine, iar un antrenor care caută un nume
+    // trebuie să-l găsească de fiecare dată în același loc.
+    .sort((a, b) => a.child_name.localeCompare(b.child_name, 'ro'))
 }
 
+/** `status: null` șterge pontarea și readuce copilul la „nepontat”. */
 export async function markAttendance(
   occurrenceId: string,
   childId: string,
-  status: 'PRESENT' | 'ABSENT'
+  status: 'PRESENT' | 'ABSENT' | null
 ) {
+  if (status === null) {
+    const { error } = await supabase
+      .from('attendance')
+      .delete()
+      .eq('occurrence_id', occurrenceId)
+      .eq('child_id', childId)
+    if (error) throw error
+    return
+  }
   const { error } = await supabase
     .from('attendance')
     .upsert(
       { occurrence_id: occurrenceId, child_id: childId, status },
       { onConflict: 'occurrence_id,child_id' }
     )
+  if (error) throw error
+}
+
+/** Marchează prezenți copiii primiți, fără să atingă pe cei deja pontați. */
+export async function markManyPresent(occurrenceId: string, childIds: string[]) {
+  if (!childIds.length) return
+  const { error } = await supabase.from('attendance').upsert(
+    childIds.map((child_id) => ({ occurrence_id: occurrenceId, child_id, status: 'PRESENT' })),
+    { onConflict: 'occurrence_id,child_id' }
+  )
   if (error) throw error
 }
 
