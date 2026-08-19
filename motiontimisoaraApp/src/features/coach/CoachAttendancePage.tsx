@@ -43,13 +43,20 @@ export default function CoachAttendancePage() {
   const past = groups?.past ?? []
   const total = upcoming.length + past.length
 
-  const olderCount = past.length - (groups?.pastRecentCount ?? 0)
-  const visiblePast = showOlder ? past : past.slice(0, groups?.pastRecentCount ?? 0)
+  // Ascundem ședințele vechi doar dacă rămâne ceva pe ecran. Un antrenor care are
+  // numai ședințe mai vechi de două săptămâni trebuie să-și vadă lista, nu un
+  // „Ședințe (0)” cu un buton singur sub el.
+  const recentCount = groups?.pastRecentCount ?? 0
+  const foldPast = !showOlder && (upcoming.length > 0 || recentCount > 0)
+  const visiblePast = foldPast ? past.slice(0, recentCount) : past
+  const olderCount = past.length - visiblePast.length
 
   // Fără selecție proprie, pagina se deschide pe ședința cea mai apropiată de acum:
   // `upcoming` e crescător, deci primul element e ori cea de azi, ori următoarea;
   // dacă antrenorul n-are ședințe viitoare, cade pe cea mai recentă trecută.
-  const ordered = [...upcoming, ...past]
+  // Alegem doar dintre ședințele randate, altfel selecția ar cădea pe un card
+  // care nu există în DOM și catalogul de pe telefon n-ar mai apărea nicăieri.
+  const ordered = [...upcoming, ...visiblePast]
   const sel = ordered.find((s) => s.id === selectedId) ?? ordered[0] ?? null
 
   const { data: roster = [], isLoading: rosterLoading } = useQuery({

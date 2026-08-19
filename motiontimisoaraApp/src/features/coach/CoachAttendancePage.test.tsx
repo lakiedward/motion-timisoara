@@ -162,6 +162,27 @@ test('ședințele mai vechi de două săptămâni apar abia după Vezi mai mult'
   expect(screen.queryByRole('button', { name: /Vezi mai mult/ })).not.toBeInTheDocument()
 })
 
+// Regresie (Bugbot): plierea celor două săptămâni nu are voie să golească lista.
+// Un antrenor cu numai ședințe vechi vedea „Ședințe (0)”, zero carduri randate și,
+// pe telefon, niciun catalog — pentru că selecția cădea pe un card nemontat.
+test('cu numai ședințe mai vechi de două săptămâni, lista le arată pe toate', async () => {
+  mockedGetCoachSessions.mockResolvedValue(
+    groups({
+      past: [
+        session({ id: 'vechi1', starts_at: '2026-07-01T14:00:00.000Z' }),
+        session({ id: 'vechi2', starts_at: '2026-06-20T14:00:00.000Z' }),
+      ],
+      pastRecentCount: 0,
+    }),
+  )
+  renderPage()
+  expect(await screen.findByText('Ședințe (2)')).toBeInTheDocument()
+  const cards = screen.getAllByRole('button', { name: /Înot începători/ })
+  expect(cards).toHaveLength(2)
+  expect(cards[0]).toHaveAttribute('aria-current', 'true')
+  expect(screen.queryByRole('button', { name: /Vezi mai mult/ })).not.toBeInTheDocument()
+})
+
 // --- Criteriile 7, 9, 11: conținutul cardului și antetul ---
 test('cardul arată locația, numărul de copii și ziua întreagă; antetul arată numărul', async () => {
   mockedGetCoachSessions.mockResolvedValue(

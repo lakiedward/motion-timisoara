@@ -221,6 +221,31 @@ export interface CoachSessionGroups {
 
 const SESSION_SELECT = '*, course:courses!inner(id, name, coach_id, location:locations(name))'
 
+const PAGE_SIZE = 1000
+/** Plasă de siguranță: 100k rânduri sunt cu mult peste orice antrenor real. */
+const MAX_PAGES = 100
+
+/**
+ * PostgREST taie răspunsul la un număr fix de rânduri, așa că un `in(...)` peste
+ * multe ședințe poate pierde rânduri fără să spună. Parcurgem paginile până se
+ * termină. La eroare ne oprim cu ce am strâns: marcajele de pe card sunt un
+ * semnal secundar, nu merită să cadă toată lista de ședințe din cauza lor.
+ */
+async function selectAllPages<T>(
+  run: (from: number, to: number) => PromiseLike<{ data: unknown; error: unknown }>
+): Promise<T[]> {
+  const rows: T[] = []
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const from = page * PAGE_SIZE
+    const { data, error } = await run(from, from + PAGE_SIZE - 1)
+    if (error) return rows
+    const batch = (data ?? []) as T[]
+    rows.push(...batch)
+    if (batch.length < PAGE_SIZE) break
+  }
+  return rows
+}
+
 export async function getCoachSessions(): Promise<CoachSessionGroups> {
   const coachId = await uid()
   const now = Date.now()
@@ -259,29 +284,27 @@ export async function getCoachSessions(): Promise<CoachSessionGroups> {
   if (!all.length) return { upcoming, past, pastRecentCount, truncated }
 
   const courseIds = [...new Set(all.map((s) => s.course?.id).filter(Boolean))] as string[]
-  const [enrollmentsRes, attendanceRes] = await Promise.all([
-    supabase
-      .from('enrollments')
-      .select('entity_id')
-      .eq('kind', 'COURSE')
-      .eq('status', 'ACTIVE')
-      .in('entity_id', courseIds),
-    supabase
-      .from('attendance')
-      .select('occurrence_id')
-      .in(
-        'occurrence_id',
-        all.map((s) => s.id)
-      ),
+  const occurrenceIds = all.map((s) => s.id)
+  const [enrollmentRows, attendanceRows] = await Promise.all([
+    selectAllPages<{ entity_id: string }>((from, to) =>
+      supabase
+        .from('enrollments')
+        .select('entity_id')
+        .eq('kind', 'COURSE')
+        .eq('status', 'ACTIVE')
+        .in('entity_id', courseIds)
+        .range(from, to)
+    ),
+    selectAllPages<{ occurrence_id: string }>((from, to) =>
+      supabase.from('attendance').select('occurrence_id').in('occurrence_id', occurrenceIds).range(from, to)
+    ),
   ])
 
   const enrolled = new Map<string, number>()
-  for (const row of (enrollmentsRes.data ?? []) as { entity_id: string }[]) {
+  for (const row of enrollmentRows) {
     enrolled.set(row.entity_id, (enrolled.get(row.entity_id) ?? 0) + 1)
   }
-  const marked = new Set(
-    ((attendanceRes.data ?? []) as { occurrence_id: string }[]).map((r) => r.occurrence_id)
-  )
+  const marked = new Set(attendanceRows.map((r) => r.occurrence_id))
 
   const decorate = (s: CoachSession): CoachSession => ({
     ...s,
