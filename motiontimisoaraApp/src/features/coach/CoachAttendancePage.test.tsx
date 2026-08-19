@@ -11,6 +11,7 @@ vi.mock('@/api/coach', () => ({
   getCoachSessions: vi.fn(),
   getSessionRoster: vi.fn(),
   markAttendance: vi.fn(),
+  markManyPresent: vi.fn(),
   PAST_VISIBLE_DAYS: 14,
   SESSION_GROUP_LIMIT: 100,
 }))
