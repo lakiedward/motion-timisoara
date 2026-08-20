@@ -16,11 +16,17 @@ vi.mock('@/api/club', () => ({
   getMyClub: vi.fn(),
 }))
 
-vi.mock('@/api/stripe-connect', () => ({
-  getStripeDashboardLink: vi.fn(),
-  refreshStripeStatus: vi.fn(),
-  startStripeOnboarding: vi.fn(),
-}))
+vi.mock('@/api/stripe-connect', async (importOriginal) => {
+  // isStripeUnavailable decides whether a failure renders as a pending platform
+  // or as an error toast, so the real guard has to survive the mock.
+  const actual = await importOriginal<typeof import('@/api/stripe-connect')>()
+  return {
+    isStripeUnavailable: actual.isStripeUnavailable,
+    getStripeDashboardLink: vi.fn(),
+    refreshStripeStatus: vi.fn(),
+    startStripeOnboarding: vi.fn(),
+  }
+})
 
 const mockedGetMyClub = vi.mocked(getMyClub)
 const mockedStart = vi.mocked(startStripeOnboarding)

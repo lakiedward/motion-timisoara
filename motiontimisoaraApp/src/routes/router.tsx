@@ -29,6 +29,7 @@ import ClubCourseFormPage from '@/features/club/ClubCourseFormPage'
 import ClubLocationsPage from '@/features/club/ClubLocationsPage'
 import ClubLocationFormPage from '@/features/club/ClubLocationFormPage'
 import ClubStripePage from '@/features/club/ClubStripePage'
+import CoachStripePage from '@/features/coach/CoachStripePage'
 import HomePage from '@/features/public/HomePage'
 import ProgramPage from '@/features/public/ProgramPage'
 import CourseDetailsPage from '@/features/public/CourseDetailsPage'
@@ -122,6 +123,12 @@ export const router = createBrowserRouter([
               { path: '/coach/locations/:id/edit', element: <LocationFormPage /> },
               { path: '/coach/attendance', element: <CoachAttendancePage /> },
               { path: '/coach/profile', element: <CoachOwnProfilePage /> },
+              { path: '/coach/stripe', element: <CoachStripePage /> },
+              // Return URLs handed to Stripe by the stripe-connect Edge Function
+              // for coach accounts. Stripe controls these paths, so they are not
+              // namespaced under /coach.
+              { path: '/stripe/onboarding/complete', element: <CoachStripePage /> },
+              { path: '/stripe/onboarding/refresh', element: <CoachStripePage /> },
             ],
           },
         ],
