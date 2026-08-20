@@ -110,3 +110,8 @@ logs/
 # Windows artifacts
 # =====================
 nul
+
+# =====================
+# Supabase CLI
+# =====================
+supabase/.temp/

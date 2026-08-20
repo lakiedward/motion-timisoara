@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { GraduationCap, Plus } from 'lucide-react'
+import { CheckCircle2, CreditCard, GraduationCap, Plus, XCircle } from 'lucide-react'
 
 import { useAuth } from '@/lib/auth-context'
-import { getMyCourses } from '@/api/coach'
+import { getMyCoachStripeStatus, getMyCourses } from '@/api/coach'
 import { Button } from '@/components/ui/button'
 
 export default function CoachDashboard() {
@@ -19,6 +19,13 @@ export default function CoachDashboard() {
     retry: false,
   })
   const active = courses.filter((c) => c.active).length
+  const { data: stripe } = useQuery({
+    queryKey: ['my-coach-stripe'],
+    queryFn: getMyCoachStripeStatus,
+    retry: false,
+  })
+  const stripeComplete = stripe?.onboardingComplete ?? false
+  const stripeLabel = stripeComplete ? 'Configurat' : 'Neconfigurat'
 
   return (
     <div className="space-y-8">
@@ -57,6 +64,28 @@ export default function CoachDashboard() {
           >
             <span className="font-display font-bold">Gestionează cursuri</span>
             <GraduationCap className="size-5" />
+          </Link>
+          <Link
+            to="/coach/stripe"
+            data-testid="coach-stat-stripe"
+            aria-label={`Stripe, ${stripeLabel}`}
+            className="bg-card shadow-card rounded-3xl p-6 transition-transform hover:-translate-y-1 sm:col-span-3"
+          >
+            <span className="bg-primary/10 text-primary grid size-11 place-items-center rounded-xl">
+              <CreditCard className="size-5" />
+            </span>
+            <div className="font-display mt-4 text-lg font-bold">Plăți cu cardul</div>
+            <div className="text-muted-foreground mt-2 flex items-center gap-2 text-sm">
+              {stripeComplete ? (
+                <>
+                  <CheckCircle2 className="text-success size-5" /> Configurat
+                </>
+              ) : (
+                <>
+                  <XCircle className="text-muted-foreground size-5" /> Neconfigurat
+                </>
+              )}
+            </div>
           </Link>
         </div>
         {isSuccess && courses.length === 0 ? (

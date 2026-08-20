@@ -454,3 +454,24 @@ export async function updateMyCoachProfile(input: {
   }
 }
 
+
+export interface CoachStripeStatus {
+  /** False when the coach has no coach_profiles row yet. */
+  hasProfile: boolean
+  onboardingComplete: boolean
+}
+
+/** Connect state for the signed-in coach, for the payouts setup screen. */
+export async function getMyCoachStripeStatus(): Promise<CoachStripeStatus> {
+  const coachId = await uid()
+  const { data, error } = await supabase
+    .from('coach_profiles')
+    .select('stripe_onboarding_complete')
+    .eq('user_id', coachId)
+    .maybeSingle()
+  if (error) throw error
+  return {
+    hasProfile: Boolean(data),
+    onboardingComplete: data?.stripe_onboarding_complete ?? false,
+  }
+}
