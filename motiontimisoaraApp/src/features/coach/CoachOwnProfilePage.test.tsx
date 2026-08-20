@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { vi } from 'vitest'
@@ -36,5 +36,8 @@ test('coach profile page shows the profile heading and name field', async () => 
     </QueryClientProvider>,
   )
   expect(await screen.findByRole('heading', { name: 'Profil antrenor' })).toBeInTheDocument()
-  expect(screen.getByLabelText('Nume')).toHaveValue('Audit Antrenor')
+  // The heading renders as soon as isLoading flips, but the field values arrive
+  // from a reset() in an effect that runs after that render — so this has to
+  // wait rather than read the input on the same tick.
+  await waitFor(() => expect(screen.getByLabelText('Nume')).toHaveValue('Audit Antrenor'))
 })
