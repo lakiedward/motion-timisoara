@@ -37,10 +37,13 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
+let lastQueryClient: QueryClient
+
 function renderPage(path = '/club/stripe') {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
+  lastQueryClient = queryClient
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[path]}>
@@ -135,4 +138,19 @@ test('configured club offers the Stripe dashboard link', async () => {
   expect(mockedDashboard).toHaveBeenCalled()
   expect(assign).toHaveBeenCalledWith('https://dashboard.stripe.com/test')
   vi.unstubAllGlobals()
+})
+
+test('the panel leaves the shared my-club cache holding the full club row', async () => {
+  // Eight other club pages read the whole club row from ['my-club']. If this
+  // screen cached its own narrowed { label, complete } shape under that key,
+  // they would read undefined for club.id for as long as it stayed fresh.
+  mockedGetMyClub.mockResolvedValue(club())
+
+  renderPage()
+  await screen.findByRole('heading', { name: 'Configurare plăți' })
+
+  const cached = lastQueryClient.getQueryData(['my-club']) as Club
+  expect(cached).toMatchObject({ id: 'club-1', name: 'Club Audit Motion', owner_user_id: 'owner' })
+  expect(cached).not.toHaveProperty('label')
+  expect(cached).not.toHaveProperty('complete')
 })
