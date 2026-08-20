@@ -13,8 +13,21 @@ export function getStripe(): Stripe {
   return _stripe;
 }
 
-// Platform fee constants — preserved exactly from StripeConnectService.kt
-const PLATFORM_FEE_PERCENT = 1.0; // 1%
+// Platform fee constants.
+//
+// 3% base. The 1% inherited from StripeConnectService.kt did not cover Stripe's
+// own processing fee: in a destination charge without `on_behalf_of` the
+// platform is the merchant of record, so Stripe bills its fee to the platform
+// balance and the application fee is the only thing covering it. At roughly
+// 1.5% + 1 RON for European cards, 1% lost money on every single transaction.
+//
+// Break-even is `1.5% + 1 RON / amount`, so small payments are the hard case:
+// at 3% a card payment only pays for itself above about 67 RON. Sell monthly or
+// in session packages rather than single cheap sessions.
+//
+// VAT is added ON TOP of the base fee, so the recipient is charged 3.57% and the
+// platform owes the 0.57% to the state — real revenue is the 3%.
+const PLATFORM_FEE_PERCENT = 3.0; // 3%
 const VAT_RATE = 0.19; // 19% TVA Romania
 
 export interface PlatformFeeBreakdown {
@@ -26,7 +39,7 @@ export interface PlatformFeeBreakdown {
 }
 
 /**
- * Calculate platform fee: 1% base + 19% VAT on fee = 1.19% total.
+ * Calculate platform fee: 3% base + 19% VAT on fee = 3.57% total.
  * Uses Math.round (HALF_UP equivalent) for financial precision.
  * @param amount Amount in smallest currency unit (bani for RON)
  */
