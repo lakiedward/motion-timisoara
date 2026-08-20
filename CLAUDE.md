@@ -169,7 +169,7 @@ Frozen. Nothing in the active product imports them and no workflow builds them. 
 | `TriathlonTeamMobile/` | Expo / React Native app | Capacitor inside `motiontimisoaraApp/` |
 | `TriathlonTeamBE/` | Kotlin Spring Boot API + PostgreSQL | Supabase (RLS + Edge Functions) |
 
-`TriathlonTeamFE/public/ui-backup/` holds 226 MB of unoptimized original club photos — 79% of everything tracked in this repo. The app's optimized `.webp` copies already live in `motiontimisoaraApp/public/ui/`. Removing the originals needs a history rewrite to actually shrink clones, so it is a coordinated one-off, not a normal commit.
+`TriathlonTeamFE/public/ui-backup/` used to hold 226 MB of unoptimized original club photos — 79% of everything tracked here — alongside a 26 MB set of resized `.jpg` twins in `public/ui/`. Both were removed from HEAD on 2026-08-20, dropping tracked content from 286 MB to 33 MB; the `.webp` set stays. **Clone size has not moved**: the blobs are still reachable in history, and only a `git filter-repo` pass plus a force-push will reclaim them. That rewrite is still owed, and should be done once — together with scrubbing the credentials described below.
 
 `supabase/seed/migrate-data.ts` was the one-shot import from the Spring Boot database. Its job is finished; it is kept next to `TriathlonTeamBE/` for the same reason that tree is kept.
 

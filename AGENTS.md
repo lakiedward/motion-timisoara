@@ -48,4 +48,4 @@ These accounts are for read-mostly UI verification. Do not use them for destruct
 
 - This repository is **public**. Nothing secret goes in a tracked file — no keys, no passwords, no cookie jars, no `.env`.
 - `.claude/settings.local.json` is machine-local and gitignored. Keep it that way.
-- `TriathlonTeamFE/public/ui-backup/` is 226 MB of original photos and dominates clone size. It is slated for removal via a coordinated history rewrite; do not add more large binaries to any tree.
+- The 226 MB of original photos that used to sit in `TriathlonTeamFE/public/ui-backup/` were removed from HEAD on 2026-08-20, but they still dominate clone size because they remain in git history until a `filter-repo` pass runs. Do not add large binaries to any tree.
