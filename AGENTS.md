@@ -49,3 +49,7 @@ These accounts are for read-mostly UI verification. Do not use them for destruct
 - This repository is **public**. Nothing secret goes in a tracked file — no keys, no passwords, no cookie jars, no `.env`.
 - `.claude/settings.local.json` is machine-local and gitignored. Keep it that way.
 - The 226 MB of original photos that used to sit in `TriathlonTeamFE/public/ui-backup/` were removed from HEAD on 2026-08-20, but they still dominate clone size because they remain in git history until a `filter-repo` pass runs. Do not add large binaries to any tree.
+
+### Verifying routes and Edge Functions (learned the hard way)
+- **A route's existence can be proven without logging in.** Guards redirect: a route that exists but is gated sends an anonymous visitor to `/login` (or to `/` on a role mismatch), while a path that matches nothing renders the `404 — Pagina nu a fost găsită` page. So to prove "this route is registered, not a 404", hit it logged out alongside a deliberately bogus control path and compare — no session needed.
+- **A tracked Edge Function is not necessarily a deployed one.** `supabase/functions/` and the project's deployed list drift apart; several functions live in git but were never pushed. An undeployed function fails CORS preflight, which surfaces in the browser console as `blocked by CORS policy ... does not have HTTP ok status` rather than as a clean 404 — do not read that as a CORS bug. Check `npx supabase functions list` before concluding a function is broken.

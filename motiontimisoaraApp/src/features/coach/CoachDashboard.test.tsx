@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { vi } from 'vitest'
 
 import CoachDashboard from './CoachDashboard'
-import { getMyCourses, type CoachCourse } from '@/api/coach'
+import { getMyCoachStripeStatus, getMyCourses, type CoachCourse } from '@/api/coach'
 
 vi.mock('@/lib/auth-context', () => ({
   useAuth: () => ({
@@ -24,9 +24,17 @@ vi.mock('@/lib/auth-context', () => ({
 
 vi.mock('@/api/coach', () => ({
   getMyCourses: vi.fn(),
+  getMyCoachStripeStatus: vi.fn(),
 }))
 
 const mockedGetMyCourses = vi.mocked(getMyCourses)
+const mockedStripeStatus = vi.mocked(getMyCoachStripeStatus)
+
+beforeEach(() => {
+  // The dashboard's Stripe card queries this on every render; default it to the
+  // common case so each test only sets up what it actually asserts on.
+  mockedStripeStatus.mockResolvedValue({ hasProfile: true, onboardingComplete: false })
+})
 
 function renderDashboard() {
   const queryClient = new QueryClient({
@@ -132,4 +140,25 @@ test('new-course control is a 44px-tall target and stacks under the greeting on 
   const header = link.parentElement
   expect(header?.className).toMatch(/flex-col/)
   expect(header?.className).toMatch(/md:flex-row/)
+})
+
+test('the dashboard offers a way into Stripe setup and shows its state', async () => {
+  mockedGetMyCourses.mockResolvedValue([])
+  mockedStripeStatus.mockResolvedValue({ hasProfile: true, onboardingComplete: false })
+
+  renderDashboard()
+  const card = await screen.findByLabelText('Stripe, Neconfigurat')
+  expect(card).toHaveAttribute('href', '/coach/stripe')
+  expect(card).toHaveAttribute('data-testid', 'coach-stat-stripe')
+})
+
+test('a coach who finished onboarding sees the configured state', async () => {
+  mockedGetMyCourses.mockResolvedValue([])
+  mockedStripeStatus.mockResolvedValue({ hasProfile: true, onboardingComplete: true })
+
+  renderDashboard()
+  expect(await screen.findByLabelText('Stripe, Configurat')).toHaveAttribute(
+    'href',
+    '/coach/stripe',
+  )
 })

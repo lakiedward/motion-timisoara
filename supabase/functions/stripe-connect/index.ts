@@ -8,7 +8,11 @@ import { supabaseAdmin, getUser, getUserRole } from "../_shared/supabase.ts";
 import { withCors } from "../_shared/cors.ts";
 import { getStripe } from "../_shared/stripe.ts";
 
-const FRONTEND_URL = Deno.env.get("FRONTEND_URL") ?? "http://localhost:4200";
+const FRONTEND_URL = Deno.env.get("FRONTEND_URL") ?? "http://localhost:3017";
+
+/** Machine-readable marker the web client matches on. Keep in sync with
+ *  motiontimisoaraApp/src/api/stripe-connect.ts. */
+const STRIPE_NOT_CONFIGURED = "stripe_not_configured";
 
 serve(
   withCors(async (req: Request) => {
@@ -24,7 +28,22 @@ serve(
     const body = await req.json();
     const { action } = body;
 
-    const stripe = getStripe();
+    // Without STRIPE_SECRET_KEY every action below throws, and withCors would
+    // flatten that into an opaque 500. The clients need to tell "the platform
+    // has no Stripe keys yet" apart from "something broke", so they can show a
+    // setup-pending state instead of an error.
+    let stripe: ReturnType<typeof getStripe>;
+    try {
+      stripe = getStripe();
+    } catch {
+      return jsonResponse(
+        {
+          error: "Plățile cu cardul nu sunt încă activate pe platformă.",
+          code: STRIPE_NOT_CONFIGURED,
+        },
+        503,
+      );
+    }
 
     switch (action) {
       case "create-account": {

@@ -50,7 +50,8 @@ One codebase ships three targets: the website, the iOS app, and the Android app.
 | `src/features/public/` | Home, program, courses, camps, activities, coaches, clubs, map, about, contact |
 | `src/features/auth/` | Login, register, coach/club signup wizards, OAuth callback, forgot/reset password |
 | `src/features/account/` | Parent portal: children, enrollments, attendance, announcements, checkout |
-| `src/features/coach/` | Coach portal: courses, activities, attendance catalog, locations, own profile |
+| `src/features/coach/` | Coach portal: courses, activities, attendance catalog, locations, own profile, Stripe setup |
+| `src/features/billing/` | `StripeOnboardingPanel` — the Connect setup screen shared by club and coach, and the target of Stripe's four return URLs |
 | `src/features/club/` | Club portal: dashboard, coaches, courses, locations, announcements, Stripe |
 | `src/features/admin/` | Admin: users, courses, clubs, sports, invite codes |
 | `src/api/` | One module per domain — all Supabase access lives here, not in components |
@@ -133,7 +134,7 @@ Rules: always add RLS policies for new tables; `uuid` primary keys via `gen_rand
 | `create-payment-intent` | ✅ | Stripe PaymentIntent for an enrollment |
 | `stripe-webhook` | ✅ | Stripe payment webhooks |
 | `mark-cash-paid` | ✅ | Marks an enrollment paid by cash — **no client calls it yet** |
-| `stripe-connect` | ❌ | Connect account status / onboarding / dashboard links. **Called from a live route** (`src/api/stripe-connect.ts`), so club Stripe onboarding is broken until this is deployed and `FRONTEND_URL` is set — its default still points at the retired Angular dev port. |
+| `stripe-connect` | ❌ | Connect account status / onboarding / dashboard links. **Called from live routes** (`src/api/stripe-connect.ts`), so club and coach Stripe onboarding stay broken until this is deployed and `FRONTEND_URL` is set. Returns 503 with `code: stripe_not_configured` when `STRIPE_SECRET_KEY` is missing, which the app renders as a setup-pending state. |
 | `stripe-connect-webhook` | ❌ | Stripe Connect webhooks |
 | `record-attendance` | ❌ | Holds the **only** implementation of session-package deduction. The app writes attendance straight to the table and skips that accounting. Do not delete — deploy it or port the logic into a trigger. |
 
@@ -210,7 +211,7 @@ Vitest injects its own `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` (see `vite
 | `STRIPE_SECRET_KEY` | For payments | |
 | `STRIPE_WEBHOOK_SECRET` | For payments | Webhook signature verification |
 | `STRIPE_CONNECT_WEBHOOK_SECRET` | For Connect | |
-| `FRONTEND_URL` | For Connect | Return URL for onboarding. Unset today, and the code default points at the retired Angular dev port. |
+| `FRONTEND_URL` | For Connect | Base for the Stripe return URLs. Unset today; the code default is the local dev origin, which is wrong for anything but local work. |
 
 ---
 
