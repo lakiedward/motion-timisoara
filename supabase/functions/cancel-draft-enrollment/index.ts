@@ -5,7 +5,8 @@
 // and the child is not left with a phantom enrollment.
 //
 // Deliberately narrow: only PENDING enrollments owned by the caller, and only
-// when no payment has succeeded. Anything else is a job for cancel-enrollment.
+// when no payment has succeeded. Cancelling an ACTIVE enrollment (with the
+// refund that implies) has no handler yet.
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { supabaseAdmin, getUser } from "../_shared/supabase.ts";

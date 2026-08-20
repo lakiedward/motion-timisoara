@@ -115,3 +115,8 @@ nul
 # Supabase CLI
 # =====================
 supabase/.temp/
+
+# =====================
+# Claude Code (machine-local)
+# =====================
+.claude/settings.local.json
