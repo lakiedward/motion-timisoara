@@ -46,7 +46,7 @@ async function fillUntilConfirmation(user: ReturnType<typeof userEvent.setup>) {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mockedUseAuth.mockReturnValue({ user: null, loading: false, refresh: vi.fn() })
+  mockedUseAuth.mockReturnValue({ user: null, loading: false, profileError: null, refresh: vi.fn() })
 })
 
 test('reaching the confirmation step does not register anything on its own', async () => {
@@ -93,6 +93,7 @@ test('a signed-in parent is sent to their own panel instead of the coach form', 
   mockedUseAuth.mockReturnValue({
     user: { id: '1', email: 'p@example.test', name: 'P', role: 'PARENT', phone: null, avatarUrl: null, needsProfileCompletion: false },
     loading: false,
+    profileError: null,
     refresh: vi.fn(),
   })
   renderPage()
@@ -105,6 +106,7 @@ test('a signed-in visitor keeps the destination they arrived with', () => {
   mockedUseAuth.mockReturnValue({
     user: { id: '1', email: 'p@example.test', name: 'P', role: 'PARENT', phone: null, avatarUrl: null, needsProfileCompletion: false },
     loading: false,
+    profileError: null,
     refresh: vi.fn(),
   })
   renderPage('/register-coach?returnUrl=%2Fcursuri%2Fabc')
