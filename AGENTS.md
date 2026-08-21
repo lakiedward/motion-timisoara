@@ -48,6 +48,11 @@ These accounts are for read-mostly UI verification. Do not use them for destruct
 - Spec criteria for a page live in `tt_ui_surface_criteria` attached to the page's **section** surface (`motion-react:page:<route>:section:toata-pagina`), NOT the `kind='page'` surface — the page surfaces have zero criteria by design, so counting criteria on them always yields 0.
 - Criterion text convention: prefix `DE PASTRAT —` (behavior to keep), `DE REPARAT —` (spec decision not yet true in the app), or `STARE NEVERIFICATĂ ÎN SESIUNE —` (state deliberately not forced), each ending with a `Verificare: …` sentence. `kind` is one of `visual`/`functional`/`state`/`a11y`.
 
+### Exercising coach signup (`/register-coach`) end to end
+- The invitation code is checked server-side by the `register-coach` Edge Function, so the error paths need real rows in `coach_invitation_codes`. `created_by_admin_id` is NOT NULL — take an existing `profiles.id` where `role = 'ADMIN'`. `expires_at` in the past → expired; `current_uses >= max_uses` → used up. All three rejections happen before user creation, so a rejected attempt leaves no account behind.
+- A code that succeeds writes `used_by_user_id`, and that column has an FK to `profiles`. Deleting the coach you just created fails with `coach_invitation_codes_used_by_user_id_fkey` until the code row is deleted (or the column cleared) first — delete the code, then the `auth.users` row, which cascades to `profiles`/`coach_profiles`.
+- Registration also tries to open a Stripe Express account, wrapped in try/catch. With no Stripe key configured it just leaves `coach_profiles.stripe_account_id` null; the signup itself still succeeds.
+
 ## Repo hygiene
 
 - This repository is **public**. Nothing secret goes in a tracked file — no keys, no passwords, no cookie jars, no `.env`.
