@@ -119,9 +119,11 @@ export default function CoachAttendancePage() {
   ) : null
 
   const rosterPanel = !sel ? null : rosterLoading ? (
+    // Înălțimile urmăresc rândul real de copil, ca lista să nu sară când sosesc
+    // datele: 126 px sub 1024 px, unde butoanele trec sub nume, 70 px peste.
     <div className="space-y-2">
       {[0, 1, 2, 3].map((i) => (
-        <Skeleton key={i} className="h-20 rounded-3xl lg:h-16" />
+        <Skeleton key={i} className="h-32 rounded-3xl lg:h-[70px]" />
       ))}
     </div>
   ) : rosterError && !roster.length ? (
@@ -243,7 +245,7 @@ export default function CoachAttendancePage() {
       ) : total ? (
         <div className="grid gap-6 md:grid-cols-[1fr_1.2fr]">
           {/* Ședințe */}
-          <div className="min-w-0 space-y-2 md:-mx-1.5 md:max-h-[70vh] md:overflow-y-auto md:px-1.5">
+          <div className="min-w-0 space-y-2 lg:-mx-1.5 lg:max-h-[70vh] lg:overflow-y-auto lg:px-1.5">
             {markingOnPhone && (
               <Button
                 type="button"
@@ -315,8 +317,10 @@ export default function CoachAttendancePage() {
             )}
           </div>
 
-          {/* Catalog — pe telefon trăiește sub ședința aleasă, nu aici */}
-          <div className="hidden min-w-0 md:flex md:max-h-[70vh] md:flex-col md:gap-2 md:overflow-hidden">
+          {/* Catalog — pe telefon trăiește sub ședința aleasă, nu aici. Plafonul de
+              înălțime pornește de la 1024 px: pe tabletă lista încape oricum, iar
+              70vh doar tăia ultimul copil lăsând ecran gol dedesubt. */}
+          <div className="hidden min-w-0 md:flex md:flex-col md:gap-2 lg:max-h-[70vh] lg:overflow-hidden">
             <div className="space-y-2">
               <h2 className="text-muted-foreground text-sm font-semibold">
                 {sel ? `Prezență · ${sel.course?.name} · ${formatWhen(sel.starts_at)}` : ''}

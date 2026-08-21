@@ -204,6 +204,29 @@ test('rândul arată vârsta, se oprește la două rânduri și are forma cardur
   expect(rand.className).toMatch(/shadow-card/)
 })
 
+// --- Criteriul 664: scheletele au înălțimea rândului real, ca lista să nu sară ---
+test('scheletele de încărcare au înălțimea unui rând de copil, pe fiecare viewport', async () => {
+  mockedSessions.mockResolvedValue(oSedinta())
+  // Un roster care nu se rezolvă niciodată ține catalogul în starea de încărcare.
+  mockedRoster.mockReturnValue(new Promise(() => {}))
+  const { container } = renderPage()
+
+  // Întâi ședințele, altfel se prind scheletele coloanei din stânga (h-28).
+  await screen.findByText('Înot începători')
+  const schelete = await waitFor(() => {
+    const found = container.querySelectorAll('[data-slot="skeleton"]')
+    expect(found.length).toBeGreaterThanOrEqual(3)
+    return found
+  })
+  // Măsurat în browser: rândul real are 126 px sub 1024 px (butoanele trec sub
+  // nume) și 70 px peste. `h-20`/`lg:h-16` dădea 80/64 px, deci ecranul sărea cu
+  // 46 px pe telefon când soseau datele.
+  schelete.forEach((s) => {
+    expect(s.className).toMatch(/(^| )h-32( |$)/)
+    expect(s.className).toMatch(/lg:h-\[70px\]/)
+  })
+})
+
 // --- Criteriile 656 și 670: ținta de tap până la 1024 px, buton lat pe rând propriu ---
 test('sub 1024 px butoanele stau pe rândul lor și împart lățimea, cu ținta de tap întreagă', async () => {
   renderCatalog(trioCopii())

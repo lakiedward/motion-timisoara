@@ -229,8 +229,12 @@ test('lista care derulează lasă loc lateral inelului de focus', async () => {
   await screen.findByRole('button', { name: /Înot începători/ })
   const scroller = container.querySelector('[class*="overflow-y-auto"]')
   expect(scroller).not.toBeNull()
-  expect(scroller!.className).toMatch(/md:px-/)
-  expect(scroller!.className).not.toMatch(/md:pr-\d/)
+  // Plafonul de înălțime — și deci derularea — pornește de la `lg:`, nu de la
+  // `md:`: pe tabletă lista încape fără să fie tăiată. Padding-ul trebuie să
+  // urmeze aceeași treaptă, altfel inelul de focus rămâne fără loc exact acolo
+  // unde apare bara de derulare.
+  expect(scroller!.className).toMatch(/lg:px-/)
+  expect(scroller!.className).not.toMatch(/lg:pr-\d/)
 })
 
 test('cele două coloane pornesc de la 768 px, nu de la 1024', async () => {
