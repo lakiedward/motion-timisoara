@@ -1027,9 +1027,24 @@ export type Database = {
         Relationships: []
       }
       sports: {
-        Row: { code: string; id: string; name: string }
-        Insert: { code: string; id?: string; name: string }
-        Update: { code?: string; id?: string; name?: string }
+        Row: {
+          code: string
+          default_photo_storage_path: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          default_photo_storage_path?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          default_photo_storage_path?: string | null
+          id?: string
+          name?: string
+        }
         Relationships: []
       }
       user_recent_locations: {
@@ -1061,6 +1076,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      course_spots_remaining: { Args: { p_course_id: string }; Returns: number }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       get_my_club_id: { Args: Record<PropertyKey, never>; Returns: string }
       get_my_coach_profile_id: { Args: Record<PropertyKey, never>; Returns: string }

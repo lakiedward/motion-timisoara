@@ -1,7 +1,7 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
-import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
+import { Link, useSearchParams } from 'react-router-dom'
+import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
 import { ChevronRight, MapPin } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import './map-popup.css'
@@ -89,10 +89,58 @@ function SectionLabel({ label, count }: { label: string; count: number }) {
   )
 }
 
+/** Fly to `?location=` and open that marker's popup once the marker ref exists. */
+function FocusLocation({
+  locationId,
+  locations,
+  markerRefs,
+}: {
+  locationId: string | null
+  locations: { id: string; lat: number | null; lng: number | null }[]
+  markerRefs: React.MutableRefObject<Map<string, L.Marker>>
+}) {
+  const map = useMap()
+  const done = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!locationId) return
+    if (done.current === locationId) return
+    const loc = locations.find((l) => l.id === locationId)
+    if (!loc || loc.lat == null || loc.lng == null) return
+
+    let cancelled = false
+    let attempts = 0
+    const tryFocus = () => {
+      if (cancelled) return
+      const marker = markerRefs.current.get(locationId)
+      if (!marker) {
+        if (attempts++ < 60) requestAnimationFrame(tryFocus)
+        return
+      }
+      done.current = locationId
+      map.flyTo([loc.lat as number, loc.lng as number], 15, { duration: 0.8 })
+      window.setTimeout(() => {
+        if (!cancelled) marker.openPopup()
+      }, 850)
+    }
+    tryFocus()
+    return () => {
+      cancelled = true
+    }
+  }, [locationId, locations, map, markerRefs])
+
+  return null
+}
+
 export default function MapPage() {
+  const [params] = useSearchParams()
+  const focusId = params.get('location')
+
   const { data: locations = [] } = useQuery({ queryKey: ['locations'], queryFn: getLocations })
   const { data: courses = [] } = useQuery({ queryKey: ['courses'], queryFn: () => getCourses() })
   const { data: activities = [] } = useQuery({ queryKey: ['activities'], queryFn: getActivities })
+
+  const markerRefs = useRef(new Map<string, L.Marker>())
 
   // Group the active courses and activities by the location they're held at, so
   // each marker's popup can list what happens there.
@@ -128,12 +176,21 @@ export default function MapPage() {
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
             attribution='&copy; OpenStreetMap &copy; CARTO'
           />
+          <FocusLocation locationId={focusId} locations={locations} markerRefs={markerRefs} />
           {withCoords.map((l) => {
             const content = byLocation.get(l.id)
             const hasCourses = !!content?.courses.length
             const hasActivities = !!content?.activities.length
             return (
-              <Marker key={l.id} position={[l.lat as number, l.lng as number]} icon={markerIcon}>
+              <Marker
+                key={l.id}
+                position={[l.lat as number, l.lng as number]}
+                icon={markerIcon}
+                ref={(ref) => {
+                  if (ref) markerRefs.current.set(l.id, ref)
+                  else markerRefs.current.delete(l.id)
+                }}
+              >
                 <Popup className="mt-popup" minWidth={264} maxWidth={280}>
                   {/* Brand-gradient header: pin chip + location name & address. */}
                   <div className="from-primary to-sky bg-gradient-to-br px-3.5 py-3">

@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 
 // Shared nested shapes returned by the embedded selects below.
-export type SportRow = Pick<Tables<'sports'>, 'id' | 'code' | 'name'>
+export type SportRow = Pick<Tables<'sports'>, 'id' | 'code' | 'name' | 'default_photo_storage_path'>
 export type CoachMini = Pick<Tables<'profiles'>, 'id' | 'name' | 'avatar_url'>
 export type LocationRow = Tables<'locations'>
 
@@ -24,7 +24,7 @@ export async function getCourses(filters: CourseFilters = {}): Promise<CourseLis
   let q = supabase
     .from('courses')
     .select(
-      '*, sport:sports(id,code,name), coach:profiles(id,name,avatar_url), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order)'
+      '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order)'
     )
     .eq('active', true)
   if (filters.level) q = q.eq('level', filters.level)
@@ -40,12 +40,21 @@ export async function getCourse(id: string): Promise<CourseListItem | null> {
   const { data, error } = await supabase
     .from('courses')
     .select(
-      '*, sport:sports(id,code,name), coach:profiles(id,name,avatar_url), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order)'
+      '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order)'
     )
     .eq('id', id)
     .single()
   if (error) return null
   return data as unknown as CourseListItem
+}
+
+/** Remaining seats for a public course (SECURITY DEFINER RPC). Null = unlimited / unknown. */
+export async function getCourseSpotsRemaining(courseId: string): Promise<number | null> {
+  const { data, error } = await supabase.rpc('course_spots_remaining', {
+    p_course_id: courseId,
+  })
+  if (error) throw error
+  return (data as number | null) ?? null
 }
 
 export type ActivityListItem = Tables<'activities'> & {
@@ -152,10 +161,22 @@ export async function getLocations(): Promise<LocationRow[]> {
 }
 
 /** Public storage URL for a path in a bucket. */
-export function publicUrl(bucket: string, path: string | null): string | null {
+export function publicUrl(bucket: string, path: string | null | undefined): string | null {
   if (!path) return null
-  if (path.startsWith('http')) return path
+  if (path.startsWith('http') || path.startsWith('/')) return path
   return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl
+}
+
+/** Course hero: own upload → admin sport default → null (caller shows gradient). */
+export function courseHeroUrl(course: {
+  course_photos?: { storage_path: string; display_order: number }[] | null
+  sport?: { default_photo_storage_path?: string | null } | null
+}): string | null {
+  const hero = [...(course.course_photos ?? [])].sort((a, b) => a.display_order - b.display_order)[0]
+  return (
+    publicUrl('course-photos', hero?.storage_path ?? null) ??
+    publicUrl('sport-photos', course.sport?.default_photo_storage_path ?? null)
+  )
 }
 
 export async function submitContactForm(input: {

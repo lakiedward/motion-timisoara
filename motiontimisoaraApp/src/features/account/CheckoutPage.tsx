@@ -320,7 +320,7 @@ function CheckoutWizard({
               { cause: err }
             )
           }
-          throw err instanceof Error ? err : new Error('Plata a eșuat')
+          throw err instanceof Error ? err : new Error('Plata a eșuat', { cause: err })
         }
       }
 

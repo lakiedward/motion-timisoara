@@ -44,6 +44,34 @@ export async function updateSport(id: string, code: string, name: string) {
   if (error) throw error
 }
 
+/** Upload or replace the admin default hero photo for a sport (all courses of that type). */
+export async function setSportDefaultPhoto(sportId: string, file: File): Promise<string> {
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
+  const path = `${sportId}/default.${ext}`
+  const { error: upErr } = await supabase.storage.from('sport-photos').upload(path, file, {
+    upsert: true,
+    contentType: file.type || `image/${ext}`,
+  })
+  if (upErr) throw upErr
+  const { error } = await supabase
+    .from('sports')
+    .update({ default_photo_storage_path: path })
+    .eq('id', sportId)
+  if (error) throw error
+  return path
+}
+
+export async function clearSportDefaultPhoto(sportId: string, currentPath: string | null) {
+  if (currentPath && !currentPath.startsWith('http') && !currentPath.startsWith('/')) {
+    await supabase.storage.from('sport-photos').remove([currentPath])
+  }
+  const { error } = await supabase
+    .from('sports')
+    .update({ default_photo_storage_path: null })
+    .eq('id', sportId)
+  if (error) throw error
+}
+
 export async function deleteSport(id: string) {
   const { error } = await supabase.from('sports').delete().eq('id', id)
   if (error) throw error
