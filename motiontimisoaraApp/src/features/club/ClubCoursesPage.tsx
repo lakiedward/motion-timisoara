@@ -58,9 +58,12 @@ export default function ClubCoursesPage() {
             <Skeleton key={i} className="h-52 rounded-3xl lg:h-48" />
           ))}
         </div>
-      ) : isError ? (
+      ) : isError && !courses.length ? (
         // Fara ramura asta, o incarcare esuata afisa „Niciun curs inca”, deci un
-        // club cu 40 de cursuri era invitat sa-si creeze primul.
+        // club cu 40 de cursuri era invitat sa-si creeze primul. Garda pe lungime
+        // e la fel de importanta: `onSuccess` la comutare invalideaza lista, iar un
+        // refetch picat trecator nu are voie sa stearga de pe ecran cursurile deja
+        // incarcate. Acelasi tipar ca pe /coach/attendance.
         <div role="alert" className="rounded-3xl border border-dashed py-16 text-center">
           <p className="text-foreground font-medium">Nu am putut încărca cursurile.</p>
           <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetch()}>

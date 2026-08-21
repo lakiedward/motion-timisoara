@@ -99,6 +99,25 @@ test('eșecul încărcării are mesaj propriu și „Reîncearcă”, fără tex
   expect(screen.getByRole('link', { name: /Curs nou/ })).toBeInTheDocument()
 })
 
+// Regresie (Bugbot): comutarea Activ/Inactiv invalideaza lista, iar un refetch
+// picat trecator nu are voie sa stearga cursurile deja incarcate de pe ecran.
+test('un refetch eșuat după comutare păstrează cursurile, fără să arate eroarea', async () => {
+  const user = userEvent.setup()
+  mockedCourses
+    .mockResolvedValueOnce([curs({ id: '1', name: 'Atletism juniori', active: false })])
+    .mockRejectedValue(new Error('blip'))
+  mockedToggle.mockResolvedValue(undefined)
+  renderPage()
+  expect(await screen.findByText('Atletism juniori')).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Activează' }))
+  await waitFor(() => expect(mockedCourses).toHaveBeenCalledTimes(2))
+
+  expect(screen.getByText('Atletism juniori')).toBeInTheDocument()
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  expect(screen.queryByText('Nu am putut încărca cursurile.')).not.toBeInTheDocument()
+})
+
 // --- Criteriul 8: starea goală rămâne cutia punctată, cu ambele drumuri ---
 test('lista goală păstrează cutia punctată și cele două drumuri spre creare', async () => {
   mockedCourses.mockResolvedValue([])
