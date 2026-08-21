@@ -46,3 +46,51 @@ enable_confirmations = false
 enabled = true
 policy = "oneshot"
 inspector_port = 8083
+
+# Per-function JWT gating. Written down because `functions deploy` defaults to
+# verify_jwt = true, and a single deploy without this file would start rejecting
+# Stripe's webhook calls (they carry a Stripe signature, never a Supabase JWT).
+#
+# false does NOT mean unauthenticated: register-*, contact-form and
+# create-managed-coach are called by anonymous or not-yet-existing users and do
+# their own authorization inside the handler (create-managed-coach reads the
+# Authorization header itself and requires role CLUB or ADMIN), while the two
+# webhooks authenticate by verifying Stripe's signature.
+[functions.register-coach]
+verify_jwt = false
+
+[functions.register-club]
+verify_jwt = false
+
+[functions.contact-form]
+verify_jwt = false
+
+[functions.create-managed-coach]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.stripe-connect-webhook]
+verify_jwt = false
+
+[functions.validate-enrollment]
+verify_jwt = true
+
+[functions.create-enrollment]
+verify_jwt = true
+
+[functions.cancel-draft-enrollment]
+verify_jwt = true
+
+[functions.create-payment-intent]
+verify_jwt = true
+
+[functions.mark-cash-paid]
+verify_jwt = true
+
+[functions.record-attendance]
+verify_jwt = true
+
+[functions.stripe-connect]
+verify_jwt = true
