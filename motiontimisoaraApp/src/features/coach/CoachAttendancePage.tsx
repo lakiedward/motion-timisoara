@@ -119,9 +119,11 @@ export default function CoachAttendancePage() {
   ) : null
 
   const rosterPanel = !sel ? null : rosterLoading ? (
+    // Înălțimile urmăresc rândul real de copil, ca lista să nu sară când sosesc
+    // datele: 126 px sub 1024 px, unde butoanele trec sub nume, 70 px peste.
     <div className="space-y-2">
       {[0, 1, 2, 3].map((i) => (
-        <Skeleton key={i} className="h-20 rounded-3xl lg:h-16" />
+        <Skeleton key={i} className="h-32 rounded-3xl lg:h-[70px]" />
       ))}
     </div>
   ) : rosterError && !roster.length ? (
