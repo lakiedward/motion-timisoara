@@ -24,6 +24,10 @@ export async function getAllUsers(): Promise<AdminUser[]> {
     .from('profiles')
     .select('id, name, email, role, enabled, created_at')
     .order('created_at', { ascending: false })
+    // Multe conturi au aceeasi zi de inregistrare. Fara al doilea criteriu, ordinea
+    // lor se schimba de la un refetch la altul, deci randurile sar sub cursor dupa
+    // fiecare comutare, iar coloana „Înregistrat" pare ca minte.
+    .order('name', { ascending: true })
   if (error) throw error
   return data ?? []
 }

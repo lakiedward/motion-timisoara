@@ -33,10 +33,18 @@
 
   /* Brand extras (from UIGuidelines core tokens) */
   --sky: #0ea5e9;
+  /* Badge-urile COACH si ADMIN masurau 2,28:1 si 2,15:1 cu text alb pe verde si
+     pe portocaliu, sub pragul de 4,5:1. Reparatia urmeaza exact tema intunecata
+     de mai jos: culoarea de brand ramane vie, iar textul de pe ea devine cerneala
+     inchisa — 7,84:1 pe verde si 8,31:1 pe portocaliu.
+     Culorile in sine NU se inchid: sunt folosite si ca text pe fundaluri inchise,
+     de exemplu eticheta de deasupra titlului din hero-ul paginii de start, care
+     sta pe gradientul albastru. Cu portocaliul inchis la #b45309 ajungea la
+     1,03:1 acolo, adica invizibila. */
   --highlight: #f59e0b;
-  --highlight-foreground: #ffffff;
+  --highlight-foreground: #0f172a;
   --success: #22c55e;
-  --success-foreground: #ffffff;
+  --success-foreground: #0f172a;
 
   --destructive: #ef4444;
 
