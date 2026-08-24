@@ -160,13 +160,20 @@ export async function getAllClubs(): Promise<Pick<Tables<'clubs'>, 'id' | 'name'
 export type AdminCourse = Tables<'courses'> & {
   sport: Pick<Tables<'sports'>, 'name'> | null
   coach: Pick<Tables<'profiles'>, 'name'> | null
+  /** Deosebeste cursurile omonime: doua cursuri pot avea acelasi nume si acelasi antrenor. */
+  location: Pick<Tables<'locations'>, 'name'> | null
+  /** Lipseste la cursurile antrenorilor independenti; adminul e singurul rol care vede si unele, si altele. */
+  club: Pick<Tables<'clubs'>, 'name'> | null
 }
 
 export async function getAllCourses(): Promise<AdminCourse[]> {
   const { data, error } = await supabase
     .from('courses')
-    .select('*, sport:sports(name), coach:profiles(name)')
+    .select('*, sport:sports(name), coach:profiles(name), location:locations(name), club:clubs(name)')
     .order('name')
+    // Doua cursuri pot purta acelasi nume; fara al doilea criteriu ordinea lor se
+    // schimba de la o incarcare la alta si randurile sar sub cursor dupa comutare.
+    .order('price')
   if (error) throw error
   return (data ?? []) as unknown as AdminCourse[]
 }
