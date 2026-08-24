@@ -51,11 +51,6 @@ export default function ClubCourseFormPage() {
   const { data: club } = useQuery({ queryKey: ['my-club'], queryFn: getMyClub })
   const clubId = club?.id ?? ''
   const { data: sports = [] } = useQuery({ queryKey: ['sports'], queryFn: fetchSports })
-  const { data: locations = [], isSuccess: locationsReady } = useQuery({
-    queryKey: ['club-selectable-locations', clubId],
-    queryFn: () => getClubSelectableLocations(clubId),
-    enabled: !!clubId,
-  })
   const { data: coaches = [], isSuccess: coachesReady } = useQuery({
     queryKey: ['club-roster-select', clubId],
     queryFn: () => getClubRosterForSelect(clubId),
@@ -65,6 +60,11 @@ export default function ClubCourseFormPage() {
     queryKey: ['club-course-edit', id],
     queryFn: () => getClubCourseById(id as string),
     enabled: isEdit,
+  })
+  const { data: locations = [], isSuccess: locationsReady } = useQuery({
+    queryKey: ['club-selectable-locations', clubId, existing?.location_id ?? null],
+    queryFn: () => getClubSelectableLocations(clubId, existing?.location_id ?? null),
+    enabled: !!clubId && (!isEdit || !!existing),
   })
 
   const {

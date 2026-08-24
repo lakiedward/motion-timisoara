@@ -213,15 +213,21 @@ export async function getClubLocations(clubId: string): Promise<Tables<'location
  */
 export async function getClubSelectableLocations(
   clubId: string,
+  keepId?: string | null,
 ): Promise<Pick<Tables<'locations'>, 'id' | 'name' | 'city'>[]> {
   const { data, error } = await supabase
     .from('locations')
-    .select('id, name, city')
-    .eq('is_active', true)
+    .select('id, name, city, is_active')
     .or(`club_id.eq.${clubId},club_id.is.null`)
     .order('name')
   if (error) throw error
-  return data ?? []
+  // Pentru alegeri NOI oferim doar sali active. Dar locatia deja salvata pe un
+  // curs ramane in lista chiar daca a fost dezactivata intre timp — altfel
+  // editarea ii pierde optiunea, selectul cade pe „—” si salvarea cere o
+  // locatie care era deja pusa. Exact esecul pe care aceasta schimbare il repara.
+  return (data ?? [])
+    .filter((l) => l.is_active || l.id === keepId)
+    .map(({ id, name, city }) => ({ id, name, city }))
 }
 
 export async function getClubLocationById(id: string): Promise<Tables<'locations'> | null> {

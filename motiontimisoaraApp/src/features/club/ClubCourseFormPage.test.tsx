@@ -92,8 +92,30 @@ test('selectul de locație folosește lista utilizabilă, nu doar locațiile pro
   renderForm()
   // Selectul se randează imediat; abia opțiunea dovedește că lista a sosit.
   expect(await screen.findByRole('option', { name: 'Bazin Olimpic Timișoara' })).toBeInTheDocument()
-  expect(mockedLocations).toHaveBeenCalledWith('club-1')
+  // La creare nu exista curs, deci nicio locatie de pastrat.
+  expect(mockedLocations).toHaveBeenCalledWith('club-1', null)
   expect(within(screen.getByLabelText('Locație')).getByText('Bazin Olimpic Timișoara')).toBeInTheDocument()
+})
+
+// Regresie (Bugbot): filtrul `is_active` nu are voie sa scoata din lista locatia
+// deja pusa pe curs. Altfel editarea unui curs a carui sala a fost dezactivata
+// pierde locatia — exact esecul pe care acest set de schimbari il repara.
+test('locația dezactivată a unui curs rămâne în listă la editare', async () => {
+  mockedExisting.mockResolvedValue({
+    id: 'c1', name: 'Înot avansat', sport_id: SPORT, location_id: 'loc-inactiva', coach_id: ANTRENOR,
+    level: 'avansat', age_from: 9, age_to: 14, capacity: 14, price_per_session: 7500, description: '',
+  } as never)
+  mockedLocations.mockResolvedValue([
+    { id: LOC_COMUNA, name: 'Bazin Olimpic Timișoara', city: 'Timișoara' },
+    { id: 'loc-inactiva', name: 'Sala Închisă', city: 'Timișoara' },
+  ] as never)
+
+  renderForm('/club/courses/c1/edit')
+  await screen.findByDisplayValue('Înot avansat')
+
+  // Interogarea primeste locatia curenta, ca sa o poata pastra chiar inactiva.
+  await waitFor(() => expect(mockedLocations).toHaveBeenCalledWith('club-1', 'loc-inactiva'))
+  await waitFor(() => expect(screen.getByLabelText('Locație')).toHaveValue('loc-inactiva'))
 })
 
 // --- Criteriul 3: fiecare camp gresit e marcat si legat de mesajul lui ---
