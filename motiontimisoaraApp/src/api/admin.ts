@@ -171,9 +171,12 @@ export async function getAllCourses(): Promise<AdminCourse[]> {
     .from('courses')
     .select('*, sport:sports(name), coach:profiles(name), location:locations(name), club:clubs(name)')
     .order('name')
-    // Doua cursuri pot purta acelasi nume; fara al doilea criteriu ordinea lor se
-    // schimba de la o incarcare la alta si randurile sar sub cursor dupa comutare.
+    // Doua cursuri pot purta acelasi nume; fara criterii suplimentare ordinea lor
+    // se schimba de la o incarcare la alta si randurile sar sub cursor dupa
+    // comutare. Pretul le desparte pe cele din lista de azi, dar nu e nici el unic:
+    // ultimul criteriu e `id`, ca sortarea sa fie totala pentru orice date.
     .order('price')
+    .order('id')
   if (error) throw error
   return (data ?? []) as unknown as AdminCourse[]
 }
