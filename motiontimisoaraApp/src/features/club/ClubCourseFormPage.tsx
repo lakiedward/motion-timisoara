@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 import {
   createClubCourse,
   getClubCourseById,
-  getClubLocations,
+  getClubSelectableLocations,
   getClubRosterForSelect,
   getMyClub,
   updateClubCourse,
@@ -23,7 +23,7 @@ import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 
 const selectCls =
-  'border-input focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px]'
+  'border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] lg:h-9'
 
 const schema = z.object({
   name: z.string().min(3, 'Minim 3 caractere'),
@@ -51,12 +51,12 @@ export default function ClubCourseFormPage() {
   const { data: club } = useQuery({ queryKey: ['my-club'], queryFn: getMyClub })
   const clubId = club?.id ?? ''
   const { data: sports = [] } = useQuery({ queryKey: ['sports'], queryFn: fetchSports })
-  const { data: locations = [] } = useQuery({
-    queryKey: ['club-locations', clubId],
-    queryFn: () => getClubLocations(clubId),
+  const { data: locations = [], isSuccess: locationsReady } = useQuery({
+    queryKey: ['club-selectable-locations', clubId],
+    queryFn: () => getClubSelectableLocations(clubId),
     enabled: !!clubId,
   })
-  const { data: coaches = [] } = useQuery({
+  const { data: coaches = [], isSuccess: coachesReady } = useQuery({
     queryKey: ['club-roster-select', clubId],
     queryFn: () => getClubRosterForSelect(clubId),
     enabled: !!clubId,
@@ -74,8 +74,13 @@ export default function ClubCourseFormPage() {
     formState: { errors, isSubmitting },
   } = useForm<Values>({ resolver: zodResolver(schema) })
 
+  // `reset` pune in select o valoare care are nevoie de `<option>`-ul ei. Cursul
+  // si listele vin din cereri diferite: daca reseteaza primul, select-urile cad
+  // pe „—” si nu se mai corecteaza, fiindca efectul nu se relua. Asteptam ca
+  // ambele liste sa se aseze — pe `isSuccess`, nu pe lungime, ca sa mearga si
+  // pentru un club fara antrenori sau fara locatii proprii.
   useEffect(() => {
-    if (existing) {
+    if (existing && coachesReady && locationsReady) {
       reset({
         name: existing.name,
         sport_id: existing.sport_id,
@@ -89,7 +94,7 @@ export default function ClubCourseFormPage() {
         description: existing.description ?? '',
       })
     }
-  }, [existing, reset])
+  }, [existing, coachesReady, locationsReady, reset])
 
   const onSubmit = async (v: Values) => {
     if (!club) {
@@ -120,6 +125,9 @@ export default function ClubCourseFormPage() {
   }
 
   const noCoaches = !coaches.length
+  // „fara locatii” inseamna acum „nicio locatie UTILIZABILA”: de cand selectul
+  // include si salile comune ale platformei, un club fara sali proprii poate
+  // crea cursuri, deci nu mai are de ce sa fie oprit.
   const noLocations = !locations.length
 
   return (
@@ -155,13 +163,29 @@ export default function ClubCourseFormPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4" noValidate>
         <div className="space-y-1.5">
           <Label htmlFor="name">Nume curs</Label>
-          <Input id="name" {...register('name')} aria-invalid={!!errors.name} />
-          {errors.name && <p className="text-destructive text-xs">{errors.name.message}</p>}
+          <Input
+            id="name"
+            className="h-11 lg:h-9"
+            {...register('name')}
+            aria-invalid={!!errors.name}
+            aria-describedby={errors.name ? 'name-error' : undefined}
+          />
+          {errors.name && (
+              <p id="name-error" className="text-destructive text-xs">
+                {errors.name.message}
+              </p>
+            )}
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="coach_id">Antrenor</Label>
-            <select id="coach_id" className={cn(selectCls)} {...register('coach_id')}>
+            <select
+              id="coach_id"
+              className={cn(selectCls)}
+              {...register('coach_id')}
+              aria-invalid={!!errors.coach_id}
+              aria-describedby={errors.coach_id ? 'coach_id-error' : undefined}
+            >
               <option value="">—</option>
               {coaches.map((c) => (
                 <option key={c.user_id} value={c.user_id}>
@@ -169,11 +193,21 @@ export default function ClubCourseFormPage() {
                 </option>
               ))}
             </select>
-            {errors.coach_id && <p className="text-destructive text-xs">{errors.coach_id.message}</p>}
+            {errors.coach_id && (
+              <p id="coach_id-error" className="text-destructive text-xs">
+                {errors.coach_id.message}
+              </p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="sport_id">Sport</Label>
-            <select id="sport_id" className={cn(selectCls)} {...register('sport_id')}>
+            <select
+              id="sport_id"
+              className={cn(selectCls)}
+              {...register('sport_id')}
+              aria-invalid={!!errors.sport_id}
+              aria-describedby={errors.sport_id ? 'sport_id-error' : undefined}
+            >
               <option value="">—</option>
               {sports.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -181,11 +215,21 @@ export default function ClubCourseFormPage() {
                 </option>
               ))}
             </select>
-            {errors.sport_id && <p className="text-destructive text-xs">{errors.sport_id.message}</p>}
+            {errors.sport_id && (
+              <p id="sport_id-error" className="text-destructive text-xs">
+                {errors.sport_id.message}
+              </p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="location_id">Locație</Label>
-            <select id="location_id" className={cn(selectCls)} {...register('location_id')}>
+            <select
+              id="location_id"
+              className={cn(selectCls)}
+              {...register('location_id')}
+              aria-invalid={!!errors.location_id}
+              aria-describedby={errors.location_id ? 'location_id-error' : undefined}
+            >
               <option value="">—</option>
               {locations.map((l) => (
                 <option key={l.id} value={l.id}>
@@ -193,7 +237,11 @@ export default function ClubCourseFormPage() {
                 </option>
               ))}
             </select>
-            {errors.location_id && <p className="text-destructive text-xs">{errors.location_id.message}</p>}
+            {errors.location_id && (
+              <p id="location_id-error" className="text-destructive text-xs">
+                {errors.location_id.message}
+              </p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="level">Nivel</Label>
@@ -206,22 +254,32 @@ export default function ClubCourseFormPage() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="price_per_session_lei">Preț / ședință (lei)</Label>
-            <Input id="price_per_session_lei" type="number" step="0.01" {...register('price_per_session_lei')} aria-invalid={!!errors.price_per_session_lei} />
+            <Input
+              id="price_per_session_lei"
+              type="number"
+              step="0.01"
+              className="h-11 lg:h-9"
+              {...register('price_per_session_lei')}
+              aria-invalid={!!errors.price_per_session_lei}
+              aria-describedby={errors.price_per_session_lei ? 'price_per_session_lei-error' : undefined}
+            />
             {errors.price_per_session_lei && (
-              <p className="text-destructive text-xs">{errors.price_per_session_lei.message}</p>
+              <p id="price_per_session_lei-error" className="text-destructive text-xs">
+                {errors.price_per_session_lei.message}
+              </p>
             )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="capacity">Capacitate</Label>
-            <Input id="capacity" type="number" {...register('capacity')} />
+            <Input id="capacity" type="number" className="h-11 lg:h-9" {...register('capacity')} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="age_from">Vârstă minimă</Label>
-            <Input id="age_from" type="number" {...register('age_from')} />
+            <Input id="age_from" type="number" className="h-11 lg:h-9" {...register('age_from')} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="age_to">Vârstă maximă</Label>
-            <Input id="age_to" type="number" {...register('age_to')} />
+            <Input id="age_to" type="number" className="h-11 lg:h-9" {...register('age_to')} />
           </div>
         </div>
         <div className="space-y-1.5">
@@ -234,10 +292,10 @@ export default function ClubCourseFormPage() {
           />
         </div>
         <div className="flex gap-2 pt-2">
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" className="h-11 lg:h-9" disabled={isSubmitting}>
             {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>
-          <Button type="button" variant="outline" asChild>
+          <Button type="button" variant="outline" className="h-11 lg:h-9" asChild>
             <Link to="/club/courses">Anulează</Link>
           </Button>
         </div>

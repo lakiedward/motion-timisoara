@@ -202,6 +202,28 @@ export async function getClubLocations(clubId: string): Promise<Tables<'location
   return data ?? []
 }
 
+/**
+ * Locatiile pe care clubul le poate FOLOSI intr-un curs: ale lui plus cele
+ * comune ale platformei (`club_id` gol, ex. Bazin Olimpic Timisoara). Salile
+ * private ale altor cluburi nu apar.
+ *
+ * Deliberat separata de `getClubLocations`, care listeaza doar ce ADMINISTREAZA
+ * clubul si alimenteaza pagina de locatii si numaratoarea din panou — acolo o
+ * locatie comuna ar aparea ca fiind a clubului si ar sugera ca o poate edita.
+ */
+export async function getClubSelectableLocations(
+  clubId: string,
+): Promise<Pick<Tables<'locations'>, 'id' | 'name' | 'city'>[]> {
+  const { data, error } = await supabase
+    .from('locations')
+    .select('id, name, city')
+    .eq('is_active', true)
+    .or(`club_id.eq.${clubId},club_id.is.null`)
+    .order('name')
+  if (error) throw error
+  return data ?? []
+}
+
 export async function getClubLocationById(id: string): Promise<Tables<'locations'> | null> {
   const { data, error } = await supabase.from('locations').select('*').eq('id', id).single()
   if (error) return null
