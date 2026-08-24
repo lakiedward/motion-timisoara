@@ -24,10 +24,13 @@ export async function getAllUsers(): Promise<AdminUser[]> {
     .from('profiles')
     .select('id, name, email, role, enabled, created_at')
     .order('created_at', { ascending: false })
-    // Multe conturi au aceeasi zi de inregistrare. Fara al doilea criteriu, ordinea
-    // lor se schimba de la un refetch la altul, deci randurile sar sub cursor dupa
-    // fiecare comutare, iar coloana „Înregistrat" pare ca minte.
+    // Multe conturi au aceeasi zi de inregistrare. Fara criterii suplimentare,
+    // ordinea lor se schimba de la un refetch la altul, deci randurile sar sub
+    // cursor dupa fiecare comutare, iar coloana „Înregistrat" pare ca minte.
+    // Nici `created_at` plus `name` nu e o cheie unica, asa ca ultimul criteriu
+    // e `id`, ca sortarea sa fie totala pentru orice date.
     .order('name', { ascending: true })
+    .order('id', { ascending: true })
   if (error) throw error
   return data ?? []
 }
@@ -160,13 +163,23 @@ export async function getAllClubs(): Promise<Pick<Tables<'clubs'>, 'id' | 'name'
 export type AdminCourse = Tables<'courses'> & {
   sport: Pick<Tables<'sports'>, 'name'> | null
   coach: Pick<Tables<'profiles'>, 'name'> | null
+  /** Deosebeste cursurile omonime: doua cursuri pot avea acelasi nume si acelasi antrenor. */
+  location: Pick<Tables<'locations'>, 'name'> | null
+  /** Lipseste la cursurile antrenorilor independenti; adminul e singurul rol care vede si unele, si altele. */
+  club: Pick<Tables<'clubs'>, 'name'> | null
 }
 
 export async function getAllCourses(): Promise<AdminCourse[]> {
   const { data, error } = await supabase
     .from('courses')
-    .select('*, sport:sports(name), coach:profiles(name)')
+    .select('*, sport:sports(name), coach:profiles(name), location:locations(name), club:clubs(name)')
     .order('name')
+    // Doua cursuri pot purta acelasi nume; fara criterii suplimentare ordinea lor
+    // se schimba de la o incarcare la alta si randurile sar sub cursor dupa
+    // comutare. Pretul le desparte pe cele din lista de azi, dar nu e nici el unic:
+    // ultimul criteriu e `id`, ca sortarea sa fie totala pentru orice date.
+    .order('price')
+    .order('id')
   if (error) throw error
   return (data ?? []) as unknown as AdminCourse[]
 }
