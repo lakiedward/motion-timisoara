@@ -202,6 +202,34 @@ export async function getClubLocations(clubId: string): Promise<Tables<'location
   return data ?? []
 }
 
+/**
+ * Locatiile pe care clubul le poate FOLOSI intr-un curs: ale lui plus cele
+ * comune ale platformei (`club_id` gol, ex. Bazin Olimpic Timisoara). Salile
+ * private ale altor cluburi nu apar.
+ *
+ * Deliberat separata de `getClubLocations`, care listeaza doar ce ADMINISTREAZA
+ * clubul si alimenteaza pagina de locatii si numaratoarea din panou — acolo o
+ * locatie comuna ar aparea ca fiind a clubului si ar sugera ca o poate edita.
+ */
+export async function getClubSelectableLocations(
+  clubId: string,
+  keepId?: string | null,
+): Promise<Pick<Tables<'locations'>, 'id' | 'name' | 'city'>[]> {
+  const { data, error } = await supabase
+    .from('locations')
+    .select('id, name, city, is_active')
+    .or(`club_id.eq.${clubId},club_id.is.null`)
+    .order('name')
+  if (error) throw error
+  // Pentru alegeri NOI oferim doar sali active. Dar locatia deja salvata pe un
+  // curs ramane in lista chiar daca a fost dezactivata intre timp — altfel
+  // editarea ii pierde optiunea, selectul cade pe „—” si salvarea cere o
+  // locatie care era deja pusa. Exact esecul pe care aceasta schimbare il repara.
+  return (data ?? [])
+    .filter((l) => l.is_active || l.id === keepId)
+    .map(({ id, name, city }) => ({ id, name, city }))
+}
+
 export async function getClubLocationById(id: string): Promise<Tables<'locations'> | null> {
   const { data, error } = await supabase.from('locations').select('*').eq('id', id).single()
   if (error) return null
