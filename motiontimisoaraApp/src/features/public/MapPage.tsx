@@ -5,29 +5,12 @@ import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
 import { ChevronRight, MapPin } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import './map-popup.css'
-import L from 'leaflet'
-import iconUrl from 'leaflet/dist/images/marker-icon.png'
-import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
-import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
+import type L from 'leaflet'
 
 import { getActivities, getCourses, getLocations } from '@/api/public'
 import type { ActivityListItem, CourseListItem } from '@/api/public'
+import { markerIcon } from '@/lib/map-marker'
 import { SPORT_COLOR, SPORT_COLOR_FALLBACK, SPORT_ICON } from './sport-icons'
-
-// Leaflet's default marker (Icon.Default) prepends an auto-detected `imagePath`
-// to its icon URLs, which mangles the hashed asset URLs Vite produces — so the
-// marker images 404 and only the "Marker" alt text shows. Build an explicit icon
-// from the bundled assets instead (plain L.Icon does not prepend imagePath).
-const markerIcon = L.icon({
-  iconUrl,
-  iconRetinaUrl,
-  shadowUrl,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  tooltipAnchor: [16, -28],
-  shadowSize: [41, 41],
-})
 
 type LocationContent = { courses: CourseListItem[]; activities: ActivityListItem[] }
 
