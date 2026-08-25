@@ -76,11 +76,20 @@ test('orașul cade pe town, apoi pe village, când city lipsește', async () => 
   expect(loc.city).toBe('Dumbrăvița')
 })
 
-// Photon poate întoarce același obiect OSM de două ori într-un răspuns. Cheile
-// duplicate sunt eroare React în lista de sugestii — verificat pe „Piața Victoriei”.
+// Photon poate întoarce același obiect OSM de două ori într-un răspuns, cu texte
+// diferite — deci strângerea duplicatelor nu le unește, iar id-ul construit doar
+// din osm_type + osm_id ar da două chei React identice. Verificat pe „Piața
+// Victoriei”, unde eroarea chiar a apărut în consolă.
 test('două rezultate cu același obiect OSM primesc id-uri diferite', async () => {
-  const acelasi = { osm_type: 'R', osm_id: 2637452, name: 'Piața Victoriei', city: 'Timișoara' }
-  raspunsuri = [{ features: [feature(acelasi, 21.22, 45.75), feature(acelasi, 21.22, 45.75)] }]
+  const acelasi = { osm_type: 'R', osm_id: 2637452, street: 'Piața Victoriei', city: 'Timișoara' }
+  raspunsuri = [
+    {
+      features: [
+        feature({ ...acelasi, housenumber: '1' }, 21.22, 45.75),
+        feature({ ...acelasi, housenumber: '2' }, 21.221, 45.751),
+      ],
+    },
+  ]
   const rezultate = await geocoding.search('piata victoriei')
   expect(rezultate).toHaveLength(2)
   expect(rezultate[0].id).not.toBe(rezultate[1].id)
@@ -135,4 +144,49 @@ test('reverse se oprește la prima încercare când găsește o casă', async ()
 test('un rezultat fără coordonate e aruncat, nu produce un punct invalid', async () => {
   raspunsuri = [{ features: [{ properties: { name: 'Fără geometrie' } }] }]
   expect(await geocoding.search('fara')).toEqual([])
+})
+
+// OSM taie un bulevard lung în segmente, iar Photon le întoarce pe toate: trei
+// rânduri „Bulevardul Take Ionescu” deosebite doar prin codul poștal. Pe telefon
+// umpleau lista și împingeau rezultatele utile afară.
+test('segmentele aceleiași străzi se strâng într-un singur rând', async () => {
+  const segment = (postcode: string) =>
+    feature({ name: 'Bulevardul Take Ionescu', city: 'Timișoara', postcode }, 21.24, 45.76)
+  raspunsuri = [
+    {
+      features: [
+        segment('300050'),
+        segment('300054'),
+        segment('300065'),
+        feature({ name: 'ISHO Offices', street: 'Bulevardul Take Ionescu', city: 'Timișoara' }, 21.242, 45.76),
+      ],
+    },
+  ]
+  const rezultate = await geocoding.search('take ionescu')
+  expect(rezultate.map((r) => r.label)).toEqual(['Bulevardul Take Ionescu', 'ISHO Offices'])
+})
+
+// Locuri diferite cu același nume în orașe diferite rămân amândouă: strângerea e
+// pe text vizibil, iar orașul face parte din el.
+test('același nume în orașe diferite nu se strânge', async () => {
+  raspunsuri = [
+    {
+      features: [
+        feature({ name: 'Sala Sporturilor', city: 'Timișoara' }, 21.22, 45.75),
+        feature({ name: 'Sala Sporturilor', city: 'Dumbrăvița' }, 21.24, 45.79),
+      ],
+    },
+  ]
+  expect(await geocoding.search('sala sporturilor')).toHaveLength(2)
+})
+
+// Cerem furnizorului mai multe decât arătăm: cu limita egală, o căutare pe o
+// stradă lungă ar rămâne cu două rezultate din cinci după strângere.
+test('se cer mai multe rezultate decât se afișează, dar se arată cel mult cinci', async () => {
+  raspunsuri = [
+    { features: Array.from({ length: 10 }, (_, i) => feature({ name: `Locul ${i}`, city: 'Timișoara' }, 21.2 + i / 100, 45.7)) },
+  ]
+  const rezultate = await geocoding.search('locul')
+  expect(cereri[0]).toContain('limit=10')
+  expect(rezultate).toHaveLength(5)
 })

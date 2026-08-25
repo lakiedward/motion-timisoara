@@ -113,6 +113,34 @@ async function fetchFeatures(url: string, signal?: AbortSignal): Promise<GeoPlac
   return (json.features ?? []).map(toPlace).filter((p): p is GeoPlace => p !== null)
 }
 
+/** Cate sugestii vede utilizatorul. */
+const SUGESTII_AFISATE = 5
+/**
+ * Cate cerem furnizorului. Mai multe decat aratam, fiindca strangerea de mai jos
+ * scoate randuri: cu limita egala, o cautare pe un bulevard lung ar ramane cu
+ * doua rezultate din cinci.
+ */
+const SUGESTII_CERUTE = 10
+
+/**
+ * OSM taie o strada lunga in mai multe segmente, iar Photon le intoarce pe toate:
+ * o cautare de „Take Ionescu" da trei randuri identice pe ecran, deosebite doar
+ * prin codul postal. Pe un telefon ele umplu lista si impting rezultatele utile
+ * afara, iar clubul oricum ajusteaza pinul dupa aceea — deci pastram primul din
+ * fiecare grup cu acelasi text vizibil.
+ */
+function strangeDuplicatele(locuri: GeoPlace[]): GeoPlace[] {
+  const vazute = new Set<string>()
+  const rezultat: GeoPlace[] = []
+  for (const loc of locuri) {
+    const cheie = `${loc.label}|${loc.city ?? ''}`
+    if (vazute.has(cheie)) continue
+    vazute.add(cheie)
+    rezultat.push(loc)
+  }
+  return rezultat
+}
+
 export const geocoding = {
   /** Sugestii pentru textul scris de utilizator, favorizate spre Timisoara. */
   async search(query: string, signal?: AbortSignal): Promise<GeoPlace[]> {
@@ -120,8 +148,9 @@ export const geocoding = {
     if (q.length < 3) return []
     const url =
       `${BASE_URL}/api?q=${encodeURIComponent(q)}` +
-      `&limit=5&lang=${LANG}&lat=${TIMISOARA.lat}&lon=${TIMISOARA.lng}&bbox=${BBOX}`
-    return fetchFeatures(url, signal)
+      `&limit=${SUGESTII_CERUTE}&lang=${LANG}&lat=${TIMISOARA.lat}&lon=${TIMISOARA.lng}&bbox=${BBOX}`
+    const locuri = await fetchFeatures(url, signal)
+    return strangeDuplicatele(locuri).slice(0, SUGESTII_AFISATE)
   },
 
   /** Adresa din dreptul unui punct de pe harta. Null cand nu se poate afla. */
