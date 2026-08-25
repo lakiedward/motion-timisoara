@@ -61,6 +61,7 @@ export function useMap() {
   return {
     flyTo: () => undefined,
     invalidateSize: () => undefined,
+    getContainer: () => document.createElement('div'),
   }
 }
 

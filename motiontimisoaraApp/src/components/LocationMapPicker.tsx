@@ -43,8 +43,19 @@ function SyncMapView({ pin, flyNonce }: { pin: MapPin | null; flyNonce: number }
   const fitted = useRef(false)
   const lastNonce = useRef(0)
   useEffect(() => {
-    const t = window.setTimeout(() => map.invalidateSize(), 50)
-    return () => window.clearTimeout(t)
+    const container = map.getContainer()
+    const resize = () => map.invalidateSize()
+    if (typeof ResizeObserver === 'undefined' || !container) {
+      const t = window.setTimeout(resize, 50)
+      return () => window.clearTimeout(t)
+    }
+    const ro = new ResizeObserver(resize)
+    ro.observe(container)
+    const t = window.setTimeout(resize, 50)
+    return () => {
+      ro.disconnect()
+      window.clearTimeout(t)
+    }
   }, [map])
   useEffect(() => {
     if (!pin) return
@@ -171,7 +182,7 @@ export function LocationMapPicker({
   const listSuggestions = canSearch ? suggestions : []
 
   return (
-    <div className="location-map-picker min-w-0 space-y-1.5">
+    <div className="location-map-picker min-w-0 max-w-full space-y-1.5">
       <Label htmlFor={inputId}>Caută locul</Label>
       <div className="relative min-w-0">
         <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />

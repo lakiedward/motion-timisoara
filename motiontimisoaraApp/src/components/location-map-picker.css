@@ -4,6 +4,8 @@
 .location-map-picker .leaflet-container {
   height: 100%;
   width: 100%;
+  max-width: 100%;
+  overflow: hidden;
   background: var(--muted);
   font: inherit;
 }

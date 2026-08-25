@@ -122,7 +122,7 @@ export default function ClubLocationFormPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl min-w-0">
+    <div className="mx-auto min-w-0 max-w-2xl overflow-x-hidden">
       <Link
         to="/club/locations"
         className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"

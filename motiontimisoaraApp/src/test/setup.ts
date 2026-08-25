@@ -16,6 +16,13 @@ class IntersectionObserverStub {
 }
 vi.stubGlobal('IntersectionObserver', IntersectionObserverStub)
 
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+vi.stubGlobal('ResizeObserver', ResizeObserverStub)
+
 // jsdom doesn't implement matchMedia — provide a no-op (reports "no match").
 if (!window.matchMedia) {
   vi.stubGlobal('matchMedia', (query: string) => ({
