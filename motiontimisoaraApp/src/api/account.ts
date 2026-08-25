@@ -10,9 +10,22 @@ export async function getMyChildren(): Promise<Child[]> {
   return data ?? []
 }
 
+/**
+ * Copilul cerut, sau `null` cand nu exista ori nu e al parintelui (RLS il ascunde).
+ *
+ * `maybeSingle` + aruncarea erorii, nu `single` cu `return null` pe orice esec:
+ * altfel „nu exista" si „n-am putut citi" arata la fel pentru apelant, iar ecranul
+ * ii spune parintelui ca nu are copilul cand de fapt a picat reteaua.
+ */
 export async function getChild(id: string): Promise<Child | null> {
-  const { data, error } = await supabase.from('children').select('*').eq('id', id).single()
-  if (error) return null
+  const { data, error } = await supabase.from('children').select('*').eq('id', id).maybeSingle()
+  // `22P02` = id-ul din adresa nu e nici macar un uuid valid. Pentru Postgres e o
+  // eroare de sintaxa, dar pentru parinte e tot „copilul asta nu exista": niciun
+  // rand nu l-ar fi putut potrivi. Restul erorilor sunt esecuri reale si urca.
+  if (error) {
+    if (error.code === '22P02') return null
+    throw error
+  }
   return data
 }
 
