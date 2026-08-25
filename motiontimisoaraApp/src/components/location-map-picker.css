@@ -1,0 +1,22 @@
+/* Scoped Leaflet chrome for the club location pin picker. Keep the map from
+   overflowing the form on 375px-wide screens (attribution is the usual culprit). */
+
+.location-map-picker .leaflet-container {
+  height: 100%;
+  width: 100%;
+  background: var(--muted);
+  font: inherit;
+}
+
+.location-map-picker .leaflet-control-attribution {
+  max-width: min(100%, 18rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.location-map-picker .leaflet-marker-draggable {
+  cursor: grab;
+}
