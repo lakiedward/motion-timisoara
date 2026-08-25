@@ -1,0 +1,17 @@
+/* Motion Timișoara — Leaflet chrome overrides for the location picker.
+   Plain CSS (no @apply) so it can target Leaflet's generated DOM, and unlayered
+   like leaflet.css itself: Tailwind's utilities live in @layer utilities, and a
+   layered rule loses to an unlayered one no matter how specific it is, so an
+   arbitrary variant such as [&_.leaflet-control-zoom_a]:h-11 silently does
+   nothing here. Same reason map-popup.css exists for the public map page. */
+
+/* Leaflet ships 30px zoom buttons. Below the lg breakpoint — the one the portal
+   forms use to switch between touch and pointer sizing — bring them up to the
+   44px minimum the rest of the form already meets. */
+@media (max-width: 1023px) {
+  .mt-location-picker .leaflet-control-zoom a {
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
+  }
+}
