@@ -282,3 +282,22 @@ async function user_salveaza() {
   const user = userEvent.setup()
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
 }
+
+// „Nu am găsit-o” și „n-am putut s-o citesc” sunt lucruri diferite. De când
+// citirea aruncă în loc să întoarcă null, o cădere de rețea ar fi ajuns pe
+// ramura de not-found și i-ar fi spus clubului că locația nu există.
+test('o citire căzută arată eroare cu Reîncearcă, nu „nu a fost găsită”', async () => {
+  mockedLocatie.mockRejectedValue(new Error('network'))
+  renderForm()
+  expect(await screen.findByText('Nu am putut încărca locația.')).toBeInTheDocument()
+  expect(screen.queryByText('Locația nu a fost găsită.')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Reîncearcă' })).toBeInTheDocument()
+})
+
+test('Reîncearcă cere din nou locația și, dacă merge, arată formularul', async () => {
+  const user = userEvent.setup()
+  mockedLocatie.mockRejectedValueOnce(new Error('network')).mockResolvedValue(locatie as never)
+  renderForm()
+  await user.click(await screen.findByRole('button', { name: 'Reîncearcă' }))
+  expect(await screen.findByDisplayValue('Bazin Audit')).toBeInTheDocument()
+})

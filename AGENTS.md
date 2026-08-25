@@ -69,6 +69,10 @@ These accounts are for read-mostly UI verification. Do not use them for destruct
 - **Simulating a marker drag: dispatch `mousemove` on the map container, not on `document`.** Leaflet's `Draggable._onMove` stores `e.target` as `_lastTarget` and then reads its `className`; `document` has none, so a drag simulated with `document.dispatchEvent` throws `Cannot read properties of undefined (reading 'baseVal')` twice per drag. The events still bubble to Leaflet's document-level handler when dispatched on `.leaflet-container`, so the realistic path is also the working one — and those console errors are a harness artifact, not a product bug.
 - **jsdom cannot lay out a map**, so unit tests mock `react-leaflet` at the module boundary (`MapContainer`/`TileLayer`/`Marker`/`useMap`/`useMapEvents`); see `src/features/club/ClubLocationFormPage.test.tsx`. Map behaviour itself is proven in a real browser, not in vitest.
 
+### Forcing a failed Supabase request in the browser
+
+You cannot do it by patching `window.fetch`. `supabase-js` resolves its fetch implementation when the client is constructed (`src/lib/supabase.ts`, at module load), so a later reassignment of `window.fetch` is simply not the function it calls — the request succeeds and the error branch never renders. Playwright's `page.route` is the only reliable interception, and the Playwright MCP tools do not expose it. Cover error branches with a unit test that rejects the mocked `src/api/*` function, and say in the report that the browser gate could not reach them rather than implying it did.
+
 ### react-hook-form and the React Compiler lint
 
 `watch()` returns a function the React Compiler cannot memoize, so ESLint reports `react-hooks/incompatible-library` and the whole component is skipped for memoization. Use `useWatch({ control, name })` instead — same value, no warning. Note `npm run lint` still exits 0 on warnings, so this only shows up if you read the output.

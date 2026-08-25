@@ -42,7 +42,12 @@ export default function ClubLocationFormPage() {
   const qc = useQueryClient()
   const { data: club } = useQuery({ queryKey: ['my-club'], queryFn: getMyClub })
   const clubId = club?.id ?? ''
-  const { data: existing, isPending: seIncarca } = useQuery({
+  const {
+    data: existing,
+    isPending: seIncarca,
+    isError: aEsuatCitirea,
+    refetch,
+  } = useQuery({
     queryKey: ['club-location-edit', clubId, id],
     queryFn: () => getClubLocationById(id as string, clubId),
     enabled: isEdit && !!clubId,
@@ -104,6 +109,28 @@ export default function ClubLocationFormPage() {
     } catch {
       toast.error('Nu am putut salva locația.')
     }
+  }
+
+  // O citire căzută nu e totuna cu o locație inexistentă. De când `getClubLocationById`
+  // aruncă în loc să întoarcă null, o pică de rețea ar fi ajuns pe ramura de mai
+  // jos și i-ar fi spus clubului că locația nu există — deși e acolo.
+  if (isEdit && !!clubId && aEsuatCitirea) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <Link
+          to="/club/locations"
+          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
+        >
+          <ArrowLeft className="size-4" /> Înapoi
+        </Link>
+        <div role="alert" className="mt-6 rounded-3xl border border-dashed py-16 text-center">
+          <p className="text-foreground font-medium">Nu am putut încărca locația.</p>
+          <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetch()}>
+            Reîncearcă
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   // Un id străin sau inexistent nu are voie să ajungă într-un formular
