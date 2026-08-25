@@ -1,5 +1,5 @@
 import { vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -23,7 +23,10 @@ vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 // Leaflet are nevoie de layout real ca sa deseneze, iar jsdom nu-l face. Harta
 // e inlocuita cu un container gol: testele de aici verifica formularul si
-// legatura lui cu selectorul, nu desenul hartii.
+// legatura lui cu selectorul, nu desenul hartii. `useMapEvents` retine handlerul
+// de apasare, ca testele sa poata simula o apasare pe harta fara Leaflet.
+let apasaPeHarta: ((e: { latlng: { lat: number; lng: number } }) => void) | null = null
+
 vi.mock('react-leaflet', () => ({
   MapContainer: ({ children }: { children?: React.ReactNode }) => (
     <div data-testid="harta">{children}</div>
@@ -31,7 +34,10 @@ vi.mock('react-leaflet', () => ({
   TileLayer: () => null,
   Marker: () => <div data-testid="pin" />,
   useMap: () => ({ invalidateSize: vi.fn(), setView: vi.fn(), getZoom: () => 13 }),
-  useMapEvents: () => null,
+  useMapEvents: (handlers: { click: (e: { latlng: { lat: number; lng: number } }) => void }) => {
+    apasaPeHarta = handlers.click
+    return null
+  },
 }))
 
 const mockedClub = vi.mocked(getMyClub)
@@ -68,6 +74,7 @@ function renderForm(ruta = '/club/locations/loc-1/edit') {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  apasaPeHarta = null
   mockedClub.mockResolvedValue({ id: 'club-1' } as never)
   mockedLocatie.mockResolvedValue(locatie as never)
   mockedActualizare.mockResolvedValue(locatie as never)
@@ -160,3 +167,118 @@ test('cererea de citire primește clubul curent, nu doar id-ul din adresă', asy
   await screen.findByDisplayValue('Bazin Audit')
   expect(mockedLocatie).toHaveBeenCalledWith('loc-1', 'club-1')
 })
+
+// Regresie (Bugbot pe PR #35, severitate mare): reverse geocoding-ul pornit la o
+// apasare pe harta se termina asincron. Cel pornit primul se poate intoarce
+// ULTIMUL si, scriind coordonatele pe care le-a capturat, impingea formularul
+// inapoi la punctul vechi — deci clubul salva alt loc decat cel ales ultima oara.
+test('un reverse intors tarziu nu mai suprascrie un punct ales dupa el', async () => {
+  const mockedReverse = vi.mocked(geocoding.reverse)
+  let terminaPrimul: (() => void) | null = null
+  mockedReverse
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          terminaPrimul = () =>
+            resolve({
+              id: 'vechi',
+              label: 'Locul vechi',
+              detail: '',
+              address: 'Strada Veche 1',
+              city: 'Timișoara',
+              lat: 45.7,
+              lng: 21.2,
+            })
+        }),
+    )
+    .mockImplementationOnce(async () => ({
+      id: 'nou',
+      label: 'Locul nou',
+      detail: '',
+      address: 'Strada Nouă 2',
+      city: 'Timișoara',
+      lat: 45.8,
+      lng: 21.3,
+    }))
+
+  renderForm()
+  await screen.findByDisplayValue('Bazin Audit')
+
+  // Prima apasare: reverse-ul ramane atarnat. A doua apasare se rezolva imediat.
+  await act(async () => {
+    apasaPeHarta?.({ latlng: { lat: 45.7, lng: 21.2 } })
+  })
+  await act(async () => {
+    apasaPeHarta?.({ latlng: { lat: 45.8, lng: 21.3 } })
+  })
+  await waitFor(() => expect(screen.getByLabelText('Adresă')).toHaveValue('Strada Nouă 2'))
+
+  // Abia acum se intoarce cel vechi. Nu are voie sa schimbe nimic.
+  await act(async () => {
+    terminaPrimul?.()
+  })
+  expect(screen.getByLabelText('Adresă')).toHaveValue('Strada Nouă 2')
+
+  await user_salveaza()
+  await waitFor(() =>
+    expect(mockedActualizare).toHaveBeenCalledWith(
+      'loc-1',
+      expect.objectContaining({ lat: 45.8, lng: 21.3, address: 'Strada Nouă 2' }),
+    ),
+  )
+})
+
+// Aceeasi cursa, dar incheiata prin alegerea unei sugestii: sugestia vine cu
+// adresa ei, iar reverse-ul pornit inainte trebuie sa devina irelevant.
+test('un reverse intors tarziu nu mai suprascrie o sugestie aleasa dupa el', async () => {
+  const user = userEvent.setup()
+  const mockedReverse = vi.mocked(geocoding.reverse)
+  let terminaVechiul: (() => void) | null = null
+  mockedReverse.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        terminaVechiul = () =>
+          resolve({
+            id: 'vechi',
+            label: 'Locul vechi',
+            detail: '',
+            address: 'Strada Veche 1',
+            city: 'Timișoara',
+            lat: 45.7,
+            lng: 21.2,
+          })
+      }),
+  )
+  mockedCautare.mockResolvedValue([
+    {
+      id: 'W1-0',
+      label: 'Bulevardul Take Ionescu 46C',
+      detail: 'Timișoara',
+      address: 'Bulevardul Take Ionescu 46C',
+      city: 'Timișoara',
+      lat: 45.7603,
+      lng: 21.2422,
+    },
+  ])
+
+  renderForm()
+  await screen.findByDisplayValue('Bazin Audit')
+  await act(async () => {
+    apasaPeHarta?.({ latlng: { lat: 45.7, lng: 21.2 } })
+  })
+
+  await user.type(screen.getByLabelText('Caută adresa'), 'take ionescu')
+  await user.click(await screen.findByRole('option', { name: /Take Ionescu 46C/ }))
+  expect(screen.getByLabelText('Adresă')).toHaveValue('Bulevardul Take Ionescu 46C')
+
+  await act(async () => {
+    terminaVechiul?.()
+  })
+  expect(screen.getByLabelText('Adresă')).toHaveValue('Bulevardul Take Ionescu 46C')
+})
+
+/** Apasa Salvează si asteapta trimiterea. */
+async function user_salveaza() {
+  const user = userEvent.setup()
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+}

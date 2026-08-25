@@ -92,7 +92,30 @@ export default function LocationPicker({ value, onChange, invalid, errorId }: Pr
     staleTime: 24 * 60 * 60 * 1000,
   })
 
+  /**
+   * Numarul punctului curent. Fiecare alegere de punct — din lista sau de pe
+   * harta — il incrementeaza, iar un reverse geocoding intors tarziu se compara
+   * cu el inainte sa scrie ceva. Fara asta, o cerere lenta pornita la o apasare
+   * mai veche se termina dupa una mai noua si impinge formularul inapoi la locul
+   * vechi, cu tot cu coordonate — deci s-ar putea salva alt loc decat cel ales.
+   */
+  const numarPunct = useRef(0)
+  const anulare = useRef<AbortController | null>(null)
+
+  /** Marcheaza un punct nou si opreste cautarea de adresa pornita pentru cel vechi. */
+  const incepePunctNou = () => {
+    anulare.current?.abort()
+    anulare.current = null
+    return ++numarPunct.current
+  }
+
+  useEffect(() => () => anulare.current?.abort(), [])
+
   const alegeSugestia = (loc: GeoPlace) => {
+    // Sugestia vine deja cu adresa, deci nu mai are nevoie de reverse — dar tot
+    // trebuie sa invalideze unul pornit pentru o apasare anterioara pe harta.
+    incepePunctNou()
+    setSeRezolvaPunctul(false)
     setCautare(loc.label)
     setListaDeschisa(false)
     setIndexActiv(-1)
@@ -106,15 +129,19 @@ export default function LocationPicker({ value, onChange, invalid, errorId }: Pr
    * loc pe care oricum nu stim sa-l numim.
    */
   const punePunctul = async (lat: number, lng: number) => {
+    const alMeu = incepePunctNou()
+    const ctrl = new AbortController()
+    anulare.current = ctrl
     onChange({ lat, lng, address: null, city: null })
     setSeRezolvaPunctul(true)
     try {
-      const loc = await geocoding.reverse(lat, lng)
+      const loc = await geocoding.reverse(lat, lng, ctrl.signal)
+      if (alMeu !== numarPunct.current) return
       if (loc) onChange({ lat, lng, address: loc.address, city: loc.city })
     } catch {
       // Fara adresa, dar cu punctul pus: destul cat sa se poata salva.
     } finally {
-      setSeRezolvaPunctul(false)
+      if (alMeu === numarPunct.current) setSeRezolvaPunctul(false)
     }
   }
 
