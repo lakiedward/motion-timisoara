@@ -63,6 +63,16 @@ These accounts are for read-mostly UI verification. Do not use them for destruct
 - `.claude/settings.local.json` is machine-local and gitignored. Keep it that way.
 - The 226 MB of original photos that used to sit in `TriathlonTeamFE/public/ui-backup/` were removed from HEAD on 2026-08-20, but they still dominate clone size because they remain in git history until a `filter-repo` pass runs. Do not add large binaries to any tree.
 
+### Styling Leaflet, and the Leaflet map in tests
+
+- **Tailwind cannot override `leaflet.css`.** Tailwind v4 emits its utilities inside `@layer utilities`, while `leaflet/dist/leaflet.css` is imported unlayered — and an unlayered rule beats a layered one regardless of specificity. So an arbitrary variant such as `[&_.leaflet-control-zoom_a]:h-11` compiles fine and silently does nothing. Override Leaflet from a plain, unlayered CSS file next to the component (`src/features/public/map-popup.css`, `src/components/location-picker.css`), not from a utility class.
+- **Simulating a marker drag: dispatch `mousemove` on the map container, not on `document`.** Leaflet's `Draggable._onMove` stores `e.target` as `_lastTarget` and then reads its `className`; `document` has none, so a drag simulated with `document.dispatchEvent` throws `Cannot read properties of undefined (reading 'baseVal')` twice per drag. The events still bubble to Leaflet's document-level handler when dispatched on `.leaflet-container`, so the realistic path is also the working one — and those console errors are a harness artifact, not a product bug.
+- **jsdom cannot lay out a map**, so unit tests mock `react-leaflet` at the module boundary (`MapContainer`/`TileLayer`/`Marker`/`useMap`/`useMapEvents`); see `src/features/club/ClubLocationFormPage.test.tsx`. Map behaviour itself is proven in a real browser, not in vitest.
+
+### react-hook-form and the React Compiler lint
+
+`watch()` returns a function the React Compiler cannot memoize, so ESLint reports `react-hooks/incompatible-library` and the whole component is skipped for memoization. Use `useWatch({ control, name })` instead — same value, no warning. Note `npm run lint` still exits 0 on warnings, so this only shows up if you read the output.
+
 ### Verifying routes and Edge Functions (learned the hard way)
 - **A route's existence can be proven without logging in.** Guards redirect: a route that exists but is gated sends an anonymous visitor to `/login` (or to `/` on a role mismatch), while a path that matches nothing renders the `404 — Pagina nu a fost găsită` page. So to prove "this route is registered, not a 404", hit it logged out alongside a deliberately bogus control path and compare — no session needed.
 - **A tracked Edge Function is not necessarily a deployed one.** `supabase/functions/` and the project's deployed list drift apart; several functions live in git but were never pushed. An undeployed function fails CORS preflight, which surfaces in the browser console as `blocked by CORS policy ... does not have HTTP ok status` rather than as a clean 404 — do not read that as a CORS bug. Check `npx supabase functions list` before concluding a function is broken.
