@@ -230,9 +230,23 @@ export async function getClubSelectableLocations(
     .map(({ id, name, city }) => ({ id, name, city }))
 }
 
-export async function getClubLocationById(id: string): Promise<Tables<'locations'> | null> {
-  const { data, error } = await supabase.from('locations').select('*').eq('id', id).single()
-  if (error) return null
+/**
+ * Doar locatiile pe care le administreaza clubul dat. Filtrul pe `club_id` e
+ * obligatoriu aici: politica `locations_select` lasa orice utilizator CLUB sa
+ * CITEASCA orice locatie, deci fara el un id strain ar precompleta formularul de
+ * editare cu datele altui club — desi `locations_update` refuza apoi salvarea.
+ */
+export async function getClubLocationById(
+  id: string,
+  clubId: string,
+): Promise<Tables<'locations'> | null> {
+  const { data, error } = await supabase
+    .from('locations')
+    .select('*')
+    .eq('id', id)
+    .eq('club_id', clubId)
+    .maybeSingle()
+  if (error) throw error
   return data
 }
 
@@ -244,9 +258,24 @@ export async function createClubLocation(clubId: string, input: LocationFormInpu
   if (error) throw error
 }
 
-export async function updateClubLocation(id: string, input: LocationFormInput) {
-  const { error } = await supabase.from('locations').update(input).eq('id', id)
+/**
+ * `.select().single()` ca in `coach.ts` `updateLocation`: fara el, PostgREST
+ * raspunde 204 No Content si cand RLS a filtrat toate randurile, iar apelantul
+ * nu are cum sa deosebeasca „am salvat" de „nu aveam voie". Cu el, zero randuri
+ * inseamna eroare, deci ecranul arata un esec, nu un fals succes.
+ */
+export async function updateClubLocation(
+  id: string,
+  input: LocationFormInput,
+): Promise<Tables<'locations'>> {
+  const { data, error } = await supabase
+    .from('locations')
+    .update(input)
+    .eq('id', id)
+    .select()
+    .single()
   if (error) throw error
+  return data
 }
 
 export async function setClubLocationActive(id: string, is_active: boolean) {
