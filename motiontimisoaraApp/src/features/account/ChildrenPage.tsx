@@ -4,6 +4,7 @@ import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { childAge, deleteChild, getMyChildren } from '@/api/account'
+import { formatLevel } from '@/lib/level'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -48,7 +49,10 @@ export default function ChildrenPage() {
                 <div className="flex-1">
                   <div className="font-semibold">{c.name}</div>
                   <div className="text-muted-foreground text-sm">
-                    {childAge(c.birth_date)} ani{c.level ? ` · ${c.level}` : ''}
+                    {/* `formatLevel`, nu valoarea brută: de când formularul scrie
+                        forma canonică, aici ar fi apărut „incepator" în loc de
+                        „Începător". Slug în bază, etichetă cu diacritice pe ecran. */}
+                    {childAge(c.birth_date)} ani{c.level ? ` · ${formatLevel(c.level)}` : ''}
                   </div>
                 </div>
               </div>
