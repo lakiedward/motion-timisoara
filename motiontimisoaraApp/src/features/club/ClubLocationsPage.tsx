@@ -87,13 +87,14 @@ export default function ClubLocationsPage() {
       </div>
 
       {seIncarcaClubul || isLoading ? (
-        // Înălțimea urmărește cardul real (~170 px), ca lista să nu sară când
-        // sosesc datele. Și clubul se așteaptă aici: cât timp se încarcă el,
-        // interogarea de locații e oprită, deci `isLoading` e fals și ecranul ar
-        // arăta o clipă „Nicio locație încă.”
+        // Înălțimile urmăresc cardul real, măsurat: 206 px la 768 px, unde linia
+        // cu adresa curge pe două rânduri, și 198 px la 1440 px. Fără asta lista
+        // sare la fiecare încărcare. Și clubul se așteaptă aici: cât timp se
+        // încarcă el, interogarea de locații e oprită, deci `isLoading` e fals și
+        // ecranul ar arăta o clipă „Nicio locație încă.”
         <div className="grid gap-4 sm:grid-cols-2">
           {[0, 1].map((i) => (
-            <Skeleton key={i} className="h-44 rounded-3xl" />
+            <Skeleton key={i} className="h-52 rounded-3xl lg:h-48" />
           ))}
         </div>
       ) : isError && !randuri.length ? (
