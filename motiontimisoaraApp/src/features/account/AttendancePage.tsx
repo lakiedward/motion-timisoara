@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
-import { getChildAttendance, getMyChildren } from '@/api/account'
+import { getChildAttendance, getChildrenAttendance, getMyChildren } from '@/api/account'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { inceputPerioada, type Perioada } from '@/lib/perioada'
@@ -10,6 +10,9 @@ import { cn } from '@/lib/utils'
 
 const selectCls =
   'border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] lg:h-9'
+
+/** Valoarea selectorului cand nu e ales un copil anume. */
+const TOTI = 'toti'
 
 const PERIOADE: { value: Perioada; label: string }[] = [
   { value: 'toate', label: 'Tot istoricul' },
@@ -30,13 +33,16 @@ export default function AttendancePage() {
     queryKey: ['children'],
     queryFn: getMyChildren,
   })
-  const [selected, setSelected] = useState('')
+  const [selected, setSelected] = useState<string>(TOTI)
   const [perioada, setPerioada] = useState<Perioada>('toate')
 
   // Alegerea se verifică față de lista curentă. Altfel, după ștergerea unui copil
   // din „Copiii mei”, `selected` rămâne un id mort: selectorul arată vizual primul
   // copil, dar cererea pleacă pe cel șters și lista pare goală pentru cine nu trebuie.
-  const childId = children.some((c) => c.id === selected) ? selected : (children[0]?.id ?? '')
+  const alegereValida = selected === TOTI || children.some((c) => c.id === selected)
+  const ales = alegereValida ? selected : TOTI
+  const totiCopiii = ales === TOTI
+  const idsCopii = useMemo(() => children.map((c) => c.id), [children])
 
   const {
     data: records = [],
@@ -44,10 +50,16 @@ export default function AttendancePage() {
     isError: aEsuatCitirea,
     refetch,
   } = useQuery({
-    queryKey: ['attendance', childId],
-    queryFn: () => getChildAttendance(childId),
-    enabled: !!childId,
+    queryKey: ['attendance', totiCopiii ? idsCopii : ales],
+    queryFn: () => (totiCopiii ? getChildrenAttendance(idsCopii) : getChildAttendance(ales)),
+    enabled: totiCopiii ? idsCopii.length > 0 : !!ales,
   })
+
+  /** Numele copiilor, ca rândurile să spună al cui e ședința fără un join în plus. */
+  const numeDupaId = useMemo(
+    () => new Map(children.map((c) => [c.id, c.name])),
+    [children],
+  )
 
   const randuri = useMemo(() => {
     const de_la = inceputPerioada(perioada)
@@ -73,10 +85,11 @@ export default function AttendancePage() {
           {children.length > 1 && (
             <select
               aria-label="Copil"
-              value={childId}
+              value={ales}
               onChange={(e) => setSelected(e.target.value)}
               className={cn(selectCls)}
             >
+              <option value={TOTI}>Toți copiii</option>
               {children.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -136,6 +149,11 @@ export default function AttendancePage() {
                 <li key={r.id} className="bg-card rounded-2xl border p-3 text-sm">
                   <div className="flex items-center justify-between gap-3">
                     <span>
+                      {/* Numele apare doar când sunt toți la un loc: filtrat pe un
+                          singur copil ar fi același nume repetat pe fiecare rând. */}
+                      {totiCopiii && (
+                        <span className="font-medium">{numeDupaId.get(r.child_id) ?? 'Copil'} · </span>
+                      )}
                       {r.occurrence?.course?.name ?? 'Ședință'}
                       {r.occurrence?.starts_at ? ` · ${formatCand(r.occurrence.starts_at)}` : ''}
                     </span>

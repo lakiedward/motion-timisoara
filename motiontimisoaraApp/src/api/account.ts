@@ -87,6 +87,24 @@ export async function getChildAttendance(childId: string): Promise<AttendanceRow
   return (data ?? []) as unknown as AttendanceRow[]
 }
 
+/**
+ * Prezenta mai multor copii deodata, pentru vederea „Toti copiii".
+ *
+ * Un singur `.in(...)` in loc de cate o cerere per copil: politica `attendance_select`
+ * restrange oricum randurile la copiii parintelui, deci lista de id-uri e o comoditate
+ * pentru client, nu o masura de securitate. Randul poarta `child_id`, deci numele se
+ * pune din lista de copii deja incarcata — fara join in plus.
+ */
+export async function getChildrenAttendance(childIds: string[]): Promise<AttendanceRow[]> {
+  if (!childIds.length) return []
+  const { data, error } = await supabase
+    .from('attendance')
+    .select('*, occurrence:course_occurrences(starts_at, course:courses(name))')
+    .in('child_id', childIds)
+  if (error) throw error
+  return (data ?? []) as unknown as AttendanceRow[]
+}
+
 /** Course announcements for courses the parent's children are enrolled in (RLS-scoped). */
 export type CourseAnnouncementRow = Tables<'course_announcements'> & {
   course: Pick<Tables<'courses'>, 'id' | 'name'> | null
