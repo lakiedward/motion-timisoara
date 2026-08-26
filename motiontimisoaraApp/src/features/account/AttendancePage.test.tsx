@@ -5,15 +5,17 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 
 import AttendancePage from './AttendancePage'
-import { getChildAttendance, getMyChildren } from '@/api/account'
+import { getChildAttendance, getChildrenAttendance, getMyChildren } from '@/api/account'
 
 vi.mock('@/api/account', () => ({
   getMyChildren: vi.fn(),
   getChildAttendance: vi.fn(),
+  getChildrenAttendance: vi.fn(),
 }))
 
 const mockedCopii = vi.mocked(getMyChildren)
 const mockedPrezenta = vi.mocked(getChildAttendance)
+const mockedPrezentaToti = vi.mocked(getChildrenAttendance)
 
 const COPIL_A = 'aaaaaaaa-0000-4000-8000-000000000001'
 const COPIL_B = 'bbbbbbbb-0000-4000-8000-000000000002'
@@ -26,8 +28,16 @@ const copii = [
 /** Azi e fixat în teste ca să nu se schimbe rezultatul filtrului odată cu luna. */
 const AZI = new Date('2026-08-26T09:00:00Z')
 
-const rand = (id: string, zi: string, status: 'PRESENT' | 'ABSENT', curs: string | null, note: string | null = null) => ({
+const rand = (
+  id: string,
+  zi: string,
+  status: 'PRESENT' | 'ABSENT',
+  curs: string | null,
+  note: string | null = null,
+  child_id: string = COPIL_A,
+) => ({
   id,
+  child_id,
   status,
   note,
   occurrence: { starts_at: zi, course: curs ? { name: curs } : null },
@@ -50,11 +60,14 @@ beforeEach(() => {
   vi.clearAllMocks()
   vi.useFakeTimers({ shouldAdvanceTime: true, now: AZI })
   mockedCopii.mockResolvedValue(copii as never)
-  mockedPrezenta.mockResolvedValue([
+  const implicite = [
     rand('r1', '2026-08-20T14:00:00Z', 'PRESENT', 'Înot — audit UI'),
     rand('r2', '2026-07-20T15:00:00Z', 'ABSENT', null, 'A anunțat că e răcit.'),
     rand('r3', '2026-07-10T14:00:00Z', 'PRESENT', 'Înot — audit UI'),
-  ] as never)
+  ]
+  // Pagina pornește pe „Toți copiii", deci cererea implicită e cea combinată.
+  mockedPrezentaToti.mockResolvedValue(implicite as never)
+  mockedPrezenta.mockResolvedValue(implicite as never)
 })
 
 afterEach(() => {
@@ -79,7 +92,7 @@ test('un cont fără copii vede îndemnul de a adăuga unul', async () => {
 // Regresie (criteriul 217 al secțiunii vecine, aprobat din 11 august și niciodată
 // construit): o cădere de rețea afișa exact mesajul de istoric gol.
 test('o citire căzută arată eroare cu reîncercare, nu mesajul de istoric gol', async () => {
-  mockedPrezenta.mockRejectedValue(new Error('network'))
+  mockedPrezentaToti.mockRejectedValue(new Error('network'))
   renderPage()
   expect(await screen.findByText('Nu am putut încărca prezența.')).toBeInTheDocument()
   expect(screen.queryByText('Nicio prezență înregistrată încă.')).not.toBeInTheDocument()
@@ -113,7 +126,7 @@ test('nota antrenorului se vede sub rândul ei', async () => {
 })
 
 test('rezumatul respectă acordul la număr', async () => {
-  mockedPrezenta.mockResolvedValue([rand('r1', '2026-08-20T14:00:00Z', 'PRESENT', 'Înot')] as never)
+  mockedPrezentaToti.mockResolvedValue([rand('r1', '2026-08-20T14:00:00Z', 'PRESENT', 'Înot')] as never)
   renderPage()
   const rezumat = await screen.findByText(/ședință înregistrată/)
   expect(rezumat.textContent).toContain('1 prezență din 1 ședință înregistrată.')
@@ -133,7 +146,7 @@ test('filtrul de perioadă taie ședințele din afara intervalului', async () =>
 // Criteriul 3: „nu ai nimic în perioada asta" nu e totuna cu „nu ai nimic deloc".
 test('când filtrul goleste lista, mesajul spune că e vorba de perioadă', async () => {
   const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-  mockedPrezenta.mockResolvedValue([rand('r3', '2026-07-10T14:00:00Z', 'PRESENT', 'Înot')] as never)
+  mockedPrezentaToti.mockResolvedValue([rand('r3', '2026-07-10T14:00:00Z', 'PRESENT', 'Înot')] as never)
   renderPage()
   await screen.findAllByRole('listitem')
 
@@ -146,7 +159,7 @@ test('când filtrul goleste lista, mesajul spune că e vorba de perioadă', asyn
 })
 
 test('un copil fără nicio pontare vede mesajul de istoric gol, cu rezumat la zero', async () => {
-  mockedPrezenta.mockResolvedValue([] as never)
+  mockedPrezentaToti.mockResolvedValue([] as never)
   renderPage()
   expect(await screen.findByText('Nicio prezență înregistrată încă.')).toBeInTheDocument()
   expect(screen.getByText(/ședințe înregistrate/).textContent).toContain('0 prezențe din 0')
@@ -154,18 +167,72 @@ test('un copil fără nicio pontare vede mesajul de istoric gol, cu rezumat la z
 
 // Regresie (criteriul 4): alegerea era ținută separat de lista de copii și nu era
 // verificată niciodată. După ștergerea copilului ales din „Copiii mei", cererea
-// pleca pe un id mort, iar selectorul arăta vizual alt copil.
+// pleca pe un id mort, iar selectorul arăta vizual alt copil. Acum revenirea se
+// face pe „Toți copiii", nu pe un copil ales arbitrar.
 test('un copil șters între timp nu mai rămâne selectat', async () => {
   const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   renderPage(queryClient)
+  // Întâi se așază pagina: interacțiunea înainte ca lista de copii să ajungă
+  // găsește un selector care încă nu există.
+  await screen.findAllByRole('listitem')
 
-  await user.selectOptions(await screen.findByLabelText('Copil'), COPIL_B)
+  await user.selectOptions(screen.getByLabelText('Copil'), COPIL_B)
   await waitFor(() => expect(mockedPrezenta).toHaveBeenCalledWith(COPIL_B))
 
   mockedPrezenta.mockClear()
+  mockedPrezentaToti.mockClear()
   queryClient.setQueryData(['children'], [copii[0]])
 
-  await waitFor(() => expect(mockedPrezenta).toHaveBeenCalledWith(COPIL_A))
+  await waitFor(() => expect(mockedPrezentaToti).toHaveBeenCalledWith([COPIL_A]))
   expect(mockedPrezenta).not.toHaveBeenCalledWith(COPIL_B)
+  // Cu un singur copil rămas, selectorul dispare cu totul — nu mai are între ce
+  // să comute. Ce contează e că cererea a plecat pe copilul real, nu pe id-ul mort.
+  expect(screen.queryByLabelText('Copil')).not.toBeInTheDocument()
+})
+
+// Criteriul 13: pagina e o privire de ansamblu, iar implicitul de dinainte — primul
+// copil în ordine alfabetică — era arbitrar.
+test('pagina pornește pe „Toți copiii", prima opțiune din listă', async () => {
+  renderPage()
+  const selector = (await screen.findByLabelText('Copil')) as HTMLSelectElement
+  expect(selector.options[0].textContent).toBe('Toți copiii')
+  expect(selector.value).toBe('toti')
+  await waitFor(() => expect(mockedPrezentaToti).toHaveBeenCalledWith([COPIL_A, COPIL_B]))
+  expect(mockedPrezenta).not.toHaveBeenCalled()
+})
+
+// Criteriul 14: în lista comună trebuie să se știe al cui e fiecare ședință, dar
+// filtrat pe un copil același nume repetat pe fiecare rând ar fi doar zgomot.
+test('numele copilului apare pe rânduri doar în vederea combinată', async () => {
+  const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+  mockedPrezentaToti.mockResolvedValue([
+    rand('r1', '2026-08-20T14:00:00Z', 'PRESENT', 'Înot', null, COPIL_A),
+    rand('r2', '2026-07-20T15:00:00Z', 'ABSENT', 'Alergare', null, COPIL_B),
+  ] as never)
+  mockedPrezenta.mockResolvedValue([
+    rand('r1', '2026-08-20T14:00:00Z', 'PRESENT', 'Înot', null, COPIL_A),
+  ] as never)
+
+  renderPage()
+  const randuri = await screen.findAllByRole('listitem')
+  expect(randuri[0]).toHaveTextContent('Ana')
+  expect(randuri[1]).toHaveTextContent('Bogdan')
+
+  await user.selectOptions(screen.getByLabelText('Copil'), COPIL_A)
+  await waitFor(() => expect(mockedPrezenta).toHaveBeenCalledWith(COPIL_A))
+  const dupaFiltrare = await screen.findAllByRole('listitem')
+  expect(dupaFiltrare[0]).not.toHaveTextContent('Ana')
+})
+
+// Criteriul 15: rezumatul și filtrul lucrează peste ședințele tuturor copiilor.
+test('rezumatul numără prezențele tuturor copiilor în vederea combinată', async () => {
+  mockedPrezentaToti.mockResolvedValue([
+    rand('r1', '2026-08-20T14:00:00Z', 'PRESENT', 'Înot', null, COPIL_A),
+    rand('r2', '2026-08-19T15:00:00Z', 'ABSENT', 'Alergare', null, COPIL_B),
+    rand('r3', '2026-08-18T15:00:00Z', 'PRESENT', 'Înot', null, COPIL_B),
+  ] as never)
+  renderPage()
+  await screen.findAllByRole('listitem')
+  expect(screen.getByText(/ședințe înregistrate/).textContent).toContain('2 prezențe din 3')
 })
