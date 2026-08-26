@@ -8,6 +8,7 @@ import {
   createClubAnnouncement,
   deleteClubAnnouncement,
   getClubAnnouncements,
+  getClubAudiences,
   getMyClub,
   setAnnouncementActive,
 } from '@/api/club'
@@ -16,6 +17,7 @@ import { toast } from 'sonner'
 vi.mock('@/api/club', () => ({
   getMyClub: vi.fn(),
   getClubAnnouncements: vi.fn(),
+  getClubAudiences: vi.fn(),
   createClubAnnouncement: vi.fn(),
   setAnnouncementActive: vi.fn(),
   deleteClubAnnouncement: vi.fn(),
@@ -25,6 +27,7 @@ vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 const mockedClub = vi.mocked(getMyClub)
 const mockedLista = vi.mocked(getClubAnnouncements)
+const mockedTinte = vi.mocked(getClubAudiences)
 const mockedCreeaza = vi.mocked(createClubAnnouncement)
 const mockedComuta = vi.mocked(setAnnouncementActive)
 const mockedSterge = vi.mocked(deleteClubAnnouncement)
@@ -36,7 +39,13 @@ const anunt = (
   content = 'Conținutul anunțului',
   priority = 'NORMAL',
   created_at = '2026-08-26T09:00:00Z',
-) => ({ id, title, content, priority, is_active, created_at })
+  audience_kind = 'CLUB',
+  audience_id: string | null = null,
+) => ({ id, title, content, priority, is_active, created_at, audience_kind, audience_id })
+
+const CURS = { kind: 'COURSE' as const, id: 'curs-1', name: 'Înot începători', active: true }
+const ACTIVITATE = { kind: 'ACTIVITY' as const, id: 'act-1', name: 'Cros de toamnă', active: true }
+const CURS_OPRIT = { kind: 'COURSE' as const, id: 'curs-vechi', name: 'Schi 2025', active: false }
 
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -54,9 +63,150 @@ beforeEach(() => {
     anunt('a', 'Cantonament de vară'),
     anunt('b', 'Bazinul închis', false),
   ] as never)
+  mockedTinte.mockResolvedValue([CURS, ACTIVITATE, CURS_OPRIT] as never)
   mockedCreeaza.mockResolvedValue(undefined as never)
   mockedComuta.mockResolvedValue(undefined as never)
   mockedSterge.mockResolvedValue(undefined as never)
+})
+
+// ===== Ținta anunțului =====
+
+test('formularul oferă tot clubul, cursurile și activitățile active', async () => {
+  renderPage()
+  // Selectul există de la prima randare; țintele vin cu interogarea lor.
+  await screen.findByRole('option', { name: 'Înot începători' })
+  const select = screen.getByLabelText('Cine primește')
+  const optiuni = [...select.querySelectorAll('option')].map((o) => o.textContent)
+  expect(optiuni).toContain('Toți părinții clubului')
+  expect(optiuni).toContain('Înot începători')
+  expect(optiuni).toContain('Cros de toamnă')
+  // Un curs oprit nu se mai poate alege pentru un anunț NOU.
+  expect(optiuni).not.toContain('Schi 2025')
+  // Grupate, ca să nu se amestece cursurile cu activitățile.
+  expect([...select.querySelectorAll('optgroup')].map((g) => g.getAttribute('label'))).toEqual([
+    'Cursuri',
+    'Activități',
+  ])
+})
+
+test('publicarea către un curs trimite ținta la server', async () => {
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByLabelText('Cine primește')
+
+  await user.type(screen.getByLabelText('Titlu'), 'Doar pentru înot')
+  await user.type(screen.getByLabelText('Conținut'), 'Vineri nu avem ședință.')
+  await user.selectOptions(screen.getByLabelText('Cine primește'), 'COURSE:curs-1')
+  await user.click(screen.getByRole('button', { name: 'Publică' }))
+
+  await waitFor(() =>
+    expect(mockedCreeaza).toHaveBeenCalledWith(
+      expect.objectContaining({ audience_kind: 'COURSE', audience_id: 'curs-1' }),
+    ),
+  )
+})
+
+test('publicarea către o activitate trimite ținta la server', async () => {
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByLabelText('Cine primește')
+
+  await user.type(screen.getByLabelText('Titlu'), 'Doar pentru cros')
+  await user.type(screen.getByLabelText('Conținut'), 'Ne vedem la start.')
+  await user.selectOptions(screen.getByLabelText('Cine primește'), 'ACTIVITY:act-1')
+  await user.click(screen.getByRole('button', { name: 'Publică' }))
+
+  await waitFor(() =>
+    expect(mockedCreeaza).toHaveBeenCalledWith(
+      expect.objectContaining({ audience_kind: 'ACTIVITY', audience_id: 'act-1' }),
+    ),
+  )
+})
+
+test('după publicare ținta revine la tot clubul', async () => {
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByLabelText('Cine primește')
+
+  await user.type(screen.getByLabelText('Titlu'), 'Doar pentru înot')
+  await user.type(screen.getByLabelText('Conținut'), 'Vineri nu avem ședință.')
+  await user.selectOptions(screen.getByLabelText('Cine primește'), 'COURSE:curs-1')
+  await user.click(screen.getByRole('button', { name: 'Publică' }))
+
+  await waitFor(() => expect(screen.getByLabelText('Cine primește')).toHaveValue('CLUB'))
+})
+
+// Partea „să văd la fiecare ce am trimis”.
+test('fiecare card spune cui i-a fost trimis anunțul', async () => {
+  mockedLista.mockResolvedValue([
+    anunt('a', 'Către tot clubul'),
+    anunt('b', 'Către curs', true, 'x', 'NORMAL', '2026-08-26T09:00:00Z', 'COURSE', 'curs-1'),
+    anunt('c', 'Către activitate', true, 'x', 'NORMAL', '2026-08-26T09:00:00Z', 'ACTIVITY', 'act-1'),
+  ] as never)
+  renderPage()
+  await screen.findByText('Către tot clubul')
+  expect(screen.getByText('Trimis către: Toți părinții clubului')).toBeInTheDocument()
+  expect(screen.getByText('Trimis către: Curs: Înot începători')).toBeInTheDocument()
+  expect(screen.getByText('Trimis către: Activitate: Cros de toamnă')).toBeInTheDocument()
+})
+
+// Un anunț vechi trimis la un curs oprit între timp trebuie să-și păstreze eticheta.
+test('eticheta se rezolvă și pentru o țintă oprită între timp', async () => {
+  mockedLista.mockResolvedValue([
+    anunt('a', 'Vechi', true, 'x', 'NORMAL', '2026-08-26T09:00:00Z', 'COURSE', 'curs-vechi'),
+  ] as never)
+  renderPage()
+  await screen.findByText('Vechi')
+  expect(screen.getByText('Trimis către: Curs: Schi 2025')).toBeInTheDocument()
+})
+
+// `activities_select` nu are clauză de club, deci o activitate dezactivată nu se
+// mai citește — eticheta ei trebuie să spună asta, nu să rămână goală.
+test('o țintă care nu se mai poate citi are text de rezervă', async () => {
+  mockedLista.mockResolvedValue([
+    anunt('a', 'Orfan', true, 'x', 'NORMAL', '2026-08-26T09:00:00Z', 'ACTIVITY', 'disparuta'),
+  ] as never)
+  renderPage()
+  await screen.findByText('Orfan')
+  expect(screen.getByText('Trimis către: Activitate indisponibil')).toBeInTheDocument()
+})
+
+test('filtrul restrânge lista la ținta aleasă și spune câte a lăsat', async () => {
+  const user = userEvent.setup()
+  mockedLista.mockResolvedValue([
+    anunt('a', 'Către tot clubul'),
+    anunt('b', 'Către curs', true, 'x', 'NORMAL', '2026-08-26T09:00:00Z', 'COURSE', 'curs-1'),
+  ] as never)
+  renderPage()
+  await screen.findByText('Către tot clubul')
+
+  await user.selectOptions(screen.getByLabelText('Arată'), 'COURSE:curs-1')
+
+  expect(screen.getByText('Către curs')).toBeInTheDocument()
+  expect(screen.queryByText('Către tot clubul')).not.toBeInTheDocument()
+  expect(screen.getByText('1 din 2')).toBeInTheDocument()
+})
+
+test('un filtru fără potriviri nu arată mesajul de listă goală', async () => {
+  const user = userEvent.setup()
+  mockedLista.mockResolvedValue([
+    anunt('a', 'Către tot clubul'),
+    anunt('b', 'Tot către club'),
+  ] as never)
+  renderPage()
+  await screen.findByText('Către tot clubul')
+
+  await user.selectOptions(screen.getByLabelText('Arată'), 'COURSE:curs-1')
+
+  expect(screen.getByText('Niciun anunț către ținta aleasă.')).toBeInTheDocument()
+  expect(screen.queryByText('Niciun anunț încă.')).not.toBeInTheDocument()
+})
+
+test('filtrul nu apare pentru un singur anunț', async () => {
+  mockedLista.mockResolvedValue([anunt('a', 'Singurul')] as never)
+  renderPage()
+  await screen.findByText('Singurul')
+  expect(screen.queryByLabelText('Arată')).not.toBeInTheDocument()
 })
 
 // Criteriul 1: ștergerea e definitivă și pleca la o singură apăsare, fără nicio
@@ -140,6 +290,9 @@ test('publicarea reușită golește formularul și anunță', async () => {
       title: 'Ședință cu părinții',
       content: 'Vineri la ora 18.',
       priority: 'NORMAL',
+      // Implicit anunțul merge la tot clubul, nu la un curs anume.
+      audience_kind: 'CLUB',
+      audience_id: null,
     }),
   )
   await waitFor(() => expect(screen.getByLabelText('Titlu')).toHaveValue(''))
