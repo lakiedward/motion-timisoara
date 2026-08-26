@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Pin } from 'lucide-react'
 
 import { getMyAnnouncements } from '@/api/account'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function AnnouncementsPage() {
@@ -12,9 +13,12 @@ export default function AnnouncementsPage() {
   const {
     data: announcements = [],
     isLoading,
+    isError,
+    refetch,
   } = useQuery({
     queryKey: ['my-announcements'],
     queryFn: getMyAnnouncements,
+    retry: false,
   })
 
   return (
@@ -25,6 +29,16 @@ export default function AnnouncementsPage() {
         <div className="space-y-3">
           <Skeleton className="h-28 rounded-3xl" />
           <Skeleton className="h-28 rounded-3xl" />
+        </div>
+      ) : isError && !announcements.length ? (
+        // Cele două surse se cer împreună, deci o cădere pe oricare dintre ele
+        // lăsa ecranul pe mesajul de listă goală — adică un părinte cu anunțuri
+        // era anunțat că nu are niciunul. Al șaselea ecran cu același tipar.
+        <div role="alert" className="rounded-3xl border border-dashed py-16 text-center">
+          <p className="text-foreground font-medium">Nu am putut încărca anunțurile.</p>
+          <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetch()}>
+            Reîncearcă
+          </Button>
         </div>
       ) : announcements.length ? (
         <ul className="space-y-4">
@@ -57,7 +71,8 @@ export default function AnnouncementsPage() {
         </ul>
       ) : (
         <div className="text-muted-foreground rounded-3xl border border-dashed py-16 text-center">
-          Niciun anunț încă. Anunțurile de la cursurile copiilor tăi vor apărea aici.
+          Niciun anunț încă. Aici apar anunțurile de la cursurile copiilor tăi și cele de la
+          cluburile la care sunt înscriși.
         </div>
       )}
     </div>

@@ -12,6 +12,8 @@ on the remote (verified by md5).
 | `00017_course_availability.sql` | `20260810133637` | `00015_course_availability` |
 | `00018_course_availability_via_spots_remaining.sql` | `20260810133739` | `00015_course_availability` |
 | `00019_announcement_views.sql` | `20260811091856` | `00016_announcement_views` |
+| `00020_club_announcement_audience.sql` | `20260826091059` | `club_announcement_audience` |
+| `00021_club_announcement_audience_ownership.sql` | `20260826094655` | `club_announcement_audience_ownership` |
 
 `00017` and `00018` are both kept on purpose: `00018` replaced `00017` in production
 62 seconds after it was applied, and the ledger records what actually ran.

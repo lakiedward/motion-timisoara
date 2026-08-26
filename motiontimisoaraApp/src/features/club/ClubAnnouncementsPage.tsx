@@ -48,16 +48,32 @@ function citesteTinta(v: string): { kind: AudienceKind; id: string | null } {
 }
 const scrieTinta = (a: ClubAudience) => `${a.kind}:${a.id}`
 
-const ETICHETA_TINTA: Record<string, string> = { COURSE: 'Curs', ACTIVITY: 'Activitate', CAMP: 'Tabără' }
+const ETICHETA_TINTA: Record<string, string> = { COURSE: 'Curs', ACTIVITY: 'Activitate' }
+/** „Curs indisponibil”, dar „Activitate indisponibilă”. */
+const INDISPONIBIL: Record<string, string> = {
+  COURSE: 'Curs indisponibil',
+  ACTIVITY: 'Activitate indisponibilă',
+}
 
-/** Ce scrie pe card despre cine primește anunțul. */
-function numeleTintei(a: ClubAnnouncement, tinte: ClubAudience[]): string {
+/**
+ * Ce scrie pe card despre cine primește anunțul.
+ *
+ * `tinteNecunoscute` separă două situații pe care textul le confunda: ținta chiar
+ * nu se mai poate citi (curs șters, activitate dezactivată — `activities_select`
+ * nu are clauză de club), sau lista de ținte n-a apucat să se încarce. A doua nu
+ * are voie să pună „indisponibil” pe fiecare card al unui club perfect sănătos.
+ */
+function numeleTintei(
+  a: ClubAnnouncement,
+  tinte: ClubAudience[],
+  tinteNecunoscute: boolean,
+): string {
   if (a.audience_kind === 'CLUB') return 'Toți părinții clubului'
-  const gasita = tinte.find((t) => t.id === a.audience_id)
   const fel = ETICHETA_TINTA[a.audience_kind] ?? a.audience_kind
-  // Textul de rezervă contează: `activities_select` nu are clauză de club, deci o
-  // activitate dezactivată nu se mai citește și numele ei nu se poate rezolva.
-  return gasita ? `${fel}: ${gasita.name}` : `${fel} indisponibil`
+  const gasita = tinte.find((t) => t.kind === a.audience_kind && t.id === a.audience_id)
+  if (gasita) return `${fel}: ${gasita.name}`
+  if (tinteNecunoscute) return `${fel} — nu am putut încărca numele`
+  return INDISPONIBIL[a.audience_kind] ?? `${fel} indisponibil`
 }
 
 // Verificarea se facea in tacere, direct in onSubmit: daca titlul sau continutul
@@ -114,9 +130,9 @@ export default function ClubAnnouncementsPage() {
     retry: false,
   })
 
-  // Ținele se cer o dată și servesc la două lucruri: alegerea din formular (doar
+  // Țintele se cer o dată și servesc la două lucruri: alegerea din formular (doar
   // cele active) și eticheta de pe fiecare card (și cele oprite între timp).
-  const { data: tinte = [] } = useQuery({
+  const { data: tinte = [], isError: aEsuatTintele } = useQuery({
     queryKey: ['club-audiences', clubId],
     queryFn: () => getClubAudiences(clubId),
     enabled: !!clubId,
@@ -124,12 +140,17 @@ export default function ClubAnnouncementsPage() {
   const tinteActive = tinte.filter((t) => t.active)
 
   const [filtru, setFiltru] = useState(TOATE)
+  // Filtrul se arată abia de la al doilea anunț. Dacă lista scade sub prag cât
+  // timp e activ un filtru, selectul dispare cu filtrul încă pus — și lista arăta
+  // gol, fără nicio cale de întoarcere. Filtrul contează doar cât e vizibil.
+  const filtruVizibil = items.length > 1
+  const filtruActiv = filtruVizibil ? filtru : TOATE
   const randuri =
-    filtru === TOATE
+    filtruActiv === TOATE
       ? items
-      : filtru === TOT_CLUBUL
+      : filtruActiv === TOT_CLUBUL
         ? items.filter((a) => a.audience_kind === 'CLUB')
-        : items.filter((a) => `${a.audience_kind}:${a.audience_id}` === filtru)
+        : items.filter((a) => `${a.audience_kind}:${a.audience_id}` === filtruActiv)
 
   const aEsuatIncarcarea = aEsuatClubul || (isError && !items.length)
   const reincearca = () => (aEsuatClubul ? reincarcaClubul() : refetch())
@@ -338,7 +359,7 @@ export default function ClubAnnouncementsPage() {
         <>
           {/* Filtrul e partea „sa vad la fiecare ce am trimis”: apare abia cand
               exista mai mult de un anunt, ca sa nu incarce ecranul degeaba. */}
-          {items.length > 1 && (
+          {filtruVizibil && (
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <Label htmlFor="filtru" className="text-muted-foreground text-sm font-normal">
                 Arată
@@ -357,7 +378,7 @@ export default function ClubAnnouncementsPage() {
                   </option>
                 ))}
               </select>
-              {filtru !== TOATE && (
+              {filtruActiv !== TOATE && (
                 <span className="text-muted-foreground text-sm">
                   {randuri.length} din {items.length}
                 </span>
@@ -385,7 +406,7 @@ export default function ClubAnnouncementsPage() {
                 <p className="text-muted-foreground mt-1 flex flex-wrap gap-x-2 text-xs">
                   <span>{formatData(a.created_at)}</span>
                   <span aria-hidden="true">·</span>
-                  <span>Trimis către: {numeleTintei(a, tinte)}</span>
+                  <span>Trimis către: {numeleTintei(a, tinte, aEsuatTintele)}</span>
                 </p>
                 {/* Randurile scrise de club se pastreaza: fara asta un anunt scris
                     pe trei randuri se citea ca un bloc continuu. Pagina de anunturi

@@ -95,3 +95,23 @@ test('un părinte fără anunțuri vede mesajul de listă goală', async () => {
   renderPage()
   expect(await screen.findByText(/Niciun anunț încă\./)).toBeInTheDocument()
 })
+
+// Textul stării goale vorbea doar despre cursuri, deși acum sunt două surse.
+test('mesajul de listă goală pomenește ambele surse', async () => {
+  mocked.mockResolvedValue([] as never)
+  renderPage()
+  const mesaj = await screen.findByText(/Niciun anunț încă\./)
+  expect(mesaj.textContent).toMatch(/cursurile/)
+  expect(mesaj.textContent).toMatch(/cluburile/)
+})
+
+// Regresie găsită la revizuire: cele două surse se cer împreună, deci o cădere pe
+// oricare dintre ele lăsa ecranul pe mesajul de listă goală — un părinte cu
+// anunțuri era anunțat că nu are niciunul.
+test('o încărcare căzută arată eroare cu reîncercare, nu mesajul de listă goală', async () => {
+  mocked.mockRejectedValue(new Error('network'))
+  renderPage()
+  expect(await screen.findByText('Nu am putut încărca anunțurile.')).toBeInTheDocument()
+  expect(screen.queryByText(/Niciun anunț încă\./)).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Reîncearcă' })).toBeInTheDocument()
+})

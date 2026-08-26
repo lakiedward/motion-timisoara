@@ -150,9 +150,18 @@ type ClubAnnouncementRow = Tables<'club_announcements'> & {
  * vede, doar cere. Ascunse, programate in viitor si expirate nu vin inapoi.
  */
 async function getMyClubAnnouncements(): Promise<ClubAnnouncementRow[]> {
+  const acum = new Date().toISOString()
   const { data, error } = await supabase
     .from('club_announcements')
     .select('*, club:clubs(id,name)')
+    // Filtrele astea par o dublare a politicii, dar nu sunt: prima clauza a
+    // politicii lasa un proprietar de club sa-si vada TOATE anunturile, inclusiv
+    // ascunse, programate in viitor si expirate. Pe pagina de parinte, acelasi om
+    // trebuie sa vada ce vede un parinte — altfel isi verifica un anunt ascuns
+    // aici si crede ca a ajuns la lume.
+    .eq('is_active', true)
+    .or(`publish_at.is.null,publish_at.lte.${acum}`)
+    .or(`expires_at.is.null,expires_at.gt.${acum}`)
     .order('created_at', { ascending: false })
   if (error) throw error
   return (data ?? []) as unknown as ClubAnnouncementRow[]

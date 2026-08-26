@@ -3,6 +3,8 @@ import { beforeEach, expect, test, vi } from 'vitest'
 import { getMyAnnouncements } from './account'
 
 let raspuns: Record<string, { data: unknown; error: unknown }> = {}
+/** Ce s-a cerut serverului, pe tabelă — forma cererii contează, nu doar răspunsul. */
+let cereri: Record<string, string[]> = {}
 
 function builder(table: string) {
   const proxy: unknown = new Proxy(() => undefined, {
@@ -11,7 +13,10 @@ function builder(table: string) {
         return (resolve: (v: unknown) => unknown) =>
           Promise.resolve(resolve(raspuns[table] ?? { data: [], error: null }))
       }
-      return () => proxy
+      return (...args: unknown[]) => {
+        ;(cereri[table] ??= []).push(`${prop}(${args.map(String).join(',')})`)
+        return proxy
+      }
     },
   })
   return proxy
@@ -39,6 +44,24 @@ const club = (id: string, created_at: string, title = 'Titlu') => ({
 
 beforeEach(() => {
   raspuns = {}
+  cereri = {}
+})
+
+// Prima clauză a politicii lasă un proprietar de club să-și vadă TOATE anunțurile,
+// inclusiv ascunse și programate. Pe pagina de părinte, același om trebuie să vadă
+// ce vede un părinte — altfel își verifică un anunț ascuns aici și crede că a plecat.
+test('anunțurile de club se cer doar în forma pe care o vede un părinte', async () => {
+  await getMyAnnouncements()
+  const cerute = cereri.club_announcements ?? []
+  expect(cerute).toContain('eq(is_active,true)')
+  expect(cerute.some((c) => c.startsWith('or(publish_at.is.null,publish_at.lte.'))).toBe(true)
+  expect(cerute.some((c) => c.startsWith('or(expires_at.is.null,expires_at.gt.'))).toBe(true)
+})
+
+test('numele clubului se cere odată cu anunțul, nu se ghicește', async () => {
+  await getMyAnnouncements()
+  expect(cereri.club_announcements ?? []).toContain('select(*, club:clubs(id,name))')
+  expect(cereri.course_announcements ?? []).toContain('select(*, course:courses(id,name))')
 })
 
 test('lista aduce ambele surse, marcate cu autorul lor', async () => {

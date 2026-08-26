@@ -160,17 +160,6 @@ test('eticheta se rezolvă și pentru o țintă oprită între timp', async () =
   expect(screen.getByText('Trimis către: Curs: Schi 2025')).toBeInTheDocument()
 })
 
-// `activities_select` nu are clauză de club, deci o activitate dezactivată nu se
-// mai citește — eticheta ei trebuie să spună asta, nu să rămână goală.
-test('o țintă care nu se mai poate citi are text de rezervă', async () => {
-  mockedLista.mockResolvedValue([
-    anunt('a', 'Orfan', true, 'x', 'NORMAL', '2026-08-26T09:00:00Z', 'ACTIVITY', 'disparuta'),
-  ] as never)
-  renderPage()
-  await screen.findByText('Orfan')
-  expect(screen.getByText('Trimis către: Activitate indisponibil')).toBeInTheDocument()
-})
-
 test('filtrul restrânge lista la ținta aleasă și spune câte a lăsat', async () => {
   const user = userEvent.setup()
   mockedLista.mockResolvedValue([
@@ -207,6 +196,66 @@ test('filtrul nu apare pentru un singur anunț', async () => {
   renderPage()
   await screen.findByText('Singurul')
   expect(screen.queryByLabelText('Arată')).not.toBeInTheDocument()
+})
+
+// Regresie găsită la revizuire: filtrul se arată abia de la al doilea anunț, deci
+// ștergerea unuia cât timp e activ un filtru făcea selectul să dispară cu filtrul
+// încă pus — lista rămânea goală, fără nicio cale de întoarcere.
+test('când filtrul dispare, anunțul rămas se vede totuși', async () => {
+  const user = userEvent.setup()
+  mockedLista.mockResolvedValue([
+    anunt('a', 'Către tot clubul'),
+    anunt('b', 'Către curs', true, 'x', 'NORMAL', '2026-08-26T09:00:00Z', 'COURSE', 'curs-1'),
+  ] as never)
+  const { rerender } = renderPage()
+  await screen.findByText('Către tot clubul')
+
+  await user.selectOptions(screen.getByLabelText('Arată'), 'COURSE:curs-1')
+  expect(screen.queryByText('Către tot clubul')).not.toBeInTheDocument()
+
+  // Anunțul filtrat dispare din listă, ca după o ștergere.
+  mockedLista.mockResolvedValue([anunt('a', 'Către tot clubul')] as never)
+  rerender(<div />)
+  renderPage()
+
+  expect(await screen.findByText('Către tot clubul')).toBeInTheDocument()
+  expect(screen.queryByText('Niciun anunț către ținta aleasă.')).not.toBeInTheDocument()
+})
+
+// O cădere a interogării de ținte nu are voie să pună „indisponibil” pe fiecare
+// card al unui club perfect sănătos — sunt două situații diferite.
+test('dacă țintele nu se pot încărca, eticheta nu minte că ținta a dispărut', async () => {
+  mockedTinte.mockRejectedValue(new Error('network'))
+  mockedLista.mockResolvedValue([
+    anunt('b', 'Către curs', true, 'x', 'NORMAL', '2026-08-26T09:00:00Z', 'COURSE', 'curs-1'),
+  ] as never)
+  renderPage()
+  await screen.findByText('Către curs')
+  expect(await screen.findByText(/nu am putut încărca numele/)).toBeInTheDocument()
+  expect(screen.queryByText(/indisponibil/)).not.toBeInTheDocument()
+})
+
+test('o activitate dispărută are acordul corect în text', async () => {
+  mockedLista.mockResolvedValue([
+    anunt('a', 'Orfan', true, 'x', 'NORMAL', '2026-08-26T09:00:00Z', 'ACTIVITY', 'disparuta'),
+  ] as never)
+  renderPage()
+  await screen.findByText('Orfan')
+  expect(screen.getByText('Trimis către: Activitate indisponibilă')).toBeInTheDocument()
+})
+
+// Un curs și o activitate pot avea același id fără să fie aceeași entitate.
+test('eticheta nu confundă un curs cu o activitate care are același id', async () => {
+  mockedTinte.mockResolvedValue([
+    { kind: 'COURSE', id: 'acelasi', name: 'Cursul', active: true },
+    { kind: 'ACTIVITY', id: 'acelasi', name: 'Activitatea', active: true },
+  ] as never)
+  mockedLista.mockResolvedValue([
+    anunt('a', 'Spre activitate', true, 'x', 'NORMAL', '2026-08-26T09:00:00Z', 'ACTIVITY', 'acelasi'),
+  ] as never)
+  renderPage()
+  await screen.findByText('Spre activitate')
+  expect(screen.getByText('Trimis către: Activitate: Activitatea')).toBeInTheDocument()
 })
 
 // Criteriul 1: ștergerea e definitivă și pleca la o singură apăsare, fără nicio

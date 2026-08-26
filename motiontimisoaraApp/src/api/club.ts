@@ -158,8 +158,14 @@ export async function deleteClubCode(id: string) {
 // ===== Club announcements =====
 export type ClubAnnouncement = Tables<'club_announcements'>
 
-/** Cui i se poate adresa un anunt. `CAMP` exista in baza, dar nu se ofera in
- *  interfata: `camps` nu are `club_id`, deci un club n-are inca tabere ale lui. */
+/**
+ * Cui i se poate adresa un anunt.
+ *
+ * `CAMP` a fost scos si din constrangerea bazei (migrarea 00021): apartenenta unei
+ * tinte se verifica prin clubul care o detine, iar `camps` nu are `club_id`, deci
+ * pentru tabere verificarea nici nu se poate exprima. Se pune la loc odata cu
+ * coloana, cand taberele devin ale clubului.
+ */
 export type AudienceKind = 'CLUB' | 'COURSE' | 'ACTIVITY'
 
 /** O tinta posibila pentru un anunt: un curs sau o activitate a clubului. */
