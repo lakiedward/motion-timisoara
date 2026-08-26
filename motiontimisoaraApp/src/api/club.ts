@@ -192,14 +192,27 @@ export async function deleteClubAnnouncement(id: string) {
 }
 
 // ===== Club locations =====
-export async function getClubLocations(clubId: string): Promise<Tables<'locations'>[]> {
+/** O locatie a clubului, cu numarul de cursuri care se tin acolo. */
+export type ClubLocation = Tables<'locations'> & { courseCount: number }
+
+/**
+ * Locatiile pe care le ADMINISTREAZA clubul, cu numarul de cursuri legate de
+ * fiecare. Numarul e cerut in aceeasi interogare (`courses(count)`), fiindca
+ * dezactivarea unei locatii trebuie sa poata spune pe cate cursuri cade —
+ * altfel clubul afla dupa.
+ */
+export async function getClubLocations(clubId: string): Promise<ClubLocation[]> {
   const { data, error } = await supabase
     .from('locations')
-    .select('*')
+    .select('*, courses(count)')
     .eq('club_id', clubId)
     .order('name')
   if (error) throw error
-  return data ?? []
+  type Row = Tables<'locations'> & { courses?: { count: number }[] }
+  return ((data ?? []) as unknown as Row[]).map(({ courses, ...loc }) => ({
+    ...loc,
+    courseCount: courses?.[0]?.count ?? 0,
+  }))
 }
 
 /**
@@ -278,8 +291,18 @@ export async function updateClubLocation(
   return data
 }
 
+/**
+ * `.select().single()` ca la `updateClubLocation`: fara el PostgREST raspunde 204
+ * si cand RLS a filtrat toate randurile, deci o comutare refuzata ar aparea pe
+ * ecran ca reusita.
+ */
 export async function setClubLocationActive(id: string, is_active: boolean) {
-  const { error } = await supabase.from('locations').update({ is_active }).eq('id', id)
+  const { error } = await supabase
+    .from('locations')
+    .update({ is_active })
+    .eq('id', id)
+    .select()
+    .single()
   if (error) throw error
 }
 
