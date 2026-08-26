@@ -4,6 +4,7 @@ import {
   MAX_FILM_MB,
   MAX_FILM_SECUNDE,
   MAX_POZE,
+  marime,
   mb,
   pregatesteFisiere,
   RETENTIE_FILM_ZILE,
@@ -22,6 +23,16 @@ const MB = 1024 * 1024
 test('mărimea se scrie în MB, cu o zecimală', () => {
   expect(mb(52_428_800)).toBe(50)
   expect(mb(1_572_864)).toBe(1.5)
+})
+
+// O poză micșorată ajunge la 30–400 KB, iar în MB cu o zecimală asta se citea
+// „0 MB” — adică fișierul părea gol.
+test('fișierele mici se scriu în KB, nu ca „0 MB”', () => {
+  expect(marime(31_742)).toBe('31 KB')
+  expect(marime(400_000)).toBe('391 KB')
+  expect(marime(1_572_864)).toBe('1.5 MB')
+  // Nici cel mai mic fișier nu se scrie „0”.
+  expect(marime(200)).toBe('1 KB')
 })
 
 // În jsdom nu există canvas, deci micșorarea cade pe fișierul original — exact

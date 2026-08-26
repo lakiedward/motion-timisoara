@@ -121,6 +121,30 @@ export async function getAtasamente(
   return pe
 }
 
+/**
+ * Scoate fișierele unui anunț din bucket, înainte ca anunțul să fie șters.
+ *
+ * Rândurile de atașament cad singure, în cascadă, dar FIȘIERELE nu: ar rămâne în
+ * bucket pentru totdeauna, iar politica bucketului le leagă de anunț — deci după
+ * ștergerea anunțului nimeni nu le-ar mai putea nici măcar găsi ca să le scoată.
+ *
+ * Nu aruncă: dacă bucketul refuză, anunțul tot trebuie să poată fi șters. Un
+ * fișier rămas în urmă e o risipă; un anunț care nu se poate șterge e un ecran
+ * blocat pentru om.
+ */
+export async function stergeFisiereleAnuntului(clubAnnouncementId: string): Promise<void> {
+  try {
+    const { data } = await supabase
+      .from('announcement_attachments')
+      .select('storage_path')
+      .eq('club_announcement_id', clubAnnouncementId)
+    const cai = (data ?? []).map((r) => r.storage_path).filter((c): c is string => !!c)
+    if (cai.length) await supabase.storage.from(BUCKET).remove(cai)
+  } catch {
+    /* vezi comentariul de mai sus */
+  }
+}
+
 /** Scoate un atașament: întâi fișierul, apoi rândul care îl pomenește. */
 export async function stergeAtasament(id: string, storagePath: string | null): Promise<void> {
   if (storagePath) {

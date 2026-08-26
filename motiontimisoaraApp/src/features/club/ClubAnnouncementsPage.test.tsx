@@ -12,6 +12,7 @@ import {
   getMyClub,
   setAnnouncementActive,
 } from '@/api/club'
+import { stergeFisiereleAnuntului } from '@/api/attachments'
 import { toast } from 'sonner'
 
 vi.mock('@/api/club', () => ({
@@ -21,6 +22,12 @@ vi.mock('@/api/club', () => ({
   createClubAnnouncement: vi.fn(),
   setAnnouncementActive: vi.fn(),
   deleteClubAnnouncement: vi.fn(),
+}))
+
+vi.mock('@/api/attachments', () => ({
+  getAtasamente: vi.fn(async () => ({})),
+  incarcaAtasamente: vi.fn(async () => []),
+  stergeFisiereleAnuntului: vi.fn(async () => undefined),
 }))
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
@@ -283,6 +290,29 @@ test('confirmarea acceptată chiar șterge anunțul', async () => {
 
   await user.click(screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”' }))
   await waitFor(() => expect(mockedSterge).toHaveBeenCalledWith('a'))
+  confirmSpy.mockRestore()
+})
+
+// Fișierele se scot ÎNAINTE de anunț: politica bucketului le leagă de el, deci
+// după ștergerea anunțului n-ar mai putea fi găsite de nimeni ca să fie scoase,
+// și ar rămâne în bucket pentru totdeauna.
+test('ștergerea scoate întâi fișierele din bucket, apoi anunțul', async () => {
+  const user = userEvent.setup()
+  const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+  const ordine: string[] = []
+  vi.mocked(stergeFisiereleAnuntului).mockImplementation(async () => {
+    ordine.push('fisiere')
+  })
+  mockedSterge.mockImplementation((async () => {
+    ordine.push('anunt')
+  }) as never)
+
+  renderPage()
+  await screen.findByText('Cantonament de vară')
+  await user.click(screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”' }))
+
+  await waitFor(() => expect(ordine).toEqual(['fisiere', 'anunt']))
+  expect(stergeFisiereleAnuntului).toHaveBeenCalledWith('a')
   confirmSpy.mockRestore()
 })
 

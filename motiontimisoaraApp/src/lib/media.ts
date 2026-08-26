@@ -46,6 +46,17 @@ export function mb(octeti: number): number {
 }
 
 /**
+ * Mărimea scrisă pentru om.
+ *
+ * O poză micșorată ajunge la 30–400 KB, iar în MB cu o zecimală asta se citea
+ * „0 MB” — adică fișierul părea gol. Sub un MB scriem kilobiți.
+ */
+export function marime(octeti: number): string {
+  if (octeti < 1024 * 1024) return `${Math.max(1, Math.round(octeti / 1024))} KB`
+  return `${mb(octeti)} MB`
+}
+
+/**
  * Durata unei filmări, citită din metadatele fișierului.
  *
  * Întoarce `null` când browserul nu poate citi containerul — se întâmplă cu unele
