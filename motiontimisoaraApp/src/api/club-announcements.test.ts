@@ -70,6 +70,8 @@ test('publicarea cere rândul înapoi, ca zero rânduri să fie eroare', async (
     title: 'Publicat',
     content: 'Text',
     priority: 'NORMAL',
+    audience_kind: 'CLUB',
+    audience_id: null,
   })
   expect(filtre).toContain('select()')
   expect(filtre).toContain('single()')
@@ -78,7 +80,14 @@ test('publicarea cere rândul înapoi, ca zero rânduri să fie eroare', async (
 test('o publicare refuzată de bază aruncă, nu se dă drept reușită', async () => {
   raspuns = { club_announcements: { data: null, error: { message: 'RLS' } } }
   await expect(
-    createClubAnnouncement({ club_id: 'club-1', title: 'X', content: 'Y', priority: 'NORMAL' }),
+    createClubAnnouncement({
+      club_id: 'club-1',
+      title: 'X',
+      content: 'Y',
+      priority: 'NORMAL',
+      audience_kind: 'CLUB',
+      audience_id: null,
+    }),
   ).rejects.toBeTruthy()
 })
 

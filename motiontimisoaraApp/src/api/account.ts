@@ -120,6 +120,79 @@ export async function getMyCourseAnnouncements(): Promise<CourseAnnouncementRow[
   return (data ?? []) as unknown as CourseAnnouncementRow[]
 }
 
+/**
+ * Un anunt asa cum il vede parintele, indiferent din ce tabela vine.
+ *
+ * Sunt doua canale, si pana acum pagina il citea doar pe unul: `course_announcements`,
+ * scris de antrenorul cursului, si `club_announcements`, scris de club. Al doilea
+ * nu ajungea la nimeni, desi politica lui de citire era gandita pentru parinti.
+ */
+export type AnnouncementRow = {
+  id: string
+  content: string
+  title: string | null
+  created_at: string
+  pinned: boolean
+  /** „Antrenor” pentru anunturile de curs, „Club” pentru cele ale clubului. */
+  sursa: 'coach' | 'club'
+  /** Cine l-a scris, asa cum se arata pe card: numele cursului sau al clubului. */
+  autor: string
+  courseId: string | null
+}
+
+type ClubAnnouncementRow = Tables<'club_announcements'> & {
+  club: Pick<Tables<'clubs'>, 'id' | 'name'> | null
+}
+
+/**
+ * Anunturile de club care ajung la parintele curent. Filtrarea dupa audienta o
+ * face politica `club_announcements_select` in baza — clientul nu decide cine ce
+ * vede, doar cere. Ascunse, programate in viitor si expirate nu vin inapoi.
+ */
+async function getMyClubAnnouncements(): Promise<ClubAnnouncementRow[]> {
+  const { data, error } = await supabase
+    .from('club_announcements')
+    .select('*, club:clubs(id,name)')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []) as unknown as ClubAnnouncementRow[]
+}
+
+/** Ambele canale, intr-o singura lista: fixatele intai, apoi cronologic invers. */
+export async function getMyAnnouncements(): Promise<AnnouncementRow[]> {
+  const [cursuri, cluburi] = await Promise.all([
+    getMyCourseAnnouncements(),
+    getMyClubAnnouncements(),
+  ])
+  const randuri: AnnouncementRow[] = [
+    ...cursuri.map((a) => ({
+      id: a.id,
+      content: a.content,
+      title: null,
+      created_at: a.created_at,
+      pinned: a.pinned,
+      sursa: 'coach' as const,
+      autor: a.course?.name ?? 'Curs',
+      courseId: a.course?.id ?? null,
+    })),
+    ...cluburi.map((a) => ({
+      id: a.id,
+      content: a.content,
+      title: a.title,
+      created_at: a.created_at,
+      pinned: false,
+      sursa: 'club' as const,
+      autor: a.club?.name ?? 'Club',
+      courseId: null,
+    })),
+  ]
+  return randuri.sort(
+    (x, y) =>
+      Number(y.pinned) - Number(x.pinned) ||
+      new Date(y.created_at).getTime() - new Date(x.created_at).getTime(),
+  )
+}
+
 export function childAge(birthDate: string): number {
   const d = new Date(birthDate)
   const now = new Date()

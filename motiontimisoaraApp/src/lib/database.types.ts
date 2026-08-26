@@ -263,6 +263,8 @@ export type Database = {
       }
       club_announcements: {
         Row: {
+          audience_id: string | null
+          audience_kind: string
           author_user_id: string
           club_id: string
           content: string
@@ -276,6 +278,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          audience_id?: string | null
+          audience_kind?: string
           author_user_id: string
           club_id: string
           content: string
@@ -289,6 +293,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          audience_id?: string | null
+          audience_kind?: string
           author_user_id?: string
           club_id?: string
           content?: string
