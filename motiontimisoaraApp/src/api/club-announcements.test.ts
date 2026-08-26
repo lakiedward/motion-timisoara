@@ -4,6 +4,7 @@ import {
   createClubAnnouncement,
   deleteClubAnnouncement,
   getClubAnnouncements,
+  getClubAudiences,
   setAnnouncementActive,
 } from './club'
 
@@ -11,6 +12,8 @@ import {
 let raspuns: Record<string, { data: unknown; error: unknown }> = {}
 /** Filtrele cerute serverului, ca să putem verifica ce s-a delegat bazei. */
 let filtre: string[] = []
+/** Argumentele întregi, pentru cazurile în care forma lor contează (ex. insert). */
+let argumente: Record<string, unknown[]> = {}
 
 function builder(table: string) {
   const proxy: unknown = new Proxy(() => undefined, {
@@ -21,6 +24,7 @@ function builder(table: string) {
       }
       return (...args: unknown[]) => {
         filtre.push(`${prop}(${args.map(String).join(',')})`)
+        argumente[prop] = args
         return proxy
       }
     },
@@ -47,6 +51,64 @@ const anunt = (id: string, title: string) => ({
 beforeEach(() => {
   raspuns = {}
   filtre = []
+  argumente = {}
+})
+
+// Fără asta, cineva care rescrie insertul enumerând coloanele explicit (tiparul
+// din `createClubLocation`) poate pierde ținta fără ca vreun test să se aprindă:
+// anunțul ar pleca mai departe, dar către tot clubul.
+test('ținta chiar ajunge în ce se trimite la server', async () => {
+  raspuns = { club_announcements: { data: anunt('a', 'Tintit'), error: null } }
+  await createClubAnnouncement({
+    club_id: 'club-1',
+    title: 'Tintit',
+    content: 'Text',
+    priority: 'NORMAL',
+    audience_kind: 'COURSE',
+    audience_id: 'curs-1',
+  })
+  expect(argumente.insert?.[0]).toMatchObject({
+    club_id: 'club-1',
+    audience_kind: 'COURSE',
+    audience_id: 'curs-1',
+  })
+})
+
+test('„tot clubul” trimite ținta goală, cum cere constrângerea din bază', async () => {
+  raspuns = { club_announcements: { data: anunt('a', 'General'), error: null } }
+  await createClubAnnouncement({
+    club_id: 'club-1',
+    title: 'General',
+    content: 'Text',
+    priority: 'NORMAL',
+    audience_kind: 'CLUB',
+    audience_id: null,
+  })
+  expect(argumente.insert?.[0]).toMatchObject({ audience_kind: 'CLUB', audience_id: null })
+})
+
+// `courses_select` întoarce ORICE curs activ, al oricărui club — delimitarea pe
+// club se face în cerere, nu de politică. Dacă `.eq('club_id', …)` dispare, selectul
+// „Cine primește” al unui club s-ar umple cu cursurile altora.
+test('țintele se cer delimitate pe clubul propriu, nu se bazează pe RLS', async () => {
+  raspuns = {
+    courses: { data: [{ id: 'c1', name: 'Înot', active: true }], error: null },
+    activities: { data: [{ id: 'a1', name: 'Cros', active: false }], error: null },
+  }
+  const tinte = await getClubAudiences('club-1')
+  expect(filtre.filter((f) => f === 'eq(club_id,club-1)')).toHaveLength(2)
+  expect(tinte).toEqual([
+    { kind: 'COURSE', id: 'c1', name: 'Înot', active: true },
+    { kind: 'ACTIVITY', id: 'a1', name: 'Cros', active: false },
+  ])
+})
+
+test('o cădere pe cursuri sau pe activități se propagă, nu întoarce o listă pe jumătate', async () => {
+  raspuns = {
+    courses: { data: [{ id: 'c1', name: 'Înot', active: true }], error: null },
+    activities: { data: null, error: { message: 'boom' } },
+  }
+  await expect(getClubAudiences('club-1')).rejects.toBeTruthy()
 })
 
 test('anunțurile clubului se cer filtrate pe club și în ordine cronologică inversă', async () => {
@@ -70,6 +132,8 @@ test('publicarea cere rândul înapoi, ca zero rânduri să fie eroare', async (
     title: 'Publicat',
     content: 'Text',
     priority: 'NORMAL',
+    audience_kind: 'CLUB',
+    audience_id: null,
   })
   expect(filtre).toContain('select()')
   expect(filtre).toContain('single()')
@@ -78,7 +142,14 @@ test('publicarea cere rândul înapoi, ca zero rânduri să fie eroare', async (
 test('o publicare refuzată de bază aruncă, nu se dă drept reușită', async () => {
   raspuns = { club_announcements: { data: null, error: { message: 'RLS' } } }
   await expect(
-    createClubAnnouncement({ club_id: 'club-1', title: 'X', content: 'Y', priority: 'NORMAL' }),
+    createClubAnnouncement({
+      club_id: 'club-1',
+      title: 'X',
+      content: 'Y',
+      priority: 'NORMAL',
+      audience_kind: 'CLUB',
+      audience_id: null,
+    }),
   ).rejects.toBeTruthy()
 })
 

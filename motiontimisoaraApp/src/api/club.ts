@@ -158,6 +158,59 @@ export async function deleteClubCode(id: string) {
 // ===== Club announcements =====
 export type ClubAnnouncement = Tables<'club_announcements'>
 
+/**
+ * Cui i se poate adresa un anunt.
+ *
+ * `CAMP` a fost scos si din constrangerea bazei (migrarea 00021): apartenenta unei
+ * tinte se verifica prin clubul care o detine, iar `camps` nu are `club_id`, deci
+ * pentru tabere verificarea nici nu se poate exprima. Se pune la loc odata cu
+ * coloana, cand taberele devin ale clubului.
+ */
+export type AudienceKind = 'CLUB' | 'COURSE' | 'ACTIVITY'
+
+/** O tinta posibila pentru un anunt: un curs sau o activitate a clubului. */
+export type ClubAudience = {
+  kind: Exclude<AudienceKind, 'CLUB'>
+  id: string
+  name: string
+  active: boolean
+}
+
+/**
+ * Cursurile si activitatile clubului, ca tinte pentru anunturi.
+ *
+ * Intoarce si pe cele inactive, ca eticheta unui anunt vechi sa se poata rezolva
+ * dupa ce cursul a fost oprit — alegerea unei tinte NOI filtreaza mai departe pe
+ * `active`, in pagina. Acelasi tipar ca la `getClubSelectableLocations`.
+ *
+ * Atentie: `courses_select` include `club_id IN my_club_ids()`, deci clubul isi
+ * vede toate cursurile; `activities_select` NU are clauza de club, deci o
+ * activitate dezactivata nu ajunge inapoi si eticheta ei cade pe textul de
+ * rezerva. Se repara in politica, nu aici.
+ */
+export async function getClubAudiences(clubId: string): Promise<ClubAudience[]> {
+  const [cursuri, activitati] = await Promise.all([
+    supabase.from('courses').select('id, name, active').eq('club_id', clubId).order('name'),
+    supabase.from('activities').select('id, name, active').eq('club_id', clubId).order('name'),
+  ])
+  if (cursuri.error) throw cursuri.error
+  if (activitati.error) throw activitati.error
+  return [
+    ...(cursuri.data ?? []).map((c) => ({
+      kind: 'COURSE' as const,
+      id: c.id,
+      name: c.name,
+      active: c.active,
+    })),
+    ...(activitati.data ?? []).map((a) => ({
+      kind: 'ACTIVITY' as const,
+      id: a.id,
+      name: a.name,
+      active: a.active,
+    })),
+  ]
+}
+
 export async function getClubAnnouncements(clubId: string): Promise<ClubAnnouncement[]> {
   const { data, error } = await supabase
     .from('club_announcements')
@@ -179,6 +232,9 @@ export async function createClubAnnouncement(input: {
   title: string
   content: string
   priority: string
+  audience_kind: AudienceKind
+  /** Gol pentru „tot clubul”; obligatoriu altfel — constrangerea din baza o cere. */
+  audience_id: string | null
 }): Promise<ClubAnnouncement> {
   const author = await uid()
   const { data, error } = await supabase
