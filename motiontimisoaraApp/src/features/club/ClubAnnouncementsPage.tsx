@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -55,10 +56,17 @@ function formatData(iso: string): string {
 
 export default function ClubAnnouncementsPage() {
   const qc = useQueryClient()
-  const { data: club, isPending: seIncarcaClubul } = useQuery({
-    queryKey: ['my-club'],
-    queryFn: getMyClub,
-  })
+  // `isError` de pe clubul propriu contează la fel de mult ca cel de pe anunțuri:
+  // dacă `getMyClub` pică, `isPending` devine fals, `clubId` rămâne gol, deci
+  // interogarea anunțurilor stă oprită — iar o interogare oprită are `isLoading`
+  // fals ȘI `isError` fals. Fără ramura de mai jos, cascada cădea pe ultima
+  // ramură și un club cu anunțuri primea „Niciun anunț încă.” la o rețea picată.
+  const {
+    data: club,
+    isPending: seIncarcaClubul,
+    isError: aEsuatClubul,
+    refetch: reincarcaClubul,
+  } = useQuery({ queryKey: ['my-club'], queryFn: getMyClub })
   const clubId = club?.id ?? ''
 
   const {
@@ -72,6 +80,9 @@ export default function ClubAnnouncementsPage() {
     enabled: !!clubId,
     retry: false,
   })
+
+  const aEsuatIncarcarea = aEsuatClubul || (isError && !items.length)
+  const reincearca = () => (aEsuatClubul ? reincarcaClubul() : refetch())
 
   const {
     register,
@@ -100,15 +111,31 @@ export default function ClubAnnouncementsPage() {
 
   // Cele doua mutatii de mai jos nu aveau tratare de eroare, deci un refuz al
   // bazei pleca in tacere si ecranul ramanea neschimbat, ca dupa o reusita.
+  //
+  // Cine e in zbor se tine aici, pe id, NU prin `mutation.variables`: mutatia e
+  // una singura pentru toata lista, iar `variables` pastreaza doar argumentele
+  // ULTIMULUI `mutate`. Cu garda pe `variables`, o a doua apasare pe alt rand
+  // muta reperul si redeschidea butonul primului rand cat timp cererea lui era
+  // inca in zbor — deci a doua apasare pe el chiar pleca la server.
+  const [seAscund, setSeAscund] = useState<string[]>([])
+  const [seSterg, setSeSterg] = useState<string[]>([])
+  const adauga = (set: typeof setSeAscund, id: string) => set((l) => [...l, id])
+  const scoate = (set: typeof setSeAscund, id: string) =>
+    set((l) => l.filter((x) => x !== id))
+
   const toggle = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) =>
       setAnnouncementActive(id, active),
+    onMutate: ({ id }) => adauga(setSeAscund, id),
+    onSettled: (_d, _e, { id }) => scoate(setSeAscund, id),
     onSuccess: invalideaza,
     onError: () => toast.error('Nu am putut schimba vizibilitatea anunțului.'),
   })
 
   const del = useMutation({
     mutationFn: (id: string) => deleteClubAnnouncement(id),
+    onMutate: (id) => adauga(setSeSterg, id),
+    onSettled: (_d, _e, id) => scoate(setSeSterg, id),
     onSuccess: () => {
       invalideaza()
       toast.success('Anunț șters.')
@@ -143,10 +170,11 @@ export default function ClubAnnouncementsPage() {
             id="title"
             className="h-11 lg:h-9"
             aria-invalid={!!errors.title}
+            aria-describedby={errors.title ? 'title-eroare' : undefined}
             {...register('title')}
           />
           {errors.title && (
-            <p role="alert" className="text-destructive text-sm">
+            <p id="title-eroare" role="alert" className="text-destructive text-sm">
               {errors.title.message}
             </p>
           )}
@@ -158,11 +186,12 @@ export default function ClubAnnouncementsPage() {
             id="content"
             rows={4}
             aria-invalid={!!errors.content}
+            aria-describedby={errors.content ? 'content-eroare' : undefined}
             className={`${campCls} py-2`}
             {...register('content')}
           />
           {errors.content && (
-            <p role="alert" className="text-destructive text-sm">
+            <p id="content-eroare" role="alert" className="text-destructive text-sm">
               {errors.content.message}
             </p>
           )}
@@ -178,7 +207,15 @@ export default function ClubAnnouncementsPage() {
               <option value="URGENT">Urgentă</option>
             </select>
           </div>
-          <Button type="submit" className="h-11 lg:h-9" disabled={create.isPending}>
+          {/* Fara `!clubId` publicarea pleca cu club_id gol daca omul apuca sa
+              scrie si sa apese inainte ca `getMyClub` sa raspunda: Postgres
+              respingea uuid-ul gol, iar clubul vedea o eroare pentru un formular
+              completat corect. Codul de dinainte avea garda asta in onSubmit. */}
+          <Button
+            type="submit"
+            className="h-11 lg:h-9"
+            disabled={create.isPending || !clubId}
+          >
             Publică
           </Button>
         </div>
@@ -192,22 +229,29 @@ export default function ClubAnnouncementsPage() {
           <Skeleton className="h-36 rounded-2xl" />
           <Skeleton className="h-36 rounded-2xl" />
         </div>
-      ) : isError && !items.length ? (
+      ) : aEsuatIncarcarea ? (
         // Garda pe lungime conteaza la fel de mult ca ramura: publicarea si
         // comutarea invalideaza lista, iar un refetch picat trecator n-are voie
         // sa stearga de pe ecran anunturile deja incarcate.
         <div role="alert" className="rounded-3xl border border-dashed py-16 text-center">
           <p className="text-foreground font-medium">Nu am putut încărca anunțurile.</p>
-          <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetch()}>
+          <Button className="mt-4 h-11 min-h-11" type="button" onClick={reincearca}>
             Reîncearcă
           </Button>
+        </div>
+      ) : !club ? (
+        // Un cont CLUB fara club asociat nu are ce lista si nu poate publica.
+        // Fara ramura asta vedea „Niciun anunt inca.” si un formular care ar fi
+        // esuat la trimitere. Acelasi tratament ca in panoul clubului.
+        <div className="text-muted-foreground rounded-3xl border border-dashed py-12 text-center">
+          Niciun club asociat contului.
         </div>
       ) : items.length ? (
         <ul className="space-y-3">
           {items.map((a) => {
             const p = PRIORITY[a.priority] ?? PRIORITY.NORMAL
-            const seAscunde = toggle.isPending && toggle.variables?.id === a.id
-            const seSterge = del.isPending && del.variables === a.id
+            const seAscunde = seAscund.includes(a.id)
+            const seSterge = seSterg.includes(a.id)
             return (
               <li key={a.id} className="bg-card shadow-card rounded-2xl border p-4">
                 <div className="flex flex-wrap items-center gap-2">

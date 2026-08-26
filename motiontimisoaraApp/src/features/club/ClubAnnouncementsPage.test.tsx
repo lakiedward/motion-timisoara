@@ -171,6 +171,47 @@ test('un club fără anunțuri vede mesajul de listă goală', async () => {
   expect(await screen.findByText('Niciun anunț încă.')).toBeInTheDocument()
 })
 
+// Regresie găsită la revizuire: `isError` venea DOAR de pe interogarea de
+// anunțuri. Când pică `getMyClub`, `isPending` devine fals, `clubId` rămâne gol,
+// deci interogarea anunțurilor stă oprită — iar o interogare oprită are
+// `isLoading` fals ȘI `isError` fals. Cascada cădea pe ultima ramură, adică pe
+// exact mesajul pe care criteriul 3 îl interzice la eșec, fără cale de întoarcere.
+test('un eșec la încărcarea clubului arată eroarea, nu mesajul de listă goală', async () => {
+  mockedClub.mockRejectedValue(new Error('network'))
+  renderPage()
+  expect(await screen.findByText('Nu am putut încărca anunțurile.')).toBeInTheDocument()
+  expect(screen.queryByText('Niciun anunț încă.')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Reîncearcă' })).toBeInTheDocument()
+  // Interogarea anunțurilor nici măcar nu pleacă fără club.
+  expect(mockedLista).not.toHaveBeenCalled()
+})
+
+test('butonul de reîncercare chiar cere din nou datele', async () => {
+  const user = userEvent.setup()
+  mockedLista.mockRejectedValue(new Error('network'))
+  renderPage()
+  await screen.findByText('Nu am putut încărca anunțurile.')
+  const inainte = mockedLista.mock.calls.length
+
+  await user.click(screen.getByRole('button', { name: 'Reîncearcă' }))
+  await waitFor(() => expect(mockedLista.mock.calls.length).toBeGreaterThan(inainte))
+})
+
+test('un cont de club fără club asociat nu e invitat să scrie primul anunț', async () => {
+  mockedClub.mockResolvedValue(null as never)
+  renderPage()
+  expect(await screen.findByText('Niciun club asociat contului.')).toBeInTheDocument()
+  expect(screen.queryByText('Niciun anunț încă.')).not.toBeInTheDocument()
+})
+
+// Regresie față de codul vechi, care avea garda `&& clubId` în onSubmit: fără ea
+// publicarea pleca cu club_id gol dacă omul apuca să scrie înainte de răspuns.
+test('publicarea e blocată cât timp clubul nu e cunoscut', () => {
+  mockedClub.mockReturnValue(new Promise(() => {}) as never)
+  renderPage()
+  expect(screen.getByRole('button', { name: 'Publică' })).toBeDisabled()
+})
+
 // Criteriul 5: textul era randat cu white-space normal, deci un anunț scris pe
 // trei rânduri se citea ca un bloc continuu.
 test('conținutul își păstrează rândurile așa cum le-a scris clubul', async () => {
@@ -184,10 +225,19 @@ test('conținutul își păstrează rândurile așa cum le-a scris clubul', asyn
 })
 
 // Criteriul 6: cardul arăta titlu, prioritate și conținut, dar nicăieri data.
-test('fiecare anunț își arată data publicării', async () => {
+// Data așteptată se calculează cu același formatter, ca testul să nu pice pe un
+// runner dintr-un fus în care 09:00 UTC cade în ziua precedentă.
+test('fiecare anunț își arată data publicării, în română', async () => {
+  const asteptata = new Date('2026-08-26T09:00:00Z').toLocaleDateString('ro-RO', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
   renderPage()
   await screen.findByText('Cantonament de vară')
-  expect(screen.getAllByText('26 august 2026').length).toBeGreaterThan(0)
+  expect(screen.getAllByText(asteptata).length).toBe(2)
+  // Format lung, nu 26.08.2026: luna scrisă în litere.
+  expect(asteptata).toMatch(/[a-zăâîșț]{3,}/i)
 })
 
 // Criteriul 7: un cititor de ecran auzea N butoane identice „Ascunde” și N
@@ -246,6 +296,88 @@ test('cât timp o ascundere e în curs se blochează doar butonul apăsat', asyn
   )
   expect(screen.getByRole('button', { name: 'Afișează anunțul „Bazinul închis”' })).toBeEnabled()
   expect(screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”' })).toBeEnabled()
+})
+
+// Regresie găsită la revizuire: garda era `toggle.variables?.id === a.id`, dar
+// mutația e UNA singură pentru toată lista, iar `variables` păstrează doar
+// argumentele ULTIMULUI `mutate`. O a doua apăsare pe alt rând muta reperul și
+// redeschidea butonul primului rând cât timp cererea lui era încă în zbor.
+test('o apăsare pe alt rând nu redeschide butonul rândului încă în lucru', async () => {
+  const user = userEvent.setup()
+  mockedComuta.mockReturnValue(new Promise(() => {}) as never)
+  renderPage()
+  await screen.findByText('Cantonament de vară')
+
+  await user.click(screen.getByRole('button', { name: 'Ascunde anunțul „Cantonament de vară”' }))
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: 'Ascunde anunțul „Cantonament de vară”' })).toBeDisabled(),
+  )
+
+  await user.click(screen.getByRole('button', { name: 'Afișează anunțul „Bazinul închis”' }))
+
+  // Prima cerere e tot în zbor, deci butonul ei rămâne închis.
+  expect(
+    screen.getByRole('button', { name: 'Ascunde anunțul „Cantonament de vară”' }),
+  ).toBeDisabled()
+  expect(screen.getByRole('button', { name: 'Afișează anunțul „Bazinul închis”' })).toBeDisabled()
+  expect(mockedComuta).toHaveBeenCalledTimes(2)
+})
+
+test('ștergerea blochează doar butonul rândului ei, și rămâne blocat', async () => {
+  const user = userEvent.setup()
+  const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+  mockedSterge.mockReturnValue(new Promise(() => {}) as never)
+  renderPage()
+  await screen.findByText('Cantonament de vară')
+
+  await user.click(screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”' }))
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”' })).toBeDisabled(),
+  )
+  expect(screen.getByRole('button', { name: 'Șterge anunțul „Bazinul închis”' })).toBeEnabled()
+  // Ascunderea aceluiași rând rămâne liberă: criteriul cere să se blocheze
+  // butonul apăsat, nu tot rândul.
+  expect(screen.getByRole('button', { name: 'Ascunde anunțul „Cantonament de vară”' })).toBeEnabled()
+
+  await user.click(screen.getByRole('button', { name: 'Șterge anunțul „Bazinul închis”' }))
+  expect(
+    screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”' }),
+  ).toBeDisabled()
+  expect(mockedSterge).toHaveBeenCalledTimes(2)
+  confirmSpy.mockRestore()
+})
+
+// Criteriul 8: singurul lucru verificabil în jsdom e că tiparul casei ajunge pe
+// controale — înălțimile reale au fost măsurate în browser, pe cele trei
+// viewporturi. Fără asta, scoaterea lui `h-11` ar trece neobservată de suită.
+test('controalele poartă tiparul de atingere al casei', async () => {
+  renderPage()
+  await screen.findByText('Cantonament de vară')
+  const controale = [
+    screen.getByLabelText('Titlu'),
+    screen.getByLabelText('Prioritate'),
+    screen.getByRole('button', { name: 'Publică' }),
+    screen.getByRole('button', { name: 'Ascunde anunțul „Cantonament de vară”' }),
+    screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”' }),
+  ]
+  for (const c of controale) expect(c.className).toContain('h-11')
+})
+
+// Criteriul 2 cere mesajul „pe câmpul respectiv”: un banner global deasupra
+// formularului ar conține aceleași cuvinte, dar nu ar lega mesajul de câmp.
+test('mesajul de lipsă e legat de câmpul lui', async () => {
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.click(screen.getByRole('button', { name: 'Publică' }))
+  const titlu = await screen.findByLabelText('Titlu')
+
+  const idMesaj = titlu.getAttribute('aria-describedby')
+  expect(idMesaj).toBeTruthy()
+  expect(document.getElementById(idMesaj!)?.textContent).toBe(
+    'Scrie un titlu de cel puțin 2 caractere',
+  )
+  expect(screen.getByLabelText('Conținut').getAttribute('aria-describedby')).toBeTruthy()
 })
 
 // Criteriul 11: badge-ul „Ascuns” nu explica pentru cine dispare anunțul.
