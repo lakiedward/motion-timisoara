@@ -4,27 +4,18 @@ import { useQuery } from '@tanstack/react-query'
 import { getChildAttendance, getMyChildren } from '@/api/account'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { inceputPerioada, type Perioada } from '@/lib/perioada'
 import { plural } from '@/lib/plural'
 import { cn } from '@/lib/utils'
 
 const selectCls =
   'border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] lg:h-9'
 
-type Perioada = 'toate' | 'luna' | 'trei-luni'
-
 const PERIOADE: { value: Perioada; label: string }[] = [
   { value: 'toate', label: 'Tot istoricul' },
   { value: 'trei-luni', label: 'Ultimele 3 luni' },
   { value: 'luna', label: 'Luna curentă' },
 ]
-
-/** Momentul de la care o ședință intră în perioada aleasă. Null = fără limită. */
-function inceputPerioada(perioada: Perioada): Date | null {
-  const acum = new Date()
-  if (perioada === 'luna') return new Date(acum.getFullYear(), acum.getMonth(), 1)
-  if (perioada === 'trei-luni') return new Date(acum.getFullYear(), acum.getMonth() - 3, acum.getDate())
-  return null
-}
 
 /** „07.08.2026 · 17:00” — data singură nu deosebește două ședințe din aceeași zi. */
 function formatCand(startsAt: string): string {
