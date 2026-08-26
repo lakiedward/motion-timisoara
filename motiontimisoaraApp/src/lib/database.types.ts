@@ -71,30 +71,36 @@ export type Database = {
       }
       announcement_attachments: {
         Row: {
-          announcement_id: string
+          announcement_id: string | null
+          club_announcement_id: string | null
           content_type: string | null
           created_at: string
           display_order: number
+          expires_at: string | null
           id: string
           storage_path: string | null
           type: string
           url: string | null
         }
         Insert: {
-          announcement_id: string
+          announcement_id?: string | null
+          club_announcement_id?: string | null
           content_type?: string | null
           created_at?: string
           display_order?: number
+          expires_at?: string | null
           id?: string
           storage_path?: string | null
           type: string
           url?: string | null
         }
         Update: {
-          announcement_id?: string
+          announcement_id?: string | null
+          club_announcement_id?: string | null
           content_type?: string | null
           created_at?: string
           display_order?: number
+          expires_at?: string | null
           id?: string
           storage_path?: string | null
           type?: string

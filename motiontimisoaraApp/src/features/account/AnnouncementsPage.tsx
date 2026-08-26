@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query'
 import { Pin } from 'lucide-react'
 
 import { getMyAnnouncements } from '@/api/account'
+import { getAtasamente } from '@/api/attachments'
+import AnnouncementMedia from '@/components/AnnouncementMedia'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -19,6 +21,15 @@ export default function AnnouncementsPage() {
     queryKey: ['my-announcements'],
     queryFn: getMyAnnouncements,
     retry: false,
+  })
+
+  // Doar anunțurile de club au atașamente deocamdată: cele de curs se scriu din
+  // pagina antrenorului, care încă nu există.
+  const idClub = announcements.filter((a) => a.sursa === 'club').map((a) => a.id)
+  const { data: atasamente = {} } = useQuery({
+    queryKey: ['my-announcement-media', idClub.join(',')],
+    queryFn: () => getAtasamente(idClub),
+    enabled: idClub.length > 0,
   })
 
   return (
@@ -66,6 +77,7 @@ export default function AnnouncementsPage() {
               </div>
               {a.title && <h2 className="mb-1 font-semibold">{a.title}</h2>}
               <p className="text-foreground/90 whitespace-pre-wrap leading-relaxed">{a.content}</p>
+              {a.sursa === 'club' && <AnnouncementMedia atasamente={atasamente[a.id] ?? []} />}
             </li>
           ))}
         </ul>
