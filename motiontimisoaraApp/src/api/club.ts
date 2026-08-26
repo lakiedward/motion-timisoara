@@ -168,27 +168,51 @@ export async function getClubAnnouncements(clubId: string): Promise<ClubAnnounce
   return data ?? []
 }
 
+/**
+ * Cele trei scrieri de mai jos cer randul inapoi cu `.select().single()`, ca
+ * `updateClubLocation`. Fara el PostgREST raspunde 204 No Content si cand RLS a
+ * filtrat toate randurile, deci un refuz ar aparea pe ecran ca reusita: anuntul
+ * ar parea publicat, ascuns sau sters fara sa se fi intamplat nimic.
+ */
 export async function createClubAnnouncement(input: {
   club_id: string
   title: string
   content: string
   priority: string
-}) {
+}): Promise<ClubAnnouncement> {
   const author = await uid()
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('club_announcements')
     .insert({ ...input, author_user_id: author, is_active: true })
+    .select()
+    .single()
   if (error) throw error
+  return data
 }
 
-export async function setAnnouncementActive(id: string, is_active: boolean) {
-  const { error } = await supabase.from('club_announcements').update({ is_active }).eq('id', id)
+export async function setAnnouncementActive(
+  id: string,
+  is_active: boolean,
+): Promise<ClubAnnouncement> {
+  const { data, error } = await supabase
+    .from('club_announcements')
+    .update({ is_active })
+    .eq('id', id)
+    .select()
+    .single()
   if (error) throw error
+  return data
 }
 
-export async function deleteClubAnnouncement(id: string) {
-  const { error } = await supabase.from('club_announcements').delete().eq('id', id)
+export async function deleteClubAnnouncement(id: string): Promise<ClubAnnouncement> {
+  const { data, error } = await supabase
+    .from('club_announcements')
+    .delete()
+    .eq('id', id)
+    .select()
+    .single()
   if (error) throw error
+  return data
 }
 
 // ===== Club locations =====
