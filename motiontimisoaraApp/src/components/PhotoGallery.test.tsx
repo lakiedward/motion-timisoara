@@ -195,6 +195,60 @@ test('săgețile poartă tiparul de atingere al casei', async () => {
   expect(screen.getByRole('button', { name: 'Poza anterioară' }).className).toContain('size-11')
 })
 
+const MULTE = Array.from({ length: 11 }, (_, i) => `https://p/m${i + 1}.jpg`)
+
+test('sub prag nu apare niciun buton de „vezi mai mult”', () => {
+  render(<PhotoGallery urls={POZE} alt="Tabără" />)
+  expect(screen.queryByRole('button', { name: /Vezi/ })).not.toBeInTheDocument()
+})
+
+// Opt e chiar pragul: se arată toate, fără buton.
+test('exact opt poze se arată întregi, fără buton', () => {
+  render(<PhotoGallery urls={MULTE.slice(0, 8)} alt="Tabără" />)
+  expect(screen.getAllByRole('button', { name: /Deschide poza/ })).toHaveLength(8)
+  expect(screen.queryByRole('button', { name: /Vezi/ })).not.toBeInTheDocument()
+})
+
+test('peste prag arată opt miniaturi și un buton care spune câte sunt', () => {
+  render(<PhotoGallery urls={MULTE} alt="Tabără" />)
+  expect(screen.getAllByRole('button', { name: /Deschide poza/ })).toHaveLength(8)
+  expect(screen.getByRole('button', { name: 'Vezi toate cele 11 poze' })).toBeInTheDocument()
+})
+
+test('butonul desface grila și o strânge la loc', async () => {
+  const user = userEvent.setup()
+  render(<PhotoGallery urls={MULTE} alt="Tabără" />)
+
+  await user.click(screen.getByRole('button', { name: 'Vezi toate cele 11 poze' }))
+  expect(screen.getAllByRole('button', { name: /Deschide poza/ })).toHaveLength(11)
+
+  const strange = screen.getByRole('button', { name: 'Vezi mai puține' })
+  expect(strange).toHaveAttribute('aria-expanded', 'true')
+  await user.click(strange)
+  expect(screen.getAllByRole('button', { name: /Deschide poza/ })).toHaveLength(8)
+})
+
+// Miniaturile se taie, dar lightbox-ul nu: numărătoarea și săgețile merg pe
+// lista întreagă, altfel „poza 8 din 8" ar minți când sunt 11.
+test('numărătoarea miniaturilor spune totalul, nu cât se vede', () => {
+  render(<PhotoGallery urls={MULTE} alt="Tabără" />)
+  expect(screen.getByRole('button', { name: 'Deschide poza 8 din 11' })).toBeInTheDocument()
+})
+
+test('cu grila strânsă, săgeata trece și prin pozele neafișate', async () => {
+  const user = userEvent.setup()
+  render(<PhotoGallery urls={MULTE} alt="Tabără" />)
+  await user.click(screen.getByRole('button', { name: 'Deschide poza 8 din 11' }))
+
+  await user.click(screen.getByRole('button', { name: 'Poza următoare' }))
+  expect(screen.getByRole('dialog', { name: 'Tabără — poza 9 din 11' })).toBeInTheDocument()
+})
+
+test('butonul de „vezi mai mult” poartă tiparul de atingere al casei', () => {
+  render(<PhotoGallery urls={MULTE} alt="Tabără" />)
+  expect(screen.getByRole('button', { name: 'Vezi toate cele 11 poze' }).className).toContain('h-11')
+})
+
 test('fiecare miniatură arată poza ei, în ordinea primită', () => {
   render(<PhotoGallery urls={POZE} alt="Tabără" />)
   const surse = screen.getAllByRole('button').map((b) => b.querySelector('img')?.getAttribute('src'))

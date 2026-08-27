@@ -1,6 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 
+import { Button } from '@/components/ui/button'
+
+/**
+ * Câte miniaturi se arată până la „vezi toate".
+ *
+ * Opt fiindcă umple exact două rânduri pe ecran lat, unde grila are patru
+ * coloane. Sub prag butonul nu apare deloc: o galerie de opt poze arată azi
+ * la fel ca înainte.
+ */
+const LIMITA = 8
+
 /**
  * O galerie de poze publice, cu vizualizare mărită.
  *
@@ -11,6 +22,7 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react'
  */
 export default function PhotoGallery({ urls, alt }: { urls: string[]; alt: string }) {
   const [deschisa, setDeschisa] = useState<number | null>(null)
+  const [toate, setToate] = useState(false)
   const dialogRef = useRef<HTMLDivElement>(null)
   const inchideRef = useRef<HTMLButtonElement>(null)
   /** De unde s-a deschis, ca focusul să se întoarcă acolo la închidere. */
@@ -91,10 +103,16 @@ export default function PhotoGallery({ urls, alt }: { urls: string[]; alt: strin
 
   if (!urls.length) return null
 
+  // Indicii rămân cei din lista întreagă, fiindcă `slice` păstrează ordinea de
+  // la zero. Așa lightbox-ul umblă prin TOATE pozele, chiar și prin cele
+  // deocamdată neafișate — deschizi a opta, mergi cu săgeata, le vezi și pe
+  // celelalte fără să mai desfaci grila.
+  const vizibile = toate ? urls : urls.slice(0, LIMITA)
+
   return (
     <>
       <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-        {urls.map((u, i) => (
+        {vizibile.map((u, i) => (
           <li key={u}>
             <button
               type="button"
@@ -112,6 +130,18 @@ export default function PhotoGallery({ urls, alt }: { urls: string[]; alt: strin
           </li>
         ))}
       </ul>
+
+      {urls.length > LIMITA && (
+        <Button
+          type="button"
+          variant="outline"
+          className="mt-3 h-11 min-h-11"
+          onClick={() => setToate((d) => !d)}
+          aria-expanded={toate}
+        >
+          {toate ? 'Vezi mai puține' : `Vezi toate cele ${urls.length} poze`}
+        </Button>
+      )}
 
       {pozaDeschisa && (
         <div
