@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 
 /**
  * O galerie de poze publice, cu vizualizare mărită.
@@ -27,6 +27,14 @@ export default function PhotoGallery({ urls, alt }: { urls: string[]; alt: strin
     setDeschisa(i)
   }
 
+  /** Un pas înainte sau înapoi, cu ocolul listei la capete. */
+  const muta = useCallback(
+    (pas: number) => {
+      setDeschisa((i) => (i === null ? null : (i + pas + urls.length) % urls.length))
+    },
+    [urls.length],
+  )
+
   // Dacă lista se scurtează cât timp o poză e deschisă, indicele poate rămâne în
   // afara ei. Se rezolvă la randare, nu dintr-un efect care schimbă starea:
   // `urls[deschisa]` ar fi undefined, iar `<img src={undefined}>` cere pagina
@@ -34,12 +42,21 @@ export default function PhotoGallery({ urls, alt }: { urls: string[]; alt: strin
   const indice = deschisa !== null && deschisa < urls.length ? deschisa : null
   const pozaDeschisa = indice !== null ? urls[indice] : null
 
+  // Focusul intră în dialog o singură dată, LA DESCHIDERE. Legat de `indice`, ar
+  // fi rulat la fiecare pas prin galerie și ar fi smuls focusul de pe săgeata
+  // tocmai apăsată — adică exact butonul pe care omul voia să-l apese din nou.
+  const eraDeschis = useRef(false)
   useEffect(() => {
-    if (indice === null) return
+    const deschisAcum = indice !== null
     // Fără asta, dialogul era modal doar cu numele: Tab plimba focusul pe
     // butoanele paginii de dedesubt, invizibile sub fundalul negru, iar cine
     // navighează din tastatură rămânea rătăcit.
-    inchideRef.current?.focus()
+    if (deschisAcum && !eraDeschis.current) inchideRef.current?.focus()
+    eraDeschis.current = deschisAcum
+  }, [indice])
+
+  useEffect(() => {
+    if (indice === null) return
 
     const laTasta = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -47,23 +64,30 @@ export default function PhotoGallery({ urls, alt }: { urls: string[]; alt: strin
         return
       }
       if (e.key === 'ArrowRight') {
-        setDeschisa((i) => (i === null ? null : (i + 1) % urls.length))
+        muta(1)
         return
       }
       if (e.key === 'ArrowLeft') {
-        setDeschisa((i) => (i === null ? null : (i - 1 + urls.length) % urls.length))
+        muta(-1)
         return
       }
-      // Un singur element focalizabil înăuntru, deci capcana e simplă: Tab se
-      // întoarce mereu la el.
       if (e.key === 'Tab') {
+        // Capcana se plimbă acum printre butoanele chiar existente: cu o
+        // singură poză sunt una, cu mai multe sunt trei. O listă fixă ar fi
+        // sărit peste săgeți sau ar fi trimis focusul într-un buton absent.
+        const butoane = [...(dialogRef.current?.querySelectorAll<HTMLElement>('button') ?? [])]
+        if (!butoane.length) return
         e.preventDefault()
-        inchideRef.current?.focus()
+        const pas = e.shiftKey ? -1 : 1
+        const acum = butoane.indexOf(document.activeElement as HTMLElement)
+        const urmator =
+          acum === -1 ? (pas === 1 ? 0 : butoane.length - 1) : (acum + pas + butoane.length) % butoane.length
+        butoane[urmator]?.focus()
       }
     }
     document.addEventListener('keydown', laTasta)
     return () => document.removeEventListener('keydown', laTasta)
-  }, [indice, urls.length, inchide])
+  }, [indice, inchide, muta])
 
   if (!urls.length) return null
 
@@ -113,6 +137,36 @@ export default function PhotoGallery({ urls, alt }: { urls: string[]; alt: strin
           >
             <X className="size-5" />
           </button>
+
+          {/* Cu o singură poză n-ai unde să te duci, deci săgețile lipsesc cu
+              totul — nu stau acolo dezactivate. `stopPropagation` fiindcă
+              fundalul de dedesubt închide dialogul la clic. */}
+          {urls.length > 1 && (
+            <>
+              <button
+                type="button"
+                className="absolute top-1/2 left-4 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-black"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  muta(-1)
+                }}
+                aria-label="Poza anterioară"
+              >
+                <ChevronLeft className="size-5" />
+              </button>
+              <button
+                type="button"
+                className="absolute top-1/2 right-4 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-black"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  muta(1)
+                }}
+                aria-label="Poza următoare"
+              >
+                <ChevronRight className="size-5" />
+              </button>
+            </>
+          )}
         </div>
       )}
     </>

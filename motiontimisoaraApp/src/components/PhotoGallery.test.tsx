@@ -34,16 +34,33 @@ test('focusul intră în dialog la deschidere', async () => {
   )
 })
 
-test('Tab nu scapă din dialog', async () => {
+test('Tab nu scapă din dialog și trece prin toate butoanele lui', async () => {
   const user = userEvent.setup()
   render(<PhotoGallery urls={POZE} alt="Tabără" />)
   await user.click(screen.getByRole('button', { name: 'Deschide poza 1 din 3' }))
+  const dialog = screen.getByRole('dialog')
   const inchide = screen.getByRole('button', { name: 'Închide poza' })
   await waitFor(() => expect(inchide).toHaveFocus())
 
-  await user.tab()
-  await user.tab()
-  expect(inchide).toHaveFocus()
+  // Trei butoane înăuntru: închide, înapoi, înainte. La al patrulea Tab ciclul
+  // se închide — și la fiecare pas focusul rămâne în dialog.
+  const vazute: (string | null)[] = []
+  for (let i = 0; i < 4; i += 1) {
+    await user.tab()
+    expect(dialog).toContainElement(document.activeElement as HTMLElement)
+    vazute.push(document.activeElement?.getAttribute('aria-label') ?? null)
+  }
+  expect(vazute).toEqual(['Poza anterioară', 'Poza următoare', 'Închide poza', 'Poza anterioară'])
+})
+
+test('Shift+Tab merge înapoi, tot fără să iasă', async () => {
+  const user = userEvent.setup()
+  render(<PhotoGallery urls={POZE} alt="Tabără" />)
+  await user.click(screen.getByRole('button', { name: 'Deschide poza 1 din 3' }))
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Închide poza' })).toHaveFocus())
+
+  await user.tab({ shift: true })
+  expect(screen.getByRole('button', { name: 'Poza următoare' })).toHaveFocus()
 })
 
 test('focusul se întoarce pe miniatura de unde s-a deschis', async () => {
@@ -112,6 +129,70 @@ test('butonul de închidere poartă tiparul de atingere al casei', async () => {
   render(<PhotoGallery urls={POZE} alt="Tabără" />)
   await user.click(screen.getByRole('button', { name: 'Deschide poza 1 din 3' }))
   expect(screen.getByRole('button', { name: 'Închide poza' }).className).toContain('size-11')
+})
+
+test('săgețile de pe ecran umblă prin poze, în ambele sensuri', async () => {
+  const user = userEvent.setup()
+  render(<PhotoGallery urls={POZE} alt="Tabără" />)
+  await user.click(screen.getByRole('button', { name: 'Deschide poza 1 din 3' }))
+
+  await user.click(screen.getByRole('button', { name: 'Poza următoare' }))
+  expect(screen.getByRole('dialog', { name: 'Tabără — poza 2 din 3' })).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Poza anterioară' }))
+  expect(screen.getByRole('dialog', { name: 'Tabără — poza 1 din 3' })).toBeInTheDocument()
+})
+
+// Săgețile stau peste fundalul care închide dialogul la clic.
+test('apăsarea unei săgeți nu închide dialogul', async () => {
+  const user = userEvent.setup()
+  render(<PhotoGallery urls={POZE} alt="Tabără" />)
+  await user.click(screen.getByRole('button', { name: 'Deschide poza 1 din 3' }))
+  await user.click(screen.getByRole('button', { name: 'Poza următoare' }))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+})
+
+// Efectul care duce focusul pe „Închide" era legat de indice, deci la fiecare
+// pas smulgea focusul de pe săgeata tocmai apăsată.
+test('focusul rămâne pe săgeată după ce umbli cu ea', async () => {
+  const user = userEvent.setup()
+  render(<PhotoGallery urls={POZE} alt="Tabără" />)
+  await user.click(screen.getByRole('button', { name: 'Deschide poza 1 din 3' }))
+  const inainte = screen.getByRole('button', { name: 'Poza următoare' })
+
+  await user.click(inainte)
+  expect(inainte).toHaveFocus()
+  await user.click(inainte)
+  expect(screen.getByRole('dialog', { name: 'Tabără — poza 3 din 3' })).toBeInTheDocument()
+  expect(inainte).toHaveFocus()
+})
+
+test('săgețile ocolesc lista la capete', async () => {
+  const user = userEvent.setup()
+  render(<PhotoGallery urls={POZE} alt="Tabără" />)
+  await user.click(screen.getByRole('button', { name: 'Deschide poza 1 din 3' }))
+  await user.click(screen.getByRole('button', { name: 'Poza anterioară' }))
+  expect(screen.getByRole('dialog', { name: 'Tabără — poza 3 din 3' })).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Poza următoare' }))
+  expect(screen.getByRole('dialog', { name: 'Tabără — poza 1 din 3' })).toBeInTheDocument()
+})
+
+test('cu o singură poză nu apar săgeți', async () => {
+  const user = userEvent.setup()
+  render(<PhotoGallery urls={[POZE[0]!]} alt="Tabără" />)
+  await user.click(screen.getByRole('button', { name: 'Deschide poza 1 din 1' }))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Poza următoare' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Poza anterioară' })).not.toBeInTheDocument()
+})
+
+test('săgețile poartă tiparul de atingere al casei', async () => {
+  const user = userEvent.setup()
+  render(<PhotoGallery urls={POZE} alt="Tabără" />)
+  await user.click(screen.getByRole('button', { name: 'Deschide poza 1 din 3' }))
+  expect(screen.getByRole('button', { name: 'Poza următoare' }).className).toContain('size-11')
+  expect(screen.getByRole('button', { name: 'Poza anterioară' }).className).toContain('size-11')
 })
 
 test('fiecare miniatură arată poza ei, în ordinea primită', () => {
