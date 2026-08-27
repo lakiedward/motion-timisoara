@@ -1,12 +1,34 @@
 name: Playwright Tests
+
+# Suita rula la fiecare push pe master, fără filtru de căi și fără BASE_URL,
+# deci pornea și pe commit-uri care ating doar documentația — și cădea de
+# fiecare dată, fiindcă ținta implicită era un domeniu mort. Acum pornește doar
+# când se schimbă ceva ce testele chiar acoperă.
 on:
   push:
     branches: [ main, master ]
+    paths:
+      - 'motiontimisoaraApp/**'
+      - 'tests/**'
+      - 'playwright.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/playwright.yml'
   pull_request:
     branches: [ main, master ]
+    paths:
+      - 'motiontimisoaraApp/**'
+      - 'tests/**'
+      - 'playwright.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/playwright.yml'
+
 jobs:
   test:
-    timeout-minutes: 60
+    # ~8 minute măsurate pentru chromium cu un singur worker. 20 lasă loc de
+    # instalări și de o rulare lentă, fără să țină o oră un job blocat.
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -15,10 +37,24 @@ jobs:
         node-version: lts/*
     - name: Install dependencies
       run: npm ci
+    # Suita își construiește și își pornește singură aplicația (webServer din
+    # playwright.config.ts), deci are nevoie și de dependențele ei.
+    - name: Install app dependencies
+      run: npm ci --prefix motiontimisoaraApp
     - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
+      run: npx playwright install --with-deps chromium
     - name: Run Playwright tests
       run: npx playwright test
+      env:
+        # Fără secrete configurate, aplicația se construiește cu date de
+        # substituție: paginile se randează și rutele răspund, dar Supabase nu
+        # are cui răspunde. E2E_PLACEHOLDER_BACKEND spune suitei exact asta, ca
+        # verificarea care cere un backend viu să se sară cinstit în loc să
+        # pice pentru un motiv pe care nimeni nu-l poate repara într-un PR.
+        VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+        VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'placeholder' }}
+        VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder' }}
+        E2E_PLACEHOLDER_BACKEND: ${{ secrets.VITE_SUPABASE_URL && '0' || '1' }}
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
