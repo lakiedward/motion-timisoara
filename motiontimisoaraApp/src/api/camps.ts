@@ -15,9 +15,23 @@ export type AntrenorTabara = {
   pozaUrl: string | null
 }
 
+/**
+ * Cine răspunde de tabără: clubul sau antrenorul care a făcut-o.
+ *
+ * `null` doar pentru taberele vechi, dinainte de migrarea 00025, care n-au niciun
+ * proprietar — constrângerea e `NOT VALID`, deci ele rămân așa.
+ */
+export type OrganizatorTabara = {
+  fel: 'club' | 'antrenor'
+  nume: string
+  /** `/cluburi/:id` ia id-ul clubului; `/antrenori/:id` ia user_id-ul. */
+  link: string
+}
+
 /** O tabără cu tot ce se arată pe pagina ei publică. */
 export type TabaraDetaliu = {
   tabara: Tables<'camps'>
+  organizator: OrganizatorTabara | null
   categorii: CategoriePret[]
   antrenori: AntrenorTabara[]
   /** Poza mare din cap, sau prima din galerie dacă nu s-a ales una. */
@@ -48,13 +62,24 @@ export function sumaCategoriilor(categorii: CategoriePret[]): number {
  * ca `null` doar din `maybeSingle`, adică din zero rânduri.
  */
 export async function getTabaraDetaliu(slug: string): Promise<TabaraDetaliu | null> {
-  const { data: tabara, error } = await supabase
+  const { data: rand, error } = await supabase
     .from('camps')
-    .select('*')
+    .select('*, club:clubs(id, name), coach:profiles(id, name)')
     .eq('slug', slug)
     .maybeSingle()
   if (error) throw error
-  if (!tabara) return null
+  if (!rand) return null
+
+  const { club, coach, ...tabara } = rand as typeof rand & {
+    club: { id: string; name: string } | null
+    coach: { id: string; name: string } | null
+  }
+
+  const organizator: OrganizatorTabara | null = club
+    ? { fel: 'club', nume: club.name, link: `/cluburi/${club.id}` }
+    : coach
+      ? { fel: 'antrenor', nume: coach.name, link: `/antrenori/${coach.id}` }
+      : null
 
   const [categorii, antrenori, poze, locuri] = await Promise.all([
     supabase
@@ -93,6 +118,7 @@ export async function getTabaraDetaliu(slug: string): Promise<TabaraDetaliu | nu
 
   return {
     tabara,
+    organizator,
     categorii: categorii.data ?? [],
     antrenori: ((antrenori.data ?? []) as unknown as RandAntrenor[])
       .filter((r) => r.coach_profile)

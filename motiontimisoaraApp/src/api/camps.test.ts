@@ -170,6 +170,48 @@ test('capacitatea nelimitată vine ca gol, nu ca zero', async () => {
   expect(d!.locuriRamase).toBeNull()
 })
 
+// `/cluburi/:id` ia id-ul clubului, dar `/antrenori/:id` ia USER_ID-ul — iar
+// `camps.coach_id` chiar e un user id. O confuzie aici ar duce la o pagină goală.
+test('clubul organizator devine link către pagina clubului', async () => {
+  raspuns = {
+    camps: { data: { ...TABARA, club: { id: 'club-9', name: 'Club Audit Motion' }, coach: null }, error: null },
+  }
+  const d = await getTabaraDetaliu('tabara-inot')
+  expect(d!.organizator).toEqual({
+    fel: 'club',
+    nume: 'Club Audit Motion',
+    link: '/cluburi/club-9',
+  })
+})
+
+test('antrenorul organizator devine link către pagina lui', async () => {
+  raspuns = {
+    camps: { data: { ...TABARA, club: null, coach: { id: 'user-9', name: 'Audit Antrenor' } }, error: null },
+  }
+  const d = await getTabaraDetaliu('tabara-inot')
+  expect(d!.organizator).toEqual({
+    fel: 'antrenor',
+    nume: 'Audit Antrenor',
+    link: '/antrenori/user-9',
+  })
+})
+
+test('o tabără veche, fără proprietar, întoarce gol în loc să inventeze unul', async () => {
+  raspuns = { camps: { data: { ...TABARA, club: null, coach: null }, error: null } }
+  const d = await getTabaraDetaliu('tabara-inot')
+  expect(d!.organizator).toBeNull()
+})
+
+// Organizatorul e scos din rand, deci n-are voie sa ramana si in `tabara`.
+test('cheile de legătură nu se scurg în obiectul taberei', async () => {
+  raspuns = {
+    camps: { data: { ...TABARA, club: { id: 'club-9', name: 'X' }, coach: null }, error: null },
+  }
+  const d = await getTabaraDetaliu('tabara-inot')
+  expect('club' in d!.tabara).toBe(false)
+  expect('coach' in d!.tabara).toBe(false)
+})
+
 test('categoriile se cer în ordinea lor, nu la nimereală', async () => {
   raspuns = { camps: { data: TABARA, error: null } }
   await getTabaraDetaliu('tabara-inot')

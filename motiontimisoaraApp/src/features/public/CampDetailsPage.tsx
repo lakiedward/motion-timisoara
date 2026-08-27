@@ -65,7 +65,7 @@ export default function CampDetailsPage() {
     )
   }
 
-  const { tabara, categorii, antrenori, heroUrl, galerieUrls, locuriRamase } = data
+  const { tabara, organizator, categorii, antrenori, heroUrl, galerieUrls, locuriRamase } = data
   const incheiata = sAIncheiat(tabara.period_end)
   const plina = locuriRamase !== null && locuriRamase <= 0
   const sePoateInscrie = !incheiata && !plina
@@ -131,6 +131,27 @@ export default function CampDetailsPage() {
           <div className="mt-8">
             <h2 className="font-display mb-3 text-lg font-bold">Din tabără</h2>
             <PhotoGallery urls={galerieUrls} alt={tabara.title} />
+          </div>
+        )}
+
+        {/* Cine organizează și cine merge sunt lucruri diferite: unul răspunde de
+            tabără, ceilalți pleacă cu copiii. Părintele are nevoie de amândouă. */}
+        {organizator && (
+          <div className="mt-8">
+            <h2 className="font-display mb-2 text-lg font-bold">Organizată de</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                to={organizator.link}
+                className="text-primary inline-flex h-11 items-center font-semibold"
+              >
+                {organizator.nume}
+              </Link>
+              {/* Un părinte vrea să știe dacă în spate stă un club sau un antrenor
+                  pe cont propriu — sunt două feluri de răspundere. */}
+              <Badge variant="outline">
+                {organizator.fel === 'club' ? 'Club' : 'Antrenor'}
+              </Badge>
+            </div>
           </div>
         )}
 

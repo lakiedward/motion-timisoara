@@ -38,6 +38,7 @@ const detaliu = (peste: Record<string, unknown> = {}) => ({
     location_text: 'Timișoara',
     ...((peste.tabara as object) ?? {}),
   },
+  organizator: { fel: 'club', nume: 'Club Audit Motion', link: '/cluburi/club-1' },
   categorii: [],
   antrenori: [],
   heroUrl: null,
@@ -175,6 +176,37 @@ test('o desfășurare corectă nu afișează nicio notă', async () => {
   renderPage()
   await screen.findByText('Ce include prețul')
   expect(screen.queryByText(/însumează/)).not.toBeInTheDocument()
+})
+
+// Secțiunea „Organizator și antrenori”, criteriul 1: cine RĂSPUNDE de tabără e
+// altceva decât cine merge cu copiii, iar pagina nu spunea deloc primul lucru.
+test('clubul organizator se vede, ca link către pagina lui', async () => {
+  renderPage()
+  const link = await screen.findByRole('link', { name: 'Club Audit Motion' })
+  expect(link).toHaveAttribute('href', '/cluburi/club-1')
+  expect(screen.getByText('Organizată de')).toBeInTheDocument()
+  expect(screen.getByText('Club')).toBeInTheDocument()
+})
+
+test('un antrenor organizator duce la pagina lui de antrenor', async () => {
+  mocked.mockResolvedValue(
+    detaliu({
+      organizator: { fel: 'antrenor', nume: 'Audit Antrenor', link: '/antrenori/user-1' },
+    }) as never,
+  )
+  renderPage()
+  const link = await screen.findByRole('link', { name: 'Audit Antrenor' })
+  expect(link).toHaveAttribute('href', '/antrenori/user-1')
+  expect(screen.getByText('Antrenor')).toBeInTheDocument()
+})
+
+// Taberele dinainte de migrarea 00025 n-au proprietar; constrangerea e NOT VALID,
+// deci raman asa. Pagina nu are voie sa arate un titlu peste un gol.
+test('o tabără fără proprietar nu arată o secțiune goală', async () => {
+  mocked.mockResolvedValue(detaliu({ organizator: null }) as never)
+  renderPage()
+  await screen.findByRole('button', { name: 'Înscrie-te' })
+  expect(screen.queryByText('Organizată de')).not.toBeInTheDocument()
 })
 
 // Criteriul 3: parintele isi trimite copilul o saptamana, trebuie sa stie cu cine.
