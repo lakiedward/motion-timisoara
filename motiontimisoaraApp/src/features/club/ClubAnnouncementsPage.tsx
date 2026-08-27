@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Trash2 } from 'lucide-react'
+import { ImagePlus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -17,6 +17,19 @@ import {
   type ClubAnnouncement,
   type ClubAudience,
 } from '@/api/club'
+import { getAtasamente, incarcaAtasamente, stergeFisiereleAnuntului } from '@/api/attachments'
+import {
+  MAX_FILM_MB,
+  MAX_FILM_SECUNDE,
+  MAX_FILME,
+  MAX_POZE,
+  marime,
+  pregatesteFisiere,
+  RETENTIE_FILM_ZILE,
+  type FisierPregatit,
+} from '@/lib/media'
+import { alegeDinGalerie, galeriaSeDeschideNativ } from '@/lib/galerie'
+import AnnouncementMedia from '@/components/AnnouncementMedia'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -162,12 +175,57 @@ export default function ClubAnnouncementsPage() {
     formState: { errors },
   } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: FORMULAR_GOL })
 
-  const invalideaza = () => qc.invalidateQueries({ queryKey: ['club-announcements', clubId] })
+  // Pozele și filmarea alese, deja micșorate și verificate în browser. Se încarcă
+  // abia după ce anunțul există: politica bucketului citește id-ul anunțului din
+  // primul segment al căii, deci fără anunț n-ar avea unde să urce.
+  const [fisiere, setFisiere] = useState<FisierPregatit[]>([])
+  const [sePregatesc, setSePregatesc] = useState(false)
+  const numarPoze = fisiere.filter((f) => f.fel === 'IMAGE').length
+  const numarFilme = fisiere.filter((f) => f.fel === 'VIDEO').length
+
+  const alegeFisiere = async (lista: File[]) => {
+    if (!lista.length) return
+    setSePregatesc(true)
+    try {
+      const { pregatite, refuzate } = await pregatesteFisiere(lista, {
+        poze: numarPoze,
+        filme: numarFilme,
+      })
+      if (pregatite.length) setFisiere((f) => [...f, ...pregatite])
+      // Fiecare refuz spune care fișier și de ce, ca omul să știe ce să scoată.
+      for (const motiv of refuzate) toast.error(motiv)
+    } finally {
+      setSePregatesc(false)
+    }
+  }
+
+  const deschideGaleria = async () => {
+    setSePregatesc(true)
+    try {
+      const alese = await alegeDinGalerie(MAX_POZE + MAX_FILME - fisiere.length)
+      setSePregatesc(false)
+      await alegeFisiere(alese)
+    } catch {
+      setSePregatesc(false)
+      toast.error('Nu am putut deschide galeria.')
+    }
+  }
+
+  const { data: atasamente = {} } = useQuery({
+    queryKey: ['club-announcement-media', items.map((a) => a.id).join(',')],
+    queryFn: () => getAtasamente(items.map((a) => a.id)),
+    enabled: items.length > 0,
+  })
+
+  const invalideaza = () => {
+    qc.invalidateQueries({ queryKey: ['club-announcements', clubId] })
+    qc.invalidateQueries({ queryKey: ['club-announcement-media'] })
+  }
 
   const create = useMutation({
-    mutationFn: (v: Values) => {
+    mutationFn: async (v: Values) => {
       const tinta = citesteTinta(v.audience)
-      return createClubAnnouncement({
+      const anunt = await createClubAnnouncement({
         club_id: clubId,
         title: v.title.trim(),
         content: v.content.trim(),
@@ -175,9 +233,12 @@ export default function ClubAnnouncementsPage() {
         audience_kind: tinta.kind,
         audience_id: tinta.id,
       })
+      if (fisiere.length) await incarcaAtasamente(anunt.id, fisiere)
+      return anunt
     },
     onSuccess: () => {
       reset(FORMULAR_GOL)
+      setFisiere([])
       invalideaza()
       toast.success('Anunț publicat.')
     },
@@ -208,7 +269,12 @@ export default function ClubAnnouncementsPage() {
   })
 
   const del = useMutation({
-    mutationFn: (id: string) => deleteClubAnnouncement(id),
+    // Fișierele se scot ÎNAINTE de anunț: politica bucketului le leagă de el, deci
+    // după ștergerea anunțului n-ar mai putea fi găsite de nimeni ca să fie scoase.
+    mutationFn: async (id: string) => {
+      await stergeFisiereleAnuntului(id)
+      return deleteClubAnnouncement(id)
+    },
     onMutate: (id) => adauga(setSeSterg, id),
     onSettled: (_d, _e, id) => scoate(setSeSterg, id),
     onSuccess: () => {
@@ -269,6 +335,71 @@ export default function ClubAnnouncementsPage() {
             <p id="content-eroare" role="alert" className="text-destructive text-sm">
               {errors.content.message}
             </p>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="media">Poze și filmare</Label>
+          {/* Pe web, `accept` fără `capture` deschide selectorul care conține
+              galeria foto, atât pe iOS cât și pe Android. În aplicația nativă
+              același input trăiește într-un WebView și de multe ori aterizează în
+              managerul de fișiere, deci acolo cerem galeria direct plugin-ului. */}
+          {galeriaSeDeschideNativ() ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 w-full lg:h-9"
+              disabled={sePregatesc}
+              onClick={() => void deschideGaleria()}
+            >
+              <ImagePlus /> Alege din galerie
+            </Button>
+          ) : (
+            <input
+              id="media"
+              type="file"
+              multiple
+              accept="image/*,video/*"
+              disabled={sePregatesc}
+              className="text-muted-foreground file:bg-secondary file:text-secondary-foreground block w-full text-sm file:mr-3 file:h-11 file:rounded-md file:border-0 file:px-4 file:text-sm file:font-medium lg:file:h-9"
+              onChange={(e) => {
+                void alegeFisiere(Array.from(e.target.files ?? []))
+                // Golim câmpul ca același fișier să poată fi ales din nou după ce
+                // a fost scos din listă — altfel browserul nu mai trimite `change`.
+                e.target.value = ''
+              }}
+            />
+          )}
+          <p className="text-muted-foreground text-xs">
+            Cel mult {MAX_POZE} poze și {MAX_FILME} filmare de {MAX_FILM_SECUNDE} de secunde
+            ({MAX_FILM_MB} MB). Pozele rămân; filmarea se șterge după{' '}
+            {RETENTIE_FILM_ZILE} de zile.
+          </p>
+          {sePregatesc && <p className="text-muted-foreground text-xs">Se pregătesc fișierele…</p>}
+          {!!fisiere.length && (
+            <ul className="space-y-1">
+              {fisiere.map((f, i) => (
+                <li
+                  key={`${f.numeOriginal}-${i}`}
+                  className="bg-muted/50 flex items-center justify-between gap-2 rounded-md px-3 py-1.5 text-sm"
+                >
+                  <span className="truncate">
+                    {f.fel === 'VIDEO' ? '🎬' : '🖼️'} {f.numeOriginal}{' '}
+                    <span className="text-muted-foreground">({marime(f.continut.size)})</span>
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-11 shrink-0 lg:h-9"
+                    aria-label={`Scoate ${f.numeOriginal}`}
+                    onClick={() => setFisiere((l) => l.filter((_, j) => j !== i))}
+                  >
+                    Scoate
+                  </Button>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
 
@@ -412,6 +543,7 @@ export default function ClubAnnouncementsPage() {
                     pe trei randuri se citea ca un bloc continuu. Pagina de anunturi
                     a parintelui foloseste deja acelasi tratament. */}
                 <p className="text-muted-foreground mt-2 text-sm whitespace-pre-wrap">{a.content}</p>
+                <AnnouncementMedia atasamente={atasamente[a.id] ?? []} />
                 {!a.is_active && (
                   <p className="text-muted-foreground mt-2 text-xs">
                     Ascuns — nu ajunge la părinți.
