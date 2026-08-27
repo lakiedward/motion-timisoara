@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 
-import { isLocalPreview } from './helpers/target'
+import { hasLiveBackend, isLocalPreview } from './helpers/target'
 
 /**
  * Production readiness for the React app (Romanian public routes).
@@ -288,6 +288,7 @@ test.describe('Production readiness — security & performance', () => {
   })
 
   test('Supabase answers without server errors', async ({ page, baseURL }) => {
+    test.skip(!hasLiveBackend(), 'Build with placeholder credentials — Supabase cannot answer')
     test.slow(isLocalPreview(baseURL), 'The dev server compiles the route on first hit')
 
     const supabase: { url: string; status: number }[] = []
