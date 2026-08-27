@@ -20,6 +20,7 @@ on the remote (verified by md5).
 | `00025_camps_owner_price_items_coaches.sql` | `20260827090944` | `camps_owner_price_items_coaches` |
 | `00026_camp_spots_remaining.sql` | `20260827091825` | `camp_spots_remaining` |
 | `00027_camps_owner_fixes.sql` | `20260827104930` | `camps_owner_fixes` |
+| `00028_camp_enrollments_and_orphan_photos.sql` | `20260827112031` | `camp_enrollments_visibility` |
 
 `00017` and `00018` are both kept on purpose: `00018` replaced `00017` in production
 62 seconds after it was applied, and the ledger records what actually ran.
