@@ -19,6 +19,60 @@ const LOT = 500;
 /** Câte căi se trimit odată la Storage. */
 const BUCATA = 100;
 
+const BUCKET_TABERE = "camp-photos";
+/** Subdosarele în care stau pozele unei tabere: `{camp_id}/hero/…` și `/gallery/…`. */
+const DOSARE_TABARA = ["hero", "gallery"];
+
+/**
+ * Șterge pozele rămase de la tabere care nu mai există.
+ *
+ * `camp_photos` cade în cascadă odată cu tabăra, dar FIȘIERELE rămân în bucket —
+ * iar politica de scriere le leagă de tabără, deci după ștergerea ei nimeni nu le
+ * mai poate scoate. Aici se face din partea serverului, cu drepturi depline, și
+ * merge indiferent pe unde a fost ștearsă tabăra.
+ *
+ * Numele dosarelor de nivel întâi sunt id-uri de tabără. Ce nu se regăsește în
+ * `camps` e orfan. Nu aruncă: curățenia nu are voie să pice rularea principală.
+ */
+async function curataPozeleTaberelorSterse(): Promise<number> {
+  try {
+    const { data: dosare, error } = await supabaseAdmin.storage
+      .from(BUCKET_TABERE)
+      .list("", { limit: 1000 });
+    if (error || !dosare?.length) return 0;
+
+    const { data: tabere } = await supabaseAdmin.from("camps").select("id");
+    const existente = new Set((tabere ?? []).map((t: { id: string }) => t.id));
+
+    const deSters: string[] = [];
+    for (const d of dosare) {
+      // Doar intrările fără id sunt dosare; un fișier direct în rădăcină n-are ce
+      // căuta acolo, dar nici nu-l atingem — nu știm al cui e.
+      if (d.id !== null || existente.has(d.name)) continue;
+      for (const sub of DOSARE_TABARA) {
+        const { data: fisiere } = await supabaseAdmin.storage
+          .from(BUCKET_TABERE)
+          .list(`${d.name}/${sub}`, { limit: 1000 });
+        for (const f of fisiere ?? []) {
+          if (f.id !== null) deSters.push(`${d.name}/${sub}/${f.name}`);
+        }
+      }
+    }
+
+    let sterse = 0;
+    for (const bucata of bucati(deSters, BUCATA)) {
+      const { error: eroare } = await supabaseAdmin.storage
+        .from(BUCKET_TABERE)
+        .remove(bucata);
+      if (!eroare) sterse += bucata.length;
+    }
+    return sterse;
+  } catch (e) {
+    console.error("Curatenia pozelor orfane a esuat:", e);
+    return 0;
+  }
+}
+
 function bucati<T>(lista: T[], marime: number): T[][] {
   const iesire: T[][] = [];
   for (let i = 0; i < lista.length; i += marime) {
@@ -114,8 +168,10 @@ serve(
       randuriSterse = (sterse ?? []).length;
     }
 
+    const pozeOrfane = await curataPozeleTaberelorSterse();
+
     console.log(
-      `Curățenie media: ${randuri.length} expirate, ${fisiereSterse} fișiere scoase, ${randuriSterse} rânduri șterse.`,
+      `Curățenie media: ${randuri.length} expirate, ${fisiereSterse} fișiere scoase, ${randuriSterse} rânduri șterse, ${pozeOrfane} poze de tabără orfane.`,
     );
 
     return new Response(
@@ -123,6 +179,7 @@ serve(
         verificate: randuri.length,
         fisiere_sterse: fisiereSterse,
         randuri_sterse: randuriSterse,
+        poze_orfane_sterse: pozeOrfane,
         // Când lotul e plin, mai sunt de făcut: rularea următoare le ia.
         mai_sunt: randuri.length === LOT,
       }),

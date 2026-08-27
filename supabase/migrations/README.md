@@ -14,9 +14,13 @@ on the remote (verified by md5).
 | `00019_announcement_views.sql` | `20260811091856` | `00016_announcement_views` |
 | `00020_club_announcement_audience.sql` | `20260826091059` | `club_announcement_audience` |
 | `00021_club_announcement_audience_ownership.sql` | `20260826094655` | `club_announcement_audience_ownership` |
-| `00022_attachments_for_club_announcements.sql` | `20260826100628` | `attachments_for_club_announcements` |
-| `00023_announcement_media_access.sql` | `20260826100708` | `announcement_media_access` |
-| `00024_purge_expired_media_cron.sql` | (aplicata 26.08) | `purge_expired_media_cron` |
+| `00022_attachments_for_club_announcements.sql` | `20260826100816` | `attachments_for_club_announcements` |
+| `00023_announcement_media_access.sql` | `20260826100903` | `announcement_media_access` |
+| `00024_purge_expired_media_cron.sql` | `20260827083602` | `purge_expired_media_cron` |
+| `00025_camps_owner_price_items_coaches.sql` | `20260827090944` | `camps_owner_price_items_coaches` |
+| `00026_camp_spots_remaining.sql` | `20260827091825` | `camp_spots_remaining` |
+| `00027_camps_owner_fixes.sql` | `20260827104930` | `camps_owner_fixes` |
+| `00028_camp_enrollments_and_orphan_photos.sql` | `20260827112031` | `camp_enrollments_visibility` |
 
 `00017` and `00018` are both kept on purpose: `00018` replaced `00017` in production
 62 seconds after it was applied, and the ledger records what actually ran.

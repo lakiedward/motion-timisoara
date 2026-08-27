@@ -94,3 +94,9 @@ verify_jwt = true
 
 [functions.stripe-connect]
 verify_jwt = true
+
+[functions.purge-expired-media]
+# Chemata de pg_cron cu cheia de service. `verify_jwt` e stratul exterior;
+# functia isi verifica oricum cheia explicit, fiindca `verify_jwt` lasa sa treaca
+# si cheia anon, care e publica.
+verify_jwt = true
