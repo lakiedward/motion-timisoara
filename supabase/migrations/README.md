@@ -18,6 +18,7 @@ on the remote (verified by md5).
 | `00023_announcement_media_access.sql` | `20260826100708` | `announcement_media_access` |
 | `00024_purge_expired_media_cron.sql` | (aplicata 26.08) | `purge_expired_media_cron` |
 | `00025_camps_owner_price_items_coaches.sql` | (aplicata 27.08) | `camps_owner_price_items_coaches` |
+| `00026_camp_spots_remaining.sql` | (aplicata 27.08) | `camp_spots_remaining` |
 
 `00017` and `00018` are both kept on purpose: `00018` replaced `00017` in production
 62 seconds after it was applied, and the ledger records what actually ran.

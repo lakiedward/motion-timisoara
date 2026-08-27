@@ -178,9 +178,12 @@ export type Database = {
         Row: {
           allow_cash: boolean
           capacity: number | null
+          club_id: string | null
+          coach_id: string | null
           currency: string
           description: string | null
           gallery_json: string | null
+          hero_photo_storage_path: string | null
           id: string
           location_text: string | null
           period_end: string
@@ -192,9 +195,12 @@ export type Database = {
         Insert: {
           allow_cash?: boolean
           capacity?: number | null
+          club_id?: string | null
+          coach_id?: string | null
           currency?: string
           description?: string | null
           gallery_json?: string | null
+          hero_photo_storage_path?: string | null
           id?: string
           location_text?: string | null
           period_end: string
@@ -206,9 +212,12 @@ export type Database = {
         Update: {
           allow_cash?: boolean
           capacity?: number | null
+          club_id?: string | null
+          coach_id?: string | null
           currency?: string
           description?: string | null
           gallery_json?: string | null
+          hero_photo_storage_path?: string | null
           id?: string
           location_text?: string | null
           period_end?: string
@@ -216,6 +225,66 @@ export type Database = {
           price?: number
           slug?: string
           title?: string
+        }
+        Relationships: []
+      }
+      camp_price_items: {
+        Row: {
+          amount: number
+          camp_id: string
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          name: string
+        }
+        Insert: {
+          amount: number
+          camp_id: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          name: string
+        }
+        Update: {
+          amount?: number
+          camp_id?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      camp_coaches: {
+        Row: { camp_id: string; coach_profile_id: string; created_at: string }
+        Insert: { camp_id: string; coach_profile_id: string; created_at?: string }
+        Update: { camp_id?: string; coach_profile_id?: string; created_at?: string }
+        Relationships: []
+      }
+      camp_photos: {
+        Row: {
+          camp_id: string
+          created_at: string
+          display_order: number
+          id: string
+          storage_path: string
+        }
+        Insert: {
+          camp_id: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          storage_path: string
+        }
+        Update: {
+          camp_id?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          storage_path?: string
         }
         Relationships: []
       }
@@ -1088,6 +1157,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      camp_spots_remaining: { Args: { p_camp_id: string }; Returns: number }
       course_spots_remaining: { Args: { p_course_id: string }; Returns: number }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       get_my_club_id: { Args: Record<PropertyKey, never>; Returns: string }
