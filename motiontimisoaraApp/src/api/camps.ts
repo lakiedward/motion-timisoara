@@ -41,11 +41,28 @@ export type TabaraDetaliu = {
   locuriRamase: number | null
 }
 
-/** O tabără s-a încheiat când ultima ei zi a trecut. Ziua de final se numără. */
+/**
+ * O zi calendaristică din baza de date, citită în fusul celui care se uită.
+ *
+ * `new Date('2026-09-18')` se interpretează ca miezul nopții UTC, nu local. La
+ * vest de Greenwich asta cade în ziua precedentă, deci o tabără care ține până pe
+ * 18 septembrie apărea încheiată încă din 17, iar înscrierile se închideau cu o zi
+ * mai devreme pentru un părinte din diaspora. Datele astea sunt zile de calendar,
+ * nu momente, deci se construiesc din bucăți.
+ */
+function ziLocala(data: string, ore = 0, minute = 0, secunde = 0, ms = 0): Date {
+  const [an, luna, zi] = data.split('-').map(Number)
+  return new Date(an, (luna ?? 1) - 1, zi ?? 1, ore, minute, secunde, ms)
+}
+
+/** Ziua de final se numără întreagă: pe 18 septembrie tabăra încă nu s-a încheiat. */
 export function sAIncheiat(periodEnd: string, azi = new Date()): boolean {
-  const sfarsit = new Date(periodEnd)
-  sfarsit.setHours(23, 59, 59, 999)
-  return sfarsit.getTime() < azi.getTime()
+  return ziLocala(periodEnd, 23, 59, 59, 999).getTime() < azi.getTime()
+}
+
+/** „13.09.2026”, din ziua de calendar, nu din momentul UTC. */
+export function formatZi(data: string): string {
+  return ziLocala(data).toLocaleDateString('ro-RO')
 }
 
 /** Suma categoriilor, în bani. Trebuie să dea prețul taberei. */

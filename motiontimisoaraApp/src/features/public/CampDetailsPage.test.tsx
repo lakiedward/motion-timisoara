@@ -24,20 +24,30 @@ vi.mock('@/lib/auth-context', () => ({ useAuth: () => ({ user: utilizator }) }))
 
 const mocked = vi.mocked(getTabaraDetaliu)
 
+/** Peste un an de la rulare: viitor mereu, fără să depindă de ceasul mașinii. */
+function pesteUnAn(): string {
+  const d = new Date()
+  d.setFullYear(d.getFullYear() + 1)
+  return d.toISOString().slice(0, 10)
+}
+
+const TABARA_IMPLICITA = {
+  id: 'camp-1',
+  slug: 'tabara-inot',
+  title: 'Tabără de înot',
+  description: 'Stagiu intensiv.',
+  price: 90000,
+  capacity: 20,
+  allow_cash: false,
+  period_start: '2026-09-13',
+  period_end: pesteUnAn(),
+  location_text: 'Timișoara',
+}
+
+// `...peste` vine ÎNAINTE de `tabara`, altfel o suprascriere parțială a taberei
+// ar înlocui obiectul compus cu bucata primită, iar restul câmpurilor ar dispărea
+// pe tăcute — testele ar trece descriind o pagină fără titlu și fără preț.
 const detaliu = (peste: Record<string, unknown> = {}) => ({
-  tabara: {
-    id: 'camp-1',
-    slug: 'tabara-inot',
-    title: 'Tabără de înot',
-    description: 'Stagiu intensiv.',
-    price: 90000,
-    capacity: 20,
-    allow_cash: false,
-    period_start: '2026-09-13',
-    period_end: '2036-09-18',
-    location_text: 'Timișoara',
-    ...((peste.tabara as object) ?? {}),
-  },
   organizator: { fel: 'club', nume: 'Club Audit Motion', link: '/cluburi/club-1' },
   categorii: [],
   antrenori: [],
@@ -45,6 +55,7 @@ const detaliu = (peste: Record<string, unknown> = {}) => ({
   galerieUrls: [],
   locuriRamase: 20,
   ...peste,
+  tabara: { ...TABARA_IMPLICITA, ...((peste.tabara as object) ?? {}) },
 })
 
 function renderPage() {
@@ -89,6 +100,35 @@ test('o tabără încheiată nu mai oferă înscriere și spune de ce', async ()
   expect(await screen.findByText('Încheiată')).toBeInTheDocument()
   expect(screen.getByText(/înscrierile sunt închise/)).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Înscrie-te' })).not.toBeInTheDocument()
+  // Restul paginii rămâne întreagă: dacă fixture-ul și-ar înghiți câmpurile la o
+  // suprascriere parțială, testul de mai sus ar trece pe o pagină aproape goală.
+  expect(screen.getByRole('heading', { level: 1, name: 'Tabără de înot' })).toBeInTheDocument()
+  expect(screen.getByText('900,00 lei')).toBeInTheDocument()
+})
+
+// Criteriul 5 (#552): perioada si locul raman langa titlu.
+test('perioada și locul se văd lângă titlu', async () => {
+  renderPage()
+  await screen.findByRole('heading', { level: 1, name: 'Tabără de înot' })
+  expect(screen.getByText(/13\.09\.2026/)).toBeInTheDocument()
+  expect(screen.getByText('Timișoara')).toBeInTheDocument()
+})
+
+test('o tabără fără loc nu lasă un rând gol în locul lui', async () => {
+  mocked.mockResolvedValue(detaliu({ tabara: { location_text: null } }) as never)
+  renderPage()
+  await screen.findByRole('heading', { level: 1, name: 'Tabără de înot' })
+  expect(screen.queryByText('Timișoara')).not.toBeInTheDocument()
+})
+
+// Un antrenor fara poza primeste initiala, nu un patrat gol.
+test('un antrenor fără poză primește inițiala numelui', async () => {
+  mocked.mockResolvedValue(
+    detaliu({ antrenori: [{ id: 'a1', nume: 'Maria Pop', pozaUrl: null }] }) as never,
+  )
+  renderPage()
+  await screen.findByText('Maria Pop')
+  expect(screen.getByText('M')).toBeInTheDocument()
 })
 
 test('o tabără plină nu mai oferă înscriere', async () => {

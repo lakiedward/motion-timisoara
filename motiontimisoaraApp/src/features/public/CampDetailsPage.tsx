@@ -2,7 +2,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, CalendarDays, MapPin, Wallet } from 'lucide-react'
 
-import { getTabaraDetaliu, sAIncheiat, sumaCategoriilor } from '@/api/camps'
+import { formatZi, getTabaraDetaliu, sAIncheiat, sumaCategoriilor } from '@/api/camps'
 import { formatRon } from '@/lib/money'
 import { plural } from '@/lib/plural'
 import { useAuth } from '@/lib/auth-context'
@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
-const dataScurta = (iso: string) => new Date(iso).toLocaleDateString('ro-RO')
 
 export default function CampDetailsPage() {
   const { slug = '' } = useParams()
@@ -111,7 +110,7 @@ export default function CampDetailsPage() {
         <div className="text-muted-foreground mt-4 flex flex-wrap gap-5 text-sm">
           <span className="flex items-center gap-1.5">
             <CalendarDays className="size-4" />
-            {dataScurta(tabara.period_start)} – {dataScurta(tabara.period_end)}
+            {formatZi(tabara.period_start)} – {formatZi(tabara.period_end)}
           </span>
           {tabara.location_text && (
             <span className="flex items-center gap-1.5">

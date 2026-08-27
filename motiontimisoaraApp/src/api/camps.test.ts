@@ -1,10 +1,12 @@
 import { beforeEach, expect, test, vi } from 'vitest'
 
-import { getTabaraDetaliu, sAIncheiat, sumaCategoriilor } from './camps'
+import { formatZi, getTabaraDetaliu, sAIncheiat, sumaCategoriilor } from './camps'
 
 let raspuns: Record<string, { data: unknown; error: unknown }> = {}
 let rpcRaspuns: { data: unknown; error: unknown } = { data: null, error: null }
 let cereri: Record<string, string[]> = {}
+/** Ce s-a cerut prin `rpc`, ca o funcție greșită sau un parametru greșit să pice. */
+let apeluriRpc: { nume: string; argumente: unknown }[] = []
 
 function tabela(nume: string) {
   const proxy: unknown = new Proxy(() => undefined, {
@@ -25,7 +27,10 @@ function tabela(nume: string) {
 vi.mock('@/lib/supabase', () => ({
   supabase: {
     from: (nume: string) => tabela(nume),
-    rpc: async () => rpcRaspuns,
+    rpc: async (nume: string, argumente: unknown) => {
+      apeluriRpc.push({ nume, argumente })
+      return rpcRaspuns
+    },
     storage: {
       from: (bucket: string) => ({
         getPublicUrl: (path: string) => ({ data: { publicUrl: `https://public/${bucket}/${path}` } }),
@@ -50,14 +55,42 @@ beforeEach(() => {
   raspuns = {}
   rpcRaspuns = { data: null, error: null }
   cereri = {}
+  apeluriRpc = []
 })
 
 // Ziua de final se numara: o tabara care se termina azi nu s-a incheiat inca.
 test('o tabără s-a încheiat abia după ultima ei zi', () => {
-  expect(sAIncheiat('2026-09-18', new Date('2026-09-18T08:00:00'))).toBe(false)
-  expect(sAIncheiat('2026-09-18', new Date('2026-09-18T23:59:00'))).toBe(false)
-  expect(sAIncheiat('2026-09-18', new Date('2026-09-19T00:30:00'))).toBe(true)
-  expect(sAIncheiat('2026-08-21', new Date('2026-08-27T10:00:00'))).toBe(true)
+  expect(sAIncheiat('2026-09-18', new Date(2026, 8, 18, 8, 0))).toBe(false)
+  expect(sAIncheiat('2026-09-18', new Date(2026, 8, 18, 23, 59))).toBe(false)
+  expect(sAIncheiat('2026-09-18', new Date(2026, 8, 19, 0, 30))).toBe(true)
+  expect(sAIncheiat('2026-08-21', new Date(2026, 7, 27, 10, 0))).toBe(true)
+})
+
+// Regresie: `new Date('2026-09-18')` se citește ca miezul nopții UTC. La vest de
+// Greenwich asta cade în ziua precedentă, deci `setHours(23,59)` dădea sfârșitul
+// zilei de 17 — iar înscrierile se închideau cu o zi mai devreme pentru un părinte
+// din diaspora. Zilele de calendar se construiesc din bucăți, nu din șirul ISO.
+test('ultima zi se socotește în fusul celui care se uită, nu în UTC', () => {
+  // Ora locală 10 dimineața pe 18 septembrie, oriunde ar fi mașina care rulează.
+  expect(sAIncheiat('2026-09-18', new Date(2026, 8, 18, 10, 0))).toBe(false)
+  // Iar `new Date(sirISO)` chiar cade în ziua precedentă la vest de Greenwich —
+  // exact capcana reparată; aici doar arătăm că nu ne mai sprijinim pe ea.
+  const caMoment = new Date('2026-09-18')
+  expect(caMoment.getTime()).toBe(Date.UTC(2026, 8, 18))
+})
+
+// Ziua se afișează tot după calendar, nu după momentul UTC.
+test('data se scrie ca ziua din bază, nu decalată cu una', () => {
+  expect(formatZi('2026-09-13')).toBe('13.09.2026')
+  expect(formatZi('2026-01-01')).toBe('01.01.2026')
+})
+
+// Harnașul trebuie să prindă o funcție greșită sau un parametru greșit: cineva
+// care copiază tiparul de la cursuri ar scrie `p_course_id` și n-ar afla niciodată.
+test('locurile se cer de la funcția taberei, cu parametrul ei', async () => {
+  raspuns = { camps: { data: TABARA, error: null } }
+  await getTabaraDetaliu('tabara-inot')
+  expect(apeluriRpc).toEqual([{ nume: 'camp_spots_remaining', argumente: { p_camp_id: 'camp-1' } }])
 })
 
 test('suma categoriilor adună toate sumele', () => {

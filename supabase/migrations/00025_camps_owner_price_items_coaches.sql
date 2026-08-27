@@ -24,6 +24,11 @@ COMMENT ON COLUMN public.camps.club_id IS
 COMMENT ON COLUMN public.camps.coach_id IS
     'Antrenorul care a creat tabara, pe cont propriu. Exact una dintre club_id si coach_id e completata.';
 
+-- ATENTIE: comentariul de mai jos s-a dovedit FALS si a fost corectat in 00027.
+-- `NOT VALID` scuteste doar validarea randurilor EXISTENTE la crearea
+-- constrangerii; orice UPDATE ulterior reverifica randul, deci taberele fara
+-- proprietar au ramas needitabile inclusiv de ADMIN. In 00027 constrangerea a
+-- devenit `<= 1`, iar `camps_update` si-a primit un WITH CHECK adevarat.
 -- `NOT VALID` dinadins: cele doua tabere existente nu au niciun proprietar, iar
 -- a le atribui la nimereala ar fi o minciuna in date. Raman cum sunt — adica
 -- editabile doar de ADMIN, exact comportamentul de azi — dar orice tabara noua
@@ -118,10 +123,12 @@ CREATE INDEX IF NOT EXISTS camp_price_items_camp_idx
 ALTER TABLE public.camp_price_items ENABLE ROW LEVEL SECURITY;
 
 -- Citirea urmeaza tabara: taberele sunt publice, deci si desfasurarea pretului.
+DROP POLICY IF EXISTS "camp_price_items_select" ON public.camp_price_items;
 CREATE POLICY "camp_price_items_select" ON public.camp_price_items
     FOR SELECT TO anon, authenticated
     USING (camp_id IN (SELECT id FROM public.camps));
 
+DROP POLICY IF EXISTS "camp_price_items_write" ON public.camp_price_items;
 CREATE POLICY "camp_price_items_write" ON public.camp_price_items
     FOR ALL TO authenticated
     USING (public.pot_administra_tabara(camp_id))
@@ -150,10 +157,12 @@ CREATE INDEX IF NOT EXISTS camp_coaches_coach_idx
 ALTER TABLE public.camp_coaches ENABLE ROW LEVEL SECURITY;
 
 -- Parintele trebuie sa stie cu cine pleaca copilul, deci lista e publica.
+DROP POLICY IF EXISTS "camp_coaches_select" ON public.camp_coaches;
 CREATE POLICY "camp_coaches_select" ON public.camp_coaches
     FOR SELECT TO anon, authenticated
     USING (camp_id IN (SELECT id FROM public.camps));
 
+DROP POLICY IF EXISTS "camp_coaches_write" ON public.camp_coaches;
 CREATE POLICY "camp_coaches_write" ON public.camp_coaches
     FOR ALL TO authenticated
     USING (public.pot_administra_tabara(camp_id))
@@ -182,10 +191,12 @@ CREATE INDEX IF NOT EXISTS camp_photos_camp_idx
 
 ALTER TABLE public.camp_photos ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "camp_photos_select" ON public.camp_photos;
 CREATE POLICY "camp_photos_select" ON public.camp_photos
     FOR SELECT TO anon, authenticated
     USING (camp_id IN (SELECT id FROM public.camps));
 
+DROP POLICY IF EXISTS "camp_photos_write" ON public.camp_photos;
 CREATE POLICY "camp_photos_write" ON public.camp_photos
     FOR ALL TO authenticated
     USING (public.pot_administra_tabara(camp_id))
