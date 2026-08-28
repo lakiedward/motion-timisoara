@@ -78,6 +78,89 @@ export function sumaCategoriilor(categorii: CategoriePret[]): number {
  * putut încărca", iar un `null` pentru amândouă le confundă. Tabăra lipsă vine
  * ca `null` doar din `maybeSingle`, adică din zero rânduri.
  */
+/** O tabără așa cum apare în lista publică. */
+export type TabaraDinLista = {
+  id: string
+  slug: string
+  title: string
+  period_start: string
+  period_end: string
+  location_text: string | null
+  price: number
+  allow_cash: boolean
+  heroUrl: string | null
+  organizator: OrganizatorTabara | null
+  /** `null` = fără limită de locuri. */
+  locuriRamase: number | null
+}
+
+/**
+ * Taberele pentru pagina publică `/tabere`.
+ *
+ * Arată DOAR pe cele care nu s-au încheiat, cea mai apropiată prima. Decis cu
+ * proprietarul pe 28.08. Până acum lista cerea tot, ordonat după `period_start`
+ * crescător — deci taberele trecute urcau deasupra celor viitoare, sub un titlu
+ * care scrie „VACANȚE ACTIVE". Paginile lor rămân accesibile pe link direct,
+ * unde badge-ul „Încheiată" spune adevărul.
+ *
+ * Filtrul se face în JS, nu în interogare: „încheiată" înseamnă sfârșitul zilei
+ * de final în fusul CITITORULUI, iar `sAIncheiat` știe asta. Un `gte` pe dată ar
+ * fi tăiat după miezul nopții UTC și ar fi ascuns o tabără cu o zi mai devreme
+ * pentru cine e la vest de Greenwich.
+ */
+export async function getTaberePublice(azi = new Date()): Promise<TabaraDinLista[]> {
+  const { data, error } = await supabase
+    .from('camps')
+    .select('*, club:clubs(id, name), coach:profiles(id, name)')
+    .order('period_start')
+  if (error) throw error
+
+  const viitoare = (data ?? []).filter((c) => !sAIncheiat(c.period_end, azi))
+  if (!viitoare.length) return []
+
+  // Un singur apel pentru toate taberele, nu `camp_spots_remaining` de N ori.
+  // Aceleași două stări pe care le numără și funcția din bază: un loc e ocupat
+  // de o înscriere plătită sau de una în curs de plată.
+  const { data: inscrieri, error: eInscrieri } = await supabase
+    .from('enrollments')
+    .select('entity_id')
+    .eq('kind', 'CAMP')
+    .in('status', ['ACTIVE', 'PENDING'])
+    .in('entity_id', viitoare.map((c) => c.id))
+  if (eInscrieri) throw eInscrieri
+
+  const ocupate = (inscrieri ?? []).reduce<Record<string, number>>((acc, r) => {
+    acc[r.entity_id] = (acc[r.entity_id] ?? 0) + 1
+    return acc
+  }, {})
+
+  return viitoare.map((rand) => {
+    const { club, coach, ...c } = rand as typeof rand & {
+      club: { id: string; name: string } | null
+      coach: { id: string; name: string } | null
+    }
+    return {
+      id: c.id,
+      slug: c.slug,
+      title: c.title,
+      period_start: c.period_start,
+      period_end: c.period_end,
+      location_text: c.location_text,
+      price: c.price,
+      allow_cash: c.allow_cash,
+      heroUrl: c.hero_photo_storage_path
+        ? supabase.storage.from('camp-photos').getPublicUrl(c.hero_photo_storage_path).data.publicUrl
+        : null,
+      organizator: club
+        ? { fel: 'club', nume: club.name, link: `/cluburi/${club.id}` }
+        : coach
+          ? { fel: 'antrenor', nume: coach.name, link: `/antrenori/${coach.id}` }
+          : null,
+      locuriRamase: c.capacity === null ? null : Math.max(0, c.capacity - (ocupate[c.id] ?? 0)),
+    }
+  })
+}
+
 export async function getTabaraDetaliu(slug: string): Promise<TabaraDetaliu | null> {
   const { data: rand, error } = await supabase
     .from('camps')
