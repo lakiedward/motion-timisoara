@@ -107,7 +107,12 @@ export async function getTabaraDetaliu(slug: string): Promise<TabaraDetaliu | nu
     supabase
       .from('camp_coaches')
       .select('coach_profile:coach_profiles(id, photo_storage_path, profile:profiles(name))')
-      .eq('camp_id', tabara.id),
+      .eq('camp_id', tabara.id)
+      // Filtrul e AICI, nu doar în RLS. Politica lasă proprietarul să-și vadă și
+      // invitațiile în așteptare, ca să le administreze — dar pagina publică
+      // trebuie să arate la fel pentru toată lumea. Fără linia asta, clubul ar
+      // vedea pe propria pagină antrenori pe care părinții nu-i văd.
+      .eq('status', 'accepted'),
     supabase
       .from('camp_photos')
       .select('storage_path, display_order')

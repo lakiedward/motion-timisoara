@@ -1,8 +1,16 @@
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '14.5'
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -67,7 +75,36 @@ export type Database = {
           start_time?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "activities_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "sports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       announcement_attachments: {
         Row: {
@@ -106,7 +143,22 @@ export type Database = {
           type?: string
           url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "announcement_attachments_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "course_announcements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "announcement_attachments_club_announcement_id_fkey"
+            columns: ["club_announcement_id"]
+            isOneToOne: false
+            referencedRelation: "club_announcements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       attendance: {
         Row: {
@@ -130,7 +182,22 @@ export type Database = {
           occurrence_id?: string
           status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "attendance_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "course_occurrences"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       audit_logs: {
         Row: {
@@ -173,6 +240,118 @@ export type Database = {
           timestamp?: string
         }
         Relationships: []
+      }
+      camp_coaches: {
+        Row: {
+          camp_id: string
+          coach_profile_id: string
+          created_at: string
+          invited_at: string
+          responded_at: string | null
+          status: string
+        }
+        Insert: {
+          camp_id: string
+          coach_profile_id: string
+          created_at?: string
+          invited_at?: string
+          responded_at?: string | null
+          status?: string
+        }
+        Update: {
+          camp_id?: string
+          coach_profile_id?: string
+          created_at?: string
+          invited_at?: string
+          responded_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camp_coaches_camp_id_fkey"
+            columns: ["camp_id"]
+            isOneToOne: false
+            referencedRelation: "camps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "camp_coaches_coach_profile_id_fkey"
+            columns: ["coach_profile_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      camp_photos: {
+        Row: {
+          camp_id: string
+          created_at: string
+          display_order: number
+          id: string
+          storage_path: string
+        }
+        Insert: {
+          camp_id: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          storage_path: string
+        }
+        Update: {
+          camp_id?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camp_photos_camp_id_fkey"
+            columns: ["camp_id"]
+            isOneToOne: false
+            referencedRelation: "camps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      camp_price_items: {
+        Row: {
+          amount: number
+          camp_id: string
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          name: string
+        }
+        Insert: {
+          amount: number
+          camp_id: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          name: string
+        }
+        Update: {
+          amount?: number
+          camp_id?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camp_price_items_camp_id_fkey"
+            columns: ["camp_id"]
+            isOneToOne: false
+            referencedRelation: "camps"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       camps: {
         Row: {
@@ -226,67 +405,22 @@ export type Database = {
           slug?: string
           title?: string
         }
-        Relationships: []
-      }
-      camp_price_items: {
-        Row: {
-          amount: number
-          camp_id: string
-          created_at: string
-          description: string | null
-          display_order: number
-          id: string
-          name: string
-        }
-        Insert: {
-          amount: number
-          camp_id: string
-          created_at?: string
-          description?: string | null
-          display_order?: number
-          id?: string
-          name: string
-        }
-        Update: {
-          amount?: number
-          camp_id?: string
-          created_at?: string
-          description?: string | null
-          display_order?: number
-          id?: string
-          name?: string
-        }
-        Relationships: []
-      }
-      camp_coaches: {
-        Row: { camp_id: string; coach_profile_id: string; created_at: string }
-        Insert: { camp_id: string; coach_profile_id: string; created_at?: string }
-        Update: { camp_id?: string; coach_profile_id?: string; created_at?: string }
-        Relationships: []
-      }
-      camp_photos: {
-        Row: {
-          camp_id: string
-          created_at: string
-          display_order: number
-          id: string
-          storage_path: string
-        }
-        Insert: {
-          camp_id: string
-          created_at?: string
-          display_order?: number
-          id?: string
-          storage_path: string
-        }
-        Update: {
-          camp_id?: string
-          created_at?: string
-          display_order?: number
-          id?: string
-          storage_path?: string
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "camps_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "camps_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       children: {
         Row: {
@@ -334,7 +468,15 @@ export type Database = {
           secondary_phone?: string | null
           tshirt_size?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "children_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       club_announcements: {
         Row: {
@@ -382,13 +524,52 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "club_announcements_author_user_id_fkey"
+            columns: ["author_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_announcements_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       club_coaches: {
-        Row: { club_id: string; coach_profile_id: string }
-        Insert: { club_id: string; coach_profile_id: string }
-        Update: { club_id?: string; coach_profile_id?: string }
-        Relationships: []
+        Row: {
+          club_id: string
+          coach_profile_id: string
+        }
+        Insert: {
+          club_id: string
+          coach_profile_id: string
+        }
+        Update: {
+          club_id?: string
+          coach_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_coaches_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_coaches_coach_profile_id_fkey"
+            columns: ["coach_profile_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       club_invitation_codes: {
         Row: {
@@ -424,13 +605,52 @@ export type Database = {
           max_uses?: number
           notes?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "club_invitation_codes_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_invitation_codes_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       club_sports: {
-        Row: { club_id: string; sport_id: string }
-        Insert: { club_id: string; sport_id: string }
-        Update: { club_id?: string; sport_id?: string }
-        Relationships: []
+        Row: {
+          club_id: string
+          sport_id: string
+        }
+        Insert: {
+          club_id: string
+          sport_id: string
+        }
+        Update: {
+          club_id?: string
+          sport_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_sports_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_sports_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "sports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clubs: {
         Row: {
@@ -508,7 +728,15 @@ export type Database = {
           stripe_payouts_enabled?: boolean
           website?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clubs_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coach_invitation_codes: {
         Row: {
@@ -547,7 +775,22 @@ export type Database = {
           used_at?: string | null
           used_by_user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "coach_invitation_codes_created_by_admin_id_fkey"
+            columns: ["created_by_admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_invitation_codes_used_by_user_id_fkey"
+            columns: ["used_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coach_profiles: {
         Row: {
@@ -604,7 +847,15 @@ export type Database = {
           stripe_payouts_enabled?: boolean
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "coach_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coach_ratings: {
         Row: {
@@ -634,13 +885,52 @@ export type Database = {
           rating?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "coach_ratings_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_ratings_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coach_sports: {
-        Row: { coach_profile_id: string; sport_id: string }
-        Insert: { coach_profile_id: string; sport_id: string }
-        Update: { coach_profile_id?: string; sport_id?: string }
-        Relationships: []
+        Row: {
+          coach_profile_id: string
+          sport_id: string
+        }
+        Insert: {
+          coach_profile_id: string
+          sport_id: string
+        }
+        Update: {
+          coach_profile_id?: string
+          sport_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_sports_coach_profile_id_fkey"
+            columns: ["coach_profile_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_sports_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "sports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       course_announcements: {
         Row: {
@@ -667,13 +957,51 @@ export type Database = {
           id?: string
           pinned?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "course_announcements_author_user_id_fkey"
+            columns: ["author_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_announcements_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       course_occurrences: {
-        Row: { course_id: string; ends_at: string; id: string; starts_at: string }
-        Insert: { course_id: string; ends_at: string; id?: string; starts_at: string }
-        Update: { course_id?: string; ends_at?: string; id?: string; starts_at?: string }
-        Relationships: []
+        Row: {
+          course_id: string
+          ends_at: string
+          id: string
+          starts_at: string
+        }
+        Insert: {
+          course_id: string
+          ends_at: string
+          id?: string
+          starts_at: string
+        }
+        Update: {
+          course_id?: string
+          ends_at?: string
+          id?: string
+          starts_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_occurrences_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       course_photos: {
         Row: {
@@ -703,7 +1031,15 @@ export type Database = {
           storage_path?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "course_photos_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       course_ratings: {
         Row: {
@@ -733,7 +1069,22 @@ export type Database = {
           rating?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "course_ratings_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_ratings_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       courses: {
         Row: {
@@ -799,7 +1150,36 @@ export type Database = {
           recurrence_rule?: string | null
           sport_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "courses_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "sports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       enrollments: {
         Row: {
@@ -838,7 +1218,15 @@ export type Database = {
           sessions_used?: number
           status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "enrollments_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invoices: {
         Row: {
@@ -904,7 +1292,15 @@ export type Database = {
           total_amount?: number
           vat_amount?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "invoices_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       locations: {
         Row: {
@@ -952,7 +1348,22 @@ export type Database = {
           name?: string
           type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "locations_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "locations_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_payments: {
         Row: {
@@ -991,7 +1402,15 @@ export type Database = {
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_payments_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
@@ -1066,7 +1485,15 @@ export type Database = {
           stripe_transfer_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "payments_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -1128,6 +1555,29 @@ export type Database = {
         }
         Relationships: []
       }
+      user_announcement_views: {
+        Row: {
+          last_seen_at: string
+          user_id: string
+        }
+        Insert: {
+          last_seen_at?: string
+          user_id: string
+        }
+        Update: {
+          last_seen_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_announcement_views_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_recent_locations: {
         Row: {
           id: string
@@ -1150,20 +1600,73 @@ export type Database = {
           use_count?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_recent_locations_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_recent_locations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      audience_club_id: {
+        Args: { p_id: string; p_kind: string }
+        Returns: string
+      }
       camp_spots_remaining: { Args: { p_camp_id: string }; Returns: number }
+      cheama_purge_expired_media: { Args: never; Returns: undefined }
+      club_enrolled_child_ids: { Args: never; Returns: string[] }
+      coach_enrolled_child_ids: { Args: never; Returns: string[] }
+      course_availability: {
+        Args: never
+        Returns: {
+          course_id: string
+          is_full: boolean
+        }[]
+      }
       course_spots_remaining: { Args: { p_course_id: string }; Returns: number }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
-      get_my_club_id: { Args: Record<PropertyKey, never>; Returns: string }
-      get_my_coach_profile_id: { Args: Record<PropertyKey, never>; Returns: string }
-      get_my_role: { Args: Record<PropertyKey, never>; Returns: string }
-      is_my_child: { Args: { child_uuid: string }; Returns: boolean }
+      get_my_coach_profile_id: { Args: never; Returns: string }
+      get_my_role: { Args: never; Returns: string }
+      my_child_ids: { Args: never; Returns: string[] }
+      my_club_coach_user_ids: { Args: never; Returns: string[] }
+      my_club_ids: { Args: never; Returns: string[] }
+      pot_administra_tabara: { Args: { p_camp_id: string }; Returns: boolean }
+      pot_vedea_inscrierile_taberei: {
+        Args: { p_camp_id: string }
+        Returns: boolean
+      }
+      raspunde_invitatie_tabara: {
+        Args: { p_accept: boolean; p_camp_id: string }
+        Returns: {
+          camp_id: string
+          coach_profile_id: string
+          created_at: string
+          invited_at: string
+          responded_at: string | null
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "camp_coaches"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      safe_uuid: { Args: { t: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
@@ -1174,11 +1677,125 @@ export type Database = {
   }
 }
 
-type DefaultSchema = Database['public']
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-export type Tables<T extends keyof DefaultSchema['Tables']> =
-  DefaultSchema['Tables'][T]['Row']
-export type TablesInsert<T extends keyof DefaultSchema['Tables']> =
-  DefaultSchema['Tables'][T]['Insert']
-export type TablesUpdate<T extends keyof DefaultSchema['Tables']> =
-  DefaultSchema['Tables'][T]['Update']
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
