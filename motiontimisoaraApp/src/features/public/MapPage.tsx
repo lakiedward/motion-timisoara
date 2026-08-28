@@ -10,6 +10,8 @@ import type L from 'leaflet'
 import { getActivities, getCourses, getLocations } from '@/api/public'
 import type { ActivityListItem, CourseListItem } from '@/api/public'
 import { markerIcon } from '@/lib/map-marker'
+import { grupeazaInLocuri, loculRandului, type Loc } from '@/lib/locuri'
+import { plural } from '@/lib/plural'
 import { SPORT_COLOR, SPORT_COLOR_FALLBACK, SPORT_ICON } from './sport-icons'
 
 type LocationContent = { courses: CourseListItem[]; activities: ActivityListItem[] }
@@ -75,11 +77,11 @@ function SectionLabel({ label, count }: { label: string; count: number }) {
 /** Fly to `?location=` and open that marker's popup once the marker ref exists. */
 function FocusLocation({
   locationId,
-  locations,
+  locuri,
   markerRefs,
 }: {
   locationId: string | null
-  locations: { id: string; lat: number | null; lng: number | null }[]
+  locuri: Loc[]
   markerRefs: React.MutableRefObject<Map<string, L.Marker>>
 }) {
   const map = useMap()
@@ -88,20 +90,23 @@ function FocusLocation({
   useEffect(() => {
     if (!locationId) return
     if (done.current === locationId) return
-    const loc = locations.find((l) => l.id === locationId)
-    if (!loc || loc.lat == null || loc.lng == null) return
+    // Linkurile din restul aplicatiei trimit un ID DE RAND, nu de loc. Markerele
+    // sunt acum pe locuri, deci se cauta locul care contine randul — altfel
+    // fiecare `/harta?location=<id>` s-ar fi rupt tacut.
+    const loc = loculRandului(locuri, locationId)
+    if (!loc) return
 
     let cancelled = false
     let attempts = 0
     const tryFocus = () => {
       if (cancelled) return
-      const marker = markerRefs.current.get(locationId)
+      const marker = markerRefs.current.get(loc.cheie)
       if (!marker) {
         if (attempts++ < 60) requestAnimationFrame(tryFocus)
         return
       }
       done.current = locationId
-      map.flyTo([loc.lat as number, loc.lng as number], 15, { duration: 0.8 })
+      map.flyTo([loc.lat, loc.lng], 15, { duration: 0.8 })
       window.setTimeout(() => {
         if (!cancelled) marker.openPopup()
       }, 850)
@@ -110,7 +115,7 @@ function FocusLocation({
     return () => {
       cancelled = true
     }
-  }, [locationId, locations, map, markerRefs])
+  }, [locationId, locuri, map, markerRefs])
 
   return null
 }
@@ -142,7 +147,20 @@ export default function MapPage() {
     return map
   }, [courses, activities])
 
-  const withCoords = locations.filter((l) => l.lat != null && l.lng != null)
+  // Numarul de cursuri pe fiecare RAND departajeaza numele locului cand doua
+  // cluburi scriu aceeasi cladire diferit.
+  const cursuriPeRand = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const c of courses) {
+      if (c.location_id) m.set(c.location_id, (m.get(c.location_id) ?? 0) + 1)
+    }
+    return m
+  }, [courses])
+
+  const locuri = useMemo(
+    () => grupeazaInLocuri(locations, cursuriPeRand),
+    [locations, cursuriPeRand],
+  )
 
   return (
     <div>
@@ -159,19 +177,21 @@ export default function MapPage() {
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
             attribution='&copy; OpenStreetMap &copy; CARTO'
           />
-          <FocusLocation locationId={focusId} locations={locations} markerRefs={markerRefs} />
-          {withCoords.map((l) => {
-            const content = byLocation.get(l.id)
-            const hasCourses = !!content?.courses.length
-            const hasActivities = !!content?.activities.length
+          <FocusLocation locationId={focusId} locuri={locuri} markerRefs={markerRefs} />
+          {locuri.map((loc) => {
+            // Continutul locului = tot ce se intampla la oricare din randurile lui.
+            const cursuriLoc = loc.randuri.flatMap((r) => byLocation.get(r.id)?.courses ?? [])
+            const activitatiLoc = loc.randuri.flatMap((r) => byLocation.get(r.id)?.activities ?? [])
+            const hasCourses = cursuriLoc.length > 0
+            const hasActivities = activitatiLoc.length > 0
             return (
               <Marker
-                key={l.id}
-                position={[l.lat as number, l.lng as number]}
+                key={loc.cheie}
+                position={[loc.lat, loc.lng]}
                 icon={markerIcon}
                 ref={(ref) => {
-                  if (ref) markerRefs.current.set(l.id, ref)
-                  else markerRefs.current.delete(l.id)
+                  if (ref) markerRefs.current.set(loc.cheie, ref)
+                  else markerRefs.current.delete(loc.cheie)
                 }}
               >
                 <Popup className="mt-popup" minWidth={264} maxWidth={280}>
@@ -183,12 +203,19 @@ export default function MapPage() {
                       </span>
                       <div className="min-w-0">
                         <p className="font-display truncate text-[15px] font-extrabold leading-tight text-white">
-                          {l.name}
+                          {loc.nume}
                         </p>
                         <p className="mt-0.5 truncate text-[11px] leading-snug text-white/85">
-                          {l.address ? `${l.address}, ` : ''}
-                          {l.city}
+                          {loc.address ? `${loc.address}, ` : ''}
+                          {loc.city}
                         </p>
+                        {/* Se scrie doar cand chiar sunt mai multe: un singur club
+                            n-are de ce sa se anunte pe harta orasului. */}
+                        {loc.cluburi > 1 && (
+                          <p className="mt-0.5 text-[11px] leading-snug text-white/85">
+                            {plural(loc.cluburi, 'club se antrenează aici', 'cluburi se antrenează aici')}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -196,9 +223,9 @@ export default function MapPage() {
                   <div className="space-y-3 p-3">
                     {hasCourses && (
                       <div>
-                        <SectionLabel label="Cursuri" count={content!.courses.length} />
+                        <SectionLabel label="Cursuri" count={cursuriLoc.length} />
                         <div className="space-y-0.5">
-                          {content!.courses.map((c) => (
+                          {cursuriLoc.map((c) => (
                             <PopupRow
                               key={c.id}
                               to={`/cursuri/${c.id}`}
@@ -213,9 +240,9 @@ export default function MapPage() {
 
                     {hasActivities && (
                       <div className={hasCourses ? 'border-border border-t pt-3' : undefined}>
-                        <SectionLabel label="Activități" count={content!.activities.length} />
+                        <SectionLabel label="Activități" count={activitatiLoc.length} />
                         <div className="space-y-0.5">
-                          {content!.activities.map((a) => (
+                          {activitatiLoc.map((a) => (
                             <PopupRow
                               key={a.id}
                               to={`/activitati/${a.id}`}
