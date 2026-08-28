@@ -12,8 +12,14 @@ import type { Tables } from '@/lib/database.types'
 export type Tabara = Tables<'camps'>
 export type CategoriePret = Tables<'camp_price_items'>
 
-/** O categorie așa cum o ține formularul, înainte să capete id și ordine. */
-export interface CategorieDeSalvat {
+/**
+ * O categorie așa cum o ține formularul, înainte să capete id și ordine.
+ *
+ * `type`, nu `interface`, dinadins: parametrul funcției din bază e `Json`, iar
+ * TypeScript dă semnătură de index implicită doar aliasurilor de tip. Un
+ * `interface` aici s-ar refuza la apel, cu o eroare care nu spune de ce.
+ */
+export type CategorieDeSalvat = {
   name: string
   amount: number
   description: string | null

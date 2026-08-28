@@ -1626,6 +1626,7 @@ export type Database = {
         Args: { p_id: string; p_kind: string }
         Returns: string
       }
+      camp_enrolled_child_ids: { Args: never; Returns: string[] }
       camp_spots_remaining: { Args: { p_camp_id: string }; Returns: number }
       cheama_purge_expired_media: { Args: never; Returns: undefined }
       club_enrolled_child_ids: { Args: never; Returns: string[] }
@@ -1667,6 +1668,24 @@ export type Database = {
         }
       }
       safe_uuid: { Args: { t: string }; Returns: string }
+      salveaza_banii_taberei: {
+        Args: { p_camp_id: string; p_categorii: Json; p_price: number }
+        Returns: {
+          amount: number
+          camp_id: string
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          name: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "camp_price_items"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
     }
     Enums: {
       [_ in never]: never
