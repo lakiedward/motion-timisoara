@@ -1,6 +1,12 @@
 import { beforeEach, expect, test, vi } from 'vitest'
 
-import { formatZi, getTabaraDetaliu, sAIncheiat, sumaCategoriilor } from './camps'
+import {
+  formatZi,
+  getTabaraDetaliu,
+  getTaberePublice,
+  sAIncheiat,
+  sumaCategoriilor,
+} from './camps'
 
 let raspuns: Record<string, { data: unknown; error: unknown }> = {}
 let rpcRaspuns: { data: unknown; error: unknown } = { data: null, error: null }
@@ -260,4 +266,63 @@ test('categoriile se cer în ordinea lor, nu la nimereală', async () => {
   await getTabaraDetaliu('tabara-inot')
   expect(cereri.camp_price_items).toContain('order(display_order)')
   expect(cereri.camp_price_items).toContain('eq(camp_id,camp-1)')
+})
+
+// --- lista publica ---------------------------------------------------------
+
+const TREI_TABERE = [
+  { id: 'a', slug: 'vara', title: 'Vară', period_start: '2026-08-14', period_end: '2026-08-21',
+    location_text: 'Brașov', price: 150000, allow_cash: true, capacity: 30,
+    hero_photo_storage_path: null, club: null, coach: null },
+  { id: 'b', slug: 'inot', title: 'Înot', period_start: '2026-09-13', period_end: '2026-09-18',
+    location_text: 'Timișoara', price: 90000, allow_cash: false, capacity: 20,
+    hero_photo_storage_path: 'b/hero/x.jpg', club: { id: 'c1', name: 'Club Test' }, coach: null },
+  { id: 'c', slug: 'mtb', title: 'MTB', period_start: '2027-07-10', period_end: '2027-07-17',
+    location_text: 'Alpi', price: 320000, allow_cash: true, capacity: null,
+    hero_photo_storage_path: null, club: null, coach: { id: 'u1', name: 'Antrenor Test' } },
+]
+
+// Miezul criteriului: tabara incheiata pe 21 august nu mai apare pe 28, desi
+// pana acum aparea PRIMA, fiindca ordonarea e dupa data de inceput crescator.
+test('lista publică lasă afară taberele încheiate', async () => {
+  raspuns = { camps: { data: TREI_TABERE, error: null }, enrollments: { data: [], error: null } }
+  const lista = await getTaberePublice(new Date(2026, 7, 28, 10, 0))
+  expect(lista.map((t) => t.slug)).toEqual(['inot', 'mtb'])
+})
+
+// Ziua de final se numara intreaga, ca la pagina de detaliu.
+test('o tabără care se termină azi rămâne în listă', async () => {
+  raspuns = { camps: { data: TREI_TABERE, error: null }, enrollments: { data: [], error: null } }
+  const lista = await getTaberePublice(new Date(2026, 7, 21, 9, 0))
+  expect(lista.map((t) => t.slug)).toEqual(['vara', 'inot', 'mtb'])
+})
+
+test('locurile rămase scad cu înscrierile, iar capacitatea goală rămâne goală', async () => {
+  raspuns = {
+    camps: { data: TREI_TABERE, error: null },
+    enrollments: { data: [{ entity_id: 'b' }, { entity_id: 'b' }], error: null },
+  }
+  const lista = await getTaberePublice(new Date(2026, 7, 28))
+  expect(lista.find((t) => t.slug === 'inot')!.locuriRamase).toBe(18)
+  // Fara limita de locuri inseamna null, nu zero: altfel tabara ar parea plina.
+  expect(lista.find((t) => t.slug === 'mtb')!.locuriRamase).toBeNull()
+})
+
+test('organizatorul iese și din club, și din antrenor', async () => {
+  raspuns = { camps: { data: TREI_TABERE, error: null }, enrollments: { data: [], error: null } }
+  const lista = await getTaberePublice(new Date(2026, 7, 28))
+  expect(lista.find((t) => t.slug === 'inot')!.organizator).toEqual({
+    fel: 'club', nume: 'Club Test', link: '/cluburi/c1',
+  })
+  expect(lista.find((t) => t.slug === 'mtb')!.organizator).toEqual({
+    fel: 'antrenor', nume: 'Antrenor Test', link: '/antrenori/u1',
+  })
+})
+
+// Fara nicio tabara viitoare nu se mai intreaba de inscrieri: n-are pe ce.
+test('când nu rămâne nicio tabără, nu se mai cer înscrierile', async () => {
+  raspuns = { camps: { data: TREI_TABERE, error: null } }
+  const lista = await getTaberePublice(new Date(2030, 0, 1))
+  expect(lista).toEqual([])
+  expect(cereri.enrollments).toBeUndefined()
 })

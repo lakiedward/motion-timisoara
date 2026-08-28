@@ -82,11 +82,11 @@ export async function getActivity(id: string): Promise<ActivityListItem | null> 
   return data as unknown as ActivityListItem
 }
 
-export async function getCamps(): Promise<Tables<'camps'>[]> {
-  const { data, error } = await supabase.from('camps').select('*').order('period_start')
-  if (error) throw error
-  return data ?? []
-}
+// `getCamps` a fost scoasă: cerea toate taberele, inclusiv pe cele încheiate,
+// ordonate crescător după data de început — deci trecutul urca deasupra
+// viitorului, sub titlul „VACANȚE ACTIVE". Lista publică folosește acum
+// `getTaberePublice` din `api/camps.ts`, care filtrează. Lăsată aici, ar fi
+// fost o capcană: următorul care o cheamă reintroduce exact bug-ul.
 
 export async function getCampBySlug(slug: string): Promise<Tables<'camps'> | null> {
   const { data, error } = await supabase.from('camps').select('*').eq('slug', slug).single()
