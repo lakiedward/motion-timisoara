@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useProprietarTabere } from './useProprietarTabere'
+import CampPhotosSection from './CampPhotosSection'
 
 const lei = z
   .string()
@@ -350,6 +351,17 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
             </p>
           )}
         </fieldset>
+
+        {eEditare && tabara ? (
+          <CampPhotosSection campId={tabara.id} heroCale={tabara.hero_photo_storage_path} />
+        ) : (
+          !eEditare && (
+            <p className="text-muted-foreground rounded-2xl border border-dashed p-4 text-sm">
+              Pozele se adaugă după ce salvezi tabăra: fișierele stau într-un dosar al ei, iar
+              dosarul are nevoie de tabără ca să existe.
+            </p>
+          )
+        )}
 
         <Button type="submit" className="h-11 min-h-11 px-6" disabled={isSubmitting || !gata}>
           {eEditare ? 'Salvează' : 'Creează tabăra'}
