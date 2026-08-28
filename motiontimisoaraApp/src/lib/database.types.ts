@@ -1643,6 +1643,7 @@ export type Database = {
       get_my_coach_profile_id: { Args: never; Returns: string }
       get_my_role: { Args: never; Returns: string }
       my_child_ids: { Args: never; Returns: string[] }
+      my_children_course_ids: { Args: never; Returns: string[] }
       my_club_coach_user_ids: { Args: never; Returns: string[] }
       my_club_ids: { Args: never; Returns: string[] }
       pot_administra_tabara: { Args: { p_camp_id: string }; Returns: boolean }
