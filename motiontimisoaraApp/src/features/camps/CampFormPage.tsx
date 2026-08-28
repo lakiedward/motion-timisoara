@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useProprietarTabere } from './useProprietarTabere'
 import CampPhotosSection from './CampPhotosSection'
+import CampCoachesSection from './CampCoachesSection'
 
 const lei = z
   .string()
@@ -353,12 +354,15 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
         </fieldset>
 
         {eEditare && tabara ? (
-          <CampPhotosSection campId={tabara.id} heroCale={tabara.hero_photo_storage_path} />
+          <>
+            <CampPhotosSection campId={tabara.id} heroCale={tabara.hero_photo_storage_path} />
+            <CampCoachesSection campId={tabara.id} />
+          </>
         ) : (
           !eEditare && (
             <p className="text-muted-foreground rounded-2xl border border-dashed p-4 text-sm">
-              Pozele se adaugă după ce salvezi tabăra: fișierele stau într-un dosar al ei, iar
-              dosarul are nevoie de tabără ca să existe.
+              Pozele și antrenorii se adaugă după ce salvezi tabăra: și unele, și alții au nevoie
+              de o tabără care există deja.
             </p>
           )
         )}

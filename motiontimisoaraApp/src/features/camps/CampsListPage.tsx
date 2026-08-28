@@ -9,10 +9,11 @@ import { plural } from '@/lib/plural'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useProprietarTabere } from './useProprietarTabere'
+import CampInvitations from './CampInvitations'
 
 /** Aceeași pagină pentru club și pentru antrenor; diferă doar prefixul rutei. */
 export default function CampsListPage({ baza }: { baza: '/club/camps' | '/coach/camps' }) {
-  const { proprietar, gata, eroare, reincearca } = useProprietarTabere()
+  const { proprietar, gata, eroare, reincearca, eClub } = useProprietarTabere()
 
   const {
     data: tabere = [],
@@ -45,6 +46,10 @@ export default function CampsListPage({ baza }: { baza: '/club/camps' | '/coach/
 
   return (
     <div>
+      {/* Invitațiile sunt ale antrenorului, nu ale clubului: un club nu poate fi
+          invitat nicăieri. Stau deasupra, fiindcă așteaptă o decizie de la el. */}
+      {!eClub && <CampInvitations />}
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl font-bold">Tabere</h1>
         <Button asChild className="h-11 min-h-11">
