@@ -91,6 +91,13 @@ npm run android           # build + sync + open Android Studio
 ### Code style
 Prettier (see `.prettierrc.json`), ESLint flat config with `react-hooks` and `react-refresh`. Tailwind utility classes composed with `cn()` from `src/lib/utils.ts`.
 
+### UI conventions
+**`motiontimisoaraApp/docs/ui-conventions.md` — read it before writing criteria for a new UI section, or before building a screen.** What's in it is inherited, not re-decided; what isn't in it is genuinely new and worth a question.
+
+It is **generated** (`npm run conventions`), never hand-edited: a convention only exists there if `scripts/ui-conventions.mjs` can measure it from the code, so every line carries a pointer to the file that *is* the convention plus today's count. Anything that needs a *choice* rather than a measurement — where a token should live, what value it takes — is deliberately not a convention; it goes on the Focus board instead.
+
+`src/ui-conventions.test.ts` holds the ceilings: what is clean stays at zero, what is drifting cannot grow, and the generated file must match what the code measures. Repair lowers a ceiling; nothing raises one.
+
 ---
 
 ## Backend (Supabase)
