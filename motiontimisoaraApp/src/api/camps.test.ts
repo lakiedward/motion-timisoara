@@ -194,6 +194,16 @@ test('un antrenor fără nume nu lasă cardul gol', async () => {
   expect(d!.antrenori[0]).toEqual({ id: 'cp1', nume: 'Antrenor', pozaUrl: null })
 })
 
+// Politica lasa proprietarul sa-si vada si invitatiile in asteptare, ca sa le
+// administreze. Daca pagina publica s-ar bizui doar pe RLS, clubul ar vedea pe
+// propria pagina antrenori pe care parintii nu-i vad — deci filtrul trebuie sa
+// fie si in interogare, nu doar in baza.
+test('pagina publică cere doar antrenorii care au acceptat', async () => {
+  raspuns = { camps: { data: TABARA, error: null } }
+  await getTabaraDetaliu('tabara-inot')
+  expect(cereri.camp_coaches).toContain('eq(status,accepted)')
+})
+
 // Capacitate nelimitata inseamna NULL, nu zero locuri — apelantul trebuie sa le
 // deosebeasca, altfel o tabara fara limita ar aparea ca plina.
 test('capacitatea nelimitată vine ca gol, nu ca zero', async () => {

@@ -1,4 +1,4 @@
-import { Building2, GraduationCap, LayoutDashboard, MapPin, Megaphone, Users } from 'lucide-react'
+import { Building2, GraduationCap, LayoutDashboard, MapPin, Megaphone, Tent, Users } from 'lucide-react'
 
 import { PortalLayout, type PortalNavItem } from '@/layout/PortalLayout'
 
@@ -8,6 +8,7 @@ const NAV: PortalNavItem[] = [
   { to: '/club/coaches', label: 'Antrenori', icon: Users },
   { to: '/club/announcements', label: 'Anunțuri', icon: Megaphone },
   { to: '/club/courses', label: 'Cursuri', icon: GraduationCap },
+  { to: '/club/camps', label: 'Tabere', icon: Tent },
   { to: '/club/locations', label: 'Locații', icon: MapPin },
 ]
 
