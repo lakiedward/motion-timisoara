@@ -112,3 +112,16 @@ test('o tabără fără limită nu arată nici locuri, nici „epuizate”', asy
   expect(screen.queryByText(/locuri rămase/)).not.toBeInTheDocument()
   expect(screen.queryByText('Locuri epuizate')).not.toBeInTheDocument()
 })
+
+// Local, incarcarea tine sub 50ms si TanStack tine raspunsul in cache, deci
+// starea asta nu se poate prinde din browser. Aici se poate: promisiunea nu se
+// rezolva niciodata, deci randarea ramane pe loc.
+test('cât se încarcă, în locul cardurilor stau forme de așteptare', async () => {
+  mocked.mockReturnValue(new Promise(() => {}))
+  deseneaza()
+  await waitFor(() => {
+    expect(document.querySelectorAll('[data-slot="skeleton"]').length).toBe(2)
+  })
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  expect(screen.queryByText(/Nicio tabără programată/)).not.toBeInTheDocument()
+})
