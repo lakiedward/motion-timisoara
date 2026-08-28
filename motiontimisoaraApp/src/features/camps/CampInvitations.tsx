@@ -73,6 +73,18 @@ export default function CampInvitations() {
               {i.stare === 'accepted' && <Badge>Ai acceptat</Badge>}
             </div>
 
+            {/* Cine pleacă cu copiii trebuie să ajungă la lista lor — cu alergii
+                și contacte de urgență. Politica din bază îl lasă (00028, 00032),
+                deci linkul nu deschide nimic ce n-avea deja voie să vadă. */}
+            {i.stare === 'accepted' && (
+              <Link
+                to={`/coach/camps/${i.campId}/enrolled`}
+                className="text-muted-foreground hover:text-foreground mt-2 inline-flex h-11 items-center text-sm"
+              >
+                Vezi cine s-a înscris
+              </Link>
+            )}
+
             {i.stare === 'invited' && (
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button

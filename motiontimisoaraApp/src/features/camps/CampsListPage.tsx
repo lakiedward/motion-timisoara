@@ -72,8 +72,14 @@ export default function CampsListPage({ baza }: { baza: '/club/camps' | '/coach/
       ) : (
         <ul className="mt-6 grid gap-4 sm:grid-cols-2">
           {tabere.map((t) => (
-            <li key={t.id}>
+            <li key={t.id} className="flex flex-col gap-2">
               <CardTabara tabara={t} baza={baza} />
+              <Link
+                to={`${baza}/${t.id}/enrolled`}
+                className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center px-1 text-sm"
+              >
+                Vezi cine s-a înscris
+              </Link>
             </li>
           ))}
         </ul>
