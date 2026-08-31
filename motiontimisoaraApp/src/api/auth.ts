@@ -46,14 +46,15 @@ export async function loadAppUserResult(): Promise<LoadAppUserResult> {
   } = await supabase.auth.getSession()
   if (!session) return { status: 'signed_out' }
 
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, email, name, role, phone, avatar_url')
-    .eq('id', session.user.id)
-    .single()
-  if (error || !data) return { status: 'error', message: PROFILE_LOAD_ERROR }
+  // Prin `my_profile()`, nu prin tabel: din migrarea 00036, `email` și `phone`
+  // nu mai sunt lizibile de rolul `authenticated`, fiindcă înainte orice cont
+  // citea contactele tuturor. Funcția e SECURITY DEFINER și filtrează ea însăși
+  // pe auth.uid(), deci întoarce doar rândul celui logat.
+  const { data, error } = await supabase.rpc('my_profile')
+  const profile = (data as Array<Parameters<typeof toAppUser>[0]> | null)?.[0]
+  if (error || !profile) return { status: 'error', message: PROFILE_LOAD_ERROR }
 
-  return { status: 'ok', user: toAppUser(data) }
+  return { status: 'ok', user: toAppUser(profile) }
 }
 
 /** Loads the current session's profile row, or null if signed out or the profile cannot be read. */

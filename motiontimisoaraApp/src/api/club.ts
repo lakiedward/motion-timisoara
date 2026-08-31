@@ -57,27 +57,25 @@ export type ClubCoach = {
   photo_storage_path: string | null
 }
 
+/**
+ * Lotul de antrenori al unui club, cu datele de contact.
+ *
+ * Trece prin `club_coach_contacts()`, nu prin join: din migrarea 00036,
+ * `profiles.email` nu mai e lizibil de rolul `authenticated`, fiindcă înainte
+ * orice cont citea adresele tuturor. Funcția verifică ea însăși că cel care
+ * întreabă chiar deține clubul (sau e ADMIN) și ridică excepție altfel.
+ */
 export async function getClubCoaches(clubId: string): Promise<ClubCoach[]> {
-  const { data, error } = await supabase
-    .from('club_coaches')
-    .select('coach_profile:coach_profiles(id, photo_storage_path, profile:profiles(name, email))')
-    .eq('club_id', clubId)
+  const { data, error } = await supabase.rpc('club_coach_contacts', { p_club_id: clubId })
   if (error) throw error
-  type Row = {
-    coach_profile: {
-      id: string
-      photo_storage_path: string | null
-      profile: { name: string; email: string } | null
-    } | null
-  }
-  return ((data ?? []) as unknown as Row[])
-    .filter((r) => r.coach_profile)
-    .map((r) => ({
-      coach_profile_id: r.coach_profile!.id,
-      name: r.coach_profile!.profile?.name ?? '—',
-      email: r.coach_profile!.profile?.email ?? '',
-      photo_storage_path: r.coach_profile!.photo_storage_path,
-    }))
+  return ((data as ClubCoach[] | null) ?? []).map((r) => ({
+    coach_profile_id: r.coach_profile_id,
+    // Numele lipsă rămâne „—", ca înainte: o celulă goală în lot arată a
+    // eroare de încărcare, nu a antrenor fără nume.
+    name: r.name ?? '—',
+    email: r.email ?? '',
+    photo_storage_path: r.photo_storage_path,
+  }))
 }
 
 export interface CreateManagedCoachInput {

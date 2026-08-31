@@ -2,7 +2,11 @@ import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 
 async function count(table: 'profiles' | 'coach_profiles' | 'clubs' | 'courses'): Promise<number> {
-  const { count, error } = await supabase.from(table).select('*', { count: 'exact', head: true })
+  // `select('id')`, nu `select('*')`: din migrările 00035–00036, rolul
+  // `authenticated` are grant doar pe coloanele publice ale acestor tabele, iar
+  // `SELECT *` cere grant pe TOATE coloanele — deci întorcea 403 chiar și
+  // pentru o simplă numărătoare. `id` e lizibil peste tot.
+  const { count, error } = await supabase.from(table).select('id', { count: 'exact', head: true })
   if (error) throw error
   return count ?? 0
 }
@@ -19,20 +23,23 @@ export async function getAdminStats() {
 
 export type AdminUser = Pick<Tables<'profiles'>, 'id' | 'name' | 'email' | 'role' | 'enabled' | 'created_at'>
 
+/**
+ * Lista de utilizatori a administratorului.
+ *
+ * Trece prin `admin_users()`, nu prin tabel: din migrarea 00036, `email` și
+ * `enabled` nu mai sunt lizibile de rolul `authenticated`, fiindcă înainte
+ * ORICE cont citea toate adresele de email din platformă. Funcția verifică ea
+ * însăși rolul și ridică excepție dacă cel care întreabă nu e ADMIN — o listă
+ * goală ar fi arătat exact ca „nu există utilizatori".
+ *
+ * Ordonarea a rămas în funcție, nu aici: multe conturi au aceeași zi de
+ * înregistrare, iar fără o sortare totală rândurile sar sub cursor între
+ * refetch-uri și coloana „Înregistrat" pare că minte.
+ */
 export async function getAllUsers(): Promise<AdminUser[]> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, name, email, role, enabled, created_at')
-    .order('created_at', { ascending: false })
-    // Multe conturi au aceeasi zi de inregistrare. Fara criterii suplimentare,
-    // ordinea lor se schimba de la un refetch la altul, deci randurile sar sub
-    // cursor dupa fiecare comutare, iar coloana „Înregistrat" pare ca minte.
-    // Nici `created_at` plus `name` nu e o cheie unica, asa ca ultimul criteriu
-    // e `id`, ca sortarea sa fie totala pentru orice date.
-    .order('name', { ascending: true })
-    .order('id', { ascending: true })
+  const { data, error } = await supabase.rpc('admin_users')
   if (error) throw error
-  return data ?? []
+  return (data as AdminUser[] | null) ?? []
 }
 
 export async function setUserEnabled(id: string, enabled: boolean) {

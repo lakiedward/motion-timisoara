@@ -405,12 +405,13 @@ export async function markManyPresent(occurrenceId: string, childIds: string[]) 
 
 export async function getMyCoachProfile() {
   const coachId = await uid()
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('name, phone, email')
-    .eq('id', coachId)
-    .single()
+  // Prin `my_profile()`, nu prin tabel: din migrarea 00036, `email` și `phone`
+  // nu mai sunt lizibile de rolul `authenticated`. Funcția filtrează ea însăși
+  // pe auth.uid().
+  const { data: rows, error: profileError } = await supabase.rpc('my_profile')
   if (profileError) throw profileError
+  const profile = (rows as Array<{ name: string; phone: string | null; email: string }> | null)?.[0]
+  if (!profile) throw new Error('Profilul nu a putut fi citit')
 
   const { data: coach, error: coachError } = await supabase
     .from('coach_profiles')
