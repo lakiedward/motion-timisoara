@@ -1622,6 +1622,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_users: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          enabled: boolean
+          id: string
+          name: string
+          role: string
+        }[]
+      }
       audience_club_id: {
         Args: { p_id: string; p_kind: string }
         Returns: string
@@ -1629,6 +1640,15 @@ export type Database = {
       camp_enrolled_child_ids: { Args: never; Returns: string[] }
       camp_spots_remaining: { Args: { p_camp_id: string }; Returns: number }
       cheama_purge_expired_media: { Args: never; Returns: undefined }
+      club_coach_contacts: {
+        Args: { p_club_id: string }
+        Returns: {
+          coach_profile_id: string
+          email: string
+          name: string
+          photo_storage_path: string
+        }[]
+      }
       club_enrolled_child_ids: { Args: never; Returns: string[] }
       coach_enrolled_child_ids: { Args: never; Returns: string[] }
       course_availability: {
@@ -1680,6 +1700,27 @@ export type Database = {
       }
       my_club_coach_user_ids: { Args: never; Returns: string[] }
       my_club_ids: { Args: never; Returns: string[] }
+      my_profile: {
+        Args: never
+        Returns: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          enabled: boolean
+          id: string
+          name: string
+          oauth_provider: string | null
+          oauth_provider_id: string | null
+          phone: string | null
+          role: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       pot_administra_tabara: { Args: { p_camp_id: string }; Returns: boolean }
       pot_vedea_inscrierile_taberei: {
         Args: { p_camp_id: string }
