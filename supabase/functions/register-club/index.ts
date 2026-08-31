@@ -45,7 +45,7 @@ serve(
         email: body.email,
         password: body.password,
         email_confirm: true,
-        user_metadata: { name: body.name, phone: body.phone, role: "CLUB" },
+        user_metadata: { name: body.name, phone: body.phone },
       });
 
     if (authError) {
@@ -56,6 +56,26 @@ serve(
     }
 
     const userId = authData.user.id;
+
+    // 1b. Ridică rolul. handle_new_user scrie întotdeauna PARENT, fiindcă
+    // rolul din metadate e scris de client și oricine își putea face astfel
+    // cont de ADMIN (migrarea 00034). Aici suntem pe service_role, deci
+    // singurul loc din sistem care are voie să acorde un privilegiu.
+    const { error: roleError } = await supabaseAdmin
+      .from("profiles")
+      .update({ role: "CLUB" })
+      .eq("id", userId);
+
+    if (roleError) {
+      // Un proprietar rămas PARENT nu-și poate administra clubul deloc.
+      // Mai bine eșuăm zgomotos decât să livrăm un cont rupt.
+      console.error("register-club: role elevation failed:", roleError);
+      await supabaseAdmin.auth.admin.deleteUser(userId);
+      return new Response(
+        JSON.stringify({ error: "Could not finish club registration" }),
+        { status: 500, headers: { "Content-Type": "application/json" } },
+      );
+    }
 
     // 2. Create club entity
     const { data: club, error: clubErr } = await supabaseAdmin

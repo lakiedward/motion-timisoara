@@ -90,13 +90,28 @@ Deno.serve(async (req: Request) => {
       email,
       password,
       email_confirm: true,
-      user_metadata: { name, phone, role: 'COACH' },
+      user_metadata: { name, phone },
     })
     if (authError) return json({ error: authError.message }, 400)
     const userId = authData.user.id
 
-    // 5. Create coach_profiles row (+ sports). handle_new_user already created
-    //    the profiles row from user_metadata.
+    // 4b. Ridică rolul. handle_new_user scrie întotdeauna PARENT, fiindcă
+    // rolul din metadate e scris de client și oricine își putea face astfel
+    // cont de ADMIN (migrarea 00034). Aici suntem pe service_role, deci
+    // singurul loc din sistem care are voie să acorde un privilegiu.
+    const { error: roleError } = await supabaseAdmin
+      .from('profiles')
+      .update({ role: 'COACH' })
+      .eq('id', userId)
+    if (roleError) {
+      // Un antrenor rămas PARENT e un cont rupt. Mai bine eșuăm zgomotos.
+      console.error('create-managed-coach: role elevation failed:', roleError)
+      await supabaseAdmin.auth.admin.deleteUser(userId)
+      return json({ error: 'Could not finish coach creation' }, 500)
+    }
+
+    // 5. Create coach_profiles row (+ sports). handle_new_user a creat deja
+    //    rândul din profiles, cu rolul ridicat la pasul 4b.
     const { data: coachProfile } = await supabaseAdmin
       .from('coach_profiles')
       .insert({ user_id: userId, bio: bio ?? null })

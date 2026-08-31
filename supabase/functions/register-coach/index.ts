@@ -64,7 +64,7 @@ serve(
         email,
         password,
         email_confirm: true,
-        user_metadata: { name, phone, role: "COACH" },
+        user_metadata: { name, phone },
       });
 
     if (authError) {
@@ -75,6 +75,26 @@ serve(
     }
 
     const userId = authData.user.id;
+
+    // 2b. Ridică rolul. handle_new_user scrie întotdeauna PARENT, fiindcă
+    // rolul din metadate e scris de client și oricine își putea face astfel
+    // cont de ADMIN (migrarea 00034). Aici suntem pe service_role, deci
+    // singurul loc din sistem care are voie să acorde un privilegiu.
+    const { error: roleError } = await supabaseAdmin
+      .from("profiles")
+      .update({ role: "COACH" })
+      .eq("id", userId);
+
+    if (roleError) {
+      // Un antrenor rămas PARENT e un cont rupt: nu-și vede cursurile și nu
+      // poate ponta prezența. Mai bine eșuăm zgomotos decât să livrăm asta.
+      console.error("register-coach: role elevation failed:", roleError);
+      await supabaseAdmin.auth.admin.deleteUser(userId);
+      return new Response(
+        JSON.stringify({ error: "Could not finish coach registration" }),
+        { status: 500, headers: { "Content-Type": "application/json" } },
+      );
+    }
 
     // 3. Create coach_profiles row
     const { data: coachProfile } = await supabaseAdmin
