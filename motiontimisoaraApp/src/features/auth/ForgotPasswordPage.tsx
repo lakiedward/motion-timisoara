@@ -10,11 +10,16 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { requestPasswordReset } from '@/api/auth'
 
-const schema = z.object({ email: z.string().email('Email invalid') })
+const schema = z.object({
+  email: z.string().min(1, 'Emailul e obligatoriu').email('Email invalid'),
+})
 type Values = z.infer<typeof schema>
+
+const CONNECTION_ERROR = 'Nu am putut trimite linkul. Verifică conexiunea și încearcă din nou.'
 
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false)
+  const [serverError, setServerError] = useState<string | null>(null)
   const {
     register,
     handleSubmit,
@@ -22,8 +27,20 @@ export default function ForgotPasswordPage() {
   } = useForm<Values>({ resolver: zodResolver(schema) })
 
   const onSubmit = async (v: Values) => {
-    await requestPasswordReset(v.email, `${window.location.origin}/reset-password`)
-    setSent(true) // always show success (privacy)
+    setServerError(null)
+    try {
+      const { error } = await requestPasswordReset(
+        v.email,
+        `${window.location.origin}/reset-password`,
+      )
+      if (error) {
+        setServerError(CONNECTION_ERROR)
+        return
+      }
+      setSent(true)
+    } catch {
+      setServerError(CONNECTION_ERROR)
+    }
   }
 
   return (
@@ -42,9 +59,20 @@ export default function ForgotPasswordPage() {
         </p>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+          {serverError && (
+            <p className="bg-destructive/10 text-destructive rounded-md px-3 py-2 text-sm">
+              {serverError}
+            </p>
+          )}
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" autoComplete="email" {...register('email')} aria-invalid={!!errors.email} />
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              {...register('email')}
+              aria-invalid={!!errors.email}
+            />
             {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
           </div>
           <Button type="submit" className="w-full" disabled={isSubmitting}>
