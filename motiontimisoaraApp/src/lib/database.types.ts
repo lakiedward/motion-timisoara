@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -1644,6 +1644,40 @@ export type Database = {
       get_my_role: { Args: never; Returns: string }
       my_child_ids: { Args: never; Returns: string[] }
       my_children_course_ids: { Args: never; Returns: string[] }
+      my_club: {
+        Args: never
+        Returns: {
+          address: string | null
+          bank_account: string | null
+          bank_name: string | null
+          city: string | null
+          company_address: string | null
+          company_cui: string | null
+          company_name: string | null
+          company_reg_number: string | null
+          created_at: string
+          description: string | null
+          email: string | null
+          hero_photo_storage_path: string | null
+          id: string
+          logo_storage_path: string | null
+          name: string
+          owner_user_id: string
+          phone: string | null
+          public_email_consent: boolean
+          stripe_account_id: string | null
+          stripe_charges_enabled: boolean
+          stripe_onboarding_complete: boolean
+          stripe_payouts_enabled: boolean
+          website: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "clubs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       my_club_coach_user_ids: { Args: never; Returns: string[] }
       my_club_ids: { Args: never; Returns: string[] }
       pot_administra_tabara: { Args: { p_camp_id: string }; Returns: boolean }
