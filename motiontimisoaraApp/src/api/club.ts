@@ -12,15 +12,21 @@ async function uid(): Promise<string> {
 
 export type Club = Tables<'clubs'>
 
+/**
+ * Clubul celui logat, cu tot cu datele de facturare.
+ *
+ * Trece prin `my_club()`, nu prin `select('*')`: din migrarea 00035, rolul
+ * `authenticated` nu mai are grant de SELECT pe coloanele bancare și fiscale
+ * (`bank_account`, `company_cui`, `stripe_account_id`…), fiindcă înainte
+ * oricine avea cont le putea citi pentru ORICE club. `SELECT *` cere grant pe
+ * toate coloanele, deci ar eșua acum. Funcția e SECURITY DEFINER și filtrează
+ * ea însăși pe `auth.uid()`, deci întoarce rândul întreg, dar numai al
+ * proprietarului.
+ */
 export async function getMyClub(): Promise<Club | null> {
-  const owner = await uid()
-  const { data, error } = await supabase
-    .from('clubs')
-    .select('*')
-    .eq('owner_user_id', owner)
-    .maybeSingle()
+  const { data, error } = await supabase.rpc('my_club')
   if (error) throw error
-  return data
+  return (data as Club[] | null)?.[0] ?? null
 }
 
 export interface ClubProfileInput {
