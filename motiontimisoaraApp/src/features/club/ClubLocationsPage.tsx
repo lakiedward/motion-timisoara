@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { MapPin, Pencil, Plus } from 'lucide-react'
@@ -19,10 +19,18 @@ function formatAdresa(l: ClubLocation): string {
 
 export default function ClubLocationsPage() {
   const qc = useQueryClient()
-  const { data: club, isPending: seIncarcaClubul } = useQuery({
-    queryKey: ['my-club'],
-    queryFn: getMyClub,
-  })
+  // `isError` de pe clubul propriu contează la fel de mult ca cel de pe locații:
+  // dacă `getMyClub` pică, `isPending` devine fals, `clubId` rămâne gol, deci
+  // interogarea locațiilor stă oprită de `enabled` — iar o interogare oprită are
+  // `isLoading` fals ȘI `isError` fals. Fără ramura de mai jos, cascada cădea pe
+  // ultima variantă și un club cu locații, pe o rețea picată, era invitat să-și
+  // adauge prima locație. Aceeași reparație ca pe pagina de anunțuri.
+  const {
+    data: club,
+    isPending: seIncarcaClubul,
+    isError: aEsuatClubul,
+    refetch: reincarcaClubul,
+  } = useQuery({ queryKey: ['my-club'], queryFn: getMyClub })
   const clubId = club?.id ?? ''
   const {
     data: locations = [],
@@ -36,8 +44,17 @@ export default function ClubLocationsPage() {
     retry: false,
   })
 
+  // Cine e în zbor se ține aici, pe id, NU prin `toggle.variables`: mutația e una
+  // singură pentru toată lista, iar `variables` păstrează doar argumentele
+  // ULTIMULUI `mutate`. Cu garda pe `variables`, o a doua apăsare pe alt rând muta
+  // reperul și redeschidea butonul primului rând cât timp cererea lui era încă în
+  // zbor — deci a doua apăsare pe el chiar pleca la server.
+  const [seComuta, setSeComuta] = useState<string[]>([])
+
   const toggle = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) => setClubLocationActive(id, active),
+    onMutate: ({ id }) => setSeComuta((l) => [...l, id]),
+    onSettled: (_d, _e, { id }) => setSeComuta((l) => l.filter((x) => x !== id)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['club-locations', clubId] }),
     onError: () => toast.error('Nu am putut actualiza locația.'),
   })
@@ -51,6 +68,11 @@ export default function ClubLocationsPage() {
       ),
     [locations]
   )
+
+  // Clubul picat e o eroare de încărcare la fel ca locațiile picate, iar butonul
+  // de reîncercare trebuie s-o ceară pe cea care chiar a căzut.
+  const aEsuatIncarcarea = aEsuatClubul || (isError && !randuri.length)
+  const reincearca = () => (aEsuatClubul ? reincarcaClubul() : refetch())
 
   const cereDezactivarea = (l: ClubLocation) => {
     if (!l.is_active) {
@@ -97,14 +119,14 @@ export default function ClubLocationsPage() {
             <Skeleton key={i} className="h-52 rounded-3xl lg:h-48" />
           ))}
         </div>
-      ) : isError && !randuri.length ? (
+      ) : aEsuatIncarcarea ? (
         // Fără ramura asta, o încărcare eșuată afișa „Nicio locație încă.”, deci un
         // club cu locații era invitat să-și adauge prima. Garda pe lungime contează
         // la fel de mult: comutarea invalidează lista, iar un refetch picat trecător
         // n-are voie să șteargă de pe ecran locațiile deja încărcate.
         <div role="alert" className="rounded-3xl border border-dashed py-16 text-center">
           <p className="text-foreground font-medium">Nu am putut încărca locațiile.</p>
-          <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetch()}>
+          <Button className="mt-4 h-11 min-h-11" type="button" onClick={reincearca}>
             Reîncearcă
           </Button>
         </div>
@@ -139,10 +161,11 @@ export default function ClubLocationsPage() {
                   size="sm"
                   variant="outline"
                   className="h-11 lg:h-9"
-                  // Doar butonul locației apăsate se blochează: starea de așteptare
-                  // e comună întregii mutații, deci fără verificarea pe id o apăsare
-                  // făcea inutilizabile comutatoarele tuturor celorlalte.
-                  disabled={toggle.isPending && toggle.variables?.id === l.id}
+                  // Doar butonul locației apăsate se blochează, și rămâne blocat cât
+                  // timp CHIAR cererea lui e în zbor — lista de id-uri le ține pe
+                  // toate, spre deosebire de `toggle.variables`, care păstra doar
+                  // ultima apăsare.
+                  disabled={seComuta.includes(l.id)}
                   aria-label={`${l.is_active ? 'Dezactivează' : 'Activează'} ${l.name}`}
                   onClick={() => cereDezactivarea(l)}
                 >
