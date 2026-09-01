@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 
 import { getChildAttendance, getChildrenAttendance, getMyChildren } from '@/api/account'
 import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { inceputPerioada, type Perioada } from '@/lib/perioada'
 import { plural } from '@/lib/plural'
@@ -82,20 +83,32 @@ export default function AttendancePage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl font-bold">Prezență</h1>
         <div className="flex flex-wrap items-center gap-2">
+          {/* Selectorul apare doar de la doi copii în sus — un control cu o
+              singură opțiune reală e zgomot. Aceeași regulă ca la filtrul din
+              anunțurile clubului, care se ascunde la un singur anunț. */}
           {children.length > 1 && (
-            <select
-              aria-label="Copil"
-              value={ales}
-              onChange={(e) => setSelected(e.target.value)}
-              className={cn(selectCls)}
-            >
-              <option value={TOTI}>Toți copiii</option>
-              {children.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-1.5">
+              {/* Eticheta e vizibilă, nu doar `aria-label`: cine se uită la ecran
+                  vedea până acum numai valoarea aleasă. Regula casei vine tot de
+                  la filtrul de anunțuri club, care are un Label înaintea lui. */}
+              <Label htmlFor="filtru-copil" className="text-muted-foreground text-sm font-normal">
+                Copil
+              </Label>
+              <select
+                id="filtru-copil"
+                aria-label="Copil"
+                value={ales}
+                onChange={(e) => setSelected(e.target.value)}
+                className={cn(selectCls)}
+              >
+                <option value={TOTI}>Toți copiii</option>
+                {children.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
           <select
             aria-label="Perioadă"
@@ -149,9 +162,11 @@ export default function AttendancePage() {
                 <li key={r.id} className="bg-card rounded-2xl border p-3 text-sm">
                   <div className="flex items-center justify-between gap-3">
                     <span>
-                      {/* Numele apare doar când sunt toți la un loc: filtrat pe un
-                          singur copil ar fi același nume repetat pe fiecare rând. */}
-                      {totiCopiii && (
+                      {/* Numele apare doar când sunt toți la un loc ȘI există mai
+                          mult de un copil. Filtrat pe unul singur ar fi același
+                          nume repetat; iar când părintele are un singur copil nu
+                          există nici măcar selector care să fie dezambiguizat. */}
+                      {totiCopiii && children.length > 1 && (
                         <span className="font-medium">{numeDupaId.get(r.child_id) ?? 'Copil'} · </span>
                       )}
                       {r.occurrence?.course?.name ?? 'Ședință'}
@@ -181,6 +196,21 @@ export default function AttendancePage() {
                 onClick={() => setPerioada('toate')}
               >
                 Vezi tot istoricul
+              </Button>
+            </div>
+          ) : !totiCopiii ? (
+            // Un copil ales care n-are nicio pontare: mesajul spune CINE, ca
+            // părintele să nu creadă că s-a stricat ceva, și dă drumul înapoi la
+            // toți. Oglindește tratamentul de mai sus al filtrului de perioadă.
+            <div className="text-muted-foreground rounded-3xl border border-dashed py-16 text-center">
+              <p>{numeDupaId.get(ales) ?? 'Copilul ales'} nu are nicio prezență înregistrată.</p>
+              <Button
+                variant="outline"
+                className="mt-4 h-11 min-h-11"
+                type="button"
+                onClick={() => setSelected(TOTI)}
+              >
+                Vezi toți copiii
               </Button>
             </div>
           ) : (
