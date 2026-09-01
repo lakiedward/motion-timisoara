@@ -236,3 +236,49 @@ test('rezumatul numără prezențele tuturor copiilor în vederea combinată', a
   await screen.findAllByRole('listitem')
   expect(screen.getByText(/ședințe înregistrate/).textContent).toContain('2 prezențe din 3')
 })
+
+// ===== Secțiunea UI #3082 „Filtru copil", criterii aprobate 2026-09-01 =====
+
+// Criteriul 1 + 2: cu un singur copil selectorul dispare, iar numele nu mai are
+// ce dezambiguiza — până acum se repeta pe fiecare rând, deși nu exista selector.
+test('cu un singur copil nu există selector, iar numele nu se repetă pe rânduri', async () => {
+  mockedCopii.mockResolvedValue([{ id: COPIL_A, name: 'Ana' }] as never)
+  mockedPrezentaToti.mockResolvedValue([
+    rand('r1', '2026-08-20T14:00:00Z', 'PRESENT', 'Înot', null, COPIL_A),
+  ] as never)
+  renderPage()
+
+  const randuri = await screen.findAllByRole('listitem')
+  expect(screen.queryByLabelText('Copil')).not.toBeInTheDocument()
+  expect(randuri[0]).not.toHaveTextContent('Ana')
+  expect(randuri[0]).toHaveTextContent('Înot')
+})
+
+// Criteriul 4: eticheta era doar `aria-label`, deci cine se uită la ecran vedea
+// numai valoarea aleasă. Regula casei vine de la filtrul de anunțuri club.
+test('selectorul de copil are etichetă vizibilă, legată de el', async () => {
+  renderPage()
+  await screen.findAllByRole('listitem')
+  const eticheta = screen.getByText('Copil', { selector: 'label' })
+  expect(eticheta).toBeInTheDocument()
+  expect(eticheta).toHaveAttribute('for', 'filtru-copil')
+  expect(screen.getByLabelText('Copil')).toHaveAttribute('id', 'filtru-copil')
+})
+
+// Criteriul 3: un copil ales fără pontări cădea pe mesajul general, fără nicio
+// cale înapoi — spre deosebire de filtrul de perioadă, care numește cauza și
+// oferă întoarcerea. Acum îl oglindește.
+test('un copil ales fără pontări e numit în mesaj și se poate reveni la toți', async () => {
+  const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+  mockedPrezenta.mockResolvedValue([] as never)
+  renderPage()
+  await screen.findAllByRole('listitem')
+
+  await user.selectOptions(screen.getByLabelText('Copil'), COPIL_B)
+
+  expect(await screen.findByText('Bogdan nu are nicio prezență înregistrată.')).toBeInTheDocument()
+  expect(screen.queryByText('Nicio prezență înregistrată încă.')).not.toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Vezi toți copiii' }))
+  await waitFor(() => expect(screen.getByLabelText('Copil')).toHaveValue('toti'))
+})
