@@ -87,7 +87,17 @@ export const router = createBrowserRouter([
           { path: '/harta', element: <MapPage /> },
           { path: '/despre', element: <AboutPage /> },
           { path: '/contact', element: <ContactPage /> },
-          { path: '/dev/ui', element: <UiGalleryPage /> },
+          // Galeria de componente e o unealtă internă, dar stătea aici ca rută
+          // publică — deasupra lui `RequireAuth`, deci oricine o putea deschide
+          // pe site. Verificat pe un build de producție servit: /dev/ui randa
+          // „Galerie componente", fără sesiune.
+          //
+          // `import.meta.env.DEV` e înlocuit cu `false` la build, deci ramura e
+          // cod mort și cade la tree-shaking împreună cu singura referință spre
+          // `UiGalleryPage`. Măsurat pe `dist`: după schimbare, nici șirul
+          // „/dev/ui" și nici textul galeriei nu mai apar în bundle — importul
+          // static de mai sus nu mai trebuie făcut dinamic pentru asta.
+          ...(import.meta.env.DEV ? [{ path: '/dev/ui', element: <UiGalleryPage /> }] : []),
           {
             element: <RequireAuth />,
             children: [
