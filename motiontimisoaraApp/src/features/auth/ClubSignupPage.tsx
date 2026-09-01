@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, type FormEvent } from 'react'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { fetchSports } from '@/api/sports'
-import { registerClub } from '@/api/auth'
+import { registerClub, roleHome } from '@/api/auth'
 import { useAuth } from '@/lib/auth-context'
 
 const schema = z.object({
@@ -29,15 +29,47 @@ const schema = z.object({
   clubCity: z.string().optional(),
   clubEmail: z.string().email('Email invalid').optional().or(z.literal('')),
   clubPhone: z.string().optional(),
+  // Billing identity. `clubs` has carried these columns since the first
+  // migration and register-club has always written them, but no screen ever
+  // asked for them, so every club existed without anything to invoice against.
+  companyName: z.string().min(3, 'Minim 3 caractere'),
+  companyCui: z
+    .string()
+    .trim()
+    .regex(/^(RO)?\d{2,10}$/i, 'CUI invalid (ex. RO12345678)'),
+  companyRegNumber: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z]\d{1,2}\/\d{1,7}\/\d{4}$/, 'Format: J35/1234/2020'),
+  companyAddress: z.string().min(5, 'Minim 5 caractere'),
+  bankAccount: z
+    .string()
+    .transform((s) => s.replace(/\s+/g, '').toUpperCase())
+    // A Romanian IBAN is 24 characters: RO, two check digits, then twenty more.
+    .refine((s) => /^RO\d{2}[A-Z0-9]{20}$/.test(s), 'IBAN invalid (ex. RO49AAAA1B31007593840000)'),
+  bankName: z.string().min(2, 'Minim 2 caractere'),
 })
 type Values = z.infer<typeof schema>
 
-const STEP_FIELDS: (keyof Values)[][] = [['name', 'email', 'phone', 'password'], ['clubName']]
+const STEP_FIELDS: (keyof Values)[][] = [
+  ['name', 'email', 'phone', 'password'],
+  [
+    'clubName',
+    'companyName',
+    'companyCui',
+    'companyRegNumber',
+    'companyAddress',
+    'bankAccount',
+    'bankName',
+  ],
+]
+/** The confirmation step — the only one allowed to register anything. */
+const CONFIRM_STEP = 2
 
 export default function ClubSignupPage() {
   const navigate = useNavigate()
   const returnUrl = useReturnUrl()
-  const { refresh } = useAuth()
+  const { user, loading, refresh } = useAuth()
   const [step, setStep] = useState(0)
   const [sportIds, setSportIds] = useState<string[]>([])
   const [serverError, setServerError] = useState<string | null>(null)
@@ -67,6 +99,12 @@ export default function ClubSignupPage() {
       clubCity: v.clubCity || undefined,
       clubEmail: v.clubEmail || undefined,
       clubPhone: v.clubPhone || undefined,
+      companyName: v.companyName,
+      companyCui: v.companyCui,
+      companyRegNumber: v.companyRegNumber,
+      companyAddress: v.companyAddress,
+      bankAccount: v.bankAccount,
+      bankName: v.bankName,
       sportIds,
     })
     if ('error' in res && res.error) {
@@ -75,8 +113,30 @@ export default function ClubSignupPage() {
       return
     }
     await refresh()
-    navigate(returnUrl || '/account')
+    // This page only ever creates club owners, so their panel is the
+    // destination unless the visitor was already on their way somewhere.
+    navigate(returnUrl || roleHome('CLUB'))
   }
+
+  // Enter inside a field submits the form. On the first two steps that has to
+  // move the wizard along, never register the club.
+  const onFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (step < CONFIRM_STEP) void next()
+    else void handleSubmit(onSubmit)()
+  }
+
+  if (loading) {
+    return (
+      <AuthLayout title="Înregistrare club" subtitle="Creează contul administratorului și clubul">
+        <p className="text-muted-foreground text-sm">Se verifică sesiunea…</p>
+      </AuthLayout>
+    )
+  }
+
+  // Someone already signed in cannot create a second account from here; send
+  // them where they were headed, or to the panel their role belongs to.
+  if (user) return <Navigate to={returnUrl || roleHome(user.role)} replace />
 
   return (
     <AuthLayout
@@ -94,7 +154,7 @@ export default function ClubSignupPage() {
           {serverError}
         </p>
       )}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+      <form onSubmit={onFormSubmit} className="space-y-4" noValidate>
         {step === 0 && (
           <>
             <div className="space-y-1.5">
@@ -140,10 +200,53 @@ export default function ClubSignupPage() {
               <Label>Sporturi</Label>
               <SportPicker sports={sports} value={sportIds} onChange={setSportIds} />
             </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="companyName">Denumire fiscală</Label>
+              <Input id="companyName" {...register('companyName')} aria-invalid={!!errors.companyName} />
+              {errors.companyName && (
+                <p className="text-destructive text-xs">{errors.companyName.message}</p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="companyCui">CUI</Label>
+              <Input id="companyCui" placeholder="RO12345678" {...register('companyCui')} aria-invalid={!!errors.companyCui} />
+              {errors.companyCui && (
+                <p className="text-destructive text-xs">{errors.companyCui.message}</p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="companyRegNumber">Nr. Registrul Comerțului</Label>
+              <Input id="companyRegNumber" placeholder="J35/1234/2020" {...register('companyRegNumber')} aria-invalid={!!errors.companyRegNumber} />
+              {errors.companyRegNumber && (
+                <p className="text-destructive text-xs">{errors.companyRegNumber.message}</p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="companyAddress">Adresă firmă</Label>
+              <Input id="companyAddress" {...register('companyAddress')} aria-invalid={!!errors.companyAddress} />
+              {errors.companyAddress && (
+                <p className="text-destructive text-xs">{errors.companyAddress.message}</p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="bankAccount">IBAN</Label>
+              <Input id="bankAccount" placeholder="RO49AAAA1B31007593840000" {...register('bankAccount')} aria-invalid={!!errors.bankAccount} />
+              {errors.bankAccount && (
+                <p className="text-destructive text-xs">{errors.bankAccount.message}</p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="bankName">Bancă</Label>
+              <Input id="bankName" {...register('bankName')} aria-invalid={!!errors.bankName} />
+              {errors.bankName && (
+                <p className="text-destructive text-xs">{errors.bankName.message}</p>
+              )}
+            </div>
           </>
         )}
 
-        {step === 2 && (
+        {step === CONFIRM_STEP && (
           <div className="space-y-2 text-sm">
             <p className="text-muted-foreground">Verifică datele înainte de finalizare:</p>
             <div className="bg-muted space-y-1 rounded-2xl p-4">
@@ -169,12 +272,22 @@ export default function ClubSignupPage() {
               Înapoi
             </Button>
           )}
-          {step < 2 ? (
+          {step < CONFIRM_STEP ? (
             <Button type="button" className="flex-1" onClick={next}>
               Continuă
             </Button>
           ) : (
-            <Button type="submit" className="flex-1" disabled={isSubmitting}>
+            // Both buttons render in the same slot, so React hands the new one
+            // the DOM node the previous click landed on. A type="submit" here
+            // would inherit that click and register the club the moment the
+            // confirmation step appeared, so registering stays an explicit
+            // onClick that only a second, deliberate press can reach.
+            <Button
+              type="button"
+              className="flex-1"
+              disabled={isSubmitting}
+              onClick={() => void handleSubmit(onSubmit)()}
+            >
               {isSubmitting ? 'Se creează…' : 'Finalizează'}
             </Button>
           )}

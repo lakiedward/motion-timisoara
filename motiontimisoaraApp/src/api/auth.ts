@@ -120,6 +120,17 @@ export interface RegisterClubInput {
   clubCity?: string
   clubEmail?: string
   clubPhone?: string
+  /**
+   * Billing identity of the club. register-club has always written these to
+   * `clubs`; until now no screen collected them, so every club landed with the
+   * columns empty and nothing to invoice against.
+   */
+  companyName: string
+  companyCui: string
+  companyRegNumber: string
+  companyAddress: string
+  bankAccount: string
+  bankName: string
   sportIds?: string[]
 }
 
@@ -149,7 +160,29 @@ function coachRegisterMessage(raw: string): string {
     return 'Codul de invitație a fost deja folosit de numărul maxim de ori.'
   }
   if (m.includes('invalid invitation code')) return 'Cod de invitație invalid.'
-  if (m.includes('already been registered') || m.includes('already registered')) {
+  return sharedRegisterMessage(m)
+}
+
+/**
+ * register-club answers in English too — Supabase Auth's own "A user with this
+ * email address has already been registered" is the case a visitor actually
+ * hits — and the wizard shows the raw message. Translated here for the same
+ * reason as the coach one.
+ */
+function clubRegisterMessage(raw: string): string {
+  const m = raw.toLowerCase()
+  if (m.includes('failed to create club')) {
+    return 'Contul a fost creat, dar clubul nu. Scrie-ne ca să-l legăm de contul tău.'
+  }
+  if (m.includes('could not finish club registration')) {
+    return 'Nu am putut finaliza înregistrarea clubului. Încearcă din nou.'
+  }
+  return sharedRegisterMessage(m)
+}
+
+/** The cases both signup Edge Functions can return, worded once so they cannot drift apart. */
+function sharedRegisterMessage(lowered: string): string {
+  if (lowered.includes('already been registered') || lowered.includes('already registered')) {
     return 'Există deja un cont cu acest email.'
   }
   return 'Nu am putut crea contul. Verifică datele și încearcă din nou.'
@@ -158,7 +191,10 @@ function coachRegisterMessage(raw: string): string {
 /** Calls the register-club Edge Function, then signs the new club owner in. */
 export async function registerClub(input: RegisterClubInput) {
   const { error } = await supabase.functions.invoke('register-club', { body: input })
-  if (error) return { error: await edgeError(error) }
+  if (error) {
+    const { message } = await edgeError(error)
+    return { error: { message: clubRegisterMessage(message) } }
+  }
   return supabase.auth.signInWithPassword({ email: input.email, password: input.password })
 }
 
