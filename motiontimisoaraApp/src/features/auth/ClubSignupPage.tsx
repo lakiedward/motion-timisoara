@@ -29,52 +29,15 @@ const schema = z.object({
   clubCity: z.string().optional(),
   clubEmail: z.string().email('Email invalid').optional().or(z.literal('')),
   clubPhone: z.string().optional(),
-  // Billing identity. `clubs` has carried these columns since the first
-  // migration and register-club has always written them, but no screen ever
-  // asked for them, so every club existed without anything to invoice against.
-  companyName: z.string().min(3, 'Minim 3 caractere'),
-  companyCui: z
-    .string()
-    .trim()
-    .regex(/^(RO)?\d{2,10}$/i, 'CUI invalid (ex. RO12345678)'),
-  // Un club sportiv din România e de obicei „Asociație Club Sportiv”: persoană
-  // juridică fără scop patrimonial, înscrisă în Registrul Asociațiilor și
-  // Fundațiilor cu numere de forma 123/A/2015 — nu la Registrul Comerțului. Iar
-  // firmele înmatriculate după noiembrie 2022 primesc forma nouă, literă plus
-  // treisprezece cifre. Un tipar care cere doar J35/1234/2020 le blochează pe
-  // toate trei, iar restul produsului nici măcar nu validează câmpul ăsta.
-  companyRegNumber: z
-    .string()
-    .trim()
-    .regex(
-      /^([A-Za-z]\d{12,13}|[A-Za-z0-9]{1,7}\/[A-Za-z0-9]{1,4}\/\d{4})$/,
-      'Format: J35/1234/2020, J2023012345678 sau 123/A/2015',
-    ),
-  companyAddress: z.string().min(5, 'Minim 5 caractere'),
-  bankAccount: z
-    .string()
-    .transform((s) => s.replace(/\s+/g, '').toUpperCase())
-    // A Romanian IBAN is 24 characters: RO, two check digits, then twenty more.
-    .refine((s) => /^RO\d{2}[A-Z0-9]{20}$/.test(s), 'IBAN invalid (ex. RO49AAAA1B31007593840000)'),
-  bankName: z.string().min(2, 'Minim 2 caractere'),
 })
 type Values = z.infer<typeof schema>
 
 const STEP_FIELDS: (keyof Values)[][] = [
   ['name', 'email', 'phone', 'password'],
-  [
-    'clubName',
-    // Optional, but validated when filled: left out of this list, a malformed
-    // address passes the step and then fails the whole-schema check on the
-    // confirmation step, where its message has nowhere to render.
-    'clubEmail',
-    'companyName',
-    'companyCui',
-    'companyRegNumber',
-    'companyAddress',
-    'bankAccount',
-    'bankName',
-  ],
+  // clubEmail e optional dar validat: lasat pe dinafara, o adresa gresita trecea
+  // de pasul lui si pica abia la validarea intregii scheme, pe confirmare, unde
+  // mesajul ei nu se randeaza nicaieri.
+  ['clubName', 'clubEmail'],
 ]
 /** The confirmation step — the only one allowed to register anything. */
 const CONFIRM_STEP = 2
@@ -112,12 +75,6 @@ export default function ClubSignupPage() {
       clubCity: v.clubCity || undefined,
       clubEmail: v.clubEmail || undefined,
       clubPhone: v.clubPhone || undefined,
-      companyName: v.companyName,
-      companyCui: v.companyCui,
-      companyRegNumber: v.companyRegNumber,
-      companyAddress: v.companyAddress,
-      bankAccount: v.bankAccount,
-      bankName: v.bankName,
       sportIds,
     })
     if ('error' in res && res.error) {
@@ -227,48 +184,6 @@ export default function ClubSignupPage() {
               <SportPicker sports={sports} value={sportIds} onChange={setSportIds} />
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="companyName">Denumire fiscală</Label>
-              <Input id="companyName" {...register('companyName')} aria-invalid={!!errors.companyName} />
-              {errors.companyName && (
-                <p className="text-destructive text-xs">{errors.companyName.message}</p>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="companyCui">CUI</Label>
-              <Input id="companyCui" placeholder="RO12345678" {...register('companyCui')} aria-invalid={!!errors.companyCui} />
-              {errors.companyCui && (
-                <p className="text-destructive text-xs">{errors.companyCui.message}</p>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="companyRegNumber">Nr. înregistrare (Reg. Com. / RAF)</Label>
-              <Input id="companyRegNumber" placeholder="J35/1234/2020 sau 123/A/2015" {...register('companyRegNumber')} aria-invalid={!!errors.companyRegNumber} />
-              {errors.companyRegNumber && (
-                <p className="text-destructive text-xs">{errors.companyRegNumber.message}</p>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="companyAddress">Adresă firmă</Label>
-              <Input id="companyAddress" {...register('companyAddress')} aria-invalid={!!errors.companyAddress} />
-              {errors.companyAddress && (
-                <p className="text-destructive text-xs">{errors.companyAddress.message}</p>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="bankAccount">IBAN</Label>
-              <Input id="bankAccount" placeholder="RO49AAAA1B31007593840000" {...register('bankAccount')} aria-invalid={!!errors.bankAccount} />
-              {errors.bankAccount && (
-                <p className="text-destructive text-xs">{errors.bankAccount.message}</p>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="bankName">Bancă</Label>
-              <Input id="bankName" {...register('bankName')} aria-invalid={!!errors.bankName} />
-              {errors.bankName && (
-                <p className="text-destructive text-xs">{errors.bankName.message}</p>
-              )}
-            </div>
           </>
         )}
 

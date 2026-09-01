@@ -18,15 +18,15 @@ vi.mock('@/lib/auth-context', () => ({ useAuth: vi.fn() }))
 const mockedRegisterClub = vi.mocked(registerClub)
 const mockedUseAuth = vi.mocked(useAuth)
 
-const signedInParent = {
+const semnat = (role: 'PARENT' | 'COACH') => ({
   id: '1',
   email: 'p@example.test',
   name: 'P',
-  role: 'PARENT' as const,
+  role,
   phone: null,
   avatarUrl: null,
   needsProfileCompletion: false,
-}
+})
 
 function renderPage(route = '/register-club') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -36,6 +36,7 @@ function renderPage(route = '/register-club') {
         <Routes>
           <Route path="/register-club" element={<ClubSignupPage />} />
           <Route path="/account" element={<p>panou părinte</p>} />
+          <Route path="/coach" element={<p>panou antrenor</p>} />
           <Route path="/club" element={<p>panou club</p>} />
           <Route path="/cursuri/abc" element={<p>pagina cursului</p>} />
         </Routes>
@@ -44,7 +45,7 @@ function renderPage(route = '/register-club') {
   )
 }
 
-/** Walks the wizard from the admin step to the confirmation step with valid data. */
+/** Walks the wizard from the admin step to the confirmation step. */
 async function fillUntilConfirmation(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText('Nume administrator'), 'Ana Spec')
   await user.type(screen.getByLabelText('Email'), 'ana@example.test')
@@ -52,149 +53,12 @@ async function fillUntilConfirmation(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole('button', { name: 'Continuă' }))
 
   await user.type(screen.getByLabelText('Nume club'), 'Club Spec Motion')
-  await user.type(screen.getByLabelText('Denumire fiscală'), 'Club Spec Motion SRL')
-  await user.type(screen.getByLabelText('CUI'), 'RO12345678')
-  await user.type(screen.getByLabelText('Nr. înregistrare (Reg. Com. / RAF)'), 'J35/1234/2020')
-  await user.type(screen.getByLabelText('Adresă firmă'), 'Str. Sportului 1, Timișoara')
-  await user.type(screen.getByLabelText('IBAN'), 'RO49AAAA1B31007593840000')
-  await user.type(screen.getByLabelText('Bancă'), 'Banca Transilvania')
   await user.click(screen.getByRole('button', { name: 'Continuă' }))
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
   mockedUseAuth.mockReturnValue({ user: null, loading: false, profileError: null, refresh: vi.fn() })
-})
-
-test('the club step asks for the billing identity, not just the trading name', async () => {
-  const user = userEvent.setup()
-  renderPage()
-
-  await user.type(screen.getByLabelText('Nume administrator'), 'Ana Spec')
-  await user.type(screen.getByLabelText('Email'), 'ana@example.test')
-  await user.type(screen.getByLabelText('Parolă'), 'parola123')
-  await user.click(screen.getByRole('button', { name: 'Continuă' }))
-
-  for (const label of [
-    'Denumire fiscală',
-    'CUI',
-    'Nr. înregistrare (Reg. Com. / RAF)',
-    'Adresă firmă',
-    'IBAN',
-    'Bancă',
-  ]) {
-    expect(screen.getByLabelText(label)).toBeInTheDocument()
-  }
-})
-
-test('the confirmation step is out of reach until the billing identity is filled in', async () => {
-  const user = userEvent.setup()
-  renderPage()
-
-  await user.type(screen.getByLabelText('Nume administrator'), 'Ana Spec')
-  await user.type(screen.getByLabelText('Email'), 'ana@example.test')
-  await user.type(screen.getByLabelText('Parolă'), 'parola123')
-  await user.click(screen.getByRole('button', { name: 'Continuă' }))
-
-  await user.type(screen.getByLabelText('Nume club'), 'Club Spec Motion')
-  await user.click(screen.getByRole('button', { name: 'Continuă' }))
-
-  expect(await screen.findByText('CUI invalid (ex. RO12345678)')).toBeInTheDocument()
-  expect(screen.queryByText('Verifică datele înainte de finalizare:')).not.toBeInTheDocument()
-})
-
-test('a malformed IBAN is refused with the shape it should have', async () => {
-  const user = userEvent.setup()
-  renderPage()
-
-  await user.type(screen.getByLabelText('Nume administrator'), 'Ana Spec')
-  await user.type(screen.getByLabelText('Email'), 'ana@example.test')
-  await user.type(screen.getByLabelText('Parolă'), 'parola123')
-  await user.click(screen.getByRole('button', { name: 'Continuă' }))
-
-  await user.type(screen.getByLabelText('Nume club'), 'Club Spec Motion')
-  await user.type(screen.getByLabelText('Denumire fiscală'), 'Club Spec Motion SRL')
-  await user.type(screen.getByLabelText('CUI'), 'RO12345678')
-  await user.type(screen.getByLabelText('Nr. înregistrare (Reg. Com. / RAF)'), 'J35/1234/2020')
-  await user.type(screen.getByLabelText('Adresă firmă'), 'Str. Sportului 1, Timișoara')
-  // Prefix corect, lungime gresita: daca testul ar folosi un IBAN strain, ar
-  // trece si daca cineva slabeste cuantificatorul de lungime.
-  await user.type(screen.getByLabelText('IBAN'), 'RO49AAAA1B3100759384')
-  await user.type(screen.getByLabelText('Bancă'), 'Banca Transilvania')
-  await user.click(screen.getByRole('button', { name: 'Continuă' }))
-
-  expect(
-    await screen.findByText('IBAN invalid (ex. RO49AAAA1B31007593840000)'),
-  ).toBeInTheDocument()
-})
-
-test('a club registered as an association can get through the step', async () => {
-  const user = userEvent.setup()
-  renderPage()
-
-  await user.type(screen.getByLabelText('Nume administrator'), 'Ana Spec')
-  await user.type(screen.getByLabelText('Email'), 'ana@example.test')
-  await user.type(screen.getByLabelText('Parolă'), 'parola123')
-  await user.click(screen.getByRole('button', { name: 'Continuă' }))
-
-  await user.type(screen.getByLabelText('Nume club'), 'ACS Spec Motion')
-  await user.type(screen.getByLabelText('Denumire fiscală'), 'Asociația Club Sportiv Spec')
-  await user.type(screen.getByLabelText('CUI'), '12345678')
-  // Registrul Asociațiilor și Fundațiilor, nu Registrul Comerțului: forma
-  // juridică obișnuită a unui club sportiv românesc.
-  await user.type(screen.getByLabelText('Nr. înregistrare (Reg. Com. / RAF)'), '123/A/2015')
-  await user.type(screen.getByLabelText('Adresă firmă'), 'Str. Sportului 1, Timișoara')
-  await user.type(screen.getByLabelText('IBAN'), 'RO49AAAA1B31007593840000')
-  await user.type(screen.getByLabelText('Bancă'), 'Banca Transilvania')
-  await user.click(screen.getByRole('button', { name: 'Continuă' }))
-
-  expect(await screen.findByText('Verifică datele înainte de finalizare:')).toBeInTheDocument()
-})
-
-test('a company registered under the 2022 ONRC format can get through the step', async () => {
-  const user = userEvent.setup()
-  renderPage()
-
-  await user.type(screen.getByLabelText('Nume administrator'), 'Ana Spec')
-  await user.type(screen.getByLabelText('Email'), 'ana@example.test')
-  await user.type(screen.getByLabelText('Parolă'), 'parola123')
-  await user.click(screen.getByRole('button', { name: 'Continuă' }))
-
-  await user.type(screen.getByLabelText('Nume club'), 'Club Spec Motion')
-  await user.type(screen.getByLabelText('Denumire fiscală'), 'Club Spec Motion SRL')
-  await user.type(screen.getByLabelText('CUI'), 'RO12345678')
-  await user.type(screen.getByLabelText('Nr. înregistrare (Reg. Com. / RAF)'), 'J2023012345678')
-  await user.type(screen.getByLabelText('Adresă firmă'), 'Str. Sportului 1, Timișoara')
-  await user.type(screen.getByLabelText('IBAN'), 'RO49AAAA1B31007593840000')
-  await user.type(screen.getByLabelText('Bancă'), 'Banca Transilvania')
-  await user.click(screen.getByRole('button', { name: 'Continuă' }))
-
-  expect(await screen.findByText('Verifică datele înainte de finalizare:')).toBeInTheDocument()
-})
-
-test('a malformed club email is caught on its own step, never as a silent dead end', async () => {
-  const user = userEvent.setup()
-  renderPage()
-
-  await user.type(screen.getByLabelText('Nume administrator'), 'Ana Spec')
-  await user.type(screen.getByLabelText('Email'), 'ana@example.test')
-  await user.type(screen.getByLabelText('Parolă'), 'parola123')
-  await user.click(screen.getByRole('button', { name: 'Continuă' }))
-
-  await user.type(screen.getByLabelText('Email club (opțional)'), 'abc')
-  await user.type(screen.getByLabelText('Nume club'), 'Club Spec Motion')
-  await user.type(screen.getByLabelText('Denumire fiscală'), 'Club Spec Motion SRL')
-  await user.type(screen.getByLabelText('CUI'), 'RO12345678')
-  await user.type(screen.getByLabelText('Nr. înregistrare (Reg. Com. / RAF)'), 'J35/1234/2020')
-  await user.type(screen.getByLabelText('Adresă firmă'), 'Str. Sportului 1, Timișoara')
-  await user.type(screen.getByLabelText('IBAN'), 'RO49AAAA1B31007593840000')
-  await user.type(screen.getByLabelText('Bancă'), 'Banca Transilvania')
-  await user.click(screen.getByRole('button', { name: 'Continuă' }))
-
-  // Fără asta, pasul trecea și „Finalizează” nu făcea absolut nimic, în tăcere:
-  // schema întreagă pica pe clubEmail, al cărui mesaj nu se randează pe pasul 3.
-  expect(await screen.findByText('Email invalid')).toBeInTheDocument()
-  expect(screen.queryByText('Verifică datele înainte de finalizare:')).not.toBeInTheDocument()
 })
 
 test('reaching the confirmation step does not register anything on its own', async () => {
@@ -214,7 +78,7 @@ test('reaching the confirmation step does not register anything on its own', asy
   expect(finish).toHaveAttribute('type', 'button')
 })
 
-test('the club is registered only once Finalizează is pressed, with the billing identity', async () => {
+test('the club is registered only once Finalizează is pressed', async () => {
   const user = userEvent.setup()
   mockedRegisterClub.mockResolvedValue({ error: { message: 'Există deja un cont cu acest email.' } })
   renderPage()
@@ -223,16 +87,6 @@ test('the club is registered only once Finalizează is pressed, with the billing
   await user.click(screen.getByRole('button', { name: 'Finalizează' }))
 
   await waitFor(() => expect(mockedRegisterClub).toHaveBeenCalledTimes(1))
-  expect(mockedRegisterClub).toHaveBeenCalledWith(
-    expect.objectContaining({
-      companyName: 'Club Spec Motion SRL',
-      companyCui: 'RO12345678',
-      companyRegNumber: 'J35/1234/2020',
-      companyAddress: 'Str. Sportului 1, Timișoara',
-      bankAccount: 'RO49AAAA1B31007593840000',
-      bankName: 'Banca Transilvania',
-    }),
-  )
 })
 
 test('a rejected email sends the owner back to the first step, message in Romanian', async () => {
@@ -247,9 +101,29 @@ test('a rejected email sends the owner back to the first step, message in Romani
   expect(screen.getByLabelText('Email')).toHaveValue('ana@example.test')
 })
 
+test('a malformed club email is caught on its own step, never as a silent dead end', async () => {
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.type(screen.getByLabelText('Nume administrator'), 'Ana Spec')
+  await user.type(screen.getByLabelText('Email'), 'ana@example.test')
+  await user.type(screen.getByLabelText('Parolă'), 'parola123')
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+
+  await user.type(screen.getByLabelText('Nume club'), 'Club Spec Motion')
+  await user.type(screen.getByLabelText('Email club (opțional)'), 'abc')
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+
+  // Fără clubEmail în STEP_FIELDS, pasul trecea și „Finalizează” nu făcea
+  // absolut nimic: schema întreagă pica pe un câmp al cărui mesaj nu se
+  // randează pe pasul de confirmare.
+  expect(await screen.findByText('Email invalid')).toBeInTheDocument()
+  expect(screen.queryByText('Verifică datele înainte de finalizare:')).not.toBeInTheDocument()
+})
+
 test('a signed-in parent is sent to their own panel instead of the club form', () => {
   mockedUseAuth.mockReturnValue({
-    user: signedInParent,
+    user: semnat('PARENT'),
     loading: false,
     profileError: null,
     refresh: vi.fn(),
@@ -260,9 +134,23 @@ test('a signed-in parent is sent to their own panel instead of the club form', (
   expect(screen.queryByLabelText('Nume administrator')).not.toBeInTheDocument()
 })
 
+test('a signed-in coach lands on their own panel, not the parent one', () => {
+  // Cu destinația veche, hardcodată pe /account, cazul PARENT trecea din
+  // coincidență. Antrenorul e cel care deosebește garda de vechiul cod.
+  mockedUseAuth.mockReturnValue({
+    user: semnat('COACH'),
+    loading: false,
+    profileError: null,
+    refresh: vi.fn(),
+  })
+  renderPage()
+
+  expect(screen.getByText('panou antrenor')).toBeInTheDocument()
+})
+
 test('a signed-in visitor keeps the destination they arrived with', () => {
   mockedUseAuth.mockReturnValue({
-    user: signedInParent,
+    user: semnat('PARENT'),
     loading: false,
     profileError: null,
     refresh: vi.fn(),
@@ -270,6 +158,21 @@ test('a signed-in visitor keeps the destination they arrived with', () => {
   renderPage('/register-club?returnUrl=%2Fcursuri%2Fabc')
 
   expect(screen.getByText('pagina cursului')).toBeInTheDocument()
+})
+
+test('a new club owner lands in the club panel, not the parent one', async () => {
+  const user = userEvent.setup()
+  const refresh = vi.fn()
+  mockedUseAuth.mockReturnValue({ user: null, loading: false, profileError: null, refresh })
+  // Pagina se uită doar după `error`; un User și un Session complet ar fi
+  // douăzeci de câmpuri fără nicio treabă cu ce probează testul.
+  mockedRegisterClub.mockResolvedValue({ error: null } as Awaited<ReturnType<typeof registerClub>>)
+  renderPage()
+
+  await fillUntilConfirmation(user)
+  await user.click(screen.getByRole('button', { name: 'Finalizează' }))
+
+  expect(await screen.findByText('panou club')).toBeInTheDocument()
 })
 
 test('the admin step is shown without waiting for a request', () => {

@@ -120,17 +120,6 @@ export interface RegisterClubInput {
   clubCity?: string
   clubEmail?: string
   clubPhone?: string
-  /**
-   * Billing identity of the club. register-club has always written these to
-   * `clubs`; until now no screen collected them, so every club landed with the
-   * columns empty and nothing to invoice against.
-   */
-  companyName: string
-  companyCui: string
-  companyRegNumber: string
-  companyAddress: string
-  bankAccount: string
-  bankName: string
   sportIds?: string[]
 }
 
