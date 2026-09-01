@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { useState, type FormEvent } from 'react'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { useForm, type FieldErrors } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { fetchSports } from '@/api/sports'
-import { registerClub } from '@/api/auth'
+import { registerClub, roleHome } from '@/api/auth'
 import { useAuth } from '@/lib/auth-context'
 
 const schema = z.object({
@@ -32,12 +32,20 @@ const schema = z.object({
 })
 type Values = z.infer<typeof schema>
 
-const STEP_FIELDS: (keyof Values)[][] = [['name', 'email', 'phone', 'password'], ['clubName']]
+const STEP_FIELDS: (keyof Values)[][] = [
+  ['name', 'email', 'phone', 'password'],
+  // clubEmail e optional dar validat: lasat pe dinafara, o adresa gresita trecea
+  // de pasul lui si pica abia la validarea intregii scheme, pe confirmare, unde
+  // mesajul ei nu se randeaza nicaieri.
+  ['clubName', 'clubEmail'],
+]
+/** The confirmation step — the only one allowed to register anything. */
+const CONFIRM_STEP = 2
 
 export default function ClubSignupPage() {
   const navigate = useNavigate()
   const returnUrl = useReturnUrl()
-  const { refresh } = useAuth()
+  const { user, loading, refresh } = useAuth()
   const [step, setStep] = useState(0)
   const [sportIds, setSportIds] = useState<string[]>([])
   const [serverError, setServerError] = useState<string | null>(null)
@@ -75,8 +83,43 @@ export default function ClubSignupPage() {
       return
     }
     await refresh()
-    navigate(returnUrl || '/account')
+    // This page only ever creates club owners, so their panel is the
+    // destination unless the visitor was already on their way somewhere.
+    navigate(returnUrl || roleHome('CLUB'))
   }
+
+  /**
+   * The confirmation step renders no field, so it renders no field error
+   * either. A value that slipped past its own step would make Finalizează do
+   * nothing at all, in silence — so whatever is invalid, send the visitor back
+   * to the step that can actually show it.
+   */
+  const onInvalid = (invalide: FieldErrors<Values>) => {
+    const primul = Object.keys(invalide)[0] as keyof Values | undefined
+    if (!primul) return
+    const pas = STEP_FIELDS.findIndex((campuri) => campuri.includes(primul))
+    if (pas >= 0) setStep(pas)
+  }
+
+  // Enter inside a field submits the form. On the first two steps that has to
+  // move the wizard along, never register the club.
+  const onFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (step < CONFIRM_STEP) void next()
+    else void handleSubmit(onSubmit, onInvalid)()
+  }
+
+  if (loading) {
+    return (
+      <AuthLayout title="Înregistrare club" subtitle="Creează contul administratorului și clubul">
+        <p className="text-muted-foreground text-sm">Se verifică sesiunea…</p>
+      </AuthLayout>
+    )
+  }
+
+  // Someone already signed in cannot create a second account from here; send
+  // them where they were headed, or to the panel their role belongs to.
+  if (user) return <Navigate to={returnUrl || roleHome(user.role)} replace />
 
   return (
     <AuthLayout
@@ -94,7 +137,7 @@ export default function ClubSignupPage() {
           {serverError}
         </p>
       )}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+      <form onSubmit={onFormSubmit} className="space-y-4" noValidate>
         {step === 0 && (
           <>
             <div className="space-y-1.5">
@@ -140,10 +183,11 @@ export default function ClubSignupPage() {
               <Label>Sporturi</Label>
               <SportPicker sports={sports} value={sportIds} onChange={setSportIds} />
             </div>
+
           </>
         )}
 
-        {step === 2 && (
+        {step === CONFIRM_STEP && (
           <div className="space-y-2 text-sm">
             <p className="text-muted-foreground">Verifică datele înainte de finalizare:</p>
             <div className="bg-muted space-y-1 rounded-2xl p-4">
@@ -169,12 +213,22 @@ export default function ClubSignupPage() {
               Înapoi
             </Button>
           )}
-          {step < 2 ? (
+          {step < CONFIRM_STEP ? (
             <Button type="button" className="flex-1" onClick={next}>
               Continuă
             </Button>
           ) : (
-            <Button type="submit" className="flex-1" disabled={isSubmitting}>
+            // Both buttons render in the same slot, so React hands the new one
+            // the DOM node the previous click landed on. A type="submit" here
+            // would inherit that click and register the club the moment the
+            // confirmation step appeared, so registering stays an explicit
+            // onClick that only a second, deliberate press can reach.
+            <Button
+              type="button"
+              className="flex-1"
+              disabled={isSubmitting}
+              onClick={() => void handleSubmit(onSubmit, onInvalid)()}
+            >
               {isSubmitting ? 'Se creează…' : 'Finalizează'}
             </Button>
           )}
