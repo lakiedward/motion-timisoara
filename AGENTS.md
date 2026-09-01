@@ -77,7 +77,26 @@ Consequence: compute the fingerprint you save from the state the next audit will
 
 ### Forcing a failed Supabase request in the browser
 
-You cannot do it by patching `window.fetch`. `supabase-js` resolves its fetch implementation when the client is constructed (`src/lib/supabase.ts`, at module load), so a later reassignment of `window.fetch` is simply not the function it calls — the request succeeds and the error branch never renders. Playwright's `page.route` is the only reliable interception, and the Playwright MCP tools do not expose it. Cover error branches with a unit test that rejects the mocked `src/api/*` function, and say in the report that the browser gate could not reach them rather than implying it did.
+Patching `window.fetch` from the console **works**, and is the cheapest way to reach an error branch in a real browser:
+
+```js
+const orig = window.fetch
+window.fetch = (...a) =>
+  String(a[0]).includes('auth/v1/recover')
+    ? Promise.reject(new TypeError('Failed to fetch'))
+    : orig.apply(window, a)
+```
+
+`supabase-js` looks its fetch up at call time, not when the client is constructed, so a reassignment made after page load is the function it calls. Measured on 2026-09-01 against the running preview, on both paths: the auth call (`auth/v1/recover`, driving `/forgot-password` into its connection-error state) and a PostgREST read (navigating to `/antrenori` — one new `/rest/v1/` request seen by the browser, one caught by the patch).
+
+> An earlier version of this note claimed the opposite — that the client freezes its fetch at module load and only Playwright's `page.route` can intercept. That was wrong, and it cost a session: an error branch was reported as unreachable from the browser and shipped covered by a unit test alone. Don't take that claim from memory; the snippet above is the check.
+
+Two things that are still true:
+
+- **The patch dies on reload.** The page re-evaluates its modules and `window.fetch` is the original again, so re-apply it after every navigation that reloads the document. Client-side (SPA) navigation keeps it.
+- **A patch left in place poisons the console for later steps.** The rejection you injected stays in the log across SPA navigations, so a later "no errors in console" check will read your own artifact as an application bug. Reload, or verify the final state in a fresh tab.
+
+A unit test that rejects the mocked `src/api/*` function is still worth having — it is faster and it runs in CI. It is no longer the *only* option.
 
 ### react-hook-form and the React Compiler lint
 
