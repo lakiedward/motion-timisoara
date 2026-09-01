@@ -59,6 +59,46 @@ test('o încărcare căzută arată eroare cu reîncercare, nu mesajul de listă
   expect(screen.getByRole('button', { name: 'Reîncearcă' })).toBeInTheDocument()
 })
 
+// Bug #986, defectul 1. Testul de deasupra prinde doar locațiile picate. Când
+// pică CLUBUL, `isPending` devine fals, `clubId` rămâne gol, deci interogarea
+// locațiilor stă oprită de `enabled` — iar o interogare oprită are `isLoading`
+// fals ȘI `isError` fals, deci cascada cădea tocmai pe „Nicio locație încă.”
+test('un club care nu se poate încărca arată eroare, nu îndemnul de listă goală', async () => {
+  mockedClub.mockRejectedValue(new Error('network'))
+  renderPage()
+  expect(await screen.findByText('Nu am putut încărca locațiile.')).toBeInTheDocument()
+  expect(screen.queryByText('Nicio locație încă.')).not.toBeInTheDocument()
+})
+
+test('reîncercarea cere din nou clubul, nu locațiile, când clubul e cel căzut', async () => {
+  const user = userEvent.setup()
+  mockedClub.mockRejectedValue(new Error('network'))
+  renderPage()
+  await screen.findByText('Nu am putut încărca locațiile.')
+  const inainte = mockedClub.mock.calls.length
+  await user.click(screen.getByRole('button', { name: 'Reîncearcă' }))
+  await waitFor(() => expect(mockedClub.mock.calls.length).toBeGreaterThan(inainte))
+})
+
+// Bug #986, defectul 2. Mutația e una singură pentru toată lista, iar
+// `mutation.variables` păstrează doar argumentele ULTIMULUI `mutate`: a doua
+// apăsare pe alt rând muta reperul și redeschidea butonul primului rând cât timp
+// cererea lui era încă în zbor, deci a doua apăsare pe el chiar pleca la server.
+test('butonul unui rând rămâne blocat și după ce se apasă alt rând', async () => {
+  const user = userEvent.setup()
+  mockedLocatii.mockResolvedValue([loc('a', 'Sala A', false), loc('b', 'Sala B', false)] as never)
+  mockedComuta.mockReturnValue(new Promise(() => {}) as never) // rămâne în zbor
+  renderPage()
+
+  const butonA = await screen.findByRole('button', { name: 'Activează Sala A' })
+  await user.click(butonA)
+  expect(butonA).toBeDisabled()
+
+  await user.click(screen.getByRole('button', { name: 'Activează Sala B' }))
+  expect(screen.getByRole('button', { name: 'Activează Sala A' })).toBeDisabled()
+  expect(screen.getByRole('button', { name: 'Activează Sala B' })).toBeDisabled()
+})
+
 // Regresie (criteriul 2): cât timp se încarcă clubul, interogarea de locații e
 // oprită, iar `isLoading` e fals — deci ecranul arăta o clipă „Nicio locație încă.”
 test('cât timp se încarcă clubul se vede scheletul, nu mesajul de listă goală', () => {
