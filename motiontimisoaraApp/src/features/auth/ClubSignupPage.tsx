@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { useForm, type FieldErrors } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
@@ -37,10 +37,19 @@ const schema = z.object({
     .string()
     .trim()
     .regex(/^(RO)?\d{2,10}$/i, 'CUI invalid (ex. RO12345678)'),
+  // Un club sportiv din România e de obicei „Asociație Club Sportiv”: persoană
+  // juridică fără scop patrimonial, înscrisă în Registrul Asociațiilor și
+  // Fundațiilor cu numere de forma 123/A/2015 — nu la Registrul Comerțului. Iar
+  // firmele înmatriculate după noiembrie 2022 primesc forma nouă, literă plus
+  // treisprezece cifre. Un tipar care cere doar J35/1234/2020 le blochează pe
+  // toate trei, iar restul produsului nici măcar nu validează câmpul ăsta.
   companyRegNumber: z
     .string()
     .trim()
-    .regex(/^[A-Za-z]\d{1,2}\/\d{1,7}\/\d{4}$/, 'Format: J35/1234/2020'),
+    .regex(
+      /^([A-Za-z]\d{12,13}|[A-Za-z0-9]{1,7}\/[A-Za-z0-9]{1,4}\/\d{4})$/,
+      'Format: J35/1234/2020, J2023012345678 sau 123/A/2015',
+    ),
   companyAddress: z.string().min(5, 'Minim 5 caractere'),
   bankAccount: z
     .string()
@@ -55,6 +64,10 @@ const STEP_FIELDS: (keyof Values)[][] = [
   ['name', 'email', 'phone', 'password'],
   [
     'clubName',
+    // Optional, but validated when filled: left out of this list, a malformed
+    // address passes the step and then fails the whole-schema check on the
+    // confirmation step, where its message has nowhere to render.
+    'clubEmail',
     'companyName',
     'companyCui',
     'companyRegNumber',
@@ -118,12 +131,25 @@ export default function ClubSignupPage() {
     navigate(returnUrl || roleHome('CLUB'))
   }
 
+  /**
+   * The confirmation step renders no field, so it renders no field error
+   * either. A value that slipped past its own step would make Finalizează do
+   * nothing at all, in silence — so whatever is invalid, send the visitor back
+   * to the step that can actually show it.
+   */
+  const onInvalid = (invalide: FieldErrors<Values>) => {
+    const primul = Object.keys(invalide)[0] as keyof Values | undefined
+    if (!primul) return
+    const pas = STEP_FIELDS.findIndex((campuri) => campuri.includes(primul))
+    if (pas >= 0) setStep(pas)
+  }
+
   // Enter inside a field submits the form. On the first two steps that has to
   // move the wizard along, never register the club.
   const onFormSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (step < CONFIRM_STEP) void next()
-    else void handleSubmit(onSubmit)()
+    else void handleSubmit(onSubmit, onInvalid)()
   }
 
   if (loading) {
@@ -216,8 +242,8 @@ export default function ClubSignupPage() {
               )}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="companyRegNumber">Nr. Registrul Comerțului</Label>
-              <Input id="companyRegNumber" placeholder="J35/1234/2020" {...register('companyRegNumber')} aria-invalid={!!errors.companyRegNumber} />
+              <Label htmlFor="companyRegNumber">Nr. înregistrare (Reg. Com. / RAF)</Label>
+              <Input id="companyRegNumber" placeholder="J35/1234/2020 sau 123/A/2015" {...register('companyRegNumber')} aria-invalid={!!errors.companyRegNumber} />
               {errors.companyRegNumber && (
                 <p className="text-destructive text-xs">{errors.companyRegNumber.message}</p>
               )}
@@ -286,7 +312,7 @@ export default function ClubSignupPage() {
               type="button"
               className="flex-1"
               disabled={isSubmitting}
-              onClick={() => void handleSubmit(onSubmit)()}
+              onClick={() => void handleSubmit(onSubmit, onInvalid)()}
             >
               {isSubmitting ? 'Se creează…' : 'Finalizează'}
             </Button>

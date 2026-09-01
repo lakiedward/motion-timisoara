@@ -54,7 +54,7 @@ async function fillUntilConfirmation(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText('Nume club'), 'Club Spec Motion')
   await user.type(screen.getByLabelText('Denumire fiscală'), 'Club Spec Motion SRL')
   await user.type(screen.getByLabelText('CUI'), 'RO12345678')
-  await user.type(screen.getByLabelText('Nr. Registrul Comerțului'), 'J35/1234/2020')
+  await user.type(screen.getByLabelText('Nr. înregistrare (Reg. Com. / RAF)'), 'J35/1234/2020')
   await user.type(screen.getByLabelText('Adresă firmă'), 'Str. Sportului 1, Timișoara')
   await user.type(screen.getByLabelText('IBAN'), 'RO49AAAA1B31007593840000')
   await user.type(screen.getByLabelText('Bancă'), 'Banca Transilvania')
@@ -78,7 +78,7 @@ test('the club step asks for the billing identity, not just the trading name', a
   for (const label of [
     'Denumire fiscală',
     'CUI',
-    'Nr. Registrul Comerțului',
+    'Nr. înregistrare (Reg. Com. / RAF)',
     'Adresă firmă',
     'IBAN',
     'Bancă',
@@ -115,15 +115,86 @@ test('a malformed IBAN is refused with the shape it should have', async () => {
   await user.type(screen.getByLabelText('Nume club'), 'Club Spec Motion')
   await user.type(screen.getByLabelText('Denumire fiscală'), 'Club Spec Motion SRL')
   await user.type(screen.getByLabelText('CUI'), 'RO12345678')
-  await user.type(screen.getByLabelText('Nr. Registrul Comerțului'), 'J35/1234/2020')
+  await user.type(screen.getByLabelText('Nr. înregistrare (Reg. Com. / RAF)'), 'J35/1234/2020')
   await user.type(screen.getByLabelText('Adresă firmă'), 'Str. Sportului 1, Timișoara')
-  await user.type(screen.getByLabelText('IBAN'), 'DE49AAAA1B3100759384')
+  // Prefix corect, lungime gresita: daca testul ar folosi un IBAN strain, ar
+  // trece si daca cineva slabeste cuantificatorul de lungime.
+  await user.type(screen.getByLabelText('IBAN'), 'RO49AAAA1B3100759384')
   await user.type(screen.getByLabelText('Bancă'), 'Banca Transilvania')
   await user.click(screen.getByRole('button', { name: 'Continuă' }))
 
   expect(
     await screen.findByText('IBAN invalid (ex. RO49AAAA1B31007593840000)'),
   ).toBeInTheDocument()
+})
+
+test('a club registered as an association can get through the step', async () => {
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.type(screen.getByLabelText('Nume administrator'), 'Ana Spec')
+  await user.type(screen.getByLabelText('Email'), 'ana@example.test')
+  await user.type(screen.getByLabelText('Parolă'), 'parola123')
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+
+  await user.type(screen.getByLabelText('Nume club'), 'ACS Spec Motion')
+  await user.type(screen.getByLabelText('Denumire fiscală'), 'Asociația Club Sportiv Spec')
+  await user.type(screen.getByLabelText('CUI'), '12345678')
+  // Registrul Asociațiilor și Fundațiilor, nu Registrul Comerțului: forma
+  // juridică obișnuită a unui club sportiv românesc.
+  await user.type(screen.getByLabelText('Nr. înregistrare (Reg. Com. / RAF)'), '123/A/2015')
+  await user.type(screen.getByLabelText('Adresă firmă'), 'Str. Sportului 1, Timișoara')
+  await user.type(screen.getByLabelText('IBAN'), 'RO49AAAA1B31007593840000')
+  await user.type(screen.getByLabelText('Bancă'), 'Banca Transilvania')
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+
+  expect(await screen.findByText('Verifică datele înainte de finalizare:')).toBeInTheDocument()
+})
+
+test('a company registered under the 2022 ONRC format can get through the step', async () => {
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.type(screen.getByLabelText('Nume administrator'), 'Ana Spec')
+  await user.type(screen.getByLabelText('Email'), 'ana@example.test')
+  await user.type(screen.getByLabelText('Parolă'), 'parola123')
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+
+  await user.type(screen.getByLabelText('Nume club'), 'Club Spec Motion')
+  await user.type(screen.getByLabelText('Denumire fiscală'), 'Club Spec Motion SRL')
+  await user.type(screen.getByLabelText('CUI'), 'RO12345678')
+  await user.type(screen.getByLabelText('Nr. înregistrare (Reg. Com. / RAF)'), 'J2023012345678')
+  await user.type(screen.getByLabelText('Adresă firmă'), 'Str. Sportului 1, Timișoara')
+  await user.type(screen.getByLabelText('IBAN'), 'RO49AAAA1B31007593840000')
+  await user.type(screen.getByLabelText('Bancă'), 'Banca Transilvania')
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+
+  expect(await screen.findByText('Verifică datele înainte de finalizare:')).toBeInTheDocument()
+})
+
+test('a malformed club email is caught on its own step, never as a silent dead end', async () => {
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.type(screen.getByLabelText('Nume administrator'), 'Ana Spec')
+  await user.type(screen.getByLabelText('Email'), 'ana@example.test')
+  await user.type(screen.getByLabelText('Parolă'), 'parola123')
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+
+  await user.type(screen.getByLabelText('Email club (opțional)'), 'abc')
+  await user.type(screen.getByLabelText('Nume club'), 'Club Spec Motion')
+  await user.type(screen.getByLabelText('Denumire fiscală'), 'Club Spec Motion SRL')
+  await user.type(screen.getByLabelText('CUI'), 'RO12345678')
+  await user.type(screen.getByLabelText('Nr. înregistrare (Reg. Com. / RAF)'), 'J35/1234/2020')
+  await user.type(screen.getByLabelText('Adresă firmă'), 'Str. Sportului 1, Timișoara')
+  await user.type(screen.getByLabelText('IBAN'), 'RO49AAAA1B31007593840000')
+  await user.type(screen.getByLabelText('Bancă'), 'Banca Transilvania')
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+
+  // Fără asta, pasul trecea și „Finalizează” nu făcea absolut nimic, în tăcere:
+  // schema întreagă pica pe clubEmail, al cărui mesaj nu se randează pe pasul 3.
+  expect(await screen.findByText('Email invalid')).toBeInTheDocument()
+  expect(screen.queryByText('Verifică datele înainte de finalizare:')).not.toBeInTheDocument()
 })
 
 test('reaching the confirmation step does not register anything on its own', async () => {
