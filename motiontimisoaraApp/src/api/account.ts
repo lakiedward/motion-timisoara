@@ -54,8 +54,15 @@ export async function updateChild(id: string, input: Partial<ChildInput>): Promi
   return data
 }
 
+/**
+ * Intorcea raspunsul brut in loc sa arunce, deci `onError` din pagina nu se
+ * declansa niciodata: si o eroare reala afisa „Copilul a fost sters". Acum
+ * arunca, si cere randul inapoi cu `.select().single()` ca sa nu treaca drept
+ * reusita nici o stergere pe care RLS a filtrat-o.
+ */
 export async function deleteChild(id: string) {
-  return supabase.from('children').delete().eq('id', id)
+  const { error } = await supabase.from('children').delete().eq('id', id).select().single()
+  if (error) throw error
 }
 
 /** Enrollment rows for the current parent (RLS-scoped via children), with payment + child. */

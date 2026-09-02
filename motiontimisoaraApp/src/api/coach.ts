@@ -70,8 +70,11 @@ export async function updateCourse(id: string, input: CourseFormInput): Promise<
   return data
 }
 
+// Comutarile cer randul inapoi cu `.select().single()`, ca `updateCourse` de mai
+// sus: fara el, PostgREST raspunde 204 si cand RLS a filtrat toate randurile,
+// iar refuzul apare pe ecran ca reusita.
 export async function setCourseActive(id: string, active: boolean) {
-  const { error } = await supabase.from('courses').update({ active }).eq('id', id)
+  const { error } = await supabase.from('courses').update({ active }).eq('id', id).select().single()
   if (error) throw error
 }
 
@@ -141,7 +144,7 @@ export async function updateActivity(id: string, input: ActivityFormInput): Prom
 }
 
 export async function setActivityActive(id: string, active: boolean) {
-  const { error } = await supabase.from('activities').update({ active }).eq('id', id)
+  const { error } = await supabase.from('activities').update({ active }).eq('id', id).select().single()
   if (error) throw error
 }
 
@@ -191,7 +194,7 @@ export async function updateLocation(id: string, input: LocationFormInput): Prom
 }
 
 export async function setLocationActive(id: string, is_active: boolean) {
-  const { error } = await supabase.from('locations').update({ is_active }).eq('id', id)
+  const { error } = await supabase.from('locations').update({ is_active }).eq('id', id).select().single()
   if (error) throw error
 }
 
@@ -438,6 +441,8 @@ export async function updateMyCoachProfile(input: {
     .from('profiles')
     .update({ name: input.name, phone: input.phone })
     .eq('id', coachId)
+    .select()
+    .single()
   if (profileError) throw profileError
 
   const { data: updated, error: coachError } = await supabase

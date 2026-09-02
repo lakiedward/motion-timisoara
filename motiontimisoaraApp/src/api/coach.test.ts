@@ -14,8 +14,11 @@ vi.mock('@/lib/supabase', () => ({
     },
     from: (table: string) => {
       if (table === 'profiles') {
+        // Scrierea cere acum rândul înapoi, deci lanțul se termină în `.single()`.
         return {
-          update: () => ({ eq: (...args: unknown[]) => profilesEq(...args) }),
+          update: () => ({
+            eq: () => ({ select: () => ({ single: (...args: unknown[]) => profilesEq(...args) }) }),
+          }),
         }
       }
       return {
