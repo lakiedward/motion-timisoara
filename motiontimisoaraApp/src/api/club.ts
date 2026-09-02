@@ -44,8 +44,11 @@ export interface ClubProfileInput {
   bank_name: string | null
 }
 
+// Fiecare scriere de mai jos cere randul inapoi cu `.select().single()`, ca
+// `updateClubLocation`: fara el, PostgREST raspunde 204 si cand RLS a filtrat
+// toate randurile, iar refuzul apare pe ecran ca reusita.
 export async function updateClub(id: string, input: ClubProfileInput) {
-  const { error } = await supabase.from('clubs').update(input).eq('id', id)
+  const { error } = await supabase.from('clubs').update(input).eq('id', id).select().single()
   if (error) throw error
 }
 
@@ -118,6 +121,8 @@ export async function removeClubCoach(clubId: string, coachProfileId: string) {
     .delete()
     .eq('club_id', clubId)
     .eq('coach_profile_id', coachProfileId)
+    .select()
+    .single()
   if (error) throw error
 }
 
@@ -155,7 +160,12 @@ export async function generateClubCode(clubId: string, maxUses = 1): Promise<str
 }
 
 export async function deleteClubCode(id: string) {
-  const { error } = await supabase.from('club_invitation_codes').delete().eq('id', id)
+  const { error } = await supabase
+    .from('club_invitation_codes')
+    .delete()
+    .eq('id', id)
+    .select()
+    .single()
   if (error) throw error
 }
 
@@ -459,10 +469,12 @@ export async function updateClubCourse(id: string, input: ClubCourseFormInput) {
     .from('courses')
     .update({ ...input, price: input.price_per_session * 8 })
     .eq('id', id)
+    .select()
+    .single()
   if (error) throw error
 }
 
 export async function setClubCourseActive(id: string, active: boolean) {
-  const { error } = await supabase.from('courses').update({ active }).eq('id', id)
+  const { error } = await supabase.from('courses').update({ active }).eq('id', id).select().single()
   if (error) throw error
 }

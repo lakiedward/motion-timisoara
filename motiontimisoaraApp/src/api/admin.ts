@@ -42,8 +42,11 @@ export async function getAllUsers(): Promise<AdminUser[]> {
   return (data as AdminUser[] | null) ?? []
 }
 
+// Scrierile de admin cer randul inapoi cu `.select().single()`, ca in `club.ts`:
+// fara el, PostgREST raspunde 204 si pentru un id care nu exista sau nu poate fi
+// atins, iar ecranul anunta o schimbare care nu s-a facut.
 export async function setUserEnabled(id: string, enabled: boolean) {
-  const { error } = await supabase.from('profiles').update({ enabled }).eq('id', id)
+  const { error } = await supabase.from('profiles').update({ enabled }).eq('id', id).select().single()
   if (error) throw error
 }
 
@@ -54,7 +57,7 @@ export async function createSport(code: string, name: string) {
 }
 
 export async function updateSport(id: string, code: string, name: string) {
-  const { error } = await supabase.from('sports').update({ code, name }).eq('id', id)
+  const { error } = await supabase.from('sports').update({ code, name }).eq('id', id).select().single()
   if (error) throw error
 }
 
@@ -71,6 +74,8 @@ export async function setSportDefaultPhoto(sportId: string, file: File): Promise
     .from('sports')
     .update({ default_photo_storage_path: path })
     .eq('id', sportId)
+    .select()
+    .single()
   if (error) throw error
   return path
 }
@@ -83,11 +88,13 @@ export async function clearSportDefaultPhoto(sportId: string, currentPath: strin
     .from('sports')
     .update({ default_photo_storage_path: null })
     .eq('id', sportId)
+    .select()
+    .single()
   if (error) throw error
 }
 
 export async function deleteSport(id: string) {
-  const { error } = await supabase.from('sports').delete().eq('id', id)
+  const { error } = await supabase.from('sports').delete().eq('id', id).select().single()
   if (error) throw error
 }
 
@@ -127,7 +134,12 @@ export async function generateCoachInviteCode(maxUses = 1): Promise<string> {
 }
 
 export async function deleteInviteCode(id: string) {
-  const { error } = await supabase.from('coach_invitation_codes').delete().eq('id', id)
+  const { error } = await supabase
+    .from('coach_invitation_codes')
+    .delete()
+    .eq('id', id)
+    .select()
+    .single()
   if (error) throw error
 }
 
@@ -192,6 +204,6 @@ export async function getAllCourses(): Promise<AdminCourse[]> {
 }
 
 export async function setCourseActiveAdmin(id: string, active: boolean) {
-  const { error } = await supabase.from('courses').update({ active }).eq('id', id)
+  const { error } = await supabase.from('courses').update({ active }).eq('id', id).select().single()
   if (error) throw error
 }
