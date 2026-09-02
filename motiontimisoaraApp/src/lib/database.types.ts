@@ -402,6 +402,7 @@ export type Database = {
           gallery_json: string | null
           hero_photo_storage_path: string | null
           id: string
+          location_id: string | null
           location_text: string | null
           period_end: string
           period_start: string
@@ -420,6 +421,7 @@ export type Database = {
           gallery_json?: string | null
           hero_photo_storage_path?: string | null
           id?: string
+          location_id?: string | null
           location_text?: string | null
           period_end: string
           period_start: string
@@ -438,6 +440,7 @@ export type Database = {
           gallery_json?: string | null
           hero_photo_storage_path?: string | null
           id?: string
+          location_id?: string | null
           location_text?: string | null
           period_end?: string
           period_start?: string
@@ -459,6 +462,13 @@ export type Database = {
             columns: ["coach_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "camps_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
             referencedColumns: ["id"]
           },
         ]
