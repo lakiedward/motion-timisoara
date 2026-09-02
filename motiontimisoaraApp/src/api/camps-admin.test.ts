@@ -1,6 +1,25 @@
 import { expect, test } from 'vitest'
 
-import { slugDinTitlu, sumaCategoriilor } from './camps-admin'
+import { intervaleSuprapuse, slugDinTitlu, sumaCategoriilor } from './camps-admin'
+
+// Capetele intervalelor sunt incluse, ca în baza de date (00037): un copil de 8
+// ani intră și în 6–8, și în 8–10, deci cele două se suprapun. Formularul arată
+// exact perechea vinovată, nu doar „ceva nu e bine".
+test('două intervale care împart un an se suprapun; vecinele nu', () => {
+  expect(intervaleSuprapuse([{ age_from: 6, age_to: 8 }, { age_from: 8, age_to: 10 }])).toEqual([0, 1])
+  expect(intervaleSuprapuse([{ age_from: 6, age_to: 8 }, { age_from: 9, age_to: 12 }])).toBeNull()
+  expect(intervaleSuprapuse([])).toBeNull()
+})
+
+test('suprapunerea se găsește oriunde în listă, nu doar între vecine', () => {
+  expect(
+    intervaleSuprapuse([
+      { age_from: 6, age_to: 8 },
+      { age_from: 9, age_to: 12 },
+      { age_from: 3, age_to: 7 },
+    ]),
+  ).toEqual([0, 2])
+})
 
 // Diacriticele românești au două forme în Unicode (virgulă și sedilă) și niciuna
 // nu se descompune prin NFD, deci se scot pe nume. Restul — ă, â, î — se
