@@ -11,6 +11,20 @@ import type { Tables } from '@/lib/database.types'
 
 export type Tabara = Tables<'camps'>
 export type CategoriePret = Tables<'camp_price_items'>
+export type PretPeVarsta = Tables<'camp_age_prices'>
+
+/** `single` = toți copiii plătesc `camps.price`; `by_age` = suma categoriei de vârstă. */
+export type ModPret = 'single' | 'by_age'
+
+/**
+ * O categorie de vârstă așa cum o ține formularul. `type`, nu `interface`, din
+ * același motiv ca `CategorieDeSalvat`: parametrul funcției din bază e `Json`.
+ */
+export type PretPeVarstaDeSalvat = {
+  age_from: number
+  age_to: number
+  amount: number
+}
 
 /**
  * O categorie așa cum o ține formularul, înainte să capete id și ordine.
@@ -168,6 +182,54 @@ export async function salveazaBanii(
   })
   if (error) throw error
   return data ?? []
+}
+
+export async function getPreturilePeVarsta(campId: string): Promise<PretPeVarsta[]> {
+  const { data, error } = await supabase
+    .from('camp_age_prices')
+    .select('*')
+    .eq('camp_id', campId)
+    .order('display_order')
+  if (error) throw error
+  return data ?? []
+}
+
+/**
+ * Comutatorul și categoriile de vârstă se scriu ÎMPREUNĂ, ca banii taberei:
+ * o tabără „pe categorii" fără categorii n-ar avea ce preț să dea vreunui
+ * copil, iar baza refuză exact starea aia (00037). Mesajele funcției sunt
+ * scrise pentru om și se arată ca atare.
+ */
+export async function salveazaPreturilePeVarsta(
+  campId: string,
+  mod: ModPret,
+  categorii: PretPeVarstaDeSalvat[],
+): Promise<PretPeVarsta[]> {
+  const { data, error } = await supabase.rpc('salveaza_preturile_pe_varsta', {
+    p_camp_id: campId,
+    p_pricing_mode: mod,
+    p_categorii: categorii,
+  })
+  if (error) throw error
+  return data ?? []
+}
+
+/**
+ * Prima pereche de intervale care se suprapun, sau `null`. Capetele sunt
+ * incluse: 6–8 și 8–10 se suprapun la 8. Aceeași regulă ca poarta din bază,
+ * verificată aici doar ca omul să afle înainte de drumul până la server.
+ */
+export function intervaleSuprapuse(
+  categorii: { age_from: number; age_to: number }[],
+): [number, number] | null {
+  for (let i = 0; i < categorii.length; i++) {
+    for (let j = i + 1; j < categorii.length; j++) {
+      const a = categorii[i]
+      const b = categorii[j]
+      if (b.age_from <= a.age_to && a.age_from <= b.age_to) return [i, j]
+    }
+  }
+  return null
 }
 
 /** Suma categoriilor, în bani. Aceeași socoteală ca poarta din bază. */
