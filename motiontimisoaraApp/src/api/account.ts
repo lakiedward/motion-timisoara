@@ -85,6 +85,18 @@ export type AttendanceRow = Tables<'attendance'> & {
   occurrence: { starts_at: string; course: { name: string } | null } | null
 }
 
+/**
+ * Un cod QR nou pentru copil. Din clipa asta vechiul cod nu mai e recunoscut de
+ * nimeni, de asta baza îl lasă doar părintelui (sau adminului), nu antrenorului
+ * care poate vedea copilul. Întoarce tokenul nou, ca ecranul să-l deseneze fără
+ * o a doua citire.
+ */
+export async function regenereazaCodulCopilului(childId: string): Promise<string> {
+  const { data, error } = await supabase.rpc('regenereaza_codul_copilului', { p_child_id: childId })
+  if (error) throw error
+  return data
+}
+
 export async function getChildAttendance(childId: string): Promise<AttendanceRow[]> {
   const { data, error } = await supabase
     .from('attendance')

@@ -65,6 +65,7 @@ import EnrollmentsPage from '@/features/account/EnrollmentsPage'
 import AttendancePage from '@/features/account/AttendancePage'
 import AnnouncementsPage from '@/features/account/AnnouncementsPage'
 import CheckoutPage from '@/features/account/CheckoutPage'
+import ChildQrPage from '@/features/children/ChildQrPage'
 
 export const router = createBrowserRouter([
   {
@@ -108,6 +109,7 @@ export const router = createBrowserRouter([
                   { path: '/account/children', element: <ChildrenPage /> },
                   { path: '/account/child/new', element: <ChildFormPage /> },
                   { path: '/account/child/:id', element: <ChildFormPage /> },
+                  { path: '/account/child/:id/qr', element: <ChildQrPage inapoi="/account/children" /> },
                   { path: '/account/enrollments', element: <EnrollmentsPage /> },
                   { path: '/account/attendance', element: <AttendancePage /> },
                   { path: '/account/announcements', element: <AnnouncementsPage /> },
@@ -139,6 +141,8 @@ export const router = createBrowserRouter([
               { path: '/coach/camps/:id/edit', element: <CampFormPage baza="/coach/camps" /> },
               { path: '/coach/camps/:id/enrolled', element: <CampEnrolledPage baza="/coach/camps" /> },
               { path: '/coach/attendance', element: <CoachAttendancePage /> },
+              // Rezerva antrenorului când părintele n-are telefonul: codul copilului înscris.
+              { path: '/coach/children/:id/qr', element: <ChildQrPage inapoi="/coach/attendance" /> },
               { path: '/coach/profile', element: <CoachOwnProfilePage /> },
               { path: '/coach/stripe', element: <CoachStripePage /> },
               // Return URLs handed to Stripe by the stripe-connect Edge Function
@@ -189,6 +193,7 @@ export const router = createBrowserRouter([
               { path: '/club/camps/new', element: <CampFormPage baza="/club/camps" /> },
               { path: '/club/camps/:id/edit', element: <CampFormPage baza="/club/camps" /> },
               { path: '/club/camps/:id/enrolled', element: <CampEnrolledPage baza="/club/camps" /> },
+              { path: '/club/children/:id/qr', element: <ChildQrPage inapoi="/club/camps" /> },
             ],
           },
         ],

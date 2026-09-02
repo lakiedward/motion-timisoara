@@ -143,6 +143,14 @@ export default function CoachAttendancePage() {
           <div className="min-w-0">
             <div className="line-clamp-1 font-medium lg:line-clamp-2">{r.child_name}</div>
             <div className="text-muted-foreground text-sm">{childAge(r.child_birth_date)} ani</div>
+            {/* Rezerva când părintele n-are telefonul: codul copilului, de pe
+                ecranul antrenorului. Element separat, ca vârsta să rămână „N ani". */}
+            <Link
+              to={`/coach/children/${r.child_id}/qr`}
+              className="text-primary inline-flex min-h-11 items-center text-sm underline-offset-4 hover:underline lg:min-h-0"
+            >
+              Cod QR
+            </Link>
           </div>
           <div className="flex gap-3 lg:shrink-0">
             {(['PRESENT', 'ABSENT'] as const).map((status) => {
