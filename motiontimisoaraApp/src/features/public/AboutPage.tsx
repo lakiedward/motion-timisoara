@@ -11,8 +11,11 @@ const VALUES = [
 export default function AboutPage() {
   return (
     <div>
+      {/* Same pale hero and the same left-aligned container as the sibling
+          pages (Tabere, Antrenori, Cluburi, Activități): this was the only one
+          centred, in a narrower column. */}
       <section className="from-primary/8 to-background border-b bg-gradient-to-b">
-        <div className="mx-auto max-w-3xl px-6 py-16 text-center">
+        <div className="mx-auto max-w-7xl px-6 py-14">
           <span className="eyebrow mb-3">Despre noi</span>
           <h1 className="font-display text-4xl font-extrabold text-foreground md:text-5xl">
             Construim <span className="text-primary">campioni</span>, dezvoltăm caractere
