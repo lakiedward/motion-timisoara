@@ -20,6 +20,8 @@ import {
   slugDinTitlu,
   type ModPret,
 } from '@/api/camps-admin'
+import { getClubSelectableLocations } from '@/api/club'
+import { getSelectableLocations } from '@/api/coach'
 import { baniToRon, formatRon, ronToBani } from '@/lib/money'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -62,6 +64,7 @@ const schema = z
       .regex(/^[a-z0-9-]+$/, 'Doar litere mici, cifre și cratime'),
     period_start: z.string().min(1, 'Alege data de început'),
     period_end: z.string().min(1, 'Alege data de sfârșit'),
+    location_id: z.string().optional(),
     location_text: z.string().optional(),
     capacity: z.string().optional(),
     price_lei: lei,
@@ -119,6 +122,7 @@ const GOL: Values = {
   slug: '',
   period_start: '',
   period_end: '',
+  location_id: '',
   location_text: '',
   capacity: '',
   price_lei: '',
@@ -143,7 +147,7 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
   const eEditare = !!id
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const { proprietar, gata } = useProprietarTabere()
+  const { proprietar, gata, eClub } = useProprietarTabere()
 
   const { data: tabara, isError: eroareTabara } = useQuery({
     queryKey: ['tabara-de-editat', id],
@@ -161,6 +165,21 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
     enabled: eEditare,
   })
 
+  // Aceleași locuri ca la cursuri: clubul le vede pe ale lui și pe cele comune
+  // ale platformei (plus cea deja salvată, chiar dacă a fost dezactivată între
+  // timp); antrenorul le vede pe cele active. Crearea cu pin pe hartă rămâne în
+  // formularul de locație — linkul de sub select duce acolo.
+  const locatiaSalvata = tabara?.location_id ?? null
+  const { data: locatii, isError: eroareLocatii } = useQuery({
+    queryKey: ['locatii-pentru-tabara', proprietar.clubId, eClub, locatiaSalvata],
+    queryFn: () =>
+      eClub
+        ? getClubSelectableLocations(proprietar.clubId as string, locatiaSalvata)
+        : getSelectableLocations(),
+    enabled: gata && (!eClub || !!proprietar.clubId) && (!eEditare || !!tabara),
+  })
+  const locatiiGata = !!locatii || eroareLocatii
+
   const {
     register,
     handleSubmit,
@@ -175,12 +194,16 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
   const titluReg = register('title')
 
   useEffect(() => {
-    if (tabara && categoriiGata && varsteGata) {
+    // Locațiile intră în condiție dinadins: `reset` cu un `location_id` pentru
+    // care nu există încă `<option>` lasă selectul pe „—", iar efectul nu se
+    // mai reia. Aceeași capcană ca la antrenorul din formularul de curs.
+    if (tabara && categoriiGata && varsteGata && locatiiGata) {
       reset({
         title: tabara.title,
         slug: tabara.slug,
         period_start: tabara.period_start,
         period_end: tabara.period_end,
+        location_id: tabara.location_id ?? '',
         location_text: tabara.location_text ?? '',
         capacity: tabara.capacity?.toString() ?? '',
         price_lei: String(baniToRon(tabara.price)),
@@ -195,7 +218,7 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
         varste: (varste ?? []).map(spreCamp),
       })
     }
-  }, [tabara, categorii, categoriiGata, varste, varsteGata, reset])
+  }, [tabara, categorii, categoriiGata, varste, varsteGata, locatiiGata, reset])
 
   // `useWatch` în loc de `watch()`: doar câmpurile astea mișcă totalul de
   // sub categorii, deci restul formularului nu se mai randează la fiecare tastă.
@@ -241,6 +264,7 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
       description: v.description?.trim() ? v.description : null,
       period_start: v.period_start,
       period_end: v.period_end,
+      location_id: v.location_id || null,
       location_text: v.location_text?.trim() ? v.location_text : null,
       capacity: num(v.capacity),
       allow_cash: v.allow_cash,
@@ -345,7 +369,38 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
           </Camp>
         </div>
 
-        <Camp eticheta="Loc" ajutor="Unde are loc tabăra. Se vede pe pagina publică.">
+        <Camp
+          eticheta="Loc"
+          ajutor={
+            eroareLocatii
+              ? 'Nu am putut încărca locațiile. Poți salva tabăra și alege locul mai târziu.'
+              : 'Un loc din platformă: așa ajunge tabăra pe hartă.'
+          }
+        >
+          <select
+            {...register('location_id')}
+            className="border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] lg:h-9"
+          >
+            <option value="">— fără loc ales —</option>
+            {(locatii ?? []).map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.name}
+                {l.city ? ` · ${l.city}` : ''}
+              </option>
+            ))}
+          </select>
+        </Camp>
+        <Link
+          to={eClub ? '/club/locations/new' : '/coach/locations/new'}
+          className="text-primary inline-flex min-h-11 items-center text-sm underline-offset-4 hover:underline"
+        >
+          Locul nu e în listă? Adaugă o locație nouă, cu pin pe hartă
+        </Link>
+
+        <Camp
+          eticheta="Detalii despre loc"
+          ajutor="Text liber, se vede pe pagina publică: cabana, intrarea, punctul de întâlnire."
+        >
           <Input {...register('location_text')} className="h-11 lg:h-9" />
         </Camp>
 

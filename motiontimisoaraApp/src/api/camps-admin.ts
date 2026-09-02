@@ -45,6 +45,8 @@ export interface TabaraInput {
   description: string | null
   period_start: string
   period_end: string
+  /** Locul din `locations`; null când tabăra are doar textul liber de mai jos. */
+  location_id: string | null
   location_text: string | null
   capacity: number | null
   allow_cash: boolean

@@ -15,6 +15,8 @@ import {
   salveazaBanii,
   salveazaPreturilePeVarsta,
 } from '@/api/camps-admin'
+import { getClubSelectableLocations } from '@/api/club'
+import { getSelectableLocations } from '@/api/coach'
 
 vi.mock('@/api/camps-admin', async () => {
   const real = await vi.importActual<typeof import('@/api/camps-admin')>('@/api/camps-admin')
@@ -30,6 +32,8 @@ vi.mock('@/api/camps-admin', async () => {
     salveazaPreturilePeVarsta: vi.fn(),
   }
 })
+vi.mock('@/api/club', () => ({ getClubSelectableLocations: vi.fn() }))
+vi.mock('@/api/coach', () => ({ getSelectableLocations: vi.fn() }))
 vi.mock('./useProprietarTabere', () => ({
   useProprietarTabere: () => ({
     proprietar: { clubId: 'club-1', coachUserId: null },
@@ -56,11 +60,15 @@ const TABARA = {
   description: '',
   hero_photo_storage_path: null,
   pricing_mode: 'single',
+  location_id: null,
   club_id: 'club-1',
   coach_id: null,
   currency: 'RON',
   gallery_json: null,
 }
+
+const BAZIN = 'b6d97609-d740-44aa-b930-fb222ffadb13'
+const CABANA = '1f0f4d5e-7c3a-4b1e-9a2f-0c6e8d7b5a41'
 
 function renderForm(ruta = '/club/camps/new') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -108,6 +116,74 @@ beforeEach(() => {
   vi.mocked(salveazaPreturilePeVarsta).mockResolvedValue([] as never)
   vi.mocked(getTaberelemele).mockResolvedValue([] as never)
   vi.mocked(getPreturilePeVarsta).mockResolvedValue([] as never)
+  vi.mocked(getClubSelectableLocations).mockResolvedValue([
+    { id: BAZIN, name: 'Bazin Olimpic Timișoara', city: 'Timișoara' },
+    { id: CABANA, name: 'Cabana Muntele Mic', city: null },
+  ])
+  vi.mocked(getSelectableLocations).mockResolvedValue([])
+})
+
+// --- #316: tabăra alege un loc din platformă, nu doar un text liber ---
+test('tabăra alege locul din locațiile clubului, iar salvarea trimite location_id', async () => {
+  const user = userEvent.setup()
+  renderForm()
+
+  const select = await screen.findByLabelText('Loc')
+  await waitFor(() =>
+    expect(within(select).getAllByRole('option').map((o) => o.textContent)).toEqual([
+      '— fără loc ales —',
+      'Bazin Olimpic Timișoara · Timișoara',
+      'Cabana Muntele Mic',
+    ]),
+  )
+  // Clubul cere lista LUI (plus cele comune), nu lista antrenorului.
+  expect(getClubSelectableLocations).toHaveBeenCalledWith('club-1', null)
+  expect(getSelectableLocations).not.toHaveBeenCalled()
+  // Crearea cu pin pe hartă rămâne în formularul de locație al clubului.
+  expect(screen.getByRole('link', { name: /Adaugă o locație nouă/ })).toHaveAttribute('href', '/club/locations/new')
+
+  await completeazaTabara(user)
+  await user.selectOptions(select, CABANA)
+  await user.type(screen.getByLabelText('Detalii despre loc'), 'Intrarea din spate')
+  await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
+
+  await waitFor(() => expect(creeazaTabara).toHaveBeenCalled())
+  expect(vi.mocked(creeazaTabara).mock.calls[0][1]).toMatchObject({
+    location_id: CABANA,
+    location_text: 'Intrarea din spate',
+  })
+})
+
+test('fără loc ales, location_id pleacă null, nu șir gol', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  await screen.findByLabelText('Loc')
+
+  await completeazaTabara(user)
+  await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
+
+  await waitFor(() => expect(creeazaTabara).toHaveBeenCalled())
+  expect(vi.mocked(creeazaTabara).mock.calls[0][1]).toMatchObject({ location_id: null })
+})
+
+test('la editare, locul salvat apare selectat chiar dacă lista vine după tabără', async () => {
+  vi.mocked(getTabaraDeEditat).mockResolvedValue({ ...TABARA, location_id: BAZIN } as never)
+  vi.mocked(getCategoriile).mockResolvedValue([])
+  vi.mocked(getPreturilePeVarsta).mockResolvedValue([])
+  vi.mocked(getClubSelectableLocations).mockImplementation(
+    () =>
+      new Promise((r) =>
+        setTimeout(() => r([{ id: BAZIN, name: 'Bazin Olimpic Timișoara', city: 'Timișoara' }]), 40),
+      ),
+  )
+
+  renderForm('/club/camps/tabara-1/edit')
+  await screen.findByDisplayValue('Tabără de înot')
+
+  await waitFor(() => expect(screen.getByLabelText('Loc')).toHaveValue(BAZIN))
+  // Locația deja salvată se cere explicit, ca să rămână în listă și dacă a fost
+  // dezactivată între timp.
+  expect(getClubSelectableLocations).toHaveBeenCalledWith('club-1', BAZIN)
 })
 
 // Comportamentul de azi nu se schimbă pentru cine nu atinge comutatorul: o
