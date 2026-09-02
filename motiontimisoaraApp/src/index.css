@@ -182,8 +182,11 @@
 
 @layer components {
   /* Primary brand gradient pill CTA (UIGuidelines .btn-cta--primary) */
+  /* Same keyboard-focus ring as the Button component (outline-none +
+     focus-visible ring): the pills had none, so a Tab user lost their place on
+     a white pill over the brand gradient. Fixed on the class, for every pill. */
   .btn-cta {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-7 py-3 text-base font-bold transition-all;
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-7 py-3 text-base font-bold transition-all outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50;
   }
   .btn-cta--primary {
     background: var(--gradient-primary);
