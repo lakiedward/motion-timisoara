@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, ArrowLeft, Phone } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Phone, QrCode } from 'lucide-react'
 
 import { getInscrisiiTaberei, varstaLa, type CopilInscris } from '@/api/camp-enrolled'
 import { getTabaraDeEditat } from '@/api/camps-admin'
@@ -92,7 +92,7 @@ export default function CampEnrolledPage({ baza }: { baza: '/club/camps' | '/coa
           <ul className="mt-4 space-y-3">
             {inscrisi.map((c) => (
               <li key={c.enrollmentId}>
-                <CardCopil copil={c} ziuaTaberei={tabara?.period_start ?? null} />
+                <CardCopil copil={c} ziuaTaberei={tabara?.period_start ?? null} baza={baza} />
               </li>
             ))}
           </ul>
@@ -102,7 +102,15 @@ export default function CampEnrolledPage({ baza }: { baza: '/club/camps' | '/coa
   )
 }
 
-function CardCopil({ copil, ziuaTaberei }: { copil: CopilInscris; ziuaTaberei: string | null }) {
+function CardCopil({
+  copil,
+  ziuaTaberei,
+  baza,
+}: {
+  copil: CopilInscris
+  ziuaTaberei: string | null
+  baza: '/club/camps' | '/coach/camps'
+}) {
   const varsta = ziuaTaberei ? varstaLa(copil.dataNasterii, ziuaTaberei) : null
 
   return (
@@ -115,11 +123,20 @@ function CardCopil({ copil, ziuaTaberei }: { copil: CopilInscris; ziuaTaberei: s
             {copil.marimeTricou ? ` · tricou ${copil.marimeTricou}` : ''}
           </p>
         </div>
-        {/* „În curs de plată" nu e o problemă de rezolvat aici, dar ține un loc,
-            deci trebuie să se vadă că nu e la fel cu unul plătit. */}
-        <Badge variant={copil.stare === 'ACTIVE' ? 'default' : 'secondary'}>
-          {copil.stare === 'ACTIVE' ? 'Înscris' : 'Plata în curs'}
-        </Badge>
+        <div className="flex items-center gap-2">
+          {/* „În curs de plată" nu e o problemă de rezolvat aici, dar ține un loc,
+              deci trebuie să se vadă că nu e la fel cu unul plătit. */}
+          <Badge variant={copil.stare === 'ACTIVE' ? 'default' : 'secondary'}>
+            {copil.stare === 'ACTIVE' ? 'Înscris' : 'Plata în curs'}
+          </Badge>
+          {/* Rezerva când părintele n-are telefonul: codul copilului, de pe
+              ecranul organizatorului. */}
+          <Button asChild size="sm" variant="outline" className="h-11 min-h-11 lg:h-9 lg:min-h-9">
+            <Link to={`${baza === '/club/camps' ? '/club' : '/coach'}/children/${copil.copilId}/qr`}>
+              <QrCode className="size-4" /> Cod QR
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {copil.alergii?.trim() && (

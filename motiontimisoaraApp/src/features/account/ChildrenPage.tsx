@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Pencil, Plus, QrCode, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { childAge, deleteChild, getMyChildren } from '@/api/account'
@@ -62,7 +62,12 @@ export default function ChildrenPage() {
                   {c.emergency_phone && <div>Contact urgență: {c.emergency_phone}</div>}
                 </div>
               )}
-              <div className="mt-4 flex gap-2">
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button asChild size="sm" variant="outline">
+                  <Link to={`/account/child/${c.id}/qr`}>
+                    <QrCode /> Cod QR
+                  </Link>
+                </Button>
                 <Button asChild size="sm" variant="outline">
                   <Link to={`/account/child/${c.id}`}>
                     <Pencil /> Editează

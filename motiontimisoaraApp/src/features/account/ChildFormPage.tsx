@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, QrCode } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { createChild, getChild, updateChild } from '@/api/account'
@@ -158,6 +158,13 @@ export default function ChildFormPage() {
       <p className="text-muted-foreground mt-1 text-xs">
         Câmpurile marcate cu <span className="text-destructive">*</span> sunt obligatorii.
       </p>
+      {isEdit && (
+        <Button asChild variant="outline" className="mt-3 h-11 min-h-11">
+          <Link to={`/account/child/${id}/qr`}>
+            <QrCode className="size-4" /> Codul QR al copilului
+          </Link>
+        </Button>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4" noValidate>
         <div className="grid gap-4 sm:grid-cols-2">

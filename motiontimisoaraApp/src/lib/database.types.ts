@@ -485,6 +485,7 @@ export type Database = {
           name: string
           parent_id: string
           photo_storage_path: string | null
+          qr_token: string
           secondary_contact_name: string | null
           secondary_phone: string | null
           tshirt_size: string | null
@@ -500,6 +501,7 @@ export type Database = {
           name: string
           parent_id: string
           photo_storage_path?: string | null
+          qr_token?: string
           secondary_contact_name?: string | null
           secondary_phone?: string | null
           tshirt_size?: string | null
@@ -515,6 +517,7 @@ export type Database = {
           name?: string
           parent_id?: string
           photo_storage_path?: string | null
+          qr_token?: string
           secondary_contact_name?: string | null
           secondary_phone?: string | null
           tshirt_size?: string | null
@@ -1801,6 +1804,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      regenereaza_codul_copilului: {
+        Args: { p_child_id: string }
+        Returns: string
       }
       safe_uuid: { Args: { t: string }; Returns: string }
       salveaza_banii_taberei: {
