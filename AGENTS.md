@@ -476,14 +476,13 @@ reorganizing this document; correct obsolete facts with current evidence.
 - **Existing UI drift:** `docs/ui-conventions.md` and its test ceilings are the current
   measured record. Regenerate through the command, never lower a reported number by
   editing the generated Markdown or raise a ceiling to conceal a regression.
-- **Date-dependent test failure (2026-09-08):**
-  `src/features/coach/CoachAttendanceCatalog.test.tsx` treats the fixed session date
-  `2026-08-20` as recent without controlling the clock, while `CoachAttendancePage.tsx`
-  compares it with `Date.now()` and a 14-day threshold. The unchanged app suite produced
-  558 passes and this one failure with `npm test -- --maxWorkers=4`. Default worker
-  startup timed out locally before running tests; bounding workers allowed execution.
-  Fix the fixture/clock in a dedicated test change; do not remove the assertion or
-  change the product's attendance threshold to make the suite green.
+- **Attendance test clock stabilized (To-Do #142, 2026-09-08):**
+  `src/features/coach/CoachAttendanceCatalog.test.tsx` freezes only `Date` at
+  `2026-08-21T12:00:00Z` and restores the real clock after every test. Async timers
+  remain real. Boundary cases freeze `2026-09-08T12:00:00Z` and check one millisecond
+  before, exactly at and one millisecond beyond 14 days; the product threshold is
+  unchanged. Default worker startup previously timed out locally; use
+  `npm test -- --maxWorkers=4` for the bounded local suite.
 - **Release state:** a local build, a merged PR and ACTIVE Edge Functions do not establish
   a production release. Verify domain deployment, payment configuration, native flows
   and required human gates live for the delivery being assessed. No unverified old

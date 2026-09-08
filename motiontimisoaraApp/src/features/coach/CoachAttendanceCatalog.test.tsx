@@ -81,9 +81,13 @@ function renderCatalog(roster: RosterEntry[]) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-08-21T12:00:00.000Z') })
 })
 
-// --- Criteriul 650: antetul spune CARE ședință se pontează ---
+afterEach(() => {
+  vi.useRealTimers()
+})
+
 test('antetul catalogului conține cursul, ziua, data și ora ședinței', async () => {
   renderCatalog(trioCopii())
   const antet = await screen.findByRole('heading', { name: /Prezență · Înot începători/ })
@@ -92,13 +96,11 @@ test('antetul catalogului conține cursul, ziua, data și ora ședinței', async
   )
 })
 
-// --- Criteriul 657: contorul de pontare ---
 test('contorul arată câți copii sunt pontați din total', async () => {
   renderCatalog(trioCopii())
   expect(await screen.findByText('2 din 3 pontați')).toBeInTheDocument()
 })
 
-// --- Criteriul 658: acțiunea în masă nu atinge copiii deja pontați ---
 test('Toți prezenți trimite doar copiii nepontați', async () => {
   const user = userEvent.setup()
   renderCatalog(trioCopii())
@@ -114,7 +116,6 @@ test('Toți prezenți e dezactivat când toți copiii sunt deja pontați', async
   expect(await screen.findByRole('button', { name: 'Toți prezenți' })).toBeDisabled()
 })
 
-// --- Criteriul 655: a doua apăsare anulează pontarea ---
 test('reapăsarea butonului activ șterge pontarea, o apăsare nouă o setează', async () => {
   const user = userEvent.setup()
   renderCatalog(trioCopii())
@@ -140,7 +141,6 @@ test('butonul activ e marcat pentru tehnologiile asistive', async () => {
   )
 })
 
-// --- Criteriul 653: eroarea de salvare spune pe cine ---
 test('mesajul de eroare la salvare conține numele copilului', async () => {
   const user = userEvent.setup()
   mockedMark.mockRejectedValueOnce(new Error('boom'))
@@ -152,7 +152,6 @@ test('mesajul de eroare la salvare conține numele copilului', async () => {
   )
 })
 
-// --- Criteriul 652: eroarea de încărcare nu mai arată ca lista goală ---
 test('eroarea la încărcarea copiilor are mesaj propriu și Reîncearcă', async () => {
   mockedSessions.mockResolvedValue(oSedinta())
   mockedRoster.mockRejectedValue(new Error('boom'))
@@ -164,9 +163,6 @@ test('eroarea la încărcarea copiilor are mesaj propriu și Reîncearcă', asyn
   expect(screen.queryByText(/Niciun copil înscris/)).not.toBeInTheDocument()
 })
 
-// Regresie (Bugbot): un refetch eșuat după o salvare nu are voie să arunce lista
-// deja încărcată. Antrenorul ponta pe telefon, semnalul pica o clipă și pierdea
-// toți copiii de pe ecran, în mijlocul pontajului.
 test('un refetch eșuat păstrează copiii deja încărcați, fără să arate eroarea', async () => {
   const user = userEvent.setup()
   mockedSessions.mockResolvedValue(oSedinta())
@@ -183,7 +179,6 @@ test('un refetch eșuat păstrează copiii deja încărcați, fără să arate e
   expect(screen.queryByText(/Nu am putut încărca lista de copii/)).not.toBeInTheDocument()
 })
 
-// --- Criteriul 664: starea goală explică cine face înscrierile ---
 test('lista goală de copii explică rolul părinților și nu oferă niciun buton', async () => {
   renderCatalog([])
   expect(await screen.findByText(/Niciun copil înscris la acest curs încă/)).toBeInTheDocument()
@@ -192,7 +187,6 @@ test('lista goală de copii explică rolul părinților și nu oferă niciun but
   expect(screen.queryByText(/din \d+ pontați/)).not.toBeInTheDocument()
 })
 
-// --- Criteriile 659, 660, 661: conținutul și forma rândului ---
 test('rândul arată vârsta, se oprește la două rânduri și are forma cardurilor site-ului', async () => {
   renderCatalog(trioCopii())
   const nume = await screen.findByText('Ana Dumitrescu')
@@ -204,47 +198,35 @@ test('rândul arată vârsta, se oprește la două rânduri și are forma cardur
   expect(rand.className).toMatch(/shadow-card/)
 })
 
-// --- Criteriul 664: scheletele au înălțimea rândului real, ca lista să nu sară ---
 test('scheletele de încărcare au înălțimea unui rând de copil, pe fiecare viewport', async () => {
   mockedSessions.mockResolvedValue(oSedinta())
-  // Un roster care nu se rezolvă niciodată ține catalogul în starea de încărcare.
   mockedRoster.mockReturnValue(new Promise(() => {}))
   const { container } = renderPage()
 
-  // Întâi ședințele, altfel se prind scheletele coloanei din stânga (h-28).
   await screen.findByText('Înot începători')
   const schelete = await waitFor(() => {
     const found = container.querySelectorAll('[data-slot="skeleton"]')
     expect(found.length).toBeGreaterThanOrEqual(3)
     return found
   })
-  // Măsurat în browser: rândul real are 126 px sub 1024 px (butoanele trec sub
-  // nume) și 70 px peste. `h-20`/`lg:h-16` dădea 80/64 px, deci ecranul sărea cu
-  // 46 px pe telefon când soseau datele.
   schelete.forEach((s) => {
     expect(s.className).toMatch(/(^| )h-32( |$)/)
     expect(s.className).toMatch(/lg:h-\[70px\]/)
   })
 })
 
-// --- Criteriile 656 și 670: ținta de tap până la 1024 px, buton lat pe rând propriu ---
 test('sub 1024 px butoanele stau pe rândul lor și împart lățimea, cu ținta de tap întreagă', async () => {
   renderCatalog(trioCopii())
   const rand = (await screen.findByText('Ana Dumitrescu')).closest('li')!
   const buton = within(rand).getByRole('button', { name: 'Prezent' })
   expect(buton.className).toMatch(/min-h-11/)
-  // `flex-1` face butoanele să împartă lățimea rândului; `min-w-[100px]` pe un
-  // singur rând cu numele lăsa doar 62 px pentru nume la 375 px.
   expect(buton.className).toMatch(/flex-1/)
   expect(buton.className).toMatch(/lg:min-h-9/)
-  // `md:` ar coborî butoanele la 36 px pe tabletă, sub ținta cerută
   expect(buton.className).not.toMatch(/md:min-h-9/)
-  // rândul se stivuiește sub 1024 px și revine pe orizontală de la lg în sus
   expect(rand.className).toMatch(/flex-col/)
   expect(rand.className).toMatch(/lg:flex-row/)
 })
 
-// --- Criteriul 665: pontarea retroactivă e semnalată ---
 test('ședința mai veche de două săptămâni e marcată ca pontare retroactivă', async () => {
   mockedSessions.mockResolvedValue(
     groups({
@@ -263,14 +245,32 @@ test('ședința recentă nu e marcată ca retroactivă', async () => {
   expect(screen.queryByText('Pontare retroactivă')).not.toBeInTheDocument()
 })
 
-// --- Criteriul 666: textul mort a fost scos ---
+test.each([
+  { age: '14 zile minus 1 ms', startsAt: '2026-08-25T12:00:00.001Z', retroactive: false },
+  { age: 'exact 14 zile', startsAt: '2026-08-25T12:00:00.000Z', retroactive: false },
+  { age: '14 zile plus 1 ms', startsAt: '2026-08-25T11:59:59.999Z', retroactive: true },
+])('la $age, pontarea retroactivă este $retroactive', async ({ startsAt, retroactive }) => {
+  vi.setSystemTime(new Date('2026-09-08T12:00:00.000Z'))
+  mockedSessions.mockResolvedValue(
+    groups({
+      past: [
+        session({ id: 'boundary', starts_at: startsAt, ends_at: '2026-08-25T13:00:00.000Z' }),
+      ],
+      pastRecentCount: retroactive ? 0 : 1,
+    }),
+  )
+  mockedRoster.mockResolvedValue(trioCopii())
+  renderPage()
+  await screen.findByText('2 din 3 pontați')
+  expect(screen.queryAllByText('Pontare retroactivă').length > 0).toBe(retroactive)
+})
+
 test('textul de rezervă Selectează o ședință nu mai există', async () => {
   renderCatalog(trioCopii())
   await screen.findByText('2 din 3 pontați')
   expect(screen.queryByText(/Selectează o ședință/)).not.toBeInTheDocument()
 })
 
-// --- Criteriul 668: pe telefon pontarea are ecranul ei ---
 test('apăsarea unei ședințe strânge lista pe telefon și oferă Înapoi la ședințe', async () => {
   const user = userEvent.setup()
   mockedSessions.mockResolvedValue(
@@ -301,7 +301,6 @@ test('apăsarea unei ședințe strânge lista pe telefon și oferă Înapoi la �
   expect(dupa[1]).toHaveAttribute('aria-current', 'true')
 })
 
-// --- Criteriul 669: acordeonul de pe telefon își are propriul antet ---
 test('pe telefon catalogul stă sub ședința aleasă, cu contor și acțiune în masă', async () => {
   const user = userEvent.setup()
   renderCatalog(trioCopii())
