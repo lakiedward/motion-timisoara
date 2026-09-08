@@ -266,3 +266,45 @@ test('SIMULATED changed server quote returns to details and requires fresh accep
   expect(state.submissions[1].priceVersions).toEqual({ 'child-a': 'simulated-version-child-a-new', 'child-b': 'simulated-version-child-b-new' });
   await proof(info, state);
 });
+
+test('SIMULATED background quote refresh preserves cached prices and accepted continuation', async ({ page }, info) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  const state = await simulate(page);
+  await openCheckout(page);
+  await details(page);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
+  await expect(page.getByRole('button', { name: 'Continuă', exact: true })).toBeEnabled();
+
+  let releaseRefresh!: () => void;
+  let observeRefresh!: () => void;
+  const refreshHeld = new Promise<void>((resolve) => { releaseRefresh = resolve; });
+  const refreshStarted = new Promise<void>((resolve) => { observeRefresh = resolve; });
+  await page.route('**/functions/v1/validate-enrollment', async (route) => {
+    observeRefresh();
+    await refreshHeld;
+    await route.fallback();
+  });
+
+  try {
+    await page.clock.setFixedTime(new Date(Date.now() + 31000));
+    await page.evaluate(() => window.dispatchEvent(new Event('offline')));
+    await page.evaluate(() => window.dispatchEvent(new Event('online')));
+    await refreshStarted;
+    await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+    await expect(page.getByText('600,00 lei', { exact: true })).toBeVisible();
+    await expect(page.getByText('800,00 lei', { exact: true })).toBeVisible();
+    await expect(page.getByText('1.400,00 lei', { exact: true })).toBeVisible();
+    await expect(page.getByText('Preț indisponibil', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('checkbox', { name: /Am citit și accept/ })).toBeChecked();
+    await expect(page.getByRole('button', { name: 'Continuă', exact: true })).toBeEnabled();
+    await capture(page, info, 'cached-prices-during-background-refresh');
+  } finally {
+    releaseRefresh();
+  }
+
+  await page.getByRole('button', { name: 'Continuă', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Sumar comandă' })).toBeVisible();
+  await expect(page.getByText('1.400,00 lei', { exact: true }).first()).toBeVisible();
+  expect(state.submissions).toEqual([]);
+  await proof(info, state);
+});

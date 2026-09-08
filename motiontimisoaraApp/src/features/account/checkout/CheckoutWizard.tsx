@@ -96,7 +96,7 @@ export default function CheckoutWizard({
   const priceFor = (childId: string) => kind === 'CAMP'
     ? verdictFor(childId)?.amount
     : unitPrice * (offering.perSession ? packageSize : 1)
-  const pricesReady = validationReady && !validationFetching && selected.every((childId) => {
+  const pricesReady = validationReady && selected.every((childId) => {
     const verdict = verdictFor(childId)
     return verdict?.eligible === true && (kind !== 'CAMP' || (
       Number.isSafeInteger(verdict.amount) && verdict.amount! >= 0 &&
