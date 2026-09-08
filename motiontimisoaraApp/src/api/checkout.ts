@@ -3,6 +3,14 @@ import { supabase } from '@/lib/supabase'
 export type EnrollmentKind = 'COURSE' | 'CAMP' | 'ACTIVITY'
 export type PaymentMethod = 'CARD' | 'CASH'
 
+export async function getCheckoutCamp(id: string | null, slug: string | null) {
+  if (!id && !slug) return null
+  const query = supabase.from('camps').select('*')
+  const { data, error } = await (slug ? query.eq('slug', slug) : query.eq('id', id!)).maybeSingle()
+  if (error) throw error
+  return data
+}
+
 export interface BillingDetails {
   name: string
   email: string
@@ -17,6 +25,9 @@ export interface ChildValidation {
   eligible: boolean
   severity?: 'error' | 'warning'
   reason?: string
+  amount?: number
+  currency?: string
+  priceVersion?: string
 }
 
 export interface ValidationResponse {
@@ -29,31 +40,45 @@ export interface CreateEnrollmentResponse {
   enrollmentId: string
   enrollmentIds: string[]
   requiresPaymentIntent: boolean
+  prices?: { childId: string; amount: number; currency: string }[]
 }
 
-/** Unwraps a functions.invoke result, surfacing the Edge Function's own error text. */
+interface FunctionErrorBody {
+  error?: string
+  code?: string
+}
+
+export class EnrollmentRequestError extends Error {
+  code?: string
+
+  constructor(message: string, code?: string) {
+    super(message)
+    this.name = 'EnrollmentRequestError'
+    this.code = code
+  }
+}
+
 async function invoke<T>(name: string, body: Record<string, unknown>): Promise<T> {
   const { data, error } = await supabase.functions.invoke(name, { body })
   if (error) {
-    // Edge Functions return { error } with a meaningful message; prefer it.
-    const message =
-      (data as { error?: string } | null)?.error ??
-      (await readFunctionError(error)) ??
-      error.message
-    throw new Error(message)
+    const details = (data as FunctionErrorBody | null)?.error
+      ? data as FunctionErrorBody
+      : await readFunctionError(error)
+    throw new EnrollmentRequestError(details?.error ?? error.message, details?.code)
   }
   if ((data as { error?: string } | null)?.error) {
-    throw new Error((data as { error: string }).error)
+    const details = data as FunctionErrorBody
+    throw new EnrollmentRequestError(details.error!, details.code)
   }
   return data as T
 }
 
-async function readFunctionError(error: unknown): Promise<string | null> {
+async function readFunctionError(error: unknown): Promise<FunctionErrorBody | null> {
   const context = (error as { context?: Response }).context
   if (!context || typeof context.json !== 'function') return null
   try {
     const parsed = await context.json()
-    return parsed?.error ?? null
+    return parsed?.error ? parsed : null
   } catch {
     return null
   }
@@ -73,10 +98,10 @@ export async function createEnrollment(input: {
   childIds: string[]
   paymentMethod: PaymentMethod
   sessionPackageSize?: number
+  priceVersions?: Record<string, string>
   billingDetails?: BillingDetails
 }): Promise<CreateEnrollmentResponse> {
   const data = await invoke<CreateEnrollmentResponse>('create-enrollment', input)
-  // Older deployments returned only enrollmentId; always settle every child.
   const enrollmentIds =
     data.enrollmentIds?.length > 0
       ? data.enrollmentIds
@@ -90,6 +115,7 @@ export async function createEnrollment(input: {
     enrollmentId: data.enrollmentId ?? enrollmentIds[0],
     enrollmentIds,
     requiresPaymentIntent: data.requiresPaymentIntent,
+    prices: data.prices,
   }
 }
 
@@ -107,18 +133,6 @@ export function cancelDraftEnrollment(enrollmentIds: string[]): Promise<{ succes
 
 export type EnrollmentReadyOutcome = 'ready' | 'failed' | 'partial' | 'timeout'
 
-/**
- * Subscribes to the stripe-webhook broadcast that flips enrollments to ACTIVE.
- *
- * Call this *before* confirming card payments so events that land during
- * confirmCardPayment are not missed. Await `whenSubscribed`, run confirms,
- * then call `startWaiting()` and await `outcome`.
- *
- * Card confirmation succeeding client-side only means Stripe accepted the
- * charge — the enrollment is still PENDING until the webhook lands. We give it
- * `timeoutMs` (from startWaiting) and then fall through: the payment is real
- * either way, so a timeout is reported as "processing", never as a failure.
- */
 export function listenForEnrollmentReady(
   userId: string,
   enrollmentIds: string[],
@@ -161,7 +175,6 @@ export function listenForEnrollmentReady(
 
     startWaiting = () => {
       if (settled || timer) return
-      // Already received every event while confirms were in flight.
       if (pending.size === 0) {
         settleWhenIdle()
         return
@@ -197,7 +210,6 @@ export function listenForEnrollmentReady(
   return { whenSubscribed, startWaiting, dispose, outcome }
 }
 
-/** @deprecated Prefer listenForEnrollmentReady so subscribe starts before confirms. */
 export function waitForEnrollmentReady(
   userId: string,
   enrollmentIds: string[],

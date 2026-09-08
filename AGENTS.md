@@ -131,6 +131,17 @@ runs Chromium in CI; local defaults include Chromium, Firefox and WebKit. With C
 placeholder credentials, `E2E_PLACEHOLDER_BACKEND` makes backend-dependent checks
 explicitly skip. That is not proof of a live backend or native functionality.
 
+`npm run test:checkout-pricing` uses `playwright.pricing.config.ts` and an isolated
+build/preview on **3022**, with dummy Supabase configuration and Stripe disabled.
+`tests/checkout-pricing.simulation.ts` intercepts every backend call and provides
+explicitly simulated parent/child/payment data. These checks prove the checkout
+contract and responsive rendering, not live enrollment, payment or native behavior.
+The Playwright workflow also runs the enrollment Deno contract tests and isolated
+SQL pricing tests. Locally run `npx --yes deno test --no-lock
+supabase/functions/enrollment-contract.test.ts` and
+`pwsh -NoProfile -File supabase/tests/run-camp-child-pricing.ps1` from the repo root.
+The SQL runner creates and removes its own network-isolated Docker container.
+
 ### Environment and Supabase
 
 Create the app's `.env` from `.env.example` only when one is missing; preserve an
@@ -487,6 +498,13 @@ reorganizing this document; correct obsolete facts with current evidence.
   a production release. Verify domain deployment, payment configuration, native flows
   and required human gates live for the delivery being assessed. No unverified old
   deployment or secret-configuration snapshot should be presented as current.
+- **Feature #315 local checkpoint (2026-09-08):** enrollment endpoints and checkout
+  use server-selected child prices and require confirmation of changed price versions.
+  Migration `00041_camp_child_price_server_only.sql` is prepared locally and has not
+  been applied remotely. Public camp pricing, live integration, approved migration/
+  function deployment and human UI acceptance remain required before closing #315.
+  Update checkout UI Coverage code references for the extracted `checkout/` components
+  when integrating the accepted change; never overwrite human verdicts.
 - **Public-repository hygiene:** `.env` and `.claude/settings.local.json` remain ignored.
   No credentials, cookie jars or large binaries in tracked files. Historical compromised
   audit credentials and removed original photos remain history-cleanup concerns; a
