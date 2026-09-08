@@ -199,6 +199,96 @@ export type Database = {
           },
         ]
       }
+      attendance_accounting: {
+        Row: {
+          child_id: string
+          created_at: string
+          debit_enrollment_id: string | null
+          id: string
+          manual_override: boolean
+          occurrence_id: string
+          qr_processed: boolean
+          updated_at: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          debit_enrollment_id?: string | null
+          id?: string
+          manual_override?: boolean
+          occurrence_id: string
+          qr_processed?: boolean
+          updated_at?: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          debit_enrollment_id?: string | null
+          id?: string
+          manual_override?: boolean
+          occurrence_id?: string
+          qr_processed?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_accounting_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_accounting_debit_enrollment_id_fkey"
+            columns: ["debit_enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_accounting_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "course_occurrences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_operations: {
+        Row: {
+          actor_id: string
+          created_at: string
+          id: string
+          payload_hash: string
+          request_id: string
+          result: Json
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          id?: string
+          payload_hash: string
+          request_id: string
+          result: Json
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          id?: string
+          payload_hash?: string
+          request_id?: string
+          result?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_operations_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -1804,6 +1894,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      record_attendance_transaction: {
+        Args: { p_actor_id: string; p_payload: Json }
+        Returns: Json
       }
       regenereaza_codul_copilului: {
         Args: { p_child_id: string }
