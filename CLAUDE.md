@@ -1,247 +1,495 @@
-# Motion Timisoara - Triathlon Team Platform
+# CLAUDE.md — Motion Timișoara
 
-## Project Overview
-Platform for managing triathlon & multi-sport clubs for kids. Parents enroll children in courses, manage payments, view calendars and announcements. Coaches manage courses, attendance, photos, and announcements. Club owners manage their club, coaches, and revenue. Admins have full control.
+> `AGENTS.md` is a byte-identical mirror of this file. Edit `CLAUDE.md`, then run
+> `Copy-Item -LiteralPath CLAUDE.md -Destination AGENTS.md` from the repository root
+> (or `cp CLAUDE.md AGENTS.md` in Bash). Never edit the mirror independently.
+> The `/proiect-nou` documentation contract was adopted on 2026-09-08 for this existing
+> project. Automatic mirror tests and `check:rules` are not installed yet; section 11
+> records the remaining implementation work. Do not describe those checks as passing.
 
-**Status**: React rebuild in progress on Supabase. Phases 1–4 done (foundation, design system, public site, auth); phases 5–10 (parent/account, coach, club, admin, hardening, native packaging) still open — see `docs/superpowers/plans/2026-06-15-rebuild-plan-index.md` for the live roadmap and `docs/react-rebuild/feature-parity-inventory.md` for what the old app did.
+## 1. Project Overview
 
-**Not deployed.** `www.motiontimisoara.com` currently returns a Railway "Application not found" 404. There is no production web deploy for either the React app or the retired Angular app.
+| Field | Value |
+|---|---|
+| Product | Clubs for children's triathlon and other sports: enrollment, courses, camps, attendance, announcements and payments |
+| Platform | React web app plus Capacitor iOS/Android; native is the primary launch target |
+| Active codebase | `motiontimisoaraApp/`; existing UI Coverage label `motion-react` |
+| Repository | `lakiedward/motion-timisoara` — public; default branch `master` |
+| Domain | `motiontimisoara.com`; verify production deployment live before reporting availability |
+| Supabase | `motion-timisoara`, ref `ehdzafadshbaaghzdzdo` |
+| Stack | React 19, TypeScript, Vite, Tailwind CSS 4, Radix UI, React Router 7, TanStack Query 5, react-hook-form, Zod, Supabase, Stripe, Leaflet, Capacitor 8 |
+| UI language | Romanian |
+| Development preview | `motion-react`, `http://127.0.0.1:3017` |
 
-**Domain**: motiontimisoara.com
+Parents manage children and enrollments; coaches manage their courses and attendance;
+clubs manage their coaches, courses and revenue; admins manage the platform. Check the
+actual route guards and RLS before assuming any role can perform an action.
 
-## Monorepo Structure
-```
+**The product is `motiontimisoaraApp/`.** Build and test this application. The root
+`supabase/`, `tests/`, `docs/` and CI configuration support it. `TriathlonTeamFE/`
+(Angular), `TriathlonTeamMobile/` (Expo) and `TriathlonTeamBE/` (Kotlin/Spring Boot) are
+frozen references. Do not boot them, install their dependencies, add features to them
+or delete them. In particular, the backend preserves original API contracts and logic.
+Legacy entries in `.claude/launch.json` do not authorize running those stacks.
+
+Rebuild planning and parity references live in
+`docs/superpowers/plans/2026-06-15-rebuild-plan-index.md` and
+`docs/react-rebuild/feature-parity-inventory.md`. Check code and current tracker state
+before treating an old phase checklist as current implementation status.
+
+## 2. Team Tracker
+
+- Project slug **`motiontimisoara`**, `project_id` **16** in `tt_projects`, on tracker
+  Supabase **`ntjzghsbrzkvpkniotaj`**. This is separate from the product database.
+  Open the working session with `/proiect motiontimisoara`.
+- **UI Coverage is the site map.** Read `tt_ui_surfaces` and `tt_section_pipeline` for
+  current inventory, purpose and next action. Existing source/plan documents provide
+  context; they do not override the tracker's accepted scope. A `planned` section is
+  not implemented just because it has an inventory row.
+- For a planned section, read its `purpose`, the design sources and neighboring code,
+  agree the missing structure, then build the page skeleton and section locally.
+  Create criteria only after the human has seen the section. Do not overwrite an
+  existing purpose or invent accepted criteria from a plan alone.
+- **Human gates belong to the human.** Never write `manual_verdict`,
+  `verdict_fingerprint`, `spec_approved_at`, `shipped_at` or the delivery profile's
+  `launch_stage`. The human sets these through Team Tracker. Do not bypass the database
+  trigger with role changes, forged claims or overrides. `planning_enabled` also
+  remains a human decision. Leave the result ready and identify the required button.
+- No DDL on `tt_` tables without explicit user authorization. A missing tracker
+  migration is an app-version problem; do not apply it as part of project setup.
+- **Execute locally** in this checkout or an isolated local worktree, in the current
+  session. Do not dispatch implementation or testing to cloud agents. Preserve an
+  existing dirty worktree; never stash, reset or commit unrelated work to make it clean.
+- **Browser verification is required for UI work.** `@Browser`, the IDE browser,
+  `@Chrome` or another available browser are options. Start the local app and verify
+  the affected scenario. Claude Preview tool names are not required dependencies.
+  Record URL, viewport/device, steps, observed result, relevant captures and console
+  errors. If no browser can verify a scenario, keep it explicitly unverified.
+- Use 375×812 for native-target UI; use 1440×900, 768×1024 and 375×812 for web-target
+  surfaces as applicable to their `platforms`. Browser emulation proves responsive
+  rendering; device-only capabilities need the relevant native runtime/device proof.
+- Bugs and non-UI features are handled end to end. UI features receive the human's
+  final acceptance after agent verification. Guided UI work keeps the human's
+  “Aprob criteriile” and “Producție” gates. Technical investigation belongs to the agent;
+  group genuine design/scope questions for the human.
+- **Complete authorized delivery autonomously:** commit only task files, push, open
+  or update the PR, then merge when the required checks, reviews and human gates pass.
+  Do not request another approval for each git step.
+- **Bugbot before code merge.** Follow the Team Tracker plugin reference
+  `skills/references/cursor-bugbot-merge-gate.md`: review the final diff, fix confirmed
+  findings, rerun affected verification and repeat review until clean. Never merge
+  while review is running or after a tooling failure without an explicit human
+  decision. The reference exempts changes with no code diff. Historical waivers do
+  not authorize a new one. A build does not replace browser proof or human acceptance.
+- Default branch is `master`. In Codex use branches such as
+  `codex/fix-bug-<id>-<slug>`, `codex/feat-feature-<id>-<slug>` and
+  `codex/ui-section-<id>-<slug>`. Include the tracker item when one exists; use a
+  descriptive documentation branch for documentation-only work. One branch, one task.
+- Mark a bug `Fixed` or a feature/To-Do `Gata` only after required verification and
+  actual merge, plus any required deployment. At the natural close of work, propose
+  `/pontaj` if the user has not already requested it.
+
+## 3. Commands
+
+Run application commands from `motiontimisoaraApp/`:
+
+| Command | Actual behavior |
+|---|---|
+| `npm ci` | Install locked app dependencies |
+| `npm run dev -- --port 3017 --strictPort --host 127.0.0.1` | Start the working preview; plain `npm run dev` uses Vite's default port |
+| `npm run typecheck` | `tsc -p tsconfig.app.json --noEmit`; checks application TypeScript |
+| `npm run lint` | ESLint; read warnings even when exit code is zero |
+| `npm test` | `vitest run`; currently does **not** run `check:rules` |
+| `npm run test:watch` | Vitest watch mode |
+| `npm run build` | `tsc -b && vite build`, output `dist/` |
+| `npm run preview` | Serve the existing production build |
+| `npm run conventions` | Regenerate `docs/ui-conventions.md` from code |
+| `npm run format` | Prettier for app source; limit changes to the task |
+| `npm run cap:sync` | Build and synchronize native projects |
+| `npm run android` | Build, synchronize Android and open Android Studio |
+| `npm run check:rules` | Required by the house contract, **not implemented yet**; see section 11 |
+
+Before opening a PR, run `npm run typecheck`, `npm run lint`, `npm test` and
+`npm run build`, stopping on a failed command and reporting the real result. Do not
+substitute bare `tsc --noEmit`: the root TypeScript config uses project references and
+can otherwise produce a misleading successful exit without checking the app.
+
+`.github/workflows/app-ci.yml` runs the app's install, typecheck, lint, test and build
+steps. Read its current path filters when deciding whether a change will trigger CI.
+
+### Root Playwright suite
+
+Run `npx playwright test` from the repository root. `playwright.config.ts` defaults to
+**`http://127.0.0.1:3021`**, builds `motiontimisoaraApp/` and starts its preview server.
+Port 3021 is the suite's isolated preview; 3017 is the interactive development preview.
+`BASE_URL` overrides the target. An external target disables the local web server;
+when testing an existing development server, start it first and set `BASE_URL` explicitly.
+
+The suite includes `tests/smoke-tests.spec.ts`, `tests/production-readiness.spec.ts`
+and `tests/helpers/target.ts`. `.github/workflows/playwright.yml` has path filters and
+runs Chromium in CI; local defaults include Chromium, Firefox and WebKit. With CI
+placeholder credentials, `E2E_PLACEHOLDER_BACKEND` makes backend-dependent checks
+explicitly skip. That is not proof of a live backend or native functionality.
+
+### Environment and Supabase
+
+Create the app's `.env` from `.env.example` only when one is missing; preserve an
+existing file. The owner provides credentials through the local environment. For this
+existing project, `get_publishable_keys` can retrieve the intended Supabase publishable
+key when authorized configuration work needs it. Never put credentials in chat,
+tracked files or command output. A new-project scaffold writes only `.env.example`.
+
+| Variable | Purpose |
+|---|---|
+| `VITE_SUPABASE_URL` | Required client API URL |
+| `VITE_SUPABASE_ANON_KEY` | Required publishable/anon client key |
+| `VITE_STRIPE_PUBLISHABLE_KEY` | Optional client payment configuration; absent key yields cash-only fallback |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Edge Function environment, injected by Supabase |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Payment function and webhook configuration |
+| `STRIPE_CONNECT_WEBHOOK_SECRET`, `FRONTEND_URL` | Connect webhook and correct frontend return URL |
+
+The Supabase client configuration is in `src/lib/supabase.ts`; Stripe's client entry
+is `src/lib/stripe.ts`. Components do not read service credentials. Vitest supplies
+test Supabase values through `vite.config.ts` and needs no production `.env`.
+
+From the repository root, use `npx supabase link --project-ref ehdzafadshbaaghzdzdo`,
+`npx supabase migration list` and `npx supabase functions list` when needed.
+`npx supabase start` needs Docker; `npx supabase functions serve` serves local functions.
+For a local stack, configure the app with `VITE_SUPABASE_URL=http://127.0.0.1:54321`.
+Applying a migration or deploying a function changes remote state and must belong to
+the authorized task; committing a file alone does neither.
+
+## 4. Folder Structure
+
+```text
 motion-timisoara/
-├── motiontimisoaraApp/      # ← THE APP. React 19 + Vite + Capacitor (web + iOS + Android)
-├── supabase/                # Backend: migrations, Edge Functions, seed
-│   ├── migrations/          # PostgreSQL schema migrations (00001–00019)
-│   ├── functions/           # Deno Edge Functions
-│   └── seed/                # One-shot data migration from the retired Spring Boot DB
-├── tests/                   # Playwright E2E (root-level, points at a running app)
-├── docs/                    # Live rebuild roadmap + feature parity inventory
-├── TriathlonTeamFE/         # [LEGACY] Angular 20 + SSR — frozen, superseded, not deployed
-├── TriathlonTeamMobile/     # [LEGACY] Expo/React Native — superseded by Capacitor
-├── TriathlonTeamBE/         # [ARCHIVED] Kotlin Spring Boot — retired, kept for reference
-├── _archive-docs/           # Historical docs & scripts from the Spring Boot era
-├── playwright.config.ts     # E2E test config
-├── .github/workflows/       # app-ci.yml (the real gate) + playwright.yml
-├── AGENTS.md                # Cursor Cloud / test-account notes
-└── CLAUDE.md                # This file
+├── motiontimisoaraApp/
+│   ├── src/
+│   │   ├── routes/             # Router, guards and RootLayout
+│   │   ├── layout/             # Public/portal layouts, header, footer and navigation
+│   │   ├── features/           # Screens and feature-specific hooks/components
+│   │   ├── components/ui/      # Canonical UI primitives
+│   │   ├── components/         # Shared product components
+│   │   ├── api/                # Typed Supabase operations
+│   │   ├── lib/                # Shared logic, clients and generated DB types
+│   │   ├── test/               # Vitest setup
+│   │   └── index.css           # Current tokens, themes and shared styles
+│   ├── docs/ui-conventions.md  # Generated, never hand-edited
+│   ├── scripts/               # UI-convention generator
+│   ├── android/               # Capacitor Android project
+│   └── ios/                   # Capacitor iOS project
+├── supabase/                  # Product migrations, functions and historical seed
+├── tests/                     # Root Playwright suite
+├── docs/                      # Design specs, plans and parity references
+├── .github/workflows/         # App CI and Playwright
+├── .claude/launch.json        # Use only motion-react for the active app
+├── TriathlonTeamFE/           # Frozen Angular reference
+├── TriathlonTeamMobile/       # Frozen Expo reference
+├── TriathlonTeamBE/           # Frozen API/business-logic reference
+├── _archive-docs/             # Historical documents
+├── CLAUDE.md                  # Authoritative instructions
+└── AGENTS.md                  # Exact copy of CLAUDE.md
 ```
 
-> **Do NOT delete `TriathlonTeamBE/`** — it is the reference for the original API contracts and business logic.
->
-> `TriathlonTeamFE/` and `TriathlonTeamMobile/` are frozen and referenced by nothing, but stay until the parity phases close: the Angular code is the spec for the screens not rebuilt yet. Do not add features to them.
+Paths beginning with `src/` in this document are relative to `motiontimisoaraApp/`.
+`@/` aliases that directory. Keep the established feature layout; do not create a
+parallel `src/pages/` or `src/app/` tree merely to resemble a fresh template.
 
----
+`src/routes/router.tsx` registers routes; `guards.tsx` enforces authentication and roles.
+Features are grouped into `public`, `auth`, `account`, `coach`, `club`, `admin`, `camps`
+and `billing`. `src/features/billing/StripeOnboardingPanel.tsx` is shared by coach and
+club. Put reusable product components in `components/`, primitives in `components/ui/`,
+data access in `api/`, pure shared logic in `lib/` and feature hooks with their feature.
+Group growing folders by responsibility; the house limit is 20 files per folder.
 
-## The app (`motiontimisoaraApp/`)
+### Architecture and backend rules
 
-**Stack**: React 19 · TypeScript · Vite · Tailwind CSS 4 · Radix UI (shadcn-style) · React Router 7 · TanStack Query 5 · react-hook-form + Zod · @supabase/supabase-js · Stripe.js · Leaflet · Capacitor 8 (iOS + Android) · Vitest + Testing Library
+- Components consume typed `src/api/*.ts` functions through TanStack Query. Do not
+  introduce direct Supabase data access in screen components. `src/lib/query.ts`
+  sets `staleTime: 30_000`, `retry: 1` and disables refetch on window focus.
+- `src/lib/auth-context.tsx` combines the auth session and `profiles` row into
+  `AppUser`; `RequireAuth` and role guards protect routes. PostgreSQL RLS remains the
+  authorization boundary. UI hiding is not authorization.
+- Web sessions use Supabase's localStorage adapter; native uses Capacitor Preferences
+  through `src/lib/supabase.ts`. Do not assume identical OAuth/deep-link behavior.
+- Store money as integer minor units (bani). Use `baniToRon` / `ronToBani` at boundaries.
+  `src/lib/stripe.ts` lazily loads Stripe and returns `null` when unconfigured.
+- `src/lib/database.types.ts` is generated. Regenerate it after schema changes; inspect
+  current migrations and live state rather than relying on a handwritten table list.
+- Migrations are append-only. `supabase/migrations/README.md` maps filenames to remote
+  versions; `00040_child_qr_token.sql` is the latest tracked numbered migration verified
+  on 2026-09-08. Before a new migration run
+  `git ls-files supabase/migrations` and choose the highest numeric prefix plus one.
+  Never infer remote application status or the next number from this snapshot.
+- New tables need RLS, UUID primary keys, `timestamptz` timestamps, appropriate enums
+  and explicit foreign-key deletion behavior. User-scoped SQL uses the caller's identity;
+  privileged actions belong in an explicitly authorized backend path.
+- Edge Functions live in `supabase/functions/<name>/index.ts`; shared CORS, Stripe and
+  Supabase helpers live in `_shared/`. Return JSON with meaningful status codes.
+  Match deployment/authentication configuration to the function's actual caller.
+- Live check on 2026-09-08: **14 Edge Functions are ACTIVE**, including `stripe-connect`,
+  `stripe-connect-webhook`, `record-attendance` and `purge-expired-media`. Recheck the
+  deployed list before diagnosing a failure; ACTIVE does not establish matching source,
+  configured Stripe secrets, browser integration or business-flow correctness.
+- Upload paths exist in `src/api/admin.ts`, `attachments.ts` and `camp-photos.ts`.
+  Bucket policies and migrations define access; do not infer that buckets are empty
+  or all images are placeholders. Verify the relevant current storage path.
 
-One codebase ships three targets: the website, the iOS app, and the Android app. Capacitor wraps the same Vite build (`webDir: dist`, appId `com.motiontimisoara.app`).
+## 5. Design System
 
-### Key paths
-| Path | What lives there |
-|------|------------------|
-| `src/routes/router.tsx` | The whole route table (~63 routes), one file |
-| `src/routes/guards.tsx` | `RequireAuth` and role gates |
-| `src/layout/` | `CoreLayout` (public), `PortalLayout` (signed-in), Header, Footer, FabAccount |
-| `src/features/public/` | Home, program, courses, camps, activities, coaches, clubs, map, about, contact |
-| `src/features/auth/` | Login, register, coach/club signup wizards, OAuth callback, forgot/reset password |
-| `src/features/account/` | Parent portal: children, enrollments, attendance, announcements, checkout |
-| `src/features/coach/` | Coach portal: courses, activities, attendance catalog, locations, own profile, Stripe setup |
-| `src/features/billing/` | `StripeOnboardingPanel` — the Connect setup screen shared by club and coach, and the target of Stripe's four return URLs |
-| `src/features/club/` | Club portal: dashboard, coaches, courses, locations, announcements, Stripe |
-| `src/features/admin/` | Admin: users, courses, clubs, sports, invite codes |
-| `src/api/` | One module per domain — all Supabase access lives here, not in components |
-| `src/lib/` | `supabase.ts`, `query.ts`, `auth-context.tsx`, `stripe.ts`, `platform.ts`, `money.ts`, `utils.ts`, `database.types.ts` |
-| `src/components/ui/` | Radix-based primitives (button, card, input, sheet, dropdown-menu, …) |
-| `src/test/setup.ts` | Vitest setup, wired via `vite.config.ts` |
+Read `motiontimisoaraApp/docs/ui-conventions.md` before a UI spec or implementation.
+It is generated by `scripts/ui-conventions.mjs`; never edit it by hand.
+`src/ui-conventions.test.ts` checks that it matches measured code and that existing
+drift cannot increase. A convention requires a measurable canonical source; a new
+token location or product choice needs a design decision.
 
-`@/` is aliased to `src/` (see `vite.config.ts`).
+**Current source of design values:** `src/index.css` (`:root`, `.dark`, `@theme inline`
+and shared component styles). It contains brand/theme colors, fonts, radii and shared
+effects. Use existing semantic tokens and established Tailwind scales. No literal
+color or arbitrary size in a new component; propose a missing token before using it.
+Do not create a second palette or silently redefine existing semantic roles.
 
-### Architecture
-- **Data access**: components never call Supabase directly. Each `src/api/*.ts` module exposes typed functions; screens consume them through TanStack Query. `queryClient` defaults: `staleTime` 30s, `retry` 1, no refetch on focus.
-- **Auth**: `src/lib/auth-context.tsx` holds the session and the `profiles` row as `AppUser`. Route protection is `RequireAuth` + role gates in `src/routes/guards.tsx`.
-- **Session storage**: web uses supabase-js localStorage; native persists into Capacitor Preferences (`src/lib/supabase.ts` swaps the storage adapter via `isNative()`).
-- **Money**: all amounts are stored in the DB as minor units (bani). Convert only at the edges with `baniToRon` / `ronToBani` from `src/lib/money.ts`.
-- **Stripe**: `src/lib/stripe.ts` lazily loads Stripe and resolves to `null` when no publishable key is set, so checkout degrades to cash-only instead of crashing.
-- **Types**: `src/lib/database.types.ts` is the generated Supabase schema. Regenerate it after any migration.
+The house template's target is `src/styles/tokens.css` plus `docs/design-system.md`
+covering colors, spacing, type, radii, shadows, contrast and allowed variants. These
+files are not implemented here yet. Until a dedicated code migration, use the current
+source above; this documentation change does not rename tokens or adopt a new palette.
 
-### Run locally
-```bash
-cd motiontimisoaraApp
-npm ci
-cp .env.example .env      # then fill in the values
-npm run dev               # http://127.0.0.1:5173 (preview config uses 3017)
-npm run typecheck         # tsc --noEmit
-npm run lint              # eslint
-npm test                  # vitest run
-npm run build             # tsc -b && vite build
-npm run cap:sync          # build + sync into the native projects
-npm run android           # build + sync + open Android Studio
-```
+| Existing canonical source | Use |
+|---|---|
+| `src/components/ui/button.tsx` | `Button`: default, destructive, outline, secondary, ghost, link; sizes default, sm, lg, icon |
+| `src/components/ui/input.tsx`, `label.tsx` | Inputs and labels |
+| `src/components/ui/card.tsx` | Card primitives |
+| `src/components/ui/sheet.tsx`, `dropdown-menu.tsx` | Radix-based overlays and menus |
+| `src/components/ui/sonner.tsx` | Shared toast renderer; actions use Sonner |
+| `src/components/ui/skeleton.tsx` | Loading skeleton; no local copies of `animate-pulse` |
+| `src/components/SectionHeader.tsx` | Existing section heading; not the template's `Section` wrapper |
+| `src/index.css` `.btn-cta` variants | Established public-site call-to-action styling |
 
-`.claude/launch.json` starts the app as **`motion-react`** on port **3017** — that is the port the E2E suite expects.
+Search and reuse the catalog before creating UI. Extend a canonical component with a
+justified variant; do not fork a second button, input or dialog. The template's full
+`Select`, `Section`, `Dialog`, `Toast`, `EmptyState` and `Spinner` catalog has not been
+adopted as such; existing Radix/Sonner integration must be preserved during adoption.
 
-### CI
-`.github/workflows/app-ci.yml` runs on any push touching `motiontimisoaraApp/**`: `npm ci`, `typecheck`, `lint`, `test`, `build`. This is the gate that matters — keep it green.
+Use the existing `background/foreground`, `card`, `primary`, `secondary`, `accent`,
+`destructive`, `muted` and `border` roles with their foreground pairs. Body font is
+Inter Variable; display font is Manrope Variable. Keep `lucide-react` as the current
+icon source, with `currentColor` and established sizes; do not use emoji as UI icons.
+Text contrast must pass WCAG AA; the convention suite checks token pairs at 4.5:1.
+Preserve both themes and keyboard-visible focus.
 
-### Code style
-Prettier (see `.prettierrc.json`), ESLint flat config with `react-hooks` and `react-refresh`. Tailwind utility classes composed with `cn()` from `src/lib/utils.ts`.
+Use the house text scale `xs` through `3xl` for new shared variants; carry over an
+existing screen's accepted design rather than silently resizing it. Popups should
+use the established portal/stacking pattern and `z-50`, avoiding clipping by overflow
+containers. Every data list needs distinct loading, error/retry and empty states.
 
-### UI conventions
-**`motiontimisoaraApp/docs/ui-conventions.md` — read it before writing criteria for a new UI section, or before building a screen.** What's in it is inherited, not re-decided; what isn't in it is genuinely new and worth a question.
+Common failures to check: hardcoded design values, duplicate primitive styling,
+unapproved type sizes, emoji icons, clipped overlays, competing primary actions,
+missing empty/error feedback and a removed focus indicator.
 
-It is **generated** (`npm run conventions`), never hand-edited: a convention only exists there if `scripts/ui-conventions.mjs` can measure it from the code, so every line carries a pointer to the file that *is* the convention plus today's count. Anything that needs a *choice* rather than a measurement — where a token should live, what value it takes — is deliberately not a convention; it goes on the Focus board instead.
+## 6. Code Rules (STRICT)
 
-`src/ui-conventions.test.ts` holds the ceilings: what is clean stays at zero, what is drifting cannot grow, and the generated file must match what the code measures. Repair lowers a ceiling; nothing raises one.
+These are the adopted working rules. **They are not all enforced by CI yet.** Existing
+ESLint, TypeScript and UI-convention tests cover part of the contract; `check:rules`,
+`jscpd` and the docs-mirror test remain pending. Never claim a check exists because it
+is written here, or treat legacy violations as permission to add more.
 
----
+### Organization, naming and limits
 
-## Backend (Supabase)
+- Put files in the folders described in section 4; group by feature before a folder
+  exceeds **20 files**. Do not accumulate unrelated helpers in a root directory.
+- One main responsibility per file. Extract focused components, helpers and types.
+- **600 lines per source file is the ceiling**, not the target. Split authored code
+  before it reaches that limit. Generated artifacts need generator-aware verification;
+  do not hand-edit `database.types.ts` to satisfy a line-count check.
+- New screen/product components use PascalCase, hooks `useX`, shared modules consistent
+  domain names and public routes Romanian kebab-case. Preserve existing primitive
+  filenames and exported contracts when extending them. Do not rename generated DB
+  types; new handwritten DB-specific wrappers should make that role explicit (`Db…`).
+- Before adding a helper or component, search `components/`, `api/`, `lib/` and the
+  relevant feature. Reuse or extract shared logic; do not copy a block into another file.
 
-**Stack**: hosted PostgreSQL with RLS · Supabase Auth · Storage · Realtime · Deno Edge Functions · Stripe
+### Remove unused code
 
-Project ref: **`ehdzafadshbaaghzdzdo`** (see `supabase/config.toml`).
+Delete superseded active-product components, imports, variables, props, functions,
+exports, types, styles, routes, assets and stale configuration in the change that
+replaces them. Confirm unused status by searching imports, route registrations and
+string references first. No `.bak`, `-copy`, `-old`, `-v2` duplicates or commented-out
+implementations. Frozen reference trees and the historical migration ledger are
+intentional retained sources, not cleanup candidates.
 
-### Auth
-- Email/password and Google OAuth via Supabase Auth.
-- User profiles live in `profiles`, kept in sync from `auth.users` by a trigger.
-- Roles: `PARENT`, `COACH`, `CLUB`, `ADMIN` (in `profiles.role`).
-- No custom JWT, no CSRF tokens, no cookie auth — supabase-js manages bearer tokens.
+### No comments in authored code
 
-### Data access
-Clients query PostgREST directly (`supabase.from('table')`); RLS enforces authorization in the database. Anything RLS cannot express becomes an Edge Function.
+Do not add inline/block comments, JSDoc, TODOs or commented-out code to authored
+`.ts`, `.tsx`, `.js`, `.mjs`, `.astro` or `.css` files. Express behavior through naming
+and structure; record the reason in section 7's sources. Remove comments from changed
+authored code as part of the relevant refactor. Compiler reference directives and
+shebangs are tooling syntax, as recognized by the template checker.
 
-### Migrations
-`supabase/migrations/00001` … `00019`. See `supabase/migrations/README.md` for the mapping between file numbers and the `version` values recorded on the remote — `00015`–`00019` were applied to the remote first and backfilled into git on 2026-08-20.
+### Review every change
 
-**Next migration number = highest existing + 1.** Check before writing one:
-```bash
-git ls-files supabase/migrations | tail -1
-```
-Never trust a number written down anywhere else, including in this file.
+Check organization and naming, comments, file/folder limits, duplication, unused code,
+token usage, canonical primitives, section identity and mirror equality. Keep task
+scope focused; record pre-existing adoption gaps instead of disguising them as green
+checks. For browser-visible behavior, run the browser gate in section 2.
 
-Rules: always add RLS policies for new tables; `uuid` primary keys via `gen_random_uuid()`; `timestamptz` for all timestamps; PostgreSQL enums for enumerations; explicit `ON DELETE` on foreign keys.
+## 7. Where the "why" lives
 
-### Edge Functions
-13 functions are tracked in `supabase/functions/`; **10 are deployed**. Deployment status is not visible from the source tree, so check it rather than assuming.
+1. **Commit messages:** conventional `feat:`, `fix:`, `ui:`, `docs:` or `chore:` subjects;
+   the body explains the concrete problem, chosen behavior and meaningful tradeoffs.
+2. **Design specs and plans:** use `docs/superpowers/specs/` and
+   `docs/superpowers/plans/` for non-trivial work, before implementation. A spec does not
+   replace the human seeing and approving UI criteria.
+3. **Section 10, Decisions:** append dated decisions that outlive one change, including
+   tokens, component variants, dependencies and persistent operating conventions.
 
-| Function | Deployed | Description |
-|----------|:--------:|-------------|
-| `register-coach` | ✅ | Coach registration with invitation code |
-| `register-club` | ✅ | Club registration |
-| `create-managed-coach` | ✅ | Club creates a coach account it manages |
-| `contact-form` | ✅ | Public contact form submission |
-| `validate-enrollment` | ✅ | Pre-checkout eligibility check |
-| `create-enrollment` | ✅ | Enrollment creation (courses, camps, activities) |
-| `cancel-draft-enrollment` | ✅ | Rolls back PENDING drafts when checkout fails or is abandoned |
-| `create-payment-intent` | ✅ | Stripe PaymentIntent for an enrollment |
-| `stripe-webhook` | ✅ | Stripe payment webhooks |
-| `mark-cash-paid` | ✅ | Marks an enrollment paid by cash — **no client calls it yet** |
-| `stripe-connect` | ❌ | Connect account status / onboarding / dashboard links. **Called from live routes** (`src/api/stripe-connect.ts`), so club and coach Stripe onboarding stay broken until this is deployed and `FRONTEND_URL` is set. Returns 503 with `code: stripe_not_configured` when `STRIPE_SECRET_KEY` is missing, which the app renders as a setup-pending state. |
-| `stripe-connect-webhook` | ❌ | Stripe Connect webhooks |
-| `record-attendance` | ❌ | Holds the **only** implementation of session-package deduction. The app writes attendance straight to the table and skips that accounting. Do not delete — deploy it or port the logic into a trigger. |
+Document the final behavior for someone who has not read the chat. Keep passwords,
+keys, cookies and other credentials out of all three records.
 
-Conventions: one function per directory (`supabase/functions/<name>/index.ts`); shared helpers in `_shared/` (`cors.ts`, `stripe.ts`, `supabase.ts`); service-role client for admin work, the caller's JWT for user-scoped work; JSON responses with real status codes; CORS via `_shared/cors.ts`.
+## 8. Section ↔ code
 
-### Main tables
-profiles, children, courses, course_occurrences, activities, camps, clubs, enrollments, attendance, payments, monthly_payments, invoices, coach_profiles, coach_invitation_codes, club_invitation_codes, locations, user_recent_locations, sports, course_photos, course_announcements, course_announcement_attachments, club_announcements, course_ratings, coach_ratings, user_announcement_views, audit_log, coach_sports, club_sports, club_coaches
+Copy the **exact stable key from the existing tracker row**. Keep codebase label
+`motion-react`; do not rename existing identities to the new-template label `app`.
+For new surfaces use the audit contract's `stableSurfaceKey` through
+`proiect-nou/scripts/sitemap-to-surfaces.mjs`, with the same codebase label as the
+registry. Never reconstruct keys from memory or rewrite existing rows to match a
+different example's key shape.
 
-### Enums
-enrollment_kind (COURSE/CAMP/ACTIVITY), enrollment_status, payment_status, payment_method, payment_recipient_type (COACH/CLUB), attendance_status, role (ADMIN/CLUB/COACH/PARENT), location_type, announcement_attachment_type, invoice_status, invoice_type, issuer_type
+The house target is one component per UI Coverage section, rendered through a shared
+`Section` carrying `data-section="<exact stable key>"`. That wrapper and systematic
+DOM annotation are pending here; `SectionHeader` alone is not that implementation.
+Until adoption, retain verified `code_refs` and existing surface identities. Shared
+header, footer and navigation are canonical units on their layout hub, not duplicate
+surfaces on every route. A page skeleton labels its remaining `planned` sections.
 
-### Storage
-Buckets are defined in `00004_storage_buckets.sql` and `00016_sport_default_photo.sql`. **All buckets are currently empty and the app has no upload path** — every course/coach/club image falls back to a placeholder. `src/api/public.ts` only ever calls `getPublicUrl`.
+### Existing tracker conventions
 
-### Local development
-```bash
-npx supabase link --project-ref ehdzafadshbaaghzdzdo
-npx supabase start              # local stack (needs Docker)
-npx supabase functions serve    # http://localhost:54321/functions/v1/<name>
-npx supabase migration list     # compare git against the remote
-```
-Point the app at the local stack by setting `VITE_SUPABASE_URL=http://127.0.0.1:54321` in `motiontimisoaraApp/.env`.
+- Page-wide criteria belong to the page's **section** surface, for example the existing
+  `motion-react:page:<route>:section:toata-pagina`, not its `kind='page'` aggregate.
+  Page aggregates intentionally have zero criteria. Read child sections for coverage.
+- Criterion text starts with `DE PASTRAT —`, `DE REPARAT —` or
+  `STARE NEVERIFICATĂ ÎN SESIUNE —` and ends with `Verificare: …`. Criterion `kind` is
+  `visual`, `functional`, `state` or `a11y`. Keep deliberately unexercised states explicit.
+- `audit-contract.mjs fingerprint` hashes bytes. With `core.autocrlf=true`, a freshly
+  authored LF file and a checked-out CRLF file can produce different fingerprints for
+  the same commit. Compute the recorded inventory fingerprint after checking out the
+  merged branch, in the state the next audit will inspect. Human verdict fingerprints
+  remain human-gated; never write them to hide a stale verdict.
 
----
+## 9. Communication
 
-## Legacy trees
+Use Romanian in chat and UI strings, English for new code identifiers and technical
+documentation, and conventional commit subjects. Preserve established public/API names.
+PR titles should identify the concrete task and tracker item when one exists. Report
+what changed, why, verification and any material unfinished work.
 
-Frozen. Nothing in the active product imports them and no workflow builds them. They stay only as reference until the parity phases close.
+Group design/scope questions with a recommended option and its reason; resolve routine
+technical choices locally. Ask only for missing authorization or a real product
+decision. Honor authorization already given, including the agreed delivery steps.
 
-| Tree | Was | Superseded by |
-|------|-----|---------------|
-| `TriathlonTeamFE/` | Angular 20 + SSR web app | `motiontimisoaraApp/` |
-| `TriathlonTeamMobile/` | Expo / React Native app | Capacitor inside `motiontimisoaraApp/` |
-| `TriathlonTeamBE/` | Kotlin Spring Boot API + PostgreSQL | Supabase (RLS + Edge Functions) |
+### Browser and test-account operating notes
 
-`TriathlonTeamFE/public/ui-backup/` used to hold 226 MB of unoptimized original club photos — 79% of everything tracked here — alongside a 26 MB set of resized `.jpg` twins in `public/ui/`. Both were removed from HEAD on 2026-08-20, dropping tracked content from 286 MB to 33 MB; the `.webp` set stays. **Clone size has not moved**: the blobs are still reachable in history, and only a `git filter-repo` pass plus a force-push will reclaim them. That rewrite is still owed, and should be done once — together with scrubbing the credentials described below.
+The configured audit identities are below. Verify their current state when a scenario
+needs them; never guess or reuse credentials from real staff or parents.
 
-`supabase/seed/migrate-data.ts` was the one-shot import from the Spring Boot database. Its job is finished; it is kept next to `TriathlonTeamBE/` for the same reason that tree is kept.
+| Role | Email | Expected destination |
+|---|---|---|
+| PARENT | `uiaudit.parent@motiontimisoara.test` | `/account` |
+| COACH | `uiaudit.coach@motiontimisoara.test` | `/coach` |
+| CLUB | `uiaudit.club@motiontimisoara.test` | `/club` |
+| ADMIN | `uiaudit.admin@motiontimisoara.test` | `/admin` |
 
----
+Recorded fixtures: parent has `Copil Audit`, coach has a `coach_profiles` row and club
+owns `Club Audit Motion`. These accounts are for read-mostly UI checks: no destructive
+admin actions, payments or messages. Creating real test records requires task consent.
 
-## E2E tests (root level)
+Passwords are not stored in the repo. A shared password was committed on 2026-08-17
+and removed on 2026-08-20; treat it as compromised. Ask the owner for current credentials
+or use an explicitly authorized password reset in Supabase. Never recover a historical
+password from git or paste a password into a tracked file, commit or chat response.
 
-Playwright, in `tests/`:
-- `smoke-tests.spec.ts` — homepage, assets, JS errors, performance
-- `production-readiness.spec.ts` — user flows, security headers, responsive design, error handling
-- `helpers/target.ts` — shared "am I running against the local preview" check
+- **Toasts:** `RootLayout.tsx` mounts the shared Toaster once. Sonner renders nothing
+  when no toast is active, so an absent `[data-sonner-toaster]` is normal. Observe
+  `[data-sonner-toast]` while it lives, for example with a `MutationObserver` recording
+  text, then read the log. A one-shot late DOM query does not prove feedback is missing.
+- **Coach signup fixtures:** `register-coach` validates invitation codes server-side.
+  Rejection paths require authorized rows in `coach_invitation_codes` with a real
+  `created_by_admin_id`. Expired `expires_at` and exhausted `current_uses/max_uses`
+  reject before user creation. Successful signup writes `used_by_user_id`, an FK to
+  `profiles`: for consented cleanup, delete the test code or clear that reference before
+  deleting the created auth user. Stripe Express creation is caught; missing Stripe
+  configuration can leave `stripe_account_id` null without failing signup.
+- **Leaflet CSS:** unlayered `leaflet.css` beats Tailwind's layered utilities. Put
+  overrides in the existing unlayered `src/features/public/map-popup.css` or
+  `src/components/location-picker.css`. Arbitrary utility variants alone do not win.
+- **Leaflet drag tests:** dispatch `mousemove` on `.leaflet-container`, not `document`.
+  Leaflet reads the last target's `className`; `document` causes a harness error.
+  jsdom cannot lay out a map: mock `react-leaflet` at the module boundary, as in
+  `src/features/club/ClubLocationFormPage.test.tsx`, and prove real map behavior in-browser.
+- **Forced network errors:** `supabase-js` resolves fetch at call time. Patching
+  `window.fetch` after load can reject a chosen auth/PostgREST request. Scope the match
+  narrowly, apply it again after a full reload and restore it afterwards. SPA navigation
+  keeps the patch; reload or use a fresh tab before a final clean-console check so the
+  injected failure is not reported as a new app defect. Keep an API rejection unit test
+  as complementary coverage, not a substitute for reaching the browser error state.
+- **Form subscriptions:** prefer `useWatch({ control, name })` over `watch()` to avoid
+  the React Compiler's `react-hooks/incompatible-library` warning. Read lint output:
+  warnings may not change its exit code.
+- **Route existence:** anonymous access to a registered protected route redirects to
+  `/login`; a role mismatch may redirect to `/`. Compare against a deliberately bogus
+  path rendering `404 — Pagina nu a fost găsită`. Route registration can be verified
+  without logging in; protected functionality still needs authorized role-specific proof.
+- **Function deployment:** an undeployed function can fail CORS preflight in-browser.
+  Read the actual deployed list before concluding that a CORS header is broken.
+- **Debugging:** for auth inspect the session/profile/role; for empty/403 responses
+  inspect RLS and caller identity; for functions/Stripe inspect logs and configuration;
+  for native behavior inspect `isNative()` and the platform adapter. For CI inspect the
+  actual failing job rather than assuming the former production-domain failure persists.
 
-Base URL comes from `BASE_URL`, defaulting to `https://www.motiontimisoara.com` — which is currently a 404, so **runs without `BASE_URL` fail by design**. Point it at a running app:
+## 10. Decisions
 
-```bash
-npx playwright test          # uses BASE_URL, or production by default
-```
+Append-only: `- YYYY-MM-DD — decision — reason`. Preserve operating knowledge when
+reorganizing this document; correct obsolete facts with current evidence.
 
-`.github/workflows/playwright.yml` runs on every push to master with no `BASE_URL` and no `paths:` filter, so it is currently red on every push, including documentation-only ones.
+- 2026-09-08 — Adopt the 11-section `/proiect-nou` documentation contract and an exact
+  `AGENTS.md` mirror — all agents should receive the same project rules and learned notes.
+- 2026-09-08 — Retain `motiontimisoaraApp/`, `motion-react`, `master`, current token names,
+  Radix/Sonner/Lucide and feature folders during documentation adoption — this existing
+  product must keep its code contracts, visual precedent and tracker identities.
+- 2026-09-08 — Record missing template infrastructure explicitly in section 11 — a
+  Markdown update cannot install a rule suite, migrate tokens or annotate rendered UI.
 
----
+## 11. Known Issues / WIP
 
-## Environment variables
-
-### `motiontimisoaraApp/.env` (see `.env.example`)
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `VITE_SUPABASE_URL` | Yes | Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Yes | Supabase anon/publishable key |
-| `VITE_STRIPE_PUBLISHABLE_KEY` | No | Without it, checkout degrades to cash-only |
-
-Vitest injects its own `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` (see `vite.config.ts`), so tests need no `.env`.
-
-### Supabase project secrets (Edge Functions)
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Yes | Injected by the platform |
-| `STRIPE_SECRET_KEY` | For payments | |
-| `STRIPE_WEBHOOK_SECRET` | For payments | Webhook signature verification |
-| `STRIPE_CONNECT_WEBHOOK_SECRET` | For Connect | |
-| `FRONTEND_URL` | For Connect | Base for the Stripe return URLs. Unset today; the code default is the local dev origin, which is wrong for anything but local work. |
-
----
-
-## Common tasks
-
-**Add a page**: create the component under `src/features/<area>/` → add the route in `src/routes/router.tsx` → put the data access in a `src/api/*.ts` module and consume it with TanStack Query → add navigation.
-
-**Add a table**: `git ls-files supabase/migrations | tail -1` to get the next number → write `supabase/migrations/000NN_<desc>.sql` with RLS policies → apply → regenerate `src/lib/database.types.ts`.
-
-**Add a column**: new migration with `ALTER TABLE` → update RLS if needed → regenerate types → update forms and views.
-
-**Add an Edge Function**: create `supabase/functions/<name>/index.ts` using `_shared/` → `npx supabase functions deploy <name>` → call it from a `src/api/*.ts` module. Deploying is a separate act from committing; the table above tracks which functions are actually live.
-
-**Change the schema**: never edit an applied migration. Migrations are an append-only ledger.
-
----
-
-## Debugging quick reference
-
-- **Auth errors**: check `supabase.auth.getSession()`, then that the `profiles` row exists for that user id.
-- **Empty results or 403**: almost always RLS. Check the policies on the table, that `auth.uid()` is who you expect, and the caller's `profiles.role`.
-- **Edge Function errors**: Supabase Dashboard → Edge Functions → Logs, or `npx supabase functions serve` locally. If a function seems to do nothing, check it is deployed at all.
-- **Native-only bugs**: `isNative()` / `platform()` from `src/lib/platform.ts`. Session storage differs between web and native.
-- **Stripe**: check Edge Function logs, webhook signatures, and that the secrets are set on the project.
-- **Schema drift**: `npx supabase migration list` compares git against the remote.
-- **CI red**: `app-ci.yml` is the real signal. `playwright.yml` is red for an unrelated reason (it targets a 404 domain).
+- **Template enforcement pending:** install/adapt `scripts/check-rules.mjs`, duplication
+  tooling, `tests/check-rules.test.ts` and a byte-comparison mirror test, then integrate
+  them with `npm test`/CI. Account for root documentation versus the app's package root.
+  Measure existing violations before claiming compliance; do not hide them behind skips
+  or looser ceilings. The installed skill owns its template scripts; fix reusable script
+  defects upstream and document any monorepo integration work.
+- **Design-system adoption pending:** dedicated `src/styles/tokens.css`, a documented
+  scale/catalog in `docs/design-system.md`, missing catalog primitives and a canonical
+  touch-target token. Preserve existing tokens/themes and measured conventions until
+  the associated implementation and UI verification are complete.
+- **Section DOM mapping pending:** shared `Section`, exact `data-section` keys and
+  verified coverage mapping for existing sections. Do not report this as implemented
+  or alter existing tracker identities merely because the rule is now documented.
+- **Existing UI drift:** `docs/ui-conventions.md` and its test ceilings are the current
+  measured record. Regenerate through the command, never lower a reported number by
+  editing the generated Markdown or raise a ceiling to conceal a regression.
+- **Date-dependent test failure (2026-09-08):**
+  `src/features/coach/CoachAttendanceCatalog.test.tsx` treats the fixed session date
+  `2026-08-20` as recent without controlling the clock, while `CoachAttendancePage.tsx`
+  compares it with `Date.now()` and a 14-day threshold. The unchanged app suite produced
+  558 passes and this one failure with `npm test -- --maxWorkers=4`. Default worker
+  startup timed out locally before running tests; bounding workers allowed execution.
+  Fix the fixture/clock in a dedicated test change; do not remove the assertion or
+  change the product's attendance threshold to make the suite green.
+- **Release state:** a local build, a merged PR and ACTIVE Edge Functions do not establish
+  a production release. Verify domain deployment, payment configuration, native flows
+  and required human gates live for the delivery being assessed. No unverified old
+  deployment or secret-configuration snapshot should be presented as current.
+- **Public-repository hygiene:** `.env` and `.claude/settings.local.json` remain ignored.
+  No credentials, cookie jars or large binaries in tracked files. Historical compromised
+  audit credentials and removed original photos remain history-cleanup concerns; a
+  destructive history rewrite needs separate explicit authorization. Keep the retired
+  source trees and `supabase/seed/migrate-data.ts` as intentional historical references.
