@@ -188,6 +188,25 @@ test('waits for the popup binding before opening a deep-linked location', async 
   expect(map.getPopup.mock.calls.length).toBeGreaterThanOrEqual(2)
 })
 
+test('retries a failed query without waiting for or restarting a slow sibling query', async () => {
+  let finishCourses!: (courses: Awaited<ReturnType<typeof getCourses>>) => void
+  vi.mocked(getCourses).mockReturnValue(
+    new Promise((resolve) => {
+      finishCourses = resolve
+    }),
+  )
+  vi.mocked(getLocations).mockRejectedValueOnce(new Error('Locations unavailable'))
+  renderMap()
+  const retry = await screen.findByRole('button', { name: 'Reîncearcă' })
+  expect(retry).toBeEnabled()
+  await userEvent.click(retry)
+  await waitFor(() => expect(getLocations).toHaveBeenCalledTimes(2))
+  expect(getCourses).toHaveBeenCalledTimes(1)
+  expect(screen.getByText('Se încarcă locațiile și ofertele…')).toBeInTheDocument()
+  await act(async () => finishCourses([]))
+  expect(await screen.findByText('Bazin Test')).toBeInTheDocument()
+})
+
 test('Escape closes an open popup from its content and restores marker focus', async () => {
   const markerElement = document.createElement('button')
   const focus = vi.spyOn(markerElement, 'focus')

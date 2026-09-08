@@ -6,12 +6,17 @@
   box-shadow: var(--shadow-card);
 }
 .mt-popup .leaflet-popup-content {
+  display: flex;
+  flex-direction: column;
   margin: 0;
   width: 264px !important;
   max-width: calc(100vw - 4rem);
   max-height: min(24rem, calc(70vh - 6rem));
-  overflow-y: auto;
+  overflow: hidden;
   line-height: 1.4;
+}
+.mt-popup-offers {
+  scrollbar-gutter: stable;
 }
 .mt-popup .leaflet-popup-content a {
   color: var(--foreground);

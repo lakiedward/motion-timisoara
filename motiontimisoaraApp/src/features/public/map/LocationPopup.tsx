@@ -60,7 +60,7 @@ export default function LocationPopup({
 }) {
   return (
     <>
-      <div className="bg-primary px-3.5 py-3">
+      <div className="bg-primary shrink-0 px-3.5 py-3">
         <div className="flex items-start gap-2.5 pr-11">
           <span className="bg-primary-foreground/20 text-primary-foreground mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg">
             <MapPin className="size-4" />
@@ -81,7 +81,7 @@ export default function LocationPopup({
           </div>
         </div>
       </div>
-      <div className="space-y-3 p-3">
+      <div className="mt-popup-offers min-h-0 space-y-3 overflow-y-auto p-3">
         {courses.length > 0 && (
           <div>
             <SectionLabel label="Cursuri" count={courses.length} />

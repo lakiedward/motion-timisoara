@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import 'leaflet/dist/leaflet.css'
@@ -11,6 +11,7 @@ import LocationMap from './map/LocationMap'
 
 export default function MapPage() {
   const [params] = useSearchParams()
+  const [isRetrying, setIsRetrying] = useState(false)
   const locationsQuery = useQuery({ queryKey: ['locations'], queryFn: getLocations })
   const coursesQuery = useQuery({ queryKey: ['courses'], queryFn: () => getCourses() })
   const activitiesQuery = useQuery({ queryKey: ['activities'], queryFn: getActivities })
@@ -24,13 +25,17 @@ export default function MapPage() {
   }, [locationsQuery.data, coursesQuery.data])
   const isError = locationsQuery.isError || coursesQuery.isError || activitiesQuery.isError
   const isLoading = locationsQuery.isPending || coursesQuery.isPending || activitiesQuery.isPending
-  const isFetching =
-    locationsQuery.isFetching || coursesQuery.isFetching || activitiesQuery.isFetching
-
-  function retry() {
-    void locationsQuery.refetch()
-    void coursesQuery.refetch()
-    void activitiesQuery.refetch()
+  async function retry() {
+    setIsRetrying(true)
+    try {
+      await Promise.all(
+        [locationsQuery, coursesQuery, activitiesQuery]
+          .filter((query) => query.isError)
+          .map((query) => query.refetch()),
+      )
+    } finally {
+      setIsRetrying(false)
+    }
   }
 
   return (
@@ -53,8 +58,8 @@ export default function MapPage() {
             <p className="text-foreground font-medium">
               Nu am putut încărca locațiile și ofertele lor.
             </p>
-            <Button className="mt-4 min-h-11" onClick={retry} disabled={isFetching}>
-              {isFetching ? 'Se reîncearcă…' : 'Reîncearcă'}
+            <Button className="mt-4 min-h-11" onClick={retry} disabled={isRetrying}>
+              {isRetrying ? 'Se reîncearcă…' : 'Reîncearcă'}
             </Button>
           </div>
         ) : isLoading ? (
