@@ -111,10 +111,19 @@ export class AttendanceQueue {
       message: 'În așteptarea confirmării',
     })
     await this.change((entries) => {
-      if (entries.some((row) => row.occurrenceId === occurrenceId && row.token === token))
+      if (
+        entries.some(
+          (row) =>
+            row.state === 'pending' && row.occurrenceId === occurrenceId && row.token === token,
+        )
+      )
         return entries
       const retained = [
-        ...entries.filter((row) => row.state !== 'confirmed'),
+        ...entries.filter(
+          (row) =>
+            row.state !== 'confirmed' &&
+            !(row.state === 'rejected' && row.occurrenceId === occurrenceId && row.token === token),
+        ),
         ...entries.filter((row) => row.state === 'confirmed').slice(-19),
       ]
       if (retained.length >= 1000)

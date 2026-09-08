@@ -73,6 +73,25 @@ describe('persistent attendance queue', () => {
     expect(restored.queue.getSnapshot().entries[0].message).toBe('Nu este înscris')
   })
 
+  it('replaces a rejected scan only on explicit rescan and submits a new request', async () => {
+    const f = fixture()
+    f.send.mockRejectedValueOnce(new AttendanceError('Nu este înscris', false, 'NOT_ENROLLED'))
+    await f.queue.enqueue(occurrenceId, 'Înot', token)
+    f.queue.activate()
+    await vi.waitFor(() => expect(f.queue.getSnapshot().entries[0].state).toBe('rejected'))
+    await idle(f.queue)
+    const rejectedId = f.send.mock.calls[0][0].requestId
+    await Promise.all([
+      f.queue.enqueue(occurrenceId, 'Înot', token),
+      f.queue.enqueue(occurrenceId, 'Înot', token),
+    ])
+    await vi.waitFor(() => expect(f.send).toHaveBeenCalledTimes(2))
+    await idle(f.queue)
+    expect(f.send.mock.calls[1][0].requestId).not.toBe(rejectedId)
+    expect(f.queue.getSnapshot().entries).toHaveLength(1)
+    expect(f.queue.getSnapshot().entries[0].state).toBe('confirmed')
+  })
+
   it('stops at an account change and preserves the remaining account-scoped work', async () => {
     const f = fixture()
     let resolve!: (value: typeof result) => void
