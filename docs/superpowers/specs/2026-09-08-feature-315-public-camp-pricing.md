@@ -1,5 +1,7 @@
 # Feature #315: public camp age pricing
 
+This records the PR #68 implementation and pre-rollout observations. The subsequent owner-approved migration, function deployments and live integration evidence are recorded in [the live verification report](2026-09-08-feature-315-live-verification.md).
+
 Continue the merged enrollment checkpoint (PR #67) with the public camp presentation. Preserve the existing price card, navigation, organizer/gallery content and availability rules.
 
 For single-price camps, retain the fixed price and itemized cost explanation. For age pricing, display every inclusive age interval and its amount without presenting `camps.price` as the payable total. Existing item names/descriptions still explain what is included, but their fixed cost breakdown cannot represent every age tariff and must not be advertised as the final price. List cards indicate age-based pricing instead of an obsolete single amount.
