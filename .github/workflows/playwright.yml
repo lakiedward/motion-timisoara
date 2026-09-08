@@ -10,7 +10,12 @@ on:
     paths:
       - 'motiontimisoaraApp/**'
       - 'tests/**'
+      - 'supabase/functions/**'
+      - 'supabase/tests/**'
+      - 'supabase/migrations/00037_camp_age_pricing.sql'
+      - 'supabase/migrations/00041_camp_child_price_server_only.sql'
       - 'playwright.config.ts'
+      - 'playwright.pricing.config.ts'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/playwright.yml'
@@ -19,7 +24,12 @@ on:
     paths:
       - 'motiontimisoaraApp/**'
       - 'tests/**'
+      - 'supabase/functions/**'
+      - 'supabase/tests/**'
+      - 'supabase/migrations/00037_camp_age_pricing.sql'
+      - 'supabase/migrations/00041_camp_child_price_server_only.sql'
       - 'playwright.config.ts'
+      - 'playwright.pricing.config.ts'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/playwright.yml'
@@ -55,9 +65,23 @@ jobs:
         VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'placeholder' }}
         VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder' }}
         E2E_PLACEHOLDER_BACKEND: ${{ secrets.VITE_SUPABASE_URL && '0' || '1' }}
+    - name: Run isolated checkout pricing simulations
+      run: npm run test:checkout-pricing
+    - uses: denoland/setup-deno@v2
+      with:
+        deno-version: v2.9.6
+    - name: Check enrollment functions
+      run: deno check --no-lock supabase/functions/validate-enrollment/index.ts supabase/functions/create-enrollment/index.ts
+    - name: Test enrollment pricing contract
+      run: deno test --no-lock supabase/functions/enrollment-contract.test.ts
+    - name: Test isolated camp pricing SQL
+      shell: pwsh
+      run: ./supabase/tests/run-camp-child-pricing.ps1
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
         name: playwright-report
-        path: playwright-report/
+        path: |
+          playwright-report/
+          test-results/checkout-pricing/
         retention-days: 30
