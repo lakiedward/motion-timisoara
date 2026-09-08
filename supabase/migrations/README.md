@@ -25,6 +25,7 @@ on the remote (verified by md5).
 | `00038_camp_age_pricing_trigger_fix.sql` | `20260902132543` | `camp_age_pricing_trigger_fix` |
 | `00039_camp_location.sql` | `20260902134657` | `camp_location` |
 | `00040_child_qr_token.sql` | `20260902141147` | `child_qr_token` |
+| `00041_camp_child_price_server_only.sql` | `20260908143741` | `camp_child_price_server_only` |
 
 `00017` and `00018` are both kept on purpose: `00018` replaced `00017` in production
 62 seconds after it was applied, and the ledger records what actually ran.

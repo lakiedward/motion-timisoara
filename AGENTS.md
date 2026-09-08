@@ -228,7 +228,7 @@ Group growing folders by responsibility; the house limit is 20 files per folder.
 - `src/lib/database.types.ts` is generated. Regenerate it after schema changes; inspect
   current migrations and live state rather than relying on a handwritten table list.
 - Migrations are append-only. `supabase/migrations/README.md` maps filenames to remote
-  versions; `00040_child_qr_token.sql` is the latest tracked numbered migration verified
+  versions; `00041_camp_child_price_server_only.sql` is the latest tracked numbered migration verified
   on 2026-09-08. Before a new migration run
   `git ls-files supabase/migrations` and choose the highest numeric prefix plus one.
   Never infer remote application status or the next number from this snapshot.
@@ -498,15 +498,20 @@ reorganizing this document; correct obsolete facts with current evidence.
   a production release. Verify domain deployment, payment configuration, native flows
   and required human gates live for the delivery being assessed. No unverified old
   deployment or secret-configuration snapshot should be presented as current.
-- **Feature #315 local checkpoint (2026-09-08):** enrollment endpoints and checkout
-  use server-selected child prices and require confirmation of changed price versions.
-  Migration `00041_camp_child_price_server_only.sql` is prepared locally and has not
-  been applied remotely. Public age-category pricing and parent highlights are implemented
-  locally; live inspection found three single-price camps and no age categories.
-  Live integration with authorized fixtures, approved migration/
-  function deployment and human UI acceptance remain required before closing #315.
-  Update checkout UI Coverage code references for the extracted `checkout/` components
-  when integrating the accepted change; never overwrite human verdicts.
+- **Feature #315 live integration (2026-09-08):** after owner approval, migration
+  `00041_camp_child_price_server_only.sql` was applied as remote version `20260908143741`.
+  `validate-enrollment` and `create-enrollment` are deployed at version 3 with JWT
+  verification enabled and source matched to merged PRs #67/#68. Browser verification
+  used the local merged frontend and live Supabase: parent login, public age tariffs
+  at three viewports, out-of-range rejection and cash enrollment at 600/800 RON.
+  Thirteen live API checks covered client RPC denial, ownership, changed quotes,
+  single pricing and preserved processed/gateway-associated payment amounts.
+  All temporary fixtures and local session/password files were removed; no actual
+  charge or refund occurred. Existing camps remain in single-price mode. UI Coverage
+  code references were updated after PR #68 without changing human verdicts.
+  See `docs/superpowers/specs/2026-09-08-feature-315-live-verification.md` for evidence.
+  Human UI acceptance, approved frontend release and relevant native verification
+  remain separate completion gates; this does not establish a production release.
 - **Public-repository hygiene:** `.env` and `.claude/settings.local.json` remain ignored.
   No credentials, cookie jars or large binaries in tracked files. Historical compromised
   audit credentials and removed original photos remain history-cleanup concerns; a
