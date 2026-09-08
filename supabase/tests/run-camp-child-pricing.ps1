@@ -9,7 +9,7 @@ if ($functionStart -lt 0) {
 $runId = [Guid]::NewGuid().ToString('N')
 $containerName = "motion-camp-pricing-$runId"
 $functionFile = Join-Path ([IO.Path]::GetTempPath()) "motion-camp-pricing-$runId.sql"
-$image = 'public.ecr.aws/supabase/postgres:17.6.1.063'
+$image = 'supabase/postgres:17.6.1.063@sha256:178f0976b54a39237096bfa310c1a352dbc82fb1b08dda45cdb8acb5d40c1426'
 
 function Invoke-TestDocker {
     param([string[]] $DockerArguments)

@@ -1,7 +1,7 @@
 import { test, expect, type Page, type TestInfo } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 
-type Scenario = 'by-age' | 'single' | 'old-backend' | 'missing-quote' | 'unmatched' | 'changed' | 'offering-error' | 'children-error';
+type Scenario = 'by-age' | 'single' | 'old-backend' | 'missing-quote' | 'unmatched' | 'changed' | 'offering-error' | 'children-error' | 'empty-children' | 'shared-category';
 type Quote = { childId: string; name: string; eligible: boolean; severity?: string; reason?: string; amount?: number; currency?: string; priceVersion?: string };
 
 const backendOrigin = 'http://127.0.0.1:54329';
@@ -14,13 +14,21 @@ const profile = {
   role: 'PARENT', phone: '0000000000', avatar_url: null,
 };
 
-async function simulate(page: Page, scenario: Scenario = 'by-age') {
+async function simulate(page: Page, scenario: Scenario = 'by-age', role: 'PARENT' | 'COACH' | null = 'PARENT') {
+  await page.clock.setFixedTime(new Date('2026-09-08T12:00:00Z'));
+  const activeProfile = { ...profile, role };
+  const fixtureChildren = scenario === 'empty-children' ? [] : children.map((child, index) => ({
+    ...child,
+    birth_date: index === 1 && scenario === 'unmatched' ? '2010-09-01'
+      : index === 1 && scenario === 'shared-category' ? '2018-09-01' : child.birth_date,
+  }));
   const errors: string[] = [];
   const expectedHttpErrors: string[] = [];
   const externalRequests: string[] = [];
   const unexpectedApi: string[] = [];
   const submissions: Record<string, unknown>[] = [];
   const mockedExternalScripts: string[] = [];
+  const apiRequests: string[] = [];
   let recovered = false;
   let changed = false;
   let created = false;
@@ -36,6 +44,7 @@ async function simulate(page: Page, scenario: Scenario = 'by-age') {
     else errors.push(`${message.text()} ${message.location().url}`);
   });
   await page.addInitScript(({ fakeProfile, origin }) => {
+    if (fakeProfile.role === null) return;
     const tokenPart = (value: unknown) => btoa(JSON.stringify(value)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
     const expiry = Math.floor(Date.now() / 1000) + 86400;
     const session = {
@@ -44,7 +53,7 @@ async function simulate(page: Page, scenario: Scenario = 'by-age') {
       user: { id: fakeProfile.id, email: fakeProfile.email, aud: 'authenticated', role: 'authenticated', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' },
     };
     localStorage.setItem(`sb-${new URL(origin).hostname.split('.')[0]}-auth-token`, JSON.stringify(session));
-  }, { fakeProfile: profile, origin: backendOrigin });
+  }, { fakeProfile: activeProfile, origin: backendOrigin });
   const appOrigin = new URL(test.info().project.use.baseURL as string).origin;
   await page.routeWebSocket((url) => url.origin.replace(/^ws/, 'http') !== appOrigin, (socket) => socket.close());
   await page.route('**/*', async (route) => {
@@ -67,21 +76,29 @@ async function simulate(page: Page, scenario: Scenario = 'by-age') {
     });
     if (request.method() === 'OPTIONS') return respond(null);
     const path = url.pathname;
-    if (path === '/rest/v1/rpc/my_profile') return respond([profile]);
-    if (path === '/auth/v1/user') return respond({ ...profile, aud: 'authenticated', user_metadata: {} });
+    apiRequests.push(path);
+    if (path === '/rest/v1/rpc/my_profile') return respond([activeProfile]);
+    if (path === '/auth/v1/user') return respond({ ...activeProfile, aud: 'authenticated', user_metadata: {} });
     if (path === '/rest/v1/children') return scenario === 'children-error' && !recovered
-      ? respond({ message: 'Simulated children failure' }, 503) : respond(children);
+      ? respond({ message: 'Simulated children failure' }, 503) : respond(fixtureChildren);
     if (path === '/rest/v1/camps') {
       if (scenario === 'offering-error' && !recovered && url.searchParams.get('select') === '*') return respond({ message: 'Simulated offering failure' }, 503);
       const camp = {
         id: 'camp-simulation', slug: 'test-315', title: 'Tabără simulată #315', description: 'Date fictive pentru verificarea locală a înscrierii.',
-        price: 99000, pricing_mode: scenario === 'single' ? 'single' : 'by_age', currency: 'RON',
-        period_start: '2099-10-01', period_end: '2099-10-07', capacity: 20, allow_cash: true,
+        price: scenario === 'single' ? 50000 : 99000, pricing_mode: scenario === 'single' ? 'single' : 'by_age', currency: 'RON',
+        period_start: '2026-10-01', period_end: '2026-10-07', capacity: 20, allow_cash: true,
         hero_photo_storage_path: null, location_text: 'Locație simulată', club: null, coach: null,
       };
       return respond(request.headers().accept?.includes('vnd.pgrst.object') ? camp : [camp]);
     }
-    if (['/rest/v1/camp_price_items', '/rest/v1/camp_coaches', '/rest/v1/camp_photos'].includes(path)) return respond([]);
+    if (path === '/rest/v1/camp_age_prices') return respond([
+      { id: 'age-six-nine', camp_id: 'camp-simulation', age_from: 6, age_to: 9, amount: 60000, display_order: 0 },
+      { id: 'age-ten-twelve', camp_id: 'camp-simulation', age_from: 10, age_to: 12, amount: 80000, display_order: 1 },
+    ]);
+    if (path === '/rest/v1/camp_price_items') return respond([
+      { id: 'included-service', name: 'Cazare și masă', description: 'Servicii simulate comune', amount: scenario === 'single' ? 50000 : 99000, display_order: 0 },
+    ]);
+    if (['/rest/v1/camp_coaches', '/rest/v1/camp_photos'].includes(path)) return respond([]);
     if (path === '/rest/v1/rpc/camp_spots_remaining') return respond(20);
     if (path === '/rest/v1/enrollments') return respond(created ? quote().map((item, index) => ({
       id: `simulated-enrollment-${index}`, kind: 'CAMP', status: 'PENDING', child: children[index],
@@ -106,7 +123,7 @@ async function simulate(page: Page, scenario: Scenario = 'by-age') {
     unexpectedApi.push(`${request.method()} ${path}`);
     return respond({ error: 'Unexpected simulated API request' }, 500);
   });
-  return { errors, expectedHttpErrors, externalRequests, unexpectedApi, submissions, mockedExternalScripts, recover: () => { recovered = true; } };
+  return { errors, expectedHttpErrors, externalRequests, unexpectedApi, submissions, mockedExternalScripts, apiRequests, recover: () => { recovered = true; } };
 }
 
 async function openCheckout(page: Page) {
@@ -286,7 +303,7 @@ test('SIMULATED background quote refresh preserves cached prices and accepted co
   });
 
   try {
-    await page.clock.setFixedTime(new Date(Date.now() + 31000));
+    await page.clock.setFixedTime(new Date(await page.evaluate(() => Date.now() + 31000)));
     await page.evaluate(() => window.dispatchEvent(new Event('offline')));
     await page.evaluate(() => window.dispatchEvent(new Event('online')));
     await refreshStarted;
@@ -306,5 +323,117 @@ test('SIMULATED background quote refresh preserves cached prices and accepted co
   await expect(page.getByRole('heading', { name: 'Sumar comandă' })).toBeVisible();
   await expect(page.getByText('1.400,00 lei', { exact: true }).first()).toBeVisible();
   expect(state.submissions).toEqual([]);
+  await proof(info, state);
+});
+
+for (const viewport of [{ width: 1440, height: 900 }, { width: 768, height: 1024 }, { width: 375, height: 812 }]) {
+  test(`SIMULATED public camp age prices and parent highlights ${viewport.width}x${viewport.height}`, async ({ page }, info) => {
+    await page.setViewportSize(viewport);
+    const state = await simulate(page);
+    await page.goto('/tabere/test-315');
+    const tariffs = page.getByRole('list', { name: 'Tarife pe vârste' });
+    await expect(tariffs).toBeVisible();
+    const younger = tariffs.getByRole('listitem').filter({ hasText: '6–9 ani' });
+    const older = tariffs.getByRole('listitem').filter({ hasText: '10–12 ani' });
+    await expect(younger).toContainText('600,00 lei');
+    await expect(younger).toContainText('Pentru Copil Simulat Ana');
+    await expect(older).toContainText('800,00 lei');
+    await expect(older).toContainText('Pentru Copil Simulat Bogdan');
+    await expect(tariffs.getByText('Categoria potrivită', { exact: true })).toHaveCount(2);
+    await expect(page.getByText('990,00 lei', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Serviciile taberei sunt descrise mai jos.')).toBeVisible();
+    await expect(page.getByText(/vârsta împlinită la începutul taberei, 01\.10\.2026/)).toBeVisible();
+    await capture(page, info, 'public-age-prices-parent-highlight');
+    expect(state.submissions).toEqual([]);
+    await proof(info, state);
+  });
+}
+
+test('SIMULATED public camp highlights remain readable in the dark theme', async ({ page }, info) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  const state = await simulate(page);
+  await page.goto('/tabere/test-315');
+  await page.evaluate(() => document.documentElement.classList.add('dark'));
+  await expect(page.getByText('Pentru Copil Simulat Ana')).toBeVisible();
+  await expect(page.getByText('Pentru Copil Simulat Bogdan')).toBeVisible();
+  await capture(page, info, 'public-age-prices-dark-theme');
+  await proof(info, state);
+});
+
+test('SIMULATED public single-price camp keeps its price and requests no children', async ({ page }, info) => {
+  const state = await simulate(page, 'single');
+  await page.goto('/tabere/test-315');
+  await expect(page.getByText('Plătești o singură dată 500,00 lei. Mai jos scrie pe ce se duc banii.')).toBeVisible();
+  await expect(page.getByText('500,00 lei', { exact: true })).toHaveCount(2);
+  await expect(page.getByRole('list', { name: 'Tarife pe vârste' })).toHaveCount(0);
+  await capture(page, info, 'public-single-price');
+  expect(state.apiRequests).not.toContain('/rest/v1/children');
+  expect(state.apiRequests).not.toContain('/rest/v1/camp_age_prices');
+  await proof(info, state);
+});
+
+test('SIMULATED public unmatched child keeps available tariffs and explains the missing category', async ({ page }, info) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  const state = await simulate(page, 'unmatched');
+  await page.goto('/tabere/test-315');
+  await expect(page.getByText('Copil Simulat Bogdan: nicio categorie disponibilă pentru 16 ani la începutul taberei.')).toBeVisible();
+  await expect(page.getByText('Pentru Copil Simulat Ana')).toBeVisible();
+  await expect(page.getByText('800,00 lei', { exact: true })).toBeVisible();
+  await capture(page, info, 'public-unmatched-child');
+  await proof(info, state);
+});
+
+test('SIMULATED public child-read failure preserves tariffs and retries only personalization', async ({ page }, info) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  const state = await simulate(page, 'children-error');
+  await page.goto('/tabere/test-315');
+  await expect(page.getByRole('alert')).toContainText('Nu am putut verifica categoriile copiilor tăi');
+  await expect(page.getByText('600,00 lei', { exact: true })).toBeVisible();
+  await expect(page.getByText('800,00 lei', { exact: true })).toBeVisible();
+  await capture(page, info, 'public-personalization-error');
+  const priceReads = state.apiRequests.filter((path) => path === '/rest/v1/camp_age_prices').length;
+  state.recover();
+  await page.getByRole('button', { name: 'Reîncearcă', exact: true }).click();
+  await expect(page.getByText('Pentru Copil Simulat Ana')).toBeVisible();
+  expect(state.apiRequests.filter((path) => path === '/rest/v1/camp_age_prices')).toHaveLength(priceReads);
+  await proof(info, state);
+});
+
+for (const role of [null, 'COACH'] as const) {
+  test(`SIMULATED public ${role ?? 'anonymous'} prices do not fetch private children`, async ({ page }, info) => {
+    const state = await simulate(page, 'by-age', role);
+    await page.goto('/tabere/test-315');
+    await expect(page.getByRole('list', { name: 'Tarife pe vârste' })).toBeVisible();
+    await expect(page.getByText('600,00 lei', { exact: true })).toBeVisible();
+    await expect(page.getByText('Categoria potrivită')).toHaveCount(0);
+    await capture(page, info, `public-${role ?? 'anonymous'}-tariffs`);
+    expect(state.apiRequests).not.toContain('/rest/v1/children');
+    await proof(info, state);
+  });
+}
+
+test('SIMULATED public shared category names both children without duplicating its tariff', async ({ page }, info) => {
+  const state = await simulate(page, 'shared-category');
+  await page.goto('/tabere/test-315');
+  await expect(page.getByText('Pentru Copil Simulat Ana, Copil Simulat Bogdan')).toBeVisible();
+  await expect(page.getByText('Categoria potrivită')).toHaveCount(1);
+  await expect(page.getByText('600,00 lei', { exact: true })).toHaveCount(1);
+  await proof(info, state);
+});
+
+test('SIMULATED public parent without children sees an explicit empty state', async ({ page }, info) => {
+  const state = await simulate(page, 'empty-children');
+  await page.goto('/tabere/test-315');
+  await expect(page.getByText('Nu ai copii înregistrați. Îi poți adăuga la înscriere.')).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Tarife pe vârste' })).toBeVisible();
+  await proof(info, state);
+});
+
+test('SIMULATED public camp listing does not advertise the old single price for age pricing', async ({ page }, info) => {
+  const state = await simulate(page);
+  await page.goto('/tabere');
+  await expect(page.getByText('Preț pe categorii de vârstă', { exact: true })).toBeVisible();
+  await expect(page.getByText('990,00 lei', { exact: true })).toHaveCount(0);
+  expect(state.apiRequests).not.toContain('/rest/v1/children');
   await proof(info, state);
 });

@@ -501,7 +501,9 @@ reorganizing this document; correct obsolete facts with current evidence.
 - **Feature #315 local checkpoint (2026-09-08):** enrollment endpoints and checkout
   use server-selected child prices and require confirmation of changed price versions.
   Migration `00041_camp_child_price_server_only.sql` is prepared locally and has not
-  been applied remotely. Public camp pricing, live integration, approved migration/
+  been applied remotely. Public age-category pricing and parent highlights are implemented
+  locally; live inspection found three single-price camps and no age categories.
+  Live integration with authorized fixtures, approved migration/
   function deployment and human UI acceptance remain required before closing #315.
   Update checkout UI Coverage code references for the extracted `checkout/` components
   when integrating the accepted change; never overwrite human verdicts.
