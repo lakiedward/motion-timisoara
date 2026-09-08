@@ -22,6 +22,7 @@ const TABARA: TabaraDinLista = {
   period_end: '2026-09-18',
   location_text: 'Timișoara',
   price: 90000,
+  pricingMode: 'single',
   allow_cash: false,
   heroUrl: 'https://public/hero.jpg',
   organizator: { fel: 'club', nume: 'Club Test', link: '/cluburi/c1' },
@@ -42,10 +43,6 @@ function deseneaza() {
 beforeEach(() => {
   mocked.mockReset()
 })
-
-// Criteriul care nu se poate forta din browser: supabase-js isi leaga fetch-ul
-// la construirea clientului, deci reteaua nu se poate taia din runtime fara sa
-// modific tocmai codul verificat. Aici se poate.
 test('o listă care nu se încarcă spune asta, nu „nicio tabără"', async () => {
   mocked.mockRejectedValue(new Error('retea picata'))
   deseneaza()
@@ -64,9 +61,6 @@ test('din eroare se poate reîncerca, iar a doua oară lista apare', async () =>
   await waitFor(() => expect(screen.getByText('Tabără de înot')).toBeInTheDocument())
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 })
-
-// Starea goala trebuie sa ramana DISTINCTA de cea de eroare: „nicio tabara" e o
-// afirmatie despre lume, nu o scuza pentru o retea picata.
 test('fără nicio tabără viitoare, mesajul e altul decât cel de eroare', async () => {
   mocked.mockResolvedValue([])
   deseneaza()
@@ -82,9 +76,6 @@ test('cardul arată locurile rămase, organizatorul și poza', async () => {
   expect(screen.getByText('Club Test')).toBeInTheDocument()
   expect(document.querySelector('img[src="https://public/hero.jpg"]')).toBeInTheDocument()
 })
-
-// Cash-ul se vedea abia la checkout, unde parintele afla ca nu poate plati cum
-// voia. Se scrie doar cand e adevarat — o tabara doar cu cardul nu spune nimic.
 test('plata cash se anunță doar când e permisă', async () => {
   mocked.mockResolvedValue([TABARA])
   const { unmount } = deseneaza()
@@ -103,8 +94,6 @@ test('o tabără plină o spune, și nu mai arată locuri rămase', async () => 
   await waitFor(() => expect(screen.getByText('Locuri epuizate')).toBeInTheDocument())
   expect(screen.queryByText(/locuri rămase/)).not.toBeInTheDocument()
 })
-
-// Fara limita de locuri nu inseamna zero: tabara nu e plina, doar nelimitata.
 test('o tabără fără limită nu arată nici locuri, nici „epuizate”', async () => {
   mocked.mockResolvedValue([{ ...TABARA, locuriRamase: null }])
   deseneaza()
@@ -112,10 +101,6 @@ test('o tabără fără limită nu arată nici locuri, nici „epuizate”', asy
   expect(screen.queryByText(/locuri rămase/)).not.toBeInTheDocument()
   expect(screen.queryByText('Locuri epuizate')).not.toBeInTheDocument()
 })
-
-// Local, incarcarea tine sub 50ms si TanStack tine raspunsul in cache, deci
-// starea asta nu se poate prinde din browser. Aici se poate: promisiunea nu se
-// rezolva niciodata, deci randarea ramane pe loc.
 test('cât se încarcă, în locul cardurilor stau forme de așteptare', async () => {
   mocked.mockReturnValue(new Promise(() => {}))
   deseneaza()
@@ -124,4 +109,11 @@ test('cât se încarcă, în locul cardurilor stau forme de așteptare', async (
   })
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   expect(screen.queryByText(/Nicio tabără programată/)).not.toBeInTheDocument()
+})
+
+test('age-price cards do not advertise the obsolete single amount', async () => {
+  mocked.mockResolvedValue([{ ...TABARA, pricingMode: 'by_age' }])
+  deseneaza()
+  expect(await screen.findByText('Preț pe categorii de vârstă')).toBeInTheDocument()
+  expect(screen.queryByText('900,00 lei')).not.toBeInTheDocument()
 })

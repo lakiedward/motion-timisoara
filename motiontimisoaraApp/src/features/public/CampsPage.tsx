@@ -22,9 +22,6 @@ export default function CampsPage() {
       <section className="from-primary/8 to-background border-b bg-gradient-to-b">
         <div className="mx-auto max-w-7xl px-6 py-14">
           <span className="eyebrow mb-3">Vacanțe active</span>
-          {/* Eticheta de mai sus e adevărată abia de când lista arată doar
-              taberele netrecute: până acum promitea „active" deasupra uneia
-              încheiate cu o săptămână în urmă. */}
           <h1 className="font-display text-foreground text-4xl font-extrabold lg:text-5xl">Tabere</h1>
           <p className="text-muted-foreground mt-2">Tabere sportive pentru copii.</p>
         </div>
@@ -32,8 +29,6 @@ export default function CampsPage() {
 
       <div className="mx-auto max-w-7xl px-6 py-10">
         {isError ? (
-          // Distinct de starea goală: „nicio tabără programată" e o afirmație
-          // despre lume, nu o scuză pentru o rețea picată.
           <div className="rounded-3xl border border-dashed py-20 text-center" role="alert">
             <p className="text-foreground font-medium">Nu am putut încărca taberele.</p>
             <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => void refetch()}>
@@ -95,9 +90,6 @@ function CardTabara({ tabara }: { tabara: TabaraDinLista }) {
               <MapPin className="size-4 shrink-0" /> {tabara.location_text}
             </div>
           )}
-          {/* Locurile rămase se vedeau abia pe pagina de detaliu, deși
-              capacitatea e impusă la înscriere: părintele afla că e plină după
-              ce intra degeaba. */}
           {!plina && tabara.locuriRamase !== null && (
             <div className="flex items-center gap-1.5">
               <Users className="size-4 shrink-0" />
@@ -117,9 +109,7 @@ function CardTabara({ tabara }: { tabara: TabaraDinLista }) {
           </p>
         )}
 
-        {/* `mt-auto` ține prețul pe aceeași linie la toate cardurile, oricât de
-            diferite sunt textele de deasupra. */}
-        <div className="font-display mt-auto pt-4 text-lg font-bold">{formatRon(tabara.price)}</div>
+        <div className="font-display mt-auto pt-4 text-lg font-bold">{tabara.pricingMode === 'by_age' ? 'Preț pe categorii de vârstă' : formatRon(tabara.price)}</div>
       </div>
     </Link>
   )

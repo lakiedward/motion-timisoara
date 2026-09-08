@@ -24,7 +24,6 @@ vi.mock('@/lib/auth-context', () => ({ useAuth: () => ({ user: utilizator }) }))
 
 const mocked = vi.mocked(getTabaraDetaliu)
 
-/** Peste un an de la rulare: viitor mereu, fără să depindă de ceasul mașinii. */
 function pesteUnAn(): string {
   const d = new Date()
   d.setFullYear(d.getFullYear() + 1)
@@ -43,13 +42,10 @@ const TABARA_IMPLICITA = {
   period_end: pesteUnAn(),
   location_text: 'Timișoara',
 }
-
-// `...peste` vine ÎNAINTE de `tabara`, altfel o suprascriere parțială a taberei
-// ar înlocui obiectul compus cu bucata primită, iar restul câmpurilor ar dispărea
-// pe tăcute — testele ar trece descriind o pagină fără titlu și fără preț.
 const detaliu = (peste: Record<string, unknown> = {}) => ({
   organizator: { fel: 'club', nume: 'Club Audit Motion', link: '/cluburi/club-1' },
   categorii: [],
+  agePrices: [],
   antrenori: [],
   heroUrl: null,
   galerieUrls: [],
@@ -74,8 +70,6 @@ beforeEach(() => {
   utilizator = { id: 'parinte-1' }
   mocked.mockResolvedValue(detaliu() as never)
 })
-
-// Criteriul 4 (#638): butonul era un ciot, desi backendul de inscriere e intreg.
 test('„Înscrie-te" duce la checkout cu tabăra aleasă', async () => {
   const user = userEvent.setup()
   renderPage()
@@ -92,21 +86,15 @@ test('un vizitator nelogat e dus la autentificare și se întoarce pe tabără',
     '/login?returnUrl=%2Ftabere%2Ftabara-inot',
   )
 })
-
-// Criteriul 5: azi un parinte putea ajunge pana la plata pentru ceva terminat.
 test('o tabără încheiată nu mai oferă înscriere și spune de ce', async () => {
   mocked.mockResolvedValue(detaliu({ tabara: { period_end: '2020-08-21' } }) as never)
   renderPage()
   expect(await screen.findByText('Încheiată')).toBeInTheDocument()
   expect(screen.getByText(/înscrierile sunt închise/)).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Înscrie-te' })).not.toBeInTheDocument()
-  // Restul paginii rămâne întreagă: dacă fixture-ul și-ar înghiți câmpurile la o
-  // suprascriere parțială, testul de mai sus ar trece pe o pagină aproape goală.
   expect(screen.getByRole('heading', { level: 1, name: 'Tabără de înot' })).toBeInTheDocument()
   expect(screen.getByText('900,00 lei')).toBeInTheDocument()
 })
-
-// Criteriul 5 (#552): perioada si locul raman langa titlu.
 test('perioada și locul se văd lângă titlu', async () => {
   renderPage()
   await screen.findByRole('heading', { level: 1, name: 'Tabără de înot' })
@@ -120,8 +108,6 @@ test('o tabără fără loc nu lasă un rând gol în locul lui', async () => {
   await screen.findByRole('heading', { level: 1, name: 'Tabără de înot' })
   expect(screen.queryByText('Timișoara')).not.toBeInTheDocument()
 })
-
-// Un antrenor fara poza primeste initiala, nu un patrat gol.
 test('un antrenor fără poză primește inițiala numelui', async () => {
   mocked.mockResolvedValue(
     detaliu({ antrenori: [{ id: 'a1', nume: 'Maria Pop', pozaUrl: null }] }) as never,
@@ -138,8 +124,6 @@ test('o tabără plină nu mai oferă înscriere', async () => {
   expect(screen.getByText('Toate locurile sunt ocupate.')).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Înscrie-te' })).not.toBeInTheDocument()
 })
-
-// Criteriul 6: parintele afla abia la final ca nu mai sunt locuri.
 test('locurile rămase se văd, cu acordul la număr', async () => {
   mocked.mockResolvedValue(detaliu({ locuriRamase: 20 }) as never)
   renderPage()
@@ -151,8 +135,6 @@ test('un singur loc rămas se scrie la singular', async () => {
   renderPage()
   expect(await screen.findByText('1 loc rămas')).toBeInTheDocument()
 })
-
-// Capacitate nelimitata: nu se scrie nimic, si mai ales nu „0 locuri".
 test('capacitatea nelimitată nu afișează niciun număr de locuri', async () => {
   mocked.mockResolvedValue(detaliu({ locuriRamase: null }) as never)
   renderPage()
@@ -160,8 +142,6 @@ test('capacitatea nelimitată nu afișează niciun număr de locuri', async () =
   expect(screen.queryByText(/locuri rămase/)).not.toBeInTheDocument()
   expect(screen.queryByText('Locuri epuizate')).not.toBeInTheDocument()
 })
-
-// Criteriul 7: refuzul venea abia din create-enrollment, dupa ce completase tot.
 test('lipsa plății cash se spune pe pagină, nu la checkout', async () => {
   renderPage()
   expect(await screen.findByText('Doar plată cu cardul.')).toBeInTheDocument()
@@ -173,8 +153,6 @@ test('o tabără care acceptă cash nu afișează avertismentul', async () => {
   await screen.findByRole('button', { name: 'Înscrie-te' })
   expect(screen.queryByText('Doar plată cu cardul.')).not.toBeInTheDocument()
 })
-
-// Criteriul 1 (#638): se vedea un singur numar, fara nicio explicatie.
 test('prețul e desfășurat pe categorii, cu descriere la fiecare', async () => {
   mocked.mockResolvedValue(
     detaliu({
@@ -190,9 +168,6 @@ test('prețul e desfășurat pe categorii, cu descriere la fiecare', async () =>
   expect(screen.getByText('Doi antrenori non-stop')).toBeInTheDocument()
   expect(screen.getByText('Cazare și masă')).toBeInTheDocument()
 })
-
-// Criteriul 2: pagina n-are voie sa minta despre bani. Cand desfasurarea nu da
-// pretul, o spune, in loc s-o ascunda.
 test('o desfășurare care nu dă prețul e semnalată, nu ascunsă', async () => {
   mocked.mockResolvedValue(
     detaliu({
@@ -217,9 +192,6 @@ test('o desfășurare corectă nu afișează nicio notă', async () => {
   await screen.findByText('Ce include prețul')
   expect(screen.queryByText(/însumează/)).not.toBeInTheDocument()
 })
-
-// Secțiunea „Organizator și antrenori”, criteriul 1: cine RĂSPUNDE de tabără e
-// altceva decât cine merge cu copiii, iar pagina nu spunea deloc primul lucru.
 test('clubul organizator se vede, ca link către pagina lui', async () => {
   renderPage()
   const link = await screen.findByRole('link', { name: 'Club Audit Motion' })
@@ -239,17 +211,12 @@ test('un antrenor organizator duce la pagina lui de antrenor', async () => {
   expect(link).toHaveAttribute('href', '/antrenori/user-1')
   expect(screen.getByText('Antrenor')).toBeInTheDocument()
 })
-
-// Taberele dinainte de migrarea 00025 n-au proprietar; constrangerea e NOT VALID,
-// deci raman asa. Pagina nu are voie sa arate un titlu peste un gol.
 test('o tabără fără proprietar nu arată o secțiune goală', async () => {
   mocked.mockResolvedValue(detaliu({ organizator: null }) as never)
   renderPage()
   await screen.findByRole('button', { name: 'Înscrie-te' })
   expect(screen.queryByText('Organizată de')).not.toBeInTheDocument()
 })
-
-// Criteriul 3: parintele isi trimite copilul o saptamana, trebuie sa stie cu cine.
 test('antrenorii care însoțesc se văd, cu nume', async () => {
   mocked.mockResolvedValue(
     detaliu({
@@ -272,8 +239,6 @@ test('un singur antrenor se scrie la singular', async () => {
   renderPage()
   expect(await screen.findByText('Antrenorul care însoțește')).toBeInTheDocument()
 })
-
-// Criteriul 4 (#552): o retea picata aratа ca o adresa gresita.
 test('o încărcare căzută arată eroare cu reîncercare, nu „nu a fost găsită"', async () => {
   mocked.mockRejectedValue(new Error('network'))
   renderPage()
@@ -288,8 +253,6 @@ test('o tabără inexistentă are mesajul ei, cu drum înapoi', async () => {
   expect(await screen.findByText('Tabăra nu a fost găsită.')).toBeInTheDocument()
   expect(screen.queryByText('Nu am putut încărca tabăra.')).not.toBeInTheDocument()
 })
-
-// Criteriile 1 si 2 (#552): pagina incepea direct cu titlul pe fond alb.
 test('poza mare și galeria apar când există', async () => {
   mocked.mockResolvedValue(
     detaliu({
