@@ -1,73 +1,55 @@
-/* Motion Timișoara — custom Leaflet popup chrome for the map page.
-   Plain CSS (no @apply) so it can target Leaflet's generated DOM. Colors come
-   from the global design tokens, so it follows light/dark themes automatically. */
-
 .mt-popup .leaflet-popup-content-wrapper {
   padding: 0;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   background: var(--popover);
-  box-shadow:
-    0 18px 50px -12px rgba(2, 32, 71, 0.3),
-    0 4px 14px -6px rgba(2, 32, 71, 0.14);
+  box-shadow: var(--shadow-card);
 }
-
 .mt-popup .leaflet-popup-content {
   margin: 0;
   width: 264px !important;
+  max-width: calc(100vw - 4rem);
+  max-height: min(24rem, calc(70vh - 6rem));
+  overflow-y: auto;
   line-height: 1.4;
 }
-
+.mt-popup .leaflet-popup-content a {
+  color: var(--foreground);
+}
 .mt-popup .leaflet-popup-tip {
   background: var(--popover);
-  box-shadow: 0 4px 14px rgba(2, 32, 71, 0.12);
 }
-
-/* Circular close button, sitting on the gradient header. */
 .mt-popup a.leaflet-popup-close-button {
-  top: 9px;
-  right: 9px;
+  top: calc(var(--spacing) * 2);
+  right: calc(var(--spacing) * 2);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: calc(var(--spacing) * 11);
+  height: calc(var(--spacing) * 11);
   padding: 0;
-  border-radius: 9999px;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius-lg);
+  color: var(--primary-foreground);
+  background: var(--primary);
   font-weight: 600;
-  transition:
-    background 0.15s ease,
-    transform 0.15s ease;
 }
-
 .mt-popup a.leaflet-popup-close-button:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.08);
+  color: var(--accent-foreground);
+  background: var(--accent);
 }
-
-/* Entrance animation. */
-.mt-popup .leaflet-popup-content-wrapper,
-.mt-popup .leaflet-popup-tip-container {
-  animation: mt-popup-in 0.22s cubic-bezier(0.2, 0.7, 0.3, 1.25) both;
+.mt-public-map .leaflet-control-zoom a {
+  width: calc(var(--spacing) * 11);
+  height: calc(var(--spacing) * 11);
+  line-height: calc(var(--spacing) * 11);
+  color: var(--foreground);
+  background: var(--background);
 }
-
-@keyframes mt-popup-in {
-  from {
-    opacity: 0;
-    transform: translateY(7px) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+.mt-public-map .leaflet-control-zoom a:focus-visible,
+.mt-public-map .leaflet-marker-icon:focus-visible,
+.mt-popup a:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .mt-popup .leaflet-popup-content-wrapper,
-  .mt-popup .leaflet-popup-tip-container {
-    animation: none;
-  }
+.mt-public-map .leaflet-container {
+  background: var(--muted);
 }
