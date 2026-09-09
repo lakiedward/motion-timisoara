@@ -79,7 +79,7 @@ function receiveConsoleLine(line) {
       events: [...(lastResult?.events || []), { ...message.event, hostReceivedAt }]
     }
   } catch (error) {
-    consoleFailure = new Error(`Invalid live native event: ${error.message}`)
+    consoleFailure ??= new Error(`Invalid live native event: ${error.message}`)
   }
 }
 
@@ -145,11 +145,18 @@ async function foreground(session) {
   await sim('launch', device, appId)
 }
 
+async function requestRestart(session) {
+  await sim('launch', device, 'com.apple.mobilesafari')
+  await delay(1500)
+  await sim('launch', device, appId)
+  await waitFor(`${session}: explicit foreground handshake starts next watcher`, () => event('start', session))
+}
+
 async function createSimulator() {
   const help = await command('xcrun', ['simctl', 'help', 'privacy'], { includeStderr: true })
   assert(help.includes('location-always'), 'Simulator must support location-always permission')
   const locationHelp = await command('xcrun', ['simctl', 'help', 'location'], { includeStderr: true })
-  assert(locationHelp.includes('set') && locationHelp.includes('clear'), 'Simulator must support synthetic location injection and cleanup')
+  assert(locationHelp.includes('set'), 'Simulator must support synthetic location injection')
   const inventory = JSON.parse(await sim('list', '--json'))
   const runtimes = inventory.runtimes.filter((item) => item.isAvailable && item.identifier.includes('.iOS-'))
     .sort((a, b) => b.version.localeCompare(a.version, undefined, { numeric: true }))
@@ -179,8 +186,10 @@ function verifyResults() {
     assert(sample.hiddenAtDelivery || lastResult.events.some((item) => item.kind === 'app-state' && item.active === false && item.observedAt >= timing[`${session}BackgroundRequestedAt`] && item.observedAt <= sample.observedAt), `${session}: app must be inactive when the callback arrives`)
     assert.equal(timing[`${session}Delivery`], 'background')
   }
-  assert(!lastResult.events.some((item) => item.kind === 'point' && Math.abs(item.latitude - 1.28) < 0.00001), 'Manual stop must reject subsequent injected points')
-  assert(!lastResult.events.some((item) => item.kind === 'point' && Math.abs(item.latitude - 2.28) < 0.00001), 'Native expiry must reject subsequent injected points')
+  const manualStoppedAt = event('manual-stopped').observedAt
+  const expiresAt = event('start', 'expiry').expiresAt
+  assert(!lastResult.events.some((item) => item.kind === 'point' && item.session === 'manual' && (item.capturedAt >= manualStoppedAt || Math.abs(item.latitude - 1.28) < 0.00001)), 'Stopped manual watcher must reject all later samples')
+  assert(!lastResult.events.some((item) => item.kind === 'point' && item.session === 'expiry' && (item.capturedAt >= expiresAt || Math.abs(item.latitude - 2.28) < 0.00001)), 'Expired watcher must reject all later samples')
   assert(event('native-expired'), 'Native expiry callback required')
   assert(event('expired-start-rejected'), 'Expired start must be rejected')
   assert(point('after-expiry', 3.25), 'Restart after native expiry must receive a point')
@@ -212,10 +221,9 @@ try {
   assert(!event('start', 'expiry'), 'Stop observation arrived too late to exercise the stopped interval')
   await inject(1.28)
   await delay(3500)
-  await sim('location', device, 'clear')
   await readResult()
   assert(!event('start', 'expiry'), 'Stop interval must remain stopped while injecting forbidden locations')
-  await waitFor('restart after explicit stop', () => event('start', 'expiry'))
+  await requestRestart('expiry')
   await inject(2.25)
   await waitFor('restarted native point', () => point('expiry', 2.25))
   await background('expiry')
@@ -228,9 +236,10 @@ try {
   assert(!event('start', 'after-expiry'), 'Expiry observation arrived too late to exercise the stopped interval')
   await inject(2.28)
   await delay(2500)
-  await sim('location', device, 'clear')
+  await readResult()
+  assert(!event('start', 'after-expiry'), 'Expiry interval must remain stopped while injecting forbidden locations')
   await waitFor('expired start rejection', () => event('expired-start-rejected'))
-  await waitFor('restart after native expiry', () => event('start', 'after-expiry'))
+  await requestRestart('after-expiry')
   await inject(3.25)
   await waitFor('all native assertions', () => event('complete'))
   verifyResults()

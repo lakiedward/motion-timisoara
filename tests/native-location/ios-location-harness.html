@@ -11,6 +11,8 @@
     const result = { version: 1, status: 'running', events: [] }
     let manualStopped = false
     let expiryHandled = false
+    let pendingRestart = null
+    let restartArmed = false
     const cap = window.Capacitor
     const invoke = (plugin, method, options = {}) => cap.nativePromise(plugin, method, options)
     const save = (kind, detail = {}) => {
@@ -70,8 +72,9 @@
     const rejectExpiredStart = () => {
       start('expired-start', Date.now() - 1000, () => fail(new Error('Expired start emitted a point')), (error) => {
         if (error.code !== 'CAPTURE_EXPIRED') return fail(error)
+        pendingRestart = startAfterExpiry
+        restartArmed = false
         void save('expired-start-rejected')
-        setTimeout(startAfterExpiry, 7000)
       })
     }
     const startExpiry = () => {
@@ -86,7 +89,15 @@
     const run = async () => {
       if (!cap?.nativeCallback || !cap?.nativePromise) throw new Error('Native Capacitor bridge missing')
       cap.nativeCallback('App', 'addListener', { eventName: 'appStateChange' }, (state) => {
-        if (state) void save('app-state', { active: state.isActive })
+        if (!state) return
+        void save('app-state', { active: state.isActive })
+        if (!state.isActive && pendingRestart) restartArmed = true
+        if (state.isActive && restartArmed && pendingRestart) {
+          const restart = pendingRestart
+          pendingRestart = null
+          restartArmed = false
+          restart()
+        }
       })
       await save('ready')
       start('manual', Date.now() + 120000, async (point) => {
@@ -95,7 +106,8 @@
         await invoke('BackgroundGeolocation', 'stop')
         await invoke('BackgroundGeolocation', 'stop')
         await save('manual-stopped')
-        setTimeout(startExpiry, 20000)
+        pendingRestart = startExpiry
+        restartArmed = false
       }, fail)
     }
     window.addEventListener('error', (event) => fail(event.error || event.message))

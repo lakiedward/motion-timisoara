@@ -142,6 +142,12 @@ human. These are separate from automatic CI and Bugbot review.
   The first runtime attempt (34395608072) timed out during initial simulator
   CoreLocation data migration, before the app was installed. The owned simulator
   now has a bounded ten-minute initial boot allowance.
+  Run 34396898372 subsequently recorded both background JavaScript callbacks before
+  foreground and native expiry before foreground (artifact 10122341840). Its final
+  restart failed because the harness advanced while a simulator command was pending.
+  Restart stages now require an explicit app-state handshake, with no JavaScript
+  restart timers. Stop assertions follow the stopped watcher, allowing synthetic
+  simulator coordinates to appear legitimately in a later explicitly started watcher.
 - Read-only live inspection confirmed both location schema and Realtime policies
   absent, with no location cron. No migration, Edge deployment or real location
   collection was performed.
