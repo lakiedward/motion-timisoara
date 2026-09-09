@@ -12,12 +12,17 @@ import { CurrentLocationSessions } from '@/features/live-location/CurrentLocatio
 
 export default function ClubCoursesPage() {
   const qc = useQueryClient()
-  const { data: club } = useQuery({ queryKey: ['my-club'], queryFn: getMyClub })
+  const {
+    data: club,
+    isLoading: clubLoading,
+    isError: clubError,
+    refetch: refetchClub,
+  } = useQuery({ queryKey: ['my-club'], queryFn: getMyClub })
   const clubId = club?.id ?? ''
   const {
     data: courses = [],
-    isLoading,
-    isError,
+    isLoading: coursesLoading,
+    isError: coursesError,
     refetch,
   } = useQuery({
     queryKey: ['club-courses', clubId],
@@ -25,6 +30,12 @@ export default function ClubCoursesPage() {
     enabled: !!clubId,
     retry: false,
   })
+  const isLoading = clubLoading || coursesLoading
+  const isError = clubError || coursesError
+  const retryCourses = () => {
+    if (clubError) void refetchClub()
+    else void refetch()
+  }
   const toggle = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) =>
       setClubCourseActive(id, active),
@@ -51,6 +62,7 @@ export default function ClubCoursesPage() {
       <CurrentLocationSessions
         courseIds={courses.map((course) => course.id)}
         courseNames={Object.fromEntries(courses.map((course) => [course.id, course.name]))}
+        courseSource={{ isLoading, isError: isError && !courses.length, retry: retryCourses }}
       />
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2">
@@ -61,7 +73,7 @@ export default function ClubCoursesPage() {
       ) : isError && !courses.length ? (
         <div role="alert" className="rounded-3xl border border-dashed py-16 text-center">
           <p className="text-foreground font-medium">Nu am putut încărca cursurile.</p>
-          <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetch()}>
+          <Button className="mt-4 h-11 min-h-11" type="button" onClick={retryCourses}>
             Reîncearcă
           </Button>
         </div>

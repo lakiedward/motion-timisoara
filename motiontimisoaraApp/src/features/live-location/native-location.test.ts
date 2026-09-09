@@ -159,3 +159,18 @@ it('recovers cleanup after a failed startup without losing a native watcher', as
   expect(stop).toHaveBeenCalledTimes(2)
   expect(start).toHaveBeenCalledTimes(2)
 })
+
+it('exposes failed startup cleanup for an explicit stop retry without starting again', async () => {
+  start.mockRejectedValueOnce(new Error('Native start failed'))
+  stop.mockRejectedValueOnce(new Error('Native cleanup failed'))
+  const failure = await startLocationCapture(deadline(), vi.fn(), vi.fn()).catch(
+    (error: Error & { stopCapture: () => Promise<void> }) => error,
+  )
+  expect(failure).toBeInstanceOf(Error)
+  if (!(failure instanceof Error)) throw new Error('Expected a startup failure')
+  expect(failure.message).toBe('Native start failed')
+  cleanup = failure.stopCapture
+  await cleanup()
+  expect(stop).toHaveBeenCalledTimes(2)
+  expect(start).toHaveBeenCalledTimes(1)
+})

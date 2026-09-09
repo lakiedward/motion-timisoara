@@ -58,7 +58,7 @@ jobs:
       - run: npx cap sync android
       - name: Compile native app and location instrumentation
         working-directory: motiontimisoaraApp/android
-        run: bash ./gradlew --no-daemon assembleDebug assembleDebugAndroidTest
+        run: bash ./gradlew --no-daemon :app:assembleDebug :app:assembleDebugAndroidTest
 
   ios-build:
     runs-on: macos-latest

@@ -12,7 +12,7 @@ tests do not establish deployment or approval.
 - A persistent stop control survives navigation. It remains available during capture
   initialization. Failed cleanup remains visible across logout/account changes and
   blocks another start until it can be retried.
-- `/account/attendance` lists current occurrences for the parent's COURSE
+- `/account/attendance` lists current occurrences for the parent's active COURSE
   enrollments. Only a parent with an eligible own child, PRESENT attendance and a
   QR accounting marker can obtain coordinates, after explicit per-session consent.
 - `/club/courses` lists current occurrences for the owner's courses. The server
@@ -104,7 +104,7 @@ human. These are separate from automatic CI and Bugbot review.
   club reads, coach role/time gating and map preservation/freshness.
 - Adapter tests cover permissions, native expiry arguments, callback validation,
   pending start/stop and failed cleanup retry. They mock the native bridge.
-- App verification passed: typecheck, lint, 703 tests in 74 files and production build.
+- App verification passed: typecheck, lint, 710 tests in 74 files and production build.
   Existing large-chunk/mixed Capacitor import build warnings remain. The generated
   UI conventions and byte-identical CLAUDE/AGENTS mirror were checked.
 - Chromium passed nine role/viewport journeys at `http://127.0.0.1:3023`:
@@ -119,7 +119,19 @@ human. These are separate from automatic CI and Bugbot review.
   with JDK 21 and SDK 36. Three tests passed on an isolated Android 36.1 emulator:
   synthetic GPS after `moveTaskToBack`, native expiry without JavaScript, no points
   after expiry/stop and rejection of an already-expired start. This exercises the
-  native service, not the full app/network path. iOS remains uncompiled/unexecuted.
+  native service, not the full app/network path.
+  The final stop test extracts the real notification's `Oprește` action and sends its
+  PendingIntent; the final three-test run passed in 19.101 seconds. Local transcript:
+  `C:/Android/motion-native-runtime/feature320-native-final-proof.txt`.
+  The native patch was also reapplied to pristine npm 8.4.5 sources and compared
+  against all five changed vendor sources.
+  CI builds the app's qualified `:app:assembleDebug :app:assembleDebugAndroidTest`
+  targets. Unqualified tasks also build third-party Cordova library tests, whose
+  unrelated Kotlin test classpath is inconsistent. No dependency override or app
+  test exclusion was introduced; a clean app build passed all 277 tasks.
+- The iOS simulator app compiled without signing on GitHub's macOS runner (PR #75,
+  App CI run 34392889009, `ios-build`). This verifies the patched Swift/SPM build;
+  it does not prove iOS background/locked-screen behavior.
 - Read-only live inspection confirmed both location schema and Realtime policies
   absent, with no location cron. No migration, Edge deployment or real location
   collection was performed.
@@ -148,6 +160,6 @@ From `motiontimisoaraApp/`: `npm run typecheck`, `npm run lint`,
 - On Android and iOS, verify background/locked-screen updates, permission denial and
   revocation, offline/no replay, explicit stop, deadline and force-quit behavior. Android
   service instrumentation covers part of this; it does not prove the full app/network
-  chain. iOS compilation/runtime needs macOS/Xcode and an iOS device or suitable simulator.
+  chain. iOS runtime needs macOS/Xcode and an iOS device or suitable simulator.
 - Merge only after CI, clean Bugbot and the required human gates. Mark #320 Gata only
   after required deployment and runtime verification; do not substitute source presence.

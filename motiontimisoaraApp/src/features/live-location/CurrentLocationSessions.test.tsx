@@ -25,6 +25,7 @@ function mount() {
   return client
 }
 beforeEach(() => {
+  vi.clearAllMocks()
   vi.mocked(getMyEnrollments).mockResolvedValue([
     { kind: 'COURSE', entity_id: 'course-1', status: 'ACTIVE' },
   ] as Awaited<ReturnType<typeof getMyEnrollments>>)
@@ -42,9 +43,37 @@ test('selection survives disappearance from occurrence candidates so revocation 
   const client = mount()
   await userEvent.click(await screen.findByRole('button', { name: /Ședință ·/ }))
   await screen.findByText('Vizualizare occurrence-1')
-  act(() => client.setQueryData(['live-location-occurrences', 'parent-1', ['course-1']], []))
+  act(() =>
+    client.setQueryData(
+      ['live-location-enrollments', 'parent-1'],
+      [{ kind: 'COURSE', entity_id: 'course-1', status: 'CANCELLED' }],
+    ),
+  )
   await screen.findByText('Nicio ședință în desfășurare.')
   expect(screen.getByText('Vizualizare occurrence-1')).toBeInTheDocument()
+})
+
+test('new parent discovery includes only active course enrollments', async () => {
+  vi.mocked(getMyEnrollments).mockResolvedValue([
+    { kind: 'COURSE', entity_id: 'course-1', status: 'ACTIVE' },
+    { kind: 'COURSE', entity_id: 'course-1', status: 'ACTIVE' },
+    { kind: 'COURSE', entity_id: 'cancelled-course', status: 'CANCELLED' },
+    { kind: 'COURSE', entity_id: 'completed-course', status: 'COMPLETED' },
+    { kind: 'COURSE', entity_id: 'pending-course', status: 'PENDING' },
+    { kind: 'CAMP', entity_id: 'active-camp', status: 'ACTIVE' },
+  ] as Awaited<ReturnType<typeof getMyEnrollments>>)
+  mount()
+  await screen.findByRole('button', { name: /Ședință ·/ })
+  expect(getCurrentLocationOccurrences).toHaveBeenCalledWith(['course-1'])
+})
+
+test('inactive enrollments alone do not issue a discovery request', async () => {
+  vi.mocked(getMyEnrollments).mockResolvedValue([
+    { kind: 'COURSE', entity_id: 'course-1', status: 'CANCELLED' },
+  ] as Awaited<ReturnType<typeof getMyEnrollments>>)
+  mount()
+  await screen.findByText('Nicio ședință în desfășurare.')
+  expect(getCurrentLocationOccurrences).not.toHaveBeenCalled()
 })
 
 test('failure is distinct from a genuinely empty current schedule', async () => {

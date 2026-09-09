@@ -217,4 +217,28 @@ describe('session-scoped location sharing', () => {
     expect(f.remoteStop).toHaveBeenCalledOnce()
     expect(f.controller.getSnapshot().error).toBe('permission revoked')
   })
+
+  it('does not create a stopping banner or error when an idle web tab is hidden', async () => {
+    const f = fixture()
+    const original = f.controller.getSnapshot()
+    const changed = vi.fn()
+    f.controller.subscribe(changed)
+    await f.controller.stop('Partajarea web s-a oprit când fila a devenit inactivă.')
+    expect(f.controller.getSnapshot()).toBe(original)
+    expect(changed).not.toHaveBeenCalled()
+    expect(f.remoteStop).not.toHaveBeenCalled()
+  })
+
+  it('retains capture cleanup exposed by a failed initialization', async () => {
+    const f = fixture()
+    f.cancel.mockRejectedValueOnce(new Error('native cleanup unavailable'))
+    f.capture.mockRejectedValueOnce(
+      Object.assign(new Error('capture failed'), { stopCapture: f.cancel }),
+    )
+    await f.controller.start('occurrence')
+    expect(f.controller.getSnapshot()).toMatchObject({ active: null, needsStopRetry: true })
+    await f.controller.stop()
+    expect(f.cancel).toHaveBeenCalledTimes(2)
+    expect(f.controller.getSnapshot().needsStopRetry).toBe(false)
+  })
 })

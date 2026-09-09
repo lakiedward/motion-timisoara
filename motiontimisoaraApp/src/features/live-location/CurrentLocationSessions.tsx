@@ -10,9 +10,11 @@ import { LocationViewer } from './LocationViewer'
 export function CurrentLocationSessions({
   courseIds,
   courseNames = {},
+  courseSource,
 }: {
   courseIds?: string[]
   courseNames?: Record<string, string>
+  courseSource?: { isLoading: boolean; isError: boolean; retry: () => void }
 }) {
   const { user } = useAuth()
   const parent = user?.role === 'PARENT'
@@ -27,7 +29,7 @@ export function CurrentLocationSessions({
     ...new Set(
       courseIds ??
         enrollmentQuery.data
-          ?.filter((entry) => entry.kind === 'COURSE')
+          ?.filter((entry) => entry.kind === 'COURSE' && entry.status === 'ACTIVE')
           .map((entry) => entry.entity_id) ??
         [],
     ),
@@ -35,14 +37,15 @@ export function CurrentLocationSessions({
   const occurrences = useQuery({
     queryKey: ['live-location-occurrences', user?.id, ids],
     queryFn: () => getCurrentLocationOccurrences(ids),
-    enabled: !!user && ids.length > 0,
+    enabled: !!user && ids.length > 0 && !courseSource?.isLoading && !courseSource?.isError,
     retry: false,
     refetchInterval: 30_000,
   })
   if (!user || !['PARENT', 'CLUB'].includes(user.role)) return null
   const selected = selection?.actor === user.id ? selection.occurrence : null
-  const loading = (parent && enrollmentQuery.isLoading) || occurrences.isLoading
-  const error = (parent && enrollmentQuery.isError) || occurrences.isError
+  const loading =
+    courseSource?.isLoading || (parent && enrollmentQuery.isLoading) || occurrences.isLoading
+  const error = courseSource?.isError || (parent && enrollmentQuery.isError) || occurrences.isError
   return (
     <section
       className="bg-card mb-6 space-y-3 rounded-2xl border p-4"
@@ -62,8 +65,9 @@ export function CurrentLocationSessions({
             size="sm"
             variant="outline"
             onClick={() => {
-              if (parent) void enrollmentQuery.refetch()
-              void occurrences.refetch()
+              if (courseSource?.isError) courseSource.retry()
+              else if (parent && enrollmentQuery.isError) void enrollmentQuery.refetch()
+              else void occurrences.refetch()
             }}
           >
             Reîncearcă ședințele

@@ -35,7 +35,8 @@ export function LiveLocationProvider({ children }: { children: ReactNode }) {
   const pending = registry.pendingExcept(controller)
   useEffect(() => {
     const hidden = () => {
-      if (!isNative() && document.hidden)
+      const state = controller.getSnapshot()
+      if (!isNative() && document.hidden && (state.active || state.busy || state.needsStopRetry))
         void controller.stop('Partajarea web s-a oprit când fila a devenit inactivă.')
     }
     const unload = () => controller.dispose()

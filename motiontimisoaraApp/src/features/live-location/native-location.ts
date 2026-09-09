@@ -151,7 +151,14 @@ export async function startLocationCapture(
     }
     return stop
   } catch (error) {
-    await stop().catch(() => undefined)
-    throw error instanceof Error ? error : captureError(error)
+    const failure = error instanceof Error ? error : captureError(error)
+    try {
+      await stop()
+    } catch {
+      const cleanupFailure = new Error(failure.message, { cause: failure })
+      cleanupFailure.name = failure.name
+      throw Object.assign(cleanupFailure, { stopCapture: stop })
+    }
+    throw failure
   }
 }

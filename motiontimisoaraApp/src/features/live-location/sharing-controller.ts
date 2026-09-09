@@ -117,6 +117,13 @@ export class SharingController {
       )
       return null
     } catch (error) {
+      if (
+        error instanceof Error &&
+        'stopCapture' in error &&
+        typeof error.stopCapture === 'function'
+      ) {
+        this.cancelCapture = error.stopCapture as () => Promise<void>
+      }
       return error instanceof Error ? error.message : 'Nu am putut porni partajarea.'
     }
   }
@@ -172,6 +179,15 @@ export class SharingController {
 
   stop = (reason?: string): Promise<void> => {
     if (this.stopping) return this.stopping
+    if (
+      !this.state.active &&
+      !this.state.busy &&
+      !this.starting &&
+      !this.cancelCapture &&
+      !this.remoteStop &&
+      !this.state.needsStopRetry
+    )
+      return Promise.resolve()
     ++this.generation
     if (this.deadline) clearTimeout(this.deadline)
     this.deadline = null
