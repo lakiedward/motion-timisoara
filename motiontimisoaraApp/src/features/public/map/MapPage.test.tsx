@@ -221,9 +221,57 @@ test('the camps filter hides places without camps and all locations restores the
   expect(screen.queryByText('Teren Test')).not.toBeInTheDocument()
   expect(screen.getByText('Bazin Test')).toBeInTheDocument()
   expect(screen.getByRole('link', { name: /^Tabără Test/ })).toBeInTheDocument()
-  await userEvent.click(screen.getByRole('button', { name: 'Toate locațiile' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Toate' }))
   expect(screen.getByText('Teren Test')).toBeInTheDocument()
   expect(campsFilter).toHaveAttribute('aria-pressed', 'false')
+})
+
+test.each([
+  { label: 'Cursuri', query: getCourses, empty: 'cursuri' },
+  { label: 'Activități', query: getActivities, empty: 'activități' },
+])('filters $label locations and preserves shared camp offers', async ({ label, query, empty }) => {
+  vi.mocked(getLocations).mockResolvedValue([
+    place,
+    { ...place, id: 'other-place', name: 'Teren Test', lat: 45.8 },
+  ])
+  const offers = [
+    {
+      id: 'offer-1',
+      name: 'Oferta Test',
+      location_id: place.id,
+      activity_date: '2026-10-01',
+      sport: null,
+    },
+  ]
+  if (query === getCourses) {
+    vi.mocked(getCourses).mockResolvedValue(offers as unknown as Awaited<ReturnType<typeof getCourses>>)
+  } else {
+    vi.mocked(getActivities).mockResolvedValue(offers as Awaited<ReturnType<typeof getActivities>>)
+  }
+  vi.mocked(getTaberePublice).mockResolvedValue([camp])
+  renderMap()
+  await screen.findByText('Teren Test')
+  await userEvent.click(screen.getByRole('button', { name: label }))
+  expect(screen.getByRole('button', { name: label })).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.queryByText('Teren Test')).not.toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /^Oferta Test/ })).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /^Tabără Test/ })).toBeInTheDocument()
+  expect(screen.queryByText(`Momentan nu există ${empty} cu locație pe hartă.`)).not.toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Toate' }))
+  expect(screen.getByText('Teren Test')).toBeInTheDocument()
+})
+
+test.each([
+  { label: 'Cursuri', empty: 'cursuri' },
+  { label: 'Activități', empty: 'activități' },
+])('shows the empty state for $label without hiding other filter choices', async ({ label, empty }) => {
+  renderMap()
+  await screen.findByText('Bazin Test')
+  await userEvent.click(screen.getByRole('button', { name: label }))
+  expect(screen.getByText(`Momentan nu există ${empty} cu locație pe hartă.`)).toBeInTheDocument()
+  expect(screen.queryByText('Bazin Test')).not.toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Toate' }))
+  expect(screen.getByText('Bazin Test')).toBeInTheDocument()
 })
 
 test.each([
@@ -238,7 +286,7 @@ test.each([
   await userEvent.click(screen.getByRole('button', { name: 'Tabere' }))
   expect(screen.getByText('Momentan nu există tabere cu locație pe hartă.')).toBeInTheDocument()
   expect(screen.queryByText('Bazin Test')).not.toBeInTheDocument()
-  await userEvent.click(screen.getByRole('button', { name: 'Toate locațiile' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Toate' }))
   expect(screen.getByText('Bazin Test')).toBeInTheDocument()
 })
 

@@ -11,6 +11,19 @@ import FocusLocation from './FocusLocation'
 import LocationPopup from './LocationPopup'
 import { basemapAttribution, cartoTileUrl } from './basemap'
 
+const offerFilters = [
+  { value: 'all', label: 'Toate' },
+  { value: 'courses', label: 'Cursuri' },
+  { value: 'activities', label: 'Activități' },
+  { value: 'camps', label: 'Tabere' },
+] as const
+
+const emptyOffers = {
+  courses: 'Momentan nu există cursuri cu locație pe hartă.',
+  activities: 'Momentan nu există activități cu locație pe hartă.',
+  camps: 'Momentan nu există tabere cu locație pe hartă.',
+}
+
 export default function LocationMap({
   locations,
   courses,
@@ -29,7 +42,7 @@ export default function LocationMap({
     tileUrl ? 'loading' : 'error',
   )
   const [attempt, setAttempt] = useState(0)
-  const [onlyCamps, setOnlyCamps] = useState(false)
+  const [offerType, setOfferType] = useState<(typeof offerFilters)[number]['value']>('all')
   const places = useMemo(
     () =>
       locations.map((location) => {
@@ -48,8 +61,8 @@ export default function LocationMap({
     [locations, courses, activities, camps],
   )
   const visiblePlaces = useMemo(
-    () => places.filter((place) => !onlyCamps || place.camps.length > 0),
-    [places, onlyCamps],
+    () => places.filter((place) => offerType === 'all' || place[offerType].length > 0),
+    [places, offerType],
   )
   const visibleLocations = useMemo(
     () => visiblePlaces.map((place) => place.location),
@@ -106,23 +119,17 @@ export default function LocationMap({
         >
           <p className="font-display text-foreground font-bold">Pe hartă</p>
           <div className="flex flex-wrap gap-2 lg:flex-col">
-            <Button
-              className="min-h-11"
-              variant={onlyCamps ? 'outline' : 'default'}
-              aria-pressed={!onlyCamps}
-              onClick={() => setOnlyCamps(false)}
-            >
-              Toate locațiile
-            </Button>
-            <Button
-              className="min-h-11"
-              variant={onlyCamps ? 'default' : 'outline'}
-              aria-pressed={onlyCamps}
-              onClick={() => setOnlyCamps(true)}
-            >
-              <Tent aria-hidden="true" className="size-4" />
-              Tabere
-            </Button>
+            {offerFilters.map((filter) => (
+              <Button
+                key={filter.value}
+                className="min-h-11"
+                variant={offerType === filter.value ? 'default' : 'outline'}
+                aria-pressed={offerType === filter.value}
+                onClick={() => setOfferType(filter.value)}
+              >
+                {filter.label}
+              </Button>
+            ))}
           </div>
           <p className="text-muted-foreground flex items-start gap-2 text-sm">
             <Tent
@@ -131,9 +138,9 @@ export default function LocationMap({
             />
             Cortul marchează locurile cu tabere active.
           </p>
-          {onlyCamps && visiblePlaces.length === 0 && (
+          {offerType !== 'all' && visiblePlaces.length === 0 && (
             <p role="status" className="text-muted-foreground text-sm">
-              Momentan nu există tabere cu locație pe hartă.
+              {emptyOffers[offerType]}
             </p>
           )}
         </aside>

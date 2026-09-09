@@ -6,7 +6,7 @@ The owner approved finishing the public map integration on 2026-09-09. Camp loca
 
 Public camp responses include the associated location, retaining the original location instructions when the relation is unavailable. List and detail views show the associated name and link to the existing `/harta?location=<id>` contract. Camp cards retain their primary detail link with a separate map link and no nested anchors.
 
-The map fetches active camps using the existing reader-local end-of-day filter. It keeps one marker per grouped place and the existing place naming rules. Places with camps use the owner-selected Lucide Tent symbol and highlight token. Their popup retains courses and activities and adds camp detail links with dates. A sidebar filter selects places with camps. Unavailable relations do not produce camp offers; empty and failed queries stay distinct.
+The map fetches active camps using the existing reader-local end-of-day filter. It keeps one marker per grouped place and the existing place naming rules. Places with camps use the owner-selected Lucide Tent symbol and highlight token. Their popup retains courses and activities and adds camp detail links with dates. The owner requested filters for every offer type: All, Courses, Activities and Camps. Each filter selects places with that offer type while the shared popup retains all offers at the location. Unavailable relations do not produce camp offers; empty and failed queries stay distinct.
 
 The static marker SVG is generated from the installed lucide-react 1.18.0 Tent icon and retains its ISC license. Generating it once avoids including React's server renderer in the browser bundle.
 
