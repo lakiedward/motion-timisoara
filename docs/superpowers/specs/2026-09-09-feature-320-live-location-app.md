@@ -134,10 +134,14 @@ human. These are separate from automatic CI and Bugbot review.
   it does not prove iOS background/locked-screen behavior.
   The isolated runner `tests/native-location/run-ios-location.mjs` now also checks
   synthetic foreground/background delivery, manual stop, restart, native expiry and
-  expired-start rejection. It requires a JavaScript callback persisted before the
-  app returns to foreground; delayed delivery after resume is a failure. CI uploads
+  expired-start rejection. It requires native console evidence of the JavaScript
+  callback received before the app returns to foreground; delayed delivery after
+  resume is a failure. It does not poll the asynchronously flushed Preferences plist. CI uploads
   the result and command transcript. Its runtime result is still pending and it
   cannot establish physical-device or full app/network behavior.
+  The first runtime attempt (34395608072) timed out during initial simulator
+  CoreLocation data migration, before the app was installed. The owned simulator
+  now has a bounded ten-minute initial boot allowance.
 - Read-only live inspection confirmed both location schema and Realtime policies
   absent, with no location cron. No migration, Edge deployment or real location
   collection was performed.

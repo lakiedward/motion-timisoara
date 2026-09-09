@@ -9,16 +9,18 @@
   <p>Synthetic simulator test. No account or network access.</p>
   <script>
     const result = { version: 1, status: 'running', events: [] }
-    let writes = Promise.resolve()
     let manualStopped = false
     let expiryHandled = false
     const cap = window.Capacitor
     const invoke = (plugin, method, options = {}) => cap.nativePromise(plugin, method, options)
     const save = (kind, detail = {}) => {
-      result.events.push({ kind, observedAt: Date.now(), ...detail })
-      const value = JSON.stringify(result)
-      writes = writes.then(() => invoke('Preferences', 'set', { key: 'motion-feature320-result', value }))
-      return writes
+      const event = { sequence: result.events.length + 1, kind, observedAt: Date.now(), ...detail }
+      result.events.push(event)
+      cap.nativeCallback('Console', 'log', {
+        level: 'log',
+        message: 'MOTION_FEATURE320_EVENT:' + JSON.stringify({ version: 1, status: result.status, event })
+      })
+      return Promise.resolve()
     }
     const fail = (error) => {
       if (result.status === 'failed') return
