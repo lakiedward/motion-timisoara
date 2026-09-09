@@ -5,9 +5,12 @@ on:
     paths:
       - 'motiontimisoaraApp/**'
       - '.github/workflows/app-ci.yml'
+      - 'tests/native-location/**'
   pull_request:
     paths:
       - 'motiontimisoaraApp/**'
+      - '.github/workflows/app-ci.yml'
+      - 'tests/native-location/**'
 
 jobs:
   build:
@@ -82,3 +85,11 @@ jobs:
       - run: npx cap sync ios
       - name: Compile iOS simulator app without signing
         run: xcodebuild -project ios/App/App.xcodeproj -scheme App -sdk iphonesimulator -configuration Debug -derivedDataPath ios/build CODE_SIGNING_ALLOWED=NO build
+      - name: Verify synthetic iOS native location lifecycle
+        run: node ../tests/native-location/run-ios-location.mjs
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: ios-live-location-${{ github.event_name }}
+          path: test-results/ios-live-location/
+          retention-days: 30

@@ -33,6 +33,12 @@ export function LiveLocationProvider({ children }: { children: ReactNode }) {
   const controller = registry.forActor(actorId)
   const snapshot = controller.getSnapshot()
   const pending = registry.pendingExcept(controller)
+  useEffect(
+    () => () => {
+      void registry.stopAll()
+    },
+    [registry],
+  )
   useEffect(() => {
     const hidden = () => {
       const state = controller.getSnapshot()

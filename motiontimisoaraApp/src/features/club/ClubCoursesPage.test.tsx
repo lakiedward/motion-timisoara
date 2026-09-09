@@ -28,8 +28,9 @@ const mockedClub = vi.mocked(getMyClub)
 const mockedCourses = vi.mocked(getClubCourses)
 const mockedToggle = vi.mocked(setClubCourseActive)
 
-function renderPage() {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+function renderPage(
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>
@@ -196,6 +197,38 @@ test('location discovery reports a course dependency failure and retries that de
   await userEvent.click(within(section).getByRole('button', { name: 'Reîncearcă ședințele' }))
   await within(section).findByText('Nicio ședință în desfășurare.')
   expect(mockedCourses).toHaveBeenCalledTimes(2)
+})
+
+test('one retry recovers simultaneous club and course failures when the club identity is cached', async () => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  client.setQueryData(['my-club'], { id: 'club-1', name: 'Club existent' })
+  mockedClub
+    .mockRejectedValueOnce(new Error('club offline'))
+    .mockResolvedValue({ id: 'club-1', name: 'Club existent' } as never)
+  mockedCourses
+    .mockRejectedValueOnce(new Error('courses offline'))
+    .mockResolvedValue([curs({ id: 'course-recovered', name: 'Curs recuperat' })])
+  renderPage(client)
+  await waitFor(() => {
+    expect(client.getQueryState(['my-club'])?.status).toBe('error')
+    expect(client.getQueryState(['club-courses', 'club-1'])?.status).toBe('error')
+  })
+  const section = screen.getByRole('region', { name: 'Ședințe cu locație în timp real' })
+  await userEvent.click(within(section).getByRole('button', { name: 'Reîncearcă ședințele' }))
+  await screen.findByText('Curs recuperat')
+  expect(mockedClub).toHaveBeenCalledTimes(2)
+  expect(mockedCourses).toHaveBeenCalledTimes(2)
+  expect(screen.queryByText('Nu am putut încărca cursurile.')).not.toBeInTheDocument()
+})
+
+test('retry without a known club identity never executes the disabled courses query', async () => {
+  mockedClub.mockRejectedValue(new Error('club unavailable'))
+  renderPage()
+  const section = screen.getByRole('region', { name: 'Ședințe cu locație în timp real' })
+  await within(section).findByText('Nu am putut încărca ședințele pentru locație.')
+  await userEvent.click(within(section).getByRole('button', { name: 'Reîncearcă ședințele' }))
+  await waitFor(() => expect(mockedClub).toHaveBeenCalledTimes(2))
+  expect(mockedCourses).not.toHaveBeenCalled()
 })
 
 // --- Criteriul 11: rândurile grilei sunt egale de la sm în sus, libere pe telefon ---

@@ -104,7 +104,7 @@ human. These are separate from automatic CI and Bugbot review.
   club reads, coach role/time gating and map preservation/freshness.
 - Adapter tests cover permissions, native expiry arguments, callback validation,
   pending start/stop and failed cleanup retry. They mock the native bridge.
-- App verification passed: typecheck, lint, 710 tests in 74 files and production build.
+- App verification passed: typecheck, lint, 712 tests in 74 files and production build.
   Existing large-chunk/mixed Capacitor import build warnings remain. The generated
   UI conventions and byte-identical CLAUDE/AGENTS mirror were checked.
 - Chromium passed nine role/viewport journeys at `http://127.0.0.1:3023`:
@@ -132,6 +132,12 @@ human. These are separate from automatic CI and Bugbot review.
 - The iOS simulator app compiled without signing on GitHub's macOS runner (PR #75,
   App CI run 34392889009, `ios-build`). This verifies the patched Swift/SPM build;
   it does not prove iOS background/locked-screen behavior.
+  The isolated runner `tests/native-location/run-ios-location.mjs` now also checks
+  synthetic foreground/background delivery, manual stop, restart, native expiry and
+  expired-start rejection. It requires a JavaScript callback persisted before the
+  app returns to foreground; delayed delivery after resume is a failure. CI uploads
+  the result and command transcript. Its runtime result is still pending and it
+  cannot establish physical-device or full app/network behavior.
 - Read-only live inspection confirmed both location schema and Realtime policies
   absent, with no location cron. No migration, Edge deployment or real location
   collection was performed.

@@ -34,7 +34,7 @@ export default function ClubCoursesPage() {
   const isError = clubError || coursesError
   const retryCourses = () => {
     if (clubError) void refetchClub()
-    else void refetch()
+    if (clubId && coursesError) void refetch()
   }
   const toggle = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) =>
