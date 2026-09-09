@@ -40,10 +40,16 @@ export default function MapPage() {
 
   return (
     <div>
-      <section className="from-primary/8 to-background border-b bg-gradient-to-b">
+      <section
+        aria-labelledby="map-page-title"
+        data-section="motion-react:page:/harta:section:toata-pagina"
+        className="from-primary/8 to-background border-b bg-gradient-to-b"
+      >
         <div className="mx-auto max-w-7xl px-6 py-12">
-          <span className="eyebrow mb-3">Locații</span>
-          <h1 className="font-display text-foreground text-4xl font-extrabold">Hartă</h1>
+          <span className="eyebrow text-accent-foreground mb-3">Locații</span>
+          <h1 id="map-page-title" className="font-display text-foreground text-4xl font-extrabold">
+            Hartă
+          </h1>
           <p className="text-muted-foreground mt-2">
             Descoperă locațiile programelor noastre, oriunde în lume.
           </p>
