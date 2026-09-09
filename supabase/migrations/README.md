@@ -31,6 +31,11 @@ on the remote (verified by md5).
 `00017` and `00018` are both kept on purpose: `00018` replaced `00017` in production
 62 seconds after it was applied, and the ledger records what actually ran.
 
+`00043_coach_live_location.sql` is a **local proposal for feature #320**, not an
+applied migration. Do not apply it remotely without the owner's separate approval
+of the migration and access rules. The backend-only scope and retention contract
+are in `docs/superpowers/specs/2026-09-09-feature-320-live-location-backend.md`.
+
 **Next migration number = highest existing + 1.** Check with
 `git ls-files supabase/migrations | tail -1` before creating one — do not trust a
 number written down elsewhere.
