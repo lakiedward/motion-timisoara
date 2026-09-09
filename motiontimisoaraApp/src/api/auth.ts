@@ -9,7 +9,6 @@ export interface AppUser {
   role: Role
   phone: string | null
   avatarUrl: string | null
-  /** True when the profile is missing a phone (e.g. fresh OAuth sign-up). */
   needsProfileCompletion: boolean
 }
 
@@ -18,7 +17,7 @@ export const PROFILE_LOAD_ERROR = 'Nu am putut încărca profilul.'
 export type LoadAppUserResult =
   | { status: 'signed_out' }
   | { status: 'ok'; user: AppUser }
-  | { status: 'error'; message: string }
+  | { status: 'error'; message: string; sessionUserId?: string; retryable?: boolean }
 
 function toAppUser(data: {
   id: string
@@ -39,25 +38,41 @@ function toAppUser(data: {
   }
 }
 
-/** Loads the current session's profile, distinguishing signed-out from a failed fetch. */
 export async function loadAppUserResult(): Promise<LoadAppUserResult> {
   const {
     data: { session },
+    error: sessionError,
   } = await supabase.auth.getSession()
+  if (sessionError) return { status: 'error', message: PROFILE_LOAD_ERROR }
   if (!session) return { status: 'signed_out' }
 
-  // Prin `my_profile()`, nu prin tabel: din migrarea 00036, `email` și `phone`
-  // nu mai sunt lizibile de rolul `authenticated`, fiindcă înainte orice cont
-  // citea contactele tuturor. Funcția e SECURITY DEFINER și filtrează ea însăși
-  // pe auth.uid(), deci întoarce doar rândul celui logat.
-  const { data, error } = await supabase.rpc('my_profile')
-  const profile = (data as Array<Parameters<typeof toAppUser>[0]> | null)?.[0]
-  if (error || !profile) return { status: 'error', message: PROFILE_LOAD_ERROR }
+  const sessionUserId = session.user.id
+  const { data, error, status } = await supabase.rpc('my_profile')
+  if (error) {
+    const permissionFailure = ['42501', 'PGRST301', 'PGRST302', 'PGRST303'].includes(error.code)
+    return {
+      status: 'error',
+      message: PROFILE_LOAD_ERROR,
+      sessionUserId,
+      retryable:
+        !permissionFailure && (status === 0 || status === 408 || status === 429 || status >= 500),
+    }
+  }
+  const profile = (
+    data as Array<Parameters<typeof toAppUser>[0] & { enabled?: boolean }> | null
+  )?.[0]
+  if (
+    !profile ||
+    profile.id !== sessionUserId ||
+    profile.enabled === false ||
+    !['ADMIN', 'CLUB', 'COACH', 'PARENT'].includes(profile.role)
+  ) {
+    return { status: 'error', message: PROFILE_LOAD_ERROR, sessionUserId, retryable: false }
+  }
 
   return { status: 'ok', user: toAppUser(profile) }
 }
 
-/** Loads the current session's profile row, or null if signed out or the profile cannot be read. */
 export async function loadAppUser(): Promise<AppUser | null> {
   const result = await loadAppUserResult()
   return result.status === 'ok' ? result.user : null

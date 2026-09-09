@@ -228,8 +228,8 @@ Group growing folders by responsibility; the house limit is 20 files per folder.
 - `src/lib/database.types.ts` is generated. Regenerate it after schema changes; inspect
   current migrations and live state rather than relying on a handwritten table list.
 - Migrations are append-only. `supabase/migrations/README.md` maps filenames to remote
-  versions; `00041_camp_child_price_server_only.sql` is the latest tracked numbered migration verified
-  on 2026-09-08. Before a new migration run
+  versions; `00042_transactional_attendance.sql` is the latest tracked numbered migration verified
+  on 2026-09-09. Before a new migration run
   `git ls-files supabase/migrations` and choose the highest numeric prefix plus one.
   Never infer remote application status or the next number from this snapshot.
 - New tables need RLS, UUID primary keys, `timestamptz` timestamps, appropriate enums
@@ -468,6 +468,18 @@ reorganizing this document; correct obsolete facts with current evidence.
   product must keep its code contracts, visual precedent and tracker identities.
 - 2026-09-08 — Record missing template infrastructure explicitly in section 11 — a
   Markdown update cannot install a rule suite, migrate tokens or annotate rendered UI.
+
+- 2026-09-09 — Feature #319 uses the official Capacitor barcode scanner with the
+  bundled ZXing Android decoder and iOS SPM; the owner approved Android 8 minimum.
+  Camera access is declared on both platforms. Native camera proof and human
+  device approval remain separate from browser rendering.
+- 2026-09-09 — Attendance mutations go through `record-attendance` and its
+  service-only transaction. Direct authenticated writes to `attendance` are revoked.
+  Request receipts and per-child/session accounting prevent duplicate debits and
+  protect manual corrections from delayed QR scans. Historical attendance receives
+  no invented debit or refund. Run `pwsh -NoProfile -File
+  supabase/tests/run-transactional-attendance.ps1` and `npx --yes deno test --no-lock
+  supabase/functions/record-attendance-contract.test.ts` for the isolated contracts.
 
 ## 11. Known Issues / WIP
 

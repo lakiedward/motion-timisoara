@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { AttendanceScanner, AttendanceOfflineQueue } from './attendance/AttendanceScanner'
+import { AttendanceError } from '@/api/attendance'
 import { childAge } from '@/api/account'
 import {
   getCoachSessions,
@@ -47,7 +49,6 @@ export default function CoachAttendancePage() {
   })
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showOlder, setShowOlder] = useState(false)
-  // Pe telefon pontarea are ecranul ei: lista de ședințe se strânge până la „Înapoi”.
   const [markingOnPhone, setMarkingOnPhone] = useState(false)
 
   const upcoming = groups?.upcoming ?? []
@@ -77,29 +78,38 @@ export default function CoachAttendancePage() {
   const marked = roster.filter((r) => r.status !== null).length
   const unmarked = roster.filter((r) => r.status === null)
 
-  const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ['roster', sel?.id] })
-    // Marcajul „Pontată” de pe cardul de ședință se ia din aceeași sursă.
+  const invalidate = (occurrenceId: string) => {
+    qc.invalidateQueries({ queryKey: ['roster', occurrenceId] })
     qc.invalidateQueries({ queryKey: ['coach-sessions'] })
   }
 
   const mark = useMutation({
-    mutationFn: ({ childId, status }: { childId: string; status: RosterEntry['status']; childName: string }) =>
-      markAttendance(sel!.id, childId, status),
-    onSuccess: invalidate,
-    // La o grupă de 20 de copii, „nu am putut salva” fără nume nu ajută pe nimeni.
-    onError: (_e, v) => toast.error(`Nu am putut salva prezența pentru ${v.childName}.`),
+    mutationFn: ({
+      occurrenceId,
+      childId,
+      status,
+    }: {
+      occurrenceId: string
+      childId: string
+      status: RosterEntry['status']
+      childName: string
+    }) => markAttendance(occurrenceId, childId, status),
+    onSuccess: (_result, variables) => invalidate(variables.occurrenceId),
+    onError: (error, v) =>
+      toast.error(
+        `Nu am putut salva prezența pentru ${v.childName}.${error instanceof AttendanceError ? ` ${error.message}` : ''}`,
+      ),
   })
 
   const markAll = useMutation({
-    mutationFn: () => markManyPresent(sel!.id, unmarked.map((r) => r.child_id)),
-    onSuccess: invalidate,
+    mutationFn: ({ occurrenceId, childIds }: { occurrenceId: string; childIds: string[] }) =>
+      markManyPresent(occurrenceId, childIds),
+    onSuccess: (_result, variables) => invalidate(variables.occurrenceId),
     onError: () => toast.error('Nu am putut marca toți copiii prezenți.'),
   })
 
   const busy = mark.isPending || markAll.isPending
 
-  /** Contorul și acțiunea în masă, aceleași pe toate ecranele. */
   const catalogActions = roster.length ? (
     <div className="flex items-center justify-between gap-3">
       <span className="text-muted-foreground text-sm">
@@ -111,7 +121,10 @@ export default function CoachAttendancePage() {
         size="sm"
         className="h-11 min-h-11 lg:h-9 lg:min-h-9"
         disabled={busy || !unmarked.length}
-        onClick={() => markAll.mutate()}
+        onClick={() =>
+          sel &&
+          markAll.mutate({ occurrenceId: sel.id, childIds: unmarked.map((row) => row.child_id) })
+        }
       >
         Toți prezenți
       </Button>
@@ -119,8 +132,6 @@ export default function CoachAttendancePage() {
   ) : null
 
   const rosterPanel = !sel ? null : rosterLoading ? (
-    // Înălțimile urmăresc rândul real de copil, ca lista să nu sară când sosesc
-    // datele: 126 px sub 1024 px, unde butoanele trec sub nume, 70 px peste.
     <div className="space-y-2">
       {[0, 1, 2, 3].map((i) => (
         <Skeleton key={i} className="h-32 rounded-3xl lg:h-[70px]" />
@@ -143,8 +154,7 @@ export default function CoachAttendancePage() {
           <div className="min-w-0">
             <div className="line-clamp-1 font-medium lg:line-clamp-2">{r.child_name}</div>
             <div className="text-muted-foreground text-sm">{childAge(r.child_birth_date)} ani</div>
-            {/* Rezerva când părintele n-are telefonul: codul copilului, de pe
-                ecranul antrenorului. Element separat, ca vârsta să rămână „N ani". */}
+
             <Link
               to={`/coach/children/${r.child_id}/qr`}
               className="text-primary inline-flex min-h-11 items-center text-sm underline-offset-4 hover:underline lg:min-h-0"
@@ -163,10 +173,9 @@ export default function CoachAttendancePage() {
                   aria-pressed={active}
                   disabled={busy}
                   className="h-11 min-h-11 flex-1 lg:h-9 lg:min-h-9 lg:flex-none"
-                  // A doua apăsare pe butonul activ șterge pontarea: altfel o atingere
-                  // greșită lângă bazin rămâne înregistrată pentru totdeauna.
                   onClick={() =>
                     mark.mutate({
+                      occurrenceId: sel.id,
                       childId: r.child_id,
                       childName: r.child_name,
                       status: active ? null : status,
@@ -201,7 +210,7 @@ export default function CoachAttendancePage() {
           className={cn(
             'shadow-card w-full rounded-3xl border-2 p-4 text-left text-sm outline-none transition-colors',
             'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
-            active ? 'border-primary bg-primary/10' : 'border-border bg-card hover:bg-accent'
+            active ? 'border-primary bg-primary/10' : 'border-border bg-card hover:bg-accent',
           )}
         >
           <div className="flex items-start justify-between gap-2">
@@ -216,11 +225,17 @@ export default function CoachAttendancePage() {
             {s.enrolled_count === 1 ? 'copil' : 'copii'}
           </div>
         </button>
-        {/* Pe telefon catalogul se deschide sub ședința aleasă, singura rămasă pe ecran. */}
+
         {active && markingOnPhone && (
           <div className="mt-3 space-y-3 md:hidden">
             {sel && isRetroactive(sel.starts_at) && (
               <Badge variant="outline">Pontare retroactivă</Badge>
+            )}
+            {sel && (
+              <AttendanceScanner
+                occurrenceId={sel.id}
+                label={`${sel.course?.name} · ${formatWhen(sel.starts_at)}`}
+              />
             )}
             {catalogActions}
             {rosterPanel}
@@ -234,6 +249,7 @@ export default function CoachAttendancePage() {
     <div>
       <h1 className="font-display text-foreground mb-6 text-2xl font-bold">Prezență</h1>
 
+      {!sel && !isLoading && <AttendanceOfflineQueue />}
       {isLoading ? (
         <div className="grid gap-6 md:grid-cols-[1fr_1.2fr]">
           <div className="space-y-2">
@@ -252,7 +268,6 @@ export default function CoachAttendancePage() {
         </div>
       ) : total ? (
         <div className="grid gap-6 md:grid-cols-[1fr_1.2fr]">
-          {/* Ședințe */}
           <div className="min-w-0 space-y-2 lg:-mx-1.5 lg:max-h-[70vh] lg:overflow-y-auto lg:px-1.5">
             {markingOnPhone && (
               <Button
@@ -268,7 +283,7 @@ export default function CoachAttendancePage() {
             <h2
               className={cn(
                 'text-muted-foreground text-sm font-semibold',
-                markingOnPhone && 'hidden md:block'
+                markingOnPhone && 'hidden md:block',
               )}
             >
               Ședințe ({upcoming.length + visiblePast.length})
@@ -279,7 +294,7 @@ export default function CoachAttendancePage() {
                 <h3
                   className={cn(
                     'text-muted-foreground pt-1 text-xs font-semibold uppercase',
-                    markingOnPhone && 'hidden md:block'
+                    markingOnPhone && 'hidden md:block',
                   )}
                 >
                   Următoarele
@@ -293,7 +308,7 @@ export default function CoachAttendancePage() {
                 <h3
                   className={cn(
                     'text-muted-foreground pt-3 text-xs font-semibold uppercase',
-                    markingOnPhone && 'hidden md:block'
+                    markingOnPhone && 'hidden md:block',
                   )}
                 >
                   Trecute
@@ -316,7 +331,7 @@ export default function CoachAttendancePage() {
               <p
                 className={cn(
                   'text-muted-foreground pt-2 text-xs',
-                  markingOnPhone && 'hidden md:block'
+                  markingOnPhone && 'hidden md:block',
                 )}
               >
                 Se afișează primele {SESSION_GROUP_LIMIT} de ședințe din fiecare grup. Ai mai multe
@@ -325,9 +340,6 @@ export default function CoachAttendancePage() {
             )}
           </div>
 
-          {/* Catalog — pe telefon trăiește sub ședința aleasă, nu aici. Plafonul de
-              înălțime pornește de la 1024 px: pe tabletă lista încape oricum, iar
-              70vh doar tăia ultimul copil lăsând ecran gol dedesubt. */}
           <div className="hidden min-w-0 md:flex md:flex-col md:gap-2 lg:max-h-[70vh] lg:overflow-hidden">
             <div className="space-y-2">
               <h2 className="text-muted-foreground text-sm font-semibold">
@@ -338,6 +350,12 @@ export default function CoachAttendancePage() {
                   </Badge>
                 )}
               </h2>
+              {sel && (
+                <AttendanceScanner
+                  occurrenceId={sel.id}
+                  label={`${sel.course?.name} · ${formatWhen(sel.starts_at)}`}
+                />
+              )}
               {catalogActions}
             </div>
             <div className="-mx-1.5 overflow-y-auto px-1.5">{rosterPanel}</div>

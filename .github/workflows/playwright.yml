@@ -14,6 +14,7 @@ on:
       - 'supabase/tests/**'
       - 'supabase/migrations/00037_camp_age_pricing.sql'
       - 'supabase/migrations/00041_camp_child_price_server_only.sql'
+      - 'supabase/migrations/00042_transactional_attendance.sql'
       - 'playwright.config.ts'
       - 'playwright.pricing.config.ts'
       - 'package.json'
@@ -28,6 +29,7 @@ on:
       - 'supabase/tests/**'
       - 'supabase/migrations/00037_camp_age_pricing.sql'
       - 'supabase/migrations/00041_camp_child_price_server_only.sql'
+      - 'supabase/migrations/00042_transactional_attendance.sql'
       - 'playwright.config.ts'
       - 'playwright.pricing.config.ts'
       - 'package.json'
@@ -71,12 +73,15 @@ jobs:
       with:
         deno-version: v2.9.6
     - name: Check enrollment functions
-      run: deno check --no-lock supabase/functions/validate-enrollment/index.ts supabase/functions/create-enrollment/index.ts
+      run: deno check --no-lock supabase/functions/validate-enrollment/index.ts supabase/functions/create-enrollment/index.ts supabase/functions/record-attendance/index.ts
     - name: Test enrollment pricing contract
-      run: deno test --no-lock supabase/functions/enrollment-contract.test.ts
+      run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/record-attendance-contract.test.ts
     - name: Test isolated camp pricing SQL
       shell: pwsh
       run: ./supabase/tests/run-camp-child-pricing.ps1
+    - name: Test isolated attendance SQL and concurrent scans
+      shell: pwsh
+      run: ./supabase/tests/run-transactional-attendance.ps1
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
