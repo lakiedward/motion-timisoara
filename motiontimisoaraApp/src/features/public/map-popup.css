@@ -59,18 +59,34 @@
   background: var(--muted);
 }
 
-.mt-public-map .mt-camp-marker {
+.mt-public-map .mt-offer-marker {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--highlight-foreground);
-  background: var(--highlight);
-  border: 2px solid var(--highlight-foreground);
+  gap: var(--spacing);
+  background: var(--card);
+  border: 2px solid var(--foreground);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
 }
 
-.mt-camp-marker svg {
-  width: calc(var(--spacing) * 7);
-  height: calc(var(--spacing) * 7);
+.mt-offer-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--spacing) * 6);
+  height: calc(var(--spacing) * 6);
+  border-radius: var(--radius-md);
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.mt-offer-camps {
+  color: var(--highlight-foreground);
+  background: var(--highlight);
+}
+
+.mt-offer-marker svg {
+  width: calc(var(--spacing) * 4);
+  height: calc(var(--spacing) * 4);
 }

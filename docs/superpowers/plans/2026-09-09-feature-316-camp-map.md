@@ -8,7 +8,9 @@ Public camp responses include the associated location, retaining the original lo
 
 The map fetches active camps using the existing reader-local end-of-day filter. It keeps one marker per grouped place and the existing place naming rules. Places with camps use the owner-selected Lucide Tent symbol and highlight token. Their popup retains courses and activities and adds camp detail links with dates. The owner requested filters for every offer type: All, Courses, Activities and Camps. Each filter selects places with that offer type while the shared popup retains all offers at the location. Unavailable relations do not produce camp offers; empty and failed queries stay distinct.
 
-The static marker SVG is generated from the installed lucide-react 1.18.0 Tent icon and retains its ISC license. Generating it once avoids including React's server renderer in the browser bundle.
+Each offer type has its own icon in the filters, legend and location marker: GraduationCap for courses, CalendarRange for activities, and Tent for camps. These reuse the existing portal navigation symbols. Mixed locations display their available type icons together on one marker; the popup remains shared. Camp symbols keep the highlight token, while course and activity symbols use primary and its foreground pair.
+
+The static marker SVGs are generated from the installed lucide-react icons and retain their ISC license. Generating them once avoids including React's server renderer in the browser bundle.
 
 ## Verification and delivery
 

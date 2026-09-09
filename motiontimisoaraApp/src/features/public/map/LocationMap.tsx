@@ -4,18 +4,18 @@ import type L from 'leaflet'
 import { Button } from '@/components/ui/button'
 import type { ActivityListItem, CourseListItem } from '@/api/public'
 import type { TabaraDinLista } from '@/api/camps'
-import { Tent } from 'lucide-react'
+import { CalendarRange, GraduationCap, MapPin, Tent } from 'lucide-react'
 import type { Loc } from '@/lib/locuri'
-import { campMarkerIcon, markerIcon } from '@/lib/map-marker'
+import { getOfferMarkerIcon } from '@/lib/map-marker'
 import FocusLocation from './FocusLocation'
 import LocationPopup from './LocationPopup'
 import { basemapAttribution, cartoTileUrl } from './basemap'
 
 const offerFilters = [
-  { value: 'all', label: 'Toate' },
-  { value: 'courses', label: 'Cursuri' },
-  { value: 'activities', label: 'Activități' },
-  { value: 'camps', label: 'Tabere' },
+  { value: 'all', label: 'Toate', icon: MapPin },
+  { value: 'courses', label: 'Cursuri', icon: GraduationCap },
+  { value: 'activities', label: 'Activități', icon: CalendarRange },
+  { value: 'camps', label: 'Tabere', icon: Tent },
 ] as const
 
 const emptyOffers = {
@@ -127,17 +127,27 @@ export default function LocationMap({
                 aria-pressed={offerType === filter.value}
                 onClick={() => setOfferType(filter.value)}
               >
+                <filter.icon aria-hidden="true" className="size-4" />
                 {filter.label}
               </Button>
             ))}
           </div>
-          <p className="text-muted-foreground flex items-start gap-2 text-sm">
-            <Tent
-              aria-hidden="true"
-              className="bg-highlight text-highlight-foreground size-6 shrink-0 rounded-md p-1"
-            />
-            Cortul marchează locurile cu tabere active.
-          </p>
+          <ul
+            aria-label="Legenda hărții"
+            className="text-muted-foreground flex flex-wrap gap-3 text-sm lg:flex-col"
+          >
+            {offerFilters
+              .filter((filter) => filter.value !== 'all')
+              .map((filter) => (
+                <li key={filter.value} className="flex items-center gap-2">
+                  <filter.icon
+                    aria-hidden="true"
+                    className={`size-6 shrink-0 rounded-md p-1 ${filter.value === 'camps' ? 'bg-highlight text-highlight-foreground' : 'bg-primary text-primary-foreground'}`}
+                  />
+                  {filter.label}
+                </li>
+              ))}
+          </ul>
           {offerType !== 'all' && visiblePlaces.length === 0 && (
             <p role="status" className="text-muted-foreground text-sm">
               {emptyOffers[offerType]}
@@ -168,7 +178,11 @@ export default function LocationMap({
                   <Marker
                     key={location.cheie}
                     position={[location.lat, location.lng]}
-                    icon={placeCamps.length ? campMarkerIcon : markerIcon}
+                    icon={getOfferMarkerIcon({
+                      courses: placeCourses.length > 0,
+                      activities: placeActivities.length > 0,
+                      camps: placeCamps.length > 0,
+                    })}
                     alt={location.nume}
                     title={location.nume}
                     ref={(marker) => {
