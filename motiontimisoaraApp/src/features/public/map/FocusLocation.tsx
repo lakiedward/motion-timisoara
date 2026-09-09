@@ -20,9 +20,12 @@ export default function FocusLocation({
       focusedId.current = null
       return
     }
-    if (focusedId.current === locationId) return
     const location = loculRandului(locations, locationId)
-    if (!location) return
+    if (!location) {
+      focusedId.current = null
+      return
+    }
+    if (focusedId.current === locationId) return
     let frame = 0
     let attempts = 0
     const focus = () => {

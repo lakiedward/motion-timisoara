@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { ChevronRight, MapPin } from 'lucide-react'
+import { ChevronRight, MapPin, Tent } from 'lucide-react'
+import { formatZi, type TabaraDinLista } from '@/api/camps'
 import type { ActivityListItem, CourseListItem } from '@/api/public'
 import type { Loc } from '@/lib/locuri'
 import { plural } from '@/lib/plural'
@@ -12,11 +13,13 @@ function PopupRow({
   sportCode,
   title,
   meta,
+  isCamp = false,
 }: {
   to: string
   sportCode: string | null | undefined
   title: string
   meta: string
+  isCamp?: boolean
 }) {
   const color = SPORT_COLOR[sportCode ?? ''] ?? SPORT_COLOR_FALLBACK
   return (
@@ -26,10 +29,18 @@ function PopupRow({
     >
       <span
         aria-hidden="true"
-        className="flex size-8 shrink-0 items-center justify-center rounded-full text-sm"
-        style={{ backgroundColor: `${color}1f`, boxShadow: `inset 0 0 0 1px ${color}33` }}
+        className={`flex size-8 shrink-0 items-center justify-center rounded-full text-sm ${isCamp ? 'bg-highlight text-highlight-foreground' : ''}`}
+        style={
+          isCamp
+            ? undefined
+            : { backgroundColor: `${color}1f`, boxShadow: `inset 0 0 0 1px ${color}33` }
+        }
       >
-        {SPORT_ICON[sportCode ?? ''] ?? <MapPin className="size-4" />}
+        {isCamp ? (
+          <Tent className="size-4" />
+        ) : (
+          (SPORT_ICON[sportCode ?? ''] ?? <MapPin className="size-4" />)
+        )}
       </span>
       <span className="min-w-0 flex-1">
         <span className="text-foreground block break-words text-sm font-semibold">{title}</span>
@@ -53,10 +64,12 @@ export default function LocationPopup({
   location,
   courses,
   activities,
+  camps,
 }: {
   location: Loc
   courses: CourseListItem[]
   activities: ActivityListItem[]
+  camps: TabaraDinLista[]
 }) {
   return (
     <>
@@ -123,9 +136,30 @@ export default function LocationPopup({
             </div>
           </div>
         )}
-        {!courses.length && !activities.length && (
+        {camps.length > 0 && (
+          <div
+            className={
+              courses.length || activities.length ? 'border-border border-t pt-3' : undefined
+            }
+          >
+            <SectionLabel label="Tabere" count={camps.length} />
+            <div className="space-y-0.5">
+              {camps.map((camp) => (
+                <PopupRow
+                  key={camp.id}
+                  to={`/tabere/${camp.slug}`}
+                  sportCode={null}
+                  title={camp.title}
+                  meta={`${formatZi(camp.period_start)} – ${formatZi(camp.period_end)}`}
+                  isCamp
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        {!courses.length && !activities.length && !camps.length && (
           <p className="text-muted-foreground text-sm">
-            Momentan fără cursuri sau activități la această locație.
+            Momentan fără cursuri, activități sau tabere la această locație.
           </p>
         )}
       </div>

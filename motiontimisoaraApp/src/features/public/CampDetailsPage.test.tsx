@@ -43,6 +43,7 @@ const TABARA_IMPLICITA = {
   location_text: 'Timișoara',
 }
 const detaliu = (peste: Record<string, unknown> = {}) => ({
+  location: null,
   organizator: { fel: 'club', nume: 'Club Audit Motion', link: '/cluburi/club-1' },
   categorii: [],
   agePrices: [],
@@ -70,6 +71,27 @@ beforeEach(() => {
   utilizator = { id: 'parinte-1' }
   mocked.mockResolvedValue(detaliu() as never)
 })
+
+test('the camp location opens the map and preserves arrival details', async () => {
+  mocked.mockResolvedValue(
+    detaliu({
+      location: {
+        id: 'pool-1',
+        name: 'Bazin Olimpic',
+        lat: 45.75,
+        lng: 21.23,
+        address: null,
+        city: 'Timișoara',
+      },
+      tabara: { location_text: 'Intrarea din curte' },
+    }) as never,
+  )
+  renderPage()
+  expect(
+    await screen.findByRole('link', { name: 'Bazin Olimpic — vezi pe hartă' }),
+  ).toHaveAttribute('href', '/harta?location=pool-1')
+  expect(screen.getByText('Intrarea din curte')).toBeInTheDocument()
+})
 test('„Înscrie-te" duce la checkout cu tabăra aleasă', async () => {
   const user = userEvent.setup()
   renderPage()
@@ -82,9 +104,7 @@ test('un vizitator nelogat e dus la autentificare și se întoarce pe tabără',
   utilizator = null
   renderPage()
   await user.click(await screen.findByRole('button', { name: 'Înscrie-te' }))
-  expect(navigheaza).toHaveBeenCalledWith(
-    '/login?returnUrl=%2Ftabere%2Ftabara-inot',
-  )
+  expect(navigheaza).toHaveBeenCalledWith('/login?returnUrl=%2Ftabere%2Ftabara-inot')
 })
 test('o tabără încheiată nu mai oferă înscriere și spune de ce', async () => {
   mocked.mockResolvedValue(detaliu({ tabara: { period_end: '2020-08-21' } }) as never)
@@ -157,8 +177,20 @@ test('prețul e desfășurat pe categorii, cu descriere la fiecare', async () =>
   mocked.mockResolvedValue(
     detaliu({
       categorii: [
-        { id: 'p1', name: 'Monitorizare', description: 'Doi antrenori non-stop', amount: 25000, display_order: 0 },
-        { id: 'p2', name: 'Cazare și masă', description: 'Pensiune completă', amount: 65000, display_order: 1 },
+        {
+          id: 'p1',
+          name: 'Monitorizare',
+          description: 'Doi antrenori non-stop',
+          amount: 25000,
+          display_order: 0,
+        },
+        {
+          id: 'p2',
+          name: 'Cazare și masă',
+          description: 'Pensiune completă',
+          amount: 65000,
+          display_order: 1,
+        },
       ],
     }) as never,
   )
@@ -183,9 +215,7 @@ test('o desfășurare care nu dă prețul e semnalată, nu ascunsă', async () =
 test('o desfășurare corectă nu afișează nicio notă', async () => {
   mocked.mockResolvedValue(
     detaliu({
-      categorii: [
-        { id: 'p1', name: 'Tot', description: null, amount: 90000, display_order: 0 },
-      ],
+      categorii: [{ id: 'p1', name: 'Tot', description: null, amount: 90000, display_order: 0 }],
     }) as never,
   )
   renderPage()

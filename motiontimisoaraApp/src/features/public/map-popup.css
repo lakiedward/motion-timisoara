@@ -58,3 +58,35 @@
 .mt-public-map .leaflet-container {
   background: var(--muted);
 }
+
+.mt-public-map .mt-offer-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing);
+  background: var(--card);
+  border: 2px solid var(--foreground);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.mt-offer-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--spacing) * 6);
+  height: calc(var(--spacing) * 6);
+  border-radius: var(--radius-md);
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.mt-offer-camps {
+  color: var(--highlight-foreground);
+  background: var(--highlight);
+}
+
+.mt-offer-marker svg {
+  width: calc(var(--spacing) * 4);
+  height: calc(var(--spacing) * 4);
+}
