@@ -6,7 +6,8 @@
   "license": "ISC",
   "scripts": {
     "test:e2e": "playwright test",
-    "test:checkout-pricing": "playwright test --config playwright.pricing.config.ts"
+    "test:checkout-pricing": "playwright test --config playwright.pricing.config.ts",
+    "test:live-location": "playwright test --config playwright.location.config.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",

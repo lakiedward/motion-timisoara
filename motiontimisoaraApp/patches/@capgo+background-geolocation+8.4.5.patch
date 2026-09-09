@@ -1,0 +1,516 @@
+diff --git a/node_modules/@capgo/background-geolocation/android/src/main/java/com/capgo/capacitor_background_geolocation/BackgroundGeolocation.java b/node_modules/@capgo/background-geolocation/android/src/main/java/com/capgo/capacitor_background_geolocation/BackgroundGeolocation.java
+index 2e11126..8407ddc 100644
+--- a/node_modules/@capgo/background-geolocation/android/src/main/java/com/capgo/capacitor_background_geolocation/BackgroundGeolocation.java
++++ b/node_modules/@capgo/background-geolocation/android/src/main/java/com/capgo/capacitor_background_geolocation/BackgroundGeolocation.java
+@@ -75,6 +75,11 @@
+ 
+     @PluginMethod(returnType = PluginMethod.RETURN_CALLBACK)
+     public void start(final PluginCall call) {
++        if (longOptionFromCall(call, "expiresAt", 0L) <= System.currentTimeMillis()
++            || call.getString("url") != null || call.getObject("headers") != null) {
++            call.reject("An unexpired capture deadline and callback-only delivery are required", "CAPTURE_EXPIRED");
++            return;
++        }
+         if (getPermissionState("location") != PermissionState.GRANTED && !call.getBoolean("requestPermissions", true)) {
+             call.reject("User denied location permission", "NOT_AUTHORIZED");
+             return;
+@@ -124,7 +129,8 @@
+                     call.getString("url", null),
+                     headersFromCall(call),
+                     longOptionFromCall(call, "minIntervalMs", 0L),
+-                    call.getBoolean("networkFallback", false)
++                    call.getBoolean("networkFallback", false),
++                    longOptionFromCall(call, "expiresAt", 0L)
+                 );
+             })
+             .exceptionally((throwable) -> {
+@@ -317,12 +323,13 @@
+         getServiceConnection()
+             .thenAccept((service) -> {
+                 var callbackId = service.stop();
+-                PluginCall savedCall = getBridge().getSavedCall(callbackId);
++                PluginCall savedCall = callbackId == null ? null : getBridge().getSavedCall(callbackId);
+                 if (savedCall != null) {
+                     savedCall.release(getBridge());
+                 }
++                releaseServiceConnection();
++                serviceConnectionFuture = null;
+                 call.resolve();
+-                serviceConnectionFuture = null;
+             })
+             .exceptionally((throwable) -> {
+                 call.reject("Service connection failed: " + throwable.getMessage());
+@@ -696,11 +703,22 @@
+     private final LocalEvents.Listener localEventListener = new LocalEvents.Listener() {
+         @Override
+         public void onLocation(String callbackId, Location location) {
++            PluginCall call = callbackId == null ? null : getBridge().getSavedCall(callbackId);
++            if (call == null || longOptionFromCall(call, "expiresAt", 0L) <= System.currentTimeMillis()) {
++                return;
++            }
++            call.resolve(formatLocation(location));
++        }
++
++        @Override
++        public void onStopped(String callbackId, String reason) {
+             PluginCall call = getBridge().getSavedCall(callbackId);
+-            if (call == null) {
+-                return;
+-            }
+-            call.resolve(formatLocation(location));
++            if (call != null) {
++                call.reject("Location capture stopped", reason);
++                call.release(getBridge());
++            }
++            releaseServiceConnection();
++            serviceConnectionFuture = null;
+         }
+ 
+         @Override
+diff --git a/node_modules/@capgo/background-geolocation/android/src/main/java/com/capgo/capacitor_background_geolocation/BackgroundGeolocationService.java b/node_modules/@capgo/background-geolocation/android/src/main/java/com/capgo/capacitor_background_geolocation/BackgroundGeolocationService.java
+index f3cd30b..e831e60 100644
+--- a/node_modules/@capgo/background-geolocation/android/src/main/java/com/capgo/capacitor_background_geolocation/BackgroundGeolocationService.java
++++ b/node_modules/@capgo/background-geolocation/android/src/main/java/com/capgo/capacitor_background_geolocation/BackgroundGeolocationService.java
+@@ -85,80 +85,67 @@
+         return binder;
+     }
+ 
+-    // Some devices allow a foreground service to outlive the application's main
+-    // activity, leading to nasty crashes as reported in issue #59. If we learn
+-    // that the application has been killed, all watchers are stopped and the
+-    // service is terminated immediately.
+-    //
+-    // The exception is native delivery mode (a "url" was given to start()): there
+-    // the service is meant to outlive the app UI, so it keeps running and relies
+-    // on onStartCommand to re-establish updates if the process is later restarted.
++    private static final String ACTION_STOP = "com.motiontimisoara.STOP_LOCATION";
++    private long captureExpiresAt;
++    private long captureDeadlineElapsed;
++    private boolean captureActive;
++    private final Runnable expiryRunnable = () -> stopCapture("CAPTURE_EXPIRED");
++
+     @Override
+     public boolean onUnbind(Intent intent) {
+-        if (LocationStore.isEnabled(getApplicationContext())) {
+-            return false;
+-        }
++        stopCapture(null);
++        return false;
++    }
++
++    @Override
++    public void onTaskRemoved(Intent rootIntent) {
++        stopCapture("CAPTURE_STOPPED");
++        super.onTaskRemoved(rootIntent);
++    }
++
++    @Override
++    public int onStartCommand(Intent intent, int flags, int startId) {
++        if (intent == null || ACTION_STOP.equals(intent.getAction())) {
++            stopCapture("CAPTURE_STOPPED");
++        }
++        return START_NOT_STICKY;
++    }
++
++    @Override
++    public void onDestroy() {
++        stopCapture(null);
++        super.onDestroy();
++    }
++
++    private boolean captureExpired() {
++        return !captureActive || System.currentTimeMillis() >= captureExpiresAt
++            || SystemClock.elapsedRealtime() >= captureDeadlineElapsed;
++    }
++
++    private String stopCapture(String reason) {
++        String previousCallback = callbackId;
++        captureActive = false;
++        callbackId = null;
++        watchdogHandler.removeCallbacks(expiryRunnable);
++        stopWatchdog();
+         if (client != null && locationCallback != null) {
+             client.removeUpdates(locationCallback);
+         }
++        locationCallback = null;
++        nativePostUrl = null;
++        LocationStore.clear(getApplicationContext());
++        if (postExecutor != null) {
++            postExecutor.shutdownNow();
++            postExecutor = null;
++        }
++        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
+         releaseMediaPlayer();
+         releaseWakeLock();
+-        stopWatchdog();
+         stopSelf();
+-        return false;
+-    }
+-
+-    // In native delivery mode, keep tracking after the user swipes the app away
+-    // from the recents list; otherwise fall back to the default teardown.
+-    @Override
+-    public void onTaskRemoved(Intent rootIntent) {
+-        if (LocationStore.isEnabled(getApplicationContext())) {
+-            return;
+-        }
+-        super.onTaskRemoved(rootIntent);
+-    }
+-
+-    // The system may kill and later restart a START_STICKY foreground service
+-    // with a null intent and no binder call. When native delivery is configured,
+-    // re-establish location updates from the persisted config so tracking resumes
+-    // without the app UI.
+-    @Override
+-    public int onStartCommand(Intent intent, int flags, int startId) {
+-        Context context = getApplicationContext();
+-        if (!LocationStore.isEnabled(context)) {
+-            // Not in native delivery mode: preserve the original behavior where the
+-            // service does not outlive the app, so it is not sticky-restarted.
+-            return START_NOT_STICKY;
+-        }
+-        nativePostUrl = LocationStore.getUrl(context);
+-        promoteToForeground(LocationStore.getTitle(context), LocationStore.getMessage(context));
+-        if (client == null || locationCallback == null) {
+-            acquireWakeLock();
+-            client = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+-            currentDistanceFilter = LocationStore.getDistanceFilter(context);
+-            currentMinIntervalMs = LocationStore.getMinIntervalMs(context);
+-            networkFallbackEnabled = LocationStore.getNetworkFallback(context);
+-            locationCallback = createLocationListener(this);
+-            lastGpsFixAtMs = SystemClock.elapsedRealtime();
+-            requestLocationUpdates();
+-            startWatchdog();
+-        }
+-        return START_STICKY;
+-    }
+-
+-    @Override
+-    public void onDestroy() {
+-        if (client != null && locationCallback != null) {
+-            client.removeUpdates(locationCallback);
+-        }
+-        super.onDestroy();
+-        releaseMediaPlayer();
+-        releaseWakeLock();
+-        stopWatchdog();
+-        if (postExecutor != null) {
+-            postExecutor.shutdown();
+-            postExecutor = null;
+-        }
++        if (reason != null && previousCallback != null) {
++            LocalEvents.emitStopped(previousCallback, reason);
++        }
++        return previousCallback;
+     }
+ 
+     private void releaseMediaPlayer() {
+@@ -209,6 +196,10 @@
+     }
+ 
+     private void restartLocationUpdates() {
++        if (captureExpired()) {
++            stopCapture("CAPTURE_EXPIRED");
++            return;
++        }
+         Logger.debug("Location watchdog timed out, restarting updates");
+         if (client == null || locationCallback == null) {
+             return;
+@@ -228,6 +219,7 @@
+     }
+ 
+     private void startWatchdog() {
++        if (!captureActive) return;
+         stopWatchdog();
+         if (watchdogRunnable == null) {
+             watchdogRunnable = this::restartLocationUpdates;
+@@ -245,6 +237,13 @@
+     }
+ 
+     private void handleLocationChanged(android.location.Location location) {
++        if (captureExpired()) {
++            stopCapture("CAPTURE_EXPIRED");
++            return;
++        }
++        if (location.getTime() >= captureExpiresAt) {
++            return;
++        }
+         if (LocationManager.GPS_PROVIDER.equals(location.getProvider())) {
+             lastGpsFixAtMs = SystemClock.elapsedRealtime();
+         } else if (LocationManager.NETWORK_PROVIDER.equals(location.getProvider())) {
+@@ -323,12 +322,15 @@
+     }
+ 
+     private void requestLocationUpdates() {
++        if (captureExpired()) {
++            stopCapture("CAPTURE_EXPIRED");
++            return;
++        }
+         try {
+             client.requestLocationUpdates(LocationManager.GPS_PROVIDER, locationIntervalMs(), currentDistanceFilter, locationCallback);
+-        } catch (SecurityException ignore) {
+-            // According to Android Studio, this method can throw a Security Exception if
+-            // permissions are not yet granted. Rather than check the permissions, which is fiddly,
+-            // we simply ignore the exception.
++        } catch (SecurityException denied) {
++            stopCapture("NOT_AUTHORIZED");
++            return;
+         }
+         if (!networkFallbackEnabled) {
+             return;
+@@ -373,7 +375,8 @@
+                 startForeground(NOTIFICATION_ID, createBackgroundNotification(notificationTitle, notificationMessage));
+             }
+         } catch (Exception exception) {
+-            Logger.error("Failed to foreground service", exception);
++            stopCapture(null);
++            throw new IllegalStateException("Foreground location notification could not start", exception);
+         }
+     }
+ 
+@@ -388,8 +391,19 @@
+             final String url,
+             final Map<String, String> headers,
+             final long minIntervalMs,
+-            final boolean networkFallback
++            final boolean networkFallback,
++            final long expiresAt
+         ) {
++            long remaining = expiresAt - System.currentTimeMillis();
++            if (remaining <= 0 || (url != null && !url.isEmpty()) || (headers != null && !headers.isEmpty())) {
++                stopCapture(null);
++                throw new IllegalArgumentException("An unexpired capture deadline and callback-only delivery are required");
++            }
++            captureExpiresAt = expiresAt;
++            captureDeadlineElapsed = SystemClock.elapsedRealtime() + remaining;
++            captureActive = true;
++            watchdogHandler.removeCallbacks(expiryRunnable);
++            watchdogHandler.postDelayed(expiryRunnable, remaining);
+             releaseMediaPlayer();
+             acquireWakeLock();
+             client = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+@@ -399,17 +413,8 @@
+             currentMinIntervalMs = Math.max(0L, minIntervalMs);
+             networkFallbackEnabled = networkFallback;
+ 
+-            nativePostUrl = (url == null || url.isEmpty()) ? null : url;
+-            LocationStore.saveSetup(
+-                getApplicationContext(),
+-                nativePostUrl,
+-                notificationTitle,
+-                notificationMessage,
+-                distanceFilter,
+-                headers,
+-                currentMinIntervalMs,
+-                networkFallback
+-            );
++            nativePostUrl = null;
++            LocationStore.clear(getApplicationContext());
+ 
+             // The service may already be running (for example after a sticky
+             // restart), so drop any previous listener before registering a new one.
+@@ -417,11 +422,11 @@
+                 client.removeUpdates(locationCallback);
+             }
+             locationCallback = createLocationListener(BackgroundGeolocationService.this);
++            promoteToForeground(notificationTitle, notificationMessage);
+             requestLocationUpdates();
+             // Arm the watchdog here so rejected network fixes during the grace period cannot
+             // leave tracking without a restart path if GPS_PROVIDER goes silent.
+             startWatchdog();
+-            promoteToForeground(notificationTitle, notificationMessage);
+         }
+ 
+         void updateHeaders(final Map<String, String> headers) {
+@@ -429,15 +434,7 @@
+         }
+ 
+         String stop() {
+-            LocationStore.clear(getApplicationContext());
+-            nativePostUrl = null;
+-            stopWatchdog();
+-            client.removeUpdates(locationCallback);
+-            ServiceCompat.stopForeground(BackgroundGeolocationService.this, ServiceCompat.STOP_FOREGROUND_REMOVE);
+-            stopSelf();
+-            releaseMediaPlayer();
+-            releaseWakeLock();
+-            return callbackId;
++            return stopCapture(null);
+         }
+ 
+         void setPlannedRoute(String filePath, double[][] routeCoordinates, float distance) {
+@@ -516,6 +513,9 @@
+             );
+         }
+ 
++        Intent stopIntent = new Intent(this, BackgroundGeolocationService.class).setAction(ACTION_STOP);
++        builder.addAction(0, "Oprește", PendingIntent.getService(
++            this, NOTIFICATION_ID, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+         return builder.build();
+     }
+ 
+diff --git a/node_modules/@capgo/background-geolocation/android/src/main/java/com/capgo/capacitor_background_geolocation/LocalEvents.java b/node_modules/@capgo/background-geolocation/android/src/main/java/com/capgo/capacitor_background_geolocation/LocalEvents.java
+index e972fe2..7439339 100644
+--- a/node_modules/@capgo/background-geolocation/android/src/main/java/com/capgo/capacitor_background_geolocation/LocalEvents.java
++++ b/node_modules/@capgo/background-geolocation/android/src/main/java/com/capgo/capacitor_background_geolocation/LocalEvents.java
+@@ -19,6 +19,8 @@
+     interface Listener {
+         default void onLocation(String callbackId, Location location) {}
+ 
++        default void onStopped(String callbackId, String reason) {}
++
+         default void onGeofenceTransition(String payload) {}
+ 
+         default void onGeofenceError(String payload) {}
+@@ -39,6 +41,10 @@
+ 
+     static void emitLocation(String callbackId, Location location) {
+         dispatch((listener) -> listener.onLocation(callbackId, location));
++    }
++
++    static void emitStopped(String callbackId, String reason) {
++        dispatch((listener) -> listener.onStopped(callbackId, reason));
+     }
+ 
+     static void emitGeofenceTransition(String payload) {
+diff --git a/node_modules/@capgo/background-geolocation/dist/esm/definitions.d.ts b/node_modules/@capgo/background-geolocation/dist/esm/definitions.d.ts
+index bffc5f1..f4aa09f 100644
+--- a/node_modules/@capgo/background-geolocation/dist/esm/definitions.d.ts
++++ b/node_modules/@capgo/background-geolocation/dist/esm/definitions.d.ts
+@@ -60,6 +60,7 @@
+  * @since 7.0.9
+  */
+ export interface StartOptions {
++    expiresAt: number;
+     /**
+      * If the "backgroundMessage" option is defined, the plugin will
+      * provide location updates whether the app is in the background or the
+diff --git a/node_modules/@capgo/background-geolocation/ios/Sources/CapgoBackgroundGeolocationPlugin/CapgoCapacitorBackgroundGeolocationPlugin.swift b/node_modules/@capgo/background-geolocation/ios/Sources/CapgoBackgroundGeolocationPlugin/CapgoCapacitorBackgroundGeolocationPlugin.swift
+index f792464..5b9d76b 100644
+--- a/node_modules/@capgo/background-geolocation/ios/Sources/CapgoBackgroundGeolocationPlugin/CapgoCapacitorBackgroundGeolocationPlugin.swift
++++ b/node_modules/@capgo/background-geolocation/ios/Sources/CapgoBackgroundGeolocationPlugin/CapgoCapacitorBackgroundGeolocationPlugin.swift
+@@ -56,6 +56,9 @@
+         CAPPluginMethod(name: "updateHeaders", returnType: CAPPluginReturnPromise),
+         CAPPluginMethod(name: "getPluginVersion", returnType: CAPPluginReturnPromise)
+     ]
++    private var captureExpiresAt: Date?
++    private var captureDeadlineUptime: TimeInterval?
++    private var captureExpiryTask: DispatchWorkItem?
+     private var locationManager: CLLocationManager?
+     private var geofenceLocationManager: CLLocationManager?
+     private var created: Date?
+@@ -112,6 +115,20 @@
+             if self.locationManager != nil {
+                 return call.reject("Location tracking already started", "ALREADY_STARTED")
+             }
++            guard let expiryMilliseconds = call.getDouble("expiresAt"), expiryMilliseconds.isFinite,
++                  expiryMilliseconds > Date().timeIntervalSince1970 * 1000,
++                  call.getString("url") == nil, call.getObject("headers") == nil else {
++                return call.reject("An unexpired capture deadline and callback-only delivery are required", "CAPTURE_EXPIRED")
++            }
++            let remaining = expiryMilliseconds / 1000 - Date().timeIntervalSince1970
++            self.captureExpiresAt = Date(timeIntervalSince1970: expiryMilliseconds / 1000)
++            self.captureDeadlineUptime = ProcessInfo.processInfo.systemUptime + remaining
++            let expiryTask = DispatchWorkItem { [weak self] in
++                self?.finishCapture(reason: "CAPTURE_EXPIRED")
++            }
++            self.captureExpiryTask?.cancel()
++            self.captureExpiryTask = expiryTask
++            DispatchQueue.main.asyncAfter(deadline: .now() + remaining, execute: expiryTask)
+             // Optional native delivery endpoint (same validation as setupGeofencing).
+             if let urlString = call.getString("url"), !urlString.isEmpty {
+                 guard let url = URL(string: urlString),
+@@ -192,26 +209,35 @@
+         return false
+     }
+ 
++    private func captureExpired() -> Bool {
++        guard let expiry = captureExpiresAt, let uptime = captureDeadlineUptime else { return true }
++        return Date() >= expiry || ProcessInfo.processInfo.systemUptime >= uptime
++    }
++
++    private func finishCapture(reason: String? = nil) {
++        captureExpiryTask?.cancel()
++        captureExpiryTask = nil
++        captureExpiresAt = nil
++        captureDeadlineUptime = nil
++        stopUpdatingLocation()
++        locationManager?.delegate = nil
++        locationManager = nil
++        created = nil
++        locationBackendUrl = nil
++        locationHeaders = [:]
++        minIntervalMs = 0
++        lastPostedLocationTime = nil
++        if let callbackId = activeCallbackId, let savedCall = bridge?.savedCall(withID: callbackId) {
++            if let reason = reason { savedCall.reject("Location capture stopped", reason) }
++            bridge?.releaseCall(savedCall)
++        }
++        activeCallbackId = nil
++    }
++
+     @objc func stop(_ call: CAPPluginCall) {
+-        // CLLocationManager requires main thread
+         DispatchQueue.main.async {
+-            self.stopUpdatingLocation()
+-
+-            self.locationManager?.delegate = nil
+-            self.locationManager = nil
+-            self.created = nil
+-            self.locationBackendUrl = nil
+-            self.locationHeaders = [:]
+-            self.minIntervalMs = 0
+-            self.lastPostedLocationTime = nil
+-
+-            if let callbackId = self.activeCallbackId {
+-                if let savedCall = self.bridge?.savedCall(withID: callbackId) {
+-                    self.bridge?.releaseCall(savedCall)
+-                }
+-                self.activeCallbackId = nil
+-            }
+-            return call.resolve()
++            self.finishCapture()
++            call.resolve()
+         }
+     }
+ 
+@@ -719,6 +745,10 @@
+     }
+ 
+     private func startUpdatingLocation() {
++        if captureExpired() {
++            finishCapture(reason: "CAPTURE_EXPIRED")
++            return
++        }
+         // Avoid unnecessary calls to startUpdatingLocation, which can
+         // result in extraneous invocations of didFailWithError.
+         if !isUpdatingLocation, let manager = locationManager {
+@@ -858,11 +888,8 @@
+                 // it cannot get a fix immediately.
+                 return
+             } else if clErr.code == .denied {
+-                stopUpdatingLocation()
+-                return call.reject(
+-                    "Permission denied.",
+-                    "NOT_AUTHORIZED"
+-                )
++                finishCapture(reason: "NOT_AUTHORIZED")
++                return
+             }
+         }
+         return call.reject(error.localizedDescription, nil, error)
+@@ -872,9 +899,13 @@
+         _ manager: CLLocationManager,
+         didUpdateLocations locations: [CLLocation]
+     ) {
++        if captureExpired() {
++            finishCapture(reason: "CAPTURE_EXPIRED")
++            return
++        }
+         guard manager === locationManager,
+               let location = locations.last,
+-              isLocationValid(location) else {
++              isLocationValid(location), let expiry = captureExpiresAt, location.timestamp < expiry else {
+             return
+         }
+ 

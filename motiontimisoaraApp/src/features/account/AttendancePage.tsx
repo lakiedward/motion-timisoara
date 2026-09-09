@@ -8,11 +8,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { inceputPerioada, type Perioada } from '@/lib/perioada'
 import { plural } from '@/lib/plural'
 import { cn } from '@/lib/utils'
+import { CurrentLocationSessions } from '@/features/live-location/CurrentLocationSessions'
 
 const selectCls =
   'border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] lg:h-9'
 
-/** Valoarea selectorului cand nu e ales un copil anume. */
 const TOTI = 'toti'
 
 const PERIOADE: { value: Perioada; label: string }[] = [
@@ -21,7 +21,6 @@ const PERIOADE: { value: Perioada; label: string }[] = [
   { value: 'luna', label: 'Luna curentă' },
 ]
 
-/** „07.08.2026 · 17:00” — data singură nu deosebește două ședințe din aceeași zi. */
 function formatCand(startsAt: string): string {
   const d = new Date(startsAt)
   const data = d.toLocaleDateString('ro-RO')
@@ -36,10 +35,6 @@ export default function AttendancePage() {
   })
   const [selected, setSelected] = useState<string>(TOTI)
   const [perioada, setPerioada] = useState<Perioada>('toate')
-
-  // Alegerea se verifică față de lista curentă. Altfel, după ștergerea unui copil
-  // din „Copiii mei”, `selected` rămâne un id mort: selectorul arată vizual primul
-  // copil, dar cererea pleacă pe cel șters și lista pare goală pentru cine nu trebuie.
   const alegereValida = selected === TOTI || children.some((c) => c.id === selected)
   const ales = alegereValida ? selected : TOTI
   const totiCopiii = ales === TOTI
@@ -56,11 +51,7 @@ export default function AttendancePage() {
     enabled: totiCopiii ? idsCopii.length > 0 : !!ales,
   })
 
-  /** Numele copiilor, ca rândurile să spună al cui e ședința fără un join în plus. */
-  const numeDupaId = useMemo(
-    () => new Map(children.map((c) => [c.id, c.name])),
-    [children],
-  )
+  const numeDupaId = useMemo(() => new Map(children.map((c) => [c.id, c.name])), [children])
 
   const randuri = useMemo(() => {
     const de_la = inceputPerioada(perioada)
@@ -71,7 +62,7 @@ export default function AttendancePage() {
         return new Date(r.occurrence.starts_at) >= de_la
       })
       .sort(
-        (a, b) => +new Date(b.occurrence?.starts_at ?? 0) - +new Date(a.occurrence?.starts_at ?? 0)
+        (a, b) => +new Date(b.occurrence?.starts_at ?? 0) - +new Date(a.occurrence?.starts_at ?? 0),
       )
   }, [records, perioada])
 
@@ -83,14 +74,8 @@ export default function AttendancePage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl font-bold">Prezență</h1>
         <div className="flex flex-wrap items-center gap-2">
-          {/* Selectorul apare doar de la doi copii în sus — un control cu o
-              singură opțiune reală e zgomot. Aceeași regulă ca la filtrul din
-              anunțurile clubului, care se ascunde la un singur anunț. */}
           {children.length > 1 && (
             <div className="flex items-center gap-1.5">
-              {/* Eticheta e vizibilă, nu doar `aria-label`: cine se uită la ecran
-                  vedea până acum numai valoarea aleasă. Regula casei vine tot de
-                  la filtrul de anunțuri club, care are un Label înaintea lui. */}
               <Label htmlFor="filtru-copil" className="text-muted-foreground text-sm font-normal">
                 Copil
               </Label>
@@ -125,17 +110,14 @@ export default function AttendancePage() {
         </div>
       </div>
 
+      <CurrentLocationSessions />
       {seIncarcaCopiii ? (
-        // Fără asta, `children` e [] cât timp cererea zboară, iar părintele care
-        // ARE copii vede o clipă îndemnul să adauge unul.
         <Skeleton className="h-40 rounded-3xl" />
       ) : !children.length ? (
         <div className="text-muted-foreground rounded-3xl border border-dashed py-16 text-center">
           Adaugă un copil pentru a vedea prezența.
         </div>
       ) : aEsuatCitirea ? (
-        // O cădere de rețea nu e totuna cu un istoric gol: până acum amândouă
-        // arătau „Nicio prezență înregistrată încă.”
         <div role="alert" className="rounded-3xl border border-dashed py-16 text-center">
           <p className="text-foreground font-medium">Nu am putut încărca prezența.</p>
           <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetch()}>
@@ -162,12 +144,10 @@ export default function AttendancePage() {
                 <li key={r.id} className="bg-card rounded-2xl border p-3 text-sm">
                   <div className="flex items-center justify-between gap-3">
                     <span>
-                      {/* Numele apare doar când sunt toți la un loc ȘI există mai
-                          mult de un copil. Filtrat pe unul singur ar fi același
-                          nume repetat; iar când părintele are un singur copil nu
-                          există nici măcar selector care să fie dezambiguizat. */}
                       {totiCopiii && children.length > 1 && (
-                        <span className="font-medium">{numeDupaId.get(r.child_id) ?? 'Copil'} · </span>
+                        <span className="font-medium">
+                          {numeDupaId.get(r.child_id) ?? 'Copil'} ·{' '}
+                        </span>
                       )}
                       {r.occurrence?.course?.name ?? 'Ședință'}
                       {r.occurrence?.starts_at ? ` · ${formatCand(r.occurrence.starts_at)}` : ''}
@@ -175,13 +155,13 @@ export default function AttendancePage() {
                     <span
                       className={cn(
                         'font-medium',
-                        r.status === 'PRESENT' ? 'text-success' : 'text-destructive'
+                        r.status === 'PRESENT' ? 'text-success' : 'text-destructive',
                       )}
                     >
                       {r.status === 'PRESENT' ? 'Prezent' : 'Absent'}
                     </span>
                   </div>
-                  {/* Nota antrenorului era citită din baza de date și aruncată. */}
+
                   {r.note && <p className="text-muted-foreground mt-1.5 text-xs">{r.note}</p>}
                 </li>
               ))}
@@ -199,9 +179,6 @@ export default function AttendancePage() {
               </Button>
             </div>
           ) : !totiCopiii ? (
-            // Un copil ales care n-are nicio pontare: mesajul spune CINE, ca
-            // părintele să nu creadă că s-a stricat ceva, și dă drumul înapoi la
-            // toți. Oglindește tratamentul de mai sus al filtrului de perioadă.
             <div className="text-muted-foreground rounded-3xl border border-dashed py-16 text-center">
               <p>{numeDupaId.get(ales) ?? 'Copilul ales'} nu are nicio prezență înregistrată.</p>
               <Button

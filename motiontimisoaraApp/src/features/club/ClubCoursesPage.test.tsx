@@ -6,6 +6,9 @@ import { vi } from 'vitest'
 import { toast } from 'sonner'
 
 import ClubCoursesPage from './ClubCoursesPage'
+vi.mock('@/features/live-location/CurrentLocationSessions', () => ({
+  CurrentLocationSessions: () => null,
+}))
 import { getClubCourses, getMyClub, setClubCourseActive, type ClubCourse } from '@/api/club'
 
 vi.mock('@/api/club', () => ({
@@ -45,7 +48,11 @@ function curs(over: Partial<ClubCourse> & { id: string; name: string }): ClubCou
 
 /** Două cursuri cu același nume, care se deosebesc doar prin locație. */
 const omonime = (): ClubCourse[] => [
-  curs({ id: '1', name: 'Înot — audit UI', location: { id: 'l1', name: 'Bazin Olimpic Timișoara' } }),
+  curs({
+    id: '1',
+    name: 'Înot — audit UI',
+    location: { id: 'l1', name: 'Bazin Olimpic Timișoara' },
+  }),
   curs({ id: '2', name: 'Înot — audit UI', location: { id: 'l2', name: 'Bazin Audit Motion' } }),
 ]
 

@@ -6,6 +6,7 @@ import { vi } from 'vitest'
 import { toast } from 'sonner'
 
 import CoachAttendancePage from './CoachAttendancePage'
+vi.mock('@/features/live-location/CoachLocationPanel', () => ({ CoachLocationPanel: () => null }))
 import {
   getCoachSessions,
   getSessionRoster,
@@ -253,9 +254,7 @@ test.each([
   vi.setSystemTime(new Date('2026-09-08T12:00:00.000Z'))
   mockedSessions.mockResolvedValue(
     groups({
-      past: [
-        session({ id: 'boundary', starts_at: startsAt, ends_at: '2026-08-25T13:00:00.000Z' }),
-      ],
+      past: [session({ id: 'boundary', starts_at: startsAt, ends_at: '2026-08-25T13:00:00.000Z' })],
       pastRecentCount: retroactive ? 0 : 1,
     }),
   )

@@ -36,6 +36,12 @@ applied migration. Do not apply it remotely without the owner's separate approva
 of the migration and access rules. The backend-only scope and retention contract
 are in `docs/superpowers/specs/2026-09-09-feature-320-live-location-backend.md`.
 
+`00044_coach_live_location_realtime.sql` is also a **local proposal for #320**.
+It adds scoped Realtime authorization and empty private invalidation events, never
+coordinates in Broadcast. It requires `00043` and the owner's separate approval of
+its policies before remote application. The app/native implementation and deployment
+checks are in `docs/superpowers/specs/2026-09-09-feature-320-live-location-app.md`.
+
 **Next migration number = highest existing + 1.** Check with
 `git ls-files supabase/migrations | tail -1` before creating one — do not trust a
 number written down elsewhere.

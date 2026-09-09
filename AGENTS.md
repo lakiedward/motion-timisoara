@@ -481,6 +481,13 @@ reorganizing this document; correct obsolete facts with current evidence.
   supabase/tests/run-transactional-attendance.ps1` and `npx --yes deno test --no-lock
   supabase/functions/record-attendance-contract.test.ts` for the isolated contracts.
 
+- 2026-09-09 — Feature #320 uses session-scoped Edge reads after empty private
+  Realtime invalidations, with no coordinate Broadcast/history. Native capture uses
+  pinned Capgo 8.4.5 plus a reproducible expiry/cleanup patch; never remove that patch
+  without replacing the lifecycle guarantees. The implementation and outstanding
+  migration, UI and device gates are documented in
+  `docs/superpowers/specs/2026-09-09-feature-320-live-location-app.md`.
+
 ## 11. Known Issues / WIP
 
 - **Template enforcement pending:** install/adapt `scripts/check-rules.mjs`, duplication

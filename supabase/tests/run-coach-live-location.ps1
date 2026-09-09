@@ -1,3 +1,4 @@
+param([switch]$WithRealtime)
 $ErrorActionPreference = 'Stop'
 $containerName = 'motion-live-location-' + [Guid]::NewGuid().ToString('N')
 $image = 'supabase/postgres:17.6.1.063@sha256:178f0976b54a39237096bfa310c1a352dbc82fb1b08dda45cdb8acb5d40c1426'
@@ -53,6 +54,13 @@ try {
     if (-not $ready) { throw 'Isolated PostgreSQL did not become ready within 30 seconds.' }
     Invoke-TestDocker -DockerArguments @('cp', (Join-Path $PSScriptRoot '../migrations/00042_transactional_attendance.sql'), "${containerName}:/tmp/transactional-attendance-migration.sql")
     Invoke-TestDocker -DockerArguments @('cp', (Join-Path $PSScriptRoot '../migrations/00043_coach_live_location.sql'), "${containerName}:/tmp/coach-live-location-migration.sql")
+    if ($WithRealtime) {
+        Invoke-TestDocker -DockerArguments @('cp', (Join-Path $PSScriptRoot '../migrations/00043_coach_live_location.sql'), "${containerName}:/tmp/coach-live-location-core-migration.sql")
+        Invoke-TestDocker -DockerArguments @('cp', (Join-Path $PSScriptRoot '../migrations/00044_coach_live_location_realtime.sql'), "${containerName}:/tmp/coach-live-location-realtime-migration.sql")
+        Invoke-TestDocker -DockerArguments @('cp', (Join-Path $PSScriptRoot 'coach-live-location-realtime-bootstrap.sql'), "${containerName}:/tmp/coach-live-location-realtime-bootstrap.sql")
+        Invoke-TestDocker -DockerArguments @('cp', (Join-Path $PSScriptRoot 'coach-live-location-realtime-install.sql'), "${containerName}:/tmp/coach-live-location-migration.sql")
+        Invoke-TestDocker -DockerArguments @('cp', (Join-Path $PSScriptRoot 'coach-live-location-realtime.sql'), "${containerName}:/tmp/coach-live-location-realtime.sql")
+    }
     Invoke-TestDocker -DockerArguments @('cp', (Join-Path $PSScriptRoot 'coach-live-location.sql'), "${containerName}:/tmp/coach-live-location.sql")
     Invoke-TestDocker -DockerArguments @('exec', $containerName, 'psql', '-X', '-U', 'supabase_admin', '-d', $database, '-v', 'ON_ERROR_STOP=1', '-f', '/tmp/coach-live-location.sql')
 
@@ -67,6 +75,9 @@ try {
     $jobs += Start-TestConnection -Name 'live-location-second' -Sql "SET ROLE service_role; SELECT public.test_assert(public.test_live(1,'stop',106,public.test_session(106))->>'success'='true','stop waiting for update succeeds');"
     Wait-ForTestConnections
     Invoke-TestSql -Sql "SELECT public.test_assert(NOT EXISTS(SELECT FROM public.coach_live_location_sessions WHERE occurrence_id=public.test_uuid(106)) AND NOT EXISTS(SELECT FROM public.coach_live_locations),'stop removes a concurrently completed point'); SELECT count(*) AS passed_assertions FROM public.test_results;"
+    if ($WithRealtime) {
+        Invoke-TestDocker -DockerArguments @('exec', $containerName, 'psql', '-X', '-U', 'supabase_admin', '-d', $database, '-v', 'ON_ERROR_STOP=1', '-f', '/tmp/coach-live-location-realtime.sql')
+    }
     Write-Output 'All isolated SQL and concurrent coach live location tests passed.'
 } finally {
     foreach ($testJob in $jobs) { Stop-Job -Job $testJob -ErrorAction SilentlyContinue; Remove-Job -Job $testJob -Force -ErrorAction SilentlyContinue }

@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
+import { CoachLocationPanel } from '@/features/live-location/CoachLocationPanel'
 
 const WEEKDAYS = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă']
 
@@ -248,6 +249,11 @@ export default function CoachAttendancePage() {
   return (
     <div>
       <h1 className="font-display text-foreground mb-6 text-2xl font-bold">Prezență</h1>
+      <CoachLocationPanel
+        occurrenceId={sel?.id ?? null}
+        startsAt={sel?.starts_at}
+        endsAt={sel?.ends_at}
+      />
 
       {!sel && !isLoading && <AttendanceOfflineQueue />}
       {isLoading ? (

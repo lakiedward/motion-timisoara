@@ -16,8 +16,10 @@ on:
       - 'supabase/migrations/00041_camp_child_price_server_only.sql'
       - 'supabase/migrations/00042_transactional_attendance.sql'
       - 'supabase/migrations/00043_coach_live_location.sql'
+      - 'supabase/migrations/00044_coach_live_location_realtime.sql'
       - 'playwright.config.ts'
       - 'playwright.pricing.config.ts'
+      - 'playwright.location.config.ts'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/playwright.yml'
@@ -32,8 +34,10 @@ on:
       - 'supabase/migrations/00041_camp_child_price_server_only.sql'
       - 'supabase/migrations/00042_transactional_attendance.sql'
       - 'supabase/migrations/00043_coach_live_location.sql'
+      - 'supabase/migrations/00044_coach_live_location_realtime.sql'
       - 'playwright.config.ts'
       - 'playwright.pricing.config.ts'
+      - 'playwright.location.config.ts'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/playwright.yml'
@@ -71,6 +75,8 @@ jobs:
         E2E_PLACEHOLDER_BACKEND: ${{ secrets.VITE_SUPABASE_URL && '0' || '1' }}
     - name: Run isolated checkout pricing simulations
       run: npm run test:checkout-pricing
+    - name: Run isolated coach location browser simulations
+      run: npx playwright test --config playwright.location.config.ts
     - uses: denoland/setup-deno@v2
       with:
         deno-version: v2.9.6
@@ -86,7 +92,7 @@ jobs:
       run: ./supabase/tests/run-transactional-attendance.ps1
     - name: Test isolated coach live location access and lifecycle
       shell: pwsh
-      run: ./supabase/tests/run-coach-live-location.ps1
+      run: ./supabase/tests/run-coach-live-location-realtime.ps1
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
@@ -94,4 +100,5 @@ jobs:
         path: |
           playwright-report/
           test-results/checkout-pricing/
+          test-results/live-location/
         retention-days: 30
