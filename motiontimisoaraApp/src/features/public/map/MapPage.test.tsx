@@ -6,6 +6,7 @@ import { useImperativeHandle, type ReactNode, type Ref } from 'react'
 import { vi } from 'vitest'
 import MapPage from '../MapPage'
 import { getActivities, getCourses, getLocations, type LocationRow } from '@/api/public'
+import { getTaberePublice, type TabaraDinLista } from '@/api/camps'
 import { cartoTileUrl } from './basemap'
 
 const map = vi.hoisted(() => ({
@@ -24,6 +25,11 @@ vi.mock('@/api/public', () => ({
   getActivities: vi.fn(),
   getCourses: vi.fn(),
   getLocations: vi.fn(),
+}))
+
+vi.mock('@/api/camps', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/api/camps')>()),
+  getTaberePublice: vi.fn(),
 }))
 
 vi.mock('react-leaflet', () => ({
@@ -70,6 +76,23 @@ const place: LocationRow = {
   is_active: true,
 }
 
+const camp: TabaraDinLista = {
+  id: 'camp-1',
+  slug: 'tabara-test',
+  title: 'Tabără Test',
+  period_start: '2026-10-01',
+  period_end: '2026-10-07',
+  location_id: place.id,
+  location: place,
+  location_text: 'Intrarea din parc',
+  price: 50000,
+  pricingMode: 'single',
+  allow_cash: true,
+  heroUrl: null,
+  organizator: null,
+  locuriRamase: 5,
+}
+
 function renderMap(route = '/harta') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
@@ -87,6 +110,7 @@ beforeEach(() => {
   vi.mocked(getLocations).mockResolvedValue([place])
   vi.mocked(getCourses).mockResolvedValue([])
   vi.mocked(getActivities).mockResolvedValue([])
+  vi.mocked(getTaberePublice).mockResolvedValue([])
 })
 
 afterEach(() => vi.unstubAllEnvs())
@@ -107,7 +131,7 @@ test('shows pending data before resolving into real locations', async () => {
   expect(await screen.findByText('Bazin Test')).toBeInTheDocument()
 })
 
-test.each([getLocations, getCourses, getActivities])(
+test.each([getLocations, getCourses, getActivities, getTaberePublice])(
   'does not turn a rejected query into empty locations or offers',
   async (query) => {
     vi.mocked(query).mockRejectedValueOnce(new Error('Unavailable'))
@@ -115,9 +139,7 @@ test.each([getLocations, getCourses, getActivities])(
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Nu am putut încărca locațiile și ofertele lor.',
     )
-    expect(
-      screen.queryByText('Momentan fără cursuri sau activități la această locație.'),
-    ).not.toBeInTheDocument()
+    expect(screen.queryByText(/Momentan fără cursuri/)).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Reîncearcă' }))
     expect(await screen.findByText('Bazin Test')).toBeInTheDocument()
   },
@@ -157,6 +179,10 @@ test('groups shared places and preserves offer links and grouped-row deep links'
       sport: null,
     },
   ] as Awaited<ReturnType<typeof getActivities>>)
+  vi.mocked(getTaberePublice).mockResolvedValue([
+    { ...camp, location_id: 'place-2', location: { ...place, id: 'place-2' } },
+    { ...camp, id: 'camp-2', slug: 'tabara-doua', title: 'A doua tabără' },
+  ])
   renderMap('/harta?location=place-2')
   expect(await screen.findAllByText('Bazin Test')).toHaveLength(1)
   expect(screen.getByText('2 cluburi se antrenează aici')).toBeInTheDocument()
@@ -168,8 +194,52 @@ test('groups shared places and preserves offer links and grouped-row deep links'
     'href',
     '/activitati/activity-1',
   )
+  expect(screen.getByRole('link', { name: /^Tabără Test/ })).toHaveAttribute(
+    'href',
+    '/tabere/tabara-test',
+  )
+  expect(screen.getByRole('link', { name: /^A doua tabără/ })).toHaveAttribute(
+    'href',
+    '/tabere/tabara-doua',
+  )
   await waitFor(() => expect(map.openPopup).toHaveBeenCalled())
   expect(map.setView).toHaveBeenCalledWith([45.75, 21.23], 15, { animate: false })
+})
+
+test('the camps filter hides places without camps and all locations restores them', async () => {
+  vi.mocked(getLocations).mockResolvedValue([
+    place,
+    { ...place, id: 'other-place', name: 'Teren Test', lat: 45.8 },
+  ])
+  vi.mocked(getTaberePublice).mockResolvedValue([camp])
+  renderMap()
+  expect(await screen.findByText('Teren Test')).toBeInTheDocument()
+  const campsFilter = screen.getByRole('button', { name: 'Tabere' })
+  expect(campsFilter).toHaveAttribute('aria-pressed', 'false')
+  await userEvent.click(campsFilter)
+  expect(campsFilter).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.queryByText('Teren Test')).not.toBeInTheDocument()
+  expect(screen.getByText('Bazin Test')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /^Tabără Test/ })).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Toate locațiile' }))
+  expect(screen.getByText('Teren Test')).toBeInTheDocument()
+  expect(campsFilter).toHaveAttribute('aria-pressed', 'false')
+})
+
+test.each([
+  { location_id: null, location: null },
+  { location_id: place.id, location: null },
+  { location_id: 'unavailable-place', location: null },
+])('a camp without an accessible location cannot create a map pin', async (missingLocation) => {
+  vi.mocked(getTaberePublice).mockResolvedValue([{ ...camp, ...missingLocation }])
+  renderMap()
+  await screen.findByText('Bazin Test')
+  expect(screen.queryByRole('link', { name: /^Tabără Test/ })).not.toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Tabere' }))
+  expect(screen.getByText('Momentan nu există tabere cu locație pe hartă.')).toBeInTheDocument()
+  expect(screen.queryByText('Bazin Test')).not.toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Toate locațiile' }))
+  expect(screen.getByText('Bazin Test')).toBeInTheDocument()
 })
 
 test('missing basemap configuration preserves locations without requesting unauthenticated tiles', async () => {

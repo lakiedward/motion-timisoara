@@ -21,6 +21,8 @@ const TABARA: TabaraDinLista = {
   period_start: '2026-09-13',
   period_end: '2026-09-18',
   location_text: 'Timișoara',
+  location_id: null,
+  location: null,
   price: 90000,
   pricingMode: 'single',
   allow_cash: false,
@@ -116,4 +118,50 @@ test('age-price cards do not advertise the obsolete single amount', async () => 
   deseneaza()
   expect(await screen.findByText('Preț pe categorii de vârstă')).toBeInTheDocument()
   expect(screen.queryByText('900,00 lei')).not.toBeInTheDocument()
+})
+
+test('camp details and associated map location are separate accessible links', async () => {
+  mocked.mockResolvedValue([
+    {
+      ...TABARA,
+      location_id: 'pool-1',
+      location: {
+        id: 'pool-1',
+        name: 'Bazin Olimpic',
+        lat: 45.75,
+        lng: 21.23,
+        address: null,
+        city: 'Timișoara',
+      },
+    },
+  ])
+  deseneaza()
+  const mapLink = await screen.findByRole('link', { name: 'Bazin Olimpic — vezi pe hartă' })
+  expect(mapLink).toHaveAttribute('href', '/harta?location=pool-1')
+  expect(screen.getByRole('link', { name: 'Tabără de înot' })).toHaveAttribute(
+    'href',
+    '/tabere/inot',
+  )
+  expect(mapLink.parentElement?.closest('a')).toBeNull()
+  expect(screen.getByText('Timișoara')).toBeInTheDocument()
+})
+
+test('a location without coordinates remains readable without a broken map link', async () => {
+  mocked.mockResolvedValue([
+    {
+      ...TABARA,
+      location_id: 'pool-1',
+      location: {
+        id: 'pool-1',
+        name: 'Bazin Olimpic',
+        lat: null,
+        lng: null,
+        address: null,
+        city: 'Timișoara',
+      },
+    },
+  ])
+  deseneaza()
+  expect(await screen.findByText('Bazin Olimpic')).toBeInTheDocument()
+  expect(screen.queryByRole('link', { name: /vezi pe hartă/ })).not.toBeInTheDocument()
 })

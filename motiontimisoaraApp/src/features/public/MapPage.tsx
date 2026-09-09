@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 import 'leaflet/dist/leaflet.css'
 import './map-popup.css'
 import { getActivities, getCourses, getLocations } from '@/api/public'
+import { getTaberePublice } from '@/api/camps'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { grupeazaInLocuri } from '@/lib/locuri'
@@ -15,6 +16,7 @@ export default function MapPage() {
   const locationsQuery = useQuery({ queryKey: ['locations'], queryFn: getLocations })
   const coursesQuery = useQuery({ queryKey: ['courses'], queryFn: () => getCourses() })
   const activitiesQuery = useQuery({ queryKey: ['activities'], queryFn: getActivities })
+  const campsQuery = useQuery({ queryKey: ['tabere-publice'], queryFn: () => getTaberePublice() })
   const locations = useMemo(() => {
     const counts = new Map<string, number>()
     for (const course of coursesQuery.data ?? []) {
@@ -23,16 +25,14 @@ export default function MapPage() {
     }
     return grupeazaInLocuri(locationsQuery.data ?? [], counts)
   }, [locationsQuery.data, coursesQuery.data])
-  const isError = locationsQuery.isError || coursesQuery.isError || activitiesQuery.isError
-  const isLoading = locationsQuery.isPending || coursesQuery.isPending || activitiesQuery.isPending
+  const queries = [locationsQuery, coursesQuery, activitiesQuery, campsQuery]
+  const isError =
+    locationsQuery.isError || coursesQuery.isError || activitiesQuery.isError || campsQuery.isError
+  const isLoading = queries.some((query) => query.isPending)
   async function retry() {
     setIsRetrying(true)
     try {
-      await Promise.all(
-        [locationsQuery, coursesQuery, activitiesQuery]
-          .filter((query) => query.isError)
-          .map((query) => query.refetch()),
-      )
+      await Promise.all(queries.filter((query) => query.isError).map((query) => query.refetch()))
     } finally {
       setIsRetrying(false)
     }
@@ -82,6 +82,7 @@ export default function MapPage() {
             locations={locations}
             courses={coursesQuery.data ?? []}
             activities={activitiesQuery.data ?? []}
+            camps={campsQuery.data ?? []}
             focusId={params.get('location')}
           />
         )}

@@ -1,12 +1,6 @@
 import { beforeEach, expect, test, vi } from 'vitest'
 
-import {
-  formatZi,
-  getTabaraDetaliu,
-  getTaberePublice,
-  sAIncheiat,
-  sumaCategoriilor,
-} from './camps'
+import { formatZi, getTabaraDetaliu, getTaberePublice, sAIncheiat, sumaCategoriilor } from './camps'
 
 let raspuns: Record<string, { data: unknown; error: unknown }> = {}
 let rpcRaspuns: { data: unknown; error: unknown } = { data: null, error: null }
@@ -38,7 +32,9 @@ vi.mock('@/lib/supabase', () => ({
     },
     storage: {
       from: (bucket: string) => ({
-        getPublicUrl: (path: string) => ({ data: { publicUrl: `https://public/${bucket}/${path}` } }),
+        getPublicUrl: (path: string) => ({
+          data: { publicUrl: `https://public/${bucket}/${path}` },
+        }),
       }),
     },
   },
@@ -115,7 +111,13 @@ test('detaliul adună categoriile, antrenorii, pozele și locurile rămase', asy
     camps: { data: TABARA, error: null },
     camp_price_items: {
       data: [
-        { id: 'p1', name: 'Monitorizare', description: 'Doi antrenori', amount: 25000, display_order: 0 },
+        {
+          id: 'p1',
+          name: 'Monitorizare',
+          description: 'Doi antrenori',
+          amount: 25000,
+          display_order: 0,
+        },
       ],
       error: null,
     },
@@ -131,7 +133,10 @@ test('detaliul adună categoriile, antrenorii, pozele și locurile rămase', asy
       ],
       error: null,
     },
-    camp_photos: { data: [{ storage_path: 'camp-1/gallery/a.jpg', display_order: 0 }], error: null },
+    camp_photos: {
+      data: [{ storage_path: 'camp-1/gallery/a.jpg', display_order: 0 }],
+      error: null,
+    },
   }
   rpcRaspuns = { data: 12, error: null }
 
@@ -161,7 +166,10 @@ test('fără poză hero aleasă, prima din galerie îi ține locul', async () =>
 test('poza hero aleasă are întâietate față de galerie', async () => {
   raspuns = {
     camps: { data: { ...TABARA, hero_photo_storage_path: 'camp-1/hero/aleasa.jpg' }, error: null },
-    camp_photos: { data: [{ storage_path: 'camp-1/gallery/prima.jpg', display_order: 0 }], error: null },
+    camp_photos: {
+      data: [{ storage_path: 'camp-1/gallery/prima.jpg', display_order: 0 }],
+      error: null,
+    },
   }
   const d = await getTabaraDetaliu('tabara-inot')
   expect(d!.heroUrl).toBe('https://public/camp-photos/camp-1/hero/aleasa.jpg')
@@ -191,7 +199,10 @@ test('capacitatea nelimitată vine ca gol, nu ca zero', async () => {
 })
 test('clubul organizator devine link către pagina clubului', async () => {
   raspuns = {
-    camps: { data: { ...TABARA, club: { id: 'club-9', name: 'Club Audit Motion' }, coach: null }, error: null },
+    camps: {
+      data: { ...TABARA, club: { id: 'club-9', name: 'Club Audit Motion' }, coach: null },
+      error: null,
+    },
   }
   const d = await getTabaraDetaliu('tabara-inot')
   expect(d!.organizator).toEqual({
@@ -203,7 +214,10 @@ test('clubul organizator devine link către pagina clubului', async () => {
 
 test('antrenorul organizator devine link către pagina lui', async () => {
   raspuns = {
-    camps: { data: { ...TABARA, club: null, coach: { id: 'user-9', name: 'Audit Antrenor' } }, error: null },
+    camps: {
+      data: { ...TABARA, club: null, coach: { id: 'user-9', name: 'Audit Antrenor' } },
+      error: null,
+    },
   }
   const d = await getTabaraDetaliu('tabara-inot')
   expect(d!.organizator).toEqual({
@@ -235,15 +249,48 @@ test('categoriile se cer în ordinea lor, nu la nimereală', async () => {
 })
 
 const TREI_TABERE = [
-  { id: 'a', slug: 'vara', title: 'Vară', period_start: '2026-08-14', period_end: '2026-08-21',
-    location_text: 'Brașov', price: 150000, allow_cash: true, capacity: 30,
-    hero_photo_storage_path: null, club: null, coach: null },
-  { id: 'b', slug: 'inot', title: 'Înot', period_start: '2026-09-13', period_end: '2026-09-18',
-    location_text: 'Timișoara', price: 90000, allow_cash: false, capacity: 20,
-    hero_photo_storage_path: 'b/hero/x.jpg', club: { id: 'c1', name: 'Club Test' }, coach: null },
-  { id: 'c', slug: 'mtb', title: 'MTB', period_start: '2027-07-10', period_end: '2027-07-17',
-    location_text: 'Alpi', price: 320000, allow_cash: true, capacity: null,
-    hero_photo_storage_path: null, club: null, coach: { id: 'u1', name: 'Antrenor Test' } },
+  {
+    id: 'a',
+    slug: 'vara',
+    title: 'Vară',
+    period_start: '2026-08-14',
+    period_end: '2026-08-21',
+    location_text: 'Brașov',
+    price: 150000,
+    allow_cash: true,
+    capacity: 30,
+    hero_photo_storage_path: null,
+    club: null,
+    coach: null,
+  },
+  {
+    id: 'b',
+    slug: 'inot',
+    title: 'Înot',
+    period_start: '2026-09-13',
+    period_end: '2026-09-18',
+    location_text: 'Timișoara',
+    price: 90000,
+    allow_cash: false,
+    capacity: 20,
+    hero_photo_storage_path: 'b/hero/x.jpg',
+    club: { id: 'c1', name: 'Club Test' },
+    coach: null,
+  },
+  {
+    id: 'c',
+    slug: 'mtb',
+    title: 'MTB',
+    period_start: '2027-07-10',
+    period_end: '2027-07-17',
+    location_text: 'Alpi',
+    price: 320000,
+    allow_cash: true,
+    capacity: null,
+    hero_photo_storage_path: null,
+    club: null,
+    coach: { id: 'u1', name: 'Antrenor Test' },
+  },
 ]
 test('lista publică lasă afară taberele încheiate', async () => {
   raspuns = { camps: { data: TREI_TABERE, error: null }, enrollments: { data: [], error: null } }
@@ -270,10 +317,14 @@ test('organizatorul iese și din club, și din antrenor', async () => {
   raspuns = { camps: { data: TREI_TABERE, error: null }, enrollments: { data: [], error: null } }
   const lista = await getTaberePublice(new Date(2026, 7, 28))
   expect(lista.find((t) => t.slug === 'inot')!.organizator).toEqual({
-    fel: 'club', nume: 'Club Test', link: '/cluburi/c1',
+    fel: 'club',
+    nume: 'Club Test',
+    link: '/cluburi/c1',
   })
   expect(lista.find((t) => t.slug === 'mtb')!.organizator).toEqual({
-    fel: 'antrenor', nume: 'Antrenor Test', link: '/antrenori/u1',
+    fel: 'antrenor',
+    nume: 'Antrenor Test',
+    link: '/antrenori/u1',
   })
 })
 test('când nu rămâne nicio tabără, nu se mai cer înscrierile', async () => {
@@ -285,7 +336,10 @@ test('când nu rămâne nicio tabără, nu se mai cer înscrierile', async () =>
 
 test('age-price detail reads the existing ordered categories only in by_age mode', async () => {
   const agePrices = [{ id: 'age-1', age_from: 6, age_to: 8, amount: 60000, display_order: 0 }]
-  raspuns = { camps: { data: { ...TABARA, pricing_mode: 'by_age' }, error: null }, camp_age_prices: { data: agePrices, error: null } }
+  raspuns = {
+    camps: { data: { ...TABARA, pricing_mode: 'by_age' }, error: null },
+    camp_age_prices: { data: agePrices, error: null },
+  }
   expect((await getTabaraDetaliu('tabara-inot'))!.agePrices).toEqual(agePrices)
   expect(cereri.camp_age_prices).toContain('eq(camp_id,camp-1)')
   expect(cereri.camp_age_prices).toContain('order(display_order)')
@@ -296,6 +350,88 @@ test('age-price detail reads the existing ordered categories only in by_age mode
 })
 
 test('age-price read errors propagate instead of showing the single amount', async () => {
-  raspuns = { camps: { data: { ...TABARA, pricing_mode: 'by_age' }, error: null }, camp_age_prices: { data: null, error: new Error('age prices unavailable') } }
+  raspuns = {
+    camps: { data: { ...TABARA, pricing_mode: 'by_age' }, error: null },
+    camp_age_prices: { data: null, error: new Error('age prices unavailable') },
+  }
   await expect(getTabaraDetaliu('tabara-inot')).rejects.toThrow('age prices unavailable')
 })
+
+const CAMP_LOCATION = {
+  id: 'location-1',
+  name: 'Baza sportivă',
+  lat: 45.75,
+  lng: 21.23,
+  address: 'Strada Test',
+  city: 'Timișoara',
+}
+
+test('public camps expose the associated location while preserving arrival instructions', async () => {
+  raspuns = {
+    camps: {
+      data: [
+        {
+          ...TABARA,
+          location_id: CAMP_LOCATION.id,
+          location: CAMP_LOCATION,
+          location_text: 'Intrarea din parc',
+        },
+      ],
+      error: null,
+    },
+  }
+  const [camp] = await getTaberePublice(new Date(2026, 8, 18, 23, 59, 59, 999))
+  expect(camp).toMatchObject({
+    location_id: CAMP_LOCATION.id,
+    location: CAMP_LOCATION,
+    location_text: 'Intrarea din parc',
+  })
+  expect(
+    cereri.camps.some((request) =>
+      request.replace(/\s+/g, '').includes('location:locations(id,name,lat,lng,address,city)'),
+    ),
+  ).toBe(true)
+  expect(await getTaberePublice(new Date(2026, 8, 19))).toEqual([])
+  expect(cereri.camps.some((request) => /^(gte|lte)\(/.test(request))).toBe(false)
+})
+
+test('camp detail exposes its location separately from the camp database row', async () => {
+  raspuns = {
+    camps: {
+      data: { ...TABARA, location_id: CAMP_LOCATION.id, location: CAMP_LOCATION },
+      error: null,
+    },
+  }
+  const detail = await getTabaraDetaliu(TABARA.slug)
+  expect(detail?.location).toEqual(CAMP_LOCATION)
+  expect(detail?.tabara.location_id).toBe(CAMP_LOCATION.id)
+  expect(detail?.tabara).not.toHaveProperty('location')
+  expect(
+    cereri.camps.some((request) =>
+      request.replace(/\s+/g, '').includes('location:locations(id,name,lat,lng,address,city)'),
+    ),
+  ).toBe(true)
+})
+
+test.each([null, undefined])(
+  'missing location joins retain legacy text and normalize to null',
+  async (location) => {
+    const legacy = {
+      ...TABARA,
+      location_id: null,
+      location,
+      location_text: 'Brașov, loc de întâlnire',
+    }
+    raspuns = { camps: { data: [legacy], error: null } }
+    const [camp] = await getTaberePublice(new Date(2026, 8, 15))
+    expect(camp).toMatchObject({
+      location_id: null,
+      location: null,
+      location_text: legacy.location_text,
+    })
+    raspuns.camps.data = legacy
+    const detail = await getTabaraDetaliu(TABARA.slug)
+    expect(detail?.location).toBeNull()
+    expect(detail?.tabara.location_text).toBe(legacy.location_text)
+  },
+)

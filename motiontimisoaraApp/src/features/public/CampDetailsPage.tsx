@@ -1,6 +1,6 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, CalendarDays, MapPin } from 'lucide-react'
+import { ArrowLeft, CalendarDays } from 'lucide-react'
 
 import { formatZi, getTabaraDetaliu, sAIncheiat } from '@/api/camps'
 import { plural } from '@/lib/plural'
@@ -10,19 +10,14 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import CampPricingCard from './camp-pricing/CampPricingCard'
-
+import CampLocation from '@/components/camps/CampLocation'
 
 export default function CampDetailsPage() {
   const { slug = '' } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  const {
-    data,
-    isLoading,
-    isError,
-    refetch,
-  } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['camp-detail', slug],
     queryFn: () => getTabaraDetaliu(slug),
     retry: false,
@@ -104,11 +99,7 @@ export default function CampDetailsPage() {
             <CalendarDays className="size-4" />
             {formatZi(tabara.period_start)} – {formatZi(tabara.period_end)}
           </span>
-          {tabara.location_text && (
-            <span className="flex items-center gap-1.5">
-              <MapPin className="size-4" /> {tabara.location_text}
-            </span>
-          )}
+          <CampLocation location={data.location} details={tabara.location_text} />
           {!incheiata && locuriRamase !== null && locuriRamase > 0 && (
             <span>{plural(locuriRamase, 'loc rămas', 'locuri rămase')}</span>
           )}
@@ -135,9 +126,7 @@ export default function CampDetailsPage() {
               >
                 {organizator.nume}
               </Link>
-              <Badge variant="outline">
-                {organizator.fel === 'club' ? 'Club' : 'Antrenor'}
-              </Badge>
+              <Badge variant="outline">{organizator.fel === 'club' ? 'Club' : 'Antrenor'}</Badge>
             </div>
           </div>
         )}

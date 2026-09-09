@@ -58,3 +58,19 @@
 .mt-public-map .leaflet-container {
   background: var(--muted);
 }
+
+.mt-public-map .mt-camp-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--highlight-foreground);
+  background: var(--highlight);
+  border: 2px solid var(--highlight-foreground);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.mt-camp-marker svg {
+  width: calc(var(--spacing) * 7);
+  height: calc(var(--spacing) * 7);
+}
