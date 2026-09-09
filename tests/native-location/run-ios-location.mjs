@@ -93,16 +93,16 @@ async function launchHarness() {
   createInterface({ input: consoleProcess.stdout, crlfDelay: Infinity }).on('line', receiveConsoleLine)
   createInterface({ input: consoleProcess.stderr, crlfDelay: Infinity }).on('line', receiveConsoleLine)
   consoleClosed = new Promise((resolve) => {
-    consoleProcess.on('error', (error) => { consoleFailure = error; resolve() })
+    consoleProcess.on('error', (error) => { consoleFailure ??= error; resolve() })
     consoleProcess.on('close', (code) => {
       launchLog.code = code
-      if (!stoppingConsole) consoleFailure = new Error(`Live native console closed unexpectedly (${code})`)
+      if (!stoppingConsole) consoleFailure ??= new Error(`Live native console closed unexpectedly (${code})`)
       clearTimeout(consoleTimeout)
       resolve()
     })
   })
   consoleTimeout = setTimeout(() => {
-    consoleFailure = new Error('Live native console exceeded the bounded test duration')
+    consoleFailure ??= new Error('Live native console exceeded the bounded test duration')
     consoleProcess.kill('SIGKILL')
   }, 240000)
 }
@@ -197,7 +197,7 @@ try {
   await command('xcodebuild', ['-project', 'ios/App/App.xcodeproj', '-scheme', 'App', '-sdk', 'iphonesimulator', '-configuration', 'Debug', '-derivedDataPath', 'ios/build', 'CODE_SIGNING_ALLOWED=NO', 'build'], { timeout: 600000 })
   assert((await readFile(path.join(builtApp, 'public/index.html'))).equals(harness), 'Only the isolated harness may be installed in the test simulator')
   await createSimulator()
-  await sim('install', device, builtApp)
+  await command('xcrun', ['simctl', 'install', device, builtApp], { timeout: 180000 })
   await sim('privacy', device, 'grant', 'location-always', appId)
   await launchHarness()
   await waitFor('harness ready', () => event('ready'))
