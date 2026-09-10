@@ -75,12 +75,12 @@ before treating an old phase checklist as current implementation status.
 - **Complete authorized delivery autonomously:** commit only task files, push, open
   or update the PR, then merge when the required checks, reviews and human gates pass.
   Do not request another approval for each git step.
-- **Bugbot before code merge.** Follow the Team Tracker plugin reference
-  `skills/references/cursor-bugbot-merge-gate.md`: review the final diff, fix confirmed
-  findings, rerun affected verification and repeat review until clean. Never merge
-  while review is running or after a tooling failure without an explicit human
-  decision. The reference exempts changes with no code diff. Historical waivers do
-  not authorize a new one. A build does not replace browser proof or human acceptance.
+- **Review before merge.** Follow the Team Tracker plugin reference
+  `skills/references/code-review-before-merge.md`: review the final diff with an
+  available reviewer or in the current session, fix confirmed findings and rerun
+  affected verification. No named bot or external review integration is required.
+  Documentation-only branches still receive proportionate review and delivery.
+  A build does not replace browser proof or human acceptance.
 - Default branch is `master`. In Codex use branches such as
   `codex/fix-bug-<id>-<slug>`, `codex/feat-feature-<id>-<slug>` and
   `codex/ui-section-<id>-<slug>`. Include the tracker item when one exists; use a
@@ -501,6 +501,11 @@ reorganizing this document; correct obsolete facts with current evidence.
   the last eligible child automatically revokes parent consent; another eligible
   child preserves it. Temporary camp fixtures were authorized for Android/parent
   verification and cleanup. Deployment does not imply final human acceptance.
+
+- 2026-09-10 — The owner removed mandatory bot review gates from Team Tracker skills.
+  Use the available review method before merge; unavailable bot integrations do not
+  block delivery. Behavioral verification, human acceptance and actual merge/deploy
+  requirements remain in place.
 
 ## 11. Known Issues / WIP
 
