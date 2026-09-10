@@ -495,6 +495,13 @@ reorganizing this document; correct obsolete facts with current evidence.
   individually approved. The owner waived physical iPhone testing for #320; preserve
   iOS build/simulator checks and do not report physical iPhone behavior as verified.
 
+- 2026-09-10 — The owner approved and deployed #320 camp migrations 00045–00047
+  and `coach-live-location` v2 with JWT verification; their remote versions are in
+  `supabase/migrations/README.md`. Camp participation remains service-only. Losing
+  the last eligible child automatically revokes parent consent; another eligible
+  child preserves it. Temporary camp fixtures were authorized for Android/parent
+  verification and cleanup. Deployment does not imply final human acceptance.
+
 ## 11. Known Issues / WIP
 
 - **Template enforcement pending:** install/adapt `scripts/check-rules.mjs`, duplication

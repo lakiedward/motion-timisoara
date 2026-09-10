@@ -411,6 +411,71 @@ export type Database = {
           },
         ]
       }
+      camp_participation: {
+        Row: {
+          arrived_at: string
+          arrived_by: string | null
+          camp_id: string
+          created_at: string
+          departed_at: string | null
+          departed_by: string | null
+          enrollment_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          arrived_at: string
+          arrived_by?: string | null
+          camp_id: string
+          created_at?: string
+          departed_at?: string | null
+          departed_by?: string | null
+          enrollment_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          arrived_at?: string
+          arrived_by?: string | null
+          camp_id?: string
+          created_at?: string
+          departed_at?: string | null
+          departed_by?: string | null
+          enrollment_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camp_participation_arrived_by_fkey"
+            columns: ["arrived_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "camp_participation_camp_id_fkey"
+            columns: ["camp_id"]
+            isOneToOne: false
+            referencedRelation: "camps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "camp_participation_departed_by_fkey"
+            columns: ["departed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "camp_participation_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: true
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       camp_photos: {
         Row: {
           camp_id: string
@@ -938,36 +1003,46 @@ export type Database = {
       }
       coach_live_location_sessions: {
         Row: {
+          camp_id: string | null
           coach_id: string
           consented_at: string
           created_at: string
           expires_at: string
           id: string
-          occurrence_id: string
+          occurrence_id: string | null
           started_at: string
           updated_at: string
         }
         Insert: {
+          camp_id?: string | null
           coach_id: string
           consented_at: string
           created_at?: string
           expires_at: string
           id?: string
-          occurrence_id: string
+          occurrence_id?: string | null
           started_at: string
           updated_at?: string
         }
         Update: {
+          camp_id?: string | null
           coach_id?: string
           consented_at?: string
           created_at?: string
           expires_at?: string
           id?: string
-          occurrence_id?: string
+          occurrence_id?: string | null
           started_at?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "coach_live_location_sessions_camp_id_fkey"
+            columns: ["camp_id"]
+            isOneToOne: false
+            referencedRelation: "camps"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "coach_live_location_sessions_coach_id_fkey"
             columns: ["coach_id"]
@@ -986,30 +1061,40 @@ export type Database = {
       }
       coach_live_location_starts: {
         Row: {
+          camp_id: string | null
           coach_id: string
           created_at: string
           expires_at: string
           id: string
-          occurrence_id: string
+          occurrence_id: string | null
           session_id: string
         }
         Insert: {
+          camp_id?: string | null
           coach_id: string
           created_at?: string
           expires_at: string
           id: string
-          occurrence_id: string
+          occurrence_id?: string | null
           session_id: string
         }
         Update: {
+          camp_id?: string | null
           coach_id?: string
           created_at?: string
           expires_at?: string
           id?: string
-          occurrence_id?: string
+          occurrence_id?: string | null
           session_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "coach_live_location_starts_camp_id_fkey"
+            columns: ["camp_id"]
+            isOneToOne: false
+            referencedRelation: "camps"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "coach_live_location_starts_coach_id_fkey"
             columns: ["coach_id"]
