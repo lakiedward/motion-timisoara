@@ -936,6 +936,137 @@ export type Database = {
           },
         ]
       }
+      coach_live_location_sessions: {
+        Row: {
+          coach_id: string
+          consented_at: string
+          created_at: string
+          expires_at: string
+          id: string
+          occurrence_id: string
+          started_at: string
+          updated_at: string
+        }
+        Insert: {
+          coach_id: string
+          consented_at: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          occurrence_id: string
+          started_at: string
+          updated_at?: string
+        }
+        Update: {
+          coach_id?: string
+          consented_at?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          occurrence_id?: string
+          started_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_live_location_sessions_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_live_location_sessions_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: true
+            referencedRelation: "course_occurrences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coach_live_location_starts: {
+        Row: {
+          coach_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          occurrence_id: string
+          session_id: string
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          expires_at: string
+          id: string
+          occurrence_id: string
+          session_id: string
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          occurrence_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_live_location_starts_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_live_location_starts_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "course_occurrences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coach_live_locations: {
+        Row: {
+          accuracy: number
+          captured_at: string
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          accuracy: number
+          captured_at: string
+          created_at?: string
+          id?: string
+          latitude: number
+          longitude: number
+          session_id: string
+          updated_at?: string
+        }
+        Update: {
+          accuracy?: number
+          captured_at?: string
+          created_at?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          session_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_live_locations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "coach_live_location_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_profiles: {
         Row: {
           avatar_url: string | null
@@ -1556,6 +1687,51 @@ export type Database = {
           },
         ]
       }
+      parent_live_location_consents: {
+        Row: {
+          consented_at: string | null
+          created_at: string
+          granted: boolean
+          id: string
+          parent_id: string
+          session_id: string
+          version: number
+        }
+        Insert: {
+          consented_at?: string | null
+          created_at?: string
+          granted: boolean
+          id?: string
+          parent_id: string
+          session_id: string
+          version: number
+        }
+        Update: {
+          consented_at?: string | null
+          created_at?: string
+          granted?: boolean
+          id?: string
+          parent_id?: string
+          session_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_live_location_consents_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parent_live_location_consents_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "coach_live_location_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -1795,6 +1971,10 @@ export type Database = {
       }
       club_enrolled_child_ids: { Args: never; Returns: string[] }
       coach_enrolled_child_ids: { Args: never; Returns: string[] }
+      coach_live_location_transaction: {
+        Args: { p_actor_id: string; p_payload: Json }
+        Returns: Json
+      }
       course_availability: {
         Args: never
         Returns: {

@@ -27,20 +27,19 @@ on the remote (verified by md5).
 | `00040_child_qr_token.sql` | `20260902141147` | `child_qr_token` |
 | `00041_camp_child_price_server_only.sql` | `20260908143741` | `camp_child_price_server_only` |
 | `00042_transactional_attendance.sql` | `20260908205252` | `transactional_attendance` |
+| `00043_coach_live_location.sql` | `20260910102002` | `coach_live_location` |
+| `00044_coach_live_location_realtime.sql` | `20260910102008` | `coach_live_location_realtime` |
 
 `00017` and `00018` are both kept on purpose: `00018` replaced `00017` in production
 62 seconds after it was applied, and the ledger records what actually ran.
 
-`00043_coach_live_location.sql` is a **local proposal for feature #320**, not an
-applied migration. Do not apply it remotely without the owner's separate approval
-of the migration and access rules. The backend-only scope and retention contract
-are in `docs/superpowers/specs/2026-09-09-feature-320-live-location-backend.md`.
-
-`00044_coach_live_location_realtime.sql` is also a **local proposal for #320**.
-It adds scoped Realtime authorization and empty private invalidation events, never
-coordinates in Broadcast. It requires `00043` and the owner's separate approval of
-its policies before remote application. The app/native implementation and deployment
-checks are in `docs/superpowers/specs/2026-09-09-feature-320-live-location-app.md`.
+`00043` and `00044` were applied on 2026-09-10 after the owner explicitly approved
+both migrations, their access rules, the Edge deployment and temporary test data.
+The `coach-live-location` Edge Function was deployed as version 1 with JWT verification.
+All four location tables have RLS enabled and no direct authenticated SELECT grant;
+the minute-based expiry cleanup job is active. Realtime sends empty private
+invalidations, never coordinates. The app/native implementation and deployment
+evidence are in `docs/superpowers/specs/2026-09-09-feature-320-live-location-app.md`.
 
 **Next migration number = highest existing + 1.** Check with
 `git ls-files supabase/migrations | tail -1` before creating one — do not trust a

@@ -129,6 +129,7 @@ export async function startLocationCapture(
           requestPermissions: false,
           stale: false,
           distanceFilter: 0,
+          networkFallback: Capacitor.getPlatform() === 'android',
           minIntervalMs: 15000,
         },
         (point, error) => {

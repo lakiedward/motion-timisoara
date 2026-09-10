@@ -179,3 +179,49 @@ From `motiontimisoaraApp/`: `npm run typecheck`, `npm run lint`,
   chain. iOS runtime needs macOS/Xcode and an iOS device or suitable simulator.
 - Merge only after CI, clean Bugbot and the required human gates. Mark #320 Gata only
   after required deployment and runtime verification; do not substitute source presence.
+
+## Authorized live verification, 2026-09-10
+
+The owner explicitly approved migrations 00043 and 00044, Edge deployment and
+temporary test fixtures. Both migrations were applied in order; their remote
+versions are recorded in the migration ledger. `coach-live-location` is ACTIVE v1
+with JWT verification. RLS and the absence of direct authenticated SELECT were
+verified for all four location tables. The expiry cron runs every minute.
+Database types were regenerated from the deployed public schema.
+
+On the physical Galaxy A55 (Android 16), the audit coach opened
+`/coach/attendance`. Past August occurrences correctly disabled consent/start;
+a temporary current occurrence enabled the checkbox and start button. Initial
+GPS-only capture produced no point for over two minutes. Enabling the installed
+plugin's Android network fallback produced a fresh point approximately 21 seconds
+after start. GPS retains priority; the plugin rejects network fixes over 300 m.
+No dependency upgrade or native lifecycle patch removal was needed.
+
+The rebuilt app was installed and tested against the live Edge/database path:
+
+- Foreground delivery reached the server and appeared as the last-sent time in UI.
+- After Home, a fresh point reached the server at 10:32:07 UTC before returning to
+  the app. The server retained one latest point, not a coordinate history.
+- The notification's actual `Oprește` action stopped capture. The session, point
+  and consent rows were all absent afterwards.
+- A second start used a short test occurrence with expiry 10:35:21 UTC. A point
+  arrived in the background at 10:35:06; at 10:35:51 the session and point were gone,
+  before reopening the app. The UI then reported that sharing had ended.
+- Live transaction checks rejected the audit parent before QR eligibility and
+  before consent, allowed reading after test consent, and rejected reading after
+  revocation. Eligibility was seeded explicitly; this was not a camera QR test or
+  an authenticated parent browser/Realtime test.
+
+The phone test used real device locations after MobAI mock-location injection
+failed. Coordinates were not copied into logs, repository evidence or screenshots.
+The screenshot `galaxy-a55-live-location-sent.png` in the session artifact directory
+shows only the coach status and last-sent time. Existing audit users, course and
+child were preserved; only the temporary occurrence/enrollment and related rows
+are designated for cleanup.
+
+Current local checks: typecheck, lint, all 712 tests across 74 files, production
+build and Android debug assembly passed. Existing Vite chunk-size and dynamic-import
+warnings remain. The local CARTO key is now configured; its earlier absence above
+is historical. Parent/club live map and private Realtime browser verification,
+locked-screen/offline/force-quit phone behavior and human UI/device acceptance
+remain separate release gates. No final human acceptance or merge is implied.
