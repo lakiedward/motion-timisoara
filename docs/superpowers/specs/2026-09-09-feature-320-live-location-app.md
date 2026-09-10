@@ -1,5 +1,16 @@
 # Feature #320: session location in the app
 
+## Physical iPhone verification waived by the owner, 2026-09-10
+
+The owner explicitly requested skipping physical iPhone testing for feature #320.
+Physical iPhone verification is therefore no longer a completion prerequisite for
+this feature, including its camp extension. This decision supersedes the physical
+iOS release-gate statements below; they remain as historical evidence.
+
+Physical iPhone behavior remains unverified, not passed. Retain the existing iOS
+build and simulator checks. The waiver does not complete camp implementation,
+Android/browser verification, human UI acceptance, migration approvals or delivery.
+
 ## Camp scope clarified by the owner, 2026-09-10
 
 The owner identified camps as the primary use case, with attendance recorded once
