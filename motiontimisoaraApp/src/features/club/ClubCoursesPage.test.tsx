@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -6,6 +6,15 @@ import { vi } from 'vitest'
 import { toast } from 'sonner'
 
 import ClubCoursesPage from './ClubCoursesPage'
+import { getCurrentLocationOccurrences } from '@/api/live-location'
+vi.mock('@/lib/auth-context', () => ({
+  useAuth: () => ({ user: { id: 'club-user', role: 'CLUB' } }),
+}))
+vi.mock('@/api/live-location', () => ({
+  getCurrentLocationOccurrences: vi.fn(),
+  locationRequest: vi.fn(),
+  subscribeToLocation: vi.fn(),
+}))
 import { getClubCourses, getMyClub, setClubCourseActive, type ClubCourse } from '@/api/club'
 
 vi.mock('@/api/club', () => ({
@@ -19,8 +28,9 @@ const mockedClub = vi.mocked(getMyClub)
 const mockedCourses = vi.mocked(getClubCourses)
 const mockedToggle = vi.mocked(setClubCourseActive)
 
-function renderPage() {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+function renderPage(
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>
@@ -45,13 +55,18 @@ function curs(over: Partial<ClubCourse> & { id: string; name: string }): ClubCou
 
 /** Două cursuri cu același nume, care se deosebesc doar prin locație. */
 const omonime = (): ClubCourse[] => [
-  curs({ id: '1', name: 'Înot — audit UI', location: { id: 'l1', name: 'Bazin Olimpic Timișoara' } }),
+  curs({
+    id: '1',
+    name: 'Înot — audit UI',
+    location: { id: 'l1', name: 'Bazin Olimpic Timișoara' },
+  }),
   curs({ id: '2', name: 'Înot — audit UI', location: { id: 'l2', name: 'Bazin Audit Motion' } }),
 ]
 
 beforeEach(() => {
   vi.clearAllMocks()
   mockedClub.mockResolvedValue({ id: 'club-1', name: 'UI Audit Club TM' } as never)
+  vi.mocked(getCurrentLocationOccurrences).mockResolvedValue([])
 })
 
 // --- Criteriul 1: pe telefon butonul coboară pe rândul lui ---
@@ -90,7 +105,9 @@ test('linia gri are antrenorul și vârsta, iar locația apare o singură dată 
 test('eșecul încărcării are mesaj propriu și „Reîncearcă”, fără textul de listă goală', async () => {
   mockedCourses.mockRejectedValue(new Error('500'))
   renderPage()
-  const alerta = await screen.findByRole('alert')
+  const alerta = (await screen.findByText('Nu am putut încărca cursurile.')).closest(
+    '[role="alert"]',
+  ) as HTMLElement
   expect(within(alerta).getByText('Nu am putut încărca cursurile.')).toBeInTheDocument()
   expect(within(alerta).getByRole('button', { name: 'Reîncearcă' })).toBeInTheDocument()
   expect(screen.queryByText(/Niciun curs încă/)).not.toBeInTheDocument()
@@ -133,7 +150,7 @@ test('scheletele de încărcare urmăresc înălțimea cardului real, pe fiecare
   mockedCourses.mockReturnValue(new Promise(() => {}))
   const { container } = renderPage()
   const schelete = await waitFor(() => {
-    const found = container.querySelectorAll('[data-slot="skeleton"]')
+    const found = container.querySelectorAll('.grid [data-slot="skeleton"]')
     expect(found.length).toBeGreaterThanOrEqual(2)
     return found
   })
@@ -143,6 +160,75 @@ test('scheletele de încărcare urmăresc înălțimea cardului real, pe fiecare
     expect(s.className).toMatch(/(^| )h-52( |$)/)
     expect(s.className).toMatch(/lg:h-48/)
   })
+})
+
+test('location discovery stays loading through both club and course lookup', async () => {
+  let resolveClub: (value: Awaited<ReturnType<typeof getMyClub>>) => void = () => {}
+  let resolveCourses: (value: ClubCourse[]) => void = () => {}
+  mockedClub.mockReturnValue(
+    new Promise((resolve) => {
+      resolveClub = resolve
+    }),
+  )
+  mockedCourses.mockReturnValue(
+    new Promise((resolve) => {
+      resolveCourses = resolve
+    }),
+  )
+  renderPage()
+  const section = screen.getByRole('region', { name: 'Ședințe cu locație în timp real' })
+  expect(section.querySelector('[data-slot="skeleton"]')).toBeInTheDocument()
+  expect(within(section).queryByText('Nicio ședință în desfășurare.')).not.toBeInTheDocument()
+  await act(async () => resolveClub({ id: 'club-1' } as Awaited<ReturnType<typeof getMyClub>>))
+  await waitFor(() => expect(mockedCourses).toHaveBeenCalledWith('club-1'))
+  expect(section.querySelector('[data-slot="skeleton"]')).toBeInTheDocument()
+  expect(within(section).queryByText('Nicio ședință în desfășurare.')).not.toBeInTheDocument()
+  await act(async () => resolveCourses([]))
+  await within(section).findByText('Nicio ședință în desfășurare.')
+  expect(getCurrentLocationOccurrences).not.toHaveBeenCalled()
+})
+
+test('location discovery reports a course dependency failure and retries that dependency', async () => {
+  mockedCourses.mockRejectedValueOnce(new Error('offline')).mockResolvedValue([])
+  renderPage()
+  const section = screen.getByRole('region', { name: 'Ședințe cu locație în timp real' })
+  await within(section).findByText('Nu am putut încărca ședințele pentru locație.')
+  expect(within(section).queryByText('Nicio ședință în desfășurare.')).not.toBeInTheDocument()
+  await userEvent.click(within(section).getByRole('button', { name: 'Reîncearcă ședințele' }))
+  await within(section).findByText('Nicio ședință în desfășurare.')
+  expect(mockedCourses).toHaveBeenCalledTimes(2)
+})
+
+test('one retry recovers simultaneous club and course failures when the club identity is cached', async () => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  client.setQueryData(['my-club'], { id: 'club-1', name: 'Club existent' })
+  mockedClub
+    .mockRejectedValueOnce(new Error('club offline'))
+    .mockResolvedValue({ id: 'club-1', name: 'Club existent' } as never)
+  mockedCourses
+    .mockRejectedValueOnce(new Error('courses offline'))
+    .mockResolvedValue([curs({ id: 'course-recovered', name: 'Curs recuperat' })])
+  renderPage(client)
+  await waitFor(() => {
+    expect(client.getQueryState(['my-club'])?.status).toBe('error')
+    expect(client.getQueryState(['club-courses', 'club-1'])?.status).toBe('error')
+  })
+  const section = screen.getByRole('region', { name: 'Ședințe cu locație în timp real' })
+  await userEvent.click(within(section).getByRole('button', { name: 'Reîncearcă ședințele' }))
+  await screen.findByText('Curs recuperat')
+  expect(mockedClub).toHaveBeenCalledTimes(2)
+  expect(mockedCourses).toHaveBeenCalledTimes(2)
+  expect(screen.queryByText('Nu am putut încărca cursurile.')).not.toBeInTheDocument()
+})
+
+test('retry without a known club identity never executes the disabled courses query', async () => {
+  mockedClub.mockRejectedValue(new Error('club unavailable'))
+  renderPage()
+  const section = screen.getByRole('region', { name: 'Ședințe cu locație în timp real' })
+  await within(section).findByText('Nu am putut încărca ședințele pentru locație.')
+  await userEvent.click(within(section).getByRole('button', { name: 'Reîncearcă ședințele' }))
+  await waitFor(() => expect(mockedClub).toHaveBeenCalledTimes(2))
+  expect(mockedCourses).not.toHaveBeenCalled()
 })
 
 // --- Criteriul 11: rândurile grilei sunt egale de la sm în sus, libere pe telefon ---

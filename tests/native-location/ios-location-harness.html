@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; connect-src 'none'">
+  <title>Motion synthetic native location test</title>
+</head>
+<body>
+  <p>Synthetic simulator test. No account or network access.</p>
+  <script>
+    const result = { version: 1, status: 'running', events: [] }
+    let manualStopped = false
+    let expiryHandled = false
+    let pendingRestart = null
+    let restartArmed = false
+    const cap = window.Capacitor
+    const invoke = (plugin, method, options = {}) => cap.nativePromise(plugin, method, options)
+    const save = (kind, detail = {}) => {
+      const event = { sequence: result.events.length + 1, kind, observedAt: Date.now(), ...detail }
+      result.events.push(event)
+      cap.nativeCallback('Console', 'log', {
+        level: 'log',
+        message: 'MOTION_FEATURE320_EVENT:' + JSON.stringify({ version: 1, status: result.status, event })
+      })
+      return Promise.resolve()
+    }
+    const fail = (error) => {
+      if (result.status === 'failed') return
+      result.status = 'failed'
+      void save('failure', { message: String(error?.message || error), code: error?.code || null })
+      void invoke('BackgroundGeolocation', 'stop').catch(() => undefined)
+    }
+    const near = (value, expected) => Math.abs(value - expected) < 0.00001
+    const start = (session, expiresAt, onPoint, onError) => {
+      void save('start', { session, expiresAt })
+      cap.nativeCallback('BackgroundGeolocation', 'start', {
+        expiresAt,
+        backgroundMessage: 'Synthetic simulator location only',
+        requestPermissions: false,
+        stale: false,
+        distanceFilter: 0,
+        minIntervalMs: 0
+      }, (point, error) => {
+        if (error) {
+          void save('native-error', { session, code: error.code })
+          onError(error)
+          return
+        }
+        if (!point) return
+        if (!Number.isFinite(point.time) || !Number.isFinite(point.latitude) || !Number.isFinite(point.longitude)) {
+          fail(new Error('Native point lacks coordinates or capture timestamp'))
+          return
+        }
+        void save('point', {
+          session,
+          latitude: point.latitude,
+          longitude: point.longitude,
+          capturedAt: point.time,
+          hiddenAtDelivery: document.hidden
+        })
+        Promise.resolve(onPoint(point)).catch(fail)
+      })
+    }
+    const startAfterExpiry = () => {
+      start('after-expiry', Date.now() + 30000, async (point) => {
+        if (!near(point.latitude, 3.25)) return
+        await invoke('BackgroundGeolocation', 'stop')
+        result.status = 'passed'
+        await save('complete')
+      }, fail)
+    }
+    const rejectExpiredStart = () => {
+      start('expired-start', Date.now() - 1000, () => fail(new Error('Expired start emitted a point')), (error) => {
+        if (error.code !== 'CAPTURE_EXPIRED') return fail(error)
+        pendingRestart = startAfterExpiry
+        restartArmed = false
+        void save('expired-start-rejected')
+      })
+    }
+    const startExpiry = () => {
+      start('expiry', Date.now() + 30000, () => undefined, (error) => {
+        if (error.code !== 'CAPTURE_EXPIRED') return fail(error)
+        if (expiryHandled) return
+        expiryHandled = true
+        void save('native-expired')
+        rejectExpiredStart()
+      })
+    }
+    const run = async () => {
+      if (!cap?.nativeCallback || !cap?.nativePromise) throw new Error('Native Capacitor bridge missing')
+      cap.nativeCallback('App', 'addListener', { eventName: 'appStateChange' }, (state) => {
+        if (!state) return
+        void save('app-state', { active: state.isActive })
+        if (!state.isActive && pendingRestart) restartArmed = true
+        if (state.isActive && restartArmed && pendingRestart) {
+          const restart = pendingRestart
+          pendingRestart = null
+          restartArmed = false
+          restart()
+        }
+      })
+      await save('ready')
+      start('manual', Date.now() + 120000, async (point) => {
+        if (!near(point.latitude, 1.27) || manualStopped) return
+        manualStopped = true
+        await invoke('BackgroundGeolocation', 'stop')
+        await invoke('BackgroundGeolocation', 'stop')
+        await save('manual-stopped')
+        pendingRestart = startExpiry
+        restartArmed = false
+      }, fail)
+    }
+    window.addEventListener('error', (event) => fail(event.error || event.message))
+    window.addEventListener('unhandledrejection', (event) => fail(event.reason))
+    void run().catch(fail)
+  </script>
+</body>
+</html>

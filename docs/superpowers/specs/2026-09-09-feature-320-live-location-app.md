@@ -1,0 +1,528 @@
+# Feature #320: session location in the app
+
+## Camp implementation, deployment and verification, 2026-09-10
+
+Camp participation and location are implemented, deployed to the product backend,
+and verified through the physical Android-to-parent flow. A coach or owning
+club confirms arrival once for an active enrollment. An authorized coach starts
+capture manually with fresh consent; each start expires after eight hours or at
+the camp's end, whichever is earlier. Announcements discovers active camp and course
+sessions without persisting coordinates in the message feed. Parents explicitly
+consent before viewing a session. Departure is confirmed separately and is final
+for that enrollment. No course subscription is debited by camp participation.
+
+Loss of the last eligible child automatically withdraws the parent's consent.
+Cancellation, enrollment deletion and parent reassignment are covered, including
+concurrent consent grants and departure. Another eligible child preserves access;
+restored eligibility requires new consent. Removed coaches cannot continue capture.
+
+Verification of the camp extension:
+
+- Typecheck, lint, 718 tests across 75 app test files and the production build pass.
+- Nine Deno location contract tests and the deployed entrypoint's type check pass.
+- The network-isolated PostgreSQL runner passes 246 assertions, including existing
+  course regressions, camp authorization, expiry, consent revocation and concurrency.
+- Four camp browser scenarios pass at 375x812, 768x1024 and 1440x900. The nine
+  existing course scenarios also pass. Camp tests cover arrival once, two manual
+  starts, active Announcements, consent, map, stop, restart, confirmed departure
+  and list failure/retry. Auth, backend, GPS and tiles are simulated. Captures were
+  inspected; no overflow or unexpected console/API/external errors were observed.
+- Android Capacitor sync and debug APK assembly pass. The latest APK passed the
+  physical Galaxy A55 camp flow against the deployed backend: arrival once, two
+  explicit starts, eight-hour deadline, stop and confirmed departure.
+- The authenticated parent received the active announcement, explicitly consented,
+  saw the real device marker at all three viewports, withdrew consent and lost
+  access after departure. All temporary fixtures were removed and verified absent.
+- Existing Vite chunk-size and mixed Capacitor import warnings remain. CLAUDE.md
+  and AGENTS.md are byte-identical. Physical iPhone verification is waived below.
+
+The owner explicitly approved the following migrations; all three are applied:
+
+1. `00045_camp_live_location_access.sql`: camp participation, separate camp/session
+   targets and service-only staff/parent access helpers.
+2. `00046_camp_live_location_transaction.sql`: camp start/read/update/stop and consent
+   transactions, preserving course behavior and the frozen eight-hour deadline.
+3. `00047_camp_live_location_discovery.sql`: active-session discovery, private
+   invalidations, cleanup and automatic consent withdrawal on lost eligibility.
+
+Remote versions are `20260910122700`, `20260910122706` and `20260910122711`.
+`coach-live-location` is ACTIVE version 2 with JWT verification. Product database
+types were regenerated from the deployed schema; typecheck and build passed again.
+Authenticated camp-to-parent verification used separately authorized temporary
+fixtures with exact-ID cleanup. The detailed live proof and cleanup are recorded
+at the end of this document. Human UI acceptance and the final code review remain
+separate gates; deployment alone does not mark feature #320 complete.
+
+## Physical iPhone verification waived by the owner, 2026-09-10
+
+The owner explicitly requested skipping physical iPhone testing for feature #320.
+Physical iPhone verification is therefore no longer a completion prerequisite for
+this feature, including its camp extension. This decision supersedes the physical
+iOS release-gate statements below; they remain as historical evidence.
+
+Physical iPhone behavior remains unverified, not passed. Retain the existing iOS
+build and simulator checks. The waiver does not complete camp implementation,
+Android/browser verification, human UI acceptance, migration approvals or delivery.
+
+## Camp scope clarified by the owner, 2026-09-10
+
+The owner identified camps as the primary use case, with attendance recorded once
+at arrival. In the continued conversation, the owner specified that sharing starts
+only when the coach starts it, and appears in the parent's Announcements page when
+the coach starts sharing. The camp extension is implemented and deployed. The
+dedicated physical Android and live parent camp verification is recorded at the end
+of this document; earlier course-flow evidence is identified separately.
+
+Agreed product behavior:
+
+- Camp arrival is confirmed once. A new location-sharing session does not require
+  another attendance scan. Enrollment alone is not proof of arrival.
+- The coach explicitly starts sharing. Arrival, opening the camp, opening
+  Announcements, and entering the background do not start location capture.
+- While sharing is active, `/account/announcements` shows a camp location card
+  identifying the coach and camp. The parent explicitly consents before viewing
+  coordinates. Existing course-location consent does not authorize a camp session.
+- The coach can stop sharing. Stopped or expired sharing cannot expose a map or
+  coordinates. There is no location history in announcements or child records.
+
+Implementation structure, distinct from human-approved UI criteria:
+
+1. Add camp participation with arrival and departure, scoped to a real active
+   camp enrollment and authorized staff. The current `attendance` model references
+   course occurrences; do not fabricate course occurrences for camps or debit course
+   subscriptions. Existing camp enrollment lists and QR display are not a check-in.
+2. Extend the location contract with an explicit camp context while retaining the
+   course context and its existing access rules. Camp capture belongs to a coach
+   who owns the camp or has an accepted accompanying-coach invitation. Recheck that
+   authorization on every request. Parent access requires an own child with active
+   camp enrollment, confirmed arrival, no departure and session-specific consent.
+3. Reuse the capture controller, stop capability, consent versioning, current-point
+   retention and private invalidations. Multiple coach sessions must remain distinct.
+   Enrollment cancellation, departure and coach removal must revoke relevant access.
+4. Place the coach controls with the camp participant view and show active sessions
+   in Announcements through an authorized API. Use dynamic cards rather than durable
+   general announcements containing sensitive location data. Include discovery of a
+   newly started session while the Announcements page is already open, failure/retry
+   feedback and immediate map invalidation on stop, expiry or consent withdrawal.
+5. Verify check-in once followed by multiple explicit starts, eligible/ineligible
+   parents and coaches, multiple camps, departure/cancellation, stop/expiry and the
+   full phone-to-parent flow. Existing course tests remain regression requirements.
+
+The owner selected an automatic expiry of eight hours per explicit start on
+2026-09-10. Clamp the frozen deadline to the end of the camp's final calendar day
+in Europe/Bucharest. A retry does not extend an existing session. Further sharing
+requires another explicit start after the prior session has ended.
+
+The existing camp enrollment visibility helper is not sufficient authorization for
+location: its tracked implementation does not require an accepted coach invitation.
+The deployed camp helpers instead require ownership or an accepted invitation and
+an enabled coach profile. The owner separately approved migrations 00045–00047 and
+their policies before application. Further migrations still require concrete approval.
+
+The existing approved specifications on surfaces #3210/#3211 cover course location.
+Do not overwrite their human approvals or count them as approval of this extension.
+Announcement surface #544 retains its identity:
+`motion-react:page:/account/announcements:section:toata-pagina`.
+
+This extends the backend contract in
+`2026-09-09-feature-320-live-location-backend.md`. The owner requested the remaining
+work on 2026-09-09. The implementation is intended for review; source and isolated
+tests do not establish deployment or approval.
+
+## User behavior
+
+- The actual COACH selects an active occurrence in `/coach/attendance`, accepts the
+  session-specific notice, and starts sharing. ADMIN does not inherit this control.
+- A persistent stop control survives navigation. It remains available during capture
+  initialization. Failed cleanup remains visible across logout/account changes and
+  blocks another start until it can be retried.
+- `/account/attendance` lists current occurrences for the parent's active COURSE
+  enrollments. Only a parent with an eligible own child, PRESENT attendance and a
+  QR accounting marker can obtain coordinates, after explicit per-session consent.
+- `/club/courses` lists current occurrences for the owner's courses. The server
+  enforces ownership on every read. Parent consent is not required for the owning club.
+- Parent consent uses the backend version/CAS contract. Revocation immediately clears
+  the map. A conflicting operation refreshes metadata but never silently regrants consent.
+- Current metadata discovers the session without coordinates. Private Broadcast sends
+  only an empty invalidation, followed by a newly authorized Edge Function read.
+  A five-second fallback handles missed delivery. Ordinary polling retains the same
+  map; errors, invalidation, account changes, hidden tabs and expiry clear its point.
+- A point expires from the display two minutes after capture even if a request hangs.
+  A new point recenters the existing Leaflet map. Missing/failed basemap tiles show
+  an explicit unavailable/retry state, using the existing CARTO/OSM basemap helper.
+- `/confidentialitate` describes this feature, recipients, permissions, withdrawal,
+  active-data retention, infrastructure backups and map-provider requests. It is a
+  feature notice, not an assertion that the operator's complete privacy policy has
+  received legal review.
+
+## Capture and lifecycle
+
+`@capgo/background-geolocation` is pinned at 8.4.5, compatible with the app's
+Capacitor 8 dependency tree. `patch-package` 8.0.1 applies the committed native
+patch during installation and fails installation if it cannot be applied.
+
+The patch requires an expiry on both platforms, rejects native URL/header delivery,
+adds native wall-clock plus monotonic expiry checks, and removes callbacks and GPS
+listeners on stop. Android uses a foreground location service with a visible stop
+notification. It does not restore tracking after process death/task removal.
+No coordinate queue or native HTTP credential persistence is used. The adapter owns
+one capture at a time and retains failed cleanup so explicit retry can reach native
+stop again. iOS declares the location background mode and permission descriptions.
+
+The controller requests a stop-only capability before starting a server session.
+It holds that token only in memory, so a late start response can still be stopped
+after logout without authorizing reads or restarts as the previous account. Cleanup
+waits for pending initialization and retains late failures. Tokens can expire and
+network requests can fail; the UI does not claim a successful stop in that case.
+
+The controller sends at most one update every 15 seconds, without overlapping
+updates or replaying failed points. Native requests use CapacitorHttp with bounded
+timeouts; the CapacitorHttp bridge is enabled for background auth refresh as well.
+Web uses Geolocation watchPosition and stops on hidden/pagehide. Native capture
+continues only while the permitted runtime is alive. There is no promise of tracking
+after force-quit, OS termination or denied permissions.
+
+The server expiry is the frozen original occurrence end plus 15 minutes, further
+clamped if the occurrence is shortened. The server rejects invalid ownership,
+eligibility or expiry on each request. A native timer is defense in depth; OS/device
+behavior still needs the device verification below. A client with a stale original
+deadline cannot extend server access.
+
+Capacitor's generated Swift package paths are normalized to forward slashes by the
+`capacitor:sync:after` hook. This prevents Windows sync output from breaking Xcode.
+
+## Deployed course database foundation
+
+1. `00043_coach_live_location.sql` (merged in PR #74 and applied after owner approval):
+   service-only transaction and four RLS tables for current sessions, latest points,
+   versioned parent consent and start replay guards. No authenticated direct table
+   access. Stop cascades point/consent deletion; minute cron purges expired sessions.
+2. `00044_coach_live_location_realtime.sql`: private `auth.uid()` authorization helper,
+   scoped Broadcast SELECT policy, restrictive receive/anonymous/publish guards,
+   and invalidations for session, consent, attendance, QR accounting and enrollment
+   changes. No coordinate table enters `supabase_realtime`. Client publication and
+   Presence for the location prefix are denied, without changing unrelated topics.
+
+Realtime channel authorization can be cached for a connection. Therefore messages
+contain exactly `{}`, never coordinates. A previously joined client can at most see
+invalidation timing; the next Edge read rechecks current access. Broadcast infrastructure
+can retain session topic/timing metadata separately from active application records.
+Notification failure cannot roll back attendance or location transactions; fallback
+polling remains necessary.
+
+The canonical tracker brief requires: “Cere acordul explicit al omului pe fiecare
+migrare/politică.” Each migration and its access rules must be explicitly approved
+before application. `CLAUDE.md` section 2 also reserves final UI acceptance for the
+human. These are separate from automatic CI and Bugbot review.
+
+## Historical course verification before live deployment
+
+This section records the initial course implementation checks. The later live
+deployment and physical-device sections below supersede its initial environment
+and runtime limitations; the current camp state is summarized above.
+
+- Isolated PostgreSQL: 122 existing access/lifecycle/concurrency assertions plus
+  43 Realtime authorization/notification assertions passed. Tests impersonate allowed
+  and forbidden actors. The Realtime SQL harness captures `realtime.send`; it does
+  not prove a deployed WebSocket channel.
+- App controller/API tests cover account binding, malformed responses, stop-only
+  capability after logout, throttling, no queue, expiry, stop during pending start
+  and capture, failed cleanup retry and retention across account changes.
+- UI tests cover parent opt-in/revoke/CAS races, identity/visibility invalidation,
+  club reads, coach role/time gating and map preservation/freshness.
+- Adapter tests cover permissions, native expiry arguments, callback validation,
+  pending start/stop and failed cleanup retry. They mock the native bridge.
+- App verification passed: typecheck, lint, 712 tests in 74 files and production build.
+  Existing large-chunk/mixed Capacitor import build warnings remain. The generated
+  UI conventions and byte-identical CLAUDE/AGENTS mirror were checked.
+- Chromium passed nine role/viewport journeys at `http://127.0.0.1:3023`:
+  375x812, 768x1024 and 1440x900. Coach consent/GPS/global stop after navigation;
+  parent consent/Leaflet/private invalidation/re-read/revoke; owning club map.
+  No console/page errors, unexpected API/external requests or horizontal overflow.
+  This uses synthetic auth, API responses, GPS and CARTO tiles; the actual browser
+  WebSocket receives simulated Phoenix messages. It is not deployed Realtime proof.
+  There are 27 screenshots and nine `SIMULATED-evidence.json` reports in the ignored
+  `test-results/live-location/` directory, also uploaded by the Playwright CI workflow.
+- Android `assembleDebug` and `assembleDebugAndroidTest` compiled the patched Java
+  with JDK 21 and SDK 36. Three tests passed on an isolated Android 36.1 emulator:
+  synthetic GPS after `moveTaskToBack`, native expiry without JavaScript, no points
+  after expiry/stop and rejection of an already-expired start. This exercises the
+  native service, not the full app/network path.
+  The final stop test extracts the real notification's `Oprește` action and sends its
+  PendingIntent; the final three-test run passed in 19.101 seconds. Local transcript:
+  `C:/Android/motion-native-runtime/feature320-native-final-proof.txt`.
+  The native patch was also reapplied to pristine npm 8.4.5 sources and compared
+  against all five changed vendor sources.
+  CI builds the app's qualified `:app:assembleDebug :app:assembleDebugAndroidTest`
+  targets. Unqualified tasks also build third-party Cordova library tests, whose
+  unrelated Kotlin test classpath is inconsistent. No dependency override or app
+  test exclusion was introduced; a clean app build passed all 277 tasks.
+- The iOS simulator app compiled without signing on GitHub's macOS runner (PR #75,
+  App CI run 34392889009, `ios-build`). This verifies the patched Swift/SPM build;
+  it does not prove iOS background/locked-screen behavior.
+  The isolated runner `tests/native-location/run-ios-location.mjs` now also checks
+  synthetic foreground/background delivery, manual stop, restart, native expiry and
+  expired-start rejection. It requires native console evidence of the JavaScript
+  callback received before the app returns to foreground; delayed delivery after
+  resume is a failure. It does not poll the asynchronously flushed Preferences plist. CI uploads
+  the result and command transcript. At this initial stage its runtime result was pending; it
+  cannot establish physical-device or full app/network behavior.
+  The first runtime attempt (34395608072) timed out during initial simulator
+  CoreLocation data migration, before the app was installed. The owned simulator
+  now has a bounded ten-minute initial boot allowance.
+  Run 34396898372 subsequently recorded both background JavaScript callbacks before
+  foreground and native expiry before foreground (artifact 10122341840). Its final
+  restart failed because the harness advanced while a simulator command was pending.
+  Restart stages now require an explicit app-state handshake, with no JavaScript
+  restart timers. Stop assertions follow the stopped watcher, allowing synthetic
+  simulator coordinates to appear legitimately in a later explicitly started watcher.
+- The initial read-only live inspection confirmed both location schema and Realtime policies
+  absent, with no location cron. No migration, Edge deployment or real location
+  collection was performed.
+
+Reproducible commands from the root:
+
+```powershell
+pwsh -NoProfile -File supabase/tests/run-coach-live-location-realtime.ps1
+npx playwright test --config playwright.location.config.ts
+```
+
+From `motiontimisoaraApp/`: `npm run typecheck`, `npm run lint`,
+`npm test -- --maxWorkers=4`, `npm run build`, then `npx cap sync`.
+`npm run conventions` regenerates the checked UI inventory.
+
+## Remaining release gates and completed deployment checks
+
+- The owner approved migrations 00043–00047 and both Edge deployments. Live
+  functions/RLS/cron were inspected and database types were regenerated.
+- The local CARTO key is configured. Live parent and club browser tests rendered
+  tiles and the physical device marker; simulated tests remain separate evidence.
+- The deployed course and camp flows, consent revocation, access denials, stop
+  cleanup and exact-ID fixture deletion passed as documented below. Course Realtime
+  delivery was observed directly; ordinary polling alone is not Broadcast proof.
+- Physical Android background/locked-screen delivery, offline recovery, stop retry,
+  permission revocation and force stop were exercised in the documented course
+  continuation; the dedicated camp flow also passed. Physical iPhone verification
+  is waived by the owner and remains unverified. Preserve iOS build/simulator checks.
+- The owner retains final UI/device acceptance. CI and Bugbot do not set that gate.
+- Merge only after CI, clean Bugbot and the required human gates. Mark #320 Gata only
+  after required deployment and runtime verification; do not substitute source presence.
+
+## Authorized live verification, 2026-09-10
+
+The owner explicitly approved migrations 00043 and 00044, Edge deployment and
+temporary test fixtures. Both migrations were applied in order; their remote
+versions are recorded in the migration ledger. `coach-live-location` is ACTIVE v1
+with JWT verification. RLS and the absence of direct authenticated SELECT were
+verified for all four location tables. The expiry cron runs every minute.
+Database types were regenerated from the deployed public schema.
+
+On the physical Galaxy A55 (Android 16), the audit coach opened
+`/coach/attendance`. Past August occurrences correctly disabled consent/start;
+a temporary current occurrence enabled the checkbox and start button. Initial
+GPS-only capture produced no point for over two minutes. Enabling the installed
+plugin's Android network fallback produced a fresh point approximately 21 seconds
+after start. GPS retains priority; the plugin rejects network fixes over 300 m.
+No dependency upgrade or native lifecycle patch removal was needed.
+
+The rebuilt app was installed and tested against the live Edge/database path:
+
+- Foreground delivery reached the server and appeared as the last-sent time in UI.
+- After Home, a fresh point reached the server at 10:32:07 UTC before returning to
+  the app. The server retained one latest point, not a coordinate history.
+- The notification's actual `Oprește` action stopped capture. The session, point
+  and consent rows were all absent afterwards.
+- A second start used a short test occurrence with expiry 10:35:21 UTC. A point
+  arrived in the background at 10:35:06; at 10:35:51 the session and point were gone,
+  before reopening the app. The UI then reported that sharing had ended.
+- Live transaction checks rejected the audit parent before QR eligibility and
+  before consent, allowed reading after test consent, and rejected reading after
+  revocation. Eligibility was seeded explicitly; this was not a camera QR test or
+  an authenticated parent browser/Realtime test.
+
+The phone test used real device locations after MobAI mock-location injection
+failed. Coordinates were not copied into logs, repository evidence or screenshots.
+The screenshot `galaxy-a55-live-location-sent.png` in the session artifact directory
+shows only the coach status and last-sent time. Existing audit users, course and
+child were preserved; only the temporary occurrence/enrollment and related rows
+are designated for cleanup.
+
+Current local checks: typecheck, lint, all 712 tests across 74 files, production
+build and Android debug assembly passed. Existing Vite chunk-size and dynamic-import
+warnings remain. The local CARTO key is now configured; its earlier absence above
+is historical. No final human acceptance or merge is implied.
+
+The owner subsequently authenticated the existing Spec Parent account in Chrome.
+A second temporary enrollment used its existing test child. The live parent flow
+passed at 375x812, 768x1024 and 1440x900: explicit consent, loaded CARTO tiles and
+marker, fresh timestamps from the physical phone, consent withdrawal removing the
+map, and server stop replacing it with the inactive-sharing message. No horizontal
+page overflow was observed. CDP captured the actual binary Realtime `invalidate`
+event on the session topic. The delivered payload contained a transport event `id`
+and no coordinates; the application SQL passes an empty payload to Realtime.
+The five-second authenticated polling fallback remains present, so timestamp
+changes alone are not used as proof of Broadcast delivery.
+
+Live transaction checks also allowed the owning club and denied another eligible
+parent without its own consent. Club browser rendering, locked-screen/offline/
+force-quit behavior on this physical device and human UI/device acceptance remain
+separate release gates. Captured browser warnings came from MetaMask and the
+existing Stripe HTTP development notice; no application error was observed during
+the parent flow. Map screenshots were inspected locally and not uploaded to Tracker.
+
+After stopping the last session, the temporary occurrence, both new enrollments,
+their attendance/accounting rows and location/start records were deleted and
+verified absent. Both existing children, all existing users and the course were
+preserved. Neither temporary enrollment had a payment or monthly-payment row.
+All GitHub checks, including Cursor Bugbot, passed on code commit d71f2a2.
+
+## Physical Android continuation through ADB, 2026-09-10
+
+After the owner authorized the ADB continuation, the same Galaxy A55 was connected
+and authorized. Both section specifications were already human-approved in Tracker.
+The installed app retained the audit coach session. A new temporary occurrence
+enabled an explicit consent/start; no enrollment or child record was created.
+
+- Locked screen: Android reported `mWakefulness=Dozing` and keyguard `showing=true`.
+  A fresh point captured at 11:10:20 UTC reached the server at 11:10:20.599, while
+  the phone remained locked. The location service remained foreground.
+- Offline and recovery: Wi-Fi and mobile data were disabled at 11:11:03 UTC.
+  At 11:12:04, the latest server point remained the 11:10:51 capture. Both original
+  network settings were restored at 11:12:24. New captures at 11:12:31, 11:12:51
+  and 11:13:11 reached the server. The observed recovery points were captured after
+  reconnection. This sampling complements the controller's no-queue tests; it does
+  not establish every intermediate callback or exercise the offline error UI.
+- Force stop: `am force-stop` at 11:13:38 removed the app process and location
+  service. The server's last point stayed at 11:13:31 through the 11:14:10 check.
+  Relaunch did not restart the location service or show active sharing. Returning
+  to attendance showed unchecked consent and no active sharing. Force stop cannot
+  send an immediate remote stop: the previous point remains subject to server expiry.
+- The temporary occurrence was shortened to an effective expiry of 11:14:54 UTC.
+  At 11:15:03, the session and point were absent without another capture/start.
+  The temporary occurrence was then deleted and its absence verified; the existing
+  course was preserved. Wi-Fi and mobile data were both restored to their original
+  enabled state. No coordinates were copied into evidence.
+
+The owner entered the phone PIN directly after the lock test. The local capture
+`galaxy-a55-location-after-force-stop.png` shows the inactive attendance panel.
+These results close the previously unverified physical Android lock, connectivity
+recovery and force-stop scenarios. They do not establish iOS physical behavior,
+permission revocation or final human UI/device acceptance. Club browser rendering
+and offline stop retry are documented below. No source code changed during this
+continuation.
+
+## Club browser și oprire offline, 2026-09-10
+
+Contul de club `UI Audit Club TM` a fost autentificat în `/club/courses`. Pentru
+verificare a fost creat un curs și o ședință temporare, fără copil sau înscriere.
+La 375x812, 768x1024 și 1440x900 pagina a încărcat dalele CARTO și markerul trimis
+de telefon, a afișat timpul ultimei poziții și nu a avut overflow orizontal. După
+acțiunea reală `Oprește locația` de pe telefon, markerul a dispărut, iar clubul a
+afișat mesajul `Partajarea locației nu este activă.` și acțiunea `Reîncearcă`.
+Consolele nu au raportat erori ale aplicației; au rămas doar avertismentele
+existente Stripe/MetaMask din mediul local.
+
+Cu Wi-Fi și datele mobile oprite, `Oprește locația` a afișat feedback-ul
+`Oprirea partajării necesită reîncercare.` și `Reîncearcă oprirea`. După restaurarea
+rețelei și retry, verificarea SQL a confirmat zero sesiuni pentru ședință. Revocarea
+temporară a permisiunilor Android fine/coarse a fost confirmată prin `dumpsys`, fără
+punct nou observat înainte de închiderea aplicației. Permisiunile au fost apoi
+restaurate la starea inițială.
+
+După test, cursul și ședința temporare au fost șterse exact după ID. Verificarea
+finală a confirmat zero sesiuni, puncte și start receipts în baza de date; cursul
+existent de audit a rămas prezent. Rezultatele închid verificarea browserului de
+club și a retry-ului offline pe Android. Rămân neacoperite fizic iOS și acceptarea
+umană finală a criteriilor/dispozitivului; acestea nu sunt înlocuite de testele
+ADB sau de aprobarea specificațiilor.
+
+## Authorized camp deployment, 2026-09-10
+
+The owner explicitly approved camp migrations 00045, 00046 and 00047, deployment
+of the updated Edge Function, and creation/cleanup of temporary camp fixtures for
+physical Android and authenticated parent verification. The remote migration ledger
+was independently checked: versions `20260910122700`, `20260910122706` and
+`20260910122711` match the three local migration names. `coach-live-location`
+is ACTIVE version 2 with JWT verification enabled.
+
+The deployed contract supports camp targets without synthetic course occurrences.
+An authorized coach starts capture explicitly, for at most eight hours and never
+beyond the camp's final day in `Europe/Bucharest`. Arrival is confirmed once;
+departure is final for that enrollment. Parents discover active sharing through
+Announcements and explicitly consent before receiving a point. Discovery contains
+session metadata only. Course QR eligibility and location contracts remain intact.
+
+When the last eligible child departs, loses its active enrollment, has the enrollment
+deleted, or is transferred to another parent by an authorized actor, existing camp
+location consent is revoked with a version change. Another eligible child preserves
+the parent's agreement. Returning eligibility requires a new explicit agreement.
+Session locks serialize concurrent agreement and departure; consent updates cannot
+restore access with a stale version.
+
+Local verification before deployment passed 246 isolated SQL assertions, including
+course regression after the camp migrations, private Realtime policies, both orders
+of concurrent agreement/departure, stop/update ordering and receipt replay protection.
+Nine Edge contract tests passed. The main application passed typecheck, lint,
+718 unit tests and production build; Android debug assembly succeeded. Four simulated
+camp browser tests and nine existing course tests passed. These checks establish
+the local implementation. The physical camp/parent flow was subsequently verified
+as recorded in the next section.
+
+The temporary verification uses existing audit identities and children. It does not
+authorize creating users, resetting passwords, taking payments or changing existing
+production enrollments. No coordinates belong in the repository, logs or shared
+screenshots. Final human UI/device acceptance and the remaining release gates stay
+separate from this migration/deployment approval.
+
+A single unmistakably temporary camp and one active enrollment were created for
+the existing audit coach and Spec Parent's existing child. Six live transaction
+checks allowed the owner's participant list and denied participant access to the
+parent and an unrelated coach, parent arrival, arrival for an unknown enrollment,
+and parent-controlled start. The participant list reported one child with no
+arrival. Afterwards the temporary camp still had zero participation rows, sessions
+and start receipts: these checks did not start capture or bypass the pending UI
+arrival step. The temporary fixture was subsequently cleaned up after the physical
+test, as recorded below.
+
+## Physical Android and live parent camp verification, 2026-09-10
+
+The latest Android APK was installed on the physical Galaxy A55. The existing audit
+coach opened the temporary camp's participant page and confirmed arrival through
+the interface once. SQL then showed one arrival and zero sharing sessions, proving
+that attendance did not start location capture.
+
+The coach explicitly granted sharing consent and pressed start. The first session
+started at `12:31:29.698629 UTC` and expired at `20:31:29.698629 UTC`, exactly
+28,800 seconds later. A real device point captured at `12:33:10.809 UTC` reached
+the server at `12:33:11.104325 UTC`; its coordinates were not copied into written
+evidence. The parent Announcements page automatically displayed the active-sharing
+card. After explicit parent consent, CARTO tiles and the coach marker rendered at
+375x812, 768x1024 and 1440x900 without horizontal overflow.
+
+Stopping through the Android interface removed the parent announcement. A second
+explicit start reused the single arrival: SQL showed two start receipts and one
+participation row. No new scan or arrival confirmation was required. The parent
+had to consent again for the new session. Manual withdrawal removed the map and
+persisted `granted=false`, version 2. After another explicit agreement, the coach
+used `Confirmă plecarea` and `Da, a plecat`. Android displayed `Plecat din tabără`;
+the parent card and map disappeared, and SQL confirmed automatic consent revocation
+with `granted=false`, version 4. The coach then stopped the second sharing session
+through Android before cleanup.
+
+No application console errors were observed. Existing Stripe HTTP-development and
+MetaMask warnings remained. Two initial locator-name timeouts came from the test
+harness; the actual UI actions and their SQL results were subsequently confirmed.
+Map screenshots were inspected only through local tooling and were not added to
+the repository or shared evidence.
+
+Cleanup first verified zero payments, monthly payments, unexpected camp enrollments
+and active sharing sessions. An exact-ID transaction deleted only the temporary
+enrollment and camp; their participation and start receipts were removed through
+the existing foreign keys. The final read confirmed zero temporary camps,
+enrollments, participation rows, sessions, points, consents and start receipts.
+The existing child, its parent relationship, both profiles and both Auth users were
+verified present. No existing account, child or production enrollment was changed.
+
+This establishes the real Android-to-Edge/database-to-parent camp flow, explicit
+start/stop, arrival reuse, renewed consent and departure revocation. It does not
+replace the owner's final human UI/device acceptance or the remaining release gates.

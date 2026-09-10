@@ -14,7 +14,9 @@
     "conventions": "node scripts/ui-conventions.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "cap:sync": "npm run build && cap sync",
-    "android": "npm run build && cap sync android && cap open android"
+    "android": "npm run build && cap sync android && cap open android",
+    "postinstall": "patch-package --error-on-fail",
+    "capacitor:sync:after": "node scripts/normalize-capacitor-paths.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.0",
@@ -28,6 +30,7 @@
     "@capacitor/push-notifications": "^8.1.1",
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
+    "@capgo/background-geolocation": "8.4.5",
     "@fontsource-variable/inter": "^5.2.8",
     "@fontsource-variable/manrope": "^5.2.8",
     "@hookform/resolvers": "^5.4.0",
@@ -75,6 +78,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
     "jsdom": "^29.1.1",
+    "patch-package": "8.0.1",
     "prettier": "^3.8.4",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",

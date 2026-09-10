@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { vi } from 'vitest'
 
 import CoachAttendancePage from './CoachAttendancePage'
+vi.mock('@/features/live-location/CoachLocationPanel', () => ({ CoachLocationPanel: () => null }))
 import { getCoachSessions, getSessionRoster, type CoachSession } from '@/api/coach'
 
 vi.mock('@/api/coach', () => ({
@@ -146,7 +147,11 @@ test('ședințele mai vechi de două săptămâni apar abia după Vezi mai mult'
     groups({
       past: [
         session({ id: 'recenta', starts_at: '2026-08-15T14:00:00.000Z' }),
-        session({ id: 'veche', starts_at: '2026-07-20T14:00:00.000Z', course: { id: 'c2', name: 'Alergare veche', location: null } }),
+        session({
+          id: 'veche',
+          starts_at: '2026-07-20T14:00:00.000Z',
+          course: { id: 'c2', name: 'Alergare veche', location: null },
+        }),
       ],
       pastRecentCount: 1,
     }),
@@ -188,7 +193,10 @@ test('cu numai ședințe mai vechi de două săptămâni, lista le arată pe toa
 test('cardul arată locația, numărul de copii și ziua întreagă; antetul arată numărul', async () => {
   mockedGetCoachSessions.mockResolvedValue(
     groups({
-      upcoming: [session({ id: 's1', enrolled_count: 1 }), session({ id: 's2', enrolled_count: 0 })],
+      upcoming: [
+        session({ id: 's1', enrolled_count: 1 }),
+        session({ id: 's2', enrolled_count: 0 }),
+      ],
     }),
   )
   renderPage()
@@ -203,7 +211,9 @@ test('cardul arată locația, numărul de copii și ziua întreagă; antetul ara
 test('fără locație pe curs, cardul scrie o liniuță în locul ei', async () => {
   mockedGetCoachSessions.mockResolvedValue(
     groups({
-      upcoming: [session({ id: 's1', course: { id: 'c1', name: 'Înot începători', location: null } })],
+      upcoming: [
+        session({ id: 's1', course: { id: 'c1', name: 'Înot începători', location: null } }),
+      ],
     }),
   )
   renderPage()

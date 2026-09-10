@@ -1,9 +1,15 @@
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-type SessionRequest = { occurrenceId: string; sessionId: string };
+type LocationTarget =
+  | { occurrenceId: string; campId?: never; coachId?: never }
+  | { campId: string; coachId: string; occurrenceId?: never };
+type SessionRequest = LocationTarget & { sessionId: string };
 export type LocationRequest =
-  | { action: "status"; occurrenceId: string }
-  | { action: "start"; occurrenceId: string; requestId: string; consent: true }
+  | { action: "list" }
+  | { action: "participants"; campId: string }
+  | { action: "arrive" | "depart"; campId: string; enrollmentId: string }
+  | (LocationTarget & { action: "status" })
+  | (LocationTarget & { action: "start"; requestId: string; consent: true })
   | (SessionRequest & { action: "read" | "stop" })
   | (SessionRequest & {
     action: "consent";
@@ -19,6 +25,15 @@ export type LocationRequest =
   });
 
 export type LocationResult =
+  | { success: true; sessions: unknown[] }
+  | {
+    success: true;
+    participants: unknown[];
+    startsAt: string;
+    endsAt: string;
+    canShare: boolean;
+  }
+  | { success: true }
   | {
     success: true;
     sessionId: string;
@@ -32,25 +47,59 @@ export type LocationResult =
 export function parseLocationRequest(value: unknown): LocationRequest | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const input = value as Record<string, unknown>;
-  if (
-    typeof input.occurrenceId !== "string" || !uuid.test(input.occurrenceId)
-  ) {
-    return null;
-  }
   const only = (...keys: string[]) =>
     Object.keys(input).every((key) => keys.includes(key));
+  if (input.action === "list") {
+    return only("action") ? { action: "list" } : null;
+  }
+  if (["participants", "arrive", "depart"].includes(String(input.action))) {
+    if (typeof input.campId !== "string" || !uuid.test(input.campId)) {
+      return null;
+    }
+    if (input.action === "participants") {
+      return only("action", "campId")
+        ? { action: "participants", campId: input.campId }
+        : null;
+    }
+    return (input.action === "arrive" || input.action === "depart") &&
+        typeof input.enrollmentId === "string" &&
+        uuid.test(input.enrollmentId) &&
+        only("action", "campId", "enrollmentId")
+      ? {
+        action: input.action,
+        campId: input.campId,
+        enrollmentId: input.enrollmentId,
+      }
+      : null;
+  }
+  let target: LocationTarget;
+  let targetKeys: string[];
+  if (Object.hasOwn(input, "campId")) {
+    if (
+      typeof input.campId !== "string" || !uuid.test(input.campId) ||
+      typeof input.coachId !== "string" || !uuid.test(input.coachId)
+    ) return null;
+    target = { campId: input.campId, coachId: input.coachId };
+    targetKeys = ["campId", "coachId"];
+  } else {
+    if (
+      typeof input.occurrenceId !== "string" || !uuid.test(input.occurrenceId)
+    ) return null;
+    target = { occurrenceId: input.occurrenceId };
+    targetKeys = ["occurrenceId"];
+  }
   if (input.action === "status") {
-    return only("action", "occurrenceId")
-      ? { action: "status", occurrenceId: input.occurrenceId }
+    return only("action", ...targetKeys)
+      ? { action: "status", ...target }
       : null;
   }
   if (input.action === "start") {
     return input.consent === true && typeof input.requestId === "string" &&
         uuid.test(input.requestId) &&
-        only("action", "occurrenceId", "requestId", "consent")
+        only("action", ...targetKeys, "requestId", "consent")
       ? {
         action: "start",
-        occurrenceId: input.occurrenceId,
+        ...target,
         requestId: input.requestId,
         consent: true,
       }
@@ -59,9 +108,9 @@ export function parseLocationRequest(value: unknown): LocationRequest | null {
   if (typeof input.sessionId !== "string" || !uuid.test(input.sessionId)) {
     return null;
   }
-  const base = { occurrenceId: input.occurrenceId, sessionId: input.sessionId };
+  const base = { ...target, sessionId: input.sessionId };
   if (input.action === "read" || input.action === "stop") {
-    return only("action", "occurrenceId", "sessionId")
+    return only("action", ...targetKeys, "sessionId")
       ? { ...base, action: input.action }
       : null;
   }
@@ -72,7 +121,7 @@ export function parseLocationRequest(value: unknown): LocationRequest | null {
         input.expectedVersion >= 0 && input.expectedVersion <= 2147483646 &&
         only(
           "action",
-          "occurrenceId",
+          ...targetKeys,
           "sessionId",
           "consent",
           "expectedVersion",
@@ -91,7 +140,7 @@ export function parseLocationRequest(value: unknown): LocationRequest | null {
     input.action === "update" &&
     only(
       "action",
-      "occurrenceId",
+      ...targetKeys,
       "sessionId",
       "latitude",
       "longitude",
@@ -121,13 +170,14 @@ export function parseLocationRequest(value: unknown): LocationRequest | null {
 const messages: Record<string, string> = {
   INVALID_REQUEST: "Cererea de locație nu este validă.",
   UNAUTHORIZED: "Sesiunea a expirat. Autentifică-te din nou.",
-  FORBIDDEN: "Nu ai acces la locația acestei ședințe.",
+  FORBIDDEN: "Nu ai acces la această activitate.",
+  CAMP_NOT_FOUND: "Tabăra nu este disponibilă.",
   OCCURRENCE_NOT_FOUND: "Ședința nu este disponibilă.",
   SESSION_NOT_FOUND: "Partajarea locației nu este activă.",
   SESSION_EXPIRED: "Partajarea locației s-a încheiat.",
   CONSENT_REQUIRED: "Confirmă acordul pentru partajarea locației.",
   NOT_ELIGIBLE:
-    "Locația este disponibilă părinților copiilor prezenți, confirmați prin QR.",
+    "Locația este disponibilă părinților copiilor înscriși și confirmați prezenți.",
   STALE_LOCATION: "Poziția este prea veche. Trimite o poziție nouă.",
   REQUEST_CONFLICT:
     "Acordul a fost modificat între timp. Reîncarcă starea curentă.",

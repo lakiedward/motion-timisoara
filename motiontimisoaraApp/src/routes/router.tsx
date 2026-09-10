@@ -66,6 +66,7 @@ import AttendancePage from '@/features/account/AttendancePage'
 import AnnouncementsPage from '@/features/account/AnnouncementsPage'
 import CheckoutPage from '@/features/account/CheckoutPage'
 import ChildQrPage from '@/features/children/ChildQrPage'
+import PrivacyPage from '@/features/public/PrivacyPage'
 
 export const router = createBrowserRouter([
   {
@@ -88,6 +89,7 @@ export const router = createBrowserRouter([
           { path: '/harta', element: <MapPage /> },
           { path: '/despre', element: <AboutPage /> },
           { path: '/contact', element: <ContactPage /> },
+          { path: '/confidentialitate', element: <PrivacyPage /> },
           // Galeria de componente e o unealtă internă, dar stătea aici ca rută
           // publică — deasupra lui `RequireAuth`, deci oricine o putea deschide
           // pe site. Verificat pe un build de producție servit: /dev/ui randa

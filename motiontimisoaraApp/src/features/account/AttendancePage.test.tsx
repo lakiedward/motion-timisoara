@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 
 import AttendancePage from './AttendancePage'
+vi.mock('@/features/live-location/CurrentLocationSessions', () => ({
+  CurrentLocationSessions: () => null,
+}))
 import { getChildAttendance, getChildrenAttendance, getMyChildren } from '@/api/account'
 
 vi.mock('@/api/account', () => ({
@@ -44,8 +47,7 @@ const rand = (
 })
 
 function renderPage(client?: QueryClient) {
-  const queryClient =
-    client ?? new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const queryClient = client ?? new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const utils = render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>
@@ -126,7 +128,9 @@ test('nota antrenorului se vede sub rândul ei', async () => {
 })
 
 test('rezumatul respectă acordul la număr', async () => {
-  mockedPrezentaToti.mockResolvedValue([rand('r1', '2026-08-20T14:00:00Z', 'PRESENT', 'Înot')] as never)
+  mockedPrezentaToti.mockResolvedValue([
+    rand('r1', '2026-08-20T14:00:00Z', 'PRESENT', 'Înot'),
+  ] as never)
   renderPage()
   const rezumat = await screen.findByText(/ședință înregistrată/)
   expect(rezumat.textContent).toContain('1 prezență din 1 ședință înregistrată.')
@@ -146,7 +150,9 @@ test('filtrul de perioadă taie ședințele din afara intervalului', async () =>
 // Criteriul 3: „nu ai nimic în perioada asta" nu e totuna cu „nu ai nimic deloc".
 test('când filtrul goleste lista, mesajul spune că e vorba de perioadă', async () => {
   const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-  mockedPrezentaToti.mockResolvedValue([rand('r3', '2026-07-10T14:00:00Z', 'PRESENT', 'Înot')] as never)
+  mockedPrezentaToti.mockResolvedValue([
+    rand('r3', '2026-07-10T14:00:00Z', 'PRESENT', 'Înot'),
+  ] as never)
   renderPage()
   await screen.findAllByRole('listitem')
 

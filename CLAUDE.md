@@ -75,12 +75,12 @@ before treating an old phase checklist as current implementation status.
 - **Complete authorized delivery autonomously:** commit only task files, push, open
   or update the PR, then merge when the required checks, reviews and human gates pass.
   Do not request another approval for each git step.
-- **Bugbot before code merge.** Follow the Team Tracker plugin reference
-  `skills/references/cursor-bugbot-merge-gate.md`: review the final diff, fix confirmed
-  findings, rerun affected verification and repeat review until clean. Never merge
-  while review is running or after a tooling failure without an explicit human
-  decision. The reference exempts changes with no code diff. Historical waivers do
-  not authorize a new one. A build does not replace browser proof or human acceptance.
+- **Review before merge.** Follow the Team Tracker plugin reference
+  `skills/references/code-review-before-merge.md`: review the final diff with an
+  available reviewer or in the current session, fix confirmed findings and rerun
+  affected verification. No named bot or external review integration is required.
+  Documentation-only branches still receive proportionate review and delivery.
+  A build does not replace browser proof or human acceptance.
 - Default branch is `master`. In Codex use branches such as
   `codex/fix-bug-<id>-<slug>`, `codex/feat-feature-<id>-<slug>` and
   `codex/ui-section-<id>-<slug>`. Include the tracker item when one exists; use a
@@ -480,6 +480,32 @@ reorganizing this document; correct obsolete facts with current evidence.
   no invented debit or refund. Run `pwsh -NoProfile -File
   supabase/tests/run-transactional-attendance.ps1` and `npx --yes deno test --no-lock
   supabase/functions/record-attendance-contract.test.ts` for the isolated contracts.
+
+- 2026-09-09 — Feature #320 uses session-scoped Edge reads after empty private
+  Realtime invalidations, with no coordinate Broadcast/history. Native capture uses
+  pinned Capgo 8.4.5 plus a reproducible expiry/cleanup patch; never remove that patch
+  without replacing the lifecycle guarantees. The implementation and outstanding
+  migration, UI and device gates are documented in
+  `docs/superpowers/specs/2026-09-09-feature-320-live-location-app.md`.
+
+- 2026-09-10 — Feature #320 camp sharing starts only through an explicit coach action
+  and appears in parent Announcements. The owner selected eight hours per start,
+  clamped to the camp end in Europe/Bucharest. Attendance is confirmed once on arrival;
+  departure or cancellation removes access. Camp migrations remain proposals until
+  individually approved. The owner waived physical iPhone testing for #320; preserve
+  iOS build/simulator checks and do not report physical iPhone behavior as verified.
+
+- 2026-09-10 — The owner approved and deployed #320 camp migrations 00045–00047
+  and `coach-live-location` v2 with JWT verification; their remote versions are in
+  `supabase/migrations/README.md`. Camp participation remains service-only. Losing
+  the last eligible child automatically revokes parent consent; another eligible
+  child preserves it. Temporary camp fixtures were authorized for Android/parent
+  verification and cleanup. Deployment does not imply final human acceptance.
+
+- 2026-09-10 — The owner removed mandatory bot review gates from Team Tracker skills.
+  Use the available review method before merge; unavailable bot integrations do not
+  block delivery. Behavioral verification, human acceptance and actual merge/deploy
+  requirements remain in place.
 
 ## 11. Known Issues / WIP
 

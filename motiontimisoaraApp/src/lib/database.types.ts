@@ -411,6 +411,71 @@ export type Database = {
           },
         ]
       }
+      camp_participation: {
+        Row: {
+          arrived_at: string
+          arrived_by: string | null
+          camp_id: string
+          created_at: string
+          departed_at: string | null
+          departed_by: string | null
+          enrollment_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          arrived_at: string
+          arrived_by?: string | null
+          camp_id: string
+          created_at?: string
+          departed_at?: string | null
+          departed_by?: string | null
+          enrollment_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          arrived_at?: string
+          arrived_by?: string | null
+          camp_id?: string
+          created_at?: string
+          departed_at?: string | null
+          departed_by?: string | null
+          enrollment_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camp_participation_arrived_by_fkey"
+            columns: ["arrived_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "camp_participation_camp_id_fkey"
+            columns: ["camp_id"]
+            isOneToOne: false
+            referencedRelation: "camps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "camp_participation_departed_by_fkey"
+            columns: ["departed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "camp_participation_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: true
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       camp_photos: {
         Row: {
           camp_id: string
@@ -932,6 +997,157 @@ export type Database = {
             columns: ["used_by_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coach_live_location_sessions: {
+        Row: {
+          camp_id: string | null
+          coach_id: string
+          consented_at: string
+          created_at: string
+          expires_at: string
+          id: string
+          occurrence_id: string | null
+          started_at: string
+          updated_at: string
+        }
+        Insert: {
+          camp_id?: string | null
+          coach_id: string
+          consented_at: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          occurrence_id?: string | null
+          started_at: string
+          updated_at?: string
+        }
+        Update: {
+          camp_id?: string | null
+          coach_id?: string
+          consented_at?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          occurrence_id?: string | null
+          started_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_live_location_sessions_camp_id_fkey"
+            columns: ["camp_id"]
+            isOneToOne: false
+            referencedRelation: "camps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_live_location_sessions_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_live_location_sessions_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: true
+            referencedRelation: "course_occurrences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coach_live_location_starts: {
+        Row: {
+          camp_id: string | null
+          coach_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          occurrence_id: string | null
+          session_id: string
+        }
+        Insert: {
+          camp_id?: string | null
+          coach_id: string
+          created_at?: string
+          expires_at: string
+          id: string
+          occurrence_id?: string | null
+          session_id: string
+        }
+        Update: {
+          camp_id?: string | null
+          coach_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          occurrence_id?: string | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_live_location_starts_camp_id_fkey"
+            columns: ["camp_id"]
+            isOneToOne: false
+            referencedRelation: "camps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_live_location_starts_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_live_location_starts_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "course_occurrences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coach_live_locations: {
+        Row: {
+          accuracy: number
+          captured_at: string
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          accuracy: number
+          captured_at: string
+          created_at?: string
+          id?: string
+          latitude: number
+          longitude: number
+          session_id: string
+          updated_at?: string
+        }
+        Update: {
+          accuracy?: number
+          captured_at?: string
+          created_at?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          session_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_live_locations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "coach_live_location_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -1556,6 +1772,51 @@ export type Database = {
           },
         ]
       }
+      parent_live_location_consents: {
+        Row: {
+          consented_at: string | null
+          created_at: string
+          granted: boolean
+          id: string
+          parent_id: string
+          session_id: string
+          version: number
+        }
+        Insert: {
+          consented_at?: string | null
+          created_at?: string
+          granted: boolean
+          id?: string
+          parent_id: string
+          session_id: string
+          version: number
+        }
+        Update: {
+          consented_at?: string | null
+          created_at?: string
+          granted?: boolean
+          id?: string
+          parent_id?: string
+          session_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_live_location_consents_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parent_live_location_consents_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "coach_live_location_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -1795,6 +2056,10 @@ export type Database = {
       }
       club_enrolled_child_ids: { Args: never; Returns: string[] }
       coach_enrolled_child_ids: { Args: never; Returns: string[] }
+      coach_live_location_transaction: {
+        Args: { p_actor_id: string; p_payload: Json }
+        Returns: Json
+      }
       course_availability: {
         Args: never
         Returns: {
