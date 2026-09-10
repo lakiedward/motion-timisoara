@@ -222,6 +222,28 @@ are designated for cleanup.
 Current local checks: typecheck, lint, all 712 tests across 74 files, production
 build and Android debug assembly passed. Existing Vite chunk-size and dynamic-import
 warnings remain. The local CARTO key is now configured; its earlier absence above
-is historical. Parent/club live map and private Realtime browser verification,
-locked-screen/offline/force-quit phone behavior and human UI/device acceptance
-remain separate release gates. No final human acceptance or merge is implied.
+is historical. No final human acceptance or merge is implied.
+
+The owner subsequently authenticated the existing Spec Parent account in Chrome.
+A second temporary enrollment used its existing test child. The live parent flow
+passed at 375x812, 768x1024 and 1440x900: explicit consent, loaded CARTO tiles and
+marker, fresh timestamps from the physical phone, consent withdrawal removing the
+map, and server stop replacing it with the inactive-sharing message. No horizontal
+page overflow was observed. CDP captured the actual binary Realtime `invalidate`
+event on the session topic. The delivered payload contained a transport event `id`
+and no coordinates; the application SQL passes an empty payload to Realtime.
+The five-second authenticated polling fallback remains present, so timestamp
+changes alone are not used as proof of Broadcast delivery.
+
+Live transaction checks also allowed the owning club and denied another eligible
+parent without its own consent. Club browser rendering, locked-screen/offline/
+force-quit behavior on this physical device and human UI/device acceptance remain
+separate release gates. Captured browser warnings came from MetaMask and the
+existing Stripe HTTP development notice; no application error was observed during
+the parent flow. Map screenshots were inspected locally and not uploaded to Tracker.
+
+After stopping the last session, the temporary occurrence, both new enrollments,
+their attendance/accounting rows and location/start records were deleted and
+verified absent. Both existing children, all existing users and the course were
+preserved. Neither temporary enrollment had a payment or monthly-payment row.
+All GitHub checks, including Cursor Bugbot, passed on code commit d71f2a2.
