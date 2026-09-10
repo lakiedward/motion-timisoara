@@ -247,3 +247,37 @@ their attendance/accounting rows and location/start records were deleted and
 verified absent. Both existing children, all existing users and the course were
 preserved. Neither temporary enrollment had a payment or monthly-payment row.
 All GitHub checks, including Cursor Bugbot, passed on code commit d71f2a2.
+
+## Physical Android continuation through ADB, 2026-09-10
+
+After the owner authorized the ADB continuation, the same Galaxy A55 was connected
+and authorized. Both section specifications were already human-approved in Tracker.
+The installed app retained the audit coach session. A new temporary occurrence
+enabled an explicit consent/start; no enrollment or child record was created.
+
+- Locked screen: Android reported `mWakefulness=Dozing` and keyguard `showing=true`.
+  A fresh point captured at 11:10:20 UTC reached the server at 11:10:20.599, while
+  the phone remained locked. The location service remained foreground.
+- Offline and recovery: Wi-Fi and mobile data were disabled at 11:11:03 UTC.
+  At 11:12:04, the latest server point remained the 11:10:51 capture. Both original
+  network settings were restored at 11:12:24. New captures at 11:12:31, 11:12:51
+  and 11:13:11 reached the server. The observed recovery points were captured after
+  reconnection. This sampling complements the controller's no-queue tests; it does
+  not establish every intermediate callback or exercise the offline error UI.
+- Force stop: `am force-stop` at 11:13:38 removed the app process and location
+  service. The server's last point stayed at 11:13:31 through the 11:14:10 check.
+  Relaunch did not restart the location service or show active sharing. Returning
+  to attendance showed unchecked consent and no active sharing. Force stop cannot
+  send an immediate remote stop: the previous point remains subject to server expiry.
+- The temporary occurrence was shortened to an effective expiry of 11:14:54 UTC.
+  At 11:15:03, the session and point were absent without another capture/start.
+  The temporary occurrence was then deleted and its absence verified; the existing
+  course was preserved. Wi-Fi and mobile data were both restored to their original
+  enabled state. No coordinates were copied into evidence.
+
+The owner entered the phone PIN directly after the lock test. The local capture
+`galaxy-a55-location-after-force-stop.png` shows the inactive attendance panel.
+These results close the previously unverified physical Android lock, connectivity
+recovery and force-stop scenarios. They do not establish iOS physical behavior,
+authenticated club browser rendering, permission revocation, offline stop retry,
+or final human UI/device acceptance. No source code changed during this continuation.
