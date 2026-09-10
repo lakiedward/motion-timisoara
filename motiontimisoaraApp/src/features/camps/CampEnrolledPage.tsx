@@ -8,15 +8,8 @@ import { formatZi } from '@/api/camps'
 import { plural } from '@/lib/plural'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { CampParticipationPanel } from '@/features/live-location/camps/CampParticipationPanel'
 
-/**
- * Lista celor înscriși la o tabără.
- *
- * O văd proprietarul ȘI antrenorii însoțitori, deci nu e sub `/club` sau
- * `/coach` cu drepturi presupuse: baza decide. Cine n-are voie primește o listă
- * goală, nu un ecran de eroare — fiindcă din punctul lui de vedere chiar nu
- * există nimic acolo.
- */
 export default function CampEnrolledPage({ baza }: { baza: '/club/camps' | '/coach/camps' }) {
   const { id } = useParams()
   const campId = id as string
@@ -53,6 +46,8 @@ export default function CampEnrolledPage({ baza }: { baza: '/club/camps' | '/coa
           {tabara.title} · {formatZi(tabara.period_start)} – {formatZi(tabara.period_end)}
         </p>
       )}
+
+      <CampParticipationPanel campId={campId} />
 
       {isError ? (
         <div className="py-16 text-center" role="alert">
@@ -119,20 +114,20 @@ function CardCopil({
         <div>
           <p className="font-medium">{copil.nume}</p>
           <p className="text-muted-foreground mt-0.5 text-sm">
-            {varsta !== null ? `${plural(varsta, 'an', 'ani')} la începutul taberei` : 'Vârstă necunoscută'}
+            {varsta !== null
+              ? `${plural(varsta, 'an', 'ani')} la începutul taberei`
+              : 'Vârstă necunoscută'}
             {copil.marimeTricou ? ` · tricou ${copil.marimeTricou}` : ''}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {/* „În curs de plată" nu e o problemă de rezolvat aici, dar ține un loc,
-              deci trebuie să se vadă că nu e la fel cu unul plătit. */}
           <Badge variant={copil.stare === 'ACTIVE' ? 'default' : 'secondary'}>
             {copil.stare === 'ACTIVE' ? 'Înscris' : 'Plata în curs'}
           </Badge>
-          {/* Rezerva când părintele n-are telefonul: codul copilului, de pe
-              ecranul organizatorului. */}
           <Button asChild size="sm" variant="outline" className="h-11 min-h-11 lg:h-9 lg:min-h-9">
-            <Link to={`${baza === '/club/camps' ? '/club' : '/coach'}/children/${copil.copilId}/qr`}>
+            <Link
+              to={`${baza === '/club/camps' ? '/club' : '/coach'}/children/${copil.copilId}/qr`}
+            >
               <QrCode className="size-4" /> Cod QR
             </Link>
           </Button>

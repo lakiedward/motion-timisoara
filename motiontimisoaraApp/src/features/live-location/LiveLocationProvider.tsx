@@ -18,9 +18,7 @@ export function LiveLocationProvider({ children }: { children: ReactNode }) {
           new SharingController({
             request: (body) => {
               if (!actorId)
-                return Promise.reject(
-                  new Error('Partajarea este disponibilă antrenorului ședinței.'),
-                )
+                return Promise.reject(new Error('Partajarea este disponibilă antrenorului.'))
               return locationRequest(body, actorId)
             },
             makeStop: (occurrenceId) => prepareLocationStop(occurrenceId, actorId ?? ''),
@@ -73,7 +71,7 @@ export function LiveLocationProvider({ children }: { children: ReactNode }) {
               ? 'Oprirea partajării necesită reîncercare.'
               : snapshot.stopping
                 ? 'Se oprește partajarea locației…'
-                : 'Locația ta este partajată pentru ședința curentă.'}
+                : 'Locația ta este partajată.'}
           </span>
           <Button
             variant="destructive"

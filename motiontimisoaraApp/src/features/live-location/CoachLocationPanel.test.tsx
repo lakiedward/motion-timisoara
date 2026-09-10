@@ -120,3 +120,31 @@ test('unresolved cleanup blocks a new consent and start', () => {
   expect(screen.getByRole('checkbox')).toBeDisabled()
   expect(screen.getByRole('button', { name: 'Pornește partajarea' })).toBeDisabled()
 })
+
+test('camp entry never starts capture and every explicit start consumes its consent', async () => {
+  render(
+    <MemoryRouter>
+      <CoachLocationPanel occurrenceId="camp:one:coach" context="camp" {...times()} />
+    </MemoryRouter>,
+  )
+  expect(context.start).not.toHaveBeenCalled()
+  expect(screen.getByText(/după 8 ore/)).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('checkbox'))
+  await userEvent.click(screen.getByRole('button', { name: 'Pornește partajarea' }))
+  expect(context.start).toHaveBeenCalledWith('camp:one:coach')
+  expect(screen.getByRole('checkbox')).not.toBeChecked()
+})
+
+test('camp sharing has no course fifteen-minute grace period', () => {
+  render(
+    <MemoryRouter>
+      <CoachLocationPanel
+        occurrenceId="camp:one:coach"
+        context="camp"
+        startsAt={new Date(Date.now() - 600_000).toISOString()}
+        endsAt={new Date(Date.now() - 1_000).toISOString()}
+      />
+    </MemoryRouter>,
+  )
+  expect(screen.getByRole('checkbox')).toBeDisabled()
+})

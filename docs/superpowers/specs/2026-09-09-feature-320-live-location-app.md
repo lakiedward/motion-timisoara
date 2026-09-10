@@ -1,5 +1,52 @@
 # Feature #320: session location in the app
 
+## Camp implementation and local verification, 2026-09-10
+
+Camp participation and location are implemented on this branch. A coach or owning
+club confirms arrival once for an active enrollment. An authorized coach starts
+capture manually with fresh consent; each start expires after eight hours or at
+the camp's end, whichever is earlier. Announcements discovers active camp and course
+sessions without persisting coordinates in the message feed. Parents explicitly
+consent before viewing a session. Departure is confirmed separately and is final
+for that enrollment. No course subscription is debited by camp participation.
+
+Loss of the last eligible child automatically withdraws the parent's consent.
+Cancellation, enrollment deletion and parent reassignment are covered, including
+concurrent consent grants and departure. Another eligible child preserves access;
+restored eligibility requires new consent. Removed coaches cannot continue capture.
+
+Verification of the local camp extension:
+
+- Typecheck, lint, 718 tests across 75 app test files and the production build pass.
+- Nine Deno location contract tests and the deployed entrypoint's type check pass.
+- The network-isolated PostgreSQL runner passes 246 assertions, including existing
+  course regressions, camp authorization, expiry, consent revocation and concurrency.
+- Four camp browser scenarios pass at 375x812, 768x1024 and 1440x900. The nine
+  existing course scenarios also pass. Camp tests cover arrival once, two manual
+  starts, active Announcements, consent, map, stop, restart, confirmed departure
+  and list failure/retry. Auth, backend, GPS and tiles are simulated. Captures were
+  inspected; no overflow or unexpected console/API/external errors were observed.
+- Android Capacitor sync and debug APK assembly pass. This camp build has not yet
+  been exercised against a deployed camp backend on the physical phone.
+- Existing Vite chunk-size and mixed Capacitor import warnings remain. CLAUDE.md
+  and AGENTS.md are byte-identical. Physical iPhone verification is waived below.
+
+The following new migrations remain unapplied pending explicit owner approval:
+
+1. `00045_camp_live_location_access.sql`: camp participation, separate camp/session
+   targets and service-only staff/parent access helpers.
+2. `00046_camp_live_location_transaction.sql`: camp start/read/update/stop and consent
+   transactions, preserving course behavior and the frozen eight-hour deadline.
+3. `00047_camp_live_location_discovery.sql`: active-session discovery, private
+   invalidations, cleanup and automatic consent withdrawal on lost eligibility.
+
+After approval, apply these migrations in order, regenerate the product database
+types from the resulting schema and deploy `coach-live-location`. Authenticated
+camp-to-parent verification needs authorized temporary camp/enrollment/participation
+fixtures with exact-ID cleanup. Earlier approval and live evidence for 00043/00044
+do not establish approval or deployment of this extension. Human UI acceptance and
+the final code review remain separate gates; feature #320 is not complete.
+
 ## Physical iPhone verification waived by the owner, 2026-09-10
 
 The owner explicitly requested skipping physical iPhone testing for feature #320.
@@ -16,9 +63,10 @@ Android/browser verification, human UI acceptance, migration approvals or delive
 The owner identified camps as the primary use case, with attendance recorded once
 at arrival. In the continued conversation, the owner specified that sharing starts
 only when the coach starts it, and appears in the parent's Announcements page when
-the coach starts sharing. This extension is not implemented by PR #75's existing
-course-occurrence flow. The Android and browser evidence below applies to that
-course flow, not to camp attendance or camp location access.
+the coach starts sharing. The camp extension is now implemented locally; the new
+migrations and Edge contract are not yet deployed. The earlier physical Android
+and live browser evidence below applies to the course flow, not to camp attendance
+or camp location access.
 
 Agreed product behavior:
 
@@ -32,8 +80,7 @@ Agreed product behavior:
 - The coach can stop sharing. Stopped or expired sharing cannot expose a map or
   coordinates. There is no location history in announcements or child records.
 
-Implementation breakdown, proposed rather than implemented or human-approved UI
-criteria:
+Implementation structure, distinct from human-approved UI criteria:
 
 1. Add camp participation with arrival and departure, scoped to a real active
    camp enrollment and authorized staff. The current `attendance` model references
@@ -56,10 +103,10 @@ criteria:
    parents and coaches, multiple camps, departure/cancellation, stop/expiry and the
    full phone-to-parent flow. Existing course tests remain regression requirements.
 
-The per-start automatic expiry still needs a concrete proposed duration: camps have
-calendar dates rather than occurrence end times. Preserve explicit starts and bounded
-native/server expiry; do not silently turn camp sharing into continuous multi-day
-tracking. Clamp any chosen deadline to the camp's end.
+The owner selected an automatic expiry of eight hours per explicit start on
+2026-09-10. Clamp the frozen deadline to the end of the camp's final calendar day
+in Europe/Bucharest. A retry does not extend an existing session. Further sharing
+requires another explicit start after the prior session has ended.
 
 The existing camp enrollment visibility helper is not sufficient authorization for
 location: its tracked implementation does not require an accepted coach invitation.

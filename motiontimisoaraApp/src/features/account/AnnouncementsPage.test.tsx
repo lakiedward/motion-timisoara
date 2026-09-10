@@ -6,6 +6,9 @@ import AnnouncementsPage from './AnnouncementsPage'
 import { getMyAnnouncements } from '@/api/account'
 
 vi.mock('@/api/account', () => ({ getMyAnnouncements: vi.fn() }))
+vi.mock('@/features/live-location/camps/ActiveLocationAnnouncements', () => ({
+  ActiveLocationAnnouncements: () => null,
+}))
 
 const mocked = vi.mocked(getMyAnnouncements)
 
@@ -45,8 +48,6 @@ beforeEach(() => {
   mocked.mockResolvedValue([deLaClub, deLaAntrenor] as never)
 })
 
-// Regresia care a pornit totul: pagina citea DOAR `course_announcements`, deci un
-// anunț scris de club nu ajungea niciodată la părinte.
 test('părintele vede și anunțurile clubului, nu doar pe cele ale antrenorului', async () => {
   renderPage()
   expect(await screen.findByText('Ședința cu părinții.', { exact: false })).toBeInTheDocument()
@@ -64,7 +65,6 @@ test('fiecare anunț spune de la cine vine', async () => {
   expect(within(carduri[1]).getByText('Anunț de la antrenor')).toBeInTheDocument()
 })
 
-// Anunțurile de club au titlu, cele de curs nu — cardul nu trebuie să lase un gol.
 test('titlul apare doar când există', async () => {
   renderPage()
   await screen.findByText('Club Audit Motion')
@@ -78,8 +78,6 @@ test('conținutul își păstrează rândurile', async () => {
   expect(text.className).toContain('whitespace-pre-wrap')
 })
 
-// Cheia trebuie să conțină sursa: cele două tabele au chei primare separate, deci
-// două anunțuri din surse diferite pot avea același id fără să fie același anunț.
 test('cele două surse nu se ciocnesc pe cheie', async () => {
   mocked.mockResolvedValue([
     { ...deLaClub, id: 'acelasi' },
@@ -93,25 +91,21 @@ test('cele două surse nu se ciocnesc pe cheie', async () => {
 test('un părinte fără anunțuri vede mesajul de listă goală', async () => {
   mocked.mockResolvedValue([] as never)
   renderPage()
-  expect(await screen.findByText(/Niciun anunț încă\./)).toBeInTheDocument()
+  expect(await screen.findByText(/Niciun mesaj încă\./)).toBeInTheDocument()
 })
 
-// Textul stării goale vorbea doar despre cursuri, deși acum sunt două surse.
 test('mesajul de listă goală pomenește ambele surse', async () => {
   mocked.mockResolvedValue([] as never)
   renderPage()
-  const mesaj = await screen.findByText(/Niciun anunț încă\./)
+  const mesaj = await screen.findByText(/Niciun mesaj încă\./)
   expect(mesaj.textContent).toMatch(/cursurile/)
   expect(mesaj.textContent).toMatch(/cluburile/)
 })
 
-// Regresie găsită la revizuire: cele două surse se cer împreună, deci o cădere pe
-// oricare dintre ele lăsa ecranul pe mesajul de listă goală — un părinte cu
-// anunțuri era anunțat că nu are niciunul.
 test('o încărcare căzută arată eroare cu reîncercare, nu mesajul de listă goală', async () => {
   mocked.mockRejectedValue(new Error('network'))
   renderPage()
   expect(await screen.findByText('Nu am putut încărca anunțurile.')).toBeInTheDocument()
-  expect(screen.queryByText(/Niciun anunț încă\./)).not.toBeInTheDocument()
+  expect(screen.queryByText(/Niciun mesaj încă\./)).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Reîncearcă' })).toBeInTheDocument()
 })

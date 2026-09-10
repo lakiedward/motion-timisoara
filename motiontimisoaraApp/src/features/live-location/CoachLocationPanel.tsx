@@ -10,10 +10,12 @@ export function CoachLocationPanel({
   occurrenceId,
   startsAt,
   endsAt,
+  context = 'course',
 }: {
   occurrenceId: string | null
   startsAt?: string
   endsAt?: string
+  context?: 'course' | 'camp'
 }) {
   const { user } = useAuth()
   const sharing = useLiveLocationSharing()
@@ -26,8 +28,12 @@ export function CoachLocationPanel({
     return () => window.clearInterval(timer)
   }, [])
   if (user?.role !== 'COACH') return null
+  const camp = context === 'camp'
   const eligibleTime =
-    !!startsAt && !!endsAt && now >= Date.parse(startsAt) && now < Date.parse(endsAt) + 15 * 60_000
+    !!startsAt &&
+    !!endsAt &&
+    now >= Date.parse(startsAt) &&
+    now < Date.parse(endsAt) + (camp ? 0 : 15 * 60_000)
   const checked = occurrenceId !== null && consentedFor === occurrenceId
   const run = async (action: () => Promise<void>) => {
     setActionError(null)
@@ -62,7 +68,7 @@ export function CoachLocationPanel({
           </p>
           {sharing.active.occurrenceId !== occurrenceId && (
             <p className="text-muted-foreground text-sm">
-              Partajezi pentru o altă ședință. Oprește partajarea înainte să alegi una nouă.
+              Partajezi pentru o altă ședință sau tabără. Oprește partajarea înainte să alegi alta.
             </p>
           )}
           <Button
@@ -77,10 +83,9 @@ export function CoachLocationPanel({
       ) : (
         <>
           <p className="text-muted-foreground text-sm">
-            Clubul organizator și părinții care își dau acordul și au un copil înscris, prezent prin
-            cod QR la această ședință, pot vedea locația ta. Partajarea continuă în fundal pe
-            dispozitivele compatibile și se oprește cel târziu la 15 minute după încheierea
-            ședinței.
+            {camp
+              ? 'Clubul organizator și părinții cu un copil înscris activ, cu sosirea confirmată și fără plecare înregistrată, pot vedea locația ta după ce își dau acordul. Partajarea apare în Anunțuri și poate continua în fundal. Se oprește automat după 8 ore sau la încheierea taberei, dacă aceasta se termină mai devreme.'
+              : 'Clubul organizator și părinții care își dau acordul și au un copil înscris, prezent prin cod QR la această ședință, pot vedea locația ta. Partajarea continuă în fundal pe dispozitivele compatibile și se oprește cel târziu la 15 minute după încheierea ședinței.'}
           </p>
           <p className="text-muted-foreground text-sm">
             Poți opri oricând. Se păstrează doar ultima poziție, care este ștearsă la oprire sau
@@ -99,18 +104,26 @@ export function CoachLocationPanel({
               onChange={(event) => setConsentedFor(event.target.checked ? occurrenceId : null)}
             />
             <Label htmlFor={consentId} className="leading-6">
-              Sunt de acord să partajez locația mea pentru această ședință.
+              {camp
+                ? 'Sunt de acord să partajez locația mea pentru această tabără.'
+                : 'Sunt de acord să partajez locația mea pentru această ședință.'}
             </Label>
           </div>
           {!eligibleTime && (
             <p className="text-muted-foreground text-sm">
-              Partajarea este disponibilă numai în timpul ședinței și încă 15 minute după încheiere.
+              {camp
+                ? 'Partajarea este disponibilă numai în perioada taberei.'
+                : 'Partajarea este disponibilă numai în timpul ședinței și încă 15 minute după încheiere.'}
             </p>
           )}
           <Button
             type="button"
             disabled={!checked || !eligibleTime || sharing.busy || sharing.needsStopRetry}
-            onClick={() => occurrenceId && void run(() => sharing.start(occurrenceId))}
+            onClick={() => {
+              if (!occurrenceId) return
+              setConsentedFor(null)
+              void run(() => sharing.start(occurrenceId))
+            }}
           >
             {sharing.busy ? 'Se pornește…' : 'Pornește partajarea'}
           </Button>

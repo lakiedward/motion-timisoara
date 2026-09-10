@@ -19,6 +19,7 @@ export function LocationViewer({ occurrenceId }: { occurrenceId: string }) {
   const { user } = useAuth()
   const actorId = user?.id
   const parent = user?.role === 'PARENT'
+  const camp = occurrenceId.startsWith('camp:')
   const identity = `${actorId}:${user?.role}:${occurrenceId}`
   const generation = useRef(0)
   const invalidate = useCallback(() => {
@@ -273,9 +274,10 @@ export function LocationViewer({ occurrenceId }: { occurrenceId: string }) {
           {parent && (
             <div className="space-y-3">
               <p className="text-muted-foreground text-sm">
-                Poți vedea locația antrenorului doar pentru ședința la care copilul tău este înscris
-                și prezent prin QR. Acordul este valabil pentru această partajare și poate fi retras
-                oricând.{' '}
+                {camp
+                  ? 'Poți vedea locația antrenorului dacă propriul copil este înscris activ în tabără, cu sosirea confirmată și fără plecare înregistrată.'
+                  : 'Poți vedea locația antrenorului doar pentru ședința la care copilul tău este înscris și prezent prin QR.'}{' '}
+                Acordul este valabil pentru această partajare și poate fi retras oricând.{' '}
                 <Link to="/confidentialitate" className="text-primary underline">
                   Confidențialitate
                 </Link>

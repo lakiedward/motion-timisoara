@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Pin } from 'lucide-react'
+import { ActiveLocationAnnouncements } from '@/features/live-location/camps/ActiveLocationAnnouncements'
 
 import { getMyAnnouncements } from '@/api/account'
 import { getAtasamente } from '@/api/attachments'
@@ -8,10 +9,6 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function AnnouncementsPage() {
-  // Pagina citea doar `course_announcements`, scrise de antrenor. Anunțurile
-  // clubului există într-o tabelă separată, a cărei politică de citire a fost
-  // gândită pentru părinți — dar nicio pagină nu o interoga, deci un anunț de
-  // club nu ajungea la nimeni. Acum lista le adună pe amândouă.
   const {
     data: announcements = [],
     isLoading,
@@ -23,8 +20,6 @@ export default function AnnouncementsPage() {
     retry: false,
   })
 
-  // Doar anunțurile de club au atașamente deocamdată: cele de curs se scriu din
-  // pagina antrenorului, care încă nu există.
   const idClub = announcements.filter((a) => a.sursa === 'club').map((a) => a.id)
   const { data: atasamente = {} } = useQuery({
     queryKey: ['my-announcement-media', idClub.join(',')],
@@ -35,6 +30,7 @@ export default function AnnouncementsPage() {
   return (
     <div>
       <h1 className="font-display mb-6 text-2xl font-bold">Anunțuri</h1>
+      <ActiveLocationAnnouncements />
 
       {isLoading ? (
         <div className="space-y-3">
@@ -42,9 +38,6 @@ export default function AnnouncementsPage() {
           <Skeleton className="h-28 rounded-3xl" />
         </div>
       ) : isError && !announcements.length ? (
-        // Cele două surse se cer împreună, deci o cădere pe oricare dintre ele
-        // lăsa ecranul pe mesajul de listă goală — adică un părinte cu anunțuri
-        // era anunțat că nu are niciunul. Al șaselea ecran cu același tipar.
         <div role="alert" className="rounded-3xl border border-dashed py-16 text-center">
           <p className="text-foreground font-medium">Nu am putut încărca anunțurile.</p>
           <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetch()}>
@@ -62,8 +55,6 @@ export default function AnnouncementsPage() {
                   </span>
                 )}
                 <span className="text-primary text-sm font-semibold">{a.autor}</span>
-                {/* Părintele trebuie să știe dacă vorbește antrenorul cursului
-                    sau clubul: sunt două voci diferite, cu greutăți diferite. */}
                 <span className="text-muted-foreground text-xs">
                   {a.sursa === 'club' ? 'Anunț de club' : 'Anunț de la antrenor'}
                 </span>
@@ -83,7 +74,7 @@ export default function AnnouncementsPage() {
         </ul>
       ) : (
         <div className="text-muted-foreground rounded-3xl border border-dashed py-16 text-center">
-          Niciun anunț încă. Aici apar anunțurile de la cursurile copiilor tăi și cele de la
+          Niciun mesaj încă. Aici apar anunțurile de la cursurile copiilor tăi și cele de la
           cluburile la care sunt înscriși.
         </div>
       )}

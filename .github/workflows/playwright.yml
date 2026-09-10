@@ -17,6 +17,9 @@ on:
       - 'supabase/migrations/00042_transactional_attendance.sql'
       - 'supabase/migrations/00043_coach_live_location.sql'
       - 'supabase/migrations/00044_coach_live_location_realtime.sql'
+      - 'supabase/migrations/00045_camp_live_location_access.sql'
+      - 'supabase/migrations/00046_camp_live_location_transaction.sql'
+      - 'supabase/migrations/00047_camp_live_location_discovery.sql'
       - 'playwright.config.ts'
       - 'playwright.pricing.config.ts'
       - 'playwright.location.config.ts'
@@ -35,6 +38,9 @@ on:
       - 'supabase/migrations/00042_transactional_attendance.sql'
       - 'supabase/migrations/00043_coach_live_location.sql'
       - 'supabase/migrations/00044_coach_live_location_realtime.sql'
+      - 'supabase/migrations/00045_camp_live_location_access.sql'
+      - 'supabase/migrations/00046_camp_live_location_transaction.sql'
+      - 'supabase/migrations/00047_camp_live_location_discovery.sql'
       - 'playwright.config.ts'
       - 'playwright.pricing.config.ts'
       - 'playwright.location.config.ts'
@@ -83,7 +89,7 @@ jobs:
     - name: Check enrollment functions
       run: deno check --no-lock supabase/functions/validate-enrollment/index.ts supabase/functions/create-enrollment/index.ts supabase/functions/record-attendance/index.ts supabase/functions/coach-live-location/index.ts
     - name: Test enrollment pricing contract
-      run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/record-attendance-contract.test.ts supabase/functions/coach-live-location-contract.test.ts
+      run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/record-attendance-contract.test.ts supabase/functions/coach-live-location-contract.test.ts supabase/functions/camp-live-location-contract.test.ts
     - name: Test isolated camp pricing SQL
       shell: pwsh
       run: ./supabase/tests/run-camp-child-pricing.ps1
@@ -93,6 +99,9 @@ jobs:
     - name: Test isolated coach live location access and lifecycle
       shell: pwsh
       run: ./supabase/tests/run-coach-live-location-realtime.ps1
+    - name: Test isolated camp participation and live location
+      shell: pwsh
+      run: ./supabase/tests/run-camp-live-location.ps1
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:

@@ -4,7 +4,7 @@ const baseURL = 'http://127.0.0.1:3023';
 
 export default defineConfig({
   testDir: './tests',
-  testMatch: '**/live-location.simulation.ts',
+  testMatch: ['**/live-location.simulation.ts', '**/camp-location.simulation.ts'],
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   workers: 1,

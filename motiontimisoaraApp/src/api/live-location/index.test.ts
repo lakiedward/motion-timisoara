@@ -19,6 +19,7 @@ vi.mock('@/lib/supabase', () => ({
 vi.mock('@/lib/platform', () => ({ isNative: mocks.native }))
 vi.mock('@capacitor/core', () => ({ CapacitorHttp: { post: mocks.post } }))
 import { locationRequest, prepareLocationStop, subscribeToLocation } from './index'
+import { campLocationKey } from './target'
 
 const session = (id = 'coach', token = 'coach-token') => ({
   data: { session: { user: { id }, access_token: token } },
@@ -40,6 +41,27 @@ describe('location transport', () => {
     await expect(locationRequest(read, 'coach')).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
     expect(mocks.invoke).not.toHaveBeenCalled()
     expect(mocks.post).not.toHaveBeenCalled()
+  })
+
+  it('sends explicit camp and coach targets for capture and the retained stop capability', async () => {
+    const target = campLocationKey('camp-id', 'coach-id')
+    await locationRequest({ action: 'status', occurrenceId: target }, 'coach')
+    expect(mocks.invoke).toHaveBeenLastCalledWith(
+      'coach-live-location',
+      expect.objectContaining({
+        body: { action: 'status', campId: 'camp-id', coachId: 'coach-id' },
+      }),
+    )
+    const stop = await prepareLocationStop(target, 'coach')
+    mocks.getSession.mockResolvedValue(session('replacement', 'different-token'))
+    await stop('session')
+    expect(mocks.invoke).toHaveBeenLastCalledWith(
+      'coach-live-location',
+      expect.objectContaining({
+        body: { action: 'stop', campId: 'camp-id', coachId: 'coach-id', sessionId: 'session' },
+        headers: { Authorization: 'Bearer coach-token' },
+      }),
+    )
   })
 
   it('preserves server rejection codes without treating an HTTP error as success', async () => {

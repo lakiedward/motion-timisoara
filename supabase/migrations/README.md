@@ -41,6 +41,19 @@ the minute-based expiry cleanup job is active. Realtime sends empty private
 invalidations, never coordinates. The app/native implementation and deployment
 evidence are in `docs/superpowers/specs/2026-09-09-feature-320-live-location-app.md`.
 
+Feature #320's camp extension adds three **local, unapplied proposals**:
+
+- `00045_camp_live_location_access.sql`: one-time camp arrival/departure,
+  camp location targets and service-only access for authorized staff.
+- `00046_camp_live_location_transaction.sql`: camp sharing with per-session consent,
+  parent eligibility, replay protection and an eight-hour maximum per explicit start.
+- `00047_camp_live_location_discovery.sql`: authorized active-session discovery for
+  Announcements, private invalidations and camp-aware expiry/cleanup.
+
+Each requires the owner's explicit approval before remote application. No remote
+version is assigned here. Regenerate database types from the migrated schema after
+authorized application; the client extension currently uses typed Edge DTOs.
+
 **Next migration number = highest existing + 1.** Check with
 `git ls-files supabase/migrations | tail -1` before creating one — do not trust a
 number written down elsewhere.

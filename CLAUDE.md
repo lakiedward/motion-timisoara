@@ -488,6 +488,13 @@ reorganizing this document; correct obsolete facts with current evidence.
   migration, UI and device gates are documented in
   `docs/superpowers/specs/2026-09-09-feature-320-live-location-app.md`.
 
+- 2026-09-10 — Feature #320 camp sharing starts only through an explicit coach action
+  and appears in parent Announcements. The owner selected eight hours per start,
+  clamped to the camp end in Europe/Bucharest. Attendance is confirmed once on arrival;
+  departure or cancellation removes access. Camp migrations remain proposals until
+  individually approved. The owner waived physical iPhone testing for #320; preserve
+  iOS build/simulator checks and do not report physical iPhone behavior as verified.
+
 ## 11. Known Issues / WIP
 
 - **Template enforcement pending:** install/adapt `scripts/check-rules.mjs`, duplication
