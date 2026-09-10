@@ -1,5 +1,66 @@
 # Feature #320: session location in the app
 
+## Camp scope clarified by the owner, 2026-09-10
+
+The owner identified camps as the primary use case, with attendance recorded once
+at arrival. In the continued conversation, the owner specified that sharing starts
+only when the coach starts it, and appears in the parent's Announcements page when
+the coach starts sharing. This extension is not implemented by PR #75's existing
+course-occurrence flow. The Android and browser evidence below applies to that
+course flow, not to camp attendance or camp location access.
+
+Agreed product behavior:
+
+- Camp arrival is confirmed once. A new location-sharing session does not require
+  another attendance scan. Enrollment alone is not proof of arrival.
+- The coach explicitly starts sharing. Arrival, opening the camp, opening
+  Announcements, and entering the background do not start location capture.
+- While sharing is active, `/account/announcements` shows a camp location card
+  identifying the coach and camp. The parent explicitly consents before viewing
+  coordinates. Existing course-location consent does not authorize a camp session.
+- The coach can stop sharing. Stopped or expired sharing cannot expose a map or
+  coordinates. There is no location history in announcements or child records.
+
+Implementation breakdown, proposed rather than implemented or human-approved UI
+criteria:
+
+1. Add camp participation with arrival and departure, scoped to a real active
+   camp enrollment and authorized staff. The current `attendance` model references
+   course occurrences; do not fabricate course occurrences for camps or debit course
+   subscriptions. Existing camp enrollment lists and QR display are not a check-in.
+2. Extend the location contract with an explicit camp context while retaining the
+   course context and its existing access rules. Camp capture belongs to a coach
+   who owns the camp or has an accepted accompanying-coach invitation. Recheck that
+   authorization on every request. Parent access requires an own child with active
+   camp enrollment, confirmed arrival, no departure and session-specific consent.
+3. Reuse the capture controller, stop capability, consent versioning, current-point
+   retention and private invalidations. Multiple coach sessions must remain distinct.
+   Enrollment cancellation, departure and coach removal must revoke relevant access.
+4. Place the coach controls with the camp participant view and show active sessions
+   in Announcements through an authorized API. Use dynamic cards rather than durable
+   general announcements containing sensitive location data. Include discovery of a
+   newly started session while the Announcements page is already open, failure/retry
+   feedback and immediate map invalidation on stop, expiry or consent withdrawal.
+5. Verify check-in once followed by multiple explicit starts, eligible/ineligible
+   parents and coaches, multiple camps, departure/cancellation, stop/expiry and the
+   full phone-to-parent flow. Existing course tests remain regression requirements.
+
+The per-start automatic expiry still needs a concrete proposed duration: camps have
+calendar dates rather than occurrence end times. Preserve explicit starts and bounded
+native/server expiry; do not silently turn camp sharing into continuous multi-day
+tracking. Clamp any chosen deadline to the camp's end.
+
+The existing camp enrollment visibility helper is not sufficient authorization for
+location: its tracked implementation does not require an accepted coach invitation.
+Inspect live policies and implement explicit authorization before introducing access.
+New migrations and policies require their own concrete owner approval before remote
+application. The earlier approval for migrations 00043/00044 does not cover them.
+
+The existing approved specifications on surfaces #3210/#3211 cover course location.
+Do not overwrite their human approvals or count them as approval of this extension.
+Announcement surface #544 retains its identity:
+`motion-react:page:/account/announcements:section:toata-pagina`.
+
 This extends the backend contract in
 `2026-09-09-feature-320-live-location-backend.md`. The owner requested the remaining
 work on 2026-09-09. The implementation is intended for review; source and isolated
