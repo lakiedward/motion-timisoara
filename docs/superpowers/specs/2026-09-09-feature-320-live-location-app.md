@@ -279,5 +279,31 @@ The owner entered the phone PIN directly after the lock test. The local capture
 `galaxy-a55-location-after-force-stop.png` shows the inactive attendance panel.
 These results close the previously unverified physical Android lock, connectivity
 recovery and force-stop scenarios. They do not establish iOS physical behavior,
-authenticated club browser rendering, permission revocation, offline stop retry,
-or final human UI/device acceptance. No source code changed during this continuation.
+permission revocation or final human UI/device acceptance. Club browser rendering
+and offline stop retry are documented below. No source code changed during this
+continuation.
+
+## Club browser și oprire offline, 2026-09-10
+
+Contul de club `UI Audit Club TM` a fost autentificat în `/club/courses`. Pentru
+verificare a fost creat un curs și o ședință temporare, fără copil sau înscriere.
+La 375x812, 768x1024 și 1440x900 pagina a încărcat dalele CARTO și markerul trimis
+de telefon, a afișat timpul ultimei poziții și nu a avut overflow orizontal. După
+acțiunea reală `Oprește locația` de pe telefon, markerul a dispărut, iar clubul a
+afișat mesajul `Partajarea locației nu este activă.` și acțiunea `Reîncearcă`.
+Consolele nu au raportat erori ale aplicației; au rămas doar avertismentele
+existente Stripe/MetaMask din mediul local.
+
+Cu Wi-Fi și datele mobile oprite, `Oprește locația` a afișat feedback-ul
+`Oprirea partajării necesită reîncercare.` și `Reîncearcă oprirea`. După restaurarea
+rețelei și retry, verificarea SQL a confirmat zero sesiuni pentru ședință. Revocarea
+temporară a permisiunilor Android fine/coarse a fost confirmată prin `dumpsys`, fără
+punct nou observat înainte de închiderea aplicației. Permisiunile au fost apoi
+restaurate la starea inițială.
+
+După test, cursul și ședința temporare au fost șterse exact după ID. Verificarea
+finală a confirmat zero sesiuni, puncte și start receipts în baza de date; cursul
+existent de audit a rămas prezent. Rezultatele închid verificarea browserului de
+club și a retry-ului offline pe Android. Rămân neacoperite fizic iOS și acceptarea
+umană finală a criteriilor/dispozitivului; acestea nu sunt înlocuite de testele
+ADB sau de aprobarea specificațiilor.
