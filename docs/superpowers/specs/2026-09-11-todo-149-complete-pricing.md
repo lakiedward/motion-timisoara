@@ -79,6 +79,30 @@ The disposable camp id 2281fa10-095e-42a8-a92f-d706eef80cd7 remains for follow-u
 checkout checks and must be cleaned up. No parent enrollment or payment was created
 through the live browser during these organizer/public checks.
 
+## Live Stripe test verification
+
+The six current function bundles were deployed on 2026-09-11: stripe-webhook v4
+(verify_jwt=false with Stripe signature validation), mark-cash-paid v4,
+cancel-draft-enrollment v5, create-payment-intent v5, validate-enrollment v6 and
+create-enrollment v6 (verify_jwt=true). The local ignored .env.local now contains
+the Motion test publishable key. No key values are tracked.
+
+An authenticated audit-parent API journey used temporary course
+9d74e418-7ac6-4db4-a306-03f7bdb68ac9, with 12.34 EUR per session and rate 5.123456.
+Validation quoted five sessions as 31612 RON minor units; creation preserved the
+accepted snapshot. Stripe intent pi_3UEVFa0lj0kEqgLX0gn8cIXP was independently read
+before confirmation and verified livemode=false, amount=31612 and currency=ron.
+Confirmation using Stripe's pm_card_visa test method returned succeeded and
+amount_received=31612. The actual webhook activated enrollment
+7a611830-ec2d-4c4c-b30b-bc5c92cc3d1e; payment
+3497461e-05b5-432c-b00f-fcfa21e25858 is SUCCEEDED/RON/31612 and purchased_sessions
+and remaining_sessions are both exactly five. This is real test-mode API/webhook
+evidence, not a browser card-entry or native proof. No real-money charge occurred.
+
+The temporary course is now inactive. Its test enrollment/payment remain for
+browser history verification and require scoped cleanup afterward. Stripe test
+objects are retained as evidence; no production payment should be altered.
+
 ## Remaining delivery gates
 
 Additional live organizer evidence: the audit club created course
@@ -116,22 +140,36 @@ confirmed zero remaining course, activity, camp and association rows. The origin
 fixture descriptions above remain historical evidence, not current inventory.
 Fresh fixtures will be required for the remaining checkout scenarios.
 
-The deployed function inventory still reports validate-enrollment v3,
-create-enrollment v3, cancel-draft-enrollment v2, create-payment-intent v2,
-mark-cash-paid v1 and stripe-webhook v1. The new checkout contract is not deployed.
-Chrome currently refuses automation because an extension UI is open; the owner
-has been asked to dismiss that panel before visual checks resume.
+The owner authenticated the existing motiontimisoara Stripe account
+acct_1SMpzG0lj0kEqgLX. Chrome verified Test mode and the explicit no-real-transactions
+banner. STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET are now stored in the product
+Supabase project's encrypted secrets. No values are recorded in this document.
+The new test destination we_1UEV5s0lj0kEqgLXrE49yLe7, named Motion Supabase test
+payments, targets https://ehdzafadshbaaghzdzdo.supabase.co/functions/v1/stripe-webhook
+and listens to payment_intent.succeeded and payment_intent.payment_failed from the
+platform account, API version 2025-09-30.clover. Existing legacy API destinations
+were preserved. The successful test payment and signed webhook are recorded above.
 
-Stripe test proof awaits the owner choosing/creating the Motion account. Chrome's
-switcher listed only Betora and Culcush. At the owner's request, the separate-account
-form and Motion Supabase secrets page were opened. Secret names are prefilled, values
-are empty. No account was created, no secret copied, and no payment submitted.
+Latest-head CI web, Android and Playwright jobs passed. iOS compiled but the native
+location harness timed out before readiness. The same unchanged native source and
+workflow passed in run 34603943798; only the failed iOS job of run 34606090160 was
+rerun after verifying that no native/workflow diff exists since 6fbfdd1. Its retry
+failed at readiness again. The artifact shows the ready event at 14:13:00.331 UTC,
+after the 14:12:45 timeout. The harness now allows a bounded 180 seconds for cold
+startup, then starts the separate 240-second scenario limit. Background delivery
+and stop/expiry assertions retain their original deadlines. Startup timestamps
+are included in evidence. Local syntax validation passed; macOS CI is required
+to verify execution.
 
 The mobile-control skill refers to MobAI, but no MobAI tools or resources are exposed
 in this session. No native device proof is claimed. Existing responsive browser
 proof does not establish native card behavior.
 
 Still required: organizer browser coverage for course/activity paths, real parent
-cash/card flows with coordinated function deployment, relevant native verification,
+cash/card browser flows, relevant native verification,
 owner UI acceptance, PR checks, merge/deployment, test fixture cleanup and tracker
 completion. The current work must not be marked Gata on test counts alone.
+
+Chrome at http://127.0.0.1:3017/account/enrollments displayed the live test payment
+as Plătit, 316,12 lei, 61,70 EUR (5 × 12,34 EUR), rate 5,123456 and five sessions
+remaining out of five. This desktop observation does not replace card-entry proof.
