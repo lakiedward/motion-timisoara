@@ -81,6 +81,33 @@ through the live browser during these organizer/public checks.
 
 ## Remaining delivery gates
 
+Additional live organizer evidence: the audit club created course
+7385fa31-fc8c-4507-aff2-5bea3ae0cd48 with 12.34 EUR per session, legacy price
+98.72 EUR and rate 5.123456. Create, edit, required-rate validation, RON switching
+and public display were exercised; club form/public rendering was inspected at the
+three target sizes. The temporary club_coaches association from club
+7a43caa7-f8fe-4387-a849-3d4e59371a24 to coach profile
+9fe1fb47-a3ad-4b17-8d1e-2705ec62604b was absent before this test and must be removed
+after the disposable club course is removed.
+
+With the owner's explicit authorization, only the .test audit parent and coach
+passwords were reset. Both authenticated through the real Chrome login form and
+were logged out successfully. No credentials are recorded here.
+
+The .test audit coach created course a24010ba-3d43-4dcc-af9c-c1e86ddfdf5e and
+activity 4f670b7a-b96f-4d79-9b08-9fe7da6edac4 through the local preview connected
+to the live product database. Both EUR forms rejected an empty exchange rate and
+accepted comma-decimal 5,123456. Editing reloaded the exact source amounts and rate.
+Course management displayed 98.72 EUR, activity management 23.45 EUR. Switching
+to RON was verified through SQL: amounts remained 9872/1234 for the course and
+2345 for the activity, while eur_ron_rate_micros became null. Both offers were
+then restored to EUR with rate 5.123456 for follow-up checkout verification.
+These two disposable records also require cleanup. Coach checks in this pass used
+Chrome's existing desktop viewport; responsive and public follow-up remain pending.
+
+PR 77 Playwright CI run 34603972770 passed. Web and Android builds passed; the
+push iOS build passed while the separate PR iOS job was still running at this check.
+
 Stripe test proof awaits the owner choosing/creating the Motion account. Chrome's
 switcher listed only Betora and Culcush. At the owner's request, the separate-account
 form and Motion Supabase secrets page were opened. Secret names are prefilled, values
