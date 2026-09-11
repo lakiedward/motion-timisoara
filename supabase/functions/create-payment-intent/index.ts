@@ -1,9 +1,7 @@
-// Edge Function: create-payment-intent
-// Replaces: POST /api/payments/{enrollmentId}/intent
-// Handles: Stripe PaymentIntent creation with Connect transfer and platform fee
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { supabaseAdmin, getUser } from "../_shared/supabase.ts";
+import { authorizedRonCharge } from "../_shared/payment-charge.ts";
 import { withCors } from "../_shared/cors.ts";
 import { getStripe, calculatePlatformFee, cancelOpenPaymentIntent } from "../_shared/stripe.ts";
 
@@ -19,7 +17,6 @@ serve(
     const user = await getUser(req);
     const { enrollmentId } = await req.json();
 
-    // Get payment for this enrollment
     const { data: payment, error: payErr } = await supabaseAdmin
       .from("payments")
       .select("*")
@@ -40,7 +37,6 @@ serve(
       );
     }
 
-    // Get enrollment
     const { data: enrollment } = await supabaseAdmin
       .from("enrollments")
       .select("*")
@@ -53,34 +49,8 @@ serve(
       );
     }
 
-    // Determine currency
-    let currency = payment.currency || "RON";
-    if (!currency || currency === "") {
-      if (enrollment.kind === "COURSE") {
-        const { data: c } = await supabaseAdmin
-          .from("courses")
-          .select("currency")
-          .eq("id", enrollment.entity_id)
-          .single();
-        currency = c?.currency ?? "RON";
-      } else if (enrollment.kind === "CAMP") {
-        const { data: c } = await supabaseAdmin
-          .from("camps")
-          .select("currency")
-          .eq("id", enrollment.entity_id)
-          .single();
-        currency = c?.currency ?? "RON";
-      } else {
-        const { data: c } = await supabaseAdmin
-          .from("activities")
-          .select("currency")
-          .eq("id", enrollment.entity_id)
-          .single();
-        currency = c?.currency ?? "RON";
-      }
-    }
+    const amountInBani = await authorizedRonCharge(supabaseAdmin, user.id, enrollment, payment);
 
-    // Determine payment destination (coach or club)
     let destinationAccountId: string | null = null;
     let destinationType = "PLATFORM";
     let coachId: string | null = null;
@@ -101,7 +71,6 @@ serve(
         clubId = entity.club_id;
         const recipient = entity.payment_recipient;
 
-        // Get coach's Stripe account
         let coachStripeAccount: string | null = null;
         let coachCanReceive = false;
         if (coachId) {
@@ -121,7 +90,6 @@ serve(
           }
         }
 
-        // Get club's Stripe account
         let clubStripeAccount: string | null = null;
         let clubCanReceive = false;
         if (clubId) {
@@ -141,7 +109,6 @@ serve(
           }
         }
 
-        // Determine destination based on payment_recipient config
         if (recipient === "CLUB") {
           if (clubCanReceive) {
             destinationAccountId = clubStripeAccount;
@@ -159,7 +126,6 @@ serve(
             destinationType = "CLUB";
           }
         } else {
-          // Legacy fallback
           if (coachCanReceive) {
             destinationAccountId = coachStripeAccount;
             destinationType = "COACH";
@@ -172,26 +138,27 @@ serve(
     }
 
     const stripe = getStripe();
-    const amountInBani = payment.amount;
-    const currencyLower = currency.toLowerCase();
+    const currencyLower = "ron";
 
-    // Always cancel any open prior intent before creating a new one. Reusing an
-    // old PI can leave Connect routing/fees out of date; leaving it open lets an
-    // old client_secret still be confirmed after a retry.
     if (payment.gateway_txn_id) {
       try {
         const existing = await stripe.paymentIntents.retrieve(payment.gateway_txn_id);
+        if (existing.amount !== amountInBani || existing.currency !== "ron") {
+          return new Response(JSON.stringify({ error: "Plata Stripe nu corespunde sumei confirmate." }), { status: 409 });
+        }
         if (existing.status === "succeeded") {
-          // Webhook may still be catching up — do NOT 409 (client would roll back
-          // the draft while Stripe already charged).
           return new Response(
             JSON.stringify({ clientSecret: existing.client_secret, alreadySucceeded: true }),
             { status: 200, headers: { "Content-Type": "application/json" } },
           );
         }
+        if (payment.status === "SUCCEEDED") {
+          return new Response(JSON.stringify({ error: "Plata este deja procesată." }), { status: 409 });
+        }
         await cancelOpenPaymentIntent(existing.id);
       } catch (err) {
         console.error("Failed to inspect existing PaymentIntent:", payment.gateway_txn_id, err);
+        return new Response(JSON.stringify({ error: "Nu am putut verifica plata existentă. Încearcă din nou." }), { status: 503 });
       }
     }
 
@@ -204,7 +171,6 @@ serve(
       },
     };
 
-    // Add Stripe Connect transfer if destination available
     if (destinationAccountId) {
       const fee = calculatePlatformFee(amountInBani);
       params.application_fee_amount = fee.platformFeeTotal;
@@ -217,7 +183,6 @@ serve(
         params.metadata.clubId = clubId;
       }
 
-      // Store fee breakdown in payment
       await supabaseAdmin
         .from("payments")
         .update({
@@ -233,7 +198,6 @@ serve(
 
     const intent = await stripe.paymentIntents.create(params);
 
-    // Save client_secret and gateway_txn_id
     await supabaseAdmin
       .from("payments")
       .update({

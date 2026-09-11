@@ -20,6 +20,7 @@ on:
       - 'supabase/migrations/00045_camp_live_location_access.sql'
       - 'supabase/migrations/00046_camp_live_location_transaction.sql'
       - 'supabase/migrations/00047_camp_live_location_discovery.sql'
+      - 'supabase/migrations/00048_enrollment_price_snapshots.sql'
       - 'playwright.config.ts'
       - 'playwright.pricing.config.ts'
       - 'playwright.location.config.ts'
@@ -41,6 +42,7 @@ on:
       - 'supabase/migrations/00045_camp_live_location_access.sql'
       - 'supabase/migrations/00046_camp_live_location_transaction.sql'
       - 'supabase/migrations/00047_camp_live_location_discovery.sql'
+      - 'supabase/migrations/00048_enrollment_price_snapshots.sql'
       - 'playwright.config.ts'
       - 'playwright.pricing.config.ts'
       - 'playwright.location.config.ts'
@@ -87,12 +89,15 @@ jobs:
       with:
         deno-version: v2.9.6
     - name: Check enrollment functions
-      run: deno check --no-lock supabase/functions/validate-enrollment/index.ts supabase/functions/create-enrollment/index.ts supabase/functions/record-attendance/index.ts supabase/functions/coach-live-location/index.ts
+      run: deno check --no-lock supabase/functions/validate-enrollment/index.ts supabase/functions/create-enrollment/index.ts supabase/functions/create-payment-intent/index.ts supabase/functions/record-attendance/index.ts supabase/functions/coach-live-location/index.ts
     - name: Test enrollment pricing contract
-      run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/record-attendance-contract.test.ts supabase/functions/coach-live-location-contract.test.ts supabase/functions/camp-live-location-contract.test.ts
+      run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/price-snapshot.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/record-attendance-contract.test.ts supabase/functions/coach-live-location-contract.test.ts supabase/functions/camp-live-location-contract.test.ts
     - name: Test isolated camp pricing SQL
       shell: pwsh
       run: ./supabase/tests/run-camp-child-pricing.ps1
+    - name: Test isolated enrollment currency snapshots
+      shell: pwsh
+      run: ./supabase/tests/run-enrollment-price-snapshots.ps1
     - name: Test isolated attendance SQL and concurrent scans
       shell: pwsh
       run: ./supabase/tests/run-transactional-attendance.ps1

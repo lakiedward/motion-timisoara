@@ -2,12 +2,13 @@ import { createValidationHandler } from "./validate-enrollment/handler.ts";
 import { createEnrollmentHandler } from "./create-enrollment/handler.ts";
 import { withCors } from "./_shared/cors.ts";
 import type { EnrollmentServices } from "./_shared/enrollment-pricing.ts";
+import type { PriceSnapshot } from "./_shared/price-snapshot.ts";
 
 type Row = Record<string, unknown>;
 type Filter = { column: string; values: unknown[] };
 type QueryResult = { data: Row | Row[] | null; error: { message: string } | null; count: number };
 type Mutation = { table: string; operation: string; values: Row; filters: Filter[] };
-type ChildQuote = { childId: string; eligible: boolean; amount?: number; currency?: string; priceVersion?: string; name: string; reason?: string };
+type ChildQuote = { childId: string; eligible: boolean; amount?: number; currency?: string; priceVersion?: string; pricingSnapshot?: PriceSnapshot; name: string; reason?: string };
 
 function equal(actual: unknown, expected: unknown, label = "Values differ") {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
@@ -51,7 +52,9 @@ class FakeQuery implements PromiseLike<QueryResult> {
       this.db.attempts.push({ table: this.table, operation: this.operation, values: structuredClone(this.values), filters: structuredClone(this.filters) });
       if (this.operation === "update" && this.table === "payments") this.db.beforePaymentUpdate?.();
     }
-    let rows = table.filter((row) => this.filters.every((filter) => filter.values.includes(row[filter.column])));
+    let rows = table.filter((row) => this.filters.every((filter) => filter.values.includes(
+      filter.column === "pricing_snapshot->>priceVersion" ? (row.pricing_snapshot as PriceSnapshot)?.priceVersion : row[filter.column],
+    )));
     if (this.operation === "insert") {
       const inserted = { id: `${this.table}-${++this.db.sequence}`, ...this.values };
       table.push(inserted);
@@ -83,11 +86,14 @@ class FakeDatabase {
       { id: "child-b", name: "Copil B", parent_id: "parent", birth_date: "2014-09-01" },
     ],
     camps: [{ id: "camp", price: 99999, pricing_mode: "by_age", currency: "RON", capacity: null, allow_cash: true }],
+    courses: [{ id: "course", price_per_session: 1500, currency: "RON", capacity: null, active: true, age_from: null, age_to: null }],
+    activities: [{ id: "activity", price: 2500, currency: "RON", capacity: null, active: true }],
     enrollments: [],
     payments: [],
   };
 
   from(table: string) { return new FakeQuery(this, table); }
+  channel(_name: string) { return { send: (_message: unknown) => Promise.resolve() }; }
 
   rpc(name: string, args: { p_child_id: string; p_camp_id: string }) {
     equal(name, "pret_tabara_pentru_copil", "Server pricing RPC");
@@ -99,7 +105,7 @@ class FakeDatabase {
   }
 }
 
-function fixture(role = "PARENT") {
+function fixture(role = "PARENT", kind = "CAMP", sessionPackageSize = 1) {
   const db = new FakeDatabase();
   const services: EnrollmentServices = {
     db: db as unknown as EnrollmentServices["db"],
@@ -113,9 +119,9 @@ function fixture(role = "PARENT") {
   });
   return {
     db,
-    validate: (childIds = ["child-a", "child-b"]) => validateHandler(request({ kind: "CAMP", entityId: "camp", childIds })),
+    validate: (childIds = ["child-a", "child-b"], extra: Row = {}) => validateHandler(request({ kind, entityId: kind.toLowerCase(), childIds, sessionPackageSize, ...extra })),
     create: (childIds = ["child-a", "child-b"], priceVersions: Record<string, string> = {}, extra: Row = {}) =>
-      enrollHandler(request({ kind: "CAMP", entityId: "camp", childIds, paymentMethod: "CARD", priceVersions, ...extra })),
+      enrollHandler(request({ kind, entityId: kind.toLowerCase(), childIds, sessionPackageSize, paymentMethod: "CARD", priceVersions, ...extra })),
   };
 }
 
@@ -137,6 +143,7 @@ function pending(context: Fixture, status = "PENDING", gateway: string | null = 
   context.db.tables.payments.push({
     id: "payment-a", enrollment_id: "draft-a", status, gateway_txn_id: gateway,
     amount: 7000, currency: "RON", method: "CARD",
+    pricing_snapshot: null,
   });
 }
 
@@ -266,6 +273,7 @@ Deno.test("pending payments without an intent reprice through conditional update
     { column: "id", values: ["payment-a"] },
     { column: "status", values: ["PENDING"] },
     { column: "gateway_txn_id", values: [null] },
+    { column: "pricing_snapshot", values: [null] },
   ]);
 });
 
@@ -319,4 +327,152 @@ Deno.test("capacity read failures block validation and creation without writes",
   equal((await context.validate()).status, 500);
   equal((await context.create(undefined, quoted.versions)).status, 500);
   equal(context.db.attempts, []);
+});
+
+for (const kind of ["COURSE", "ACTIVITY", "CAMP"]) {
+  for (const currency of ["RON", "EUR"]) {
+    for (const paymentMethod of ["CARD", "CASH"]) {
+      Deno.test(`${kind} ${currency} ${paymentMethod} confirms authoritative RON and records source pricing`, async () => {
+        const quantity = kind === "COURSE" ? 3 : 1;
+        const context = fixture("PARENT", kind, quantity);
+        const table = kind === "ACTIVITY" ? "activities" : `${kind.toLowerCase()}s`;
+        Object.assign(context.db.tables[table][0], { currency, eur_ron_rate_micros: currency === "EUR" ? 5123456 : null });
+        const quoted = await quote(context);
+        const response = await context.create(undefined, quoted.versions, {
+          paymentMethod, amount: 1, currency: "USD", eurRonRateMicros: 1, pricingSnapshot: { amount: 1 },
+        });
+        equal(response.status, 200);
+        const units = kind === "COURSE" ? [1500, 1500] : kind === "ACTIVITY" ? [2500, 2500] : [12000, 18000];
+        for (let i = 0; i < 2; i++) {
+          const expected = currency === "RON" ? units[i] * quantity : Math.floor((units[i] * quantity * 5123456 + 500000) / 1000000);
+          const payment = context.db.tables.payments[i];
+          const snapshot = payment.pricing_snapshot as PriceSnapshot;
+          equal([payment.amount, payment.currency, snapshot.sourceUnitAmount, snapshot.sourceCurrency, snapshot.quantity],
+            [expected, "RON", units[i], currency, quantity]);
+          equal(snapshot, quoted.results[i].pricingSnapshot);
+        }
+      });
+    }
+  }
+
+  Deno.test(`${kind} refuses missing or changed versions before writes`, async () => {
+    const context = fixture("PARENT", kind);
+    equal((await context.create()).status, 409);
+    const quoted = await quote(context);
+    const table = kind === "ACTIVITY" ? "activities" : `${kind.toLowerCase()}s`;
+    Object.assign(context.db.tables[table][0], { currency: "EUR", eur_ron_rate_micros: 5000000 });
+    const response = await context.create(undefined, quoted.versions);
+    equal(response.status, 409);
+    equal((await response.json()).code, "PRICE_CHANGED");
+    equal(context.db.attempts, []);
+  });
+
+  Deno.test(`${kind} rejects invalid EUR rates on validation and creation`, async () => {
+    for (const rate of [null, 0, -1, 5.12, "5.12"]) {
+      const context = fixture("PARENT", kind);
+      const table = kind === "ACTIVITY" ? "activities" : `${kind.toLowerCase()}s`;
+      Object.assign(context.db.tables[table][0], { currency: "EUR", eur_ron_rate_micros: rate });
+      equal((await context.validate()).status, 500);
+      equal((await context.create()).status, 500);
+      equal(context.db.attempts, []);
+    }
+  });
+
+  Deno.test(`${kind} retry preserves accepted pricing with or without a gateway after organizer edits`, async () => {
+    const context = fixture("PARENT", kind);
+    const quoted = await quote(context);
+    equal((await context.create(undefined, quoted.versions)).status, 200);
+    const table = kind === "ACTIVITY" ? "activities" : `${kind.toLowerCase()}s`;
+    Object.assign(context.db.tables[table][0], { currency: "EUR", eur_ron_rate_micros: 7500000, price: 55555, price_per_session: 9999 });
+    context.db.prices = { "child-a": 55555, "child-b": 99999 };
+    for (const gateway of [null, "pi_saved"]) {
+      for (const payment of context.db.tables.payments) payment.gateway_txn_id = gateway;
+      const original = structuredClone(context.db.tables.payments);
+      context.db.attempts = [];
+      const repeated = await quote(context);
+      equal(repeated.versions, quoted.versions);
+      equal((await context.create(undefined, repeated.versions)).status, 200);
+      equal(context.db.tables.payments, original);
+      equal(context.db.attempts, []);
+    }
+  });
+
+  Deno.test(`${kind} rejects processed payments and foreign children before writes`, async () => {
+    for (const status of ["SUCCEEDED", "REFUNDED"]) {
+      const context = fixture("PARENT", kind);
+      const quoted = await quote(context);
+      equal((await context.create(undefined, quoted.versions)).status, 200);
+      context.db.tables.payments[0].status = status;
+      context.db.attempts = [];
+      equal((await context.create(undefined, quoted.versions)).status, 409);
+      equal(context.db.attempts, []);
+    }
+    const context = fixture("PARENT", kind);
+    context.db.tables.children[0].parent_id = "stranger";
+    const quoted = await quote(context);
+    equal(quoted.results[0].name, "—");
+    equal(quoted.results[0].pricingSnapshot, undefined);
+    equal((await context.create(undefined, quoted.versions)).status, 403);
+    equal(context.db.attempts, []);
+  });
+}
+
+Deno.test("course package changes require reconfirmation and cannot reprice an accepted snapshot", async () => {
+  const context = fixture("PARENT", "COURSE", 3);
+  const quoted = await quote(context);
+  equal((await context.create(undefined, quoted.versions, { sessionPackageSize: 4 })).status, 409);
+  equal(context.db.attempts, []);
+  equal((await context.create(undefined, quoted.versions)).status, 200);
+  const original = structuredClone(context.db.tables.payments);
+  equal((await context.create(undefined, quoted.versions, { sessionPackageSize: 4 })).status, 409);
+  equal(context.db.tables.payments, original);
+});
+
+Deno.test("invalid package counts are rejected by both endpoints", async () => {
+  for (const kind of ["COURSE", "ACTIVITY", "CAMP"]) {
+    const context = fixture("PARENT", kind);
+    for (const sessionPackageSize of [null, 0, -1, 1.5, "2", Number.MAX_SAFE_INTEGER + 1]) {
+      equal((await context.validate(undefined, { sessionPackageSize })).status, 400);
+      equal((await context.create(undefined, {}, { sessionPackageSize })).status, 400);
+    }
+    equal(context.db.attempts, []);
+  }
+});
+
+Deno.test("a changed rate invalidates confirmation even if rounding leaves the RON amount unchanged", async () => {
+  const context = fixture("PARENT", "ACTIVITY");
+  Object.assign(context.db.tables.activities[0], { price: 1, currency: "EUR", eur_ron_rate_micros: 5000000 });
+  const quoted = await quote(context);
+  context.db.tables.activities[0].eur_ron_rate_micros = 5000001;
+  equal((await context.create(undefined, quoted.versions)).status, 409);
+  equal(context.db.attempts, []);
+});
+
+for (const status of ["PENDING", "FAILED", "CANCELLED"]) {
+  Deno.test(`accepted ${status} cash payment retries by card with new billing and unchanged pricing`, async () => {
+    const context = fixture();
+    const quoted = await quote(context);
+    equal((await context.create(undefined, quoted.versions, { paymentMethod: "CASH" })).status, 200);
+    for (const payment of context.db.tables.payments) {
+      payment.status = status;
+      payment.gateway_txn_id = null;
+    }
+    const snapshots = context.db.tables.payments.map((row) => structuredClone(row.pricing_snapshot));
+    const billingDetails = { name: "Test Parent", email: "parent@example.test", addressLine1: "Test", city: "Test", postalCode: "123" };
+    equal((await context.create(undefined, quoted.versions, { billingDetails })).status, 200);
+    equal(context.db.tables.payments.map((row) => [row.method, row.status, row.billing_name]),
+      [["CARD", "PENDING", "Test Parent"], ["CARD", "PENDING", "Test Parent"]]);
+    equal(context.db.tables.payments.map((row) => row.pricing_snapshot), snapshots);
+  });
+}
+
+Deno.test("concurrent snapshot retry cannot overwrite a processed payment", async () => {
+  const context = fixture();
+  const quoted = await quote(context);
+  equal((await context.create(undefined, quoted.versions, { paymentMethod: "CASH" })).status, 200);
+  for (const payment of context.db.tables.payments) payment.gateway_txn_id = null;
+  context.db.beforePaymentUpdate = () => { context.db.tables.payments[0].status = "SUCCEEDED"; };
+  equal((await context.create(undefined, quoted.versions)).status, 409);
+  equal(context.db.tables.payments[0].status, "SUCCEEDED");
+  equal(context.db.tables.payments[0].method, "CASH");
 });

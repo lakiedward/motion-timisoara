@@ -1,4 +1,5 @@
-import { getCampChildPrices, validSelection, enrollmentJson, type EnrollmentServices, type CampChildPrice } from "../_shared/enrollment-pricing.ts";
+import { getEnrollmentChildPrices, validSelection, enrollmentJson, type EnrollmentServices, type EnrollmentOffer } from "../_shared/enrollment-pricing.ts";
+import { validQuantity } from "../_shared/price-snapshot.ts";
 
 interface EnrollmentRequest {
   kind: "COURSE" | "CAMP" | "ACTIVITY";
@@ -44,7 +45,10 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
 
     const body: EnrollmentRequest = await req.json();
     const { kind, entityId, childIds, paymentMethod, billingDetails } = body;
-    const sessionPackageSize = body.sessionPackageSize ?? 1;
+    const sessionPackageSize = body.sessionPackageSize === undefined ? 1 : body.sessionPackageSize;
+    if (!validQuantity(sessionPackageSize) || (kind !== "COURSE" && sessionPackageSize !== 1)) {
+      return enrollmentJson({ error: "Numărul de ședințe nu este valid." }, 400);
+    }
 
     if (!validSelection(kind, entityId, childIds) || !["CARD", "CASH"].includes(paymentMethod)) {
       return new Response(
@@ -115,15 +119,12 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
           return !existing.some((e: any) => e.status === "PENDING");
         }).length
       : children.length;
-    let entityPrice = 0;
-    let campPrices: CampChildPrice[] = [];
-    let paymentCurrency = "RON";
-    let effectiveSessionPackageSize = sessionPackageSize;
+    let offer: EnrollmentOffer;
 
     if (kind === "COURSE") {
       const { data: course } = await supabaseAdmin
         .from("courses")
-        .select("price_per_session, currency, capacity, age_from, age_to, active")
+        .select("price_per_session, currency, eur_ron_rate_micros, capacity, age_from, age_to, active")
         .eq("id", entityId)
         .single();
       if (!course) {
@@ -157,8 +158,7 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
           );
         }
       }
-      entityPrice = course.price_per_session * effectiveSessionPackageSize;
-      paymentCurrency = course.currency;
+      offer = course;
       if (newEnrollmentCount > 0 && course.capacity != null) {
         const { count, error: capacityError } = await supabaseAdmin
           .from("enrollments")
@@ -180,7 +180,7 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
     } else if (kind === "CAMP") {
       const { data: camp } = await supabaseAdmin
         .from("camps")
-        .select("currency, capacity, allow_cash")
+        .select("currency, eur_ron_rate_micros, capacity, allow_cash")
         .eq("id", entityId)
         .single();
       if (!camp) {
@@ -197,15 +197,7 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
           { status: 400, headers: { "Content-Type": "application/json" } },
         );
       }
-      campPrices = await getCampChildPrices(supabaseAdmin, entityId, childIds, camp.currency, existingEnrollments ?? []);
-      if (campPrices.some((price) => price.reason)) {
-        return enrollmentJson({ error: campPrices.find((price) => price.reason)!.reason }, 409);
-      }
-      if (campPrices.some((price) => body.priceVersions?.[price.childId] !== price.priceVersion)) {
-        return enrollmentJson({ error: "Prețul s-a schimbat. Revino la Detalii și verifică din nou suma.", code: "PRICE_CHANGED" }, 409);
-      }
-      paymentCurrency = camp.currency;
-      effectiveSessionPackageSize = 1;
+      offer = camp;
       if (newEnrollmentCount > 0 && camp.capacity != null) {
         const { count, error: capacityError } = await supabaseAdmin
           .from("enrollments")
@@ -227,7 +219,7 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
     } else {
       const { data: activity } = await supabaseAdmin
         .from("activities")
-        .select("price, currency, capacity, active")
+        .select("price, currency, eur_ron_rate_micros, capacity, active")
         .eq("id", entityId)
         .single();
       if (!activity) {
@@ -242,9 +234,7 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
           { status: 400, headers: { "Content-Type": "application/json" } },
         );
       }
-      entityPrice = activity.price;
-      paymentCurrency = activity.currency;
-      effectiveSessionPackageSize = 1;
+      offer = activity;
       if (newEnrollmentCount > 0 && activity.capacity != null) {
         const { count, error: capacityError } = await supabaseAdmin
           .from("enrollments")
@@ -265,14 +255,23 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
       }
     }
 
+    const childPrices = await getEnrollmentChildPrices(supabaseAdmin, kind, entityId, childIds, offer,
+      existingEnrollments ?? [], sessionPackageSize);
+    if (childPrices.some((price) => price.reason)) {
+      return enrollmentJson({ error: childPrices.find((price) => price.reason)!.reason }, 409);
+    }
+    if (childPrices.some((price) => body.priceVersions?.[price.childId] !== price.priceVersion)) {
+      return enrollmentJson({ error: "Prețul s-a schimbat. Revino la Detalii și verifică din nou suma.", code: "PRICE_CHANGED" }, 409);
+    }
+
     const now = new Date().toISOString();
     const savedEnrollments: { id: string }[] = [];
     const prices: { childId: string; amount: number; currency: string }[] = [];
 
     for (const child of children) {
-      const quote = campPrices.find((price) => price.childId === child.id);
-      const childPrice = quote?.amount ?? entityPrice;
-      const childCurrency = quote?.currency ?? paymentCurrency;
+      const quote = childPrices.find((price) => price.childId === child.id)!;
+      const childPrice = quote.amount!;
+      const childCurrency = quote.currency!;
       const existing = existingByChild.get(child.id) ?? [];
       const pendingDraft =
         paymentMethod === "CARD"
@@ -288,6 +287,7 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
           method: paymentMethod,
           amount: childPrice,
           currency: childCurrency,
+          pricing_snapshot: quote.snapshot,
           status: "PENDING",
           updated_at: now,
         };
@@ -302,7 +302,7 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
 
         const { data: payments, error: paymentsError } = await supabaseAdmin
           .from("payments")
-          .select("id, status, amount, currency, gateway_txn_id")
+          .select("id, method, status, amount, currency, gateway_txn_id, pricing_snapshot")
           .eq("enrollment_id", enrollment.id);
 
         if (paymentsError) return enrollmentJson({ error: "Nu am putut verifica plata existentă." }, 500);
@@ -319,13 +319,25 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
         );
         const reusable = unpaid ?? failedRow;
         if (reusable) {
-          if (kind === "CAMP" && reusable.gateway_txn_id) {
-            if (reusable.amount !== childPrice || reusable.currency !== childCurrency) {
+          if (reusable.gateway_txn_id || reusable.pricing_snapshot) {
+            if (reusable.amount !== childPrice || reusable.currency !== childCurrency ||
+              reusable.pricing_snapshot?.priceVersion !== quote.snapshot?.priceVersion) {
               return enrollmentJson({ error: "Plata s-a schimbat. Verifică din nou înscrierea." }, 409);
             }
+            if (reusable.method !== paymentMethod || reusable.status !== "PENDING" || billingDetails) {
+              const retryPatch = { ...paymentPatch };
+              delete retryPatch.amount;
+              delete retryPatch.currency;
+              delete retryPatch.pricing_snapshot;
+              let update = supabaseAdmin.from("payments").update(retryPatch).eq("id", reusable.id).eq("status", reusable.status);
+              update = reusable.gateway_txn_id ? update.eq("gateway_txn_id", reusable.gateway_txn_id) : update.is("gateway_txn_id", null);
+              update = reusable.pricing_snapshot ? update.eq("pricing_snapshot->>priceVersion", quote.priceVersion!) : update.is("pricing_snapshot", null);
+              const saved = await update.select("id").single();
+              if (saved.error || !saved.data) return enrollmentJson({ error: "Plata s-a schimbat. Verifică din nou înscrierea." }, 409);
+            }
           } else {
-            let update = supabaseAdmin.from("payments").update(paymentPatch).eq("id", reusable.id).eq("status", reusable.status);
-            if (kind === "CAMP") update = update.is("gateway_txn_id", null);
+            const update = supabaseAdmin.from("payments").update(paymentPatch).eq("id", reusable.id).eq("status", reusable.status)
+              .is("gateway_txn_id", null).is("pricing_snapshot", null);
             const saved = await update.select("id").single();
             if (saved.error || !saved.data) return enrollmentJson({ error: "Plata s-a schimbat. Verifică din nou înscrierea." }, 409);
           }
@@ -368,6 +380,7 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
           method: paymentMethod,
           amount: childPrice,
           currency: childCurrency,
+          pricing_snapshot: quote.snapshot,
           status: "PENDING",
           created_at: now,
           updated_at: now,
@@ -391,7 +404,7 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
               event: "pending_cash_payment",
               payload: {
                 enrollmentId: enrollment.id,
-                sessionCount: effectiveSessionPackageSize,
+                sessionCount: sessionPackageSize,
                 courseId: entityId,
               },
             });

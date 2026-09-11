@@ -509,6 +509,14 @@ reorganizing this document; correct obsolete facts with current evidence.
 
 ## 11. Known Issues / WIP
 
+- **To-Do #149 backend foundation (2026-09-11):** migration `00048` is an isolated-tested
+  proposal, not deployed. Offer prices remain minor units of RON or EUR; the organizer's
+  EUR/RON rate uses integer millionths. Enrollment handlers require per-child price
+  versions for all three kinds and store immutable RON payment snapshots. Do not deploy
+  them alone: frontend confirmation, displays, generated types and course fulfillment
+  must be updated together. The approved slice and remaining gates are recorded in
+  `docs/superpowers/specs/2026-09-11-todo-149-eur-ron-contract.md`. To-Do #149 stays open.
+
 - **Template enforcement pending:** install/adapt `scripts/check-rules.mjs`, duplication
   tooling, `tests/check-rules.test.ts` and a byte-comparison mirror test, then integrate
   them with `npm test`/CI. Account for root documentation versus the app's package root.
