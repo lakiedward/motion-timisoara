@@ -65,6 +65,20 @@ Migration/deployment approval does not replace final human UI/device acceptance.
 `git ls-files supabase/migrations | tail -1` before creating one — do not trust a
 number written down elsewhere.
 
+### To-Do #149 proposal, not deployed
+
+`00048_enrollment_price_snapshots.sql` is the isolated-tested EUR/RON pricing
+foundation for the first slice of plan #102. It is **not applied remotely**.
+It adds organizer exchange rates and immutable accepted RON payment snapshots.
+Offer constraints are `NOT VALID` to preserve legacy rows with unknown currencies
+or missing EUR rates; new/updated rows must comply. Audit and reconcile historical
+offers before validating those constraints at the eventual authorized deployment.
+
+Do not deploy the enrollment handlers independently: course/activity quote versions,
+frontend confirmation, displays and snapshot-based course fulfillment still require
+the coordinated follow-up described in
+`docs/superpowers/specs/2026-09-11-todo-149-eur-ron-contract.md`.
+
 To confirm git and the remote still agree:
 
 ```bash
