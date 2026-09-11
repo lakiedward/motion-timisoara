@@ -2,7 +2,6 @@ import { OfferExchangeNote } from '@/components/OfferExchangeNote'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, CalendarDays, Clock, MapPin } from 'lucide-react'
-import { toast } from 'sonner'
 
 import { getActivity } from '@/api/public'
 import { formatMoney } from '@/lib/money'
@@ -40,7 +39,7 @@ export default function ActivityDetailPage() {
   const date = new Date(a.activity_date)
   const onEnroll = () => {
     if (!user) navigate(`/login?returnUrl=${encodeURIComponent(`/activitati/${a.id}`)}`)
-    else toast.info('Înscrierea va fi disponibilă în curând (checkout — Faza 5).')
+    else navigate(`/account/checkout?kind=ACTIVITY&id=${a.id}`)
   }
 
   return (
@@ -76,12 +75,12 @@ export default function ActivityDetailPage() {
         <p className="text-muted-foreground mt-6 leading-relaxed">{a.description}</p>
       )}
 
-      <div className="bg-card shadow-card mt-8 flex items-center justify-between rounded-3xl border p-6">
-        <div className="font-display text-2xl font-extrabold">
+      <div className="bg-card shadow-card mt-8 flex flex-col items-start gap-4 rounded-3xl border p-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="font-display shrink-0 whitespace-nowrap text-2xl font-extrabold">
           {formatMoney(a.price, a.currency)}
         </div>
         <OfferExchangeNote offer={a} />
-        <button onClick={onEnroll} className="btn-cta btn-cta--primary">
+        <button onClick={onEnroll} className="btn-cta btn-cta--primary shrink-0 whitespace-nowrap">
           Înscrie-te
         </button>
       </div>

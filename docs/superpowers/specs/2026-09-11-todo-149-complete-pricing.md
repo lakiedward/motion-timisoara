@@ -173,3 +173,38 @@ completion. The current work must not be marked Gata on test counts alone.
 Chrome at http://127.0.0.1:3017/account/enrollments displayed the live test payment
 as Plătit, 316,12 lei, 61,70 EUR (5 × 12,34 EUR), rate 5,123456 and five sessions
 remaining out of five. This desktop observation does not replace card-entry proof.
+
+## Live activity card retry verification
+
+Chrome used the public activity page for disposable activity
+04e3f938-d9c8-4b8a-ab7b-a802f9edd5bb, priced at 23.45 EUR with rate 5.123456.
+The public enrollment button still displayed a legacy Phase 5 placeholder; it now
+navigates to the existing ACTIVITY checkout. Its price/action panel stacks on small
+screens so the exchange explanation and action have room.
+
+The audit parent selected Copil Audit, accepted 120.15 RON and entered fictitious
+billing details. Stripe Elements was visibly in test mode. Test card ending 0002
+produced FAILED payment e2fef6ec-feea-4f7f-87cb-5ec4dc88a7a9 with enrollment
+3626ef94-e9c3-4fa9-952c-71b85106dab3 still PENDING. Retrying in the same browser
+with the standard successful test Visa activated the same enrollment and changed
+the same payment to SUCCEEDED/RON/12015, with no duplicate row. The browser returned
+to enrollment history showing Activitate, Activ, Plătit, 120,15 lei and the accepted
+23,45 EUR conversion. The disposable activity is now inactive; scoped cleanup of
+this activity and the earlier course payment fixtures remains required.
+
+The course payment history was additionally inspected at 375x812, 768x1024 and
+1440x900. All displayed the accepted conversion and five remaining sessions.
+Viewport overrides were reset after inspection. These are browser dimensions,
+not physical-device proof.
+
+Cleanup: both new disposable offers and their two audit enrollments were removed
+in a scoped transaction after verifying no invoices, monthly payments, attendance,
+other children or dependent course content. Their test payment/intent-request rows
+were removed by the verified enrollment cascade. Post-delete counts are zero for
+all listed IDs. Stripe test objects remain in the provider as test evidence.
+
+The activity panel was checked at the three target widths. A follow-up prevents
+price and button text shrinking onto separate lines. Typecheck, lint, 722 tests
+and build passed; the final class-only adjustment also passed a fresh build.
+The activity navigation/layout diff was reviewed locally against the existing
+course checkout route and the ACTIVITY loader. No open finding was identified.
