@@ -24,6 +24,7 @@ const TABARA: TabaraDinLista = {
   location_id: null,
   location: null,
   price: 90000,
+  currency: 'RON',
   pricingMode: 'single',
   allow_cash: false,
   heroUrl: 'https://public/hero.jpg',

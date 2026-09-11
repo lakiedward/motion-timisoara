@@ -4,7 +4,7 @@ import { Search } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { getAllCourses, setCourseActiveAdmin, type AdminCourse } from '@/api/admin'
-import { formatRon } from '@/lib/money'
+import { formatMoney } from '@/lib/money'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,7 +12,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 const COLOANE = ['Curs', 'Sport', 'Antrenor', 'Preț', 'Status'] as const
 
-/** Cauta si peste diacritice: „inot" trebuie sa gaseasca „Înot începători". */
 function fold(s: string) {
   return s
     .normalize('NFD')
@@ -20,14 +19,12 @@ function fold(s: string) {
     .toLowerCase()
 }
 
-/** „1 curs", „7 cursuri", „20 de cursuri" — regula romaneasca pentru „de". */
 function numaraCursuri(n: number) {
   if (n === 1) return '1 curs'
   const rest = n % 100
   return `${n}${n > 0 && (rest === 0 || rest > 19) ? ' de' : ''} cursuri`
 }
 
-/** Cursurile fara club sunt ale antrenorilor independenti, nu date lipsa. */
 function apartenenta(course: AdminCourse) {
   return course.club?.name ?? 'Antrenor independent'
 }
@@ -38,10 +35,6 @@ function StatusBadge({ active }: { active: boolean }) {
   return <Badge variant={active ? 'success' : 'outline'}>{active ? 'Activ' : 'Inactiv'}</Badge>
 }
 
-/**
- * Actiunea din rand. Are contur si in repaus: pana acum era transparenta, cu
- * border-width 0, si se citea ca text obisnuit.
- */
 function ToggleAction({
   course,
   pending,
@@ -66,11 +59,6 @@ function ToggleAction({
   )
 }
 
-/**
- * Sceletul reia structura tabelului si tine locul numaratorului, ca titlul si
- * primul rand sa nu se mute cand sosesc datele. Blocul unic de 256px de dinainte
- * era mai scund decat tabelul real de 439px, deci pagina sarea vizibil.
- */
 function LoadingState() {
   const randuri = [0, 1, 2, 3, 4]
   return (
@@ -172,9 +160,6 @@ export default function AdminCoursesPage() {
       {isLoading ? (
         <LoadingState />
       ) : isError && courses.length === 0 ? (
-        // Garda pe lungime: un refetch picat trecator nu are voie sa stearga de pe
-        // ecran cursurile deja incarcate, si o incarcare esuata nu are voie sa arate
-        // ca „platforma nu are niciun curs".
         <div role="alert" className="rounded-3xl border border-dashed py-16 text-center">
           <p className="text-foreground font-medium">Nu am putut încărca cursurile.</p>
           <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetch()}>
@@ -183,9 +168,7 @@ export default function AdminCoursesPage() {
         </div>
       ) : courses.length === 0 ? (
         <div className="text-muted-foreground rounded-3xl border border-dashed px-6 py-16 text-center">
-          {/* Din admin nu exista nicio cale de creare, deci mesajul spune unde se face. */}
-          Niciun curs înregistrat. Cursurile se creează din portalul clubului sau al
-          antrenorului.
+          Niciun curs înregistrat. Cursurile se creează din portalul clubului sau al antrenorului.
         </div>
       ) : (
         <>
@@ -208,9 +191,6 @@ export default function AdminCoursesPage() {
             </div>
           ) : (
             <>
-              {/* De la 768px in sus tabel — acolo incape masurat (718px); sub 768px
-                  fise, fiindca tabelul avea 600px intr-un container de 325px si
-                  coloana Status plus toate butoanele ramaneau in afara ecranului. */}
               <div className="bg-card shadow-card hidden overflow-hidden rounded-3xl border md:block">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50 text-muted-foreground text-left text-xs uppercase">
@@ -234,8 +214,7 @@ export default function AdminCoursesPage() {
                       <tr key={c.id} className="hover:bg-accent border-t transition-colors">
                         <td className="px-4 py-3">
                           <span className="font-medium">{c.name}</span>
-                          {/* Locatia deosebeste cursurile omonime: doua cursuri pot
-                              avea acelasi nume, sport si antrenor. */}
+
                           <span className="text-muted-foreground block text-xs">
                             {c.location?.name ?? '—'}
                           </span>
@@ -247,9 +226,9 @@ export default function AdminCoursesPage() {
                             {apartenenta(c)}
                           </span>
                         </td>
-                        {/* Aliniat la dreapta, ca zecimalele sa cada una sub alta. */}
+
                         <td className="px-4 py-3 text-right whitespace-nowrap">
-                          {formatRon(c.price)}
+                          {formatMoney(c.price, c.currency)}
                         </td>
                         <td className="px-4 py-3">
                           <StatusBadge active={c.active} />
@@ -284,7 +263,9 @@ export default function AdminCoursesPage() {
                       {c.sport?.name ?? '—'} · {c.coach?.name ?? '—'} · {apartenenta(c)}
                     </p>
                     <div className="mt-3 flex items-center justify-between gap-3">
-                      <span className="font-display font-bold">{formatRon(c.price)}</span>
+                      <span className="font-display font-bold">
+                        {formatMoney(c.price, c.currency)}
+                      </span>
                       <ToggleAction
                         course={c}
                         pending={toggle.isPending}

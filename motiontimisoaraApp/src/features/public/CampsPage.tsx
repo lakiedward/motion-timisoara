@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Banknote, CalendarDays, Users } from 'lucide-react'
 
 import { getTaberePublice, formatZi, type TabaraDinLista } from '@/api/camps'
-import { formatRon } from '@/lib/money'
+import { formatMoney } from '@/lib/money'
 import { plural } from '@/lib/plural'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -111,7 +111,7 @@ function CardTabara({ tabara }: { tabara: TabaraDinLista }) {
         <div className="font-display mt-auto pt-4 text-lg font-bold">
           {tabara.pricingMode === 'by_age'
             ? 'Preț pe categorii de vârstă'
-            : formatRon(tabara.price)}
+            : formatMoney(tabara.price, tabara.currency)}
         </div>
       </div>
     </article>

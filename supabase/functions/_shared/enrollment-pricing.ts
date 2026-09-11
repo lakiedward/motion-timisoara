@@ -105,7 +105,7 @@ export async function getEnrollmentChildPrices(
         snapshot.amount !== payment.amount || snapshot.currency !== payment.currency) {
         throw enrollmentJson({ error: "Oferta salvată nu corespunde înscrierii." }, 500);
       }
-      if (snapshot.quantity !== quantity) return { childId, reason: "Pachetul salvat diferă. Reia plata cu numărul de ședințe confirmat inițial." };
+      if (snapshot.quantity !== quantity) return { childId, reason: `Pachetul salvat are ${snapshot.quantity} ședințe. Alege acest număr pentru a relua plata confirmată inițial.` };
       return { childId, amount: snapshot.amount, currency: snapshot.currency, priceVersion: snapshot.priceVersion, payment, snapshot };
     }
     if (payment?.gateway_txn_id) {
@@ -116,17 +116,21 @@ export async function getEnrollmentChildPrices(
         priceVersion: await priceVersion(`${kind}:${entityId}:${payment.id}`, childId, payment.amount, payment.currency) };
     }
     let sourceAmount = kind === "COURSE" ? offer.price_per_session : offer.price;
+    let sourceCurrency = offer.currency;
+    let sourceRate = offer.eur_ron_rate_micros ?? null;
     if (kind === "CAMP") {
-      const result = await db.rpc("pret_tabara_pentru_copil", { p_camp_id: entityId, p_child_id: childId });
+      const result = await db.rpc("enrollment_camp_offer", { p_camp_id: entityId, p_child_id: childId });
       if (result.error) throw enrollmentJson({ error: "Nu am putut calcula prețul taberei. Încearcă din nou." }, 500);
-      if (result.data === null) {
+      if (result.data === null || result.data.amount === null) {
         return { childId, reason: "Nu există o categorie de preț pentru vârsta copilului la începutul taberei." };
       }
-      sourceAmount = result.data;
+      sourceAmount = result.data.amount;
+      sourceCurrency = result.data.currency;
+      sourceRate = result.data.eur_ron_rate_micros;
     }
     try {
-      const snapshot = await createPriceSnapshot(kind, entityId, childId, sourceAmount!, offer.currency,
-        offer.eur_ron_rate_micros ?? null, quantity);
+      const snapshot = await createPriceSnapshot(kind, entityId, childId, sourceAmount!, sourceCurrency,
+        sourceRate, quantity);
       return { childId, amount: snapshot.amount, currency: snapshot.currency, priceVersion: snapshot.priceVersion, payment, snapshot };
     } catch {
       throw enrollmentJson({ error: "Prețul sau cursul valutar nu este valid. Contactează clubul." }, 500);

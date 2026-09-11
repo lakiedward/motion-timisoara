@@ -68,13 +68,18 @@ export async function deleteChild(id: string) {
 /** Enrollment rows for the current parent (RLS-scoped via children), with payment + child. */
 export type EnrollmentRow = Tables<'enrollments'> & {
   child: Pick<Tables<'children'>, 'id' | 'name'> | null
-  payments: Pick<Tables<'payments'>, 'amount' | 'status' | 'method' | 'paid_at'>[]
+  payments: Pick<
+    Tables<'payments'>,
+    'amount' | 'currency' | 'pricing_snapshot' | 'status' | 'method' | 'paid_at'
+  >[]
 }
 
 export async function getMyEnrollments(): Promise<EnrollmentRow[]> {
   const { data, error } = await supabase
     .from('enrollments')
-    .select('*, child:children(id,name), payments(amount,status,method,paid_at)')
+    .select(
+      '*, child:children(id,name), payments(amount,currency,pricing_snapshot,status,method,paid_at)',
+    )
     .order('created_at', { ascending: false })
   if (error) throw error
   return (data ?? []) as unknown as EnrollmentRow[]

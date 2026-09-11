@@ -21,6 +21,8 @@ on:
       - 'supabase/migrations/00046_camp_live_location_transaction.sql'
       - 'supabase/migrations/00047_camp_live_location_discovery.sql'
       - 'supabase/migrations/00048_enrollment_price_snapshots.sql'
+      - 'supabase/migrations/00049_atomic_camp_offer_pricing.sql'
+      - 'supabase/migrations/0005*.sql'
       - 'playwright.config.ts'
       - 'playwright.pricing.config.ts'
       - 'playwright.location.config.ts'
@@ -43,6 +45,8 @@ on:
       - 'supabase/migrations/00046_camp_live_location_transaction.sql'
       - 'supabase/migrations/00047_camp_live_location_discovery.sql'
       - 'supabase/migrations/00048_enrollment_price_snapshots.sql'
+      - 'supabase/migrations/00049_atomic_camp_offer_pricing.sql'
+      - 'supabase/migrations/0005*.sql'
       - 'playwright.config.ts'
       - 'playwright.pricing.config.ts'
       - 'playwright.location.config.ts'
@@ -92,12 +96,22 @@ jobs:
       run: deno check --no-lock supabase/functions/validate-enrollment/index.ts supabase/functions/create-enrollment/index.ts supabase/functions/create-payment-intent/index.ts supabase/functions/record-attendance/index.ts supabase/functions/coach-live-location/index.ts
     - name: Test enrollment pricing contract
       run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/price-snapshot.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/record-attendance-contract.test.ts supabase/functions/coach-live-location-contract.test.ts supabase/functions/camp-live-location-contract.test.ts
+    - name: Test payment confirmation and intent retries
+      run: deno test --no-lock supabase/functions/payment-completion-contract.test.ts supabase/functions/_shared/payment-intent.test.ts
+    - name: Check payment confirmation functions
+      run: deno check --no-lock supabase/functions/mark-cash-paid/index.ts supabase/functions/stripe-webhook/index.ts supabase/functions/cancel-draft-enrollment/index.ts
     - name: Test isolated camp pricing SQL
       shell: pwsh
       run: ./supabase/tests/run-camp-child-pricing.ps1
     - name: Test isolated enrollment currency snapshots
       shell: pwsh
       run: ./supabase/tests/run-enrollment-price-snapshots.ps1
+    - name: Test atomic camp offer pricing
+      shell: pwsh
+      run: ./supabase/tests/run-atomic-camp-offer-pricing.ps1
+    - name: Test atomic payment completion and concurrent confirmations
+      shell: pwsh
+      run: ./supabase/tests/run-enrollment-payment-completion.ps1
     - name: Test isolated attendance SQL and concurrent scans
       shell: pwsh
       run: ./supabase/tests/run-transactional-attendance.ps1

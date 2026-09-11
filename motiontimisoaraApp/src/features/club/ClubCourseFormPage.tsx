@@ -1,6 +1,15 @@
+import { OfferCurrencyFields } from '@/components/OfferCurrencyFields'
+import {
+  offerAmountSchema,
+  offerCurrencyShape,
+  validateOfferCurrency,
+  offerCurrencyInput,
+  offerCurrencyValues,
+  parseScaledDecimal,
+} from '@/lib/pricing/offer-currency'
 import { useEffect } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -16,7 +25,7 @@ import {
   updateClubCourse,
 } from '@/api/club'
 import { fetchSports } from '@/api/sports'
-import { baniToRon, ronToBani } from '@/lib/money'
+import { baniToRon } from '@/lib/money'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -25,20 +34,21 @@ import { cn } from '@/lib/utils'
 const selectCls =
   'border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] lg:h-9'
 
-const schema = z.object({
-  name: z.string().min(3, 'Minim 3 caractere'),
-  sport_id: z.string().min(1, 'Alege un sport'),
-  location_id: z.string().min(1, 'Alege o locație'),
-  coach_id: z.string().min(1, 'Alege un antrenor'),
-  level: z.string().optional(),
-  age_from: z.string().optional(),
-  age_to: z.string().optional(),
-  capacity: z.string().optional(),
-  price_per_session_lei: z
-    .string()
-    .refine((s) => s.trim() !== '' && !Number.isNaN(Number(s)) && Number(s) >= 0, 'Preț invalid'),
-  description: z.string().optional(),
-})
+const schema = z
+  .object({
+    ...offerCurrencyShape,
+    name: z.string().min(3, 'Minim 3 caractere'),
+    sport_id: z.string().min(1, 'Alege un sport'),
+    location_id: z.string().min(1, 'Alege o locație'),
+    coach_id: z.string().min(1, 'Alege un antrenor'),
+    level: z.string().optional(),
+    age_from: z.string().optional(),
+    age_to: z.string().optional(),
+    capacity: z.string().optional(),
+    price_per_session_lei: offerAmountSchema,
+    description: z.string().optional(),
+  })
+  .superRefine(validateOfferCurrency)
 type Values = z.infer<typeof schema>
 
 const num = (s: string | undefined) => (s && s.trim() ? Number(s) : null)
@@ -69,19 +79,19 @@ export default function ClubCourseFormPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<Values>({ resolver: zodResolver(schema) })
-
-  // `reset` pune in select o valoare care are nevoie de `<option>`-ul ei. Cursul
-  // si listele vin din cereri diferite: daca reseteaza primul, select-urile cad
-  // pe „—” si nu se mai corecteaza, fiindca efectul nu se relua. Asteptam ca
-  // ambele liste sa se aseze — pe `isSuccess`, nu pe lungime, ca sa mearga si
-  // pentru un club fara antrenori sau fara locatii proprii.
+  } = useForm<Values>({
+    resolver: zodResolver(schema),
+    defaultValues: { currency: 'RON', eur_ron_rate: '' },
+  })
+  const currency = useWatch({ control, name: 'currency' })
   useEffect(() => {
     if (existing && coachesReady && locationsReady) {
       reset({
+        ...offerCurrencyValues(existing),
         name: existing.name,
         sport_id: existing.sport_id,
         location_id: existing.location_id,
@@ -102,6 +112,7 @@ export default function ClubCourseFormPage() {
       return
     }
     const payload = {
+      ...offerCurrencyInput(v),
       name: v.name,
       sport_id: v.sport_id,
       location_id: v.location_id,
@@ -110,7 +121,7 @@ export default function ClubCourseFormPage() {
       age_from: num(v.age_from),
       age_to: num(v.age_to),
       capacity: num(v.capacity),
-      price_per_session: ronToBani(Number(v.price_per_session_lei)),
+      price_per_session: parseScaledDecimal(v.price_per_session_lei, 2)!,
       description: v.description || null,
     }
     try {
@@ -125,17 +136,19 @@ export default function ClubCourseFormPage() {
   }
 
   const noCoaches = !coaches.length
-  // „fara locatii” inseamna acum „nicio locatie UTILIZABILA”: de cand selectul
-  // include si salile comune ale platformei, un club fara sali proprii poate
-  // crea cursuri, deci nu mai are de ce sa fie oprit.
   const noLocations = !locations.length
 
   return (
     <div className="mx-auto max-w-2xl">
-      <Link to="/club/courses" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm">
+      <Link
+        to="/club/courses"
+        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
+      >
         <ArrowLeft className="size-4" /> Înapoi
       </Link>
-      <h1 className="font-display mt-4 text-2xl font-bold">{isEdit ? 'Editează curs' : 'Curs nou'}</h1>
+      <h1 className="font-display mt-4 text-2xl font-bold">
+        {isEdit ? 'Editează curs' : 'Curs nou'}
+      </h1>
 
       {(noCoaches || noLocations) && !isEdit && (
         <div className="bg-highlight/10 text-foreground/80 mt-4 rounded-2xl border p-4 text-sm">
@@ -171,12 +184,18 @@ export default function ClubCourseFormPage() {
             aria-describedby={errors.name ? 'name-error' : undefined}
           />
           {errors.name && (
-              <p id="name-error" className="text-destructive text-xs">
-                {errors.name.message}
-              </p>
-            )}
+            <p id="name-error" className="text-destructive text-xs">
+              {errors.name.message}
+            </p>
+          )}
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
+          <OfferCurrencyFields
+            currency={currency}
+            currencyField={register('currency')}
+            rateField={register('eur_ron_rate')}
+            error={errors.eur_ron_rate?.message}
+          />
           <div className="space-y-1.5">
             <Label htmlFor="coach_id">Antrenor</Label>
             <select
@@ -253,7 +272,9 @@ export default function ClubCourseFormPage() {
             </select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="price_per_session_lei">Preț / ședință (lei)</Label>
+            <Label htmlFor="price_per_session_lei">
+              Preț / ședință ({currency === 'EUR' ? 'EUR' : 'lei'})
+            </Label>
             <Input
               id="price_per_session_lei"
               type="number"
@@ -261,7 +282,9 @@ export default function ClubCourseFormPage() {
               className="h-11 lg:h-9"
               {...register('price_per_session_lei')}
               aria-invalid={!!errors.price_per_session_lei}
-              aria-describedby={errors.price_per_session_lei ? 'price_per_session_lei-error' : undefined}
+              aria-describedby={
+                errors.price_per_session_lei ? 'price_per_session_lei-error' : undefined
+              }
             />
             {errors.price_per_session_lei && (
               <p id="price_per_session_lei-error" className="text-destructive text-xs">

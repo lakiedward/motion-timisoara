@@ -1,28 +1,30 @@
-import { cloneElement, isValidElement, useEffect, useId } from 'react'
+import { schema, GOL, num, spreCamp, type Values } from './camp-form-schema'
+import { OfferCurrencyFields } from '@/components/OfferCurrencyFields'
+import {
+  offerCurrencyInput,
+  offerCurrencyValues,
+  parseScaledDecimal,
+} from '@/lib/pricing/offer-currency'
+import { cloneElement, isValidElement, useEffect, useId, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
-  actualizeazaTabara,
-  creeazaTabara,
   getCategoriile,
   getPreturilePeVarsta,
   getTabaraDeEditat,
   getTaberelemele,
-  intervaleSuprapuse,
-  salveazaBanii,
-  salveazaPreturilePeVarsta,
+  saveCampOffer,
   slugDinTitlu,
   type ModPret,
 } from '@/api/camps-admin'
 import { getClubSelectableLocations } from '@/api/club'
 import { getSelectableLocations } from '@/api/coach'
-import { baniToRon, formatRon, ronToBani } from '@/lib/money'
+import { baniToRon, formatMoney } from '@/lib/money'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -30,121 +32,10 @@ import { useProprietarTabere } from './useProprietarTabere'
 import CampPhotosSection from './CampPhotosSection'
 import CampCoachesSection from './CampCoachesSection'
 
-const lei = z
-  .string()
-  .refine((s) => s.trim() !== '' && !Number.isNaN(Number(s)) && Number(s) >= 0, 'Sumă invalidă')
-
-// Ani împliniți, 0–25, ca poarta din bază (00037).
-const ani = z
-  .string()
-  .refine(
-    (s) => s.trim() !== '' && Number.isInteger(Number(s)) && Number(s) >= 0 && Number(s) <= 25,
-    'Între 0 și 25 de ani',
-  )
-
-const schema = z
-  .object({
-    pricing_mode: z.enum(['single', 'by_age']),
-    varste: z.array(
-      z
-        .object({
-          age_from: ani,
-          age_to: ani,
-          amount_lei: lei,
-        })
-        .refine((c) => Number(c.age_from) <= Number(c.age_to), {
-          message: 'Vârsta de început e după cea de sfârșit',
-          path: ['age_to'],
-        }),
-    ),
-    title: z.string().min(3, 'Minim 3 caractere'),
-    slug: z
-      .string()
-      .min(3, 'Minim 3 caractere')
-      .regex(/^[a-z0-9-]+$/, 'Doar litere mici, cifre și cratime'),
-    period_start: z.string().min(1, 'Alege data de început'),
-    period_end: z.string().min(1, 'Alege data de sfârșit'),
-    location_id: z.string().optional(),
-    location_text: z.string().optional(),
-    capacity: z.string().optional(),
-    price_lei: lei,
-    allow_cash: z.boolean(),
-    description: z.string().optional(),
-    categorii: z.array(
-      z.object({
-        name: z.string().min(1, 'Numele lipsește'),
-        amount_lei: lei,
-        description: z.string().optional(),
-      }),
-    ),
-  })
-  .refine((v) => v.period_end >= v.period_start, {
-    message: 'Sfârșitul nu poate fi înaintea începutului',
-    path: ['period_end'],
-  })
-  // Aceeași regulă ca poarta din bază, verificată aici doar ca omul să afle
-  // înainte de drumul până la server. Baza rămâne cea care refuză de-adevăratelea.
-  .refine(
-    (v) =>
-      v.categorii.length === 0 ||
-      ronToBani(Number(v.price_lei)) ===
-        v.categorii.reduce((t, c) => t + ronToBani(Number(c.amount_lei) || 0), 0),
-    { message: 'Suma categoriilor trebuie să dea exact prețul taberei', path: ['categorii'] },
-  )
-  // Regulile prețului pe vârstă, aceleași ca în `salveaza_preturile_pe_varsta`:
-  // „pe categorii" cere măcar una, iar intervalele nu se suprapun (capete incluse).
-  .superRefine((v, ctx) => {
-    if (v.pricing_mode !== 'by_age') return
-    if (v.varste.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Prețul pe categorii are nevoie de cel puțin o categorie de vârstă',
-        path: ['varste'],
-      })
-      return
-    }
-    const perechi = v.varste.map((c) => ({ age_from: Number(c.age_from), age_to: Number(c.age_to) }))
-    const suprapuse = intervaleSuprapuse(perechi)
-    if (suprapuse) {
-      const [a, b] = suprapuse
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: `Categoria ${perechi[a].age_from}–${perechi[a].age_to} ani se suprapune cu ${perechi[b].age_from}–${perechi[b].age_to} ani`,
-        path: ['varste'],
-      })
-    }
-  })
-
-type Values = z.infer<typeof schema>
-
-const GOL: Values = {
-  title: '',
-  slug: '',
-  period_start: '',
-  period_end: '',
-  location_id: '',
-  location_text: '',
-  capacity: '',
-  price_lei: '',
-  allow_cash: false,
-  description: '',
-  categorii: [],
-  pricing_mode: 'single',
-  varste: [],
-}
-
-const num = (s: string | undefined) => (s && s.trim() ? Number(s) : null)
-
-/** O categorie de vârstă cum vine din bază, adusă în forma câmpurilor. */
-const spreCamp = (c: { age_from: number; age_to: number; amount: number }) => ({
-  age_from: String(c.age_from),
-  age_to: String(c.age_to),
-  amount_lei: String(baniToRon(c.amount)),
-})
-
 export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/camps' }) {
   const { id } = useParams()
   const eEditare = !!id
+  const [newCampId] = useState(() => crypto.randomUUID())
   const navigate = useNavigate()
   const qc = useQueryClient()
   const { proprietar, gata, eClub } = useProprietarTabere()
@@ -164,11 +55,6 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
     queryFn: () => getPreturilePeVarsta(id as string),
     enabled: eEditare,
   })
-
-  // Aceleași locuri ca la cursuri: clubul le vede pe ale lui și pe cele comune
-  // ale platformei (plus cea deja salvată, chiar dacă a fost dezactivată între
-  // timp); antrenorul le vede pe cele active. Crearea cu pin pe hartă rămâne în
-  // formularul de locație — linkul de sub select duce acolo.
   const locatiaSalvata = tabara?.location_id ?? null
   const { data: locatii, isError: eroareLocatii } = useQuery({
     queryKey: ['locatii-pentru-tabara', proprietar.clubId, eClub, locatiaSalvata],
@@ -194,11 +80,9 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
   const titluReg = register('title')
 
   useEffect(() => {
-    // Locațiile intră în condiție dinadins: `reset` cu un `location_id` pentru
-    // care nu există încă `<option>` lasă selectul pe „—", iar efectul nu se
-    // mai reia. Aceeași capcană ca la antrenorul din formularul de curs.
     if (tabara && categoriiGata && varsteGata && locatiiGata) {
       reset({
+        ...offerCurrencyValues(tabara),
         title: tabara.title,
         slug: tabara.slug,
         period_start: tabara.period_start,
@@ -219,24 +103,20 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
       })
     }
   }, [tabara, categorii, categoriiGata, varste, varsteGata, locatiiGata, reset])
-
-  // `useWatch` în loc de `watch()`: doar câmpurile astea mișcă totalul de
-  // sub categorii, deci restul formularului nu se mai randează la fiecare tastă.
+  const currency = useWatch({ control, name: 'currency' })
   const pretLei = useWatch({ control, name: 'price_lei' })
   const categoriiVii = useWatch({ control, name: 'categorii' })
   const slugViu = useWatch({ control, name: 'slug' })
   const modPret = useWatch({ control, name: 'pricing_mode' })
   const peVarsta = modPret === 'by_age'
-
-  // Sursele pentru „copiază categoriile din altă tabără": celelalte tabere ale
-  // aceluiași proprietar. Decis 2026-09-02: fără șabloane de club sau de
-  // platformă — categoriile stau pe tabără și se copiază, nu se sincronizează.
   const { data: taberele } = useQuery({
     queryKey: ['taberele-mele', proprietar.clubId, proprietar.coachUserId],
     queryFn: () => getTaberelemele(proprietar),
     enabled: gata && peVarsta,
   })
-  const surseDeCopiat = (taberele ?? []).filter((t) => t.id !== id && t.pricing_mode === 'by_age')
+  const surseDeCopiat = (taberele ?? []).filter(
+    (t) => t.id !== id && t.pricing_mode === 'by_age' && t.currency === currency,
+  )
 
   const copiazaDin = async (campId: string) => {
     if (!campId) return
@@ -248,9 +128,9 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
     }
   }
 
-  const pretBani = ronToBani(Number(pretLei) || 0)
+  const pretBani = parseScaledDecimal(pretLei ?? '', 2) ?? 0
   const sumaBani = (categoriiVii ?? []).reduce(
-    (t, c) => t + ronToBani(Number(c?.amount_lei) || 0),
+    (t, c) => t + (parseScaledDecimal(c?.amount_lei ?? '', 2) ?? 0),
     0,
   )
   const areCategorii = (categoriiVii ?? []).length > 0
@@ -271,31 +151,27 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
     }
     const bani = v.categorii.map((c) => ({
       name: c.name.trim(),
-      amount: ronToBani(Number(c.amount_lei)),
+      amount: parseScaledDecimal(c.amount_lei, 2)!,
       description: c.description?.trim() ? c.description : null,
     }))
 
     try {
-      // Prețul NU merge prin `campuri`: un UPDATE care îl schimbă singur e oprit
-      // de triggerul din bază cât timp există categorii care nu l-ar mai da.
-      // Se scrie împreună cu ele, prin funcție.
-      const campId = eEditare
-        ? (await actualizeazaTabara(id as string, campuri)).id
-        : (await creeazaTabara(proprietar, campuri)).id
-      await salveazaBanii(campId, ronToBani(Number(v.price_lei)), bani)
-      // Comutatorul și categoriile de vârstă merg tot prin funcție, tot împreună.
-      // Pe „preț unic" lista se golește: o categorie păstrată pe ascuns ar
-      // reapărea la următoarea comutare, cu sume pe care nimeni nu le-a revăzut.
-      await salveazaPreturilePeVarsta(
+      const campId = id ?? newCampId
+      await saveCampOffer(
         campId,
+        parseScaledDecimal(v.price_lei, 2)!,
+        bani,
+        offerCurrencyInput(v),
         v.pricing_mode,
         v.pricing_mode === 'by_age'
           ? v.varste.map((c) => ({
               age_from: Number(c.age_from),
               age_to: Number(c.age_to),
-              amount: ronToBani(Number(c.amount_lei)),
+              amount: parseScaledDecimal(c.amount_lei, 2)!,
             }))
           : [],
+        campuri,
+        proprietar,
       )
 
       qc.invalidateQueries({ queryKey: ['taberele-mele'] })
@@ -305,8 +181,6 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
       toast.success(eEditare ? 'Tabără actualizată.' : 'Tabără creată.')
       navigate(baza)
     } catch (e) {
-      // Mesajul bazei e scris pentru om („Suma categoriilor (X) nu da pretul
-      // taberei (Y)"), deci se arată, nu se înlocuiește cu un „a eșuat" generic.
       const mesaj = e instanceof Error ? e.message : ''
       toast.error(mesaj || 'Nu am putut salva tabăra.')
     }
@@ -339,14 +213,7 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
             className="h-11 lg:h-9"
             aria-invalid={!!errors.title}
             onBlur={(e) => {
-              // `register` își aduce propriul onBlur, care marchează câmpul ca
-              // atins. Spread-ul îl pune primul, al nostru l-ar fi înlocuit —
-              // deci se cheamă explicit, altfel validarea la ieșirea din câmp
-              // tace pe tot formularul.
               titluReg.onBlur(e)
-              // Slugul se completează singur din titlu, dar numai cât timp e gol
-              // și numai la creare: schimbarea lui pe o tabără publicată ar rupe
-              // linkurile trimise deja părinților.
               if (!eEditare && !slugViu) setValue('slug', slugDinTitlu(e.target.value))
             }}
           />
@@ -423,8 +290,17 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
 
         <fieldset className="rounded-2xl border p-5">
           <legend className="px-2 font-semibold">Ce include prețul</legend>
+          <OfferCurrencyFields
+            currency={currency}
+            currencyField={register('currency')}
+            rateField={register('eur_ron_rate')}
+            error={errors.eur_ron_rate?.message}
+          />
 
-          <Camp eticheta="Prețul taberei" eroare={errors.price_lei?.message}>
+          <Camp
+            eticheta={`Prețul taberei (${currency === 'EUR' ? 'EUR' : 'lei'})`}
+            eroare={errors.price_lei?.message}
+          >
             <Input
               type="number"
               step="0.01"
@@ -452,7 +328,10 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
                         placeholder="Cazare și masă"
                       />
                     </Camp>
-                    <Camp eticheta="Sumă (lei)" eroare={errors.categorii?.[i]?.amount_lei?.message}>
+                    <Camp
+                      eticheta={`Sumă (${currency === 'EUR' ? 'EUR' : 'lei'})`}
+                      eroare={errors.categorii?.[i]?.amount_lei?.message}
+                    >
                       <Input
                         type="number"
                         step="0.01"
@@ -498,10 +377,10 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
               role={seDiferenta === 0 ? undefined : 'alert'}
             >
               {seDiferenta === 0
-                ? `Categoriile adună ${formatRon(sumaBani)} — exact prețul taberei.`
+                ? `Categoriile adună ${formatMoney(sumaBani, currency)} — exact prețul taberei.`
                 : seDiferenta > 0
-                  ? `Categoriile adună ${formatRon(sumaBani)}, cu ${formatRon(seDiferenta)} mai mult decât prețul.`
-                  : `Categoriile adună ${formatRon(sumaBani)}, cu ${formatRon(-seDiferenta)} mai puțin decât prețul.`}
+                  ? `Categoriile adună ${formatMoney(sumaBani, currency)}, cu ${formatMoney(seDiferenta, currency)} mai mult decât prețul.`
+                  : `Categoriile adună ${formatMoney(sumaBani, currency)}, cu ${formatMoney(-seDiferenta, currency)} mai puțin decât prețul.`}
             </p>
           )}
           {errors.categorii?.root?.message && (
@@ -530,8 +409,8 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
               <p className="text-muted-foreground mt-4 text-sm">
                 Vârsta se socotește în ani împliniți la data de început a taberei, iar capetele
                 intervalului sunt incluse. Un copil care nu intră în nicio categorie nu se va putea
-                înscrie. Prețul unic de mai sus rămâne, deocamdată, cel afișat și cel plătit — pagina
-                publică și înscrierea încep să citească categoriile la pasul următor.
+                înscrie. Părintele vede prețul categoriei copilului și confirmă suma finală în lei
+                înainte de plată.
               </p>
 
               <ul className="mt-4 space-y-4" aria-label="Categorii de vârstă">
@@ -559,7 +438,10 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
                             aria-invalid={!!errors.varste?.[i]?.age_to}
                           />
                         </Camp>
-                        <Camp eticheta="Sumă (lei)" eroare={errors.varste?.[i]?.amount_lei?.message}>
+                        <Camp
+                          eticheta={`Sumă (${currency === 'EUR' ? 'EUR' : 'lei'})`}
+                          eroare={errors.varste?.[i]?.amount_lei?.message}
+                        >
                           <Input
                             type="number"
                             step="0.01"
@@ -639,8 +521,8 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
         ) : (
           !eEditare && (
             <p className="text-muted-foreground rounded-2xl border border-dashed p-4 text-sm">
-              Pozele și antrenorii se adaugă după ce salvezi tabăra: și unele, și alții au nevoie
-              de o tabără care există deja.
+              Pozele și antrenorii se adaugă după ce salvezi tabăra: și unele, și alții au nevoie de
+              o tabără care există deja.
             </p>
           )
         )}
@@ -664,8 +546,6 @@ function Camp({
   eroare?: string
   children: React.ReactNode
 }) {
-  // Eticheta se leagă de câmp prin id, ca un cititor de ecran să știe ce
-  // completează; până acum textul stătea doar lângă câmp.
   const id = useId()
   const camp = isValidElement<{ id?: string }>(children)
     ? cloneElement(children, { id: children.props.id ?? id })

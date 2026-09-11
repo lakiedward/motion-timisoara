@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { CalendarDays, Clock, MapPin } from 'lucide-react'
 
 import { getActivities } from '@/api/public'
-import { formatRon } from '@/lib/money'
+import { formatMoney } from '@/lib/money'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SPORT_ICON } from './sport-icons'
@@ -53,7 +53,8 @@ export default function ActivitiesPage() {
                         <CalendarDays className="size-4" /> {date.toLocaleDateString('ro-RO')}
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <Clock className="size-4" /> {a.start_time?.slice(0, 5)}–{a.end_time?.slice(0, 5)}
+                        <Clock className="size-4" /> {a.start_time?.slice(0, 5)}–
+                        {a.end_time?.slice(0, 5)}
                       </div>
                       {a.location && (
                         <div className="flex items-center gap-1.5">
@@ -61,7 +62,9 @@ export default function ActivitiesPage() {
                         </div>
                       )}
                     </div>
-                    <div className="font-display pt-1 text-lg font-bold">{formatRon(a.price)}</div>
+                    <div className="font-display pt-1 text-lg font-bold">
+                      {formatMoney(a.price, a.currency)}
+                    </div>
                   </div>
                 </Link>
               )

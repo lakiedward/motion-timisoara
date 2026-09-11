@@ -4,14 +4,13 @@ import { Plus, Users, Images, ReceiptText, Clock } from 'lucide-react'
 
 import { getTaberelemele, type TabaraDinLista } from '@/api/camps-admin'
 import { formatZi, sAIncheiat } from '@/api/camps'
-import { formatRon } from '@/lib/money'
+import { formatMoney } from '@/lib/money'
 import { plural } from '@/lib/plural'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useProprietarTabere } from './useProprietarTabere'
 import CampInvitations from './CampInvitations'
 
-/** Aceeași pagină pentru club și pentru antrenor; diferă doar prefixul rutei. */
 export default function CampsListPage({ baza }: { baza: '/club/camps' | '/coach/camps' }) {
   const { proprietar, gata, eroare, reincearca, eClub } = useProprietarTabere()
 
@@ -25,10 +24,6 @@ export default function CampsListPage({ baza }: { baza: '/club/camps' | '/coach/
     queryFn: () => getTaberelemele(proprietar),
     enabled: gata,
   })
-
-  // Eroarea de la club și cea de la tabere sunt două lucruri diferite, dar
-  // pentru om înseamnă același „nu s-a putut încărca". Ce NU trebuie e să cadă
-  // pe starea goală: „n-ai nicio tabără" e o afirmație, nu o scuză.
   if (eroare || isError) {
     return (
       <div className="py-16 text-center" role="alert">
@@ -46,8 +41,6 @@ export default function CampsListPage({ baza }: { baza: '/club/camps' | '/coach/
 
   return (
     <div>
-      {/* Invitațiile sunt ale antrenorului, nu ale clubului: un club nu poate fi
-          invitat nicăieri. Stau deasupra, fiindcă așteaptă o decizie de la el. */}
       {!eClub && <CampInvitations />}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -91,8 +84,6 @@ export default function CampsListPage({ baza }: { baza: '/club/camps' | '/coach/
 function CardTabara({ tabara, baza }: { tabara: TabaraDinLista; baza: string }) {
   const incheiata = sAIncheiat(tabara.period_end)
   const plina = tabara.capacity !== null && tabara.locuriOcupate >= tabara.capacity
-  // Prețul fără nicio categorie nu e o greșeală — dar o desfășurare pe jumătate
-  // scrisă e, iar poarta din bază o refuză la salvare, deci n-ar trebui să existe.
   const faraDesfasurare = tabara.categorii === 0
 
   return (
@@ -114,7 +105,7 @@ function CardTabara({ tabara, baza }: { tabara: TabaraDinLista; baza: string }) 
         {tabara.location_text ? ` · ${tabara.location_text}` : ''}
       </p>
 
-      <p className="mt-3 font-semibold">{formatRon(tabara.price)}</p>
+      <p className="mt-3 font-semibold">{formatMoney(tabara.price, tabara.currency)}</p>
 
       <ul className="text-muted-foreground mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
         <li className="inline-flex items-center gap-1">
@@ -134,7 +125,11 @@ function CardTabara({ tabara, baza }: { tabara: TabaraDinLista; baza: string }) 
         {tabara.antrenoriInAsteptare > 0 && (
           <li className="inline-flex items-center gap-1">
             <Clock className="size-4" />
-            {plural(tabara.antrenoriInAsteptare, 'invitație în așteptare', 'invitații în așteptare')}
+            {plural(
+              tabara.antrenoriInAsteptare,
+              'invitație în așteptare',
+              'invitații în așteptare',
+            )}
           </li>
         )}
       </ul>

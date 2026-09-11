@@ -1,8 +1,8 @@
 import { test, expect, type Page, type TestInfo } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 
-type Scenario = 'by-age' | 'single' | 'old-backend' | 'missing-quote' | 'unmatched' | 'changed' | 'offering-error' | 'children-error' | 'empty-children' | 'shared-category';
-type Quote = { childId: string; name: string; eligible: boolean; severity?: string; reason?: string; amount?: number; currency?: string; priceVersion?: string };
+type Scenario = 'eur-retry' | 'eur' | 'by-age' | 'single' | 'old-backend' | 'missing-quote' | 'unmatched' | 'changed' | 'offering-error' | 'children-error' | 'empty-children' | 'shared-category';
+type Quote = { childId: string; name: string; eligible: boolean; severity?: string; reason?: string; amount?: number; currency?: string; priceVersion?: string; pricingSnapshot?: Record<string, unknown> };
 
 const backendOrigin = 'http://127.0.0.1:54329';
 const children = [
@@ -14,7 +14,7 @@ const profile = {
   role: 'PARENT', phone: '0000000000', avatar_url: null,
 };
 
-async function simulate(page: Page, scenario: Scenario = 'by-age', role: 'PARENT' | 'COACH' | null = 'PARENT') {
+async function simulate(page: Page, scenario: Scenario = 'by-age', role: 'PARENT' | 'COACH' | null = 'PARENT', kind: 'CAMP' | 'COURSE' | 'ACTIVITY' = 'CAMP') {
   await page.clock.setFixedTime(new Date('2026-09-08T12:00:00Z'));
   const activeProfile = { ...profile, role };
   const fixtureChildren = scenario === 'empty-children' ? [] : children.map((child, index) => ({
@@ -32,10 +32,13 @@ async function simulate(page: Page, scenario: Scenario = 'by-age', role: 'PARENT
   let recovered = false;
   let changed = false;
   let created = false;
+  let quantity = 1;
+  const euro = scenario.startsWith('eur');
   const quote = (): Quote[] => children.map((child, index) => ({
     childId: child.id, name: child.name, eligible: true,
-    amount: scenario === 'single' ? 50000 : index === 0 ? 60000 : changed ? 90000 : 80000,
-    currency: 'RON', priceVersion: `simulated-version-${child.id}-${changed ? 'new' : 'original'}`,
+    amount: euro ? Math.round(1234 * quantity * 5.123456) : scenario === 'single' ? 50000 : index === 0 ? 60000 : changed ? 90000 : 80000,
+    currency: 'RON', priceVersion: `simulated-version-${child.id}-${euro ? quantity : changed ? 'new' : 'original'}`,
+    ...(euro ? { pricingSnapshot: { sourceUnitAmount: 1234, sourceCurrency: 'EUR', quantity, eurRonRateMicros: 5123456 } } : {}),
   }));
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => {
@@ -81,6 +84,11 @@ async function simulate(page: Page, scenario: Scenario = 'by-age', role: 'PARENT
     if (path === '/auth/v1/user') return respond({ ...activeProfile, aud: 'authenticated', user_metadata: {} });
     if (path === '/rest/v1/children') return scenario === 'children-error' && !recovered
       ? respond({ message: 'Simulated children failure' }, 503) : respond(fixtureChildren);
+    if (path === '/rest/v1/courses' || path === '/rest/v1/activities') return respond({
+      id: 'offer-simulation', name: 'Ofertă EUR simulată #149', currency: 'EUR',
+      price: 99999, price_per_session: 99999, eur_ron_rate_micros: 6000000,
+      package_options: '[5,10,20]',
+    });
     if (path === '/rest/v1/camps') {
       if (scenario === 'offering-error' && !recovered && url.searchParams.get('select') === '*') return respond({ message: 'Simulated offering failure' }, 503);
       const camp = {
@@ -101,11 +109,13 @@ async function simulate(page: Page, scenario: Scenario = 'by-age', role: 'PARENT
     if (['/rest/v1/camp_coaches', '/rest/v1/camp_photos'].includes(path)) return respond([]);
     if (path === '/rest/v1/rpc/camp_spots_remaining') return respond(20);
     if (path === '/rest/v1/enrollments') return respond(created ? quote().map((item, index) => ({
-      id: `simulated-enrollment-${index}`, kind: 'CAMP', status: 'PENDING', child: children[index],
-      payments: [{ amount: item.amount, status: 'PENDING', method: 'CASH', paid_at: null }],
+      id: `simulated-enrollment-${index}`, kind, status: 'PENDING', child: children[index],
+      payments: [{ amount: item.amount, currency: item.currency, pricing_snapshot: item.pricingSnapshot, status: 'PENDING', method: 'CASH', paid_at: null }],
     })) : []);
     if (path === '/functions/v1/validate-enrollment') {
+      quantity = kind === 'COURSE' ? request.postDataJSON().sessionPackageSize : 1;
       let results = quote();
+      if (scenario === 'eur-retry' && quantity !== 5) results = results.map(item => ({ childId: item.childId, name: item.name, eligible: false, severity: 'error', reason: 'Pachetul salvat are 5 ședințe. Alege acest număr pentru a relua plata confirmată inițial.' }));
       if (scenario === 'old-backend') results = results.map(({ amount: _amount, currency: _currency, priceVersion: _version, ...item }) => item);
       if (scenario === 'missing-quote') results = results.slice(0, 1);
       if (scenario === 'unmatched') results[1] = { childId: children[1].id, name: children[1].name, eligible: false, severity: 'error', reason: 'Nu există o categorie de preț pentru vârsta copilului la începutul taberei.' };
@@ -143,11 +153,11 @@ async function selectChildren(page: Page) {
 async function details(page: Page) {
   await selectChildren(page);
   await page.getByRole('button', { name: 'Continuă', exact: true }).click();
-  await expect(page.getByRole('checkbox', { name: /Am citit și accept/ })).toBeVisible();
+  await expect(page.getByRole('checkbox', { name: /Confirm suma finală în lei și accept/ })).toBeVisible();
 }
 
 async function payment(page: Page) {
-  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
+  await page.getByRole('checkbox', { name: /Confirm suma finală în lei și accept/ }).check();
   await page.getByRole('button', { name: 'Continuă', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Sumar comandă' })).toBeVisible();
   await expect(page.getByRole('radio', { name: /Cash, la antrenor/ })).toBeChecked();
@@ -271,7 +281,7 @@ test('SIMULATED changed server quote returns to details and requires fresh accep
   await details(page);
   await payment(page);
   await page.getByRole('button', { name: 'Finalizează', exact: true }).click();
-  await expect(page.getByRole('checkbox', { name: /Am citit și accept/ })).not.toBeChecked();
+  await expect(page.getByRole('checkbox', { name: /Confirm suma finală în lei și accept/ })).not.toBeChecked();
   await expect(page.getByText('900,00 lei', { exact: true })).toBeVisible();
   await expect(page.getByText('1.500,00 lei', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Continuă', exact: true })).toBeDisabled();
@@ -289,7 +299,7 @@ test('SIMULATED background quote refresh preserves cached prices and accepted co
   const state = await simulate(page);
   await openCheckout(page);
   await details(page);
-  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
+  await page.getByRole('checkbox', { name: /Confirm suma finală în lei și accept/ }).check();
   await expect(page.getByRole('button', { name: 'Continuă', exact: true })).toBeEnabled();
 
   let releaseRefresh!: () => void;
@@ -312,7 +322,7 @@ test('SIMULATED background quote refresh preserves cached prices and accepted co
     await expect(page.getByText('800,00 lei', { exact: true })).toBeVisible();
     await expect(page.getByText('1.400,00 lei', { exact: true })).toBeVisible();
     await expect(page.getByText('Preț indisponibil', { exact: true })).toHaveCount(0);
-    await expect(page.getByRole('checkbox', { name: /Am citit și accept/ })).toBeChecked();
+    await expect(page.getByRole('checkbox', { name: /Confirm suma finală în lei și accept/ })).toBeChecked();
     await expect(page.getByRole('button', { name: 'Continuă', exact: true })).toBeEnabled();
     await capture(page, info, 'cached-prices-during-background-refresh');
   } finally {
@@ -435,5 +445,61 @@ test('SIMULATED public camp listing does not advertise the old single price for 
   await expect(page.getByText('Preț pe categorii de vârstă', { exact: true })).toBeVisible();
   await expect(page.getByText('990,00 lei', { exact: true })).toHaveCount(0);
   expect(state.apiRequests).not.toContain('/rest/v1/children');
+  await proof(info, state);
+});
+
+for (const kind of ['CAMP', 'COURSE', 'ACTIVITY'] as const) {
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 768, height: 1024 }, { width: 375, height: 812 }]) {
+    test(`SIMULATED EUR ${kind} quote confirmation and history ${viewport.width}`, async ({ page }, info) => {
+      await page.setViewportSize(viewport);
+      const state = await simulate(page, 'eur', 'PARENT', kind);
+      if (kind === 'CAMP') await openCheckout(page);
+      else await page.goto(`/account/checkout?kind=${kind}&id=offer-simulation`);
+      await details(page);
+      const acceptance = page.getByRole('checkbox', { name: /Confirm suma finală în lei și accept/ });
+      if (kind === 'COURSE') {
+        await expect(page.getByText('632,23 lei', { exact: true })).toHaveCount(2);
+        await acceptance.check();
+        await page.getByRole('button', { name: '5 ședințe', exact: true }).click();
+        await expect(page.getByText('316,12 lei', { exact: true })).toHaveCount(2);
+        await expect(acceptance).not.toBeChecked();
+        await expect(page.getByRole('button', { name: 'Continuă', exact: true })).toBeDisabled();
+      } else {
+        await expect(page.getByText('63,22 lei', { exact: true })).toHaveCount(2);
+      }
+      await expect(page.getByText(/1 EUR = 5,123456 lei/)).toHaveCount(2);
+      await capture(page, info, `eur-${kind}-details`);
+      await payment(page);
+      await expect(page.getByText(/1 EUR = 5,123456 lei/)).toHaveCount(2);
+      await capture(page, info, `eur-${kind}-payment`);
+      await page.getByRole('button', { name: 'Finalizează', exact: true }).click();
+      await expect(page).toHaveURL(/\/account\/enrollments$/);
+      await expect(page.getByText(/1 EUR = 5,123456 lei/)).toHaveCount(2);
+      expect(state.submissions).toHaveLength(1);
+      expect(state.submissions[0].kind).toBe(kind);
+      expect(state.submissions[0].priceVersions).toEqual({
+        'child-a': `simulated-version-child-a-${kind === 'COURSE' ? 5 : 1}`,
+        'child-b': `simulated-version-child-b-${kind === 'COURSE' ? 5 : 1}`,
+      });
+      if (kind === 'COURSE') expect(state.submissions[0].sessionPackageSize).toBe(5);
+      await proof(info, state);
+    });
+  }
+}
+
+test('SIMULATED saved five-session payment can be resumed from initial child selection', async ({ page }, info) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  const state = await simulate(page, 'eur-retry', 'PARENT', 'COURSE');
+  await page.goto('/account/checkout?kind=COURSE&id=offer-simulation');
+  await expect(page.getByRole('checkbox', { name: /Copil Simulat Ana/ })).toBeDisabled();
+  await expect(page.getByText(/Pachetul salvat are 5 ședințe/)).toHaveCount(2);
+  await page.getByRole('button', { name: '5 ședințe', exact: true }).click();
+  await expect(page.getByRole('checkbox', { name: /Copil Simulat Ana/ })).toBeEnabled();
+  await details(page);
+  await expect(page.getByText('316,12 lei', { exact: true })).toHaveCount(2);
+  await payment(page);
+  await page.getByRole('button', { name: 'Finalizează', exact: true }).click();
+  await expect(page).toHaveURL(/\/account\/enrollments$/);
+  expect(state.submissions[0].sessionPackageSize).toBe(5);
   await proof(info, state);
 });

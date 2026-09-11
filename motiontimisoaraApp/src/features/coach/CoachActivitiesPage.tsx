@@ -4,7 +4,7 @@ import { Pencil, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { getMyActivities, setActivityActive } from '@/api/coach'
-import { formatRon } from '@/lib/money'
+import { formatMoney } from '@/lib/money'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -47,14 +47,16 @@ export default function CoachActivitiesPage() {
                   <h3 className="font-display text-lg font-bold">{a.name}</h3>
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {a.sport && <Badge>{a.sport.name}</Badge>}
-                    <Badge variant={a.active ? 'success' : 'outline'}>{a.active ? 'Activ' : 'Inactiv'}</Badge>
+                    <Badge variant={a.active ? 'success' : 'outline'}>
+                      {a.active ? 'Activ' : 'Inactiv'}
+                    </Badge>
                   </div>
                 </div>
-                <span className="font-display font-bold">{formatRon(a.price)}</span>
+                <span className="font-display font-bold">{formatMoney(a.price, a.currency)}</span>
               </div>
               <div className="text-muted-foreground mt-2 text-sm">
-                {new Date(a.activity_date).toLocaleDateString('ro-RO')} · {a.start_time?.slice(0, 5)}–
-                {a.end_time?.slice(0, 5)}
+                {new Date(a.activity_date).toLocaleDateString('ro-RO')} ·{' '}
+                {a.start_time?.slice(0, 5)}–{a.end_time?.slice(0, 5)}
               </div>
               <div className="mt-4 flex gap-2">
                 <Button asChild size="sm" variant="outline">
@@ -62,7 +64,12 @@ export default function CoachActivitiesPage() {
                     <Pencil /> Editează
                   </Link>
                 </Button>
-                <Button size="sm" variant="ghost" disabled={toggle.isPending} onClick={() => toggle.mutate({ id: a.id, active: !a.active })}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={toggle.isPending}
+                  onClick={() => toggle.mutate({ id: a.id, active: !a.active })}
+                >
                   {a.active ? 'Dezactivează' : 'Activează'}
                 </Button>
               </div>

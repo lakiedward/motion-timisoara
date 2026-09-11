@@ -65,14 +65,46 @@ Migration/deployment approval does not replace final human UI/device acceptance.
 `git ls-files supabase/migrations | tail -1` before creating one — do not trust a
 number written down elsewhere.
 
-### To-Do #149 proposal, not deployed
+### To-Do #149 database rollout
 
 `00048_enrollment_price_snapshots.sql` is the isolated-tested EUR/RON pricing
-foundation for the first slice of plan #102. It is **not applied remotely**.
+foundation for the first slice of plan #102. The owner subsequently authorized
+the complete To-Do. It was applied remotely as `20260911121324` on 2026-09-11.
 It adds organizer exchange rates and immutable accepted RON payment snapshots.
 Offer constraints are `NOT VALID` to preserve legacy rows with unknown currencies
 or missing EUR rates; new/updated rows must comply. Audit and reconcile historical
-offers before validating those constraints at the eventual authorized deployment.
+offers before validating those constraints. The deployment inventory contained
+7 RON courses, 2 RON activities and 4 RON camps, with no existing EUR offers.
+
+`00049_atomic_camp_offer_pricing.sql` was tested against the existing camp pricing
+functions in isolated PostgreSQL and applied as `20260911122634` on 2026-09-11.
+It saves currency, exchange rate, base price, breakdown and age prices in one
+owner-authorized transaction. Failed saves preserve the entire previous offer.
+Live verification confirmed SECURITY INVOKER, authenticated execution and no
+anonymous execution; the four existing camp offers remained in RON.
+
+On 2026-09-11, the isolated SQL suites and backend review passed before applying:
+
+| Local migration | Remote version |
+| --- | --- |
+| 00050_atomic_enrollment_payment_completion.sql | 20260911130522 |
+| 00051_safe_legacy_draft_cancellation.sql | 20260911130525 |
+| 00052_atomic_camp_enrollment_quote.sql | 20260911130528 |
+| 00053_frozen_stripe_intent_requests.sql | 20260911130531 |
+| 00054_atomic_camp_form_save.sql | 20260911131631 |
+
+Live verification confirmed all four RPCs are SECURITY INVOKER, executable by
+service_role and inaccessible to authenticated callers. The frozen Stripe request
+table has RLS and no client access. An unbound request older than 23 hours requires
+reconciliation rather than risking a second intent after Stripe idempotency expiry.
+Generated application database types include these migrations.
+
+Migration 00054 saves camp metadata and the complete offer in one transaction,
+including initial creation. The form supplies a stable UUID so an uncertain response
+can be retried without creating another camp. Isolated tests cover failed initial
+save without an orphan, full update rollback and ownership. Independent review
+passed. Live checks confirm SECURITY INVOKER, authenticated access and no anonymous
+access; an audit-club save stored EUR 123.45, rate 5.123456 and a EUR 99.99 age tariff.
 
 Do not deploy the enrollment handlers independently: course/activity quote versions,
 frontend confirmation, displays and snapshot-based course fulfillment still require

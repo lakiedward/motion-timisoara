@@ -1,13 +1,21 @@
+import { AcceptedPriceDetails } from '@/components/AcceptedPriceDetails'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 
 import { getMyEnrollments } from '@/api/account'
-import { formatRon } from '@/lib/money'
+import { formatMoney } from '@/lib/money'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 
-const KIND_LABEL: Record<string, string> = { COURSE: 'Curs', CAMP: 'Tabără', ACTIVITY: 'Activitate' }
-const STATUS: Record<string, { label: string; variant: 'default' | 'success' | 'outline' | 'destructive' }> = {
+const KIND_LABEL: Record<string, string> = {
+  COURSE: 'Curs',
+  CAMP: 'Tabără',
+  ACTIVITY: 'Activitate',
+}
+const STATUS: Record<
+  string,
+  { label: string; variant: 'default' | 'success' | 'outline' | 'destructive' }
+> = {
   ACTIVE: { label: 'Activ', variant: 'success' },
   PENDING: { label: 'În așteptare', variant: 'outline' },
   CANCELLED: { label: 'Anulat', variant: 'destructive' },
@@ -54,8 +62,15 @@ export default function EnrollmentsPage() {
                 )}
                 {payment && (
                   <div className="mt-2 flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">{PAY[payment.status] ?? payment.status}</span>
-                    <span className="font-semibold">{formatRon(payment.amount)}</span>
+                    <span className="text-muted-foreground">
+                      {PAY[payment.status] ?? payment.status}
+                    </span>
+                    <div className="text-right">
+                      <span className="font-semibold">
+                        {formatMoney(payment.amount, payment.currency)}
+                      </span>
+                      <AcceptedPriceDetails snapshot={payment.pricing_snapshot} />
+                    </div>
                   </div>
                 )}
               </div>

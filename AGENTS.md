@@ -509,13 +509,15 @@ reorganizing this document; correct obsolete facts with current evidence.
 
 ## 11. Known Issues / WIP
 
-- **To-Do #149 backend foundation (2026-09-11):** migration `00048` is an isolated-tested
-  proposal, not deployed. Offer prices remain minor units of RON or EUR; the organizer's
+- **To-Do #149 completion in progress (2026-09-11):** migrations `00048` and `00049`
+  were tested in isolated PostgreSQL and applied remotely after the owner authorized
+  full completion. The migration ledger records remote versions and verification.
+  Offer prices remain minor units of RON or EUR; the organizer's
   EUR/RON rate uses integer millionths. Enrollment handlers require per-child price
   versions for all three kinds and store immutable RON payment snapshots. Do not deploy
   them alone: frontend confirmation, displays, generated types and course fulfillment
-  must be updated together. The approved slice and remaining gates are recorded in
-  `docs/superpowers/specs/2026-09-11-todo-149-eur-ron-contract.md`. To-Do #149 stays open.
+  must be updated together. The complete scope and remaining gates are recorded in
+  `docs/superpowers/specs/2026-09-11-todo-149-complete-pricing.md`. To-Do #149 stays open.
 
 - **Template enforcement pending:** install/adapt `scripts/check-rules.mjs`, duplication
   tooling, `tests/check-rules.test.ts` and a byte-comparison mirror test, then integrate
@@ -563,3 +565,15 @@ reorganizing this document; correct obsolete facts with current evidence.
   audit credentials and removed original photos remain history-cleanup concerns; a
   destructive history rewrite needs separate explicit authorization. Keep the retired
   source trees and `supabase/seed/migrate-data.ts` as intentional historical references.
+
+- 2026-09-11 — To-Do #149 migrations 00050–00053 are applied after isolated SQL tests
+  and backend review. Payment completion uses the accepted session quantity,
+  cancellation preserves accepted drafts, camp quotes use one SQL read, and Stripe
+  request parameters are frozen before creation. An unbound request older than
+  23 hours requires reconciliation. Edge deployment and Stripe test proof remain
+  pending; see the complete-pricing spec and migration ledger.
+
+- 2026-09-11 — To-Do #149 migration 00054 saves camp metadata and complete pricing
+  atomically. The form reuses a generated UUID on retries, avoiding partially created
+  camps or duplicate insertion after an uncertain response. Isolated SQL, eleven
+  form tests, independent review and a live audit-club save verified this behavior.

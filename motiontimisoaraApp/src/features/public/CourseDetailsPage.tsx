@@ -1,3 +1,4 @@
+import { OfferExchangeNote } from '@/components/OfferExchangeNote'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, CalendarDays, MapPin, Users } from 'lucide-react'
@@ -6,7 +7,7 @@ import { toast } from 'sonner'
 import { courseHeroUrl, getCourse, getCourseSpotsRemaining } from '@/api/public'
 import { getCourseRatingSummary, getMyCourseRating, submitCourseRating } from '@/api/ratings'
 import { formatLevel } from '@/lib/level'
-import { formatRon } from '@/lib/money'
+import { formatMoney } from '@/lib/money'
 import { useAuth } from '@/lib/auth-context'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -60,7 +61,9 @@ export default function CourseDetailsPage() {
     return (
       <div className="mx-auto flex min-h-[55vh] max-w-lg flex-col items-center justify-center px-6 py-20 text-center">
         <div className="from-primary/15 to-sky/10 w-full rounded-3xl border bg-gradient-to-br p-10 shadow-sm">
-          <p className="font-display text-foreground text-2xl font-extrabold">Cursul nu a fost găsit.</p>
+          <p className="font-display text-foreground text-2xl font-extrabold">
+            Cursul nu a fost găsit.
+          </p>
           <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
             Linkul poate fi greșit sau cursul nu mai este disponibil. Poți alege alt curs din listă.
           </p>
@@ -79,7 +82,7 @@ export default function CourseDetailsPage() {
   const sportColor = SPORT_COLOR[course.sport?.code ?? ''] ?? SPORT_COLOR_FALLBACK
   const levelLabel = formatLevel(course.level)
   const sessions = [...(course.occurrences ?? [])].sort(
-    (a, b) => +new Date(a.starts_at) - +new Date(b.starts_at)
+    (a, b) => +new Date(a.starts_at) - +new Date(b.starts_at),
   )
   const capacity = course.capacity
   const remaining = capacity == null ? null : (spotsRemaining ?? capacity)
@@ -96,7 +99,6 @@ export default function CourseDetailsPage() {
 
   return (
     <div>
-      {/* HERO — photo or gradient + sport name (no emoji) */}
       <section className="relative h-[46vh] min-h-[320px] overflow-hidden md:h-[52vh]">
         {img ? (
           <img src={img} alt={course.name} className="absolute inset-0 size-full object-cover" />
@@ -152,7 +154,6 @@ export default function CourseDetailsPage() {
       <div className="mx-auto max-w-6xl px-6 py-10">
         <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
           <div>
-            {/* Info strip — always one row (including mobile) */}
             <div className="bg-card shadow-card divide-border grid grid-cols-3 divide-x overflow-hidden rounded-2xl border">
               {course.age_from != null ? (
                 <InfoTile
@@ -161,17 +162,17 @@ export default function CourseDetailsPage() {
                   value={`${course.age_from}–${course.age_to} ani`}
                 />
               ) : (
-                <InfoTile icon={<Users className="size-3.5 sm:size-4" />} label="Vârstă" value="—" />
+                <InfoTile
+                  icon={<Users className="size-3.5 sm:size-4" />}
+                  label="Vârstă"
+                  value="—"
+                />
               )}
               <InfoTile
                 icon={<MapPin className="size-3.5 sm:size-4" />}
                 label="Locație"
                 value={course.location?.name ?? '—'}
-                to={
-                  course.location_id
-                    ? `/harta?location=${course.location_id}`
-                    : undefined
-                }
+                to={course.location_id ? `/harta?location=${course.location_id}` : undefined}
               />
               {capacity != null ? (
                 <InfoTile
@@ -181,7 +182,11 @@ export default function CourseDetailsPage() {
                   hint={`din ${capacity}`}
                 />
               ) : (
-                <InfoTile icon={<Users className="size-3.5 sm:size-4" />} label="Capacitate" value="—" />
+                <InfoTile
+                  icon={<Users className="size-3.5 sm:size-4" />}
+                  label="Capacitate"
+                  value="—"
+                />
               )}
             </div>
 
@@ -240,7 +245,9 @@ export default function CourseDetailsPage() {
                   )}
                   <span className="min-w-0">
                     <span className="block font-semibold">{course.coach.name}</span>
-                    <span className="text-muted-foreground text-sm">Vezi profilul antrenorului</span>
+                    <span className="text-muted-foreground text-sm">
+                      Vezi profilul antrenorului
+                    </span>
                   </span>
                 </Link>
               </section>
@@ -252,12 +259,13 @@ export default function CourseDetailsPage() {
               <div className="h-1.5" style={{ background: 'var(--gradient-primary)' }} />
               <div className="flex flex-col items-center p-6 text-center">
                 <div className="font-display text-3xl font-extrabold">
-                  {formatRon(course.price)}
+                  {formatMoney(course.price, course.currency)}
                   <span className="text-muted-foreground text-base font-normal"> / lună</span>
                 </div>
+                <OfferExchangeNote offer={course} />
                 {course.price_per_session > 0 && (
                   <p className="text-muted-foreground mt-1 text-sm">
-                    {formatRon(course.price_per_session)} / ședință
+                    {formatMoney(course.price_per_session, course.currency)} / ședință
                   </p>
                 )}
                 <button
@@ -266,13 +274,15 @@ export default function CourseDetailsPage() {
                   disabled={isFull}
                   className={cn(
                     'btn-cta btn-cta--primary mt-5 w-full',
-                    isFull && 'pointer-events-none opacity-50'
+                    isFull && 'pointer-events-none opacity-50',
                   )}
                 >
                   {isFull ? 'Locuri epuizate' : 'Înscrie-te'}
                 </button>
                 {isFull ? (
-                  <p className="text-destructive mt-3 text-center text-xs font-medium">Locuri epuizate</p>
+                  <p className="text-destructive mt-3 text-center text-xs font-medium">
+                    Locuri epuizate
+                  </p>
                 ) : (
                   <p className="text-muted-foreground mt-3 text-center text-xs">
                     Plată online sau cash, gestionată din contul tău.
