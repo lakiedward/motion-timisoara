@@ -431,7 +431,7 @@ Deno.test("course package changes require reconfirmation and cannot reprice an a
 Deno.test("invalid package counts are rejected by both endpoints", async () => {
   for (const kind of ["COURSE", "ACTIVITY", "CAMP"]) {
     const context = fixture("PARENT", kind);
-    for (const sessionPackageSize of [0, -1, 1.5, "2", Number.MAX_SAFE_INTEGER + 1]) {
+    for (const sessionPackageSize of [null, 0, -1, 1.5, "2", Number.MAX_SAFE_INTEGER + 1]) {
       equal((await context.validate(undefined, { sessionPackageSize })).status, 400);
       equal((await context.create(undefined, {}, { sessionPackageSize })).status, 400);
     }

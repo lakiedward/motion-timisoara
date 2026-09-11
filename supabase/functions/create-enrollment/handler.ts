@@ -45,7 +45,7 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
 
     const body: EnrollmentRequest = await req.json();
     const { kind, entityId, childIds, paymentMethod, billingDetails } = body;
-    const sessionPackageSize = body.sessionPackageSize ?? 1;
+    const sessionPackageSize = body.sessionPackageSize === undefined ? 1 : body.sessionPackageSize;
     if (!validQuantity(sessionPackageSize) || (kind !== "COURSE" && sessionPackageSize !== 1)) {
       return enrollmentJson({ error: "Numărul de ședințe nu este valid." }, 400);
     }
