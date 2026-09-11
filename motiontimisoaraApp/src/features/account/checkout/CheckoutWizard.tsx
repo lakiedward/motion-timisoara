@@ -1,3 +1,4 @@
+import { AcceptedPriceDetails } from '@/components/AcceptedPriceDetails'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -7,7 +8,6 @@ import { toast } from 'sonner'
 
 import {
   EnrollmentRequestError,
-  cancelDraftEnrollment,
   createEnrollment,
   createPaymentIntent,
   listenForEnrollmentReady,
@@ -24,11 +24,13 @@ import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { CheckoutPaymentStep } from './CheckoutPaymentStep'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 
 import type { Offering } from '../CheckoutPage'
-import { AddChildInline, Field } from './CheckoutFormFields'
+import { AddChildInline } from './CheckoutFormFields'
+import { CheckoutBillingFields } from './CheckoutBillingFields'
 
 const KIND_LABEL: Record<EnrollmentKind, string> = {
   COURSE: 'Curs',
@@ -57,9 +59,9 @@ export default function CheckoutWizard({
   const [selected, setSelected] = useState<string[]>([])
   const [packageSize, setPackageSize] = useState(DEFAULT_PACKAGE)
   const [accepted, setAccepted] = useState(false)
-  const [acceptedCampPrices, setAcceptedCampPrices] = useState<string | null>(null)
+  const [acceptedPrices, setAcceptedPrices] = useState<string | null>(null)
   const [chosenMethod, setMethod] = useState<PaymentMethod>(
-    stripeConfigured ? initialMethod : 'CASH'
+    stripeConfigured ? initialMethod : 'CASH',
   )
   const [billing, setBilling] = useState<BillingDetails>(() => ({
     name: user?.name ?? '',
@@ -70,14 +72,33 @@ export default function CheckoutWizard({
   }))
   const [progress, setProgress] = useState<string | null>(null)
 
-  const { data: children = [], isLoading: childrenLoading, isError: childrenFailed, refetch: refetchChildren } = useQuery({
+  const {
+    data: children = [],
+    isLoading: childrenLoading,
+    isError: childrenFailed,
+    refetch: refetchChildren,
+  } = useQuery({
     queryKey: ['children'],
     queryFn: getMyChildren,
   })
   const childIds = useMemo(() => children.map((c) => c.id), [children])
-  const { data: validation, isSuccess: validationReady, isFetching: validationFetching, isError: validationFailed, error: validationError, refetch: refetchValidation } = useQuery({
-    queryKey: ['validate-enrollment', kind, offering.id, childIds],
-    queryFn: () => validateEnrollment(kind, offering.id, childIds),
+  const {
+    data: validation,
+    isSuccess: validationReady,
+    isFetching: validationFetching,
+    isError: validationFailed,
+    error: validationError,
+    refetch: refetchValidation,
+  } = useQuery({
+    queryKey: [
+      'validate-enrollment',
+      kind,
+      offering.id,
+      childIds,
+      offering.perSession ? packageSize : 1,
+    ],
+    queryFn: () =>
+      validateEnrollment(kind, offering.id, childIds, offering.perSession ? packageSize : 1),
     enabled: childIds.length > 0,
   })
 
@@ -89,26 +110,31 @@ export default function CheckoutWizard({
 
   const paymentAvailable = stripeConfigured || (allowCash && !cashBlocked)
 
-  const steps = method === 'CARD' ? ['Copii', 'Detalii', 'Facturare', 'Plată'] : ['Copii', 'Detalii', 'Plată']
+  const steps =
+    method === 'CARD' ? ['Copii', 'Detalii', 'Facturare', 'Plată'] : ['Copii', 'Detalii', 'Plată']
   const lastStep = steps.length - 1
 
-  const unitPrice = Number.isFinite(offering.unitPrice) ? offering.unitPrice : 0
-  const priceFor = (childId: string) => kind === 'CAMP'
-    ? verdictFor(childId)?.amount
-    : unitPrice * (offering.perSession ? packageSize : 1)
-  const pricesReady = validationReady && selected.every((childId) => {
-    const verdict = verdictFor(childId)
-    return verdict?.eligible === true && (kind !== 'CAMP' || (
-      Number.isSafeInteger(verdict.amount) && verdict.amount! >= 0 &&
-      verdict.currency === 'RON' && Boolean(verdict.priceVersion)
-    ))
-  })
-  const total = pricesReady ? selected.reduce((sum, childId) => sum + (priceFor(childId) ?? 0), 0) : 0
-  const priceVersions = kind === 'CAMP'
-    ? Object.fromEntries(selected.map((childId) => [childId, verdictFor(childId)?.priceVersion ?? '']))
-    : undefined
-  const currentCampPrices = JSON.stringify(priceVersions)
-  const hasAccepted = accepted && (kind !== 'CAMP' || acceptedCampPrices === currentCampPrices)
+  const priceFor = (childId: string) => verdictFor(childId)?.amount
+  const pricesReady =
+    validationReady &&
+    selected.every((childId) => {
+      const verdict = verdictFor(childId)
+      return (
+        verdict?.eligible === true &&
+        Number.isSafeInteger(verdict.amount) &&
+        verdict.amount! >= 0 &&
+        verdict.currency === 'RON' &&
+        Boolean(verdict.priceVersion)
+      )
+    })
+  const total = pricesReady
+    ? selected.reduce((sum, childId) => sum + (priceFor(childId) ?? 0), 0)
+    : 0
+  const priceVersions = Object.fromEntries(
+    selected.map((childId) => [childId, verdictFor(childId)?.priceVersion ?? '']),
+  )
+  const currentPrices = JSON.stringify(priceVersions)
+  const hasAccepted = accepted && acceptedPrices === currentPrices
 
   const billingValid =
     billing.name.trim().length > 1 &&
@@ -146,7 +172,7 @@ export default function CheckoutWizard({
         throw new Error(
           cashBlocked
             ? 'Există o înscriere neplătită; alege plata cu cardul.'
-            : 'Plata cash nu este disponibilă pentru această ofertă.'
+            : 'Plata cash nu este disponibilă pentru această ofertă.',
         )
       }
       if (!paymentAvailable) {
@@ -157,6 +183,9 @@ export default function CheckoutWizard({
       }
 
       setProgress('Se creează înscrierile…')
+      if (method === 'CARD' && (!stripe || !elements?.getElement(CardElement))) {
+        throw new Error('Formularul de card nu s-a încărcat. Reîncarcă pagina.')
+      }
       const created = await createEnrollment({
         kind,
         entityId: offering.id,
@@ -171,7 +200,6 @@ export default function CheckoutWizard({
 
       const card = elements?.getElement(CardElement)
       if (!stripe || !card) {
-        await cancelDraftEnrollment(created.enrollmentIds)
         throw new Error('Formularul de card nu s-a încărcat. Reîncarcă pagina.')
       }
       const ids = created.enrollmentIds
@@ -184,7 +212,11 @@ export default function CheckoutWizard({
       }
 
       for (let i = 0; i < ids.length; i++) {
-        setProgress(ids.length > 1 ? `Se procesează plata ${i + 1} din ${ids.length}…` : 'Se procesează plata…')
+        setProgress(
+          ids.length > 1
+            ? `Se procesează plata ${i + 1} din ${ids.length}…`
+            : 'Se procesează plata…',
+        )
         try {
           const { clientSecret, alreadySucceeded } = await createPaymentIntent(ids[i])
           if (alreadySucceeded) continue
@@ -206,11 +238,10 @@ export default function CheckoutWizard({
           if (error) throw new Error(error.message ?? 'Plata a eșuat')
         } catch (err) {
           listener?.dispose()
-          await cancelDraftEnrollment(ids.slice(i)).catch(() => undefined)
           if (i > 0) {
             throw new Error(
-              `Plata a reușit pentru ${i} din ${ids.length} copii. Restul au fost anulate — verifică în Înscrieri.`,
-              { cause: err }
+              `Plata a reușit pentru ${i} din ${ids.length} copii. Restul rămân în așteptare, cu oferta salvată. Verifică în Înscrieri.`,
+              { cause: err },
             )
           }
           throw err instanceof Error ? err : new Error('Plata a eșuat', { cause: err })
@@ -288,7 +319,8 @@ export default function CheckoutWizard({
 
       <h1 className="font-display text-2xl font-bold">Finalizează înscrierea</h1>
       <p className="text-muted-foreground mt-1 text-sm">
-        <Badge variant="outline">{KIND_LABEL[kind]}</Badge> <span className="ml-2">{offering.title}</span>
+        <Badge variant="outline">{KIND_LABEL[kind]}</Badge>{' '}
+        <span className="ml-2">{offering.title}</span>
       </p>
 
       <ol className="mt-6 mb-8 flex flex-wrap gap-2">
@@ -297,7 +329,9 @@ export default function CheckoutWizard({
             key={label}
             className={cn(
               'flex items-center gap-2 rounded-full px-3 py-1.5 text-sm',
-              i === step ? 'bg-primary text-primary-foreground font-semibold' : 'bg-muted text-muted-foreground'
+              i === step
+                ? 'bg-primary text-primary-foreground font-semibold'
+                : 'bg-muted text-muted-foreground',
             )}
           >
             <span className="grid size-5 place-items-center rounded-full border text-xs">
@@ -307,6 +341,42 @@ export default function CheckoutWizard({
           </li>
         ))}
       </ol>
+      {offering.perSession && step <= 1 && (
+        <div className="mb-6">
+          <Label className="mb-2 block">Pachet de ședințe</Label>
+          <div className="flex flex-wrap gap-2">
+            {offering.packages.map((size) => (
+              <button
+                key={size}
+                type="button"
+                onClick={() => setPackageSize(size)}
+                className={cn(
+                  'rounded-full border px-4 py-2 text-sm',
+                  packageSize === size
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-card',
+                )}
+              >
+                {size} ședințe
+              </button>
+            ))}
+            <div className="flex items-center gap-2">
+              <Label htmlFor="custom-package" className="text-muted-foreground text-sm">
+                Altul
+              </Label>
+              <Input
+                id="custom-package"
+                type="number"
+                min={1}
+                className="w-24"
+                value={packageSize}
+                onChange={(e) => setPackageSize(Math.max(1, Number(e.target.value) || 1))}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {step === 0 && (
         <section className="space-y-4">
           {childrenLoading ? (
@@ -314,7 +384,9 @@ export default function CheckoutWizard({
           ) : childrenFailed ? (
             <div role="alert" className="space-y-2 text-sm">
               <p>Nu am putut încărca lista de copii.</p>
-              <Button variant="outline" onClick={() => void refetchChildren()}>Reîncearcă</Button>
+              <Button variant="outline" onClick={() => void refetchChildren()}>
+                Reîncearcă
+              </Button>
             </div>
           ) : children.length === 0 ? (
             <p className="text-muted-foreground rounded-3xl border border-dashed py-10 text-center">
@@ -330,7 +402,7 @@ export default function CheckoutWizard({
                   key={child.id}
                   className={cn(
                     'bg-card shadow-card flex cursor-pointer items-start gap-3 rounded-3xl p-5',
-                    blocked && 'cursor-not-allowed opacity-60'
+                    blocked && 'cursor-not-allowed opacity-60',
                   )}
                 >
                   <input
@@ -340,17 +412,23 @@ export default function CheckoutWizard({
                     disabled={blocked}
                     onChange={(e) =>
                       setSelected((prev) =>
-                        e.target.checked ? [...prev, child.id] : prev.filter((c) => c !== child.id)
+                        e.target.checked ? [...prev, child.id] : prev.filter((c) => c !== child.id),
                       )
                     }
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-semibold">{child.name}</span>
-                      <span className="text-muted-foreground text-sm">{childAge(child.birth_date)} ani</span>
-                      {verdict?.severity === 'error' && <Badge variant="destructive">Nu poate</Badge>}
+                      <span className="text-muted-foreground text-sm">
+                        {childAge(child.birth_date)} ani
+                      </span>
+                      {verdict?.severity === 'error' && (
+                        <Badge variant="destructive">Nu poate</Badge>
+                      )}
                       {verdict?.severity === 'warning' && <Badge variant="outline">Atenție</Badge>}
-                      {verdict && !verdict.severity && <Badge variant="success">Poate participa</Badge>}
+                      {verdict && !verdict.severity && (
+                        <Badge variant="success">Poate participa</Badge>
+                      )}
                     </div>
                     {verdict?.reason && (
                       <p className="text-muted-foreground mt-1 flex items-start gap-1 text-sm">
@@ -388,53 +466,26 @@ export default function CheckoutWizard({
       )}
       {step === 1 && (
         <section className="space-y-6">
-          {offering.perSession && (
-            <div>
-              <Label className="mb-2 block">Pachet de ședințe</Label>
-              <div className="flex flex-wrap gap-2">
-                {offering.packages.map((size) => (
-                  <button
-                    key={size}
-                    type="button"
-                    onClick={() => setPackageSize(size)}
-                    className={cn(
-                      'rounded-full border px-4 py-2 text-sm',
-                      packageSize === size ? 'bg-primary text-primary-foreground border-primary' : 'bg-card'
-                    )}
-                  >
-                    {size} ședințe
-                  </button>
-                ))}
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="custom-package" className="text-muted-foreground text-sm">
-                    Altul
-                  </Label>
-                  <Input
-                    id="custom-package"
-                    type="number"
-                    min={1}
-                    className="w-24"
-                    value={packageSize}
-                    onChange={(e) => setPackageSize(Math.max(1, Number(e.target.value) || 1))}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
           <div className="bg-card shadow-card rounded-3xl p-5">
             {selected.map((cid) => {
               const child = children.find((c) => c.id === cid)
               return (
                 <div key={cid} className="flex items-center justify-between gap-3 py-1 text-sm">
-                  <span className="min-w-0 truncate">{child?.name}</span>
-                  <span className="shrink-0 font-medium tabular-nums">{priceFor(cid) === undefined ? 'Preț indisponibil' : formatRon(priceFor(cid)!)}</span>
+                  <div className="min-w-0">
+                    <span>{child?.name}</span>
+                    <AcceptedPriceDetails snapshot={verdictFor(cid)?.pricingSnapshot} />
+                  </div>
+                  <span className="shrink-0 font-medium tabular-nums">
+                    {priceFor(cid) === undefined ? 'Preț indisponibil' : formatRon(priceFor(cid)!)}
+                  </span>
                 </div>
               )
             })}
             <div className="mt-3 flex items-center justify-between gap-3 border-t pt-3 font-semibold">
               <span>Total</span>
-              <span className="shrink-0 tabular-nums">{pricesReady ? formatRon(total) : 'Preț indisponibil'}</span>
+              <span className="shrink-0 tabular-nums">
+                {pricesReady ? formatRon(total) : 'Preț indisponibil'}
+              </span>
             </div>
           </div>
 
@@ -443,10 +494,13 @@ export default function CheckoutWizard({
               type="checkbox"
               className="mt-0.5 size-4"
               checked={hasAccepted}
-              onChange={(e) => { setAccepted(e.target.checked); setAcceptedCampPrices(currentCampPrices ?? null) }}
+              onChange={(e) => {
+                setAccepted(e.target.checked)
+                setAcceptedPrices(currentPrices ?? null)
+              }}
             />
             <span>
-              Am citit și accept regulamentul și{' '}
+              Confirm suma finală în lei și accept regulamentul și{' '}
               <Link to="/termeni" className="text-primary font-medium">
                 termenii și condițiile
               </Link>
@@ -456,99 +510,44 @@ export default function CheckoutWizard({
         </section>
       )}
       {steps[step] === 'Facturare' && (
-        <section className="grid gap-4 sm:grid-cols-2">
-          <Field label="Nume complet" value={billing.name} onChange={(v) => setBilling({ ...billing, name: v })} />
-          <Field
-            label="Email"
-            type="email"
-            value={billing.email}
-            onChange={(v) => setBilling({ ...billing, email: v })}
-          />
-          <div className="sm:col-span-2">
-            <Field
-              label="Adresă"
-              value={billing.addressLine1}
-              onChange={(v) => setBilling({ ...billing, addressLine1: v })}
-            />
-          </div>
-          <Field label="Oraș" value={billing.city} onChange={(v) => setBilling({ ...billing, city: v })} />
-          <Field
-            label="Cod poștal"
-            value={billing.postalCode}
-            onChange={(v) => setBilling({ ...billing, postalCode: v })}
-          />
-        </section>
+        <CheckoutBillingFields billing={billing} setBilling={setBilling} />
       )}
       {step === lastStep && (
-        <section className="space-y-6">
-          <div className="bg-card shadow-card rounded-3xl p-5">
-            <h2 className="mb-3 font-semibold">Sumar comandă</h2>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">{offering.title}</span>
-              <span>{KIND_LABEL[kind]}</span>
-            </div>
-            <div className="mt-1 flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">
-                {selected.length} {selected.length === 1 ? 'copil' : 'copii'}
-                {offering.perSession && ` × ${packageSize} ședințe`}
-              </span>
-              <span className="font-semibold">{pricesReady ? formatRon(total) : 'Preț indisponibil'}</span>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Metodă de plată</Label>
-            <label className="flex items-center gap-3 text-sm">
-              <input
-                type="radio"
-                checked={method === 'CARD'}
-                disabled={!stripeConfigured}
-                onChange={() => switchMethod('CARD')}
-              />
-              <span>Card bancar {!stripeConfigured && '(indisponibil — Stripe neconfigurat)'}</span>
-            </label>
-            {allowCash && (
-              <label className="flex items-center gap-3 text-sm">
-                <input
-                  type="radio"
-                  checked={method === 'CASH'}
-                  disabled={cashBlocked}
-                  onChange={() => switchMethod('CASH')}
-                />
-                <span>Cash, la antrenor {cashBlocked && '(indisponibil — există o înscriere neplătită)'}</span>
-              </label>
-            )}
-            {!paymentAvailable && (
-              <p className="text-destructive text-sm">
-                Nu există o metodă de plată disponibilă pentru această înscriere. Contactează clubul
-                sau încearcă mai târziu.
-              </p>
-            )}
-          </div>
-
-          {method === 'CARD' ? (
-            <div className="bg-card shadow-card rounded-3xl p-5">
-              <Label className="mb-3 block">Date card</Label>
-              <div className="rounded-xl border p-3">
-                <CardElement options={{ hidePostalCode: true }} />
-              </div>
-            </div>
-          ) : (
-            <p className="bg-muted text-muted-foreground rounded-3xl p-5 text-sm">
-              Înscrierea rămâne în așteptare până când antrenorul confirmă încasarea sumei de{' '}
-              <strong>{pricesReady ? formatRon(total) : 'Preț indisponibil'}</strong>.
+        <CheckoutPaymentStep
+          title={offering.title}
+          kindLabel={KIND_LABEL[kind]}
+          childCount={selected.length}
+          packageSize={offering.perSession ? packageSize : undefined}
+          snapshots={selected.map((cid) => verdictFor(cid)?.pricingSnapshot)}
+          total={pricesReady ? total : undefined}
+          method={method}
+          allowCash={allowCash}
+          cashBlocked={cashBlocked}
+          paymentAvailable={paymentAvailable}
+          switchMethod={switchMethod}
+        />
+      )}
+      {!validationFetching &&
+        selected.length > 0 &&
+        (!pricesReady || (accepted && !hasAccepted)) && (
+          <div role="alert" className="text-destructive mt-4 space-y-2 text-sm">
+            <p>
+              {pricesReady
+                ? 'Prețurile s-au schimbat. Revino la Detalii și confirmă suma.'
+                : 'Prețul sau eligibilitatea unui copil nu este disponibilă. Verifică din nou selecția.'}
             </p>
-          )}
-        </section>
-      )}
-      {kind === 'CAMP' && !validationFetching && selected.length > 0 && (!pricesReady || (accepted && !hasAccepted)) && (
-        <div role="alert" className="text-destructive mt-4 space-y-2 text-sm">
-          <p>{pricesReady ? 'Prețurile s-au schimbat. Revino la Detalii și confirmă suma.' : 'Prețul sau eligibilitatea unui copil nu este disponibilă. Verifică din nou selecția.'}</p>
-          <Button variant="outline" onClick={() => { setStep(pricesReady ? 1 : 0); setAccepted(false); void refetchValidation() }}>
-            Verifică din nou
-          </Button>
-        </div>
-      )}
+            <Button
+              variant="outline"
+              onClick={() => {
+                setStep(pricesReady ? 1 : 0)
+                setAccepted(false)
+                void refetchValidation()
+              }}
+            >
+              Verifică din nou
+            </Button>
+          </div>
+        )}
       <div className="mt-8 flex items-center gap-3">
         {step > 0 && (
           <Button variant="outline" onClick={goBack} disabled={busy}>
@@ -562,7 +561,14 @@ export default function CheckoutWizard({
         ) : (
           <Button
             onClick={() => finalize.mutate()}
-            disabled={busy || selected.length === 0 || !paymentAvailable || !validationReady || !pricesReady || !hasAccepted}
+            disabled={
+              busy ||
+              selected.length === 0 ||
+              !paymentAvailable ||
+              !validationReady ||
+              !pricesReady ||
+              !hasAccepted
+            }
           >
             {busy && <Loader2 className="mr-2 size-4 animate-spin" />}
             {busy ? (progress ?? 'Se procesează…') : 'Finalizează'}

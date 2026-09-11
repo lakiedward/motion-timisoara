@@ -32,6 +32,8 @@ export async function getCourseById(id: string): Promise<Tables<'courses'> | nul
 }
 
 export interface CourseFormInput {
+  currency: 'RON' | 'EUR'
+  eur_ron_rate_micros: number | null
   name: string
   sport_id: string
   location_id: string
@@ -39,7 +41,7 @@ export interface CourseFormInput {
   age_from: number | null
   age_to: number | null
   capacity: number | null
-  price_per_session: number // bani
+  price_per_session: number
   description: string | null
 }
 
@@ -108,6 +110,8 @@ export async function getActivityById(id: string): Promise<Tables<'activities'> 
 }
 
 export interface ActivityFormInput {
+  currency: 'RON' | 'EUR'
+  eur_ron_rate_micros: number | null
   name: string
   description: string | null
   sport_id: string
@@ -115,7 +119,7 @@ export interface ActivityFormInput {
   activity_date: string
   start_time: string
   end_time: string
-  price: number // bani
+  price: number
   capacity: number | null
 }
 

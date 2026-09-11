@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import type { PriceSnapshot } from '../../../supabase/functions/_shared/price-snapshot'
 
 export type EnrollmentKind = 'COURSE' | 'CAMP' | 'ACTIVITY'
 export type PaymentMethod = 'CARD' | 'CASH'
@@ -28,6 +29,7 @@ export interface ChildValidation {
   amount?: number
   currency?: string
   priceVersion?: string
+  pricingSnapshot?: PriceSnapshot
 }
 
 export interface ValidationResponse {
@@ -62,7 +64,7 @@ async function invoke<T>(name: string, body: Record<string, unknown>): Promise<T
   const { data, error } = await supabase.functions.invoke(name, { body })
   if (error) {
     const details = (data as FunctionErrorBody | null)?.error
-      ? data as FunctionErrorBody
+      ? (data as FunctionErrorBody)
       : await readFunctionError(error)
     throw new EnrollmentRequestError(details?.error ?? error.message, details?.code)
   }
@@ -87,9 +89,15 @@ async function readFunctionError(error: unknown): Promise<FunctionErrorBody | nu
 export function validateEnrollment(
   kind: EnrollmentKind,
   entityId: string,
-  childIds: string[]
+  childIds: string[],
+  sessionPackageSize = 1,
 ): Promise<ValidationResponse> {
-  return invoke<ValidationResponse>('validate-enrollment', { kind, entityId, childIds })
+  return invoke<ValidationResponse>('validate-enrollment', {
+    kind,
+    entityId,
+    childIds,
+    sessionPackageSize,
+  })
 }
 
 export async function createEnrollment(input: {
@@ -120,15 +128,11 @@ export async function createEnrollment(input: {
 }
 
 export function createPaymentIntent(
-  enrollmentId: string
+  enrollmentId: string,
 ): Promise<{ clientSecret: string; alreadySucceeded?: boolean }> {
   return invoke<{ clientSecret: string; alreadySucceeded?: boolean }>('create-payment-intent', {
     enrollmentId,
   })
-}
-
-export function cancelDraftEnrollment(enrollmentIds: string[]): Promise<{ success: boolean }> {
-  return invoke<{ success: boolean }>('cancel-draft-enrollment', { enrollmentIds })
 }
 
 export type EnrollmentReadyOutcome = 'ready' | 'failed' | 'partial' | 'timeout'
@@ -136,7 +140,7 @@ export type EnrollmentReadyOutcome = 'ready' | 'failed' | 'partial' | 'timeout'
 export function listenForEnrollmentReady(
   userId: string,
   enrollmentIds: string[],
-  timeoutMs = 15000
+  timeoutMs = 15000,
 ): {
   whenSubscribed: Promise<void>
   startWaiting: () => void
@@ -213,7 +217,7 @@ export function listenForEnrollmentReady(
 export function waitForEnrollmentReady(
   userId: string,
   enrollmentIds: string[],
-  timeoutMs = 15000
+  timeoutMs = 15000,
 ): Promise<EnrollmentReadyOutcome> {
   const listener = listenForEnrollmentReady(userId, enrollmentIds, timeoutMs)
   listener.startWaiting()

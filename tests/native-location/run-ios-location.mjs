@@ -89,6 +89,7 @@ async function launchHarness() {
   const args = ['simctl', 'launch', '--console-pty', device, appId]
   const launchLog = { binary: 'xcrun', args, liveConsole: true }
   log.push(launchLog)
+  timing.launchRequestedAt = Date.now()
   consoleProcess = spawn('xcrun', args, { cwd: appRoot, stdio: ['ignore', 'pipe', 'pipe'] })
   createInterface({ input: consoleProcess.stdout, crlfDelay: Infinity }).on('line', receiveConsoleLine)
   createInterface({ input: consoleProcess.stderr, crlfDelay: Infinity }).on('line', receiveConsoleLine)
@@ -101,10 +102,6 @@ async function launchHarness() {
       resolve()
     })
   })
-  consoleTimeout = setTimeout(() => {
-    consoleFailure ??= new Error('Live native console exceeded the bounded test duration')
-    consoleProcess.kill('SIGKILL')
-  }, 240000)
 }
 
 async function waitFor(description, predicate, timeout = 35000) {
@@ -209,7 +206,13 @@ try {
   await command('xcrun', ['simctl', 'install', device, builtApp], { timeout: 180000 })
   await sim('privacy', device, 'grant', 'location-always', appId)
   await launchHarness()
-  await waitFor('harness ready', () => event('ready'))
+  await waitFor('harness ready', () => event('ready'), 180000)
+  timing.harnessReadyAt = Date.now()
+  timing.startupDurationMs = timing.harnessReadyAt - timing.launchRequestedAt
+  consoleTimeout = setTimeout(() => {
+    consoleFailure ??= new Error('Live native console exceeded the bounded test duration')
+    consoleProcess.kill('SIGKILL')
+  }, 240000)
   await inject(1.25)
   await waitFor('foreground native point', () => point('manual', 1.25))
   await background('manual')

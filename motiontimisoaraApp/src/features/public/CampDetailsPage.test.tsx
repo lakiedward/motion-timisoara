@@ -36,6 +36,7 @@ const TABARA_IMPLICITA = {
   title: 'Tabără de înot',
   description: 'Stagiu intensiv.',
   price: 90000,
+  currency: 'RON',
   capacity: 20,
   allow_cash: false,
   period_start: '2026-09-13',

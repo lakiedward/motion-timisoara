@@ -96,10 +96,11 @@ class FakeDatabase {
   channel(_name: string) { return { send: (_message: unknown) => Promise.resolve() }; }
 
   rpc(name: string, args: { p_child_id: string; p_camp_id: string }) {
-    equal(name, "pret_tabara_pentru_copil", "Server pricing RPC");
+    equal(name, "enrollment_camp_offer", "Server pricing RPC");
     this.rpcCalls.push({ name, childId: args.p_child_id, campId: args.p_camp_id });
     return Promise.resolve({
-      data: this.prices[args.p_child_id] ?? null,
+      data: { amount: this.prices[args.p_child_id] ?? null, currency: this.tables.camps[0].currency,
+        eur_ron_rate_micros: this.tables.camps[0].eur_ron_rate_micros ?? null },
       error: this.rpcErrorChild === args.p_child_id ? { message: "Pricing unavailable" } : null,
     });
   }

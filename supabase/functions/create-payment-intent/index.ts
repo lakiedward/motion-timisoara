@@ -2,8 +2,9 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { supabaseAdmin, getUser } from "../_shared/supabase.ts";
 import { authorizedRonCharge } from "../_shared/payment-charge.ts";
+import { preparePaymentIntent } from "../_shared/payment-intent.ts";
 import { withCors } from "../_shared/cors.ts";
-import { getStripe, calculatePlatformFee, cancelOpenPaymentIntent } from "../_shared/stripe.ts";
+import { getStripe, calculatePlatformFee } from "../_shared/stripe.ts";
 
 serve(
   withCors(async (req: Request) => {
@@ -140,28 +141,6 @@ serve(
     const stripe = getStripe();
     const currencyLower = "ron";
 
-    if (payment.gateway_txn_id) {
-      try {
-        const existing = await stripe.paymentIntents.retrieve(payment.gateway_txn_id);
-        if (existing.amount !== amountInBani || existing.currency !== "ron") {
-          return new Response(JSON.stringify({ error: "Plata Stripe nu corespunde sumei confirmate." }), { status: 409 });
-        }
-        if (existing.status === "succeeded") {
-          return new Response(
-            JSON.stringify({ clientSecret: existing.client_secret, alreadySucceeded: true }),
-            { status: 200, headers: { "Content-Type": "application/json" } },
-          );
-        }
-        if (payment.status === "SUCCEEDED") {
-          return new Response(JSON.stringify({ error: "Plata este deja procesată." }), { status: 409 });
-        }
-        await cancelOpenPaymentIntent(existing.id);
-      } catch (err) {
-        console.error("Failed to inspect existing PaymentIntent:", payment.gateway_txn_id, err);
-        return new Response(JSON.stringify({ error: "Nu am putut verifica plata existentă. Încearcă din nou." }), { status: 503 });
-      }
-    }
-
     const params: any = {
       amount: amountInBani,
       currency: currencyLower,
@@ -183,31 +162,17 @@ serve(
         params.metadata.clubId = clubId;
       }
 
-      await supabaseAdmin
-        .from("payments")
-        .update({
-          platform_fee_amount: fee.platformFeeTotal,
-          coach_payout_amount: fee.recipientAmount,
-        })
-        .eq("id", payment.id);
+
     }
 
     if (payment.billing_email) {
       params.receipt_email = payment.billing_email;
     }
 
-    const intent = await stripe.paymentIntents.create(params);
-
-    await supabaseAdmin
-      .from("payments")
-      .update({
-        client_secret: intent.client_secret,
-        gateway_txn_id: intent.id,
-      })
-      .eq("id", payment.id);
+    const prepared = await preparePaymentIntent(supabaseAdmin, stripe, payment, params);
 
     return new Response(
-      JSON.stringify({ clientSecret: intent.client_secret }),
+      JSON.stringify(prepared),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
   }),

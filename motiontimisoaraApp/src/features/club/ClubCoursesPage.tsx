@@ -4,7 +4,7 @@ import { Pencil, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { getMyClub, getClubCourses, setClubCourseActive } from '@/api/club'
-import { formatRon } from '@/lib/money'
+import { formatMoney } from '@/lib/money'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -93,7 +93,7 @@ export default function ClubCoursesPage() {
                     </Badge>
                   </div>
                 </div>
-                <span className="font-display font-bold">{formatRon(c.price)}</span>
+                <span className="font-display font-bold">{formatMoney(c.price, c.currency)}</span>
               </div>
 
               <div className="text-muted-foreground mt-2 text-sm">

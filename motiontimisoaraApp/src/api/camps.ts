@@ -66,6 +66,7 @@ export type TabaraDinLista = {
   location_id: string | null
   location: CampLocation | null
   price: number
+  currency: string
   pricingMode: string
   allow_cash: boolean
   heroUrl: string | null
@@ -115,6 +116,7 @@ export async function getTaberePublice(azi = new Date()): Promise<TabaraDinLista
       location_id: c.location_id ?? null,
       location: location ?? null,
       price: c.price,
+      currency: c.currency,
       pricingMode: c.pricing_mode,
       allow_cash: c.allow_cash,
       heroUrl: c.hero_photo_storage_path

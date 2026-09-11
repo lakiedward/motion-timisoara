@@ -4,14 +4,19 @@ import { Pencil, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { getMyCourses, setCourseActive } from '@/api/coach'
-import { formatRon } from '@/lib/money'
+import { formatMoney } from '@/lib/money'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function CoachCoursesPage() {
   const qc = useQueryClient()
-  const { data: courses = [], isLoading, isError, refetch } = useQuery({
+  const {
+    data: courses = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['my-courses'],
     queryFn: getMyCourses,
     retry: false,
@@ -41,10 +46,7 @@ export default function CoachCoursesPage() {
           ))}
         </div>
       ) : isError && courses.length === 0 ? (
-        <div
-          role="alert"
-          className="rounded-3xl border border-dashed py-16 text-center"
-        >
+        <div role="alert" className="rounded-3xl border border-dashed py-16 text-center">
           <p className="text-foreground font-medium">Nu am putut încărca cursurile.</p>
           <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetch()}>
             Reîncearcă
@@ -65,7 +67,7 @@ export default function CoachCoursesPage() {
                     </Badge>
                   </div>
                 </div>
-                <span className="font-display font-bold">{formatRon(c.price)}</span>
+                <span className="font-display font-bold">{formatMoney(c.price, c.currency)}</span>
               </div>
               <div className="text-muted-foreground mt-2 text-sm">
                 {c.location?.name ?? '—'}

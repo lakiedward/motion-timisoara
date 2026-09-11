@@ -10,11 +10,9 @@ import CheckoutWizard from './checkout/CheckoutWizard'
 
 const DEFAULT_PACKAGES = [5, 10, 20]
 
-
 export interface Offering {
   id: string
   title: string
-  unitPrice: number
   perSession: boolean
   packages: number[]
 }
@@ -24,7 +22,9 @@ function parsePackages(raw: string | null): number[] {
   try {
     const parsed = JSON.parse(raw)
     const sizes = (Array.isArray(parsed) ? parsed : parsed?.sizes)
-      ?.map((v: unknown) => (typeof v === 'number' ? v : Number((v as { sessions?: number })?.sessions)))
+      ?.map((v: unknown) =>
+        typeof v === 'number' ? v : Number((v as { sessions?: number })?.sessions),
+      )
       ?.filter((n: number) => Number.isFinite(n) && n > 0)
     return sizes?.length ? sizes : DEFAULT_PACKAGES
   } catch {
@@ -38,19 +38,22 @@ export default function CheckoutPage() {
   const id = params.get('id')
   const slug = params.get('slug')
 
-  const { data: offering, isLoading, isError, refetch } = useQuery({
+  const {
+    data: offering,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['checkout-offering', kind, id, slug],
     queryFn: async (): Promise<Offering | null> => {
       if (kind === 'CAMP') {
         const camp = await getCheckoutCamp(id, slug)
-        return camp
-          ? { id: camp.id, title: camp.title, unitPrice: Number(camp.price) || 0, perSession: false, packages: [] }
-          : null
+        return camp ? { id: camp.id, title: camp.title, perSession: false, packages: [] } : null
       }
       if (kind === 'ACTIVITY' && id) {
         const activity = await getActivity(id)
         return activity
-          ? { id: activity.id, title: activity.name, unitPrice: Number(activity.price) || 0, perSession: false, packages: [] }
+          ? { id: activity.id, title: activity.name, perSession: false, packages: [] }
           : null
       }
       if (kind === 'COURSE' && id) {
@@ -59,7 +62,6 @@ export default function CheckoutPage() {
           ? {
               id: course.id,
               title: course.name,
-              unitPrice: Number(course.price_per_session) || 0,
               perSession: true,
               packages: parsePackages(course.package_options),
             }
@@ -90,7 +92,9 @@ export default function CheckoutPage() {
     return (
       <div role="alert" className="mx-auto max-w-lg space-y-4 py-10 text-center">
         <p>Nu am putut încărca oferta. Încearcă din nou.</p>
-        <Button variant="outline" onClick={() => void refetch()}>Reîncearcă</Button>
+        <Button variant="outline" onClick={() => void refetch()}>
+          Reîncearcă
+        </Button>
       </div>
     )
   }
@@ -105,7 +109,12 @@ export default function CheckoutPage() {
 
   return (
     <Elements stripe={stripePromise}>
-      <CheckoutWizard kind={kind} offering={offering} initialMethod={readMethod(params.get('payment'))} />
+      <CheckoutWizard
+        key={`${kind}:${offering.id}`}
+        kind={kind}
+        offering={offering}
+        initialMethod={readMethod(params.get('payment'))}
+      />
     </Elements>
   )
 }

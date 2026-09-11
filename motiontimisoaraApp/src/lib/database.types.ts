@@ -25,6 +25,7 @@ export type Database = {
           currency: string
           description: string | null
           end_time: string
+          eur_ron_rate_micros: number | null
           hero_photo_storage_path: string | null
           id: string
           location_id: string
@@ -45,6 +46,7 @@ export type Database = {
           currency?: string
           description?: string | null
           end_time: string
+          eur_ron_rate_micros?: number | null
           hero_photo_storage_path?: string | null
           id?: string
           location_id: string
@@ -65,6 +67,7 @@ export type Database = {
           currency?: string
           description?: string | null
           end_time?: string
+          eur_ron_rate_micros?: number | null
           hero_photo_storage_path?: string | null
           id?: string
           location_id?: string
@@ -554,6 +557,7 @@ export type Database = {
           coach_id: string | null
           currency: string
           description: string | null
+          eur_ron_rate_micros: number | null
           gallery_json: string | null
           hero_photo_storage_path: string | null
           id: string
@@ -573,6 +577,7 @@ export type Database = {
           coach_id?: string | null
           currency?: string
           description?: string | null
+          eur_ron_rate_micros?: number | null
           gallery_json?: string | null
           hero_photo_storage_path?: string | null
           id?: string
@@ -592,6 +597,7 @@ export type Database = {
           coach_id?: string | null
           currency?: string
           description?: string | null
+          eur_ron_rate_micros?: number | null
           gallery_json?: string | null
           hero_photo_storage_path?: string | null
           id?: string
@@ -1456,6 +1462,7 @@ export type Database = {
           coach_id: string
           currency: string
           description: string | null
+          eur_ron_rate_micros: number | null
           hero_photo_storage_path: string | null
           id: string
           level: string | null
@@ -1477,6 +1484,7 @@ export type Database = {
           coach_id: string
           currency?: string
           description?: string | null
+          eur_ron_rate_micros?: number | null
           hero_photo_storage_path?: string | null
           id?: string
           level?: string | null
@@ -1498,6 +1506,7 @@ export type Database = {
           coach_id?: string
           currency?: string
           description?: string | null
+          eur_ron_rate_micros?: number | null
           hero_photo_storage_path?: string | null
           id?: string
           level?: string | null
@@ -1817,6 +1826,32 @@ export type Database = {
           },
         ]
       }
+      payment_intent_requests: {
+        Row: {
+          created_at: string
+          id: string
+          params: Json
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          params: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          params?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_intent_requests_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -1838,6 +1873,7 @@ export type Database = {
           method: string
           paid_at: string | null
           platform_fee_amount: number | null
+          pricing_snapshot: Json | null
           status: string
           stripe_transfer_id: string | null
           updated_at: string
@@ -1862,6 +1898,7 @@ export type Database = {
           method: string
           paid_at?: string | null
           platform_fee_amount?: number | null
+          pricing_snapshot?: Json | null
           status: string
           stripe_transfer_id?: string | null
           updated_at?: string
@@ -1886,6 +1923,7 @@ export type Database = {
           method?: string
           paid_at?: string | null
           platform_fee_amount?: number | null
+          pricing_snapshot?: Json | null
           status?: string
           stripe_transfer_id?: string | null
           updated_at?: string
@@ -2038,12 +2076,27 @@ export type Database = {
           role: string
         }[]
       }
+      apply_enrollment_payment_result: {
+        Args: {
+          p_amount: number
+          p_currency: string
+          p_gateway_id: string
+          p_method: string
+          p_payment_id: string
+          p_result: string
+        }
+        Returns: Json
+      }
       audience_club_id: {
         Args: { p_id: string; p_kind: string }
         Returns: string
       }
       camp_enrolled_child_ids: { Args: never; Returns: string[] }
       camp_spots_remaining: { Args: { p_camp_id: string }; Returns: number }
+      cancel_unaccepted_enrollment_draft: {
+        Args: { p_enrollment_id: string; p_parent_id: string }
+        Returns: Json
+      }
       cheama_purge_expired_media: { Args: never; Returns: undefined }
       club_coach_contacts: {
         Args: { p_club_id: string }
@@ -2069,6 +2122,14 @@ export type Database = {
       }
       course_spots_remaining: { Args: { p_course_id: string }; Returns: number }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      enrollment_camp_offer: {
+        Args: { p_camp_id: string; p_child_id: string }
+        Returns: Json
+      }
+      freeze_payment_intent_request: {
+        Args: { p_params: Json; p_payment_id: string }
+        Returns: Json
+      }
       get_my_coach_profile_id: { Args: never; Returns: string }
       get_my_role: { Args: never; Returns: string }
       my_child_ids: { Args: never; Returns: string[] }
@@ -2204,6 +2265,37 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      save_camp_offer: {
+        Args: {
+          p_age_prices: Json
+          p_breakdown: Json
+          p_camp_id: string
+          p_club_id: string
+          p_coach_id: string
+          p_currency: string
+          p_eur_ron_rate_micros: number
+          p_metadata: Json
+          p_price: number
+          p_pricing_mode: string
+        }
+        Returns: undefined
+      }
+      save_camp_offer_pricing: {
+        Args: {
+          p_age_prices: Json
+          p_breakdown: Json
+          p_camp_id: string
+          p_currency: string
+          p_eur_ron_rate_micros: number
+          p_price: number
+          p_pricing_mode: string
+        }
+        Returns: undefined
+      }
+      valid_enrollment_price_snapshot: {
+        Args: { p_amount: number; p_currency: string; p_snapshot: Json }
+        Returns: boolean
       }
       varsta_la_data: {
         Args: { p_birth_date: string; p_la_data: string }

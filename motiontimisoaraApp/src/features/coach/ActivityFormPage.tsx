@@ -1,15 +1,29 @@
+import { OfferCurrencyFields } from '@/components/OfferCurrencyFields'
+import {
+  offerAmountSchema,
+  offerCurrencyShape,
+  validateOfferCurrency,
+  offerCurrencyInput,
+  offerCurrencyValues,
+  parseScaledDecimal,
+} from '@/lib/pricing/offer-currency'
 import { useEffect } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { createActivity, getActivityById, getSelectableLocations, updateActivity } from '@/api/coach'
+import {
+  createActivity,
+  getActivityById,
+  getSelectableLocations,
+  updateActivity,
+} from '@/api/coach'
 import { fetchSports } from '@/api/sports'
-import { baniToRon, ronToBani } from '@/lib/money'
+import { baniToRon } from '@/lib/money'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,17 +32,20 @@ import { cn } from '@/lib/utils'
 const selectCls =
   'border-input focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px]'
 
-const schema = z.object({
-  name: z.string().min(3, 'Minim 3 caractere'),
-  sport_id: z.string().min(1, 'Alege un sport'),
-  location_id: z.string().min(1, 'Alege o locație'),
-  activity_date: z.string().min(1, 'Obligatoriu'),
-  start_time: z.string().min(1, 'Obligatoriu'),
-  end_time: z.string().min(1, 'Obligatoriu'),
-  price_lei: z.string().refine((s) => s.trim() !== '' && !Number.isNaN(Number(s)) && Number(s) >= 0, 'Preț invalid'),
-  capacity: z.string().optional(),
-  description: z.string().optional(),
-})
+const schema = z
+  .object({
+    ...offerCurrencyShape,
+    name: z.string().min(3, 'Minim 3 caractere'),
+    sport_id: z.string().min(1, 'Alege un sport'),
+    location_id: z.string().min(1, 'Alege o locație'),
+    activity_date: z.string().min(1, 'Obligatoriu'),
+    start_time: z.string().min(1, 'Obligatoriu'),
+    end_time: z.string().min(1, 'Obligatoriu'),
+    price_lei: offerAmountSchema,
+    capacity: z.string().optional(),
+    description: z.string().optional(),
+  })
+  .superRefine(validateOfferCurrency)
 type Values = z.infer<typeof schema>
 
 export default function ActivityFormPage() {
@@ -37,7 +54,10 @@ export default function ActivityFormPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const { data: sports = [] } = useQuery({ queryKey: ['sports'], queryFn: fetchSports })
-  const { data: locations = [] } = useQuery({ queryKey: ['sel-locations'], queryFn: getSelectableLocations })
+  const { data: locations = [] } = useQuery({
+    queryKey: ['sel-locations'],
+    queryFn: getSelectableLocations,
+  })
   const { data: existing } = useQuery({
     queryKey: ['activity-edit', id],
     queryFn: () => getActivityById(id as string),
@@ -46,14 +66,20 @@ export default function ActivityFormPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<Values>({ resolver: zodResolver(schema) })
+  } = useForm<Values>({
+    resolver: zodResolver(schema),
+    defaultValues: { currency: 'RON', eur_ron_rate: '' },
+  })
+  const currency = useWatch({ control, name: 'currency' })
 
   useEffect(() => {
     if (existing) {
       reset({
+        ...offerCurrencyValues(existing),
         name: existing.name,
         sport_id: existing.sport_id,
         location_id: existing.location_id,
@@ -69,6 +95,7 @@ export default function ActivityFormPage() {
 
   const onSubmit = async (v: Values) => {
     const payload = {
+      ...offerCurrencyInput(v),
       name: v.name,
       description: v.description || null,
       sport_id: v.sport_id,
@@ -76,7 +103,7 @@ export default function ActivityFormPage() {
       activity_date: v.activity_date,
       start_time: v.start_time,
       end_time: v.end_time,
-      price: ronToBani(Number(v.price_lei)),
+      price: parseScaledDecimal(v.price_lei, 2)!,
       capacity: v.capacity && v.capacity.trim() ? Number(v.capacity) : null,
     }
     try {
@@ -92,10 +119,15 @@ export default function ActivityFormPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <Link to="/coach/activities" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm">
+      <Link
+        to="/coach/activities"
+        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
+      >
         <ArrowLeft className="size-4" /> Înapoi
       </Link>
-      <h1 className="font-display mt-4 text-2xl font-bold">{isEdit ? 'Editează activitate' : 'Activitate nouă'}</h1>
+      <h1 className="font-display mt-4 text-2xl font-bold">
+        {isEdit ? 'Editează activitate' : 'Activitate nouă'}
+      </h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4" noValidate>
         <div className="space-y-1.5">
@@ -104,6 +136,12 @@ export default function ActivityFormPage() {
           {errors.name && <p className="text-destructive text-xs">{errors.name.message}</p>}
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
+          <OfferCurrencyFields
+            currency={currency}
+            currencyField={register('currency')}
+            rateField={register('eur_ron_rate')}
+            error={errors.eur_ron_rate?.message}
+          />
           <div className="space-y-1.5">
             <Label htmlFor="sport_id">Sport</Label>
             <select id="sport_id" className={cn(selectCls)} {...register('sport_id')}>
@@ -114,7 +152,9 @@ export default function ActivityFormPage() {
                 </option>
               ))}
             </select>
-            {errors.sport_id && <p className="text-destructive text-xs">{errors.sport_id.message}</p>}
+            {errors.sport_id && (
+              <p className="text-destructive text-xs">{errors.sport_id.message}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="location_id">Locație</Label>
@@ -126,27 +166,58 @@ export default function ActivityFormPage() {
                 </option>
               ))}
             </select>
-            {errors.location_id && <p className="text-destructive text-xs">{errors.location_id.message}</p>}
+            {errors.location_id && (
+              <p className="text-destructive text-xs">{errors.location_id.message}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="activity_date">Data</Label>
-            <Input id="activity_date" type="date" {...register('activity_date')} aria-invalid={!!errors.activity_date} />
-            {errors.activity_date && <p className="text-destructive text-xs">{errors.activity_date.message}</p>}
+            <Input
+              id="activity_date"
+              type="date"
+              {...register('activity_date')}
+              aria-invalid={!!errors.activity_date}
+            />
+            {errors.activity_date && (
+              <p className="text-destructive text-xs">{errors.activity_date.message}</p>
+            )}
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="price_lei">Preț (lei)</Label>
-            <Input id="price_lei" type="number" step="0.01" {...register('price_lei')} aria-invalid={!!errors.price_lei} />
-            {errors.price_lei && <p className="text-destructive text-xs">{errors.price_lei.message}</p>}
+            <Label htmlFor="price_lei">Preț ({currency === 'EUR' ? 'EUR' : 'lei'})</Label>
+            <Input
+              id="price_lei"
+              type="number"
+              step="0.01"
+              {...register('price_lei')}
+              aria-invalid={!!errors.price_lei}
+            />
+            {errors.price_lei && (
+              <p className="text-destructive text-xs">{errors.price_lei.message}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="start_time">Ora început</Label>
-            <Input id="start_time" type="time" {...register('start_time')} aria-invalid={!!errors.start_time} />
-            {errors.start_time && <p className="text-destructive text-xs">{errors.start_time.message}</p>}
+            <Input
+              id="start_time"
+              type="time"
+              {...register('start_time')}
+              aria-invalid={!!errors.start_time}
+            />
+            {errors.start_time && (
+              <p className="text-destructive text-xs">{errors.start_time.message}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="end_time">Ora final</Label>
-            <Input id="end_time" type="time" {...register('end_time')} aria-invalid={!!errors.end_time} />
-            {errors.end_time && <p className="text-destructive text-xs">{errors.end_time.message}</p>}
+            <Input
+              id="end_time"
+              type="time"
+              {...register('end_time')}
+              aria-invalid={!!errors.end_time}
+            />
+            {errors.end_time && (
+              <p className="text-destructive text-xs">{errors.end_time.message}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="capacity">Capacitate</Label>
