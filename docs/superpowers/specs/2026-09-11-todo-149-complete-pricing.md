@@ -102,11 +102,25 @@ Course management displayed 98.72 EUR, activity management 23.45 EUR. Switching
 to RON was verified through SQL: amounts remained 9872/1234 for the course and
 2345 for the activity, while eur_ron_rate_micros became null. Both offers were
 then restored to EUR with rate 5.123456 for follow-up checkout verification.
-These two disposable records also require cleanup. Coach checks in this pass used
+Coach checks in this pass used
 Chrome's existing desktop viewport; responsive and public follow-up remain pending.
 
 PR 77 Playwright CI run 34603972770 passed. Web and Android builds passed; the
 push iOS build passed while the separate PR iOS job was still running at this check.
+
+Cleanup update: all four disposable offers listed above and the temporary
+club_coaches association were removed. Before deletion, no enrollments existed for
+any of these offers; course occurrences/photos/announcements/ratings and camp
+photos/participation/live-location records were also absent. Post-delete SQL
+confirmed zero remaining course, activity, camp and association rows. The original
+fixture descriptions above remain historical evidence, not current inventory.
+Fresh fixtures will be required for the remaining checkout scenarios.
+
+The deployed function inventory still reports validate-enrollment v3,
+create-enrollment v3, cancel-draft-enrollment v2, create-payment-intent v2,
+mark-cash-paid v1 and stripe-webhook v1. The new checkout contract is not deployed.
+Chrome currently refuses automation because an extension UI is open; the owner
+has been asked to dismiss that panel before visual checks resume.
 
 Stripe test proof awaits the owner choosing/creating the Motion account. Chrome's
 switcher listed only Betora and Culcush. At the owner's request, the separate-account
