@@ -207,6 +207,18 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 768, height: 1024
   });
 }
 
+test('SIMULATED checkout terms link opens the public terms page', async ({ page }, info) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  const state = await simulate(page);
+  await openCheckout(page);
+  await details(page);
+  await page.getByRole('link', { name: 'termenii și condițiile', exact: true }).click();
+  await expect(page).toHaveURL(/\/termeni$/);
+  await expect(page.getByRole('heading', { name: 'Termeni și condiții', level: 1 })).toBeVisible();
+  await capture(page, info, 'checkout-terms');
+  await proof(info, state);
+});
+
 for (const scenario of ['old-backend', 'missing-quote'] as const) {
   test(`SIMULATED ${scenario} blocks checkout with no fallback price`, async ({ page }, info) => {
     await page.setViewportSize({ width: 375, height: 812 });
