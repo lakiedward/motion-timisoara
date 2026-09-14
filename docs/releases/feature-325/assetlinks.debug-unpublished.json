@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.motiontimisoara.app",
+      "sha256_cert_fingerprints": [
+        "1C:2D:11:69:57:8B:8C:DD:ED:99:12:46:DF:4E:EB:0C:9A:FF:42:9B:AB:29:7F:2C:07:8A:5E:90:4E:0C:05:B8"
+      ]
+    }
+  }
+]

@@ -2,9 +2,8 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { Preferences } from '@capacitor/preferences'
 import type { Database } from '@/lib/database.types'
 import { isNative } from '@/lib/platform'
+import { webRecoveryGrant } from '@/lib/auth/recovery-grant'
 
-// On native, persist the session in Capacitor Preferences (secure device storage).
-// On web, supabase-js defaults to localStorage.
 const nativeStorage = {
   getItem: async (key: string) => (await Preferences.get({ key })).value,
   setItem: async (key: string, value: string) => {
@@ -26,3 +25,11 @@ export const supabase: SupabaseClient<Database> = createClient<Database>(url, an
     ...(isNative() ? { storage: nativeStorage as never } : {}),
   },
 })
+
+if (!isNative()) {
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY' && session) webRecoveryGrant.issue(session)
+    else if (event !== 'INITIAL_SESSION' && !webRecoveryGrant.valid(session))
+      webRecoveryGrant.clear()
+  })
+}
