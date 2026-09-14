@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { authenticateNative } from './auth-native/google'
 
 export type Role = 'PARENT' | 'COACH' | 'CLUB' | 'ADMIN'
 
@@ -78,29 +79,31 @@ export async function loadAppUser(): Promise<AppUser | null> {
   return result.status === 'ok' ? result.user : null
 }
 
-export function signInWithPassword(email: string, password: string) {
-  return supabase.auth.signInWithPassword({ email, password })
+export async function signInWithPassword(email: string, password: string) {
+  return authenticateNative(() => supabase.auth.signInWithPassword({ email, password }))
 }
 
-export function signUpParent(input: {
+export async function signUpParent(input: {
   name: string
   email: string
   password: string
   phone: string
 }) {
-  return supabase.auth.signUp({
-    email: input.email,
-    password: input.password,
-    options: { data: { name: input.name, phone: input.phone, role: 'PARENT' } },
-  })
+  return authenticateNative(() =>
+    supabase.auth.signUp({
+      email: input.email,
+      password: input.password,
+      options: { data: { name: input.name, phone: input.phone, role: 'PARENT' } },
+    }),
+  )
 }
 
 export function signInWithGoogle(redirectTo: string) {
   return supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } })
 }
 
-export function signOut() {
-  return supabase.auth.signOut()
+export async function signOut() {
+  return authenticateNative(() => supabase.auth.signOut())
 }
 
 export function requestPasswordReset(email: string, redirectTo: string) {
@@ -138,23 +141,15 @@ export interface RegisterClubInput {
   sportIds?: string[]
 }
 
-/** Calls the register-coach Edge Function, then signs the new coach in. */
 export async function registerCoach(input: RegisterCoachInput) {
   const { error } = await supabase.functions.invoke('register-coach', { body: input })
   if (error) {
     const { message } = await edgeError(error)
     return { error: { message: coachRegisterMessage(message) } }
   }
-  return supabase.auth.signInWithPassword({ email: input.email, password: input.password })
+  return signInWithPassword(input.email, input.password)
 }
 
-/**
- * register-coach answers in English ("Invalid invitation code"), and the signup
- * form puts whatever comes back straight in front of the coach, so the cases
- * someone can actually hit are translated before they reach the screen.
- * Anything unrecognised becomes a plain Romanian sentence rather than leaking
- * an internal message.
- */
 function coachRegisterMessage(raw: string): string {
   const m = raw.toLowerCase()
   if (m.includes('invitation code expired')) {
@@ -167,12 +162,6 @@ function coachRegisterMessage(raw: string): string {
   return sharedRegisterMessage(m)
 }
 
-/**
- * register-club answers in English too — Supabase Auth's own "A user with this
- * email address has already been registered" is the case a visitor actually
- * hits — and the wizard shows the raw message. Translated here for the same
- * reason as the coach one.
- */
 function clubRegisterMessage(raw: string): string {
   const m = raw.toLowerCase()
   if (m.includes('failed to create club')) {
@@ -184,7 +173,6 @@ function clubRegisterMessage(raw: string): string {
   return sharedRegisterMessage(m)
 }
 
-/** The cases both signup Edge Functions can return, worded once so they cannot drift apart. */
 function sharedRegisterMessage(lowered: string): string {
   if (lowered.includes('already been registered') || lowered.includes('already registered')) {
     return 'Există deja un cont cu acest email.'
@@ -192,31 +180,24 @@ function sharedRegisterMessage(lowered: string): string {
   return 'Nu am putut crea contul. Verifică datele și încearcă din nou.'
 }
 
-/** Calls the register-club Edge Function, then signs the new club owner in. */
 export async function registerClub(input: RegisterClubInput) {
   const { error } = await supabase.functions.invoke('register-club', { body: input })
   if (error) {
     const { message } = await edgeError(error)
     return { error: { message: clubRegisterMessage(message) } }
   }
-  return supabase.auth.signInWithPassword({ email: input.email, password: input.password })
+  return signInWithPassword(input.email, input.password)
 }
 
-/** Extracts a human message from an Edge Function error response. */
 async function edgeError(error: unknown): Promise<{ message: string }> {
   const ctx = (error as { context?: Response })?.context
   if (ctx && typeof ctx.json === 'function') {
-    try {
-      const body = await ctx.json()
-      if (body?.error) return { message: body.error as string }
-    } catch {
-      /* ignore */
-    }
+    const body = await ctx.json().catch(() => null)
+    if (body?.error) return { message: body.error as string }
   }
   return { message: (error as { message?: string })?.message ?? 'A apărut o eroare.' }
 }
 
-/** Default landing route for a role after login. */
 export function roleHome(role: Role): string {
   switch (role) {
     case 'ADMIN':

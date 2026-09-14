@@ -87,7 +87,7 @@ export default function RegisterPage() {
       }
     >
       <div className="space-y-4">
-        <GoogleSignInButton label="Înregistrare cu Google" returnUrl={returnUrl} />
+        <GoogleSignInButton label="Înregistrare cu Google" returnUrl={returnUrl} disabled={isSubmitting} />
         <div className="text-muted-foreground flex items-center gap-3 text-xs">
           <span className="bg-border h-px flex-1" /> sau <span className="bg-border h-px flex-1" />
         </div>
