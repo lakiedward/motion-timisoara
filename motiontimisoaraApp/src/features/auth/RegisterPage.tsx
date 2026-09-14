@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { signUpParent } from '@/api/auth'
 import { useAuth } from '@/lib/auth-context'
+import { isNative } from '@/lib/platform'
 
 const schema = z.object({
   name: z.string().min(3, 'Minim 3 caractere'),
@@ -37,12 +38,15 @@ export default function RegisterPage() {
 
   const onSubmit = async (v: Values) => {
     setServerError(null)
-    const { data, error } = await signUpParent(v)
+    const { data, error } = await signUpParent(v).catch(() => ({
+      data: { session: null },
+      error: { message: 'Nu am putut crea contul. Verifică conexiunea și încearcă din nou.' },
+    }))
     if (error) {
       setServerError(
         error.message.toLowerCase().includes('already')
           ? 'Există deja un cont cu acest email.'
-          : error.message
+          : 'Nu am putut crea contul. Încearcă din nou sau contactează echipa Motion.',
       )
       return
     }
@@ -62,8 +66,10 @@ export default function RegisterPage() {
             <MailCheck className="size-6" />
           </span>
           <p className="text-muted-foreground">
-            Ți-am trimis un email de confirmare. Deschide linkul din email pentru a-ți activa contul,
-            apoi autentifică-te.
+            Ți-am trimis un email de confirmare. Deschide linkul din email pentru a-ți activa
+            contul, apoi autentifică-te.
+            {isNative() &&
+              ' Deschide emailul pe acest telefon în următoarele 5 minute. Linkul funcționează în aplicația din care ai creat contul.'}
           </p>
           <Button asChild className="w-full">
             <Link to={withReturnUrl('/login', returnUrl)}>Mergi la autentificare</Link>
@@ -87,7 +93,11 @@ export default function RegisterPage() {
       }
     >
       <div className="space-y-4">
-        <GoogleSignInButton label="Înregistrare cu Google" returnUrl={returnUrl} disabled={isSubmitting} />
+        <GoogleSignInButton
+          label="Înregistrare cu Google"
+          returnUrl={returnUrl}
+          disabled={isSubmitting}
+        />
         <div className="text-muted-foreground flex items-center gap-3 text-xs">
           <span className="bg-border h-px flex-1" /> sau <span className="bg-border h-px flex-1" />
         </div>
@@ -99,17 +109,35 @@ export default function RegisterPage() {
           )}
           <div className="space-y-1.5">
             <Label htmlFor="name">Nume complet</Label>
-            <Input id="name" autoComplete="name" {...register('name')} aria-invalid={!!errors.name} />
+            <Input
+              id="name"
+              autoComplete="name"
+              {...register('name')}
+              aria-invalid={!!errors.name}
+            />
             {errors.name && <p className="text-destructive text-xs">{errors.name.message}</p>}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" autoComplete="email" {...register('email')} aria-invalid={!!errors.email} />
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              {...register('email')}
+              aria-invalid={!!errors.email}
+            />
             {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="phone">Telefon</Label>
-            <Input id="phone" type="tel" autoComplete="tel" placeholder="+40..." {...register('phone')} aria-invalid={!!errors.phone} />
+            <Input
+              id="phone"
+              type="tel"
+              autoComplete="tel"
+              placeholder="+40..."
+              {...register('phone')}
+              aria-invalid={!!errors.phone}
+            />
             {errors.phone && <p className="text-destructive text-xs">{errors.phone.message}</p>}
           </div>
           <div className="space-y-1.5">
@@ -121,7 +149,9 @@ export default function RegisterPage() {
               {...register('password')}
               aria-invalid={!!errors.password}
             />
-            {errors.password && <p className="text-destructive text-xs">{errors.password.message}</p>}
+            {errors.password && (
+              <p className="text-destructive text-xs">{errors.password.message}</p>
+            )}
           </div>
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? 'Se creează…' : 'Creează cont'}

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { requestPasswordReset } from '@/api/auth'
+import { isNative } from '@/lib/platform'
 
 const schema = z.object({
   email: z.string().min(1, 'Emailul e obligatoriu').email('Email invalid'),
@@ -56,6 +57,8 @@ export default function ForgotPasswordPage() {
       {sent ? (
         <p className="bg-primary/10 text-primary rounded-md px-3 py-3 text-sm">
           Dacă există un cont cu acest email, vei primi în scurt timp un link de resetare.
+          {isNative() &&
+            ' Deschide emailul pe acest telefon în următoarele 5 minute. Linkul funcționează în aplicația din care l-ai solicitat.'}
         </p>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>

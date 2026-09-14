@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { NativeOAuthListener } from './NativeOAuthListener'
 import { GOOGLE_ERROR } from '@/api/auth-native/coordinator'
+import { EMAIL_CALLBACK, type EmailResult } from '@/api/auth-native/email-coordinator'
 
 type Result = { returnUrl?: string } | { error: string }
 type UrlListener = (event: { url: string }) => void
@@ -18,6 +19,10 @@ const mocks = vi.hoisted(() => ({
   receive: vi.fn(),
   subscribe: vi.fn(),
   error: vi.fn(),
+  success: vi.fn(),
+  emailRestore: vi.fn(),
+  emailReceive: vi.fn(),
+  emailResults: new Set<(result: EmailResult) => void>(),
   urls: new Set<UrlListener>(),
   results: new Set<ResultListener>(),
   removals: [] as Array<ReturnType<typeof vi.fn>>,
@@ -28,7 +33,16 @@ vi.mock('@capacitor/app', () => ({
   App: { addListener: mocks.addListener, getLaunchUrl: mocks.getLaunchUrl },
 }))
 vi.mock('@/lib/platform', () => ({ isNative: mocks.native }))
-vi.mock('sonner', () => ({ toast: { error: mocks.error } }))
+vi.mock('sonner', () => ({ toast: { error: mocks.error, success: mocks.success } }))
+vi.mock('@/api/auth-native/email', () => ({
+  nativeEmail: { restore: mocks.emailRestore, receive: mocks.emailReceive },
+  onNativeEmailResult: (listener: (result: EmailResult) => void) => {
+    mocks.emailResults.add(listener)
+    return () => {
+      mocks.emailResults.delete(listener)
+    }
+  },
+}))
 vi.mock('@/api/auth-native/google', () => ({
   nativeGoogle: { restore: mocks.restore, receive: mocks.receive },
   onNativeGoogleResult: mocks.subscribe,
@@ -67,6 +81,9 @@ beforeEach(() => {
   vi.resetAllMocks()
   mocks.urls.clear()
   mocks.results.clear()
+  mocks.emailResults.clear()
+  mocks.emailRestore.mockResolvedValue(undefined)
+  mocks.emailReceive.mockResolvedValue(false)
   mocks.removals.length = 0
   mocks.unsubscribes.length = 0
   mocks.native.mockReturnValue(true)
@@ -97,6 +114,54 @@ afterEach(() => {
 })
 
 describe('native OAuth listener lifecycle', () => {
+  it.each(['recovery', 'signup'] as const)(
+    'routes verified email %s to its fixed destination',
+    async (kind) => {
+      mount()
+      await settle()
+      await act(async () => {
+        mocks.emailResults.forEach((listener) => listener({ kind }))
+      })
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        kind === 'recovery' ? '/reset-password' : '/login',
+      )
+    },
+  )
+
+  it('shows an invalid route for rejected or repeated email links', async () => {
+    mount()
+    await settle()
+    await act(async () => {
+      mocks.emailResults.forEach((listener) => listener({ error: 'Invalid link' }))
+    })
+    expect(screen.getByTestId('location')).toHaveTextContent('/reset-password?invalid=1')
+    expect(mocks.error).toHaveBeenCalledWith('Invalid link')
+  })
+
+  it('handles a cold email URL through the email coordinator only', async () => {
+    mocks.getLaunchUrl.mockResolvedValue({ url: EMAIL_CALLBACK + '?nonce=n&code=c' })
+    mount()
+    await settle()
+    expect(mocks.emailReceive).toHaveBeenCalledExactlyOnceWith(EMAIL_CALLBACK + '?nonce=n&code=c')
+    expect(mocks.receive).not.toHaveBeenCalled()
+  })
+
+  it('deduplicates the initial OS event and launch URL, while allowing a later replay to be rejected', async () => {
+    const launch = deferred<{ url: string }>()
+    mocks.getLaunchUrl.mockReturnValue(launch.promise)
+    mount()
+    await waitFor(() => expect(mocks.getLaunchUrl).toHaveBeenCalledOnce())
+    const url = EMAIL_CALLBACK + '?nonce=n&code=c'
+    await act(async () => {
+      mocks.urls.forEach((listener) => listener({ url }))
+      launch.resolve({ url })
+    })
+    expect(mocks.emailReceive).toHaveBeenCalledOnce()
+    await act(async () => {
+      mocks.urls.forEach((listener) => listener({ url }))
+    })
+    expect(mocks.emailReceive).toHaveBeenCalledTimes(2)
+  })
   it('subscribes before restoring state and reading the cold-start URL', async () => {
     const ready = deferred<{ remove: () => Promise<void> }>()
     const remove = vi.fn(async () => undefined)

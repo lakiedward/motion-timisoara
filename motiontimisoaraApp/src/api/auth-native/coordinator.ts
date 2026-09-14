@@ -57,6 +57,7 @@ export function createOAuthCoordinator<Session>(deps: OAuthDependencies<Session>
     flow.status === 'awaiting'
 
   return {
+    run: serialized,
     getState: () => state,
     subscribe(listener: () => void) {
       listeners.add(listener)

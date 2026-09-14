@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -10,7 +10,7 @@ import { AuthLayout } from './AuthLayout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { signOut, updatePassword } from '@/api/auth'
+import { isPasswordRecoveryReady, updatePassword } from '@/api/auth'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 
@@ -29,6 +29,8 @@ type LinkState = 'checking' | 'ready' | 'invalid'
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const invalidLink = params.has('invalid')
   const { refresh } = useAuth()
   const [linkState, setLinkState] = useState<LinkState>('checking')
   const [serverError, setServerError] = useState<string | null>(null)
@@ -41,27 +43,34 @@ export default function ResetPasswordPage() {
   } = useForm<Values>({ resolver: zodResolver(schema) })
 
   useEffect(() => {
-    // INITIAL_SESSION fires (also for late subscribers) only after supabase-js
-    // has consumed any recovery tokens from the URL, so no-session there means
-    // a missing or expired link rather than a race.
+    let active = true
+    const check = async () => {
+      const ready = !invalidLink && (await isPasswordRecoveryReady().catch(() => false))
+      if (active) setLinkState(ready ? 'ready' : 'invalid')
+    }
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) setLinkState('ready')
-      else if (event === 'INITIAL_SESSION') setLinkState('invalid')
+    } = supabase.auth.onAuthStateChange(() => {
+      void check()
     })
-    return () => subscription.unsubscribe()
-  }, [])
+    void check()
+    const timer = window.setInterval(() => {
+      void check()
+    }, 15_000)
+    return () => {
+      active = false
+      window.clearInterval(timer)
+      subscription.unsubscribe()
+    }
+  }, [invalidLink])
 
   const onSubmit = async (v: Values) => {
     setServerError(null)
-    const { error } = await updatePassword(v.password)
+    const { error } = await updatePassword(v.password).catch(() => ({ error: true }))
     if (error) {
       setServerError('Link-ul de resetare este invalid sau a expirat.')
       return
     }
-    // Drop the recovery session so the user really lands on the login form.
-    await signOut()
     await refresh()
     toast.success('Parola a fost schimbată. Autentifică-te cu parola nouă.')
     navigate('/login')
@@ -69,10 +78,13 @@ export default function ResetPasswordPage() {
 
   return (
     <AuthLayout
-      title="Setează o parolă nouă"
+      title={invalidLink ? 'Link de email invalid' : 'Setează o parolă nouă'}
       footer={
-        <Link to="/login" className="text-primary font-semibold">
-          Înapoi la autentificare
+        <Link
+          to={invalidLink ? '/forgot-password' : '/login'}
+          className="text-primary font-semibold"
+        >
+          {invalidLink ? 'Resetează parola' : 'Înapoi la autentificare'}
         </Link>
       }
     >
@@ -83,10 +95,14 @@ export default function ResetPasswordPage() {
       {linkState === 'invalid' && (
         <div className="space-y-4">
           <p className="bg-destructive/10 text-destructive rounded-md px-3 py-3 text-sm">
-            Link-ul de resetare este invalid sau a expirat.
+            {invalidLink
+              ? 'Acest link este invalid, a expirat sau a fost deja folosit.'
+              : 'Link-ul de resetare este invalid sau a expirat.'}
           </p>
           <Button asChild className="w-full">
-            <Link to="/forgot-password">Solicită un link nou</Link>
+            <Link to={invalidLink ? '/login' : '/forgot-password'}>
+              {invalidLink ? 'Mergi la autentificare' : 'Solicită un link nou'}
+            </Link>
           </Button>
         </div>
       )}
