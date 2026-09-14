@@ -13,6 +13,9 @@ AS $$
     END
 $$;
 
+COMMENT ON FUNCTION public.audience_club_id(TEXT, UUID) IS
+    'Clubul care deține cursul, activitatea sau tabăra dată. NULL dacă entitatea nu există, nu are club sau tipul nu are apartenență exprimabilă.';
+
 ALTER TABLE public.club_announcements
     DROP CONSTRAINT IF EXISTS club_announcements_audience_kind_ck;
 ALTER TABLE public.club_announcements
