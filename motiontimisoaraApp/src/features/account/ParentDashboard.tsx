@@ -5,6 +5,7 @@ import { CalendarCheck, Plus, UserRound } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { childAge, getMyChildren, getMyEnrollments } from '@/api/account'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 
 export default function ParentDashboard() {
   const { user } = useAuth()
@@ -20,6 +21,20 @@ export default function ParentDashboard() {
         </h1>
         <p className="text-muted-foreground mt-1">Gestionează copiii și înscrierile lor.</p>
       </div>
+
+      {user?.needsProfileCompletion && (
+        <Card>
+          <CardContent className="space-y-3">
+            <p className="font-semibold">Completează-ți profilul</p>
+            <p className="text-muted-foreground text-sm">
+              Adaugă numărul de telefon pentru a finaliza profilul.
+            </p>
+            <Button asChild>
+              <Link to="/auth/callback?returnUrl=%2Faccount">Completează profilul</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Stat icon={<UserRound className="size-5" />} value={children.length} label="Copii" />

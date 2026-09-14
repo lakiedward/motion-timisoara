@@ -9,7 +9,7 @@ import { useReturnUrl } from './return-url'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { supabase } from '@/lib/supabase'
+import { toast } from 'sonner'
 import { completeProfile, loadAppUser, roleHome, type AppUser } from '@/api/auth'
 import { useAuth } from '@/lib/auth-context'
 
@@ -47,33 +47,36 @@ export default function OAuthCallbackPage() {
         navigate(returnUrl || roleHome(u.role), { replace: true })
       }
     }
-    // detectSessionInUrl resolves the OAuth hash on web; wait for the session.
-    loadAppUser().then((u) => {
-      if (u) return finish(u)
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange(async (event) => {
-        if (event === 'SIGNED_IN') {
-          const loaded = await loadAppUser()
-          if (loaded) finish(loaded)
-        }
-      })
-      const timer = setTimeout(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const deadline = Date.now() + 6000
+    const checkSession = async () => {
+      try {
+        const user = await loadAppUser()
+        if (!active) return
+        if (user) return finish(user)
+        if (Date.now() >= deadline) setPhase('error')
+        else
+          timer = setTimeout(() => {
+            void checkSession()
+          }, 250)
+      } catch {
         if (active) setPhase('error')
-      }, 6000)
-      return () => {
-        subscription.unsubscribe()
-        clearTimeout(timer)
       }
-    })
+    }
+    void checkSession()
     return () => {
       active = false
+      clearTimeout(timer)
     }
   }, [navigate, returnUrl, reset])
 
   const onSubmit = async (v: Values) => {
     if (!pending) return
-    await completeProfile(pending.id, v)
+    const { error } = await completeProfile(pending.id, v)
+    if (error) {
+      toast.error('Nu am putut salva profilul. Încearcă din nou.')
+      return
+    }
     await refresh()
     navigate(returnUrl || roleHome(pending.role), { replace: true })
   }
@@ -113,7 +116,13 @@ export default function OAuthCallbackPage() {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="phone">Telefon</Label>
-          <Input id="phone" type="tel" placeholder="+40..." {...register('phone')} aria-invalid={!!errors.phone} />
+          <Input
+            id="phone"
+            type="tel"
+            placeholder="+40..."
+            {...register('phone')}
+            aria-invalid={!!errors.phone}
+          />
           {errors.phone && <p className="text-destructive text-xs">{errors.phone.message}</p>}
         </div>
         <Button type="submit" className="w-full" disabled={isSubmitting}>

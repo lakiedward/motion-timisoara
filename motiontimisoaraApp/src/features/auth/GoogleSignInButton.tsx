@@ -1,5 +1,10 @@
 import { Button } from '@/components/ui/button'
 import { signInWithGoogle } from '@/api/auth'
+import { useState, useSyncExternalStore } from 'react'
+import { toast } from 'sonner'
+import { isNative } from '@/lib/platform'
+import { nativeGoogle } from '@/api/auth-native/google'
+import { GOOGLE_ERROR } from '@/api/auth-native/coordinator'
 
 function GoogleIcon() {
   return (
@@ -27,19 +32,61 @@ function GoogleIcon() {
 export function GoogleSignInButton({
   label = 'Continuă cu Google',
   returnUrl,
+  disabled = false,
 }: {
   label?: string
   returnUrl?: string
+  disabled?: boolean
 }) {
+  const flow = useSyncExternalStore(nativeGoogle.subscribe, nativeGoogle.getState)
+  const [loading, setLoading] = useState(false)
+  const pending = isNative() && flow !== 'idle'
   const onClick = async () => {
-    const base = `${window.location.origin}/auth/callback`
-    const redirectTo = returnUrl ? `${base}?returnUrl=${encodeURIComponent(returnUrl)}` : base
-    await signInWithGoogle(redirectTo)
+    setLoading(true)
+    try {
+      if (isNative()) await nativeGoogle.start(returnUrl)
+      else {
+        const base = `${window.location.origin}/auth/callback`
+        const redirectTo = returnUrl ? `${base}?returnUrl=${encodeURIComponent(returnUrl)}` : base
+        const { error } = await signInWithGoogle(redirectTo)
+        if (error) toast.error(GOOGLE_ERROR)
+      }
+    } catch {
+      toast.error(GOOGLE_ERROR)
+    } finally {
+      setLoading(false)
+    }
   }
   return (
-    <Button type="button" variant="outline" className="w-full" onClick={onClick}>
-      <GoogleIcon />
-      {label}
-    </Button>
+    <div className="space-y-2">
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full"
+        onClick={onClick}
+        disabled={disabled || loading || pending}
+      >
+        <GoogleIcon />
+        {loading || pending ? 'Se conectează cu Google…' : label}
+      </Button>
+      {pending && (
+        <div className="space-y-1 text-center">
+          <p className="text-muted-foreground text-sm" role="status">
+            Continuă în fereastra Google sau anulează pentru a reîncerca.
+          </p>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={flow === 'committing'}
+            onClick={() => {
+              void nativeGoogle.cancel().catch(() => toast.error(GOOGLE_ERROR))
+            }}
+          >
+            Anulează conectarea Google
+          </Button>
+        </div>
+      )}
+    </div>
   )
 }
