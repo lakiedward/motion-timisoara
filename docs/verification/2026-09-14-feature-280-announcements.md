@@ -12,6 +12,7 @@ Independent local reviews covered the SQL/API and parent/media components. Three
 - Final API after generated-type integration: 13 tests and typecheck passed.
 - Isolated PostgreSQL: 67 assertions passed using authenticated/anonymous roles and two concurrent connections. Coverage includes all audience kinds, ownership, canceled enrollment, hidden/future/expired rows, source collisions, pagination, filters, author/contact-field isolation, visit races, order changes, immutable identity and course transfer. The container and volumes were removed.
 - The SQL runner is included in App CI. No local Playwright or CDP was used.
+- The first CI run exposed outdated API fixtures in the existing camp-location simulation. Its four failing cases reached the new feed RPC and received the fixture's deliberate unexpected-request 500. The fixture now models the three announcement RPCs, validates the visit identity and asserts that the parent used them; unexpected requests and console errors remain failures.
 
 ## Browser evidence
 

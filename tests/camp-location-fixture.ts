@@ -32,7 +32,9 @@ export async function simulateCamp(page: Page, role: 'COACH' | 'PARENT', state: 
     role, errors: [] as string[], unexpectedApi: [] as string[], externalRequests: [] as string[],
     expectedFailures: [] as string[], actions: [] as Action[], lists: [] as object[][],
     socketJoins: [] as { topic: string; private: boolean }[], tileCount: 0,
+    announcementRequests: [] as string[],
   };
+  let announcementSeenAt: string | null = null;
   const child = { id: ids.child, parent_id: ids.parent, name: 'Copil Simulat Ana', birth_date: '2018-09-01' };
   const camp = { id: ids.camp, title: campTitle, coach_id: ids.coach, club_id: null,
     period_start: new Date(Date.now() - 86400000).toISOString().slice(0, 10),
@@ -105,7 +107,23 @@ export async function simulateCamp(page: Page, role: 'COACH' | 'PARENT', state: 
     if (url.pathname === '/rest/v1/children') return respond([child]);
     if (url.pathname === '/rest/v1/enrollments') return respond([{ id: ids.enrollment, kind: 'CAMP', entity_id: ids.camp,
       child_id: ids.child, status: 'ACTIVE', child, created_at: new Date().toISOString() }]);
-    if (['/rest/v1/course_announcements', '/rest/v1/club_announcements'].includes(url.pathname)) return respond([]);
+    if (request.method() === 'POST' && url.pathname === '/rest/v1/rpc/get_parent_announcement_feed') {
+      expect(request.postDataJSON()).toEqual({ p_page_size: 20 });
+      evidence.announcementRequests.push('feed');
+      return respond({ items: [], asOf: new Date().toISOString(), previousSeenAt: announcementSeenAt, nextCursor: null });
+    }
+    if (request.method() === 'POST' && url.pathname === '/rest/v1/rpc/get_parent_announcement_courses') {
+      evidence.announcementRequests.push('courses');
+      return respond([]);
+    }
+    if (request.method() === 'POST' && url.pathname === '/rest/v1/rpc/mark_parent_announcements_seen') {
+      const body = request.postDataJSON();
+      expect(body.p_expected_user_id).toBe(actor.id);
+      expect(Number.isFinite(Date.parse(body.p_as_of))).toBe(true);
+      announcementSeenAt = new Date(Math.max(Date.parse(announcementSeenAt ?? body.p_as_of), Date.parse(body.p_as_of))).toISOString();
+      evidence.announcementRequests.push('seen');
+      return respond(null);
+    }
     if (url.pathname === '/functions/v1/coach-live-location') {
       const body = request.postDataJSON() as Action;
       evidence.actions.push(body);
@@ -189,6 +207,9 @@ export async function campProof(info: TestInfo, simulations: Awaited<ReturnType<
     expect(evidence.errors).toEqual([]);
     expect(evidence.unexpectedApi).toEqual([]);
     expect(evidence.externalRequests).toEqual([]);
+    if (evidence.role === 'PARENT') {
+      expect(evidence.announcementRequests).toEqual(expect.arrayContaining(['feed', 'courses', 'seen']));
+    }
     for (const session of evidence.lists.flat()) {
       expect(Object.keys(session).sort()).toEqual(['campId', 'coachId', 'coachName', 'expiresAt', 'occurrenceId', 'sessionId', 'title']);
     }
