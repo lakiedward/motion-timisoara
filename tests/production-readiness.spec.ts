@@ -34,6 +34,7 @@ const HEADER_ROUTES = [
 const PUBLIC_ROUTES = [
   '/',
   ...HEADER_ROUTES.map((route) => route.path),
+  '/termeni',
   '/login',
   '/signup',
   '/register',
@@ -135,6 +136,15 @@ test.describe('Production readiness — critical user flows', () => {
 
     await page.getByRole('link', { name: 'Acasă' }).click()
     await expect(page).toHaveURL(/\/$/)
+  })
+
+  test('footer terms link opens the terms page', async ({ page, baseURL }) => {
+    await page.goto('/')
+    test.skip(!isLocalPreview(baseURL), 'React footer is asserted on the local preview only')
+
+    await page.locator('footer').getByRole('link', { name: 'Termeni', exact: true }).click()
+    await expect(page).toHaveURL(/\/termeni$/)
+    await expect(page.getByRole('heading', { name: 'Termeni și condiții', level: 1 })).toBeVisible()
   })
 
   // One test per route rather than a single sweep: each route then gets its own
