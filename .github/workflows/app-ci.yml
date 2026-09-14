@@ -6,13 +6,28 @@ on:
       - 'motiontimisoaraApp/**'
       - '.github/workflows/app-ci.yml'
       - 'tests/native-location/**'
+      - 'supabase/migrations/00055_camp_announcement_audience.sql'
+      - 'supabase/migrations/00056_parent_announcement_feed.sql'
+      - 'supabase/tests/*parent-announcement*'
   pull_request:
     paths:
       - 'motiontimisoaraApp/**'
       - '.github/workflows/app-ci.yml'
       - 'tests/native-location/**'
+      - 'supabase/migrations/00055_camp_announcement_audience.sql'
+      - 'supabase/migrations/00056_parent_announcement_feed.sql'
+      - 'supabase/tests/*parent-announcement*'
 
 jobs:
+  announcement-sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify parent announcement feed and audience isolation
+        shell: pwsh
+        run: ./supabase/tests/run-parent-announcement-feed.ps1
+
   build:
     runs-on: ubuntu-latest
     defaults:
