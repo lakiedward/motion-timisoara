@@ -71,4 +71,4 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
 
     canonic  src/api/camps.ts sAIncheiat()
     blocat   0 filtre de dată în interogări
-    folosit  2 fișiere
+    folosit  3 fișiere
