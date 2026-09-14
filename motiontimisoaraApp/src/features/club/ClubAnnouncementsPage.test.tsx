@@ -52,6 +52,7 @@ const anunt = (
 
 const CURS = { kind: 'COURSE' as const, id: 'curs-1', name: 'Înot începători', active: true }
 const ACTIVITATE = { kind: 'ACTIVITY' as const, id: 'act-1', name: 'Cros de toamnă', active: true }
+const TABARA = { kind: 'CAMP' as const, id: 'tabara-1', name: 'Tabără de vară', active: true }
 const CURS_OPRIT = { kind: 'COURSE' as const, id: 'curs-vechi', name: 'Schi 2025', active: false }
 
 function renderPage() {
@@ -70,7 +71,7 @@ beforeEach(() => {
     anunt('a', 'Cantonament de vară'),
     anunt('b', 'Bazinul închis', false),
   ] as never)
-  mockedTinte.mockResolvedValue([CURS, ACTIVITATE, CURS_OPRIT] as never)
+  mockedTinte.mockResolvedValue([CURS, ACTIVITATE, TABARA, CURS_OPRIT] as never)
   mockedCreeaza.mockResolvedValue(undefined as never)
   mockedComuta.mockResolvedValue(undefined as never)
   mockedSterge.mockResolvedValue(undefined as never)
@@ -87,12 +88,14 @@ test('formularul oferă tot clubul, cursurile și activitățile active', async 
   expect(optiuni).toContain('Toți părinții clubului')
   expect(optiuni).toContain('Înot începători')
   expect(optiuni).toContain('Cros de toamnă')
+  expect(optiuni).toContain('Tabără de vară')
   // Un curs oprit nu se mai poate alege pentru un anunț NOU.
   expect(optiuni).not.toContain('Schi 2025')
   // Grupate, ca să nu se amestece cursurile cu activitățile.
   expect([...select.querySelectorAll('optgroup')].map((g) => g.getAttribute('label'))).toEqual([
     'Cursuri',
     'Activități',
+    'Tabere',
   ])
 })
 
@@ -130,6 +133,23 @@ test('publicarea către o activitate trimite ținta la server', async () => {
   )
 })
 
+test('publicarea către o tabără trimite ținta la server', async () => {
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByLabelText('Cine primește')
+
+  await user.type(screen.getByLabelText('Titlu'), 'Detalii de plecare')
+  await user.type(screen.getByLabelText('Conținut'), 'Ne vedem la ora opt.')
+  await user.selectOptions(screen.getByLabelText('Cine primește'), 'CAMP:tabara-1')
+  await user.click(screen.getByRole('button', { name: 'Publică' }))
+
+  await waitFor(() =>
+    expect(mockedCreeaza).toHaveBeenCalledWith(
+      expect.objectContaining({ audience_kind: 'CAMP', audience_id: 'tabara-1' }),
+    ),
+  )
+})
+
 test('după publicare ținta revine la tot clubul', async () => {
   const user = userEvent.setup()
   renderPage()
@@ -149,12 +169,14 @@ test('fiecare card spune cui i-a fost trimis anunțul', async () => {
     anunt('a', 'Către tot clubul'),
     anunt('b', 'Către curs', true, 'x', 'NORMAL', '2026-08-26T09:00:00Z', 'COURSE', 'curs-1'),
     anunt('c', 'Către activitate', true, 'x', 'NORMAL', '2026-08-26T09:00:00Z', 'ACTIVITY', 'act-1'),
+    anunt('d', 'Către tabără', true, 'x', 'NORMAL', '2026-08-26T09:00:00Z', 'CAMP', 'tabara-1'),
   ] as never)
   renderPage()
   await screen.findByText('Către tot clubul')
   expect(screen.getByText('Trimis către: Toți părinții clubului')).toBeInTheDocument()
   expect(screen.getByText('Trimis către: Curs: Înot începători')).toBeInTheDocument()
   expect(screen.getByText('Trimis către: Activitate: Cros de toamnă')).toBeInTheDocument()
+  expect(screen.getByText('Trimis către: Tabără: Tabără de vară')).toBeInTheDocument()
 })
 
 // Un anunț vechi trimis la un curs oprit între timp trebuie să-și păstreze eticheta.

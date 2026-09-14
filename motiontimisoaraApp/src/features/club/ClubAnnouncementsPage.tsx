@@ -61,11 +61,16 @@ function citesteTinta(v: string): { kind: AudienceKind; id: string | null } {
 }
 const scrieTinta = (a: ClubAudience) => `${a.kind}:${a.id}`
 
-const ETICHETA_TINTA: Record<string, string> = { COURSE: 'Curs', ACTIVITY: 'Activitate' }
+const ETICHETA_TINTA: Record<string, string> = {
+  COURSE: 'Curs',
+  ACTIVITY: 'Activitate',
+  CAMP: 'Tabără',
+}
 /** „Curs indisponibil”, dar „Activitate indisponibilă”. */
 const INDISPONIBIL: Record<string, string> = {
   COURSE: 'Curs indisponibil',
   ACTIVITY: 'Activitate indisponibilă',
+  CAMP: 'Tabără indisponibilă',
 }
 
 /**
@@ -424,6 +429,17 @@ export default function ClubAnnouncementsPage() {
               <optgroup label="Activități">
                 {tinteActive
                   .filter((t) => t.kind === 'ACTIVITY')
+                  .map((t) => (
+                    <option key={t.id} value={scrieTinta(t)}>
+                      {t.name}
+                    </option>
+                  ))}
+              </optgroup>
+            )}
+            {tinteActive.filter((t) => t.kind === 'CAMP').length > 0 && (
+              <optgroup label="Tabere">
+                {tinteActive
+                  .filter((t) => t.kind === 'CAMP')
                   .map((t) => (
                     <option key={t.id} value={scrieTinta(t)}>
                       {t.name}

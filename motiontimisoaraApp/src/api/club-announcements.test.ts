@@ -94,12 +94,21 @@ test('țintele se cer delimitate pe clubul propriu, nu se bazează pe RLS', asyn
   raspuns = {
     courses: { data: [{ id: 'c1', name: 'Înot', active: true }], error: null },
     activities: { data: [{ id: 'a1', name: 'Cros', active: false }], error: null },
+    camps: {
+      data: [
+        { id: 't1', title: 'Tabără de vară', period_end: '2026-09-14' },
+        { id: 't2', title: 'Tabără încheiată', period_end: '2026-09-13' },
+      ],
+      error: null,
+    },
   }
-  const tinte = await getClubAudiences('club-1')
-  expect(filtre.filter((f) => f === 'eq(club_id,club-1)')).toHaveLength(2)
+  const tinte = await getClubAudiences('club-1', new Date('2026-09-14T12:00:00'))
+  expect(filtre.filter((f) => f === 'eq(club_id,club-1)')).toHaveLength(3)
   expect(tinte).toEqual([
     { kind: 'COURSE', id: 'c1', name: 'Înot', active: true },
     { kind: 'ACTIVITY', id: 'a1', name: 'Cros', active: false },
+    { kind: 'CAMP', id: 't1', name: 'Tabără de vară', active: true },
+    { kind: 'CAMP', id: 't2', name: 'Tabără încheiată', active: false },
   ])
 })
 

@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 import type { LocationFormInput } from '@/api/coach'
+import { sAIncheiat } from '@/api/camps'
 
 async function uid(): Promise<string> {
   const {
@@ -141,7 +142,7 @@ export async function deleteClubCode(id: string) {
 }
 export type ClubAnnouncement = Tables<'club_announcements'>
 
-export type AudienceKind = 'CLUB' | 'COURSE' | 'ACTIVITY'
+export type AudienceKind = 'CLUB' | 'COURSE' | 'ACTIVITY' | 'CAMP'
 
 export type ClubAudience = {
   kind: Exclude<AudienceKind, 'CLUB'>
@@ -150,13 +151,15 @@ export type ClubAudience = {
   active: boolean
 }
 
-export async function getClubAudiences(clubId: string): Promise<ClubAudience[]> {
-  const [cursuri, activitati] = await Promise.all([
+export async function getClubAudiences(clubId: string, acum = new Date()): Promise<ClubAudience[]> {
+  const [cursuri, activitati, tabere] = await Promise.all([
     supabase.from('courses').select('id, name, active').eq('club_id', clubId).order('name'),
     supabase.from('activities').select('id, name, active').eq('club_id', clubId).order('name'),
+    supabase.from('camps').select('id, title, period_end').eq('club_id', clubId).order('title'),
   ])
   if (cursuri.error) throw cursuri.error
   if (activitati.error) throw activitati.error
+  if (tabere.error) throw tabere.error
   return [
     ...(cursuri.data ?? []).map((c) => ({
       kind: 'COURSE' as const,
@@ -169,6 +172,12 @@ export async function getClubAudiences(clubId: string): Promise<ClubAudience[]> 
       id: a.id,
       name: a.name,
       active: a.active,
+    })),
+    ...(tabere.data ?? []).map((t) => ({
+      kind: 'CAMP' as const,
+      id: t.id,
+      name: t.title,
+      active: !sAIncheiat(t.period_end, acum),
     })),
   ]
 }
