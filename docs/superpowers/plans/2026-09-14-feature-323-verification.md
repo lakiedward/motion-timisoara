@@ -45,8 +45,18 @@ The installed candidate restored the pending Google attempt after an app restart
 Its cancel action returned the button to its ready state, and a new attempt opened
 Google account selection again. Screenshot: local ignored artifact
 `.test-evidence/323-native/restored-pending-google.png`.
-The owner must complete provider consent and any missing profile fields.
-This observation does not yet prove successful callback/session installation.
+The owner subsequently completed Google consent and reached profile completion.
+The native app retained the owner's authenticated session after the phone closed
+and after installing the next debug build. A read-only backend check confirmed the
+Google identity and the successful sign-in at 09:21:03 UTC on 2026-09-14.
+
+The interruption exposed a missing recovery action: the parent dashboard had no
+way to reopen an incomplete profile. Added a conditional canonical Card and
+`Completează profilul` action. On the phone, Menu > Contul meu > Completează profilul
+opened the existing name/phone form without a new login. The owner supplied the
+phone number and completed the save. The app returned to the parent dashboard,
+the recovery card disappeared, and a read-only boolean check confirmed the phone
+was saved. No real profile fields were invented, disclosed or reset.
 
 Chrome at `http://127.0.0.1:3017/login?returnUrl=%2Faccount%2Fenrollments`,
 1665 x 893 viewport: the audit parent's password login returned to the live
@@ -54,7 +64,7 @@ Chrome at `http://127.0.0.1:3017/login?returnUrl=%2Faccount%2Fenrollments`,
 enrollments or payments were created. Browser console and responsive variants are
 not recorded as verified by this check.
 
-Pending: completed Google login and authenticated return-path/restart checks on Android;
+Pending: a non-default return-path check on Android;
 full web Google regression; physical iOS Google proof; human acceptance; final CI,
 merge and release. Keep the PR in draft and tracker feature 323 open until the
 required delivery evidence and gates are satisfied.
@@ -66,3 +76,8 @@ configuration, listener and web callback changes. Cancellation races found durin
 review received regression tests and fixes. A rejected native listener registration
 also received cleanup protection. This is agent review, not an external bot result.
 The final reviewed commit and CI results belong in the PR delivery record.
+
+Initial PR CI passed the application, Android and web test jobs. iOS compilation
+also succeeded, but the separate synthetic location harness readiness check timed
+out at 180 seconds; its ready event arrived at 191.5 seconds. This is not physical
+iOS OAuth proof. Recheck the next CI run; no location thresholds were changed.
