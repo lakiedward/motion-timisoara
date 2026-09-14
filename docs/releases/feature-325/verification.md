@@ -16,7 +16,7 @@ This is the agreed Android custom-scheme stage. The web source is verified local
 | Real expired PKCE flow | Passed: the request sent at 14:15:03 was rejected at 14:20:20 with HTTP 422 `flow_state_expired`; the form stayed unavailable. The native notice and local pending lifetime now match this five-minute limit. |
 | Final rebuilt APK and consumed reset email | Passed: generic email-invalid heading, explanation, login action and reset link; no password inputs. |
 | Direct web reset navigation without recovery grant | Passed: invalid-link state. |
-| Actual web reset request and Gmail link | Passed through real delivery and an enabled local reset form. Final password submission/login awaits the owner's browser handoff. |
+| Actual web reset request and Gmail link | Passed: real delivery enabled the local reset form; the owner completed password submission through the browser handoff. Chrome returned to login, and Auth recorded the password-update timestamp. The owner confirmed completion; a subsequent web login was not independently observed. |
 | Responsive invalid-email page | Chrome rendered the real app in an isolated iframe at 375x812, 768x1024 and 1440x900. Mobile and desktop captures were inspected; no clipped controls observed. These are iframe viewport checks, not native-device emulation. |
 
 The valid confirmation path was exercised cold; its warm routing/replay path and the valid warm recovery path were exercised separately. A second valid signup confirmation with an already running app has not been exercised with another account lifecycle.
@@ -27,12 +27,14 @@ Local PNG captures are in the session's temporary `motion-325-evidence` director
 
 `npm run typecheck`, `npm run lint`, `npm test` and `npm run build` passed on the final implementation. Vitest: 868 tests across 82 files. `npx cap sync android` and Gradle `assembleDebug` passed; the final APK was installed successfully. The build retains existing large-chunk and ineffective Capacitor dynamic-import warnings. No `check:rules` command exists in this repository.
 
-An independent agent reviewed the complete implementation and SDK integration, then reviewed the final copy, invalid-state actions and five-minute lifetime. No actionable findings remained. `git diff --check` passed. CI and merge status are recorded on the pull request.
+An independent agent reviewed the complete implementation and SDK integration, then reviewed the final copy, invalid-state actions and five-minute lifetime included in revision `81c70a4`. No actionable findings remained. `git diff --check` passed. CI and merge status are recorded on the pull request.
 
 MobAI Warning/Error capture contained no AndroidRuntime crash or Capacitor console error during the sampled run. It did contain existing menu DialogContent description warnings and missing `public/plugins` warnings. System-wide Chromium tile-memory warnings also occurred; this capture covered multiple apps and is not a performance benchmark for Motion.
+
+The web recovery tab reported a one-second Auth clock-skew warning, the expected Stripe HTTP development warning, and browser-extension warnings. No application console error was recorded for the successful recovery flow.
 
 ## Remote configuration and remaining work
 
 The existing production Site URL and Google redirects were preserved. Auth now allows `com.motiontimisoara.app://auth/email-callback**`. The owner configured Private Email SMTP for Motion; real confirmation and recovery messages were delivered after correcting the mailbox password. Existing templates use `ConfirmationURL`, preserving the selected redirect. Messages were found in Gmail Spam, so inbox deliverability is not established.
 
-A temporary loopback reset redirect and the disposable test user are retained only until the pending web test is completed, then must be removed. No HTTPS association, frontend deployment, iOS build distribution or store release is published by this stage. The prepared debug association is intentionally outside the public build. Feature 325 remains open for HTTPS distribution associations and real iOS proof.
+The disposable test user was deleted after the web handoff; Auth user, profile, identities and sessions were verified absent. The temporary loopback reset redirect was removed after testing. No HTTPS association, frontend deployment, iOS build distribution or store release is published by this stage. The prepared debug association is intentionally outside the public build. Feature 325 remains open for HTTPS distribution associations and real iOS proof.
