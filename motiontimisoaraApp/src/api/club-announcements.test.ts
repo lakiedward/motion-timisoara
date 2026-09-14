@@ -1,5 +1,4 @@
 import { beforeEach, expect, test, vi } from 'vitest'
-
 import {
   createClubAnnouncement,
   deleteClubAnnouncement,
@@ -7,14 +6,15 @@ import {
   getClubAudiences,
   setAnnouncementActive,
 } from './club'
-
-/** Ce întoarce fiecare tabel la următoarea interogare. */
-let raspuns: Record<string, { data: unknown; error: unknown }> = {}
-/** Filtrele cerute serverului, ca să putem verifica ce s-a delegat bazei. */
+let raspuns: Record<
+  string,
+  {
+    data: unknown
+    error: unknown
+  }
+> = {}
 let filtre: string[] = []
-/** Argumentele întregi, pentru cazurile în care forma lor contează (ex. insert). */
 let argumente: Record<string, unknown[]> = {}
-
 function builder(table: string) {
   const proxy: unknown = new Proxy(() => undefined, {
     get(_t, prop: string) {
@@ -31,14 +31,12 @@ function builder(table: string) {
   })
   return proxy
 }
-
 vi.mock('@/lib/supabase', () => ({
   supabase: {
     from: (table: string) => builder(table),
     auth: { getSession: async () => ({ data: { session: { user: { id: 'autor-1' } } } }) },
   },
 }))
-
 const anunt = (id: string, title: string) => ({
   id,
   title,
@@ -47,16 +45,11 @@ const anunt = (id: string, title: string) => ({
   is_active: true,
   created_at: '2026-08-26T09:00:00Z',
 })
-
 beforeEach(() => {
   raspuns = {}
   filtre = []
   argumente = {}
 })
-
-// Fără asta, cineva care rescrie insertul enumerând coloanele explicit (tiparul
-// din `createClubLocation`) poate pierde ținta fără ca vreun test să se aprindă:
-// anunțul ar pleca mai departe, dar către tot clubul.
 test('ținta chiar ajunge în ce se trimite la server', async () => {
   raspuns = { club_announcements: { data: anunt('a', 'Tintit'), error: null } }
   await createClubAnnouncement({
@@ -73,7 +66,6 @@ test('ținta chiar ajunge în ce se trimite la server', async () => {
     audience_id: 'curs-1',
   })
 })
-
 test('„tot clubul” trimite ținta goală, cum cere constrângerea din bază', async () => {
   raspuns = { club_announcements: { data: anunt('a', 'General'), error: null } }
   await createClubAnnouncement({
@@ -86,23 +78,27 @@ test('„tot clubul” trimite ținta goală, cum cere constrângerea din bază'
   })
   expect(argumente.insert?.[0]).toMatchObject({ audience_kind: 'CLUB', audience_id: null })
 })
-
-// `courses_select` întoarce ORICE curs activ, al oricărui club — delimitarea pe
-// club se face în cerere, nu de politică. Dacă `.eq('club_id', …)` dispare, selectul
-// „Cine primește” al unui club s-ar umple cu cursurile altora.
 test('țintele se cer delimitate pe clubul propriu, nu se bazează pe RLS', async () => {
   raspuns = {
     courses: { data: [{ id: 'c1', name: 'Înot', active: true }], error: null },
     activities: { data: [{ id: 'a1', name: 'Cros', active: false }], error: null },
+    camps: {
+      data: [
+        { id: 't1', title: 'Tabără de vară', period_end: '2026-09-14' },
+        { id: 't2', title: 'Tabără încheiată', period_end: '2026-09-13' },
+      ],
+      error: null,
+    },
   }
-  const tinte = await getClubAudiences('club-1')
-  expect(filtre.filter((f) => f === 'eq(club_id,club-1)')).toHaveLength(2)
+  const tinte = await getClubAudiences('club-1', new Date('2026-09-14T12:00:00'))
+  expect(filtre.filter((f) => f === 'eq(club_id,club-1)')).toHaveLength(3)
   expect(tinte).toEqual([
     { kind: 'COURSE', id: 'c1', name: 'Înot', active: true },
     { kind: 'ACTIVITY', id: 'a1', name: 'Cros', active: false },
+    { kind: 'CAMP', id: 't1', name: 'Tabără de vară', active: true },
+    { kind: 'CAMP', id: 't2', name: 'Tabără încheiată', active: false },
   ])
 })
-
 test('o cădere pe cursuri sau pe activități se propagă, nu întoarce o listă pe jumătate', async () => {
   raspuns = {
     courses: { data: [{ id: 'c1', name: 'Înot', active: true }], error: null },
@@ -110,7 +106,6 @@ test('o cădere pe cursuri sau pe activități se propagă, nu întoarce o list�
   }
   await expect(getClubAudiences('club-1')).rejects.toBeTruthy()
 })
-
 test('anunțurile clubului se cer filtrate pe club și în ordine cronologică inversă', async () => {
   raspuns = { club_announcements: { data: [anunt('a', 'Primul')], error: null } }
   const rezultat = await getClubAnnouncements('club-1')
@@ -118,13 +113,6 @@ test('anunțurile clubului se cer filtrate pe club și în ordine cronologică i
   expect(filtre).toContain('eq(club_id,club-1)')
   expect(filtre.some((f) => f.startsWith('order(created_at'))).toBe(true)
 })
-
-// Regresie: cele trei scrieri de mai jos plecau fără `.select()`, deci PostgREST
-// răspundea 204 No Content și când RLS filtrase toate rândurile. Apelantul nu avea
-// cum să deosebească „am scris” de „nu aveam voie”, iar ecranul arăta o reușită.
-// Fiecare test verifică DOUĂ lucruri: că rândul e cerut înapoi (`select`+`single`,
-// altfel zero rânduri nu produce eroare) și că un refuz chiar se propagă.
-
 test('publicarea cere rândul înapoi, ca zero rânduri să fie eroare', async () => {
   raspuns = { club_announcements: { data: anunt('a', 'Publicat'), error: null } }
   await createClubAnnouncement({
@@ -138,7 +126,6 @@ test('publicarea cere rândul înapoi, ca zero rânduri să fie eroare', async (
   expect(filtre).toContain('select()')
   expect(filtre).toContain('single()')
 })
-
 test('o publicare refuzată de bază aruncă, nu se dă drept reușită', async () => {
   raspuns = { club_announcements: { data: null, error: { message: 'RLS' } } }
   await expect(
@@ -152,7 +139,6 @@ test('o publicare refuzată de bază aruncă, nu se dă drept reușită', async 
     }),
   ).rejects.toBeTruthy()
 })
-
 test('ascunderea cere rândul înapoi, ca zero rânduri să fie eroare', async () => {
   raspuns = { club_announcements: { data: anunt('a', 'Ascuns'), error: null } }
   await setAnnouncementActive('a', false)
@@ -160,12 +146,10 @@ test('ascunderea cere rândul înapoi, ca zero rânduri să fie eroare', async (
   expect(filtre).toContain('select()')
   expect(filtre).toContain('single()')
 })
-
 test('o ascundere refuzată de bază aruncă, nu se dă drept reușită', async () => {
   raspuns = { club_announcements: { data: null, error: { message: 'RLS' } } }
   await expect(setAnnouncementActive('a', false)).rejects.toBeTruthy()
 })
-
 test('ștergerea cere rândul înapoi, ca zero rânduri să fie eroare', async () => {
   raspuns = { club_announcements: { data: anunt('a', 'Șters'), error: null } }
   await deleteClubAnnouncement('a')
@@ -174,7 +158,6 @@ test('ștergerea cere rândul înapoi, ca zero rânduri să fie eroare', async (
   expect(filtre).toContain('select()')
   expect(filtre).toContain('single()')
 })
-
 test('o ștergere refuzată de bază aruncă, nu se dă drept reușită', async () => {
   raspuns = { club_announcements: { data: null, error: { message: 'RLS' } } }
   await expect(deleteClubAnnouncement('a')).rejects.toBeTruthy()

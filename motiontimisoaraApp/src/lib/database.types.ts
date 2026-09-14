@@ -2132,6 +2132,30 @@ export type Database = {
       }
       get_my_coach_profile_id: { Args: never; Returns: string }
       get_my_role: { Args: never; Returns: string }
+      get_parent_announcement_courses: {
+        Args: never
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
+      get_parent_announcement_feed: {
+        Args: {
+          p_as_of?: string
+          p_before_id?: string
+          p_before_pinned?: boolean
+          p_before_published_at?: string
+          p_before_source?: string
+          p_course_id?: string
+          p_order_version?: string
+          p_page_size?: number
+        }
+        Returns: Json
+      }
+      mark_parent_announcements_seen: {
+        Args: { p_as_of: string; p_expected_user_id: string }
+        Returns: undefined
+      }
       my_child_ids: { Args: never; Returns: string[] }
       my_children_course_ids: { Args: never; Returns: string[] }
       my_club: {

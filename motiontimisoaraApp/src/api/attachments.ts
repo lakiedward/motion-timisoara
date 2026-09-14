@@ -3,18 +3,16 @@ import type { Tables } from '@/lib/database.types'
 import { termenulFilmarii, type FisierPregatit } from '@/lib/media'
 
 const BUCKET = 'announcement-media'
-/** Cât ține un link semnat. Scurt: linkul circulă, dreptul nu. */
 const VIATA_LINK_SECUNDE = 60 * 60
 
 export type Atasament = Tables<'announcement_attachments'>
+export type AnnouncementAttachmentSource = 'club' | 'coach'
 
-/** Un atașament gata de afișat, cu linkul lui semnat. */
 export type AtasamentAfisabil = {
   id: string
   fel: 'IMAGE' | 'VIDEO' | 'URL'
   link: string
   contentType: string | null
-  /** Când dispare filmarea. Gol pentru poze — ele rămân. */
   expiraLa: string | null
 }
 
@@ -24,18 +22,6 @@ function extensia(nume: string, contentType: string): string {
   return contentType.split('/')[1] ?? 'bin'
 }
 
-/**
- * Urcă fișierele în bucket și le leagă de anunț.
- *
- * Calea e `{announcement_id}/{uuid}.{ext}`, convenție din migrarea 00004: politica
- * de storage citește primul segment ca să afle de care anunț atârnă fișierul, deci
- * anunțul trebuie să existe ÎNAINTE de încărcare. De aceea funcția primește un id,
- * nu creează ea anunțul.
- *
- * Dacă o încărcare pică la mijloc, fișierele deja urcate sunt șterse înapoi:
- * altfel ar rămâne în bucket fără niciun rând care să le pomenească, deci fără
- * nimeni care să le mai poată șterge vreodată.
- */
 export async function incarcaAtasamente(
   clubAnnouncementId: string,
   fisiere: FisierPregatit[],
@@ -63,10 +49,7 @@ export async function incarcaAtasamente(
       })
     }
 
-    const { data, error } = await supabase
-      .from('announcement_attachments')
-      .insert(randuri)
-      .select()
+    const { data, error } = await supabase.from('announcement_attachments').insert(randuri).select()
     if (error) throw error
     return data ?? []
   } catch (e) {
@@ -75,21 +58,16 @@ export async function incarcaAtasamente(
   }
 }
 
-/**
- * Atașamentele mai multor anunțuri, cu linkuri semnate.
- *
- * Bucketul e privat, deci fișierele nu au adresă publică: fiecare are nevoie de un
- * link semnat, cerut într-un singur apel pentru tot lotul. Un link care nu se poate
- * semna e sărit, nu aruncat — un fișier lipsă nu are voie să golească toată galeria.
- */
 export async function getAtasamente(
-  clubAnnouncementIds: string[],
+  announcementIds: string[],
+  source: AnnouncementAttachmentSource = 'club',
 ): Promise<Record<string, AtasamentAfisabil[]>> {
-  if (!clubAnnouncementIds.length) return {}
+  if (!announcementIds.length) return {}
+  const announcementColumn = source === 'club' ? 'club_announcement_id' : 'announcement_id'
   const { data, error } = await supabase
     .from('announcement_attachments')
     .select('*')
-    .in('club_announcement_id', clubAnnouncementIds)
+    .in(announcementColumn, announcementIds)
     .order('display_order')
   if (error) throw error
 
@@ -97,9 +75,10 @@ export async function getAtasamente(
   const cai = randuri.map((r) => r.storage_path).filter((c): c is string => !!c)
   const linkuri = new Map<string, string>()
   if (cai.length) {
-    const { data: semnate } = await supabase.storage
+    const { data: semnate, error: signingError } = await supabase.storage
       .from(BUCKET)
       .createSignedUrls(cai, VIATA_LINK_SECUNDE)
+    if (signingError) throw signingError
     for (const s of semnate ?? []) {
       if (s.signedUrl && s.path) linkuri.set(s.path, s.signedUrl)
     }
@@ -107,10 +86,11 @@ export async function getAtasamente(
 
   const pe: Record<string, AtasamentAfisabil[]> = {}
   for (const r of randuri) {
-    if (!r.club_announcement_id) continue
+    const announcementId = r[announcementColumn]
+    if (!announcementId) continue
     const link = r.storage_path ? linkuri.get(r.storage_path) : r.url
     if (!link) continue
-    ;(pe[r.club_announcement_id] ??= []).push({
+    ;(pe[announcementId] ??= []).push({
       id: r.id,
       fel: r.type as AtasamentAfisabil['fel'],
       link,
@@ -121,17 +101,6 @@ export async function getAtasamente(
   return pe
 }
 
-/**
- * Scoate fișierele unui anunț din bucket, înainte ca anunțul să fie șters.
- *
- * Rândurile de atașament cad singure, în cascadă, dar FIȘIERELE nu: ar rămâne în
- * bucket pentru totdeauna, iar politica bucketului le leagă de anunț — deci după
- * ștergerea anunțului nimeni nu le-ar mai putea nici măcar găsi ca să le scoată.
- *
- * Nu aruncă: dacă bucketul refuză, anunțul tot trebuie să poată fi șters. Un
- * fișier rămas în urmă e o risipă; un anunț care nu se poate șterge e un ecran
- * blocat pentru om.
- */
 export async function stergeFisiereleAnuntului(clubAnnouncementId: string): Promise<void> {
   try {
     const { data } = await supabase
@@ -141,11 +110,10 @@ export async function stergeFisiereleAnuntului(clubAnnouncementId: string): Prom
     const cai = (data ?? []).map((r) => r.storage_path).filter((c): c is string => !!c)
     if (cai.length) await supabase.storage.from(BUCKET).remove(cai)
   } catch {
-    /* vezi comentariul de mai sus */
+    return
   }
 }
 
-/** Scoate un atașament: întâi fișierul, apoi rândul care îl pomenește. */
 export async function stergeAtasament(id: string, storagePath: string | null): Promise<void> {
   if (storagePath) {
     const { error } = await supabase.storage.from(BUCKET).remove([storagePath])

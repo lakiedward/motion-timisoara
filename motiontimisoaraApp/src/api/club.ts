@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 import type { LocationFormInput } from '@/api/coach'
-
+import { sAIncheiat } from '@/api/camps'
 async function uid(): Promise<string> {
   const {
     data: { session },
@@ -9,15 +9,12 @@ async function uid(): Promise<string> {
   if (!session) throw new Error('Not authenticated')
   return session.user.id
 }
-
 export type Club = Tables<'clubs'>
-
 export async function getMyClub(): Promise<Club | null> {
   const { data, error } = await supabase.rpc('my_club')
   if (error) throw error
   return (data as Club[] | null)?.[0] ?? null
 }
-
 export interface ClubProfileInput {
   name: string
   description: string | null
@@ -42,7 +39,6 @@ export type ClubCoach = {
   email: string
   photo_storage_path: string | null
 }
-
 export async function getClubCoaches(clubId: string): Promise<ClubCoach[]> {
   const { data, error } = await supabase.rpc('club_coach_contacts', { p_club_id: clubId })
   if (error) throw error
@@ -53,7 +49,6 @@ export async function getClubCoaches(clubId: string): Promise<ClubCoach[]> {
     photo_storage_path: r.photo_storage_path,
   }))
 }
-
 export interface CreateManagedCoachInput {
   email: string
   name: string
@@ -66,14 +61,17 @@ export interface CreateManagedCoachResult {
   email: string
   tempPassword: string
 }
-
 export async function createManagedCoach(
   input: CreateManagedCoachInput,
 ): Promise<CreateManagedCoachResult> {
   const { data, error } = await supabase.functions.invoke('create-managed-coach', { body: input })
   if (error) {
     let msg = 'Nu am putut crea antrenorul.'
-    const ctx = (error as { context?: Response })?.context
+    const ctx = (
+      error as {
+        context?: Response
+      }
+    )?.context
     if (ctx && typeof ctx.json === 'function') {
       try {
         const b = await ctx.json()
@@ -86,7 +84,6 @@ export async function createManagedCoach(
   }
   return data as CreateManagedCoachResult
 }
-
 export async function removeClubCoach(clubId: string, coachProfileId: string) {
   const { error } = await supabase
     .from('club_coaches')
@@ -98,7 +95,6 @@ export async function removeClubCoach(clubId: string, coachProfileId: string) {
   if (error) throw error
 }
 export type ClubCode = Tables<'club_invitation_codes'>
-
 export async function getClubCodes(clubId: string): Promise<ClubCode[]> {
   const { data, error } = await supabase
     .from('club_invitation_codes')
@@ -108,14 +104,12 @@ export async function getClubCodes(clubId: string): Promise<ClubCode[]> {
   if (error) throw error
   return data ?? []
 }
-
 function randomCode(): string {
   const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   const part = () =>
     Array.from({ length: 4 }, () => a[Math.floor(Math.random() * a.length)]).join('')
   return `${part()}-${part()}`
 }
-
 export async function generateClubCode(clubId: string, maxUses = 1): Promise<string> {
   const owner = await uid()
   const code = randomCode()
@@ -129,7 +123,6 @@ export async function generateClubCode(clubId: string, maxUses = 1): Promise<str
   if (error) throw error
   return code
 }
-
 export async function deleteClubCode(id: string) {
   const { error } = await supabase
     .from('club_invitation_codes')
@@ -140,23 +133,22 @@ export async function deleteClubCode(id: string) {
   if (error) throw error
 }
 export type ClubAnnouncement = Tables<'club_announcements'>
-
-export type AudienceKind = 'CLUB' | 'COURSE' | 'ACTIVITY'
-
+export type AudienceKind = 'CLUB' | 'COURSE' | 'ACTIVITY' | 'CAMP'
 export type ClubAudience = {
   kind: Exclude<AudienceKind, 'CLUB'>
   id: string
   name: string
   active: boolean
 }
-
-export async function getClubAudiences(clubId: string): Promise<ClubAudience[]> {
-  const [cursuri, activitati] = await Promise.all([
+export async function getClubAudiences(clubId: string, acum = new Date()): Promise<ClubAudience[]> {
+  const [cursuri, activitati, tabere] = await Promise.all([
     supabase.from('courses').select('id, name, active').eq('club_id', clubId).order('name'),
     supabase.from('activities').select('id, name, active').eq('club_id', clubId).order('name'),
+    supabase.from('camps').select('id, title, period_end').eq('club_id', clubId).order('title'),
   ])
   if (cursuri.error) throw cursuri.error
   if (activitati.error) throw activitati.error
+  if (tabere.error) throw tabere.error
   return [
     ...(cursuri.data ?? []).map((c) => ({
       kind: 'COURSE' as const,
@@ -170,9 +162,14 @@ export async function getClubAudiences(clubId: string): Promise<ClubAudience[]> 
       name: a.name,
       active: a.active,
     })),
+    ...(tabere.data ?? []).map((t) => ({
+      kind: 'CAMP' as const,
+      id: t.id,
+      name: t.title,
+      active: !sAIncheiat(t.period_end, acum),
+    })),
   ]
 }
-
 export async function getClubAnnouncements(clubId: string): Promise<ClubAnnouncement[]> {
   const { data, error } = await supabase
     .from('club_announcements')
@@ -182,14 +179,12 @@ export async function getClubAnnouncements(clubId: string): Promise<ClubAnnounce
   if (error) throw error
   return data ?? []
 }
-
 export async function createClubAnnouncement(input: {
   club_id: string
   title: string
   content: string
   priority: string
   audience_kind: AudienceKind
-
   audience_id: string | null
 }): Promise<ClubAnnouncement> {
   const author = await uid()
@@ -201,7 +196,6 @@ export async function createClubAnnouncement(input: {
   if (error) throw error
   return data
 }
-
 export async function setAnnouncementActive(
   id: string,
   is_active: boolean,
@@ -215,7 +209,6 @@ export async function setAnnouncementActive(
   if (error) throw error
   return data
 }
-
 export async function deleteClubAnnouncement(id: string): Promise<ClubAnnouncement> {
   const { data, error } = await supabase
     .from('club_announcements')
@@ -226,9 +219,9 @@ export async function deleteClubAnnouncement(id: string): Promise<ClubAnnounceme
   if (error) throw error
   return data
 }
-
-export type ClubLocation = Tables<'locations'> & { courseCount: number }
-
+export type ClubLocation = Tables<'locations'> & {
+  courseCount: number
+}
 export async function getClubLocations(clubId: string): Promise<ClubLocation[]> {
   const { data, error } = await supabase
     .from('locations')
@@ -236,13 +229,16 @@ export async function getClubLocations(clubId: string): Promise<ClubLocation[]> 
     .eq('club_id', clubId)
     .order('name')
   if (error) throw error
-  type Row = Tables<'locations'> & { courses?: { count: number }[] }
+  type Row = Tables<'locations'> & {
+    courses?: {
+      count: number
+    }[]
+  }
   return ((data ?? []) as unknown as Row[]).map(({ courses, ...loc }) => ({
     ...loc,
     courseCount: courses?.[0]?.count ?? 0,
   }))
 }
-
 export async function getClubSelectableLocations(
   clubId: string,
   keepId?: string | null,
@@ -257,7 +253,6 @@ export async function getClubSelectableLocations(
     .filter((l) => l.is_active || l.id === keepId)
     .map(({ id, name, city }) => ({ id, name, city }))
 }
-
 export async function getClubLocationById(
   id: string,
   clubId: string,
@@ -271,7 +266,6 @@ export async function getClubLocationById(
   if (error) throw error
   return data
 }
-
 export async function createClubLocation(clubId: string, input: LocationFormInput) {
   const owner = await uid()
   const { error } = await supabase
@@ -279,7 +273,6 @@ export async function createClubLocation(clubId: string, input: LocationFormInpu
     .insert({ ...input, club_id: clubId, created_by_user_id: owner, is_active: true })
   if (error) throw error
 }
-
 export async function updateClubLocation(
   id: string,
   input: LocationFormInput,
@@ -293,7 +286,6 @@ export async function updateClubLocation(
   if (error) throw error
   return data
 }
-
 export async function setClubLocationActive(id: string, is_active: boolean) {
   const { error } = await supabase
     .from('locations')
@@ -308,7 +300,6 @@ export type ClubCourse = Tables<'courses'> & {
   location: Pick<Tables<'locations'>, 'id' | 'name'> | null
   coach: Pick<Tables<'profiles'>, 'id' | 'name'> | null
 }
-
 export async function getClubCourses(clubId: string): Promise<ClubCourse[]> {
   const { data, error } = await supabase
     .from('courses')
@@ -320,23 +311,29 @@ export async function getClubCourses(clubId: string): Promise<ClubCourse[]> {
   if (error) throw error
   return (data ?? []) as unknown as ClubCourse[]
 }
-
 export async function getClubCourseById(id: string): Promise<Tables<'courses'> | null> {
   const { data, error } = await supabase.from('courses').select('*').eq('id', id).single()
   if (error) return null
   return data
 }
-
-export async function getClubRosterForSelect(
-  clubId: string,
-): Promise<{ user_id: string; name: string }[]> {
+export async function getClubRosterForSelect(clubId: string): Promise<
+  {
+    user_id: string
+    name: string
+  }[]
+> {
   const { data, error } = await supabase
     .from('club_coaches')
     .select('coach_profile:coach_profiles(user_id, profile:profiles(name))')
     .eq('club_id', clubId)
   if (error) throw error
   type Row = {
-    coach_profile: { user_id: string; profile: { name: string } | null } | null
+    coach_profile: {
+      user_id: string
+      profile: {
+        name: string
+      } | null
+    } | null
   }
   return ((data ?? []) as unknown as Row[])
     .filter((r) => r.coach_profile)
@@ -345,7 +342,6 @@ export async function getClubRosterForSelect(
       name: r.coach_profile!.profile?.name ?? '—',
     }))
 }
-
 export interface ClubCourseFormInput {
   currency: 'RON' | 'EUR'
   eur_ron_rate_micros: number | null
@@ -360,7 +356,6 @@ export interface ClubCourseFormInput {
   price_per_session: number
   description: string | null
 }
-
 export async function createClubCourse(clubId: string, input: ClubCourseFormInput) {
   const { error } = await supabase.from('courses').insert({
     ...input,
@@ -371,7 +366,6 @@ export async function createClubCourse(clubId: string, input: ClubCourseFormInpu
   })
   if (error) throw error
 }
-
 export async function updateClubCourse(id: string, input: ClubCourseFormInput) {
   const { error } = await supabase
     .from('courses')
@@ -381,7 +375,6 @@ export async function updateClubCourse(id: string, input: ClubCourseFormInput) {
     .single()
   if (error) throw error
 }
-
 export async function setClubCourseActive(id: string, active: boolean) {
   const { error } = await supabase.from('courses').update({ active }).eq('id', id).select().single()
   if (error) throw error

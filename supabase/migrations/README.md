@@ -111,6 +111,21 @@ frontend confirmation, displays and snapshot-based course fulfillment still requ
 the coordinated follow-up described in
 `docs/superpowers/specs/2026-09-11-todo-149-eur-ron-contract.md`.
 
+Feature #280: `00055_camp_announcement_audience.sql` was applied as
+`20260914154559` (`camp_announcement_audience`) on 2026-09-14. Live readback
+confirmed CAMP in both `audience_club_id` and the audience-kind constraint.
+The existing ownership and enrollment policies remain unchanged. The prior
+review exercised 22 isolated SQL checks for ownership, parent eligibility and
+media visibility; this does not substitute for the parent-feed verification.
+
+Feature #280: `00056_parent_announcement_feed.sql` was applied as
+`20260914160121` (`parent_announcement_feed`) on 2026-09-14, after 67 isolated
+SQL assertions and independent review. All three client RPCs are SECURITY
+INVOKER, executable by authenticated users and inaccessible to anonymous users.
+Live parent impersonation returned an empty feed and the audit parent's enrolled
+course. Author insertion is tied to the authenticated user; existing authors and
+announcement identities are immutable. Generated client types reflect this schema.
+
 To confirm git and the remote still agree:
 
 ```bash
