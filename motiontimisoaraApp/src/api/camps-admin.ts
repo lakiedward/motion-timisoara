@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
+import type { CampRequirementCategory } from '@/lib/camp-requirements'
 
 export type Tabara = Tables<'camps'>
 export type CategoriePret = Tables<'camp_price_items'>
@@ -55,7 +56,7 @@ export interface TabaraInput {
   location_text: string | null
   capacity: number | null
   allow_cash: boolean
-  camp_requirements: string[]
+  camp_requirements: CampRequirementCategory[]
 }
 
 export interface Proprietar {

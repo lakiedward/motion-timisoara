@@ -2,6 +2,10 @@ import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 import { publicUrl } from '@/api/public'
 import { getPreturilePeVarsta, type PretPeVarsta } from '@/api/camps-admin'
+import {
+  readCampRequirements,
+  type CampRequirementCategory,
+} from '@/lib/camp-requirements'
 
 const BUCKET = 'camp-photos'
 
@@ -30,7 +34,7 @@ export type OrganizatorTabara = {
 export type TabaraDetaliu = {
   tabara: Tables<'camps'>
   location: CampLocation | null
-  necesar: string[]
+  necesar: CampRequirementCategory[]
   organizator: OrganizatorTabara | null
   categorii: CategoriePret[]
   agePrices: PretPeVarsta[]
@@ -55,14 +59,6 @@ export function formatZi(data: string): string {
 
 export function sumaCategoriilor(categorii: CategoriePret[]): number {
   return categorii.reduce((t, c) => t + Number(c.amount || 0), 0)
-}
-
-function citesteNecesar(valoare: unknown): string[] {
-  if (!Array.isArray(valoare)) return []
-  return valoare
-    .filter((articol): articol is string => typeof articol === 'string')
-    .map((articol) => articol.trim())
-    .filter(Boolean)
 }
 
 export type TabaraDinLista = {
@@ -204,7 +200,7 @@ export async function getTabaraDetaliu(slug: string): Promise<TabaraDetaliu | nu
   return {
     tabara,
     location: location ?? null,
-    necesar: citesteNecesar(tabara.camp_requirements),
+    necesar: readCampRequirements(tabara.camp_requirements),
     organizator,
     categorii: categorii.data ?? [],
     agePrices,

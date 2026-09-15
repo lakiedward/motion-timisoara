@@ -133,13 +133,19 @@ test('o tabără fără loc nu lasă un rând gol în locul lui', async () => {
 test('necesarul taberei se afișează ca listă pentru părinte', async () => {
   mocked.mockResolvedValue(
     detaliu({
-      necesar: ['Tricouri pentru 7 zile', 'Bicicletă verificată înainte de plecare'],
+      necesar: [
+        { name: 'Haine', items: [{ name: 'Chiloți', quantity: 7 }] },
+        { name: 'Ski', items: [{ name: 'Schiuri', quantity: 1 }, { name: 'Clăpari', quantity: 1 }] },
+      ],
     }) as never,
   )
   renderPage()
   expect(await screen.findByRole('heading', { name: 'Necesar pentru tabără' })).toBeInTheDocument()
-  expect(screen.getByText('Tricouri pentru 7 zile')).toBeInTheDocument()
-  expect(screen.getByText('Bicicletă verificată înainte de plecare')).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Haine' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Ski' })).toBeInTheDocument()
+  expect(screen.getByText('Chiloți — 7')).toBeInTheDocument()
+  expect(screen.getByText('Schiuri — 1')).toBeInTheDocument()
+  expect(screen.getByText('Clăpari — 1')).toBeInTheDocument()
 })
 test('o tabără fără necesar nu arată o secțiune goală', async () => {
   renderPage()

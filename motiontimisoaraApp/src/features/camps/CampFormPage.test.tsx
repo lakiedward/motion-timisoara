@@ -190,25 +190,40 @@ test('la editare, locul salvat apare selectat chiar dacă lista vine după tabă
   await waitFor(() => expect(screen.getByLabelText('Loc')).toHaveValue(BAZIN))
   expect(getClubSelectableLocations).toHaveBeenCalledWith('club-1', BAZIN)
 })
-test('la editare, necesarul salvat poate fi schimbat și se trimite ca listă curată', async () => {
+test('la editare, necesarul salvat poate primi categorii și articole numerotate', async () => {
   const user = userEvent.setup()
   vi.mocked(getTabaraDeEditat).mockResolvedValue({
     ...TABARA,
-    camp_requirements: ['Tricouri pentru 7 zile', 'Bicicletă proprie'],
+    camp_requirements: [{ name: 'Haine', items: [{ name: 'Chiloți', quantity: 7 }] }],
   } as never)
   vi.mocked(getCategoriile).mockResolvedValue([])
   renderForm('/club/camps/tabara-1/edit')
 
-  const necesar = await screen.findByLabelText('Necesar pentru tabără')
-  await waitFor(() => expect(necesar).toHaveValue('Tricouri pentru 7 zile\nBicicletă proprie'))
-  fireEvent.change(necesar, {
-    target: { value: 'Tricouri pentru 7 zile\n  Bicicletă proprie  \nBicicletă proprie' },
-  })
+  await waitFor(() => expect(screen.getByLabelText('Categorie')).toHaveValue('Haine'))
+  expect(screen.getByLabelText('Articol')).toHaveValue('Chiloți')
+  expect(screen.getByLabelText('Număr')).toHaveValue(7)
+  await user.click(screen.getByRole('button', { name: 'Adaugă categorie' }))
+  await user.type(screen.getAllByLabelText('Categorie')[1], 'Ski')
+  await user.click(screen.getAllByRole('button', { name: 'Adaugă articol' })[1])
+  await user.type(screen.getAllByLabelText('Articol')[1], 'Schiuri')
+  await user.type(screen.getAllByLabelText('Număr')[1], '1')
+  await user.click(screen.getAllByRole('button', { name: 'Adaugă articol' })[1])
+  await user.type(screen.getAllByLabelText('Articol')[2], 'Clăpari')
+  await user.type(screen.getAllByLabelText('Număr')[2], '1')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
 
   await waitFor(() => expect(saveCampOffer).toHaveBeenCalled())
   expect(vi.mocked(saveCampOffer).mock.calls[0][6]).toMatchObject({
-    camp_requirements: ['Tricouri pentru 7 zile', 'Bicicletă proprie'],
+    camp_requirements: [
+      { name: 'Haine', items: [{ name: 'Chiloți', quantity: 7 }] },
+      {
+        name: 'Ski',
+        items: [
+          { name: 'Schiuri', quantity: 1 },
+          { name: 'Clăpari', quantity: 1 },
+        ],
+      },
+    ],
   })
 })
 test('o tabără nouă pornește pe preț unic, fără categorii de vârstă la vedere', async () => {

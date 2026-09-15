@@ -112,11 +112,20 @@ export default function CampDetailsPage() {
         {necesar.length > 0 && (
           <div className="mt-8">
             <h2 className="font-display mb-3 text-lg font-bold">Necesar pentru tabără</h2>
-            <ul className="text-muted-foreground list-disc space-y-2 pl-5">
-              {necesar.map((articol, index) => (
-                <li key={`${articol}-${index}`}>{articol}</li>
+            <div className="space-y-5">
+              {necesar.map((categorie) => (
+                <section key={categorie.name}>
+                  <h3 className="font-medium">{categorie.name}</h3>
+                  <ul className="text-muted-foreground mt-2 list-disc space-y-2 pl-5">
+                    {categorie.items.map((articol) => (
+                      <li key={articol.name}>
+                        {articol.name} — {articol.quantity}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               ))}
-            </ul>
+            </div>
           </div>
         )}
 
