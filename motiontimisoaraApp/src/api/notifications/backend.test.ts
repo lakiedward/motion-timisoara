@@ -1,7 +1,18 @@
-import { beforeEach, expect, it, vi } from 'vitest'
-import { getPushPreferences, getPushSession, registerPushDevice, setPushEnabled } from './backend'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import {
+  getPushPreferences,
+  getPushSession,
+  registerPushDevice,
+  revokePushDevice,
+  setPushEnabled,
+} from './backend'
 
-const mocks = vi.hoisted(() => ({ rpc: vi.fn(), header: vi.fn(), getSession: vi.fn() }))
+const mocks = vi.hoisted(() => ({
+  rpc: vi.fn(),
+  header: vi.fn(),
+  abort: vi.fn(),
+  getSession: vi.fn(),
+}))
 vi.mock('@/lib/supabase', () => ({
   supabase: { rpc: mocks.rpc, auth: { getSession: mocks.getSession } },
 }))
@@ -14,22 +25,83 @@ const session = { userId, sessionId, accessToken }
 beforeEach(() => {
   vi.resetAllMocks()
   mocks.rpc.mockReturnValue({ setHeader: mocks.header })
-  mocks.header.mockResolvedValue({ data: { enabled: false }, error: null })
+  mocks.header.mockReturnValue({ abortSignal: mocks.abort })
+  mocks.abort.mockResolvedValue({ data: { enabled: false }, error: null })
+})
+
+afterEach(() => vi.useRealTimers())
+
+it.each([
+  ['preferences', () => getPushPreferences(session)],
+  ['opt-out', () => setPushEnabled(session, false)],
+  [
+    'registration',
+    () =>
+      registerPushDevice(session, {
+        bindingId: 'binding',
+        installationId: 'installation',
+        token: 'token',
+      }),
+  ],
+  ['revocation', () => revokePushDevice(session, 'binding')],
+] as const)('aborts a stalled %s request so the coordinator can settle', async (_, request) => {
+  vi.useFakeTimers()
+  const failure = new Error('Request aborted')
+  mocks.abort.mockImplementation(
+    (signal: AbortSignal) =>
+      new Promise((resolve) => {
+        signal.addEventListener('abort', () => resolve({ data: null, error: failure }), {
+          once: true,
+        })
+      }),
+  )
+  const result = expect(request()).rejects.toThrow('Push request timed out')
+  await vi.advanceTimersByTimeAsync(10_000)
+  await result
+  expect(mocks.abort.mock.calls[0][0].aborted).toBe(true)
+  expect(vi.getTimerCount()).toBe(0)
+})
+
+it('settles a deadline while the RPC waits for auth before starting fetch', async () => {
+  vi.useFakeTimers()
+  mocks.abort.mockImplementation(() => new Promise(() => undefined))
+  const result = expect(getPushPreferences(session)).rejects.toThrow('Push request timed out')
+  await vi.advanceTimersByTimeAsync(10_000)
+  await result
+  expect(mocks.abort.mock.calls[0][0].aborted).toBe(true)
+  expect(vi.getTimerCount()).toBe(0)
+})
+
+it('settles a stalled session refresh before the coordinator starts an RPC', async () => {
+  vi.useFakeTimers()
+  mocks.getSession.mockImplementation(() => new Promise(() => undefined))
+  const result = expect(getPushSession(userId)).rejects.toThrow('Push request timed out')
+  await vi.advanceTimersByTimeAsync(10_000)
+  await result
+  expect(mocks.rpc).not.toHaveBeenCalled()
+  expect(vi.getTimerCount()).toBe(0)
+})
+
+it('clears the deadline after a successful request', async () => {
+  vi.useFakeTimers()
+  expect(await getPushPreferences(session)).toEqual({ enabled: false })
+  expect(vi.getTimerCount()).toBe(0)
+  expect(mocks.abort.mock.calls[0][0].aborted).toBe(false)
 })
 
 it('binds preference reads and writes to the captured session token', async () => {
   expect(await getPushPreferences(session)).toEqual({ enabled: false })
   expect(mocks.rpc).toHaveBeenCalledWith('get_my_push_preferences')
   expect(mocks.header).toHaveBeenCalledWith('Authorization', `Bearer ${accessToken}`)
-  mocks.header.mockResolvedValueOnce({ data: { enabled: true }, error: null })
+  mocks.abort.mockResolvedValueOnce({ data: { enabled: true }, error: null })
   expect(await setPushEnabled(session, true)).toEqual({ enabled: true })
   expect(mocks.rpc).toHaveBeenLastCalledWith('set_my_push_enabled', { p_enabled: true })
 })
 
 it('does not turn an invalid response or unsaved preference into false success', async () => {
-  mocks.header.mockResolvedValueOnce({ data: { enabled: 'true' }, error: null })
+  mocks.abort.mockResolvedValueOnce({ data: { enabled: 'true' }, error: null })
   await expect(getPushPreferences(session)).rejects.toThrow('Invalid push preferences')
-  mocks.header.mockResolvedValueOnce({ data: { enabled: false }, error: null })
+  mocks.abort.mockResolvedValueOnce({ data: { enabled: false }, error: null })
   await expect(setPushEnabled(session, true)).rejects.toThrow('Push preference was not saved')
 })
 
@@ -52,7 +124,7 @@ it('rejects a session belonging to another user or missing its session identifie
 })
 
 it('registers one installation and binding under the same captured auth session', async () => {
-  mocks.header.mockResolvedValueOnce({ data: null, error: null })
+  mocks.abort.mockResolvedValueOnce({ data: null, error: null })
   await registerPushDevice(session, {
     bindingId: 'binding',
     installationId: 'installation',

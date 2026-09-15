@@ -28,6 +28,7 @@ export const pushNotifications = createPushCoordinator({
       queryFn: () => getPushPreferences(session),
       staleTime: 0,
       retry: false,
+      networkMode: 'always',
     }),
   setEnabled: async (session, enabled) => {
     const result = await setPushEnabled(session, enabled)
