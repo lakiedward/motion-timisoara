@@ -1,16 +1,13 @@
 import { AcceptedPriceDetails } from '@/components/AcceptedPriceDetails'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import { AlertCircle, ArrowLeft, Check, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
   EnrollmentRequestError,
   createEnrollment,
-  createPaymentIntent,
-  listenForEnrollmentReady,
   validateEnrollment,
   type BillingDetails,
   type EnrollmentKind,
@@ -31,6 +28,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import type { Offering } from '../CheckoutPage'
 import { AddChildInline } from './CheckoutFormFields'
 import { CheckoutBillingFields } from './CheckoutBillingFields'
+import { usePaymentAdapter } from './usePaymentAdapter'
+import { processEnrollmentPayments, paymentResultMessage } from '@/api/payments/process'
 
 const KIND_LABEL: Record<EnrollmentKind, string> = {
   COURSE: 'Curs',
@@ -52,8 +51,10 @@ export default function CheckoutWizard({
   const navigate = useNavigate()
   const qc = useQueryClient()
   const { user } = useAuth()
-  const stripe = useStripe()
-  const elements = useElements()
+  const payment = usePaymentAdapter()
+  const attempt = useRef<AbortController | null>(null)
+  const createdIds = useRef<string[]>([])
+  useEffect(() => () => attempt.current?.abort(), [user?.id])
 
   const [step, setStep] = useState(0)
   const [selected, setSelected] = useState<string[]>([])
@@ -182,10 +183,14 @@ export default function CheckoutWizard({
         throw new Error('Nu mai sunt locuri suficiente pentru selecția ta.')
       }
 
-      setProgress('Se creează înscrierile…')
-      if (method === 'CARD' && (!stripe || !elements?.getElement(CardElement))) {
-        throw new Error('Formularul de card nu s-a încărcat. Reîncarcă pagina.')
+      if (method === 'CARD' && !payment.ready) {
+        throw new Error('Plata nu este pregătită. Reîncearcă după încărcarea formularului.')
       }
+      if (createdIds.current.length) {
+        throw new Error('Înscrierile sunt deja salvate. Reia plata din Înscrieri.')
+      }
+      attempt.current = new AbortController()
+      setProgress('Se creează înscrierile…')
       const created = await createEnrollment({
         kind,
         entityId: offering.id,
@@ -196,80 +201,36 @@ export default function CheckoutWizard({
         billingDetails: method === 'CARD' ? billing : undefined,
       })
 
-      if (method === 'CASH') return { ids: created.enrollmentIds, outcome: 'cash' as const }
-
-      const card = elements?.getElement(CardElement)
-      if (!stripe || !card) {
-        throw new Error('Formularul de card nu s-a încărcat. Reîncarcă pagina.')
-      }
-      const ids = created.enrollmentIds
-      const listener = user ? listenForEnrollmentReady(user.id, ids) : null
-      if (listener) {
-        await Promise.race([
-          listener.whenSubscribed,
-          new Promise<void>((resolve) => setTimeout(resolve, 3000)),
-        ])
-      }
-
-      for (let i = 0; i < ids.length; i++) {
-        setProgress(
-          ids.length > 1
-            ? `Se procesează plata ${i + 1} din ${ids.length}…`
-            : 'Se procesează plata…',
-        )
-        try {
-          const { clientSecret, alreadySucceeded } = await createPaymentIntent(ids[i])
-          if (alreadySucceeded) continue
-          const { error } = await stripe.confirmCardPayment(clientSecret, {
-            payment_method: {
-              card,
-              billing_details: {
-                name: billing.name,
-                email: billing.email,
-                address: {
-                  line1: billing.addressLine1,
-                  city: billing.city,
-                  postal_code: billing.postalCode,
-                  country: 'RO',
-                },
-              },
-            },
-          })
-          if (error) throw new Error(error.message ?? 'Plata a eșuat')
-        } catch (err) {
-          listener?.dispose()
-          if (i > 0) {
-            throw new Error(
-              `Plata a reușit pentru ${i} din ${ids.length} copii. Restul rămân în așteptare, cu oferta salvată. Verifică în Înscrieri.`,
-              { cause: err },
-            )
-          }
-          throw err instanceof Error ? err : new Error('Plata a eșuat', { cause: err })
-        }
-      }
-
-      setProgress('Confirmăm plata…')
-      if (listener) listener.startWaiting()
-      const outcome = listener ? await listener.outcome : 'timeout'
-      return { ids, outcome }
+      createdIds.current = created.enrollmentIds
+      if (method === 'CASH') return { cash: true as const }
+      const result = await processEnrollmentPayments(
+        created.enrollmentIds,
+        payment.adapter,
+        (value) =>
+          setProgress(
+            value.confirming
+              ? 'Confirmăm plata…'
+              : `Plata ${value.index} din ${value.total} · ${value.child}`,
+          ),
+        attempt.current.signal,
+      )
+      return { cash: false as const, result }
     },
-    onSuccess: ({ outcome }) => {
+    onSuccess: (result) => {
+      void qc.invalidateQueries({ queryKey: ['enrollments'] })
+      if (attempt.current?.signal.aborted) return
       setProgress(null)
-      qc.invalidateQueries({ queryKey: ['enrollments'] })
-      if (outcome === 'cash') {
+      if (result.cash) {
         toast.success('Înscriere înregistrată. Plata se face cash la antrenor.')
-      } else if (outcome === 'ready') {
-        toast.success('Plată confirmată. Înscrierea este activă.')
-      } else if (outcome === 'failed') {
-        toast.error('Plata a fost respinsă. Verifică în secțiunea Înscrieri.')
-      } else if (outcome === 'partial') {
-        toast.message('Unele plăți s-au confirmat, altele nu. Verifică în Înscrieri.')
       } else {
-        toast.message('Plata a fost trimisă. Confirmarea poate dura câteva momente.')
+        const message = paymentResultMessage(result.result)
+        if (result.result.outcome === 'ready') toast.success(message)
+        else toast.message(message)
       }
       navigate('/account/enrollments')
     },
     onError: (e: Error) => {
+      if (attempt.current?.signal.aborted) return
       if (e instanceof EnrollmentRequestError && e.code === 'PRICE_CHANGED') {
         setAccepted(false)
         setStep(1)
@@ -277,6 +238,7 @@ export default function CheckoutWizard({
       }
       setProgress(null)
       toast.error(e.message)
+      if (createdIds.current.length) navigate('/account/enrollments')
     },
   })
 
@@ -565,6 +527,7 @@ export default function CheckoutWizard({
               busy ||
               selected.length === 0 ||
               !paymentAvailable ||
+              (method === 'CARD' && !payment.ready) ||
               !validationReady ||
               !pricesReady ||
               !hasAccepted

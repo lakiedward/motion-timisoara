@@ -4,7 +4,7 @@ const config: CapacitorConfig = {
   appId: 'com.motiontimisoara.app',
   appName: 'Motion Timisoara',
   webDir: 'dist',
-  android: { useLegacyBridge: true },
+  android: { useLegacyBridge: true, loggingBehavior: 'none' },
   plugins: { CapacitorHttp: { enabled: true } },
 }
 

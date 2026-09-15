@@ -4,12 +4,15 @@ import { readPriceSnapshot } from "./price-snapshot.ts";
 
 export async function authorizedRonCharge(
   db: SupabaseClient, userId: string,
-  enrollment: { kind: string; entity_id: string; child_id: string },
+  enrollment: { kind: string; entity_id: string; child_id: string; status: string },
   payment: { amount: number; currency: string; status: string; gateway_txn_id?: string | null; pricing_snapshot?: unknown },
 ): Promise<number> {
   const { data: child, error } = await db.from("children").select("parent_id").eq("id", enrollment.child_id).single();
   if (error || !child || child.parent_id !== userId) {
     throw enrollmentJson({ error: "Înscrierea nu îți aparține." }, 403);
+  }
+  if (enrollment.status !== "PENDING" && enrollment.status !== "ACTIVE") {
+    throw enrollmentJson({ error: "Înscrierea nu mai permite plata. Verifică în Înscrieri." }, 409);
   }
   const canInspectSucceeded = payment.status === "SUCCEEDED" && Boolean(payment.gateway_txn_id);
   if ((!canInspectSucceeded && !["PENDING", "FAILED"].includes(payment.status)) || payment.currency !== "RON" ||

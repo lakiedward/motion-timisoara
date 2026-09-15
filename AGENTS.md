@@ -515,6 +515,13 @@ reorganizing this document; correct obsolete facts with current evidence.
   only in Supabase secrets. iOS/APNs remains deferred. See the Android push and backend
   specs dated 2026-09-15 for contracts and verification.
 
+- 2026-09-15 — Feature #327 uses an app-local Capacitor Android bridge around
+  Stripe Android 22.8.1 and Play Services Wallet 19.4.0. Native payments accept
+  TEST configuration only, disable Link and retain the existing web Elements adapter.
+  Every child keeps one frozen RON payment; explicit recovery reuses its original
+  intent, while webhooks alone fulfill sessions. Initial enrollment batches use
+  service-only atomic persistence. See the feature #327 specs and verification record.
+
 ## 11. Known Issues / WIP
 
 - **To-Do #149 completion in progress (2026-09-11):** migrations `00048` and `00049`

@@ -3,19 +3,34 @@ package com.motiontimisoara.app;
 import android.content.Intent;
 import android.os.Bundle;
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.PluginHandle;
+import com.motiontimisoara.app.payments.MotionPaymentsPlugin;
 import com.motiontimisoara.app.push.MotionPushPayload;
 import com.motiontimisoara.app.push.MotionPushPlugin;
 import com.motiontimisoara.app.push.MotionPushState;
 import java.util.HashMap;
 import java.util.Map;
+import com.stripe.android.paymentsheet.PaymentSheet;
 
 public class MainActivity extends BridgeActivity {
     private static volatile boolean foreground;
+    private PaymentSheet paymentSheet;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         registerPlugin(MotionPushPlugin.class);
+        registerPlugin(MotionPaymentsPlugin.class);
         super.onCreate(savedInstanceState);
+        paymentSheet = new PaymentSheet.Builder(result -> {
+            PluginHandle handle = getBridge().getPlugin("MotionPayments");
+            if (handle != null && handle.getInstance() instanceof MotionPaymentsPlugin) {
+                ((MotionPaymentsPlugin) handle.getInstance()).onPaymentResult(result);
+            }
+        }).build(this);
+    }
+
+    public void presentPayment(String clientSecret, PaymentSheet.Configuration configuration) {
+        paymentSheet.presentWithPaymentIntent(clientSecret, configuration);
     }
 
     @Override

@@ -144,6 +144,7 @@ serve(
     const params: any = {
       amount: amountInBani,
       currency: currencyLower,
+      payment_method_types: ["card"],
       metadata: {
         enrollmentId: enrollment.id,
         paymentId: payment.id,

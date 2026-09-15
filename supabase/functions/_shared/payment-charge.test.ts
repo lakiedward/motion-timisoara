@@ -1,7 +1,7 @@
 import { authorizedRonCharge } from "./payment-charge.ts";
 import { createPriceSnapshot } from "./price-snapshot.ts";
 
-const enrollment = { kind: "COURSE", entity_id: "offer", child_id: "child" };
+const enrollment = { kind: "COURSE", entity_id: "offer", child_id: "child", status: "PENDING" };
 const db = {
   from: () => ({ select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { parent_id: "parent" }, error: null }) }) }) }),
 } as unknown as Parameters<typeof authorizedRonCharge>[0];
@@ -40,4 +40,11 @@ Deno.test("legacy charge must already be RON and satisfy the Stripe integer amou
     { currency: "EUR" }, { currency: "" }, { amount: 0 }, { amount: -1 }, { amount: 1.5 },
     { amount: 100000000 }, { amount: NaN }, { status: "REFUNDED" }, { status: "CANCELLED" }, { status: "SUCCEEDED" },
   ]) await rejected(() => authorizedRonCharge(db, "parent", enrollment, { ...payment, ...patch }), 409);
+});
+
+Deno.test("cancelled or unknown enrollment cannot start or resume a charge", async () => {
+  const payment = { amount: 10000, currency: "RON", status: "PENDING", gateway_txn_id: "pi_pending" };
+  for (const status of ["CANCELLED", "", "ARCHIVED"]) {
+    await rejected(() => authorizedRonCharge(db, "parent", { ...enrollment, status }, payment), 409);
+  }
 });

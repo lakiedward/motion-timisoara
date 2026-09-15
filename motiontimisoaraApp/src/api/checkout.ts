@@ -127,99 +127,15 @@ export async function createEnrollment(input: {
   }
 }
 
-export function createPaymentIntent(
-  enrollmentId: string,
-): Promise<{ clientSecret: string; alreadySucceeded?: boolean }> {
-  return invoke<{ clientSecret: string; alreadySucceeded?: boolean }>('create-payment-intent', {
-    enrollmentId,
-  })
+export interface PaymentIntentResponse {
+  clientSecret: string
+  alreadySucceeded?: boolean
+  alreadyProcessing?: boolean
+  amount?: number
+  currency?: string
+  testMode?: boolean
 }
 
-export type EnrollmentReadyOutcome = 'ready' | 'failed' | 'partial' | 'timeout'
-
-export function listenForEnrollmentReady(
-  userId: string,
-  enrollmentIds: string[],
-  timeoutMs = 15000,
-): {
-  whenSubscribed: Promise<void>
-  startWaiting: () => void
-  dispose: () => void
-  outcome: Promise<EnrollmentReadyOutcome>
-} {
-  let resolveSubscribed!: () => void
-  const whenSubscribed = new Promise<void>((resolve) => {
-    resolveSubscribed = resolve
-  })
-
-  let timer: ReturnType<typeof setTimeout> | undefined
-  let startWaiting!: () => void
-  let dispose!: () => void
-
-  const outcome = new Promise<EnrollmentReadyOutcome>((resolve) => {
-    const pending = new Set(enrollmentIds)
-    const failed = new Set<string>()
-    const channel = supabase.channel(`user:${userId}:payments`)
-    let settled = false
-
-    const finish = (result: EnrollmentReadyOutcome) => {
-      if (settled) return
-      settled = true
-      if (timer) clearTimeout(timer)
-      supabase.removeChannel(channel)
-      resolve(result)
-    }
-
-    const settleWhenIdle = () => {
-      if (pending.size > 0) return
-      if (failed.size === 0) finish('ready')
-      else if (failed.size === enrollmentIds.length) finish('failed')
-      else finish('partial')
-    }
-
-    startWaiting = () => {
-      if (settled || timer) return
-      if (pending.size === 0) {
-        settleWhenIdle()
-        return
-      }
-      timer = setTimeout(() => finish('timeout'), timeoutMs)
-    }
-
-    dispose = () => {
-      if (settled) return
-      settled = true
-      if (timer) clearTimeout(timer)
-      supabase.removeChannel(channel)
-      resolve('timeout')
-    }
-
-    channel
-      .on('broadcast', { event: 'enrollment_ready' }, ({ payload }) => {
-        pending.delete((payload as { enrollmentId: string }).enrollmentId)
-        settleWhenIdle()
-      })
-      .on('broadcast', { event: 'payment_failed' }, ({ payload }) => {
-        const id = (payload as { enrollmentId: string }).enrollmentId
-        if (!pending.has(id)) return
-        pending.delete(id)
-        failed.add(id)
-        settleWhenIdle()
-      })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') resolveSubscribed()
-      })
-  })
-
-  return { whenSubscribed, startWaiting, dispose, outcome }
-}
-
-export function waitForEnrollmentReady(
-  userId: string,
-  enrollmentIds: string[],
-  timeoutMs = 15000,
-): Promise<EnrollmentReadyOutcome> {
-  const listener = listenForEnrollmentReady(userId, enrollmentIds, timeoutMs)
-  listener.startWaiting()
-  return listener.outcome
+export function createPaymentIntent(enrollmentId: string): Promise<PaymentIntentResponse> {
+  return invoke<PaymentIntentResponse>('create-payment-intent', { enrollmentId })
 }

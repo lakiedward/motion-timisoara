@@ -80,6 +80,8 @@ class FakeDatabase {
   rpcErrorChild: string | null = null;
   capacityError = false;
   beforePaymentUpdate?: () => void;
+  batchCalls: Row[] = [];
+  batchError: { code: string; message: string; details?: string } | null = null;
   tables: Record<string, Row[]> = {
     children: [
       { id: "child-a", name: "Copil A", parent_id: "parent", birth_date: "2018-09-01" },
@@ -95,15 +97,70 @@ class FakeDatabase {
   from(table: string) { return new FakeQuery(this, table); }
   channel(_name: string) { return { send: (_message: unknown) => Promise.resolve() }; }
 
-  rpc(name: string, args: { p_child_id: string; p_camp_id: string }) {
+  removeChannel(_channel: unknown) { return Promise.resolve("ok"); }
+
+  async rpc(name: string, args: Row) {
+    if (name === "save_enrollment_batch") return this.saveBatch(args);
+    const childId = String(args.p_child_id);
+    const campId = String(args.p_camp_id);
     equal(name, "enrollment_camp_offer", "Server pricing RPC");
-    this.rpcCalls.push({ name, childId: args.p_child_id, campId: args.p_camp_id });
+    this.rpcCalls.push({ name, childId, campId });
     return Promise.resolve({
-      data: { amount: this.prices[args.p_child_id] ?? null, currency: this.tables.camps[0].currency,
+      data: { amount: this.prices[childId] ?? null, currency: this.tables.camps[0].currency,
         eur_ron_rate_micros: this.tables.camps[0].eur_ron_rate_micros ?? null },
-      error: this.rpcErrorChild === args.p_child_id ? { message: "Pricing unavailable" } : null,
+      error: this.rpcErrorChild === childId ? { message: "Pricing unavailable" } : null,
     });
   }
+
+  saveBatch(args: Row) {
+    this.batchCalls.push(structuredClone(args));
+    if (this.batchError) return { data: null, error: this.batchError };
+    this.beforePaymentUpdate?.();
+    const before = structuredClone(this.tables);
+    const writesBefore = this.writes.length;
+    const ids: string[] = [];
+    const createdIds: string[] = [];
+    const prices: Row[] = [];
+    const quotes = args.p_quotes as { childId: string; amount: number; currency: string; priceVersion: string; snapshot: PriceSnapshot | null }[];
+    const billing = args.p_billing as Record<string, string> | null;
+    for (const quote of quotes) {
+      let enrollment = this.tables.enrollments.find((row) => row.kind === args.p_kind && row.entity_id === args.p_entity_id && row.child_id === quote.childId && ["PENDING", "ACTIVE"].includes(String(row.status)));
+      let payment = enrollment && this.tables.payments.find((row) => row.enrollment_id === enrollment!.id);
+      const compatible = payment && payment.amount === quote.amount && payment.currency === quote.currency &&
+        JSON.stringify(payment.pricing_snapshot ?? null) === JSON.stringify(quote.snapshot);
+      const paidReplay = enrollment?.status === "ACTIVE" && payment?.status === "SUCCEEDED" && payment.method === "CARD" && payment.gateway_txn_id && compatible;
+      if (payment && !paidReplay && ((!['PENDING','FAILED','CANCELLED'].includes(String(payment.status))) ||
+        ((payment.gateway_txn_id || payment.pricing_snapshot) && !compatible))) {
+        this.tables = before;
+        this.writes.splice(writesBefore);
+        return { data: null, error: { code: "23514", message: "Plata s-a schimbat." } };
+      }
+      if (!enrollment) {
+        enrollment = { id: `enrollments-${++this.sequence}`, child_id: quote.childId, kind: args.p_kind,
+          entity_id: args.p_entity_id, status: "PENDING", purchased_sessions: 0, remaining_sessions: 0, sessions_used: 0 };
+        this.tables.enrollments.push(enrollment);
+        createdIds.push(String(enrollment.id));
+        this.writes.push({ table: "enrollments", operation: "insert", values: structuredClone(enrollment), filters: [] });
+      }
+      if (!paidReplay && (!payment || payment.method !== args.p_method || payment.status !== "PENDING" || billing || (!payment.gateway_txn_id && !payment.pricing_snapshot))) {
+        const values: Row = { method: args.p_method, amount: quote.amount, currency: quote.currency, pricing_snapshot: quote.snapshot, status: "PENDING" };
+        if (billing && args.p_method === "CARD") Object.assign(values, { billing_name: billing.name, billing_email: billing.email,
+          billing_address_line1: billing.addressLine1, billing_city: billing.city, billing_postal_code: billing.postalCode, billing_country: "RO" });
+        const operation = payment ? "update" : "insert";
+        if (payment) Object.assign(payment, values);
+        else {
+          payment = { id: `payments-${++this.sequence}`, enrollment_id: enrollment.id, ...values };
+          this.tables.payments.push(payment);
+        }
+        this.writes.push({ table: "payments", operation, values: structuredClone(values), filters: [] });
+      }
+      ids.push(String(enrollment.id));
+      prices.push({ childId: quote.childId, amount: quote.amount, currency: quote.currency });
+    }
+    return { data: { enrollmentId: ids[0], enrollmentIds: ids, createdEnrollmentIds: createdIds, prices,
+      requiresPaymentIntent: args.p_method === "CARD" }, error: null };
+  }
+
 }
 
 function fixture(role = "PARENT", kind = "CAMP", sessionPackageSize = 1) {
@@ -261,7 +318,7 @@ Deno.test("pending gateway payments preserve stored amounts despite changed camp
   equal(context.db.rpcCalls, []);
 });
 
-Deno.test("pending payments without an intent reprice through conditional update", async () => {
+Deno.test("pending payments without an accepted snapshot delegate fresh quote to the atomic transaction", async () => {
   const context = fixture();
   pending(context);
   const quoted = await quote(context, ["child-a"]);
@@ -270,16 +327,13 @@ Deno.test("pending payments without an intent reprice through conditional update
   equal(context.db.tables.payments[0].amount, 12000);
   equal(context.db.tables.enrollments.length, 1);
   equal(context.db.writes.length, 1);
-  equal(context.db.attempts[0].filters, [
-    { column: "id", values: ["payment-a"] },
-    { column: "status", values: ["PENDING"] },
-    { column: "gateway_txn_id", values: [null] },
-    { column: "pricing_snapshot", values: [null] },
-  ]);
+  equal(context.db.batchCalls.length, 1);
+  equal((context.db.batchCalls[0].p_quotes as Row[])[0].amount, 12000);
+  equal(context.db.attempts, []);
 });
 
 for (const concurrentChange of ["payment succeeded", "intent attached"]) {
-  Deno.test(`a concurrent ${concurrentChange} makes the payment CAS fail with 409`, async () => {
+  Deno.test(`a concurrent ${concurrentChange} is rejected by the atomic persistence boundary with 409`, async () => {
     const context = fixture();
     pending(context);
     const quoted = await quote(context, ["child-a"]);
@@ -290,7 +344,7 @@ for (const concurrentChange of ["payment succeeded", "intent attached"]) {
     equal((await context.create(["child-a"], quoted.versions)).status, 409);
     equal(context.db.tables.payments[0].amount, 7000);
     equal(context.db.writes, []);
-    equal(context.db.attempts.length, 1);
+    equal(context.db.batchCalls.length, 1);
   });
 }
 
@@ -476,4 +530,32 @@ Deno.test("concurrent snapshot retry cannot overwrite a processed payment", asyn
   equal((await context.create(undefined, quoted.versions)).status, 409);
   equal(context.db.tables.payments[0].status, "SUCCEEDED");
   equal(context.db.tables.payments[0].method, "CASH");
+});
+
+Deno.test("a partially paid batch returns existing paid ids without another enrollment or payment", async () => {
+  const context = fixture();
+  const quoted = await quote(context);
+  const original = await (await context.create(undefined, quoted.versions)).json();
+  context.db.tables.enrollments[0].status = "ACTIVE";
+  Object.assign(context.db.tables.payments[0], { status: "SUCCEEDED", gateway_txn_id: "pi_paid" });
+  const before = structuredClone(context.db.tables);
+  const replay = await context.create(undefined, quoted.versions);
+  equal(replay.status, 200);
+  const replayed = await replay.json();
+  equal([...replayed.enrollmentIds].sort(), [...original.enrollmentIds].sort());
+  equal(context.db.tables, before);
+});
+
+Deno.test("atomic persistence failures propagate authorization and price conflicts without partial client writes", async () => {
+  for (const [code, status, details] of [["42501", 403, undefined], ["23514", 409, "PRICE_CHANGED"], ["08006", 500, undefined]] as const) {
+    const context = fixture();
+    const quoted = await quote(context);
+    context.db.batchError = { code, message: "Atomic rejection", details };
+    const response = await context.create(undefined, quoted.versions);
+    equal(response.status, status);
+    if (details) equal((await response.json()).code, details);
+    equal(context.db.tables.enrollments, []);
+    equal(context.db.tables.payments, []);
+    equal(context.db.attempts, []);
+  }
 });

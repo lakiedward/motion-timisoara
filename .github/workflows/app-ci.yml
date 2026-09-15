@@ -13,6 +13,12 @@ on:
       - 'supabase/functions/dispatch-push/**'
       - 'supabase/functions/dispatch-push-contract.test.ts'
       - 'supabase/tests/*push*'
+      - 'supabase/migrations/00060_atomic_enrollment_creation.sql'
+      - 'supabase/functions/create-enrollment/**'
+      - 'supabase/functions/create-payment-intent/**'
+      - 'supabase/functions/_shared/payment-*.ts'
+      - 'supabase/functions/enrollment-contract.test.ts'
+      - 'supabase/tests/*atomic-enrollment-creation*'
   pull_request:
     paths:
       - 'motiontimisoaraApp/**'
@@ -25,8 +31,28 @@ on:
       - 'supabase/functions/dispatch-push/**'
       - 'supabase/functions/dispatch-push-contract.test.ts'
       - 'supabase/tests/*push*'
+      - 'supabase/migrations/00060_atomic_enrollment_creation.sql'
+      - 'supabase/functions/create-enrollment/**'
+      - 'supabase/functions/create-payment-intent/**'
+      - 'supabase/functions/_shared/payment-*.ts'
+      - 'supabase/functions/enrollment-contract.test.ts'
+      - 'supabase/tests/*atomic-enrollment-creation*'
 
 jobs:
+  enrollment-payments:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify atomic enrollment retries and concurrent fulfillment
+        shell: pwsh
+        run: ./supabase/tests/run-atomic-enrollment-creation.ps1
+      - name: Verify enrollment and payment-intent contracts
+        run: npx --yes deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/payment-charge.test.ts
+
   push-contracts:
     runs-on: ubuntu-latest
     timeout-minutes: 5

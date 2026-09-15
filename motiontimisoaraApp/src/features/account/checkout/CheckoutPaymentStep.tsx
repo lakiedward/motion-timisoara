@@ -1,4 +1,4 @@
-import { CardElement } from '@stripe/react-stripe-js'
+import { PaymentEntry } from './PaymentEntry'
 import { AcceptedPriceDetails } from '@/components/AcceptedPriceDetails'
 import { Label } from '@/components/ui/label'
 import { formatRon } from '@/lib/money'
@@ -85,12 +85,7 @@ export function CheckoutPaymentStep({
       </div>
 
       {method === 'CARD' ? (
-        <div className="bg-card shadow-card rounded-3xl p-5">
-          <Label className="mb-3 block">Date card</Label>
-          <div className="rounded-xl border p-3">
-            <CardElement options={{ hidePostalCode: true }} />
-          </div>
-        </div>
+        <PaymentEntry childCount={childCount} />
       ) : (
         <p className="bg-muted text-muted-foreground rounded-3xl p-5 text-sm">
           Înscrierea rămâne în așteptare până când antrenorul confirmă încasarea sumei de{' '}
