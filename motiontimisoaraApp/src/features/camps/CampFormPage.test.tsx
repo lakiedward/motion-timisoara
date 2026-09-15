@@ -200,7 +200,7 @@ test('la editare, necesarul salvat poate fi schimbat și se trimite ca listă cu
   renderForm('/club/camps/tabara-1/edit')
 
   const necesar = await screen.findByLabelText('Necesar pentru tabără')
-  expect(necesar).toHaveValue('Tricouri pentru 7 zile\nBicicletă proprie')
+  await waitFor(() => expect(necesar).toHaveValue('Tricouri pentru 7 zile\nBicicletă proprie'))
   fireEvent.change(necesar, {
     target: { value: 'Tricouri pentru 7 zile\n  Bicicletă proprie  \nBicicletă proprie' },
   })
