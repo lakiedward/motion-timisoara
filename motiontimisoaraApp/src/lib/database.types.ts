@@ -552,12 +552,12 @@ export type Database = {
       camps: {
         Row: {
           allow_cash: boolean
+          camp_requirements: Json
           capacity: number | null
           club_id: string | null
           coach_id: string | null
           currency: string
           description: string | null
-          camp_requirements: Json
           eur_ron_rate_micros: number | null
           gallery_json: string | null
           hero_photo_storage_path: string | null
@@ -573,12 +573,12 @@ export type Database = {
         }
         Insert: {
           allow_cash?: boolean
+          camp_requirements?: Json
           capacity?: number | null
           club_id?: string | null
           coach_id?: string | null
           currency?: string
           description?: string | null
-          camp_requirements?: Json
           eur_ron_rate_micros?: number | null
           gallery_json?: string | null
           hero_photo_storage_path?: string | null
@@ -594,12 +594,12 @@ export type Database = {
         }
         Update: {
           allow_cash?: boolean
+          camp_requirements?: Json
           capacity?: number | null
           club_id?: string | null
           coach_id?: string | null
           currency?: string
           description?: string | null
-          camp_requirements?: Json
           eur_ron_rate_micros?: number | null
           gallery_json?: string | null
           hero_photo_storage_path?: string | null
