@@ -153,6 +153,17 @@ existing text item to quantity one in a legacy category, then enforces the
 new JSON shape. The existing camp-owner authorization and atomic save RPC
 remain unchanged.
 
+Feature #327: `00060_atomic_enrollment_creation.sql` was applied as
+`20260915142234` (`atomic_enrollment_creation`) on 2026-09-15. The service-only
+batch RPC saves enrollment/payment pairs atomically, serializes requests for an
+offer and preserves frozen prices and compatible paid retries. Isolated SQL tests
+cover rollback, ownership, concurrent retries, final-seat capacity and concurrent
+payment completion. Product types were regenerated from the applied schema.
+`create-enrollment` v8 and `create-payment-intent` v8 were deployed with JWT
+verification retained. The intent follow-up restricts new intents to card (including
+Google Pay) and safely normalizes eligible existing TEST intents without replacing
+their IDs or changing amounts. Android device evidence is recorded separately.
+
 To confirm git and the remote still agree:
 
 ```bash

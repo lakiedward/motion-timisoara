@@ -1,11 +1,16 @@
 import { AcceptedPriceDetails } from '@/components/AcceptedPriceDetails'
 import { Link } from 'react-router-dom'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import { getMyEnrollments } from '@/api/account'
 import { formatMoney } from '@/lib/money'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
+import { useAuth } from '@/lib/auth-context'
+import { enrollmentPayable } from '@/api/payments/enrollments'
+import { EnrollmentPaymentPanel } from './checkout/EnrollmentPaymentPanel'
 
 const KIND_LABEL: Record<string, string> = {
   COURSE: 'Curs',
@@ -29,9 +34,18 @@ const PAY: Record<string, string> = {
 }
 
 export default function EnrollmentsPage() {
-  const { data: enrollments = [], isLoading } = useQuery({
-    queryKey: ['enrollments'],
+  const { user } = useAuth()
+  const [paymentId, setPaymentId] = useState<string | null>(null)
+  const {
+    data: enrollments = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ['enrollments', user?.id],
     queryFn: getMyEnrollments,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   })
 
   return (
@@ -42,6 +56,13 @@ export default function EnrollmentsPage() {
           {[0, 1].map((i) => (
             <Skeleton key={i} className="h-24 rounded-3xl" />
           ))}
+        </div>
+      ) : isError ? (
+        <div role="alert" className="space-y-3">
+          <p>Nu am putut încărca înscrierile și plățile.</p>
+          <Button variant="outline" onClick={() => void refetch()}>
+            Reîncearcă
+          </Button>
         </div>
       ) : enrollments.length ? (
         <div className="space-y-4">
@@ -73,6 +94,13 @@ export default function EnrollmentsPage() {
                     </div>
                   </div>
                 )}
+                {paymentId === e.id ? (
+                  <EnrollmentPaymentPanel enrollmentId={e.id} onClose={() => setPaymentId(null)} />
+                ) : enrollmentPayable(e) ? (
+                  <Button className="mt-4" variant="outline" onClick={() => setPaymentId(e.id)}>
+                    Reia plata
+                  </Button>
+                ) : null}
               </div>
             )
           })}

@@ -1,4 +1,5 @@
 import { getEnrollmentChildPrices, validSelection, enrollmentJson, type EnrollmentServices, type EnrollmentOffer } from "../_shared/enrollment-pricing.ts";
+import { completedEnrollmentPrices, notifyCashEnrollments, saveEnrollmentBatch } from "./persistence.ts";
 import { validQuantity } from "../_shared/price-snapshot.ts";
 
 interface EnrollmentRequest {
@@ -93,30 +94,14 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
     }
     for (const child of children) {
       const existing = existingByChild.get(child.id) ?? [];
-      if (paymentMethod === "CARD") {
-        if (existing.some((e: any) => e.status === "ACTIVE")) {
-          return new Response(
-            JSON.stringify({
-              error: `Child already enrolled: ${child.name}`,
-            }),
-            { status: 409, headers: { "Content-Type": "application/json" } },
-          );
-        }
-      } else {
-        if (existing.length > 0) {
-          return new Response(
-            JSON.stringify({
-              error: `Child already enrolled: ${child.name}`,
-            }),
-            { status: 409, headers: { "Content-Type": "application/json" } },
-          );
-        }
+      if (paymentMethod === "CASH" && existing.length > 0) {
+        return enrollmentJson({ error: `Child already enrolled: ${child.name}` }, 409);
       }
     }
     const newEnrollmentCount = paymentMethod === "CARD"
       ? children.filter((c: any) => {
           const existing = existingByChild.get(c.id) ?? [];
-          return !existing.some((e: any) => e.status === "PENDING");
+          return existing.length === 0;
         }).length
       : children.length;
     let offer: EnrollmentOffer;
@@ -255,8 +240,15 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
       }
     }
 
-    const childPrices = await getEnrollmentChildPrices(supabaseAdmin, kind, entityId, childIds, offer,
-      existingEnrollments ?? [], sessionPackageSize);
+    const completed = paymentMethod === "CARD"
+      ? await completedEnrollmentPrices(supabaseAdmin, kind, entityId, existingEnrollments ?? [], sessionPackageSize)
+      : [];
+    const completedChildIds = new Set(completed.map((price) => price.childId));
+    const childPrices = [
+      ...await getEnrollmentChildPrices(supabaseAdmin, kind, entityId, childIds.filter((id) => !completedChildIds.has(id)), offer,
+        (existingEnrollments ?? []).filter((row) => !completedChildIds.has(row.child_id)), sessionPackageSize),
+      ...completed,
+    ];
     if (childPrices.some((price) => price.reason)) {
       return enrollmentJson({ error: childPrices.find((price) => price.reason)!.reason }, 409);
     }
@@ -264,178 +256,13 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
       return enrollmentJson({ error: "Prețul s-a schimbat. Revino la Detalii și verifică din nou suma.", code: "PRICE_CHANGED" }, 409);
     }
 
-    const now = new Date().toISOString();
-    const savedEnrollments: { id: string }[] = [];
-    const prices: { childId: string; amount: number; currency: string }[] = [];
-
-    for (const child of children) {
-      const quote = childPrices.find((price) => price.childId === child.id)!;
-      const childPrice = quote.amount!;
-      const childCurrency = quote.currency!;
-      const existing = existingByChild.get(child.id) ?? [];
-      const pendingDraft =
-        paymentMethod === "CARD"
-          ? existing.find((e: { status: string }) => e.status === "PENDING")
-          : undefined;
-
-      let enrollment: { id: string };
-
-      if (pendingDraft) {
-        enrollment = { id: pendingDraft.id };
-
-        const paymentPatch: Record<string, unknown> = {
-          method: paymentMethod,
-          amount: childPrice,
-          currency: childCurrency,
-          pricing_snapshot: quote.snapshot,
-          status: "PENDING",
-          updated_at: now,
-        };
-        if (billingDetails) {
-          paymentPatch.billing_name = billingDetails.name;
-          paymentPatch.billing_email = billingDetails.email;
-          paymentPatch.billing_address_line1 = billingDetails.addressLine1;
-          paymentPatch.billing_city = billingDetails.city;
-          paymentPatch.billing_postal_code = billingDetails.postalCode;
-          paymentPatch.billing_country = "RO";
-        }
-
-        const { data: payments, error: paymentsError } = await supabaseAdmin
-          .from("payments")
-          .select("id, method, status, amount, currency, gateway_txn_id, pricing_snapshot")
-          .eq("enrollment_id", enrollment.id);
-
-        if (paymentsError) return enrollmentJson({ error: "Nu am putut verifica plata existentă." }, 500);
-        if (payments?.some((p: { status: string }) => p.status === "SUCCEEDED")) {
-          return new Response(
-            JSON.stringify({ error: `Child already enrolled: ${child.name}` }),
-            { status: 409, headers: { "Content-Type": "application/json" } },
-          );
-        }
-
-        const unpaid = payments?.find((p: { status: string }) => p.status === "PENDING");
-        const failedRow = payments?.find(
-          (p: { status: string }) => p.status === "FAILED" || p.status === "CANCELLED",
-        );
-        const reusable = unpaid ?? failedRow;
-        if (reusable) {
-          if (reusable.gateway_txn_id || reusable.pricing_snapshot) {
-            if (reusable.amount !== childPrice || reusable.currency !== childCurrency ||
-              reusable.pricing_snapshot?.priceVersion !== quote.snapshot?.priceVersion) {
-              return enrollmentJson({ error: "Plata s-a schimbat. Verifică din nou înscrierea." }, 409);
-            }
-            if (reusable.method !== paymentMethod || reusable.status !== "PENDING" || billingDetails) {
-              const retryPatch = { ...paymentPatch };
-              delete retryPatch.amount;
-              delete retryPatch.currency;
-              delete retryPatch.pricing_snapshot;
-              let update = supabaseAdmin.from("payments").update(retryPatch).eq("id", reusable.id).eq("status", reusable.status);
-              update = reusable.gateway_txn_id ? update.eq("gateway_txn_id", reusable.gateway_txn_id) : update.is("gateway_txn_id", null);
-              update = reusable.pricing_snapshot ? update.eq("pricing_snapshot->>priceVersion", quote.priceVersion!) : update.is("pricing_snapshot", null);
-              const saved = await update.select("id").single();
-              if (saved.error || !saved.data) return enrollmentJson({ error: "Plata s-a schimbat. Verifică din nou înscrierea." }, 409);
-            }
-          } else {
-            const update = supabaseAdmin.from("payments").update(paymentPatch).eq("id", reusable.id).eq("status", reusable.status)
-              .is("gateway_txn_id", null).is("pricing_snapshot", null);
-            const saved = await update.select("id").single();
-            if (saved.error || !saved.data) return enrollmentJson({ error: "Plata s-a schimbat. Verifică din nou înscrierea." }, 409);
-          }
-        } else if (!payments?.length) {
-          const saved = await supabaseAdmin.from("payments").insert({
-            enrollment_id: enrollment.id,
-            ...paymentPatch,
-            created_at: now,
-          });
-          if (saved.error) return enrollmentJson({ error: "Nu am putut salva plata." }, 500);
-        } else {
-          return enrollmentJson({ error: "Plata a fost deja procesată. Verifică în Înscrieri." }, 409);
-        }
-      } else {
-        const { data: created, error: enrollErr } = await supabaseAdmin
-          .from("enrollments")
-          .insert({
-            kind,
-            entity_id: entityId,
-            child_id: child.id,
-            status: "PENDING",
-            created_at: now,
-            purchased_sessions: 0,
-            remaining_sessions: 0,
-            sessions_used: 0,
-          })
-          .select("id")
-          .single();
-
-        if (enrollErr || !created) {
-          return new Response(
-            JSON.stringify({ error: "Failed to create enrollment" }),
-            { status: 500, headers: { "Content-Type": "application/json" } },
-          );
-        }
-        enrollment = created;
-
-        const paymentData: Record<string, unknown> = {
-          enrollment_id: enrollment.id,
-          method: paymentMethod,
-          amount: childPrice,
-          currency: childCurrency,
-          pricing_snapshot: quote.snapshot,
-          status: "PENDING",
-          created_at: now,
-          updated_at: now,
-        };
-
-        if (paymentMethod === "CARD" && billingDetails) {
-          paymentData.billing_name = billingDetails.name;
-          paymentData.billing_email = billingDetails.email;
-          paymentData.billing_address_line1 = billingDetails.addressLine1;
-          paymentData.billing_city = billingDetails.city;
-          paymentData.billing_postal_code = billingDetails.postalCode;
-          paymentData.billing_country = "RO";
-        }
-
-        const savedPayment = await supabaseAdmin.from("payments").insert(paymentData);
-        if (savedPayment.error) return enrollmentJson({ error: "Nu am putut salva plata." }, 500);
-        if (paymentMethod === "CASH") {
-          if (kind === "COURSE") {
-            await supabaseAdmin.channel("admin:pending-cash-payments").send({
-              type: "broadcast",
-              event: "pending_cash_payment",
-              payload: {
-                enrollmentId: enrollment.id,
-                sessionCount: sessionPackageSize,
-                courseId: entityId,
-              },
-            });
-          } else if (kind === "ACTIVITY") {
-            await supabaseAdmin.channel("admin:pending-activity-payments").send({
-              type: "broadcast",
-              event: "pending_activity_payment",
-              payload: {
-                enrollmentId: enrollment.id,
-                activityId: entityId,
-                childName: child.name,
-              },
-            });
-          }
-        }
-      }
-
-      savedEnrollments.push(enrollment);
-      prices.push({ childId: child.id, amount: childPrice, currency: childCurrency });
+    const batch = await saveEnrollmentBatch(supabaseAdmin, {
+      parentId: user.id, kind, entityId, paymentMethod, quotes: childPrices, billingDetails,
+    });
+    if (paymentMethod === "CASH") {
+      await notifyCashEnrollments(supabaseAdmin, batch, { kind, entityId, sessionPackageSize, children });
     }
-
-    const primaryId = savedEnrollments[0]?.id;
-    const enrollmentIds = savedEnrollments.map((e: { id: string }) => e.id);
-    return new Response(
-      JSON.stringify({
-        enrollmentId: primaryId,
-        enrollmentIds,
-        prices,
-        requiresPaymentIntent: paymentMethod === "CARD",
-      }),
-      { status: 200, headers: { "Content-Type": "application/json" } },
-    );
+    const { createdEnrollmentIds: _createdEnrollmentIds, ...response } = batch;
+    return enrollmentJson(response);
   };
 }

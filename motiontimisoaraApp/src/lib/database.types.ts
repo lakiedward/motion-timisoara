@@ -2421,6 +2421,17 @@ export type Database = {
         }
         Returns: undefined
       }
+      save_enrollment_batch: {
+        Args: {
+          p_billing?: Json
+          p_entity_id: string
+          p_kind: string
+          p_method: string
+          p_parent_id: string
+          p_quotes: Json
+        }
+        Returns: Json
+      }
       set_my_push_enabled: { Args: { p_enabled: boolean }; Returns: Json }
       valid_enrollment_price_snapshot: {
         Args: { p_amount: number; p_currency: string; p_snapshot: Json }
