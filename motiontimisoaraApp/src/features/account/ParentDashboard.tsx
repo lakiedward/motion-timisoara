@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
+import { PushSettingsCard } from '@/features/notifications/PushSettingsCard'
 
 export default function ParentDashboard() {
   const { user } = useAuth()
@@ -68,6 +69,8 @@ export default function ParentDashboard() {
           <Plus className="size-5" />
         </Link>
       </div>
+
+      <PushSettingsCard />
 
       {childrenQuery.isPending && (
         <div role="status" aria-label="Se încarcă lista copiilor" className="space-y-4">

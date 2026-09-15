@@ -126,6 +126,19 @@ Live parent impersonation returned an empty feed and the audit parent's enrolled
 course. Author insertion is tied to the authenticated user; existing authors and
 announcement identities are immutable. Generated client types reflect this schema.
 
+Feature #326: `00057_android_parent_push.sql` was applied as
+`20260915092254` (`android_parent_push`) on 2026-09-15, after 80 isolated SQL
+assertions, concurrent claim tests and review. The four parent RPCs derive the
+caller identity; the three delivery RPCs are executable only by service_role.
+All six new tables have RLS. Private queue tables intentionally have no client
+policies. The authenticated SECURITY DEFINER advisor notices describe the four
+explicitly guarded parent entry points, not anonymous access.
+
+The `dispatch-push` Edge Function uses its own backend secret with JWT gateway
+verification disabled. The `dispatch-parent-push` cron invokes it every minute
+using Vault. A live empty dispatch returned HTTP 200 after FCM authorization;
+this does not establish device delivery. Generated public types include the schema.
+
 To confirm git and the remote still agree:
 
 ```bash

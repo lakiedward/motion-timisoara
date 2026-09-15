@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   getSession: vi.fn(),
   setSession: vi.fn(),
   native: vi.fn(),
+  isolatePush: vi.fn(),
 }))
 
 vi.mock('@capacitor/preferences', () => ({
@@ -30,6 +31,7 @@ vi.mock('@/lib/supabase', () => ({
   supabase: { auth: { getSession: mocks.getSession, setSession: mocks.setSession } },
 }))
 vi.mock('@/lib/platform', () => ({ isNative: mocks.native }))
+vi.mock('@/api/notifications', () => ({ authenticateWithPushIsolation: mocks.isolatePush }))
 
 const storageKey = 'motion-native-google'
 const verifierKey = `${storageKey}-code-verifier`
@@ -66,6 +68,7 @@ beforeEach(() => {
     mocks.preferences.delete(key)
   })
   mocks.native.mockReturnValue(true)
+  mocks.isolatePush.mockImplementation((work: () => Promise<unknown>) => work())
   mocks.open.mockResolvedValue(undefined)
   mocks.close.mockResolvedValue(undefined)
   mocks.getSession.mockResolvedValue({ data: { session: null }, error: null })

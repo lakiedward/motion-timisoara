@@ -507,6 +507,14 @@ reorganizing this document; correct obsolete facts with current evidence.
   block delivery. Behavioral verification, human acceptance and actual merge/deploy
   requirements remain in place.
 
+- 2026-09-15 — Feature #326 sends data-only FCM messages through a custom Android
+  service that validates the current account binding before display. The parent opts
+  in explicitly; local revocation precedes auth changes. Firebase tasks stay serialized
+  across response timeouts. The private outbox rechecks sessions and audiences before
+  sending. Keep `android/app/google-services.json` untracked and the sender credential
+  only in Supabase secrets. iOS/APNs remains deferred. See the Android push and backend
+  specs dated 2026-09-15 for contracts and verification.
+
 ## 11. Known Issues / WIP
 
 - **To-Do #149 completion in progress (2026-09-11):** migrations `00048` and `00049`

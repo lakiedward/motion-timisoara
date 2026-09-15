@@ -1977,6 +1977,82 @@ export type Database = {
         }
         Relationships: []
       }
+      push_devices: {
+        Row: {
+          created_at: string
+          id: string
+          installation_id: string
+          platform: string
+          revoked_at: string | null
+          session_id: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          installation_id: string
+          platform?: string
+          revoked_at?: string | null
+          session_id: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          installation_id?: string
+          platform?: string
+          revoked_at?: string | null
+          session_id?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_devices_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_preferences: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sports: {
         Row: {
           code: string
@@ -2098,6 +2174,7 @@ export type Database = {
         Returns: Json
       }
       cheama_purge_expired_media: { Args: never; Returns: undefined }
+      claim_push_deliveries: { Args: { p_limit?: number }; Returns: Json }
       club_coach_contacts: {
         Args: { p_club_id: string }
         Returns: {
@@ -2126,11 +2203,22 @@ export type Database = {
         Args: { p_camp_id: string; p_child_id: string }
         Returns: Json
       }
+      finish_push_delivery: {
+        Args: {
+          p_code?: string
+          p_delivery_id: string
+          p_lease_id: string
+          p_outcome: string
+          p_retry_after?: number
+        }
+        Returns: undefined
+      }
       freeze_payment_intent_request: {
         Args: { p_params: Json; p_payment_id: string }
         Returns: Json
       }
       get_my_coach_profile_id: { Args: never; Returns: string }
+      get_my_push_preferences: { Args: never; Returns: Json }
       get_my_role: { Args: never; Returns: string }
       get_parent_announcement_courses: {
         Args: never
@@ -2220,6 +2308,10 @@ export type Database = {
         Args: { p_camp_id: string }
         Returns: boolean
       }
+      prepare_push_delivery: {
+        Args: { p_delivery_id: string; p_lease_id: string }
+        Returns: Json
+      }
       pret_tabara_pentru_copil: {
         Args: { p_camp_id: string; p_child_id: string }
         Returns: number
@@ -2253,6 +2345,15 @@ export type Database = {
         Args: { p_child_id: string }
         Returns: string
       }
+      register_push_device: {
+        Args: {
+          p_binding_id: string
+          p_installation_id: string
+          p_token: string
+        }
+        Returns: undefined
+      }
+      revoke_push_device: { Args: { p_binding_id: string }; Returns: undefined }
       safe_uuid: { Args: { t: string }; Returns: string }
       salveaza_banii_taberei: {
         Args: { p_camp_id: string; p_categorii: Json; p_price: number }
@@ -2317,6 +2418,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_my_push_enabled: { Args: { p_enabled: boolean }; Returns: Json }
       valid_enrollment_price_snapshot: {
         Args: { p_amount: number; p_currency: string; p_snapshot: Json }
         Returns: boolean

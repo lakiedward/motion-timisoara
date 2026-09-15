@@ -4,6 +4,7 @@ import { Browser } from '@capacitor/browser'
 import { supabase } from '@/lib/supabase'
 import { isNative } from '@/lib/platform'
 import { createOAuthCoordinator, type PendingFlow } from './coordinator'
+import { authenticateWithPushIsolation } from '@/api/notifications'
 
 const STORAGE_KEY = 'motion-native-google'
 const VERIFIER_KEY = `${STORAGE_KEY}-code-verifier`
@@ -91,10 +92,12 @@ export const nativeGoogle = createOAuthCoordinator<Session>({
     return !!data.session
   },
   async commit(session) {
-    const { error } = await supabase.auth.setSession({
-      access_token: session.access_token,
-      refresh_token: session.refresh_token,
-    })
+    const { error } = await authenticateWithPushIsolation(() =>
+      supabase.auth.setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+      }),
+    )
     if (error) throw error
   },
   nonce: () =>
