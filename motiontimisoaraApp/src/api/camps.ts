@@ -30,6 +30,7 @@ export type OrganizatorTabara = {
 export type TabaraDetaliu = {
   tabara: Tables<'camps'>
   location: CampLocation | null
+  necesar: string[]
   organizator: OrganizatorTabara | null
   categorii: CategoriePret[]
   agePrices: PretPeVarsta[]
@@ -54,6 +55,14 @@ export function formatZi(data: string): string {
 
 export function sumaCategoriilor(categorii: CategoriePret[]): number {
   return categorii.reduce((t, c) => t + Number(c.amount || 0), 0)
+}
+
+function citesteNecesar(valoare: unknown): string[] {
+  if (!Array.isArray(valoare)) return []
+  return valoare
+    .filter((articol): articol is string => typeof articol === 'string')
+    .map((articol) => articol.trim())
+    .filter(Boolean)
 }
 
 export type TabaraDinLista = {
@@ -195,6 +204,7 @@ export async function getTabaraDetaliu(slug: string): Promise<TabaraDetaliu | nu
   return {
     tabara,
     location: location ?? null,
+    necesar: citesteNecesar(tabara.camp_requirements),
     organizator,
     categorii: categorii.data ?? [],
     agePrices,

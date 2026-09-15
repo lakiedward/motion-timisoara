@@ -60,6 +60,7 @@ const TABARA = {
   coach_id: null,
   currency: 'RON',
   gallery_json: null,
+  camp_requirements: [],
 }
 
 const BAZIN = 'b6d97609-d740-44aa-b930-fb222ffadb13'
@@ -188,6 +189,27 @@ test('la editare, locul salvat apare selectat chiar dacă lista vine după tabă
 
   await waitFor(() => expect(screen.getByLabelText('Loc')).toHaveValue(BAZIN))
   expect(getClubSelectableLocations).toHaveBeenCalledWith('club-1', BAZIN)
+})
+test('la editare, necesarul salvat poate fi schimbat și se trimite ca listă curată', async () => {
+  const user = userEvent.setup()
+  vi.mocked(getTabaraDeEditat).mockResolvedValue({
+    ...TABARA,
+    camp_requirements: ['Tricouri pentru 7 zile', 'Bicicletă proprie'],
+  } as never)
+  vi.mocked(getCategoriile).mockResolvedValue([])
+  renderForm('/club/camps/tabara-1/edit')
+
+  const necesar = await screen.findByLabelText('Necesar pentru tabără')
+  expect(necesar).toHaveValue('Tricouri pentru 7 zile\nBicicletă proprie')
+  fireEvent.change(necesar, {
+    target: { value: 'Tricouri pentru 7 zile\n  Bicicletă proprie  \nBicicletă proprie' },
+  })
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+
+  await waitFor(() => expect(saveCampOffer).toHaveBeenCalled())
+  expect(vi.mocked(saveCampOffer).mock.calls[0][6]).toMatchObject({
+    camp_requirements: ['Tricouri pentru 7 zile', 'Bicicletă proprie'],
+  })
 })
 test('o tabără nouă pornește pe preț unic, fără categorii de vârstă la vedere', async () => {
   const user = userEvent.setup()

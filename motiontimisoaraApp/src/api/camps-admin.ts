@@ -55,6 +55,7 @@ export interface TabaraInput {
   location_text: string | null
   capacity: number | null
   allow_cash: boolean
+  camp_requirements: string[]
 }
 
 export interface Proprietar {

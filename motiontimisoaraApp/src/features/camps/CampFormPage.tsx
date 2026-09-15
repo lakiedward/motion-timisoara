@@ -93,6 +93,7 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
         price_lei: String(baniToRon(tabara.price)),
         allow_cash: tabara.allow_cash,
         description: tabara.description ?? '',
+        necesar: formateazaNecesar(tabara.camp_requirements),
         categorii: (categorii ?? []).map((c) => ({
           name: c.name,
           amount_lei: String(baniToRon(c.amount)),
@@ -148,6 +149,7 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
       location_text: v.location_text?.trim() ? v.location_text : null,
       capacity: num(v.capacity),
       allow_cash: v.allow_cash,
+      camp_requirements: pregatesteNecesar(v.necesar),
     }
     const bani = v.categorii.map((c) => ({
       name: c.name.trim(),
@@ -279,6 +281,19 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
           <textarea
             {...register('description')}
             rows={4}
+            className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent p-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] [field-sizing:content] max-h-64"
+          />
+        </Camp>
+
+        <Camp
+          eticheta="Necesar pentru tabără"
+          eroare={errors.necesar?.message}
+          ajutor="Câte un articol pe rând: haine, echipamente și orice detalii utile pentru participanți."
+        >
+          <textarea
+            {...register('necesar')}
+            rows={6}
+            maxLength={2000}
             className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent p-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] [field-sizing:content] max-h-64"
           />
         </Camp>
@@ -533,6 +548,15 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
       </form>
     </div>
   )
+}
+
+function formateazaNecesar(valoare: unknown): string {
+  if (!Array.isArray(valoare)) return ''
+  return valoare.filter((articol): articol is string => typeof articol === 'string').join('\n')
+}
+
+function pregatesteNecesar(text: string): string[] {
+  return [...new Set(text.split('\n').map((articol) => articol.trim()).filter(Boolean))]
 }
 
 function Camp({

@@ -45,6 +45,7 @@ export const schema = z
     price_lei: lei,
     allow_cash: z.boolean(),
     description: z.string().optional(),
+    necesar: z.string().max(2000, 'Lista poate avea cel mult 2.000 de caractere'),
     categorii: z.array(
       z.object({
         name: z.string().min(1, 'Numele lipsește'),
@@ -105,6 +106,7 @@ export const GOL: Values = {
   price_lei: '',
   allow_cash: false,
   description: '',
+  necesar: '',
   categorii: [],
   pricing_mode: 'single',
   varste: [],

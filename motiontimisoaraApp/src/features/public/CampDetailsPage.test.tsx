@@ -46,6 +46,7 @@ const TABARA_IMPLICITA = {
 const detaliu = (peste: Record<string, unknown> = {}) => ({
   location: null,
   organizator: { fel: 'club', nume: 'Club Audit Motion', link: '/cluburi/club-1' },
+  necesar: [],
   categorii: [],
   agePrices: [],
   antrenori: [],
@@ -128,6 +129,22 @@ test('o tabără fără loc nu lasă un rând gol în locul lui', async () => {
   renderPage()
   await screen.findByRole('heading', { level: 1, name: 'Tabără de înot' })
   expect(screen.queryByText('Timișoara')).not.toBeInTheDocument()
+})
+test('necesarul taberei se afișează ca listă pentru părinte', async () => {
+  mocked.mockResolvedValue(
+    detaliu({
+      necesar: ['Tricouri pentru 7 zile', 'Bicicletă verificată înainte de plecare'],
+    }) as never,
+  )
+  renderPage()
+  expect(await screen.findByRole('heading', { name: 'Necesar pentru tabără' })).toBeInTheDocument()
+  expect(screen.getByText('Tricouri pentru 7 zile')).toBeInTheDocument()
+  expect(screen.getByText('Bicicletă verificată înainte de plecare')).toBeInTheDocument()
+})
+test('o tabără fără necesar nu arată o secțiune goală', async () => {
+  renderPage()
+  await screen.findByRole('button', { name: 'Înscrie-te' })
+  expect(screen.queryByRole('heading', { name: 'Necesar pentru tabără' })).not.toBeInTheDocument()
 })
 test('un antrenor fără poză primește inițiala numelui', async () => {
   mocked.mockResolvedValue(
