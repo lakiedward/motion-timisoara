@@ -19,6 +19,7 @@ dist-ssr
 !.env.example
 
 # Capacitor native build artifacts
+android/app/google-services.json
 android/app/build/
 android/.gradle/
 android/app/src/main/assets/public/

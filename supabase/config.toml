@@ -92,6 +92,9 @@ verify_jwt = true
 [functions.record-attendance]
 verify_jwt = true
 
+[functions.dispatch-push]
+verify_jwt = false
+
 # Proposed backend for #320; not deployed by the local contract stage.
 [functions.coach-live-location]
 verify_jwt = true

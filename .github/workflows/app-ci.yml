@@ -9,6 +9,10 @@ on:
       - 'supabase/migrations/00055_camp_announcement_audience.sql'
       - 'supabase/migrations/00056_parent_announcement_feed.sql'
       - 'supabase/tests/*parent-announcement*'
+      - 'supabase/migrations/00057_android_parent_push.sql'
+      - 'supabase/functions/dispatch-push/**'
+      - 'supabase/functions/dispatch-push-contract.test.ts'
+      - 'supabase/tests/*push*'
   pull_request:
     paths:
       - 'motiontimisoaraApp/**'
@@ -17,8 +21,26 @@ on:
       - 'supabase/migrations/00055_camp_announcement_audience.sql'
       - 'supabase/migrations/00056_parent_announcement_feed.sql'
       - 'supabase/tests/*parent-announcement*'
+      - 'supabase/migrations/00057_android_parent_push.sql'
+      - 'supabase/functions/dispatch-push/**'
+      - 'supabase/functions/dispatch-push-contract.test.ts'
+      - 'supabase/tests/*push*'
 
 jobs:
+  push-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify push audience, delivery and concurrent claims
+        shell: pwsh
+        run: ./supabase/tests/run-push-delivery.ps1
+      - name: Verify dispatcher and FCM contracts
+        run: npx --yes deno test --no-lock supabase/functions/dispatch-push-contract.test.ts
+
   announcement-sql:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -74,9 +96,9 @@ jobs:
           VITE_SUPABASE_ANON_KEY: placeholder
           VITE_STRIPE_PUBLISHABLE_KEY: ''
       - run: npx cap sync android
-      - name: Compile native app and location instrumentation
+      - name: Test push lifecycle and compile native app and instrumentation
         working-directory: motiontimisoaraApp/android
-        run: bash ./gradlew --no-daemon :app:assembleDebug :app:assembleDebugAndroidTest
+        run: bash ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest
 
   ios-build:
     runs-on: macos-latest

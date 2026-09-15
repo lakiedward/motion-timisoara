@@ -3,6 +3,7 @@ import { authenticateNative } from './auth-native/google'
 import { nativeEmail, requestNativePasswordReset, signUpNativeParent } from './auth-native/email'
 import { webRecoveryGrant } from '@/lib/auth/recovery-grant'
 import { isNative } from '@/lib/platform'
+import { authenticateWithPushIsolation, clearPushBeforeSignOut } from './notifications'
 
 export type Role = 'PARENT' | 'COACH' | 'CLUB' | 'ADMIN'
 
@@ -83,7 +84,9 @@ export async function loadAppUser(): Promise<AppUser | null> {
 }
 
 export async function signInWithPassword(email: string, password: string) {
-  return authenticateNative(() => supabase.auth.signInWithPassword({ email, password }))
+  return authenticateNative(() =>
+    authenticateWithPushIsolation(() => supabase.auth.signInWithPassword({ email, password })),
+  )
 }
 
 export async function signUpParent(input: {
@@ -107,7 +110,10 @@ export function signInWithGoogle(redirectTo: string) {
 }
 
 export async function signOut() {
-  return authenticateNative(() => supabase.auth.signOut())
+  return authenticateNative(async () => {
+    await clearPushBeforeSignOut()
+    return supabase.auth.signOut()
+  })
 }
 
 export function requestPasswordReset(email: string, redirectTo: string) {
@@ -128,7 +134,10 @@ export async function updatePassword(password: string) {
     return { error: { message: 'Invalid recovery link' } }
   webRecoveryGrant.clear()
   const result = await supabase.auth.updateUser({ password })
-  if (!result.error) await supabase.auth.signOut({ scope: 'local' })
+  if (!result.error) {
+    await clearPushBeforeSignOut()
+    await supabase.auth.signOut({ scope: 'local' })
+  }
   return result
 }
 
