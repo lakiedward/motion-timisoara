@@ -79,6 +79,33 @@ test('locurile se cer de la funcția taberei, cu parametrul ei', async () => {
   expect(apeluriRpc).toEqual([{ nume: 'camp_spots_remaining', argumente: { p_camp_id: 'camp-1' } }])
 })
 
+test('necesarul păstrează numai categoriile și articolele valide', async () => {
+  raspuns = {
+    camps: {
+      data: {
+        ...TABARA,
+        camp_requirements: [
+          {
+            name: ' Haine ',
+            items: [
+              { name: ' Chiloți ', quantity: 7 },
+              { name: 'Șosete', quantity: 0 },
+              { name: '', quantity: 2 },
+            ],
+          },
+          { name: 'Ski', items: [{ name: 'Schiuri', quantity: 1 }] },
+          { name: '', items: [{ name: 'Ignorat', quantity: 1 }] },
+        ],
+      },
+      error: null,
+    },
+  }
+  expect((await getTabaraDetaliu('tabara-inot'))!.necesar).toEqual([
+    { name: 'Haine', items: [{ name: 'Chiloți', quantity: 7 }] },
+    { name: 'Ski', items: [{ name: 'Schiuri', quantity: 1 }] },
+  ])
+})
+
 test('suma categoriilor adună toate sumele', () => {
   expect(
     sumaCategoriilor([

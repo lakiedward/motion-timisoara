@@ -15,6 +15,12 @@ const ani = z
     (s) => s.trim() !== '' && Number.isInteger(Number(s)) && Number(s) >= 0 && Number(s) <= 25,
     'Între 0 și 25 de ani',
   )
+const numarNecesar = z
+  .string()
+  .refine(
+    (s) => s.trim() !== '' && Number.isInteger(Number(s)) && Number(s) >= 1 && Number(s) <= 99,
+    'Între 1 și 99',
+  )
 
 export const schema = z
   .object({
@@ -45,6 +51,19 @@ export const schema = z
     price_lei: lei,
     allow_cash: z.boolean(),
     description: z.string().optional(),
+    necesar: z.array(
+      z.object({
+        name: z.string().trim().min(1, 'Numele categoriei lipsește'),
+        items: z
+          .array(
+            z.object({
+              name: z.string().trim().min(1, 'Numele articolului lipsește'),
+              quantity: numarNecesar,
+            }),
+          )
+          .min(1, 'Adaugă cel puțin un articol'),
+      }),
+    ),
     categorii: z.array(
       z.object({
         name: z.string().min(1, 'Numele lipsește'),
@@ -105,6 +124,7 @@ export const GOL: Values = {
   price_lei: '',
   allow_cash: false,
   description: '',
+  necesar: [],
   categorii: [],
   pricing_mode: 'single',
   varste: [],

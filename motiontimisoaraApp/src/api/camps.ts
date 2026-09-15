@@ -2,6 +2,10 @@ import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 import { publicUrl } from '@/api/public'
 import { getPreturilePeVarsta, type PretPeVarsta } from '@/api/camps-admin'
+import {
+  readCampRequirements,
+  type CampRequirementCategory,
+} from '@/lib/camp-requirements'
 
 const BUCKET = 'camp-photos'
 
@@ -30,6 +34,7 @@ export type OrganizatorTabara = {
 export type TabaraDetaliu = {
   tabara: Tables<'camps'>
   location: CampLocation | null
+  necesar: CampRequirementCategory[]
   organizator: OrganizatorTabara | null
   categorii: CategoriePret[]
   agePrices: PretPeVarsta[]
@@ -195,6 +200,7 @@ export async function getTabaraDetaliu(slug: string): Promise<TabaraDetaliu | nu
   return {
     tabara,
     location: location ?? null,
+    necesar: readCampRequirements(tabara.camp_requirements),
     organizator,
     categorii: categorii.data ?? [],
     agePrices,

@@ -55,7 +55,7 @@ export default function CampDetailsPage() {
     )
   }
 
-  const { tabara, organizator, antrenori, heroUrl, galerieUrls, locuriRamase } = data
+  const { tabara, necesar, organizator, antrenori, heroUrl, galerieUrls, locuriRamase } = data
   const incheiata = sAIncheiat(tabara.period_end)
   const plina = locuriRamase !== null && locuriRamase <= 0
 
@@ -107,6 +107,26 @@ export default function CampDetailsPage() {
 
         {tabara.description && (
           <p className="text-muted-foreground mt-6 leading-relaxed">{tabara.description}</p>
+        )}
+
+        {necesar.length > 0 && (
+          <div className="mt-8">
+            <h2 className="font-display mb-3 text-lg font-bold">Necesar pentru tabără</h2>
+            <div className="space-y-5">
+              {necesar.map((categorie) => (
+                <section key={categorie.name}>
+                  <h3 className="font-medium">{categorie.name}</h3>
+                  <ul className="text-muted-foreground mt-2 list-disc space-y-2 pl-5">
+                    {categorie.items.map((articol) => (
+                      <li key={articol.name}>
+                        {articol.name} — {articol.quantity}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
+          </div>
         )}
 
         {galerieUrls.length > 0 && (
