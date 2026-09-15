@@ -27,6 +27,7 @@ const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, mil
 
 async function command(binary, args, { timeout = 60000, acceptFailure = false, includeStderr = false } = {}) {
   return new Promise((resolve, reject) => {
+    const startedAt = Date.now()
     const process = spawn(binary, args, { cwd: appRoot, stdio: ['ignore', 'pipe', 'pipe'] })
     let stdout = ''
     let stderr = ''
@@ -43,7 +44,8 @@ async function command(binary, args, { timeout = 60000, acceptFailure = false, i
     })
     process.on('close', (code) => {
       clearTimeout(timer)
-      log.push({ binary, args, code, timedOut, stdout, stderr })
+      const finishedAt = Date.now()
+      log.push({ binary, args, code, timedOut, startedAt, finishedAt, durationMs: finishedAt - startedAt, stdout, stderr })
       if (timedOut || (code !== 0 && !acceptFailure)) {
         reject(new Error(`${binary} ${args.join(' ')} failed (${timedOut ? 'timeout' : code}): ${stderr.slice(-1500)}`))
       } else resolve((includeStderr ? `${stdout}\n${stderr}` : stdout).trim())
@@ -212,7 +214,7 @@ try {
   consoleTimeout = setTimeout(() => {
     consoleFailure ??= new Error('Live native console exceeded the bounded test duration')
     consoleProcess.kill('SIGKILL')
-  }, 240000)
+  }, 480000)
   await inject(1.25)
   await waitFor('foreground native point', () => point('manual', 1.25))
   await background('manual')

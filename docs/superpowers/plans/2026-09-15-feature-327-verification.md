@@ -139,3 +139,11 @@ were added. The CLAUDE/AGENTS mirror was updated together.
 This record covers the reviewed implementation and verified backend/device stage.
 The PR records its final reviewed revision, CI results and actual merge. No frontend
 or store deployment is part of this delivery.
+
+The first CI run exposed missing root Node type dependencies in the new Deno job;
+the job now installs the locked dependencies and pins the existing Deno 2.9.6 runtime.
+An unrelated synthetic iOS location test also exhausted its 30-second capture
+deadline while waiting for simulator commands. The isolated harness now uses
+120-second expiry/restart windows, a bounded 480-second host observation budget,
+and command timestamps. All background-delivery, native-expiry and rejected-late-point
+assertions remain intact; iOS product sources and payment scope are unchanged.
