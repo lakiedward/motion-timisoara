@@ -7,7 +7,7 @@ after successful verification on 2026-09-15.
 ## Automated verification
 
 - Public database types regenerated after the live migration.
-- Application typecheck, ESLint, 978 Vitest tests and production build passed.
+- Application typecheck, ESLint, 986 Vitest tests and production build passed.
 - The final coordinator cleanup fence is included in that run; its 21 focused tests pass.
 - Android Java compilation and 20 unit tests pass, including deadline response races.
 - 80 isolated PostgreSQL assertions pass, including concurrent SKIP LOCKED claims,
@@ -67,9 +67,9 @@ returns 401. Empty dispatch proves configuration and execution, not phone delive
 
 Device: Galaxy A55 5G (SM-A556B), Android 16, 1080x2340, controlled through MobAI.
 The owner authorized temporary records in Club Audit Motion and notifications only to
-their account on this phone. No payment was performed. The final debug APK, after all
-temporary diagnostic probes were removed, has SHA256
-`56002320739B553AD1C52A69FF9BA62C47DA69D86F3D165E3A26A89643DB3265`.
+their account on this phone. No payment was performed. The final debug APK, including
+the offline request fix and without temporary diagnostic probes, has SHA256
+`90AB97883CA3863D79C95CB6BD8140CB71A993CDBBD4F9A05ACEC1BBF6F1368A`.
 
 Observed on 2026-09-15, Europe/Bucharest:
 
@@ -97,6 +97,20 @@ Observed on 2026-09-15, Europe/Bucharest:
   instructions and no active backend device. Restoring the permission in Settings and
   explicitly activating again registered a new binding successfully.
 - Logout removed the active backend binding before the anonymous navigation rendered.
+- Account switch: the audit coach signed in through the actual Android password form
+  and saw the coach dashboard. The owner's next attendance event expanded with zero
+  deliveries. After coach logout, the owner's Google login returned to the parent
+  dashboard with notifications disabled until explicit reactivation created a new binding.
+- Duplicate delivery: an attendance alert appeared while Motion was in the background.
+  After dismissing that exact alert, the same delivery was retried against the same
+  event and binding. FCM accepted both attempts; the dismissed alert did not reappear.
+- Offline resume exposed a paused TanStack preference query. The fix makes those reads
+  run offline and bounds session retrieval and RPCs to ten seconds each, including
+  time spent waiting for Supabase auth before fetch. On the final APK, Flight mode with
+  Wi-Fi off produced the existing error and Reincearca action instead of indefinite
+  loading. Reconnection restored the enabled state. A new background attendance alert
+  then opened the current record, and account opt-out again produced false plus zero
+  active backend devices. The owner's explicit opt-in was restored afterward.
 - Live audience evaluation admitted the fixture owner and rejected the unrelated audit
   parent for course, camp and course-targeted club announcement events. The dispatcher
   readback contained one recipient, zero other recipients and zero pending/sending jobs.
@@ -104,13 +118,27 @@ Observed on 2026-09-15, Europe/Bucharest:
 Local screenshots are in the ignored `motiontimisoaraApp/tmp/push326-evidence/`
 directory: `foreground-attendance-tap.png`, `background-course-tap.png`,
 `closed-camp-tap.png`, `background-announcement-tap.png` and `permission-denied.png`.
-The foreground toast capture is retained there as `foreground-attendance-toast.jpeg`.
+The foreground toast capture is retained there as `foreground-attendance-toast.jpeg`;
+`account-switch-coach.png` records the separate coach dashboard.
+Final-build captures are `offline-retry-final.png`, `final-build-attendance-tap.png`
+and `final-enabled-clean-account.png`.
 
 The initial locked startup emitted Capacitor bridge/safe-area initialization errors;
 the later receipt and navigation probes emitted no application error. Global device
 CPU measurements were not interpreted as app-specific performance measurements.
-Account-switch verification and fixture cleanup remain in progress and must be completed
-before merge. iOS/APNs and frontend/store publication remain deferred.
+An offline-queued message was accepted by FCM, but a delayed alert was not observed after
+reconnection. That attempt is not claimed as device-delivery proof; expiry and delayed
+binding rejection are covered by the isolated native and backend contracts. An additional
+offline retry was still pending at the harness's 16-second observation limit; it recovered
+after reconnection. The per-operation deadlines do not promise a ten-second total across
+session, preference and native cleanup steps.
+
+Cleanup removed the exact authorized child, enrollment, occurrence, attendance, course,
+camp and three announcements, together with their 17 events and 15 delivery rows. No
+other recipient was present. Readback confirmed zero remaining disposable business
+records and zero push events/deliveries. Existing audit accounts, Club Audit Motion and
+the owner's account were retained. Wi-Fi and Flight mode were restored to their original
+on/off states. iOS/APNs and frontend/store publication remain deferred.
 
 ## Final source review
 
@@ -118,5 +146,8 @@ The final working diff was independently reviewed locally for React/auth, Androi
 and backend authorization/delivery. No confirmed finding remains. Review covered
 binding/session isolation, asynchronous cancellation, permission and token lifecycle,
 payload routing, outbox leases, audience revalidation and credential handling. The
-reviewed source is the source committed with this report; CI on the PR revision and
-the remaining device/cleanup steps are still required before merge.
+offline fix received a further local review, which found and corrected Supabase's
+pre-fetch auth wait escaping an abort-only deadline. Its focused tests, full application
+suite, typecheck, lint and final Android build passed. Required CI on PR #84 must be
+green on its final revision before merge; device verification and cleanup are complete
+for the approved Android stage, with the delivery limitations stated above.

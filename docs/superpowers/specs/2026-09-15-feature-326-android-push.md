@@ -37,4 +37,7 @@ Temporary live fixtures and notification recipients require the owner's consent.
 
 ## Execution status
 
-Implementation in progress. No completed browser, live push, device, merge or deployment proof is asserted by this design document.
+The Android implementation, browser/device verification and live backend deployment are
+recorded in `2026-09-15-feature-326-verification.md`. PR #84 delivers this stage. The
+verification report separates observed phone behavior, contract coverage and remaining
+delivery limitations. iOS/APNs and frontend/store publication remain outside this stage.
