@@ -79,6 +79,22 @@ test('locurile se cer de la funcția taberei, cu parametrul ei', async () => {
   expect(apeluriRpc).toEqual([{ nume: 'camp_spots_remaining', argumente: { p_camp_id: 'camp-1' } }])
 })
 
+test('necesarul păstrează doar articolele text curate', async () => {
+  raspuns = {
+    camps: {
+      data: {
+        ...TABARA,
+        camp_requirements: [' Tricouri pentru 7 zile ', 23, '', 'Bicicletă proprie '],
+      },
+      error: null,
+    },
+  }
+  expect((await getTabaraDetaliu('tabara-inot'))!.necesar).toEqual([
+    'Tricouri pentru 7 zile',
+    'Bicicletă proprie',
+  ])
+})
+
 test('suma categoriilor adună toate sumele', () => {
   expect(
     sumaCategoriilor([
