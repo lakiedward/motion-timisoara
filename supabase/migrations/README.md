@@ -139,6 +139,13 @@ verification disabled. The `dispatch-parent-push` cron invokes it every minute
 using Vault. A live empty dispatch returned HTTP 200 after FCM authorization;
 this does not establish device delivery. Generated public types include the schema.
 
+To-Do #154: `00058_camp_requirements.sql` was applied as
+`20260915115819` (`camp_requirements`) on 2026-09-15 after the owner authorized
+the migration. It adds a JSON list to camps and includes it in the existing
+owner-authorized atomic camp save RPC. Anonymous execution remains revoked;
+authenticated execution retains the existing ownership check. Generated
+application types match the applied schema.
+
 To confirm git and the remote still agree:
 
 ```bash
