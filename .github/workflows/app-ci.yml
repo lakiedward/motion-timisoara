@@ -47,11 +47,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.6
       - name: Verify atomic enrollment retries and concurrent fulfillment
         shell: pwsh
         run: ./supabase/tests/run-atomic-enrollment-creation.ps1
       - name: Verify enrollment and payment-intent contracts
-        run: npx --yes deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/payment-charge.test.ts
+        run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/payment-charge.test.ts
 
   push-contracts:
     runs-on: ubuntu-latest
