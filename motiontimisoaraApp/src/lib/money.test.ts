@@ -1,4 +1,4 @@
-import { baniToRon, ronToBani, formatRon } from '@/lib/money'
+import { baniToRon, ronToBani, formatRon, formatOfferPrice, formatRonOffer } from '@/lib/money'
 
 test('baniToRon converts minor units to major', () => {
   expect(baniToRon(12345)).toBe(123.45)
@@ -18,4 +18,11 @@ test('formatRon renders Romanian currency from bani', () => {
   const out = formatRon(12345)
   expect(out).toContain('123,45')
   expect(out.toLowerCase()).toContain('lei')
+})
+
+test('zero offer prices are shown as Gratuit', () => {
+  expect(formatOfferPrice(0, 'RON')).toBe('Gratuit')
+  expect(formatOfferPrice(0, 'EUR')).toBe('Gratuit')
+  expect(formatRonOffer(0)).toBe('Gratuit')
+  expect(formatOfferPrice(60000, 'RON')).toContain('600,00')
 })

@@ -259,7 +259,7 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
     const batch = await saveEnrollmentBatch(supabaseAdmin, {
       parentId: user.id, kind, entityId, paymentMethod, quotes: childPrices, billingDetails,
     });
-    if (paymentMethod === "CASH") {
+    if (paymentMethod === "CASH" && batch.prices.some((price) => price.amount > 0)) {
       await notifyCashEnrollments(supabaseAdmin, batch, { kind, entityId, sessionPackageSize, children });
     }
     const { createdEnrollmentIds: _createdEnrollmentIds, ...response } = batch;

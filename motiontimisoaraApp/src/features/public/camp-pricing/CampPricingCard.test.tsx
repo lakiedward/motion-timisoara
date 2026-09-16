@@ -131,6 +131,20 @@ test('child read error offers retry without hiding public prices', async () => {
   expect(await screen.findByText('Pentru Ana, Mara')).toBeInTheDocument()
 })
 
+test('a zero age category is shown as Gratuit, not 0,00 lei', () => {
+  user = null
+  view({
+    agePrices: [
+      { id: 'free', age_from: 0, age_to: 2, amount: 0, display_order: 0 },
+      { id: 'paid', age_from: 3, age_to: 12, amount: 80000, display_order: 1 },
+    ],
+  })
+  expect(screen.getByText('Gratuit')).toBeInTheDocument()
+  expect(screen.getByText('800,00 lei')).toBeInTheDocument()
+  expect(screen.queryByText('0,00 lei')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Înscrie-te' })).toBeEnabled()
+})
+
 test('missing age prices block enrollment without using the single price', () => {
   user = null
   view({ agePrices: [] })

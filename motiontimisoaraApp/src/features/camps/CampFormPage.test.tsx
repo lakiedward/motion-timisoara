@@ -250,6 +250,45 @@ test('o tabără nouă pornește pe preț unic, fără categorii de vârstă la 
   )
 })
 
+test('o categorie de vârstă cu 0 lei se salvează ca sumă zero', async () => {
+  const user = userEvent.setup()
+  renderForm()
+
+  await completeazaTabara(user)
+  await user.click(screen.getByRole('radio', { name: /Pe categorii de vârstă/ }))
+  await adaugaCategorie(user, '0', '2', '0')
+  await adaugaCategorie(user, '3', '12', '800')
+  await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
+
+  await waitFor(() =>
+    expect(saveCampOffer).toHaveBeenCalledWith(
+      expect.any(String),
+      90000,
+      [],
+      { currency: 'RON', eur_ron_rate_micros: null },
+      'by_age',
+      [
+        { age_from: 0, age_to: 2, amount: 0 },
+        { age_from: 3, age_to: 12, amount: 80000 },
+      ],
+      expect.any(Object),
+      { clubId: 'club-1', coachUserId: null },
+    ),
+  )
+})
+
+test('Marchează gratuit pune suma categoriei pe zero', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  await completeazaTabara(user)
+  await user.click(screen.getByRole('radio', { name: /Pe categorii de vârstă/ }))
+  await adaugaCategorie(user, '0', '2', '50')
+  expect(screen.getByLabelText('Sumă (lei)')).toHaveValue(50)
+  await user.click(screen.getByRole('button', { name: 'Marchează gratuit' }))
+  expect(screen.getByLabelText('Sumă (lei)')).toHaveValue(0)
+  expect(screen.getByText('Categoria este gratuită.')).toBeInTheDocument()
+})
+
 test('pe categorii: comutatorul arată lista, iar salvarea trimite intervalele în ani și sumele în bani', async () => {
   const user = userEvent.setup()
   renderForm()

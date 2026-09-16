@@ -128,7 +128,8 @@ class FakeDatabase {
       let payment = enrollment && this.tables.payments.find((row) => row.enrollment_id === enrollment!.id);
       const compatible = payment && payment.amount === quote.amount && payment.currency === quote.currency &&
         JSON.stringify(payment.pricing_snapshot ?? null) === JSON.stringify(quote.snapshot);
-      const paidReplay = enrollment?.status === "ACTIVE" && payment?.status === "SUCCEEDED" && payment.method === "CARD" && payment.gateway_txn_id && compatible;
+      const paidReplay = enrollment?.status === "ACTIVE" && payment?.status === "SUCCEEDED" && compatible &&
+        (payment.amount === 0 || (payment.method === "CARD" && payment.gateway_txn_id));
       if (payment && !paidReplay && ((!['PENDING','FAILED','CANCELLED'].includes(String(payment.status))) ||
         ((payment.gateway_txn_id || payment.pricing_snapshot) && !compatible))) {
         this.tables = before;
@@ -137,13 +138,13 @@ class FakeDatabase {
       }
       if (!enrollment) {
         enrollment = { id: `enrollments-${++this.sequence}`, child_id: quote.childId, kind: args.p_kind,
-          entity_id: args.p_entity_id, status: "PENDING", purchased_sessions: 0, remaining_sessions: 0, sessions_used: 0 };
+          entity_id: args.p_entity_id, status: quote.amount === 0 ? "ACTIVE" : "PENDING", purchased_sessions: 0, remaining_sessions: 0, sessions_used: 0 };
         this.tables.enrollments.push(enrollment);
         createdIds.push(String(enrollment.id));
         this.writes.push({ table: "enrollments", operation: "insert", values: structuredClone(enrollment), filters: [] });
       }
       if (!paidReplay && (!payment || payment.method !== args.p_method || payment.status !== "PENDING" || billing || (!payment.gateway_txn_id && !payment.pricing_snapshot))) {
-        const values: Row = { method: args.p_method, amount: quote.amount, currency: quote.currency, pricing_snapshot: quote.snapshot, status: "PENDING" };
+        const values: Row = { method: args.p_method, amount: quote.amount, currency: quote.currency, pricing_snapshot: quote.snapshot, status: quote.amount === 0 ? "SUCCEEDED" : "PENDING" };
         if (billing && args.p_method === "CARD") Object.assign(values, { billing_name: billing.name, billing_email: billing.email,
           billing_address_line1: billing.addressLine1, billing_city: billing.city, billing_postal_code: billing.postalCode, billing_country: "RO" });
         const operation = payment ? "update" : "insert";
@@ -154,11 +155,12 @@ class FakeDatabase {
         }
         this.writes.push({ table: "payments", operation, values: structuredClone(values), filters: [] });
       }
+      if (quote.amount === 0) enrollment.status = "ACTIVE";
       ids.push(String(enrollment.id));
       prices.push({ childId: quote.childId, amount: quote.amount, currency: quote.currency });
     }
     return { data: { enrollmentId: ids[0], enrollmentIds: ids, createdEnrollmentIds: createdIds, prices,
-      requiresPaymentIntent: args.p_method === "CARD" }, error: null };
+      requiresPaymentIntent: args.p_method === "CARD" && quotes.some((quote) => quote.amount > 0) }, error: null };
   }
 
 }
@@ -242,6 +244,37 @@ Deno.test("single-mode camps still use the authoritative RPC result for every ch
   const quoted = await quote(context);
   equal((await context.create(undefined, quoted.versions)).status, 200);
   equal(context.db.tables.payments.map((row) => row.amount), [25000, 25000]);
+});
+
+Deno.test("a free age category activates without a payment intent", async () => {
+  const context = fixture();
+  context.db.prices = { "child-a": 0 };
+  const quoted = await quote(context, ["child-a"]);
+  equal(quoted.results[0].amount, 0);
+  const response = await context.create(["child-a"], quoted.versions);
+  equal(response.status, 200);
+  const body = await response.json();
+  equal(body.requiresPaymentIntent, false);
+  equal(body.prices, [{ childId: "child-a", amount: 0, currency: "RON" }]);
+  const enrollment = context.db.tables.enrollments.find((row) => row.child_id === "child-a");
+  const payment = context.db.tables.payments.find((row) => row.enrollment_id === enrollment?.id);
+  equal([enrollment?.status, payment?.amount, payment?.status], ["ACTIVE", 0, "SUCCEEDED"]);
+});
+
+Deno.test("a mixed free and paid camp batch charges only the paid child", async () => {
+  const context = fixture();
+  context.db.prices = { "child-a": 0, "child-b": 18000 };
+  const quoted = await quote(context);
+  const response = await context.create(undefined, quoted.versions);
+  equal(response.status, 200);
+  const body = await response.json();
+  equal(body.requiresPaymentIntent, true);
+  const free = context.db.tables.enrollments.find((row) => row.child_id === "child-a");
+  const paid = context.db.tables.enrollments.find((row) => row.child_id === "child-b");
+  equal(free?.status, "ACTIVE");
+  equal(paid?.status, "PENDING");
+  equal(context.db.tables.payments.find((row) => row.enrollment_id === free?.id)?.status, "SUCCEEDED");
+  equal(context.db.tables.payments.find((row) => row.enrollment_id === paid?.id)?.status, "PENDING");
 });
 
 Deno.test("an unmatched age rejects the child and the complete creation batch before writes", async () => {

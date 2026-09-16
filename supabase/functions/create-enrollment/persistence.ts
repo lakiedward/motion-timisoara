@@ -14,8 +14,9 @@ export async function completedEnrollmentPrices(
   return await Promise.all(active.map(async (enrollment) => {
     const payments = result.data?.filter((row) => row.enrollment_id === enrollment.id) ?? [];
     const payment = payments[0];
-    if (payments.length !== 1 || payment.method !== "CARD" || payment.status !== "SUCCEEDED" ||
-      !payment.gateway_txn_id || !payment.pricing_snapshot) {
+    const free = payment?.amount === 0;
+    if (payments.length !== 1 || payment.status !== "SUCCEEDED" || !payment.pricing_snapshot ||
+      (!free && (payment.method !== "CARD" || !payment.gateway_txn_id))) {
       throw enrollmentJson({ error: "Înscrierea este deja procesată. Verifică în Înscrieri." }, 409);
     }
     let snapshot: PriceSnapshot;

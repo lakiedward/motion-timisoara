@@ -1,7 +1,7 @@
 import { PaymentEntry } from './PaymentEntry'
 import { AcceptedPriceDetails } from '@/components/AcceptedPriceDetails'
 import { Label } from '@/components/ui/label'
-import { formatRon } from '@/lib/money'
+import { formatRonOffer } from '@/lib/money'
 import { stripeConfigured } from '@/lib/stripe'
 import type { PaymentMethod } from '@/api/checkout'
 
@@ -47,7 +47,7 @@ export function CheckoutPaymentStep({
             {packageSize !== undefined && ` × ${packageSize} ședințe`}
           </span>
           <span className="font-semibold">
-            {total !== undefined ? formatRon(total) : 'Preț indisponibil'}
+            {total !== undefined ? formatRonOffer(total) : 'Preț indisponibil'}
           </span>
         </div>
       </div>
@@ -89,7 +89,7 @@ export function CheckoutPaymentStep({
       ) : (
         <p className="bg-muted text-muted-foreground rounded-3xl p-5 text-sm">
           Înscrierea rămâne în așteptare până când antrenorul confirmă încasarea sumei de{' '}
-          <strong>{total !== undefined ? formatRon(total) : 'Preț indisponibil'}</strong>.
+          <strong>{total !== undefined ? formatRonOffer(total) : 'Preț indisponibil'}</strong>.
         </p>
       )}
     </section>

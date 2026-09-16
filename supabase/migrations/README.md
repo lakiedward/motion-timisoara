@@ -164,6 +164,12 @@ verification retained. The intent follow-up restricts new intents to card (inclu
 Google Pay) and safely normalizes eligible existing TEST intents without replacing
 their IDs or changing amounts. Android device evidence is recorded separately.
 
+To-Do #151: `00061_free_enrollment_fulfillment.sql` is shipped and not applied
+yet. It keeps the service-only batch RPC and fulfills a confirmed 0 RON quote
+immediately: enrollment ACTIVE, payment SUCCEEDED without a Stripe intent.
+A mixed batch still requires a card intent only for children with amount > 0.
+Isolated SQL and enrollment contract tests cover the free and mixed paths.
+
 To confirm git and the remote still agree:
 
 ```bash
