@@ -9,9 +9,10 @@ import { plural } from '@/lib/plural'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useProprietarTabere } from './useProprietarTabere'
+import type { CampPortalBaza } from './camp-portal'
 import CampInvitations from './CampInvitations'
 
-export default function CampsListPage({ baza }: { baza: '/club/camps' | '/coach/camps' }) {
+export default function CampsListPage({ baza }: { baza: CampPortalBaza }) {
   const { proprietar, gata, eroare, reincearca, eClub } = useProprietarTabere()
 
   const {

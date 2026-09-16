@@ -29,14 +29,16 @@ import { baniToRon, formatMoney } from '@/lib/money'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useProprietarTabere } from './useProprietarTabere'
+import type { CampPortalBaza } from './camp-portal'
 import CampAgePricesSection from './CampAgePricesSection'
 import CampFormField from './CampFormField'
+import CampPeriodSection from './CampPeriodSection'
 import CampPhotosSection from './CampPhotosSection'
 import CampCoachesSection from './CampCoachesSection'
 import CampRequirementsSection from './CampRequirementsSection'
 import CampRulesSection from './CampRulesSection'
 
-export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/camps' }) {
+export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   const { id } = useParams()
   const eEditare = !!id
   const [newCampId] = useState(() => crypto.randomUUID())
@@ -220,14 +222,12 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
           <Input {...register('slug')} className="h-11 lg:h-9" aria-invalid={!!errors.slug} />
         </CampFormField>
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <CampFormField eticheta="Începe" eroare={errors.period_start?.message}>
-            <Input type="date" {...register('period_start')} className="h-11 lg:h-9" />
-          </CampFormField>
-          <CampFormField eticheta="Se termină" eroare={errors.period_end?.message}>
-            <Input type="date" {...register('period_end')} className="h-11 lg:h-9" />
-          </CampFormField>
-        </div>
+        <CampPeriodSection
+          register={register}
+          control={control}
+          setValue={setValue}
+          errors={errors}
+        />
 
         <CampFormField
           eticheta="Loc"

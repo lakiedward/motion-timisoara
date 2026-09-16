@@ -9,8 +9,9 @@ import { plural } from '@/lib/plural'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { CampParticipationPanel } from '@/features/live-location/camps/CampParticipationPanel'
+import type { CampPortalBaza } from './camp-portal'
 
-export default function CampEnrolledPage({ baza }: { baza: '/club/camps' | '/coach/camps' }) {
+export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
   const { id } = useParams()
   const campId = id as string
 
@@ -104,7 +105,7 @@ function CardCopil({
 }: {
   copil: CopilInscris
   ziuaTaberei: string | null
-  baza: '/club/camps' | '/coach/camps'
+  baza: CampPortalBaza
 }) {
   const varsta = ziuaTaberei ? varstaLa(copil.dataNasterii, ziuaTaberei) : null
 
