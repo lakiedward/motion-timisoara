@@ -170,6 +170,11 @@ immediately: enrollment ACTIVE, payment SUCCEEDED without a Stripe intent.
 A mixed batch still requires a card intent only for children with amount > 0.
 Isolated SQL and enrollment contract tests cover the free and mixed paths.
 
+To-Do #155: `00062_camp_rules.sql` is shipped and not applied yet. It adds
+nullable `camps.rules` (max 8000 characters) and persists it through
+`save_camp_offer` when the metadata JSON includes the `rules` key. Public camp
+reads already use `select('*')`, so pages keep loading before the column exists.
+
 To confirm git and the remote still agree:
 
 ```bash

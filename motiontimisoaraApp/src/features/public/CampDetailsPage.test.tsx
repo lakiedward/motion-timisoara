@@ -147,6 +147,21 @@ test('necesarul taberei se afișează ca listă pentru părinte', async () => {
   expect(screen.getByText('Schiuri — 1')).toBeInTheDocument()
   expect(screen.getByText('Clăpari — 1')).toBeInTheDocument()
 })
+test('regulamentul taberei apare ca text cu rânduri păstrate', async () => {
+  mocked.mockResolvedValue(
+    detaliu({ tabara: { rules: 'Fără telefoane.\nFără dulciuri seara.' } }) as never,
+  )
+  renderPage()
+  const sectiune = (await screen.findByRole('heading', { name: 'Regulament' })).closest('section')
+  expect(sectiune).toHaveTextContent('Fără telefoane.')
+  expect(sectiune).toHaveTextContent('Fără dulciuri seara.')
+  expect(sectiune?.querySelector('p')).toHaveClass('whitespace-pre-wrap')
+})
+test('o tabără fără regulament nu arată o secțiune goală', async () => {
+  renderPage()
+  await screen.findByRole('button', { name: 'Înscrie-te' })
+  expect(screen.queryByRole('heading', { name: 'Regulament' })).not.toBeInTheDocument()
+})
 test('o tabără fără necesar nu arată o secțiune goală', async () => {
   renderPage()
   await screen.findByRole('button', { name: 'Înscrie-te' })

@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import CampPricingCard from './camp-pricing/CampPricingCard'
 import CampLocation from '@/components/camps/CampLocation'
+import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
 
 export default function CampDetailsPage() {
   const { slug = '' } = useParams()
@@ -108,6 +109,8 @@ export default function CampDetailsPage() {
         {tabara.description && (
           <p className="text-muted-foreground mt-6 leading-relaxed">{tabara.description}</p>
         )}
+
+        <CampRulesDisplay rules={tabara.rules} />
 
         {necesar.length > 0 && (
           <div className="mt-8">
