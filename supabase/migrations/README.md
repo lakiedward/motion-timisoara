@@ -164,16 +164,18 @@ verification retained. The intent follow-up restricts new intents to card (inclu
 Google Pay) and safely normalizes eligible existing TEST intents without replacing
 their IDs or changing amounts. Android device evidence is recorded separately.
 
-To-Do #151: `00061_free_enrollment_fulfillment.sql` is shipped and not applied
-yet. It keeps the service-only batch RPC and fulfills a confirmed 0 RON quote
-immediately: enrollment ACTIVE, payment SUCCEEDED without a Stripe intent.
-A mixed batch still requires a card intent only for children with amount > 0.
-Isolated SQL and enrollment contract tests cover the free and mixed paths.
+To-Do #151: `00061_free_enrollment_fulfillment.sql` was applied as
+`20260916144814` (`free_enrollment_fulfillment`) on 2026-09-16 after the owner
+authorized landing the stack. It keeps the service-only batch RPC and fulfills
+a confirmed 0 RON quote immediately: enrollment ACTIVE, payment SUCCEEDED
+without a Stripe intent. A mixed batch still requires a card intent only for
+children with amount > 0. Isolated SQL and enrollment contract tests cover the
+free and mixed paths. `create-enrollment` was deployed as version 9 with JWT
+verification retained; amount 0 is treated as already fulfilled.
 
-To-Do #155: `00062_camp_rules.sql` is shipped and not applied yet. It adds
-nullable `camps.rules` (max 8000 characters) and persists it through
-`save_camp_offer` when the metadata JSON includes the `rules` key. Public camp
-reads already use `select('*')`, so pages keep loading before the column exists.
+To-Do #155: `00062_camp_rules.sql` was applied as `20260916145126` (`camp_rules`)
+on 2026-09-16. It adds nullable `camps.rules` (max 8000 characters) and persists
+it through `save_camp_offer` when the metadata JSON includes the `rules` key.
 
 To confirm git and the remote still agree:
 
