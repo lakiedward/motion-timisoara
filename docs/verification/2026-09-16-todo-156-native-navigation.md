@@ -48,22 +48,51 @@ description warning. The native shell does not use that Sheet.
 Local screenshots are stored outside the public repository in
 `C:/Users/lakie/Documents/Codex/Reports/motion-todo-156/`.
 
-## Outstanding evidence and gates
+## Android device evidence
 
-- Galaxy A55 (Android 16) was detected and its existing application opened. It
-  disconnected before installation of the new APK. This does not establish device
-  verification of the new shell. Installation, keyboard, safe-area and Android back
-  checks are pending reconnection.
-- No iOS runtime/device verification has been performed.
-- Parent and admin navigation is covered by automated tests, but no current live
-  login for those roles is available. The owner does not know their credentials.
-- Final human visual acceptance, CI and merge remain pending. No production deploy
-  or store publication is included. To-Do #156 remains In progress in Team Tracker.
+After reconnection, installed the APK built from `5d0c5ce` on Galaxy A55 5G,
+Android 16, physical resolution 1080x2340. MobAI performed all device interactions.
+The installation preserved the owner's existing parent session. Checks were
+read-only; no child, enrollment, payment or message was created, and no logout
+or password change was performed.
+
+- Cold launch retained the parent session and displayed the five accepted tabs.
+- Opened Home, Explore, Children, Announcements and Account. Children and
+  Announcements showed their empty states; Account retained secondary destinations.
+- Scrolled Account to the bottom. Both bars stayed visible, the sign-out control
+  remained accessible above the bottom bar, and system status/gesture areas did not
+  overlap the controls.
+- Opened Contact and focused its empty name field. The keyboard resized the WebView;
+  the focused field remained visible and the bottom bar stayed above the keyboard.
+  Android Back first dismissed the keyboard, then returned to Account. The top-bar
+  Back control independently returned from Contact to Account.
+- Sent the app to the background and reopened it. Explore and the parent tabs were
+  preserved. Left the app on Explore for human review.
+- Captured logcat contained Android/WebView platform diagnostics, but no matching
+  fatal exception, ANR or uncaught JavaScript error during these checks. MobAI's
+  generic memory-growth alert compared cold-start 88.6 MiB with loaded pages; memory
+  ended at 241.0 MiB, below its 302.5 MiB peak. This is not a memory-leak benchmark.
+
+Screenshots: `android-parent-explore.png`, `android-parent-account-scrolled.png`,
+`android-keyboard.png` in the local evidence directory above. Metrics session:
+`8283f772-1bf6-4609-b338-1111f553c858`.
+
+## CI and outstanding gates
+
+All CI checks for `5d0c5ce` passed, including app tests/build, Android build,
+iOS simulator compilation, SQL/contracts and the repository's existing integration
+workflow. iOS compilation is not iOS device UI verification.
+
+- No iOS runtime/device UI verification has been performed.
+- Admin navigation is covered by automated tests, without a current live admin login.
+- Final human visual acceptance and merge remain pending. No production deploy or
+  store publication is included. To-Do #156 remains In progress in Team Tracker.
 
 ## Review
 
 Reviewed the final authored implementation against base `6141e95` in the current
 session: route guards, role destinations, authentication state, payment and push
 listener placement, shared web navigation, back behavior, layout offsets, canonical
-primitives and token usage. No unresolved code defect was found. The device and
-human gates above remain separate from this code review.
+primitives and token usage. Reviewed implementation revision: `5d0c5ce`. No unresolved
+code defect was found. Android verification required no code changes. The remaining
+verification limits and human gate above remain separate from this code review.
