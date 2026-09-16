@@ -24,6 +24,7 @@ import {
 import { getClubSelectableLocations } from '@/api/club'
 import { getSelectableLocations } from '@/api/coach'
 import { campRequirementsForSave, readCampRequirements } from '@/lib/camp-requirements'
+import { campRulesForSave } from '@/lib/camp-rules'
 import { baniToRon, formatMoney } from '@/lib/money'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,6 +34,7 @@ import CampFormField from './CampFormField'
 import CampPhotosSection from './CampPhotosSection'
 import CampCoachesSection from './CampCoachesSection'
 import CampRequirementsSection from './CampRequirementsSection'
+import CampRulesSection from './CampRulesSection'
 
 export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/camps' }) {
   const { id } = useParams()
@@ -94,6 +96,7 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
         price_lei: String(baniToRon(tabara.price)),
         allow_cash: tabara.allow_cash,
         description: tabara.description ?? '',
+        rules: tabara.rules ?? '',
         necesar: readCampRequirements(tabara.camp_requirements).map((categorie) => ({
           name: categorie.name,
           items: categorie.items.map((articol) => ({
@@ -130,6 +133,7 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
       title: v.title,
       slug: v.slug,
       description: v.description?.trim() ? v.description : null,
+      rules: campRulesForSave(v.rules),
       period_start: v.period_start,
       period_end: v.period_end,
       location_id: v.location_id || null,
@@ -271,6 +275,8 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
             className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent p-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] [field-sizing:content] max-h-64"
           />
         </CampFormField>
+
+        <CampRulesSection register={register} errors={errors} />
 
         <CampRequirementsSection control={control} register={register} errors={errors} />
 

@@ -57,6 +57,7 @@ export interface TabaraInput {
   capacity: number | null
   allow_cash: boolean
   camp_requirements: CampRequirementCategory[]
+  rules: string | null
 }
 
 export interface Proprietar {

@@ -61,6 +61,7 @@ const TABARA = {
   currency: 'RON',
   gallery_json: null,
   camp_requirements: [],
+  rules: null,
 }
 
 const BAZIN = 'b6d97609-d740-44aa-b930-fb222ffadb13'
@@ -167,7 +168,10 @@ test('fără loc ales, location_id pleacă null, nu șir gol', async () => {
   await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
 
   await waitFor(() => expect(saveCampOffer).toHaveBeenCalled())
-  expect(vi.mocked(saveCampOffer).mock.calls[0][6]).toMatchObject({ location_id: null })
+  expect(vi.mocked(saveCampOffer).mock.calls[0][6]).toMatchObject({
+    location_id: null,
+    rules: null,
+  })
 })
 
 test('la editare, locul salvat apare selectat chiar dacă lista vine după tabără', async () => {
@@ -226,6 +230,33 @@ test('la editare, necesarul salvat poate primi categorii și articole numerotate
     ],
   })
 })
+
+test('regulamentul se salvează ca text, iar golul pleacă null', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  await completeazaTabara(user)
+  fireEvent.change(screen.getByLabelText('Regulamentul taberei'), {
+    target: { value: 'Fără telefoane.\nFără dulciuri seara.' },
+  })
+  await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
+  await waitFor(() => expect(saveCampOffer).toHaveBeenCalled())
+  expect(vi.mocked(saveCampOffer).mock.calls[0][6]).toMatchObject({
+    rules: 'Fără telefoane.\nFără dulciuri seara.',
+  })
+})
+
+test('la editare, regulamentul salvat revine în formular', async () => {
+  vi.mocked(getTabaraDeEditat).mockResolvedValue({
+    ...TABARA,
+    rules: 'Fără telefoane.',
+  } as never)
+  vi.mocked(getCategoriile).mockResolvedValue([])
+  renderForm('/club/camps/tabara-1/edit')
+  await waitFor(() =>
+    expect(screen.getByLabelText('Regulamentul taberei')).toHaveValue('Fără telefoane.'),
+  )
+})
+
 test('o tabără nouă pornește pe preț unic, fără categorii de vârstă la vedere', async () => {
   const user = userEvent.setup()
   renderForm()

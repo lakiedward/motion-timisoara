@@ -568,6 +568,7 @@ export type Database = {
           period_start: string
           price: number
           pricing_mode: string
+          rules: string | null
           slug: string
           title: string
         }
@@ -589,6 +590,7 @@ export type Database = {
           period_start: string
           price?: number
           pricing_mode?: string
+          rules?: string | null
           slug: string
           title: string
         }
@@ -610,6 +612,7 @@ export type Database = {
           period_start?: string
           price?: number
           pricing_mode?: string
+          rules?: string | null
           slug?: string
           title?: string
         }
