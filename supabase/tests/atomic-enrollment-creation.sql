@@ -176,8 +176,8 @@ BEGIN
     result := public.save_enrollment_batch(public.test_uuid(1),'CAMP',public.test_uuid(121),'CARD',
         jsonb_build_array(public.test_quote(216,'CAMP',121,0,'RON',NULL,1)));
     PERFORM public.test_assert(result->>'requiresPaymentIntent'='false','free camp does not require a card intent');
-    PERFORM public.test_assert((SELECT status='ACTIVE' FROM public.enrollments WHERE child_id=public.test_uuid(216)),'free camp enrollment is active');
-    PERFORM public.test_assert((SELECT status='SUCCEEDED' AND amount=0 AND gateway_txn_id IS NULL FROM public.payments p
+    PERFORM public.test_assert((SELECT e.status='ACTIVE' FROM public.enrollments e WHERE e.child_id=public.test_uuid(216)),'free camp enrollment is active');
+    PERFORM public.test_assert((SELECT p.status='SUCCEEDED' AND p.amount=0 AND p.gateway_txn_id IS NULL FROM public.payments p
         JOIN public.enrollments e ON e.id=p.enrollment_id WHERE e.child_id=public.test_uuid(216)),'free camp payment is fulfilled at zero');
     first := result;
     result := public.save_enrollment_batch(public.test_uuid(1),'CAMP',public.test_uuid(121),'CARD',
@@ -186,8 +186,8 @@ BEGIN
     result := public.save_enrollment_batch(public.test_uuid(1),'CAMP',public.test_uuid(123),'CARD',
         jsonb_build_array(public.test_quote(217,'CAMP',123,0,'RON',NULL,1), public.test_quote(218,'CAMP',123,8000,'RON',NULL,1)));
     PERFORM public.test_assert(result->>'requiresPaymentIntent'='true','mixed batch still needs a card intent');
-    PERFORM public.test_assert((SELECT status='ACTIVE' FROM public.enrollments WHERE child_id=public.test_uuid(217)),'free sibling is active immediately');
-    PERFORM public.test_assert((SELECT status='PENDING' FROM public.enrollments WHERE child_id=public.test_uuid(218)),'paid sibling waits for card');
+    PERFORM public.test_assert((SELECT e.status='ACTIVE' FROM public.enrollments e WHERE e.child_id=public.test_uuid(217)),'free sibling is active immediately');
+    PERFORM public.test_assert((SELECT e.status='PENDING' FROM public.enrollments e WHERE e.child_id=public.test_uuid(218)),'paid sibling waits for card');
 END;
 $$;
 RESET ROLE;
