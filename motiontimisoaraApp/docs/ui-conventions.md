@@ -24,7 +24,7 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
     Cât timp tokenul nu există, asta NU e o convenție — e un item de lucru.
 
     canonic  — lipsește —
-    măsurat  103 valori scrise de mână, în 38 fișiere
+    măsurat  106 valori scrise de mână, în 39 fișiere
     →        unde trăiește tokenul e o alegere, nu o măsurătoare. Deschis pe Focus.
 
 ## Forme de așteptare  [RESPECTATĂ]
@@ -33,7 +33,7 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
 
     canonic  src/components/ui/skeleton.tsx
     blocat   0 animate-pulse în afara primitivei
-    folosit  46 fișiere
+    folosit  47 fișiere
 
 ## Culorile de brand  [DERIVĂ 1]
 

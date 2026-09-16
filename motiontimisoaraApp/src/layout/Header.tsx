@@ -23,17 +23,7 @@ import {
 import { useAuth } from '@/lib/auth-context'
 import { signOut, type Role } from '@/api/auth'
 import { cn } from '@/lib/utils'
-
-const NAV = [
-  { to: '/cursuri', label: 'Cursuri' },
-  { to: '/activitati', label: 'Activități' },
-  { to: '/tabere', label: 'Tabere' },
-  { to: '/harta', label: 'Hartă' },
-  { to: '/antrenori', label: 'Antrenori' },
-  { to: '/cluburi', label: 'Cluburi' },
-  { to: '/despre', label: 'Despre' },
-  { to: '/contact', label: 'Contact' },
-]
+import { publicNavigation } from '@/layout/navigation'
 
 function initials(name: string) {
   return name
@@ -45,7 +35,6 @@ function initials(name: string) {
     .toUpperCase()
 }
 
-/** Role-specific dashboard links shown in the account menu. */
 function roleLinks(role: Role) {
   const links: { to: string; label: string }[] = [{ to: '/account', label: 'Contul meu' }]
   if (role === 'COACH' || role === 'ADMIN') links.push({ to: '/coach', label: 'Panou antrenor' })
@@ -58,7 +47,7 @@ export function Header() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [scrolled, setScrolled] = React.useState(
-    () => typeof window !== 'undefined' && window.scrollY > 8
+    () => typeof window !== 'undefined' && window.scrollY > 8,
   )
   const [open, setOpen] = React.useState(false)
 
@@ -79,7 +68,7 @@ export function Header() {
         'sticky top-0 z-40 w-full border-b transition-colors',
         scrolled
           ? 'bg-background/85 supports-[backdrop-filter]:bg-background/70 border-border backdrop-blur'
-          : 'border-transparent bg-transparent'
+          : 'border-transparent bg-transparent',
       )}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4">
@@ -88,14 +77,14 @@ export function Header() {
         </Link>
 
         <nav className="ml-2 hidden flex-1 items-center gap-1 lg:flex">
-          {NAV.map((item) => (
+          {publicNavigation.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
                 cn(
                   'hover:bg-accent hover:text-accent-foreground rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  isActive ? 'text-primary' : 'text-muted-foreground'
+                  isActive ? 'text-primary' : 'text-muted-foreground',
                 )
               }
             >
@@ -104,7 +93,6 @@ export function Header() {
           ))}
         </nav>
 
-        {/* Desktop auth area */}
         <div className="ml-auto hidden items-center gap-2 lg:flex">
           {user ? (
             <DropdownMenu>
@@ -154,7 +142,6 @@ export function Header() {
           )}
         </div>
 
-        {/* Mobile drawer */}
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="ml-auto lg:hidden" aria-label="Meniu">
@@ -179,14 +166,14 @@ export function Header() {
               </div>
             )}
             <nav className="flex flex-col gap-1 px-2">
-              {NAV.map((item) => (
+              {publicNavigation.map((item) => (
                 <SheetClose asChild key={item.to}>
                   <NavLink
                     to={item.to}
                     className={({ isActive }) =>
                       cn(
                         'hover:bg-accent rounded-md px-3 py-2.5 text-sm font-medium',
-                        isActive ? 'text-primary' : 'text-foreground'
+                        isActive ? 'text-primary' : 'text-foreground',
                       )
                     }
                   >
