@@ -68,11 +68,20 @@ import CheckoutPage from '@/features/account/CheckoutPage'
 import ChildQrPage from '@/features/children/ChildQrPage'
 import PrivacyPage from '@/features/public/PrivacyPage'
 import TermsPage from '@/features/public/TermsPage'
+import NativeExplorePage from '@/layout/native/NativeExplorePage'
+import NativeAccountPage from '@/layout/native/NativeAccountPage'
+import { usesNativeNavigation } from '@/layout/native/native-runtime'
 
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [
+      ...(usesNativeNavigation()
+        ? [
+            { path: '/exploreaza', element: <NativeExplorePage /> },
+            { path: '/cont', element: <NativeAccountPage /> },
+          ]
+        : []),
       {
         element: <CoreLayout />,
         children: [
@@ -92,16 +101,6 @@ export const router = createBrowserRouter([
           { path: '/contact', element: <ContactPage /> },
           { path: '/termeni', element: <TermsPage /> },
           { path: '/confidentialitate', element: <PrivacyPage /> },
-          // Galeria de componente e o unealtă internă, dar stătea aici ca rută
-          // publică — deasupra lui `RequireAuth`, deci oricine o putea deschide
-          // pe site. Verificat pe un build de producție servit: /dev/ui randa
-          // „Galerie componente", fără sesiune.
-          //
-          // `import.meta.env.DEV` e înlocuit cu `false` la build, deci ramura e
-          // cod mort și cade la tree-shaking împreună cu singura referință spre
-          // `UiGalleryPage`. Măsurat pe `dist`: după schimbare, nici șirul
-          // „/dev/ui" și nici textul galeriei nu mai apar în bundle — importul
-          // static de mai sus nu mai trebuie făcut dinamic pentru asta.
           ...(import.meta.env.DEV ? [{ path: '/dev/ui', element: <UiGalleryPage /> }] : []),
           {
             element: <RequireAuth />,
@@ -113,7 +112,10 @@ export const router = createBrowserRouter([
                   { path: '/account/children', element: <ChildrenPage /> },
                   { path: '/account/child/new', element: <ChildFormPage /> },
                   { path: '/account/child/:id', element: <ChildFormPage /> },
-                  { path: '/account/child/:id/qr', element: <ChildQrPage inapoi="/account/children" /> },
+                  {
+                    path: '/account/child/:id/qr',
+                    element: <ChildQrPage inapoi="/account/children" />,
+                  },
                   { path: '/account/enrollments', element: <EnrollmentsPage /> },
                   { path: '/account/attendance', element: <AttendancePage /> },
                   { path: '/account/announcements', element: <AnnouncementsPage /> },
@@ -143,15 +145,17 @@ export const router = createBrowserRouter([
               { path: '/coach/camps', element: <CampsListPage baza="/coach/camps" /> },
               { path: '/coach/camps/new', element: <CampFormPage baza="/coach/camps" /> },
               { path: '/coach/camps/:id/edit', element: <CampFormPage baza="/coach/camps" /> },
-              { path: '/coach/camps/:id/enrolled', element: <CampEnrolledPage baza="/coach/camps" /> },
+              {
+                path: '/coach/camps/:id/enrolled',
+                element: <CampEnrolledPage baza="/coach/camps" />,
+              },
               { path: '/coach/attendance', element: <CoachAttendancePage /> },
-              // Rezerva antrenorului când părintele n-are telefonul: codul copilului înscris.
-              { path: '/coach/children/:id/qr', element: <ChildQrPage inapoi="/coach/attendance" /> },
+              {
+                path: '/coach/children/:id/qr',
+                element: <ChildQrPage inapoi="/coach/attendance" />,
+              },
               { path: '/coach/profile', element: <CoachOwnProfilePage /> },
               { path: '/coach/stripe', element: <CoachStripePage /> },
-              // Return URLs handed to Stripe by the stripe-connect Edge Function
-              // for coach accounts. Stripe controls these paths, so they are not
-              // namespaced under /coach.
               { path: '/stripe/onboarding/complete', element: <CoachStripePage /> },
               { path: '/stripe/onboarding/refresh', element: <CoachStripePage /> },
             ],
@@ -171,7 +175,10 @@ export const router = createBrowserRouter([
               { path: '/admin/camps', element: <CampsListPage baza="/admin/camps" /> },
               { path: '/admin/camps/new', element: <CampFormPage baza="/admin/camps" /> },
               { path: '/admin/camps/:id/edit', element: <CampFormPage baza="/admin/camps" /> },
-              { path: '/admin/camps/:id/enrolled', element: <CampEnrolledPage baza="/admin/camps" /> },
+              {
+                path: '/admin/camps/:id/enrolled',
+                element: <CampEnrolledPage baza="/admin/camps" />,
+              },
               { path: '/admin/sports', element: <AdminSportsPage /> },
               { path: '/admin/codes', element: <AdminInviteCodesPage /> },
             ],
@@ -200,7 +207,10 @@ export const router = createBrowserRouter([
               { path: '/club/camps', element: <CampsListPage baza="/club/camps" /> },
               { path: '/club/camps/new', element: <CampFormPage baza="/club/camps" /> },
               { path: '/club/camps/:id/edit', element: <CampFormPage baza="/club/camps" /> },
-              { path: '/club/camps/:id/enrolled', element: <CampEnrolledPage baza="/club/camps" /> },
+              {
+                path: '/club/camps/:id/enrolled',
+                element: <CampEnrolledPage baza="/club/camps" />,
+              },
               { path: '/club/children/:id/qr', element: <ChildQrPage inapoi="/club/camps" /> },
             ],
           },

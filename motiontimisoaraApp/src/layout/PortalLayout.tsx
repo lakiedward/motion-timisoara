@@ -1,21 +1,24 @@
 import * as React from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { LogOut, Menu } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 
 import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
-import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
 import { useAuth } from '@/lib/auth-context'
 import { signOut } from '@/api/auth'
 import { cn } from '@/lib/utils'
+import type { PortalNavItem } from '@/layout/navigation'
+import { usesNativeNavigation } from '@/layout/native/native-runtime'
 
-export interface PortalNavItem {
-  to: string
-  label: string
-  icon: LucideIcon
-  end?: boolean
-}
+export type { PortalNavItem } from '@/layout/navigation'
 
 const navItemClass = ({ isActive }: { isActive: boolean }) =>
   cn(
@@ -41,7 +44,13 @@ function NavList({ nav, onNavigate }: { nav: PortalNavItem[]; onNavigate?: () =>
   return (
     <nav className="flex flex-col gap-1 p-3">
       {nav.map((item) => (
-        <NavLink key={item.to} to={item.to} end={item.end} onClick={onNavigate} className={navItemClass}>
+        <NavLink
+          key={item.to}
+          to={item.to}
+          end={item.end}
+          onClick={onNavigate}
+          className={navItemClass}
+        >
           <item.icon className="size-4.5" />
           {item.label}
         </NavLink>
@@ -52,7 +61,9 @@ function NavList({ nav, onNavigate }: { nav: PortalNavItem[]; onNavigate?: () =>
 
 function RoleLabel({ children }: { children: string }) {
   return (
-    <p className="text-muted-foreground px-4 pt-4 pb-1 text-xs font-bold tracking-wider uppercase">{children}</p>
+    <p className="text-muted-foreground px-4 pt-4 pb-1 text-xs font-bold tracking-wider uppercase">
+      {children}
+    </p>
   )
 }
 
@@ -103,9 +114,16 @@ export function PortalLayout({
 
   const closeSheet = () => setOpen(false)
 
+  if (usesNativeNavigation()) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-6">
+        <Outlet />
+      </div>
+    )
+  }
+
   return (
     <div className="bg-muted/30 min-h-dvh lg:pl-64">
-      {/* Desktop sidebar */}
       <aside className="bg-card fixed inset-y-0 left-0 hidden w-64 flex-col border-r lg:flex">
         <div className="flex h-16 items-center border-b px-5">
           <Link to="/">
@@ -117,14 +135,15 @@ export function PortalLayout({
           <NavList nav={nav} />
         </div>
         <div className="border-t p-3">
-          {profileTo && firstName ? <ProfileNameLink to={profileTo} name={firstName} className="mb-1" /> : null}
+          {profileTo && firstName ? (
+            <ProfileNameLink to={profileTo} name={firstName} className="mb-1" />
+          ) : null}
           <button type="button" className={logoutClassName} onClick={onLogout}>
             <LogOut className="size-4" /> Deconectare
           </button>
         </div>
       </aside>
 
-      {/* Topbar (mobile) */}
       <header className="bg-card sticky top-0 z-30 flex h-16 items-center gap-3 border-b px-4 lg:hidden">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
@@ -146,7 +165,12 @@ export function PortalLayout({
             </div>
             <div className="mt-auto border-t p-3">
               {profileTo && firstName ? (
-                <ProfileNameLink to={profileTo} name={firstName} onNavigate={closeSheet} className="mb-1" />
+                <ProfileNameLink
+                  to={profileTo}
+                  name={firstName}
+                  onNavigate={closeSheet}
+                  className="mb-1"
+                />
               ) : null}
               <SheetClose asChild>
                 <button type="button" className={logoutClassName} onClick={onLogout}>

@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { cn } from '@/lib/utils'
+import { usesNativeNavigation } from '@/layout/native/native-runtime'
 
 const NAV = [
   { to: '/account', label: 'Panou', end: true },
@@ -11,6 +12,13 @@ const NAV = [
 ]
 
 export default function AccountLayout() {
+  if (usesNativeNavigation()) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-6">
+        <Outlet />
+      </div>
+    )
+  }
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
       <nav className="border-border mb-8 flex gap-1 overflow-x-auto border-b">
@@ -24,7 +32,7 @@ export default function AccountLayout() {
                 '-mb-px whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors',
                 isActive
                   ? 'border-primary text-primary'
-                  : 'text-muted-foreground hover:text-foreground border-transparent'
+                  : 'text-muted-foreground hover:text-foreground border-transparent',
               )
             }
           >

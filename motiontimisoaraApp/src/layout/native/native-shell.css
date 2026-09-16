@@ -1,0 +1,36 @@
+@reference "../../index.css";
+
+.native-navigation {
+  --native-bar-height: calc(var(--spacing) * 16);
+  --native-safe-top: env(safe-area-inset-top, 0px);
+  --native-safe-bottom: env(safe-area-inset-bottom, 0px);
+  scroll-padding-top: calc(var(--native-bar-height) + var(--native-safe-top) + var(--spacing) * 4);
+  scroll-padding-bottom: calc(
+    var(--native-bar-height) + var(--native-safe-bottom) + var(--spacing) * 4
+  );
+}
+
+.native-app-shell {
+  padding-top: calc(var(--native-bar-height) + var(--native-safe-top));
+  padding-bottom: calc(var(--native-bar-height) + var(--native-safe-bottom));
+}
+
+.native-topbar {
+  padding-top: var(--native-safe-top);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.native-bottom-bar {
+  padding-bottom: var(--native-safe-bottom);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.native-content {
+  min-height: calc(
+    100dvh - var(--native-bar-height) * 2 - var(--native-safe-top) - var(--native-safe-bottom)
+  );
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
