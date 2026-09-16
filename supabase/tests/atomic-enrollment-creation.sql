@@ -162,12 +162,14 @@ INSERT INTO public.enrollments(kind,entity_id,child_id) SELECT 'COURSE',public.t
 SELECT public.test_assert(public.test_try_save(ARRAY[215])='23514','ambiguous enrollments reject without cleanup');
 SELECT public.test_assert((SELECT count(*)=2 FROM public.enrollments WHERE child_id=public.test_uuid(215)),'legacy duplicates preserved for review');
 INSERT INTO public.camps(id,currency,price,allow_cash) VALUES(public.test_uuid(121),'RON',0,false),(public.test_uuid(123),'RON',8000,false);
+RESET ROLE;
 CREATE OR REPLACE FUNCTION public.enrollment_camp_offer(p_camp_id UUID,p_child_id UUID) RETURNS JSONB
 LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$
     SELECT jsonb_build_object('amount', CASE WHEN p_child_id = public.test_uuid(217) THEN 0 ELSE price END,
         'currency',currency,'eur_ron_rate_micros',eur_ron_rate_micros)
     FROM public.camps WHERE id=p_camp_id
 $$;
+SET LOCAL ROLE service_role;
 DO $$
 DECLARE result JSONB; first JSONB;
 BEGIN
