@@ -257,6 +257,38 @@ test('la editare, regulamentul salvat revine în formular', async () => {
   )
 })
 
+test('perioada arată durata inclusiv și o scurtătură mută sfârșitul', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  expect(screen.getByRole('group', { name: 'Perioada taberei' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: '7 zile' })).toBeDisabled()
+  fireEvent.change(screen.getByLabelText('Începe'), { target: { value: '2027-07-10' } })
+  expect(screen.getByLabelText('Se termină')).toHaveValue('2027-07-10')
+  expect(screen.getByText(/· 1 zi/)).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: '7 zile' }))
+  expect(screen.getByLabelText('Se termină')).toHaveValue('2027-07-16')
+  expect(screen.getByText(/· 7 zile/)).toBeInTheDocument()
+})
+
+test('un început după sfârșit mută sfârșitul pe aceeași zi', async () => {
+  renderForm()
+  fireEvent.change(screen.getByLabelText('Începe'), { target: { value: '2027-07-10' } })
+  fireEvent.change(screen.getByLabelText('Se termină'), { target: { value: '2027-07-12' } })
+  fireEvent.change(screen.getByLabelText('Începe'), { target: { value: '2027-07-18' } })
+  expect(screen.getByLabelText('Se termină')).toHaveValue('2027-07-18')
+  expect(screen.getByText(/· 1 zi/)).toBeInTheDocument()
+})
+
+test('la editare, intervalul salvat arată durata inclusivă', async () => {
+  vi.mocked(getTabaraDeEditat).mockResolvedValue(TABARA as never)
+  vi.mocked(getCategoriile).mockResolvedValue([])
+  renderForm('/club/camps/tabara-1/edit')
+  await screen.findByDisplayValue('Tabără de înot')
+  expect(screen.getByLabelText('Începe')).toHaveValue('2026-09-13')
+  expect(screen.getByLabelText('Se termină')).toHaveValue('2026-09-20')
+  expect(screen.getByText(/· 8 zile/)).toBeInTheDocument()
+})
+
 test('o tabără nouă pornește pe preț unic, fără categorii de vârstă la vedere', async () => {
   const user = userEvent.setup()
   renderForm()
