@@ -29,6 +29,7 @@ import { baniToRon, formatMoney } from '@/lib/money'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useProprietarTabere } from './useProprietarTabere'
+import type { CampPortalBaza } from './camp-portal'
 import CampAgePricesSection from './CampAgePricesSection'
 import CampFormField from './CampFormField'
 import CampPeriodSection from './CampPeriodSection'
@@ -37,7 +38,7 @@ import CampCoachesSection from './CampCoachesSection'
 import CampRequirementsSection from './CampRequirementsSection'
 import CampRulesSection from './CampRulesSection'
 
-export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/camps' }) {
+export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   const { id } = useParams()
   const eEditare = !!id
   const [newCampId] = useState(() => crypto.randomUUID())

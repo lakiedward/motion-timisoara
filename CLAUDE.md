@@ -525,7 +525,9 @@ reorganizing this document; correct obsolete facts with current evidence.
 - 2026-09-16 — To-Do #150 keeps native `type="date"` for camp start/end, grouped as
   one Perioada taberei fieldset with inclusive duration and 7/8/14-day shortcuts.
   A JavaScript calendar would replace Capacitor's platform pickers; no new date
-  library. See `docs/superpowers/specs/2026-09-16-todo-150-camp-interval.md`.
+  library. Club, coach, and admin create/edit (`/club/camps`, `/coach/camps`,
+  `/admin/camps`) share that fieldset. See
+  `docs/superpowers/specs/2026-09-16-todo-150-camp-interval.md`.
 
 ## 11. Known Issues / WIP
 

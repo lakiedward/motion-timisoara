@@ -13,6 +13,9 @@ existing form. Native is the primary launch target.
   days from the chosen start.
 - Stored values remain `period_start` / `period_end` ISO dates. Zod still rejects
   an end before the start.
+- Club, coach, and admin camp create/edit use the same fieldset:
+  `/club/camps/new|:id/edit`, `/coach/camps/new|:id/edit`,
+  `/admin/camps/new|:id/edit`.
 
 ## Not in this change
 
