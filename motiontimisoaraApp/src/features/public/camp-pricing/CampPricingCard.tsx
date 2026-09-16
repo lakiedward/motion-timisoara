@@ -4,7 +4,7 @@ import { Wallet } from 'lucide-react'
 import { getMyChildren } from '@/api/account'
 import { formatZi, sumaCategoriilor, type TabaraDetaliu } from '@/api/camps'
 import { useAuth } from '@/lib/auth-context'
-import { formatMoney } from '@/lib/money'
+import { formatMoney, formatOfferPrice } from '@/lib/money'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -76,7 +76,7 @@ export default function CampPricingCard({
                         {price.age_from}–{price.age_to} ani
                       </span>
                       <span className="font-semibold tabular-nums">
-                        {formatMoney(price.amount, tabara.currency)}
+                        {formatOfferPrice(price.amount, tabara.currency)}
                       </span>
                     </div>
                     {matching.length > 0 && (
@@ -139,7 +139,7 @@ export default function CampPricingCard({
           <p className="text-muted-foreground mb-4 text-sm">
             {byAge
               ? 'Serviciile taberei sunt descrise mai jos.'
-              : `Plătești o singură dată ${formatMoney(tabara.price, tabara.currency)}. Mai jos scrie pe ce se duc banii.`}
+              : `Plătești o singură dată ${formatOfferPrice(tabara.price, tabara.currency)}. Mai jos scrie pe ce se duc banii.`}
           </p>
           <ul className="divide-border divide-y">
             {categorii.map((item) => (
@@ -180,7 +180,7 @@ export default function CampPricingCard({
             </p>
           ) : (
             <div className="font-display text-2xl font-extrabold">
-              {formatMoney(tabara.price, tabara.currency)}
+              {formatOfferPrice(tabara.price, tabara.currency)}
             </div>
           )}
           {!tabara.allow_cash && canEnroll && (

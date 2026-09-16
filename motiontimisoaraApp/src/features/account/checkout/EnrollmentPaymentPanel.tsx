@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { stripePromise } from '@/lib/stripe'
 import { useAuth } from '@/lib/auth-context'
-import { formatMoney } from '@/lib/money'
+import { formatOfferPrice } from '@/lib/money'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AcceptedPriceDetails } from '@/components/AcceptedPriceDetails'
@@ -83,7 +83,7 @@ function SavedPayment({ enrollmentId, onClose }: { enrollmentId: string; onClose
       ) : enrollment && saved ? (
         <>
           <p className="text-sm">
-            {enrollment.child?.name} · <strong>{formatMoney(saved.amount, saved.currency)}</strong>
+            {enrollment.child?.name} · <strong>{formatOfferPrice(saved.amount, saved.currency)}</strong>
           </p>
           <AcceptedPriceDetails snapshot={saved.pricing_snapshot} />
           {enrollmentPaid(enrollment) ? (
@@ -107,7 +107,7 @@ function SavedPayment({ enrollmentId, onClose }: { enrollmentId: string; onClose
               >
                 {pay.isPending
                   ? 'Verificăm și confirmăm plata…'
-                  : `Plătește ${formatMoney(saved.amount, saved.currency)}`}
+                  : `Plătește ${formatOfferPrice(saved.amount, saved.currency)}`}
               </Button>
             </>
           ) : (

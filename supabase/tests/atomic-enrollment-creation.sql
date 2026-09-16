@@ -30,6 +30,7 @@ LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$
     FROM public.camps WHERE id=p_camp_id
 $$;
 \i /tmp/migrations/00060_atomic_enrollment_creation.sql
+\i /tmp/migrations/00061_free_enrollment_fulfillment.sql
 CREATE FUNCTION public.test_uuid(v INTEGER) RETURNS UUID LANGUAGE sql IMMUTABLE AS $$
     SELECT ('00000000-0000-0000-0000-' || lpad(v::TEXT,12,'0'))::UUID
 $$;
@@ -160,6 +161,35 @@ SELECT public.test_assert(public.save_enrollment_batch(public.test_uuid(1),'COUR
 INSERT INTO public.enrollments(kind,entity_id,child_id) SELECT 'COURSE',public.test_uuid(100),public.test_uuid(215) FROM generate_series(1,2);
 SELECT public.test_assert(public.test_try_save(ARRAY[215])='23514','ambiguous enrollments reject without cleanup');
 SELECT public.test_assert((SELECT count(*)=2 FROM public.enrollments WHERE child_id=public.test_uuid(215)),'legacy duplicates preserved for review');
+INSERT INTO public.camps(id,currency,price,allow_cash) VALUES(public.test_uuid(121),'RON',0,false),(public.test_uuid(123),'RON',8000,false);
+RESET ROLE;
+CREATE OR REPLACE FUNCTION public.enrollment_camp_offer(p_camp_id UUID,p_child_id UUID) RETURNS JSONB
+LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$
+    SELECT jsonb_build_object('amount', CASE WHEN p_child_id = public.test_uuid(217) THEN 0 ELSE price END,
+        'currency',currency,'eur_ron_rate_micros',eur_ron_rate_micros)
+    FROM public.camps WHERE id=p_camp_id
+$$;
+SET LOCAL ROLE service_role;
+DO $$
+DECLARE result JSONB; first JSONB;
+BEGIN
+    result := public.save_enrollment_batch(public.test_uuid(1),'CAMP',public.test_uuid(121),'CARD',
+        jsonb_build_array(public.test_quote(216,'CAMP',121,0,'RON',NULL,1)));
+    PERFORM public.test_assert(result->>'requiresPaymentIntent'='false','free camp does not require a card intent');
+    PERFORM public.test_assert((SELECT e.status='ACTIVE' FROM public.enrollments e WHERE e.child_id=public.test_uuid(216)),'free camp enrollment is active');
+    PERFORM public.test_assert((SELECT p.status='SUCCEEDED' AND p.amount=0 AND p.gateway_txn_id IS NULL FROM public.payments p
+        JOIN public.enrollments e ON e.id=p.enrollment_id WHERE e.child_id=public.test_uuid(216)),'free camp payment is fulfilled at zero');
+    first := result;
+    result := public.save_enrollment_batch(public.test_uuid(1),'CAMP',public.test_uuid(121),'CARD',
+        jsonb_build_array(public.test_quote(216,'CAMP',121,0,'RON',NULL,1)));
+    PERFORM public.test_assert(result->'enrollmentIds' = first->'enrollmentIds','free camp retry reuses the fulfilled enrollment');
+    result := public.save_enrollment_batch(public.test_uuid(1),'CAMP',public.test_uuid(123),'CARD',
+        jsonb_build_array(public.test_quote(217,'CAMP',123,0,'RON',NULL,1), public.test_quote(218,'CAMP',123,8000,'RON',NULL,1)));
+    PERFORM public.test_assert(result->>'requiresPaymentIntent'='true','mixed batch still needs a card intent');
+    PERFORM public.test_assert((SELECT e.status='ACTIVE' FROM public.enrollments e WHERE e.child_id=public.test_uuid(217)),'free sibling is active immediately');
+    PERFORM public.test_assert((SELECT e.status='PENDING' FROM public.enrollments e WHERE e.child_id=public.test_uuid(218)),'paid sibling waits for card');
+END;
+$$;
 RESET ROLE;
 COMMIT;
 \echo 'Atomic enrollment creation: ownership, accepted prices, rollback, capacity, replay and fulfillment passed'

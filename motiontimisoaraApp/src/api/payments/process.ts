@@ -57,6 +57,7 @@ export async function processEnrollmentPayments(
     if (signal?.aborted) break
     const row = rows.find((item) => item.id === id)!
     if (enrollmentPaid(row)) continue
+    if (row.payments[0]?.amount === 0) continue
     if (!enrollmentPayable(row)) {
       stopped = 'failed'
       message = 'Această înscriere nu mai poate fi plătită. Verifică starea în Înscrieri.'

@@ -15,7 +15,7 @@ import {
 } from '@/api/checkout'
 import { childAge, createChild, getMyChildren } from '@/api/account'
 import { useAuth } from '@/lib/auth-context'
-import { formatRon } from '@/lib/money'
+import { formatRonOffer } from '@/lib/money'
 import { stripeConfigured } from '@/lib/stripe'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -30,6 +30,7 @@ import { AddChildInline } from './CheckoutFormFields'
 import { CheckoutBillingFields } from './CheckoutBillingFields'
 import { usePaymentAdapter } from './usePaymentAdapter'
 import { processEnrollmentPayments, paymentResultMessage } from '@/api/payments/process'
+import { checkoutIsFree, checkoutStepLabels, enrollmentNeedsCardPayment } from './checkout-flow'
 
 const KIND_LABEL: Record<EnrollmentKind, string> = {
   COURSE: 'Curs',
@@ -111,10 +112,6 @@ export default function CheckoutWizard({
 
   const paymentAvailable = stripeConfigured || (allowCash && !cashBlocked)
 
-  const steps =
-    method === 'CARD' ? ['Copii', 'Detalii', 'Facturare', 'Plată'] : ['Copii', 'Detalii', 'Plată']
-  const lastStep = steps.length - 1
-
   const priceFor = (childId: string) => verdictFor(childId)?.amount
   const pricesReady =
     validationReady &&
@@ -131,6 +128,10 @@ export default function CheckoutWizard({
   const total = pricesReady
     ? selected.reduce((sum, childId) => sum + (priceFor(childId) ?? 0), 0)
     : 0
+  const isFree = checkoutIsFree(selected.length, pricesReady, total)
+  const canPayWithoutStripe = isFree || paymentAvailable
+  const steps = checkoutStepLabels(isFree, method)
+  const lastStep = steps.length - 1
   const priceVersions = Object.fromEntries(
     selected.map((childId) => [childId, verdictFor(childId)?.priceVersion ?? '']),
   )
@@ -156,7 +157,7 @@ export default function CheckoutWizard({
       if (childIds.length > 0 && !validationReady) return false
       return capacityOk && pricesReady
     }
-    if (step === 1) return hasAccepted && pricesReady && total > 0
+    if (step === 1) return hasAccepted && pricesReady
     if (steps[step] === 'Facturare') return billingValid
     return true
   })()
@@ -166,24 +167,24 @@ export default function CheckoutWizard({
       if (!validationReady || !pricesReady || !hasAccepted || selected.length === 0) {
         throw new Error('Verifică din nou copiii și prețurile înainte de înscriere.')
       }
-      if (method === 'CARD' && !billingValid) {
+      if (!isFree && method === 'CARD' && !billingValid) {
         throw new Error('Completează datele de facturare')
       }
-      if (method === 'CASH' && (cashBlocked || !allowCash)) {
+      if (!isFree && method === 'CASH' && (cashBlocked || !allowCash)) {
         throw new Error(
           cashBlocked
             ? 'Există o înscriere neplătită; alege plata cu cardul.'
             : 'Plata cash nu este disponibilă pentru această ofertă.',
         )
       }
-      if (!paymentAvailable) {
+      if (!canPayWithoutStripe) {
         throw new Error('Nu există o metodă de plată disponibilă pentru această înscriere.')
       }
       if (!capacityOk) {
         throw new Error('Nu mai sunt locuri suficiente pentru selecția ta.')
       }
 
-      if (method === 'CARD' && !payment.ready) {
+      if (!isFree && method === 'CARD' && !payment.ready) {
         throw new Error('Plata nu este pregătită. Reîncearcă după încărcarea formularului.')
       }
       if (createdIds.current.length) {
@@ -195,14 +196,17 @@ export default function CheckoutWizard({
         kind,
         entityId: offering.id,
         childIds: selected,
-        paymentMethod: method,
+        paymentMethod: isFree ? 'CARD' : method,
         priceVersions,
         sessionPackageSize: offering.perSession ? packageSize : undefined,
-        billingDetails: method === 'CARD' ? billing : undefined,
+        billingDetails: isFree || method !== 'CARD' ? undefined : billing,
       })
 
       createdIds.current = created.enrollmentIds
-      if (method === 'CASH') return { cash: true as const }
+      if (method === 'CASH' && !isFree) return { cash: true as const, free: false as const }
+      if (!enrollmentNeedsCardPayment(total, created.requiresPaymentIntent)) {
+        return { cash: false as const, free: isFree }
+      }
       const result = await processEnrollmentPayments(
         created.enrollmentIds,
         payment.adapter,
@@ -214,15 +218,17 @@ export default function CheckoutWizard({
           ),
         attempt.current.signal,
       )
-      return { cash: false as const, result }
+      return { cash: false as const, free: false as const, result }
     },
     onSuccess: (result) => {
       void qc.invalidateQueries({ queryKey: ['enrollments'] })
       if (attempt.current?.signal.aborted) return
       setProgress(null)
-      if (result.cash) {
+      if (result.free) {
+        toast.success('Înscriere confirmată. Nu este nevoie de plată.')
+      } else if (result.cash) {
         toast.success('Înscriere înregistrată. Plata se face cash la antrenor.')
-      } else {
+      } else if (result.result) {
         const message = paymentResultMessage(result.result)
         if (result.result.outcome === 'ready') toast.success(message)
         else toast.message(message)
@@ -438,7 +444,9 @@ export default function CheckoutWizard({
                     <AcceptedPriceDetails snapshot={verdictFor(cid)?.pricingSnapshot} />
                   </div>
                   <span className="shrink-0 font-medium tabular-nums">
-                    {priceFor(cid) === undefined ? 'Preț indisponibil' : formatRon(priceFor(cid)!)}
+                    {priceFor(cid) === undefined
+                      ? 'Preț indisponibil'
+                      : formatRonOffer(priceFor(cid)!)}
                   </span>
                 </div>
               )
@@ -446,7 +454,7 @@ export default function CheckoutWizard({
             <div className="mt-3 flex items-center justify-between gap-3 border-t pt-3 font-semibold">
               <span>Total</span>
               <span className="shrink-0 tabular-nums">
-                {pricesReady ? formatRon(total) : 'Preț indisponibil'}
+                {pricesReady ? formatRonOffer(total) : 'Preț indisponibil'}
               </span>
             </div>
           </div>
@@ -474,7 +482,7 @@ export default function CheckoutWizard({
       {steps[step] === 'Facturare' && (
         <CheckoutBillingFields billing={billing} setBilling={setBilling} />
       )}
-      {step === lastStep && (
+      {steps[step] === 'Plată' && (
         <CheckoutPaymentStep
           title={offering.title}
           kindLabel={KIND_LABEL[kind]}
@@ -526,8 +534,8 @@ export default function CheckoutWizard({
             disabled={
               busy ||
               selected.length === 0 ||
-              !paymentAvailable ||
-              (method === 'CARD' && !payment.ready) ||
+              !canPayWithoutStripe ||
+              (!isFree && method === 'CARD' && !payment.ready) ||
               !validationReady ||
               !pricesReady ||
               !hasAccepted

@@ -236,6 +236,46 @@ describe('existing enrollment payment recovery', () => {
     expect(test.confirm).toHaveBeenCalledTimes(1)
   })
 
+  it('does not open a card intent for a fulfilled free enrollment', async () => {
+    const test = setup(['first'])
+    test.current.set('first', {
+      ...enrollment('first', true),
+      payments: [{ ...enrollment('first', true).payments[0], amount: 0 }],
+    })
+    const result = await processEnrollmentPayments(
+      ['first'],
+      test.adapter,
+      test.progress,
+      undefined,
+      test.services,
+    )
+    expect(result).toMatchObject({ outcome: 'ready', completed: 1, total: 1 })
+    expect(test.intent).not.toHaveBeenCalled()
+    expect(test.confirm).not.toHaveBeenCalled()
+  })
+
+  it('skips Stripe for a pending zero-amount sibling and still charges the paid child', async () => {
+    const test = setup(['free', 'paid'])
+    test.current.set('free', {
+      ...enrollment('free'),
+      payments: [{ ...enrollment('free').payments[0], amount: 0 }],
+    })
+    test.confirm.mockImplementation(async () => {
+      test.current.set('paid', enrollment('paid', true))
+      return 'completed'
+    })
+    const result = await processEnrollmentPayments(
+      ['free', 'paid'],
+      test.adapter,
+      test.progress,
+      undefined,
+      test.services,
+    )
+    expect(test.intent).toHaveBeenCalledExactlyOnceWith('paid')
+    expect(result.completed).toBe(1)
+    expect(result.total).toBe(2)
+  })
+
   it('rejects canceled enrollments and cash payments without opening a card flow', async () => {
     for (const row of [
       { ...enrollment('first'), status: 'CANCELLED' as const },

@@ -18,3 +18,11 @@ export function formatRon(bani: number): string {
 export function formatMoney(amount: number, currency: string): string {
   return `${numberFormatter.format(baniToRon(amount))} ${currency === 'RON' ? 'lei' : currency}`
 }
+
+export function formatOfferPrice(amount: number, currency: string): string {
+  return amount === 0 ? 'Gratuit' : formatMoney(amount, currency)
+}
+
+export function formatRonOffer(bani: number): string {
+  return bani === 0 ? 'Gratuit' : formatRon(bani)
+}

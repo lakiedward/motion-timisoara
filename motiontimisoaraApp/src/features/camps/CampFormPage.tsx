@@ -5,7 +5,7 @@ import {
   offerCurrencyValues,
   parseScaledDecimal,
 } from '@/lib/pricing/offer-currency'
-import { cloneElement, isValidElement, useEffect, useId, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -17,7 +17,6 @@ import {
   getCategoriile,
   getPreturilePeVarsta,
   getTabaraDeEditat,
-  getTaberelemele,
   saveCampOffer,
   slugDinTitlu,
   type ModPret,
@@ -28,8 +27,9 @@ import { campRequirementsForSave, readCampRequirements } from '@/lib/camp-requir
 import { baniToRon, formatMoney } from '@/lib/money'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { useProprietarTabere } from './useProprietarTabere'
+import CampAgePricesSection from './CampAgePricesSection'
+import CampFormField from './CampFormField'
 import CampPhotosSection from './CampPhotosSection'
 import CampCoachesSection from './CampCoachesSection'
 import CampRequirementsSection from './CampRequirementsSection'
@@ -78,7 +78,6 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
   } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: GOL })
 
   const { fields, append, remove } = useFieldArray({ control, name: 'categorii' })
-  const varsteArr = useFieldArray({ control, name: 'varste' })
   const titluReg = register('title')
 
   useEffect(() => {
@@ -116,26 +115,6 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
   const pretLei = useWatch({ control, name: 'price_lei' })
   const categoriiVii = useWatch({ control, name: 'categorii' })
   const slugViu = useWatch({ control, name: 'slug' })
-  const modPret = useWatch({ control, name: 'pricing_mode' })
-  const peVarsta = modPret === 'by_age'
-  const { data: taberele } = useQuery({
-    queryKey: ['taberele-mele', proprietar.clubId, proprietar.coachUserId],
-    queryFn: () => getTaberelemele(proprietar),
-    enabled: gata && peVarsta,
-  })
-  const surseDeCopiat = (taberele ?? []).filter(
-    (t) => t.id !== id && t.pricing_mode === 'by_age' && t.currency === currency,
-  )
-
-  const copiazaDin = async (campId: string) => {
-    if (!campId) return
-    try {
-      const randuri = await getPreturilePeVarsta(campId)
-      varsteArr.replace(randuri.map(spreCamp))
-    } catch {
-      toast.error('Nu am putut citi categoriile taberei alese.')
-    }
-  }
 
   const pretBani = parseScaledDecimal(pretLei ?? '', 2) ?? 0
   const sumaBani = (categoriiVii ?? []).reduce(
@@ -217,7 +196,7 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
       </h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5" noValidate>
-        <Camp eticheta="Titlu" eroare={errors.title?.message}>
+        <CampFormField eticheta="Titlu" eroare={errors.title?.message}>
           <Input
             {...titluReg}
             className="h-11 lg:h-9"
@@ -227,26 +206,26 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
               if (!eEditare && !slugViu) setValue('slug', slugDinTitlu(e.target.value))
             }}
           />
-        </Camp>
+        </CampFormField>
 
-        <Camp
+        <CampFormField
           eticheta="Adresa paginii"
           eroare={errors.slug?.message}
           ajutor={`/tabere/${slugViu || '...'}`}
         >
           <Input {...register('slug')} className="h-11 lg:h-9" aria-invalid={!!errors.slug} />
-        </Camp>
+        </CampFormField>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <Camp eticheta="Începe" eroare={errors.period_start?.message}>
+          <CampFormField eticheta="Începe" eroare={errors.period_start?.message}>
             <Input type="date" {...register('period_start')} className="h-11 lg:h-9" />
-          </Camp>
-          <Camp eticheta="Se termină" eroare={errors.period_end?.message}>
+          </CampFormField>
+          <CampFormField eticheta="Se termină" eroare={errors.period_end?.message}>
             <Input type="date" {...register('period_end')} className="h-11 lg:h-9" />
-          </Camp>
+          </CampFormField>
         </div>
 
-        <Camp
+        <CampFormField
           eticheta="Loc"
           ajutor={
             eroareLocatii
@@ -266,7 +245,7 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
               </option>
             ))}
           </select>
-        </Camp>
+        </CampFormField>
         <Link
           to={eClub ? '/club/locations/new' : '/coach/locations/new'}
           className="text-primary inline-flex min-h-11 items-center text-sm underline-offset-4 hover:underline"
@@ -274,24 +253,24 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
           Locul nu e în listă? Adaugă o locație nouă, cu pin pe hartă
         </Link>
 
-        <Camp
+        <CampFormField
           eticheta="Detalii despre loc"
           ajutor="Text liber, se vede pe pagina publică: cabana, intrarea, punctul de întâlnire."
         >
           <Input {...register('location_text')} className="h-11 lg:h-9" />
-        </Camp>
+        </CampFormField>
 
-        <Camp eticheta="Locuri" ajutor="Lasă gol pentru tabără fără limită.">
+        <CampFormField eticheta="Locuri" ajutor="Lasă gol pentru tabără fără limită.">
           <Input type="number" min={0} {...register('capacity')} className="h-11 lg:h-9" />
-        </Camp>
+        </CampFormField>
 
-        <Camp eticheta="Descriere">
+        <CampFormField eticheta="Descriere">
           <textarea
             {...register('description')}
             rows={4}
             className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent p-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] [field-sizing:content] max-h-64"
           />
-        </Camp>
+        </CampFormField>
 
         <CampRequirementsSection control={control} register={register} errors={errors} />
 
@@ -309,7 +288,7 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
             error={errors.eur_ron_rate?.message}
           />
 
-          <Camp
+          <CampFormField
             eticheta={`Prețul taberei (${currency === 'EUR' ? 'EUR' : 'lei'})`}
             eroare={errors.price_lei?.message}
           >
@@ -321,7 +300,7 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
               className="h-11 lg:h-9"
               aria-invalid={!!errors.price_lei}
             />
-          </Camp>
+          </CampFormField>
 
           <p className="text-muted-foreground mt-4 text-sm">
             Categoriile explică prețul, nu îl schimbă: părintele plătește totalul. Poți sări peste
@@ -333,14 +312,14 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
               <li key={f.id} className="rounded-xl border p-4">
                 <div className="flex items-start gap-3">
                   <div className="grid flex-1 gap-3 sm:grid-cols-[1fr_140px]">
-                    <Camp eticheta="Nume" eroare={errors.categorii?.[i]?.name?.message}>
+                    <CampFormField eticheta="Nume" eroare={errors.categorii?.[i]?.name?.message}>
                       <Input
                         {...register(`categorii.${i}.name`)}
                         className="h-11 lg:h-9"
                         placeholder="Cazare și masă"
                       />
-                    </Camp>
-                    <Camp
+                    </CampFormField>
+                    <CampFormField
                       eticheta={`Sumă (${currency === 'EUR' ? 'EUR' : 'lei'})`}
                       eroare={errors.categorii?.[i]?.amount_lei?.message}
                     >
@@ -351,7 +330,7 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
                         {...register(`categorii.${i}.amount_lei`)}
                         className="h-11 lg:h-9"
                       />
-                    </Camp>
+                    </CampFormField>
                   </div>
                   <Button
                     type="button"
@@ -363,13 +342,13 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
                     <Trash2 className="size-4" />
                   </Button>
                 </div>
-                <Camp eticheta="Descriere">
+                <CampFormField eticheta="Descriere">
                   <Input
                     {...register(`categorii.${i}.description`)}
                     className="h-11 lg:h-9"
                     placeholder="Pensiune la 15 minute de trasee, mic dejun inclus."
                   />
-                </Camp>
+                </CampFormField>
               </li>
             ))}
           </ul>
@@ -402,128 +381,16 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
           )}
         </fieldset>
 
-        <fieldset className="rounded-2xl border p-5">
-          <legend className="px-2 font-semibold">Prețul pe vârstă</legend>
-
-          <div className="space-y-1" role="radiogroup" aria-label="Cum se stabilește prețul">
-            <label className="flex min-h-11 items-center gap-3 text-sm">
-              <input type="radio" value="single" {...register('pricing_mode')} className="size-4" />
-              Preț unic — toți copiii plătesc prețul taberei
-            </label>
-            <label className="flex min-h-11 items-center gap-3 text-sm">
-              <input type="radio" value="by_age" {...register('pricing_mode')} className="size-4" />
-              Pe categorii de vârstă — fiecare copil plătește suma categoriei lui
-            </label>
-          </div>
-
-          {peVarsta && (
-            <>
-              <p className="text-muted-foreground mt-4 text-sm">
-                Vârsta se socotește în ani împliniți la data de început a taberei, iar capetele
-                intervalului sunt incluse. Un copil care nu intră în nicio categorie nu se va putea
-                înscrie. Părintele vede prețul categoriei copilului și confirmă suma finală în lei
-                înainte de plată.
-              </p>
-
-              <ul className="mt-4 space-y-4" aria-label="Categorii de vârstă">
-                {varsteArr.fields.map((f, i) => (
-                  <li key={f.id} className="rounded-xl border p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="grid flex-1 gap-3 sm:grid-cols-3">
-                        <Camp eticheta="De la (ani)" eroare={errors.varste?.[i]?.age_from?.message}>
-                          <Input
-                            type="number"
-                            min={0}
-                            max={25}
-                            {...register(`varste.${i}.age_from`)}
-                            className="h-11 lg:h-9"
-                            aria-invalid={!!errors.varste?.[i]?.age_from}
-                          />
-                        </Camp>
-                        <Camp eticheta="Până la (ani)" eroare={errors.varste?.[i]?.age_to?.message}>
-                          <Input
-                            type="number"
-                            min={0}
-                            max={25}
-                            {...register(`varste.${i}.age_to`)}
-                            className="h-11 lg:h-9"
-                            aria-invalid={!!errors.varste?.[i]?.age_to}
-                          />
-                        </Camp>
-                        <Camp
-                          eticheta={`Sumă (${currency === 'EUR' ? 'EUR' : 'lei'})`}
-                          eroare={errors.varste?.[i]?.amount_lei?.message}
-                        >
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min={0}
-                            {...register(`varste.${i}.amount_lei`)}
-                            className="h-11 lg:h-9"
-                            aria-invalid={!!errors.varste?.[i]?.amount_lei}
-                          />
-                        </Camp>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="size-11 min-h-11 shrink-0"
-                        onClick={() => varsteArr.remove(i)}
-                        aria-label={`Șterge categoria de vârstă ${i + 1}`}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 min-h-11"
-                  onClick={() => varsteArr.append({ age_from: '', age_to: '', amount_lei: '' })}
-                >
-                  <Plus className="size-4" /> Adaugă o categorie de vârstă
-                </Button>
-
-                {surseDeCopiat.length > 0 && (
-                  <label className="flex items-center gap-2 text-sm">
-                    <span className="text-muted-foreground">Copiază categoriile din</span>
-                    <select
-                      aria-label="Copiază categoriile din altă tabără"
-                      defaultValue=""
-                      onChange={(e) => {
-                        void copiazaDin(e.target.value)
-                        e.target.value = ''
-                      }}
-                      className="border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] lg:h-9"
-                    >
-                      <option value="">alege o tabără…</option>
-                      {surseDeCopiat.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.title}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-              </div>
-
-              {errors.varste?.root?.message && (
-                <p className="text-destructive mt-2 text-sm" role="alert">
-                  {errors.varste.root.message}
-                </p>
-              )}
-              {typeof errors.varste?.message === 'string' && (
-                <p className="text-destructive mt-2 text-sm" role="alert">
-                  {errors.varste.message}
-                </p>
-              )}
-            </>
-          )}
-        </fieldset>
+        <CampAgePricesSection
+          control={control}
+          register={register}
+          setValue={setValue}
+          errors={errors}
+          currency={currency}
+          proprietar={proprietar}
+          campId={id}
+          gata={gata}
+        />
 
         {eEditare && tabara ? (
           <>
@@ -543,37 +410,6 @@ export default function CampFormPage({ baza }: { baza: '/club/camps' | '/coach/c
           {eEditare ? 'Salvează' : 'Creează tabăra'}
         </Button>
       </form>
-    </div>
-  )
-}
-
-function Camp({
-  eticheta,
-  ajutor,
-  eroare,
-  children,
-}: {
-  eticheta: string
-  ajutor?: string
-  eroare?: string
-  children: React.ReactNode
-}) {
-  const id = useId()
-  const camp = isValidElement<{ id?: string }>(children)
-    ? cloneElement(children, { id: children.props.id ?? id })
-    : children
-  return (
-    <div className="mt-3 first:mt-0">
-      <Label htmlFor={id} className="mb-1.5 block">
-        {eticheta}
-      </Label>
-      {camp}
-      {ajutor && !eroare && <p className="text-muted-foreground mt-1 text-xs">{ajutor}</p>}
-      {eroare && (
-        <p className="text-destructive mt-1 text-xs" role="alert">
-          {eroare}
-        </p>
-      )}
     </div>
   )
 }
