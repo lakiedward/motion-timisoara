@@ -537,6 +537,12 @@ reorganizing this document; correct obsolete facts with current evidence.
   Coach and club forms share `CourseProgramFields`. See
   `docs/superpowers/specs/2026-09-17-todo-158-course-program.md`.
 
+- 2026-09-17 — To-Do #159 stage 1 draft is a local three-step camp form
+  (Detalii, Categorii și costuri, Verificare). Category totals are the sum of
+  named components; there is no competing global camp price. Live save,
+  enrollment display and templates are later slices. See
+  `docs/superpowers/specs/2026-09-17-todo-159-camp-form-draft.md`.
+
 ## 11. Known Issues / WIP
 
 - **To-Do #149 completion in progress (2026-09-11):** migrations `00048` and `00049`

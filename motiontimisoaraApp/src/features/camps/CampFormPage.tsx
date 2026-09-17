@@ -1,50 +1,38 @@
-import { schema, GOL, num, spreCamp, type Values } from './camp-form-schema'
-import { OfferCurrencyFields } from '@/components/OfferCurrencyFields'
 import {
-  offerCurrencyInput,
-  offerCurrencyValues,
-  parseScaledDecimal,
-} from '@/lib/pricing/offer-currency'
-import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useFieldArray, useForm, useWatch } from 'react-hook-form'
+  schema,
+  GOL,
+  CAMP_FORM_STEPS,
+  COSTURI_FIELDS,
+  DETALII_FIELDS,
+  type Values,
+} from './camp-form-schema'
+import { varsteDinDateSalvate } from './camp-form-totals'
+import { offerCurrencyValues } from '@/lib/pricing/offer-currency'
+import { useEffect, useState, type FormEvent } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { useForm, useWatch, type FieldErrors } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { ArrowLeft, Check } from 'lucide-react'
 import { toast } from 'sonner'
 
-import {
-  getCategoriile,
-  getPreturilePeVarsta,
-  getTabaraDeEditat,
-  saveCampOffer,
-  slugDinTitlu,
-  type ModPret,
-} from '@/api/camps-admin'
+import { getCategoriile, getPreturilePeVarsta, getTabaraDeEditat } from '@/api/camps-admin'
 import { getClubSelectableLocations } from '@/api/club'
 import { getSelectableLocations } from '@/api/coach'
-import { campRequirementsForSave, readCampRequirements } from '@/lib/camp-requirements'
-import { campRulesForSave } from '@/lib/camp-rules'
-import { baniToRon, formatMoney } from '@/lib/money'
+import { readCampRequirements } from '@/lib/camp-requirements'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 import { useProprietarTabere } from './useProprietarTabere'
 import type { CampPortalBaza } from './camp-portal'
 import CampAgePricesSection from './CampAgePricesSection'
-import CampFormField from './CampFormField'
-import CampPeriodSection from './CampPeriodSection'
-import CampPhotosSection from './CampPhotosSection'
-import CampCoachesSection from './CampCoachesSection'
-import CampRequirementsSection from './CampRequirementsSection'
-import CampRulesSection from './CampRulesSection'
+import CampFormDetailsStep from './CampFormDetailsStep'
+import CampFormReviewStep from './CampFormReviewStep'
 
 export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   const { id } = useParams()
   const eEditare = !!id
-  const [newCampId] = useState(() => crypto.randomUUID())
-  const navigate = useNavigate()
-  const qc = useQueryClient()
   const { proprietar, gata, eClub } = useProprietarTabere()
+  const [step, setStep] = useState(0)
 
   const { data: tabara, isError: eroareTabara } = useQuery({
     queryKey: ['tabara-de-editat', id],
@@ -77,12 +65,11 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
     handleSubmit,
     reset,
     setValue,
+    getValues,
     control,
-    formState: { errors, isSubmitting },
+    trigger,
+    formState: { errors },
   } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: GOL })
-
-  const { fields, append, remove } = useFieldArray({ control, name: 'categorii' })
-  const titluReg = register('title')
 
   useEffect(() => {
     if (tabara && categoriiGata && varsteGata && locatiiGata) {
@@ -95,7 +82,6 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
         location_id: tabara.location_id ?? '',
         location_text: tabara.location_text ?? '',
         capacity: tabara.capacity?.toString() ?? '',
-        price_lei: String(baniToRon(tabara.price)),
         allow_cash: tabara.allow_cash,
         description: tabara.description ?? '',
         rules: tabara.rules ?? '',
@@ -106,79 +92,46 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
             quantity: String(articol.quantity),
           })),
         })),
-        categorii: (categorii ?? []).map((c) => ({
-          name: c.name,
-          amount_lei: String(baniToRon(c.amount)),
-          description: c.description ?? '',
-        })),
-        pricing_mode: (tabara.pricing_mode as ModPret) ?? 'single',
-        varste: (varste ?? []).map(spreCamp),
+        varste: varsteDinDateSalvate({
+          agePrices: varste ?? [],
+          priceItems: categorii ?? [],
+          campPrice: tabara.price,
+        }),
       })
     }
   }, [tabara, categorii, categoriiGata, varste, varsteGata, locatiiGata, reset])
+
   const currency = useWatch({ control, name: 'currency' })
-  const pretLei = useWatch({ control, name: 'price_lei' })
-  const categoriiVii = useWatch({ control, name: 'categorii' })
   const slugViu = useWatch({ control, name: 'slug' })
 
-  const pretBani = parseScaledDecimal(pretLei ?? '', 2) ?? 0
-  const sumaBani = (categoriiVii ?? []).reduce(
-    (t, c) => t + (parseScaledDecimal(c?.amount_lei ?? '', 2) ?? 0),
-    0,
-  )
-  const areCategorii = (categoriiVii ?? []).length > 0
-  const seDiferenta = areCategorii ? sumaBani - pretBani : 0
+  const inapoiLaPas = (urmatorul: number) => {
+    if (urmatorul < step) setStep(urmatorul)
+  }
 
-  const onSubmit = async (v: Values) => {
-    if (!gata) return
-    const campuri = {
-      title: v.title,
-      slug: v.slug,
-      description: v.description?.trim() ? v.description : null,
-      rules: campRulesForSave(v.rules),
-      period_start: v.period_start,
-      period_end: v.period_end,
-      location_id: v.location_id || null,
-      location_text: v.location_text?.trim() ? v.location_text : null,
-      capacity: num(v.capacity),
-      allow_cash: v.allow_cash,
-      camp_requirements: campRequirementsForSave(v.necesar),
+  const next = async () => {
+    if (step === 0) {
+      if (await trigger([...DETALII_FIELDS])) setStep(1)
+      return
     }
-    const bani = v.categorii.map((c) => ({
-      name: c.name.trim(),
-      amount: parseScaledDecimal(c.amount_lei, 2)!,
-      description: c.description?.trim() ? c.description : null,
-    }))
-
-    try {
-      const campId = id ?? newCampId
-      await saveCampOffer(
-        campId,
-        parseScaledDecimal(v.price_lei, 2)!,
-        bani,
-        offerCurrencyInput(v),
-        v.pricing_mode,
-        v.pricing_mode === 'by_age'
-          ? v.varste.map((c) => ({
-              age_from: Number(c.age_from),
-              age_to: Number(c.age_to),
-              amount: parseScaledDecimal(c.amount_lei, 2)!,
-            }))
-          : [],
-        campuri,
-        proprietar,
-      )
-
-      qc.invalidateQueries({ queryKey: ['taberele-mele'] })
-      qc.invalidateQueries({ queryKey: ['tabara-de-editat', campId] })
-      qc.invalidateQueries({ queryKey: ['categoriile-taberei', campId] })
-      qc.invalidateQueries({ queryKey: ['preturile-pe-varsta', campId] })
-      toast.success(eEditare ? 'Tabără actualizată.' : 'Tabără creată.')
-      navigate(baza)
-    } catch (e) {
-      const mesaj = e instanceof Error ? e.message : ''
-      toast.error(mesaj || 'Nu am putut salva tabăra.')
+    if (step === 1) {
+      if (await trigger([...COSTURI_FIELDS])) setStep(2)
     }
+  }
+
+  const onLocalDraft = () => {
+    toast.success('Draft local păstrat. Salvarea în tabără urmează după acest prototip.')
+  }
+
+  const onInvalid = (invalide: FieldErrors<Values>) => {
+    const primul = Object.keys(invalide)[0]
+    if (DETALII_FIELDS.includes(primul as (typeof DETALII_FIELDS)[number])) setStep(0)
+    else if (COSTURI_FIELDS.includes(primul as (typeof COSTURI_FIELDS)[number])) setStep(1)
+  }
+
+  const onFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (step < 2) void next()
+    else void handleSubmit(onLocalDraft, onInvalid)()
   }
 
   if (eEditare && eroareTabara) {
@@ -200,221 +153,91 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
       <h1 className="font-display mt-2 text-2xl font-bold">
         {eEditare ? 'Editează tabăra' : 'Tabără nouă'}
       </h1>
+      <p
+        role="status"
+        className="border-border bg-muted text-muted-foreground mt-3 rounded-2xl border border-dashed p-4 text-sm"
+      >
+        Draft local — prototip pentru noul flux. Datele rămân în formular; nu se salvează încă în
+        tabără.
+      </p>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5" noValidate>
-        <CampFormField eticheta="Titlu" eroare={errors.title?.message}>
-          <Input
-            {...titluReg}
-            className="h-11 lg:h-9"
-            aria-invalid={!!errors.title}
-            onBlur={(e) => {
-              titluReg.onBlur(e)
-              if (!eEditare && !slugViu) setValue('slug', slugDinTitlu(e.target.value))
-            }}
-          />
-        </CampFormField>
-
-        <CampFormField
-          eticheta="Adresa paginii"
-          eroare={errors.slug?.message}
-          ajutor={`/tabere/${slugViu || '...'}`}
-        >
-          <Input {...register('slug')} className="h-11 lg:h-9" aria-invalid={!!errors.slug} />
-        </CampFormField>
-
-        <CampPeriodSection
-          register={register}
-          control={control}
-          setValue={setValue}
-          errors={errors}
-        />
-
-        <CampFormField
-          eticheta="Loc"
-          ajutor={
-            eroareLocatii
-              ? 'Nu am putut încărca locațiile. Poți salva tabăra și alege locul mai târziu.'
-              : 'Un loc din platformă: așa ajunge tabăra pe hartă.'
-          }
-        >
-          <select
-            {...register('location_id')}
-            className="border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] lg:h-9"
-          >
-            <option value="">— fără loc ales —</option>
-            {(locatii ?? []).map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
-                {l.city ? ` · ${l.city}` : ''}
-              </option>
-            ))}
-          </select>
-        </CampFormField>
-        <Link
-          to={eClub ? '/club/locations/new' : '/coach/locations/new'}
-          className="text-primary inline-flex min-h-11 items-center text-sm underline-offset-4 hover:underline"
-        >
-          Locul nu e în listă? Adaugă o locație nouă, cu pin pe hartă
-        </Link>
-
-        <CampFormField
-          eticheta="Detalii despre loc"
-          ajutor="Text liber, se vede pe pagina publică: cabana, intrarea, punctul de întâlnire."
-        >
-          <Input {...register('location_text')} className="h-11 lg:h-9" />
-        </CampFormField>
-
-        <CampFormField eticheta="Locuri" ajutor="Lasă gol pentru tabără fără limită.">
-          <Input type="number" min={0} {...register('capacity')} className="h-11 lg:h-9" />
-        </CampFormField>
-
-        <CampFormField eticheta="Descriere">
-          <textarea
-            {...register('description')}
-            rows={4}
-            className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent p-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] [field-sizing:content] max-h-64"
-          />
-        </CampFormField>
-
-        <CampRulesSection register={register} errors={errors} />
-
-        <CampRequirementsSection control={control} register={register} errors={errors} />
-
-        <label className="flex min-h-11 items-center gap-3 text-sm">
-          <input type="checkbox" {...register('allow_cash')} className="size-4" />
-          Acceptă plata cash
-        </label>
-
-        <fieldset className="rounded-2xl border p-5">
-          <legend className="px-2 font-semibold">Ce include prețul</legend>
-          <OfferCurrencyFields
-            currency={currency}
-            currencyField={register('currency')}
-            rateField={register('eur_ron_rate')}
-            error={errors.eur_ron_rate?.message}
-          />
-
-          <CampFormField
-            eticheta={`Prețul taberei (${currency === 'EUR' ? 'EUR' : 'lei'})`}
-            eroare={errors.price_lei?.message}
-          >
-            <Input
-              type="number"
-              step="0.01"
-              min={0}
-              {...register('price_lei')}
-              className="h-11 lg:h-9"
-              aria-invalid={!!errors.price_lei}
-            />
-          </CampFormField>
-
-          <p className="text-muted-foreground mt-4 text-sm">
-            Categoriile explică prețul, nu îl schimbă: părintele plătește totalul. Poți sări peste
-            ele, dar dacă le pui, suma lor trebuie să dea exact prețul.
-          </p>
-
-          <ul className="mt-4 space-y-4">
-            {fields.map((f, i) => (
-              <li key={f.id} className="rounded-xl border p-4">
-                <div className="flex items-start gap-3">
-                  <div className="grid flex-1 gap-3 sm:grid-cols-[1fr_140px]">
-                    <CampFormField eticheta="Nume" eroare={errors.categorii?.[i]?.name?.message}>
-                      <Input
-                        {...register(`categorii.${i}.name`)}
-                        className="h-11 lg:h-9"
-                        placeholder="Cazare și masă"
-                      />
-                    </CampFormField>
-                    <CampFormField
-                      eticheta={`Sumă (${currency === 'EUR' ? 'EUR' : 'lei'})`}
-                      eroare={errors.categorii?.[i]?.amount_lei?.message}
-                    >
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min={0}
-                        {...register(`categorii.${i}.amount_lei`)}
-                        className="h-11 lg:h-9"
-                      />
-                    </CampFormField>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="size-11 min-h-11 shrink-0"
-                    onClick={() => remove(i)}
-                    aria-label={`Șterge categoria ${i + 1}`}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                </div>
-                <CampFormField eticheta="Descriere">
-                  <Input
-                    {...register(`categorii.${i}.description`)}
-                    className="h-11 lg:h-9"
-                    placeholder="Pensiune la 15 minute de trasee, mic dejun inclus."
-                  />
-                </CampFormField>
-              </li>
-            ))}
-          </ul>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="mt-4 h-11 min-h-11"
-            onClick={() => append({ name: '', amount_lei: '', description: '' })}
-          >
-            <Plus className="size-4" /> Adaugă o categorie
-          </Button>
-
-          {areCategorii && (
-            <p
-              className={`mt-4 text-sm font-medium ${seDiferenta === 0 ? 'text-muted-foreground' : 'text-destructive'}`}
-              role={seDiferenta === 0 ? undefined : 'alert'}
-            >
-              {seDiferenta === 0
-                ? `Categoriile adună ${formatMoney(sumaBani, currency)} — exact prețul taberei.`
-                : seDiferenta > 0
-                  ? `Categoriile adună ${formatMoney(sumaBani, currency)}, cu ${formatMoney(seDiferenta, currency)} mai mult decât prețul.`
-                  : `Categoriile adună ${formatMoney(sumaBani, currency)}, cu ${formatMoney(-seDiferenta, currency)} mai puțin decât prețul.`}
-            </p>
-          )}
-          {errors.categorii?.root?.message && (
-            <p className="text-destructive mt-2 text-sm" role="alert">
-              {errors.categorii.root.message}
-            </p>
-          )}
-        </fieldset>
-
-        <CampAgePricesSection
-          control={control}
-          register={register}
-          setValue={setValue}
-          errors={errors}
-          currency={currency}
-          proprietar={proprietar}
-          campId={id}
-          gata={gata}
-        />
-
-        {eEditare && tabara ? (
-          <>
-            <CampPhotosSection campId={tabara.id} heroCale={tabara.hero_photo_storage_path} />
-            <CampCoachesSection campId={tabara.id} />
-          </>
-        ) : (
-          !eEditare && (
-            <p className="text-muted-foreground rounded-2xl border border-dashed p-4 text-sm">
-              Pozele și antrenorii se adaugă după ce salvezi tabăra: și unele, și alții au nevoie de
-              o tabără care există deja.
-            </p>
+      <ol className="mt-6 mb-6 flex flex-wrap gap-2" aria-label="Pașii formularului">
+        {CAMP_FORM_STEPS.map((label, i) => {
+          const current = i === step
+          const done = i < step
+          const className = cn(
+            'flex min-h-11 items-center gap-2 rounded-full px-3 py-1.5 text-sm',
+            current
+              ? 'bg-primary text-primary-foreground font-semibold'
+              : 'bg-muted text-muted-foreground',
           )
-        )}
+          const inner = (
+            <>
+              <span className="grid size-5 place-items-center rounded-full border text-xs">
+                {done ? <Check className="size-3" /> : i + 1}
+              </span>
+              {label}
+            </>
+          )
+          return (
+            <li key={label}>
+              {done ? (
+                <button type="button" className={className} onClick={() => inapoiLaPas(i)}>
+                  {inner}
+                </button>
+              ) : (
+                <span className={className} aria-current={current ? 'step' : undefined}>
+                  {inner}
+                </span>
+              )}
+            </li>
+          )
+        })}
+      </ol>
 
-        <Button type="submit" className="h-11 min-h-11 px-6" disabled={isSubmitting || !gata}>
-          {eEditare ? 'Salvează' : 'Creează tabăra'}
-        </Button>
+      <form onSubmit={onFormSubmit} className="space-y-5" noValidate>
+        {step === 0 && (
+          <CampFormDetailsStep
+            register={register}
+            control={control}
+            setValue={setValue}
+            errors={errors}
+            eEditare={eEditare}
+            eClub={eClub}
+            locatii={locatii}
+            eroareLocatii={eroareLocatii}
+            slugViu={slugViu ?? ''}
+            tabara={tabara}
+          />
+        )}
+        {step === 1 && (
+          <CampAgePricesSection
+            control={control}
+            register={register}
+            errors={errors}
+            currency={currency}
+            proprietar={proprietar}
+            campId={id}
+            gata={gata}
+          />
+        )}
+        {step === 2 && <CampFormReviewStep values={getValues()} locatii={locatii} />}
+
+        <div className="flex flex-wrap gap-3">
+          {step > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 min-h-11 px-6"
+              onClick={() => inapoiLaPas(step - 1)}
+            >
+              Înapoi
+            </Button>
+          )}
+          <Button type="submit" className="h-11 min-h-11 px-6">
+            {step < 2 ? 'Continuă' : 'Păstrează draftul local'}
+          </Button>
+        </div>
       </form>
     </div>
   )
