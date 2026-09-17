@@ -1,0 +1,78 @@
+name: Client demo
+
+on:
+  workflow_run:
+    workflows: [App CI, Playwright Tests]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: motion-client-demo
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Resolve current verified master revision
+        id: revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          EVENT_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          sha=$(gh api "repos/$REPOSITORY/git/ref/heads/master" --jq '.object.sha')
+          if [ -n "$EVENT_SHA" ] && [ "$EVENT_SHA" != "$sha" ]; then exit 0; fi
+          for workflow in app-ci.yml playwright.yml; do
+            result=$(gh api "repos/$REPOSITORY/actions/workflows/$workflow/runs?branch=master&event=push&head_sha=$sha&per_page=1" --jq '.workflow_runs[0].conclusion')
+            if [ "$result" != success ]; then exit 0; fi
+          done
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        if: steps.revision.outputs.sha != ''
+        with:
+          ref: ${{ steps.revision.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        if: steps.revision.outputs.sha != ''
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: motiontimisoaraApp/package-lock.json
+      - name: Build the demo interface
+        if: steps.revision.outputs.sha != ''
+        working-directory: motiontimisoaraApp
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.MOTION_DEMO_VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.MOTION_DEMO_VITE_SUPABASE_ANON_KEY }}
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.MOTION_DEMO_VITE_STRIPE_PUBLISHABLE_KEY }}
+          VITE_CARTO_BASEMAP_API_KEY: ${{ secrets.MOTION_DEMO_VITE_CARTO_BASEMAP_API_KEY }}
+        run: |
+          npm ci
+          npm run build
+          node scripts/prepare-client-demo.mjs
+      - name: Publish only if master still matches
+        if: steps.revision.outputs.sha != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          VERIFIED_SHA: ${{ steps.revision.outputs.sha }}
+          NETLIFY_AUTH_TOKEN: ${{ secrets.MOTION_DEMO_NETLIFY_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.MOTION_DEMO_NETLIFY_SITE_ID }}
+        run: |
+          set -euo pipefail
+          current=$(gh api "repos/$REPOSITORY/git/ref/heads/master" --jq '.object.sha')
+          if [ "$current" != "$VERIFIED_SHA" ]; then exit 0; fi
+          npx --yes netlify-cli@23.5.0 deploy --prod --no-build --dir=motiontimisoaraApp/dist --message="Client demo master $VERIFIED_SHA"
