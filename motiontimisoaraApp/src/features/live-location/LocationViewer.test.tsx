@@ -2,7 +2,12 @@ import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
-import { LocationError, locationRequest, type LocationResponse } from '@/api/live-location'
+import {
+  LocationError,
+  locationRequest,
+  subscribeToLocation,
+  type LocationResponse,
+} from '@/api/live-location'
 import { LocationViewer } from './LocationViewer'
 
 const context = vi.hoisted(() => ({
@@ -89,6 +94,9 @@ test('revocation clears the map and ignores a previously pending read', async ()
   granted = true
   mount()
   await screen.findByTestId('live-map')
+  await waitFor(() =>
+    expect(subscribeToLocation).toHaveBeenCalledWith('session-1', expect.any(Function)),
+  )
   let finishRead: (value: LocationResponse) => void = () => {}
   let pendingReadStarted = false
   request.mockImplementation(async (body) => {

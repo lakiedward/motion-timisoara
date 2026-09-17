@@ -61,6 +61,10 @@ Source: https://capacitorjs.com/docs/config
   route before React Router finished navigation. The assertion now waits for the
   intended route without loosening the update and refresh assertions. Product code
   is unchanged. Final CI must verify this revision before merge.
+- Another parallel CI run exposed a location-viewer test sending an invalidation
+  before its mocked Realtime subscription was installed. The test now waits for
+  that subscription before exercising the pending-read/revocation race. Its privacy
+  assertions remain unchanged.
 - Current-session review covered the final diff, default-build isolation, fixed HTTPS
   origin, secret handling, public artifact contents, workflow trust boundaries and
   the exact-SHA deployment gate. No unresolved code finding remains.
