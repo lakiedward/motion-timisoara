@@ -10,7 +10,7 @@ writeFileSync(
     commit,
     builtAt: new Date().toISOString(),
     channel: 'client-demo',
-    branch: 'master',
+    trackingBranch: 'master',
   }),
 )
 writeFileSync(

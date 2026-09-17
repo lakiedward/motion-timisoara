@@ -92,7 +92,7 @@ it('updates the verified recovery account then refreshes the main session withou
   await user.click(screen.getByRole('button', { name: 'Salvează parola' }))
   await waitFor(() => expect(mocks.update).toHaveBeenCalledWith('test-new-password'))
   expect(mocks.refresh).toHaveBeenCalledOnce()
-  expect(screen.getByTestId('location')).toHaveTextContent('/login')
+  await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/login'))
 })
 
 it('does not report success when the grant expires or the update rejects', async () => {
