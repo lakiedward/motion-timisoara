@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 import type { LocationFormInput } from '@/api/coach'
+import { regenerateCourseOccurrences } from '@/api/course-occurrences'
 import { sAIncheiat } from '@/api/camps'
 async function uid(): Promise<string> {
   const {
@@ -355,16 +356,27 @@ export interface ClubCourseFormInput {
   capacity: number | null
   price_per_session: number
   description: string | null
+  recurrence_rule: string
 }
 export async function createClubCourse(clubId: string, input: ClubCourseFormInput) {
-  const { error } = await supabase.from('courses').insert({
-    ...input,
-    club_id: clubId,
-    payment_recipient: 'CLUB',
-    price: input.price_per_session * 8,
-    active: true,
-  })
+  const { data, error } = await supabase
+    .from('courses')
+    .insert({
+      ...input,
+      club_id: clubId,
+      payment_recipient: 'CLUB',
+      price: input.price_per_session * 8,
+      active: true,
+    })
+    .select()
+    .single()
   if (error) throw error
+  try {
+    await regenerateCourseOccurrences(data.id, input.recurrence_rule)
+  } catch (generationError) {
+    await supabase.from('courses').delete().eq('id', data.id)
+    throw generationError
+  }
 }
 export async function updateClubCourse(id: string, input: ClubCourseFormInput) {
   const { error } = await supabase
@@ -374,6 +386,7 @@ export async function updateClubCourse(id: string, input: ClubCourseFormInput) {
     .select()
     .single()
   if (error) throw error
+  await regenerateCourseOccurrences(id, input.recurrence_rule)
 }
 export async function setClubCourseActive(id: string, active: boolean) {
   const { error } = await supabase.from('courses').update({ active }).eq('id', id).select().single()

@@ -1,4 +1,5 @@
 import { OfferCurrencyFields } from '@/components/OfferCurrencyFields'
+import CourseProgramFields from '@/components/CourseProgramFields'
 import {
   offerAmountSchema,
   offerCurrencyShape,
@@ -7,6 +8,13 @@ import {
   offerCurrencyValues,
   parseScaledDecimal,
 } from '@/lib/pricing/offer-currency'
+import {
+  courseProgramSchema,
+  emptyCourseProgram,
+  parseRecurrenceRule,
+  requireSerializedProgram,
+  validateCourseProgramFields,
+} from '@/lib/course-program/recurrence'
 import { useEffect } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useForm, useWatch } from 'react-hook-form'
@@ -47,8 +55,12 @@ const schema = z
     capacity: z.string().optional(),
     price_per_session_lei: offerAmountSchema,
     description: z.string().optional(),
+    program: courseProgramSchema,
   })
-  .superRefine(validateOfferCurrency)
+  .superRefine((value, ctx) => {
+    validateOfferCurrency(value, ctx)
+    validateCourseProgramFields(value, ctx)
+  })
 type Values = z.infer<typeof schema>
 
 const num = (s: string | undefined) => (s && s.trim() ? Number(s) : null)
@@ -82,10 +94,11 @@ export default function ClubCourseFormPage() {
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { currency: 'RON', eur_ron_rate: '' },
+    defaultValues: { currency: 'RON', eur_ron_rate: '', program: emptyCourseProgram() },
   })
   const currency = useWatch({ control, name: 'currency' })
   useEffect(() => {
@@ -102,6 +115,7 @@ export default function ClubCourseFormPage() {
         capacity: existing.capacity?.toString() ?? '',
         price_per_session_lei: String(baniToRon(existing.price_per_session)),
         description: existing.description ?? '',
+        program: parseRecurrenceRule(existing.recurrence_rule),
       })
     }
   }, [existing, coachesReady, locationsReady, reset])
@@ -123,12 +137,17 @@ export default function ClubCourseFormPage() {
       capacity: num(v.capacity),
       price_per_session: parseScaledDecimal(v.price_per_session_lei, 2)!,
       description: v.description || null,
+      recurrence_rule: requireSerializedProgram(v.program),
     }
     try {
       if (isEdit) await updateClubCourse(id as string, payload)
       else await createClubCourse(club.id, payload)
       qc.invalidateQueries({ queryKey: ['club-courses'] })
-      toast.success(isEdit ? 'Curs actualizat.' : 'Curs creat.')
+      toast.success(
+        isEdit
+          ? 'Curs actualizat. Ședințele viitoare urmează programul.'
+          : 'Curs creat. Ședințele au fost generate din program.',
+      )
       navigate('/club/courses')
     } catch {
       toast.error('Nu am putut salva cursul.')
@@ -305,6 +324,13 @@ export default function ClubCourseFormPage() {
             <Input id="age_to" type="number" className="h-11 lg:h-9" {...register('age_to')} />
           </div>
         </div>
+        <CourseProgramFields
+          control={control}
+          register={register}
+          setValue={setValue}
+          errors={errors}
+          inputClassName="h-11 lg:h-9"
+        />
         <div className="space-y-1.5">
           <Label htmlFor="description">Descriere</Label>
           <textarea

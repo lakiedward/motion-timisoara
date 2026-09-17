@@ -64,13 +64,20 @@ const scrieri: [string, () => Promise<unknown>][] = [
   ['club.deleteClubCode', () => club.deleteClubCode('k1')],
   [
     'club.updateClubCourse',
-    () => club.updateClubCourse('x', { price_per_session: 100 } as Parameters<typeof club.updateClubCourse>[1]),
+    () =>
+      club.updateClubCourse('x', {
+        price_per_session: 100,
+        recurrence_rule: '{"daySchedules":{"1":{"start":"18:00","end":"19:00"}}}',
+      } as Parameters<typeof club.updateClubCourse>[1]),
   ],
   ['club.setClubCourseActive', () => club.setClubCourseActive('x', false)],
   ['coach.setCourseActive', () => coach.setCourseActive('x', false)],
   ['coach.setActivityActive', () => coach.setActivityActive('x', false)],
   ['coach.setLocationActive', () => coach.setLocationActive('x', false)],
-  ['coach.updateMyCoachProfile', () => coach.updateMyCoachProfile({ name: 'A', phone: null, bio: null })],
+  [
+    'coach.updateMyCoachProfile',
+    () => coach.updateMyCoachProfile({ name: 'A', phone: null, bio: null }),
+  ],
   ['admin.setUserEnabled', () => admin.setUserEnabled('u', false)],
   ['admin.updateSport', () => admin.updateSport('s', 'COD', 'Nume')],
   ['admin.setSportDefaultPhoto', () => admin.setSportDefaultPhoto('s', poza())],

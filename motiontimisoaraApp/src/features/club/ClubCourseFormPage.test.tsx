@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor, within, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -49,12 +49,21 @@ function renderForm(ruta = '/club/courses/new') {
   )
 }
 
+async function completeazaProgram(user: ReturnType<typeof userEvent.setup>, zi = 'Luni') {
+  await user.click(screen.getByRole('button', { name: zi }))
+  const grup = screen.getByRole('group', { name: zi })
+  fireEvent.change(within(grup).getByLabelText('Ora start'), { target: { value: '18:00' } })
+  fireEvent.change(within(grup).getByLabelText('Ora final'), { target: { value: '19:00' } })
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   mockedClub.mockResolvedValue({ id: 'club-1', name: 'UI Audit Club TM' } as never)
   mockedSports.mockResolvedValue([{ id: SPORT, name: 'Înot' }] as never)
   mockedRoster.mockResolvedValue([{ user_id: ANTRENOR, name: 'Audit Antrenor' }] as never)
-  mockedLocations.mockResolvedValue([{ id: LOC_COMUNA, name: 'Bazin Olimpic Timișoara', city: 'Timișoara' }] as never)
+  mockedLocations.mockResolvedValue([
+    { id: LOC_COMUNA, name: 'Bazin Olimpic Timișoara', city: 'Timișoara' },
+  ] as never)
 })
 
 // --- Criteriul 1: precompletarea nu mai pierde antrenorul si locatia ---
@@ -75,7 +84,10 @@ test('la editare, antrenorul salvat apare selectat chiar dacă lista lui vine du
     description: '',
   } as never)
   mockedRoster.mockImplementation(
-    () => new Promise((r) => setTimeout(() => r([{ user_id: ANTRENOR, name: 'Audit Antrenor' }] as never), 40)),
+    () =>
+      new Promise((r) =>
+        setTimeout(() => r([{ user_id: ANTRENOR, name: 'Audit Antrenor' }] as never), 40),
+      ),
   )
 
   renderForm('/club/courses/c1/edit')
@@ -94,7 +106,9 @@ test('selectul de locație folosește lista utilizabilă, nu doar locațiile pro
   expect(await screen.findByRole('option', { name: 'Bazin Olimpic Timișoara' })).toBeInTheDocument()
   // La creare nu exista curs, deci nicio locatie de pastrat.
   expect(mockedLocations).toHaveBeenCalledWith('club-1', null)
-  expect(within(screen.getByLabelText('Locație')).getByText('Bazin Olimpic Timișoara')).toBeInTheDocument()
+  expect(
+    within(screen.getByLabelText('Locație')).getByText('Bazin Olimpic Timișoara'),
+  ).toBeInTheDocument()
 })
 
 // Regresie (Bugbot): filtrul `is_active` nu are voie sa scoata din lista locatia
@@ -102,8 +116,17 @@ test('selectul de locație folosește lista utilizabilă, nu doar locațiile pro
 // pierde locatia — exact esecul pe care acest set de schimbari il repara.
 test('locația dezactivată a unui curs rămâne în listă la editare', async () => {
   mockedExisting.mockResolvedValue({
-    id: 'c1', name: 'Înot avansat', sport_id: SPORT, location_id: 'loc-inactiva', coach_id: ANTRENOR,
-    level: 'avansat', age_from: 9, age_to: 14, capacity: 14, price_per_session: 7500, description: '',
+    id: 'c1',
+    name: 'Înot avansat',
+    sport_id: SPORT,
+    location_id: 'loc-inactiva',
+    coach_id: ANTRENOR,
+    level: 'avansat',
+    age_from: 9,
+    age_to: 14,
+    capacity: 14,
+    price_per_session: 7500,
+    description: '',
   } as never)
   mockedLocations.mockResolvedValue([
     { id: LOC_COMUNA, name: 'Bazin Olimpic Timișoara', city: 'Timișoara' },
@@ -134,6 +157,7 @@ test('validarea marchează toate câmpurile greșite și leagă fiecare mesaj de
   }
   // Câmpurile opționale nu se marchează degeaba.
   expect(screen.getByLabelText('Capacitate')).not.toHaveAttribute('aria-invalid', 'true')
+  expect(screen.getByText('Selectează cel puțin o zi și completează orele.')).toBeInTheDocument()
 })
 
 // --- Criteriul 2: tinta de tap sub 1024 px ---
@@ -157,7 +181,9 @@ test('mesajul „Adaugă o locație” apare doar când nu există nicio locați
   expect(await screen.findByText(/Nu ai locații/)).toBeInTheDocument()
   unmount()
 
-  mockedLocations.mockResolvedValue([{ id: LOC_COMUNA, name: 'Bazin Olimpic Timișoara', city: 'Timișoara' }] as never)
+  mockedLocations.mockResolvedValue([
+    { id: LOC_COMUNA, name: 'Bazin Olimpic Timișoara', city: 'Timișoara' },
+  ] as never)
   renderForm()
   await screen.findByRole('option', { name: 'Bazin Olimpic Timișoara' })
   expect(screen.queryByText(/Nu ai locații/)).not.toBeInTheDocument()
@@ -173,11 +199,17 @@ test('salvarea reușită creează cursul și duce înapoi în listă', async () 
   await user.selectOptions(screen.getByLabelText('Sport'), SPORT)
   await user.selectOptions(screen.getByLabelText('Locație'), LOC_COMUNA)
   await user.type(screen.getByLabelText('Preț / ședință (lei)'), '80')
+  await completeazaProgram(user)
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
 
   await waitFor(() => expect(createClubCourse).toHaveBeenCalled())
+  expect(vi.mocked(createClubCourse).mock.calls[0][1]).toMatchObject({
+    recurrence_rule: JSON.stringify({
+      daySchedules: { '1': { start: '18:00', end: '19:00' } },
+    }),
+  })
   const { toast } = await import('sonner')
-  expect(toast.success).toHaveBeenCalledWith('Curs creat.')
+  expect(toast.success).toHaveBeenCalledWith('Curs creat. Ședințele au fost generate din program.')
 })
 
 // --- Criteriul 6: salvarea esuata pastreaza ce ai scris ---
@@ -190,6 +222,7 @@ test('salvarea eșuată păstrează valorile completate și anunță eroarea', a
   await user.selectOptions(screen.getByLabelText('Sport'), SPORT)
   await user.selectOptions(screen.getByLabelText('Locație'), LOC_COMUNA)
   await user.type(screen.getByLabelText('Preț / ședință (lei)'), '80')
+  await completeazaProgram(user)
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
 
   const { toast } = await import('sonner')
@@ -206,8 +239,17 @@ test('titlul urmează modul: „Curs nou” la creare, „Editează curs” la e
   unmount()
 
   mockedExisting.mockResolvedValue({
-    id: 'c1', name: 'Înot avansat', sport_id: SPORT, location_id: LOC_COMUNA, coach_id: ANTRENOR,
-    level: 'avansat', age_from: 9, age_to: 14, capacity: 14, price_per_session: 7500, description: '',
+    id: 'c1',
+    name: 'Înot avansat',
+    sport_id: SPORT,
+    location_id: LOC_COMUNA,
+    coach_id: ANTRENOR,
+    level: 'avansat',
+    age_from: 9,
+    age_to: 14,
+    capacity: 14,
+    price_per_session: 7500,
+    description: '',
   } as never)
   renderForm('/club/courses/c1/edit')
   expect(await screen.findByRole('heading', { name: 'Editează curs' })).toBeInTheDocument()
