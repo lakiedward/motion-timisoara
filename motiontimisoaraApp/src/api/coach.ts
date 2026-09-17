@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
+import { regenerateCourseOccurrences } from '@/api/course-occurrences'
 
 export type CoachCourse = Tables<'courses'> & {
   sport: Pick<Tables<'sports'>, 'id' | 'code' | 'name'> | null
@@ -43,6 +44,7 @@ export interface CourseFormInput {
   capacity: number | null
   price_per_session: number
   description: string | null
+  recurrence_rule: string
 }
 
 export async function createCourse(input: CourseFormInput): Promise<Tables<'courses'>> {
@@ -58,6 +60,12 @@ export async function createCourse(input: CourseFormInput): Promise<Tables<'cour
     .select()
     .single()
   if (error) throw error
+  try {
+    await regenerateCourseOccurrences(data.id, input.recurrence_rule)
+  } catch (generationError) {
+    await supabase.from('courses').delete().eq('id', data.id)
+    throw generationError
+  }
   return data
 }
 
@@ -69,6 +77,7 @@ export async function updateCourse(id: string, input: CourseFormInput): Promise<
     .select()
     .single()
   if (error) throw error
+  await regenerateCourseOccurrences(id, input.recurrence_rule)
   return data
 }
 export async function setCourseActive(id: string, active: boolean) {

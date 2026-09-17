@@ -529,6 +529,14 @@ reorganizing this document; correct obsolete facts with current evidence.
   `/admin/camps`) share that fieldset. See
   `docs/superpowers/specs/2026-09-16-todo-150-camp-interval.md`.
 
+- 2026-09-17 — To-Do #158 requires weekday+hours on course create/edit. The program
+  is stored as `{daySchedules}` JSON on `courses.recurrence_rule` (Monday=1 …
+  Sunday=7). Native `type="time"`; no implicit days or hours. After save, the next
+  eight weeks of `course_occurrences` are generated in Europe/Bucharest. Future
+  sessions with attendance are kept; other future sessions follow the new program.
+  Coach and club forms share `CourseProgramFields`. See
+  `docs/superpowers/specs/2026-09-17-todo-158-course-program.md`.
+
 ## 11. Known Issues / WIP
 
 - **To-Do #149 completion in progress (2026-09-11):** migrations `00048` and `00049`
