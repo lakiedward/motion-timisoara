@@ -2080,6 +2080,54 @@ export type Database = {
         }
         Relationships: []
       }
+      tt_demo_source_receipts: {
+        Row: {
+          adapter: string
+          created_at: string
+          fingerprint: string
+          identity: Json
+          owner_id: string
+          ownership: string
+          presentation_id: string
+          request_hash: string
+          resource_key: string
+          resource_table: string
+          run_id: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          adapter: string
+          created_at?: string
+          fingerprint: string
+          identity: Json
+          owner_id: string
+          ownership: string
+          presentation_id: string
+          request_hash: string
+          resource_key: string
+          resource_table: string
+          run_id: string
+          state: string
+          updated_at?: string
+        }
+        Update: {
+          adapter?: string
+          created_at?: string
+          fingerprint?: string
+          identity?: Json
+          owner_id?: string
+          ownership?: string
+          presentation_id?: string
+          request_hash?: string
+          resource_key?: string
+          resource_table?: string
+          run_id?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_announcement_views: {
         Row: {
           last_seen_at: string

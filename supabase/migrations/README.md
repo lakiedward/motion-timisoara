@@ -183,3 +183,5 @@ To confirm git and the remote still agree:
 npx supabase link --project-ref ehdzafadshbaaghzdzdo
 npx supabase migration list
 ```
+
+Client presentations: `00063_demo_source_receipts.sql` was applied as `20260917130713` (`demo_source_receipts`) on 2026-09-17. It adds an empty private ownership ledger for presentation preparation/reset, with RLS enabled. Anonymous, authenticated and agent_sql access are revoked; service_role receives only SELECT, INSERT and UPDATE. No product rows were created or changed.
