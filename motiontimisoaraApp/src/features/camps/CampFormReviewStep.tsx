@@ -33,7 +33,7 @@ export default function CampFormReviewStep({
         Verificare
       </h2>
       <p className="text-muted-foreground text-sm">
-        Controlează categoriile și totalurile. Draftul rămâne local; nu se scrie în tabără.
+        Controlează categoriile și totalurile, apoi salvează tabăra.
       </p>
 
       <div className="rounded-2xl border p-5">

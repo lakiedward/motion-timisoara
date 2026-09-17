@@ -55,6 +55,7 @@ GRANT SELECT ON public.camp_price_items TO authenticated;
 \i /tmp/migrations/00049_atomic_camp_offer_pricing.sql
 \i /tmp/migrations/00052_atomic_camp_enrollment_quote.sql
 \i /tmp/migrations/00054_atomic_camp_form_save.sql
+\i /tmp/migrations/00064_camp_age_price_components.sql
 GRANT SELECT ON public.camps,public.children,public.camp_age_prices TO service_role;
 INSERT INTO public.children VALUES ('00000000-0000-0000-0000-000000000201','2018-10-01');
 INSERT INTO public.camps(id, owner_id) VALUES
@@ -194,5 +195,73 @@ BEGIN
 END;
 $$;
 RESET ROLE;
+SET LOCAL ROLE authenticated;
+SET LOCAL request.jwt.claim.sub = '00000000-0000-0000-0000-000000000101';
+SELECT public.save_camp_offer(
+    '00000000-0000-0000-0000-000000000004',
+    '{"title":"Components camp","slug":"components-camp","period_start":"2027-07-10","period_end":"2027-07-17","allow_cash":true}'::jsonb,
+    NULL,
+    '00000000-0000-0000-0000-000000000101',
+    0,
+    'RON',
+    NULL,
+    '[]'::jsonb,
+    'by_age',
+    '[{"age_from":6,"age_to":8,"amount":60000,"components":[{"name":"Cazare","amount":40000},{"name":"Masa","amount":20000}]},{"age_from":9,"age_to":12,"amount":0,"components":[{"name":"Participare","amount":0}]}]'::jsonb
+);
+DO $$
+DECLARE
+    tineri JSONB;
+    gratuit JSONB;
+BEGIN
+    IF NOT EXISTS (
+        SELECT FROM public.camps
+        WHERE id = '00000000-0000-0000-0000-000000000004'
+          AND price = 0 AND pricing_mode = 'by_age' AND currency = 'RON'
+    ) THEN
+        RAISE EXCEPTION 'Wizard save must keep camps.price unused at 0';
+    END IF;
+    IF EXISTS (SELECT FROM public.camp_price_items WHERE camp_id = '00000000-0000-0000-0000-000000000004') THEN
+        RAISE EXCEPTION 'Wizard save must not keep a competing camp-level breakdown';
+    END IF;
+    SELECT to_jsonb(p) INTO tineri FROM public.camp_age_prices p
+        WHERE camp_id = '00000000-0000-0000-0000-000000000004' AND age_from = 6;
+    SELECT to_jsonb(p) INTO gratuit FROM public.camp_age_prices p
+        WHERE camp_id = '00000000-0000-0000-0000-000000000004' AND age_from = 9;
+    IF tineri->>'amount' <> '60000'
+       OR tineri->'components' IS DISTINCT FROM '[{"name":"Cazare","amount":40000},{"name":"Masa","amount":20000}]'::jsonb THEN
+        RAISE EXCEPTION 'Named components must persist with the category total';
+    END IF;
+    IF gratuit->>'amount' <> '0'
+       OR gratuit->'components' IS DISTINCT FROM '[{"name":"Participare","amount":0}]'::jsonb THEN
+        RAISE EXCEPTION 'A free category must keep a zero Participare component';
+    END IF;
+    BEGIN
+        PERFORM public.salveaza_preturile_pe_varsta(
+            '00000000-0000-0000-0000-000000000004',
+            'by_age',
+            '[{"age_from":6,"age_to":8,"amount":50000,"components":[{"name":"Cazare","amount":40000},{"name":"Masa","amount":20000}]}]'
+        );
+        RAISE EXCEPTION 'Mismatched component sum must be refused';
+    EXCEPTION WHEN raise_exception THEN
+        IF SQLERRM NOT LIKE 'Suma componentelor%' THEN RAISE; END IF;
+    END;
+    BEGIN
+        PERFORM public.salveaza_preturile_pe_varsta(
+            '00000000-0000-0000-0000-000000000004',
+            'by_age',
+            '[{"age_from":6,"age_to":8,"amount":40000,"components":[{"name":"","amount":40000}]}]'
+        );
+        RAISE EXCEPTION 'Nameless component must be refused';
+    EXCEPTION WHEN raise_exception THEN
+        IF SQLERRM NOT LIKE 'Fiecare componenta%' THEN RAISE; END IF;
+    END;
+    IF (SELECT amount FROM public.camp_age_prices WHERE camp_id = '00000000-0000-0000-0000-000000000004' AND age_from = 6)
+       IS DISTINCT FROM 60000 THEN
+        RAISE EXCEPTION 'Rejected component save changed the stored offer';
+    END IF;
+END;
+$$;
+RESET ROLE;
 ROLLBACK;
-\echo 'Atomic camp pricing: EUR/RON, ownership, grants and rollback verified'
+\echo 'Atomic camp pricing: EUR/RON, ownership, grants, rollback and named components verified'

@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ageAtCampStart, matchesAgeCategory } from './age-category'
+import { citesteComponentePret } from '@/lib/camp-age-components'
 
 export default function CampPricingCard({
   data,
@@ -63,6 +64,7 @@ export default function CampPricingCard({
             <ul className="space-y-2" aria-label="Tarife pe vârste">
               {agePrices.map((price) => {
                 const matching = children.filter((child) => matchesAgeCategory(child.age, price))
+                const componente = citesteComponentePret(price.components)
                 return (
                   <li
                     key={price.id}
@@ -79,6 +81,24 @@ export default function CampPricingCard({
                         {formatOfferPrice(price.amount, tabara.currency)}
                       </span>
                     </div>
+                    {componente.length > 0 && (
+                      <ul
+                        className="divide-border mt-2 divide-y text-sm"
+                        aria-label={`Componente, ${price.age_from}–${price.age_to} ani`}
+                      >
+                        {componente.map((item, index) => (
+                          <li
+                            key={`${item.name}-${index}`}
+                            className="text-muted-foreground flex justify-between gap-3 py-1.5"
+                          >
+                            <span>{item.name}</span>
+                            <span className="tabular-nums">
+                              {formatOfferPrice(item.amount, tabara.currency)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                     {matching.length > 0 && (
                       <div className="mt-2 space-y-1">
                         <Badge variant="secondary">Categoria potrivită</Badge>

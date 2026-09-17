@@ -37,6 +37,7 @@ export type PretPeVarstaDeSalvat = {
   age_from: number
   age_to: number
   amount: number
+  components: { name: string; amount: number }[]
 }
 
 export type CategorieDeSalvat = {

@@ -14,6 +14,10 @@ export function preturiPeVarstaDinDraft(varste: Values['varste']) {
     age_from: Number(c.age_from),
     age_to: Number(c.age_to),
     amount: totalCategorieBani(c.componente),
+    components: c.componente.map((item) => ({
+      name: item.name.trim(),
+      amount: parseScaledDecimal(item.amount_lei, 2) ?? 0,
+    })),
   }))
 }
 
@@ -24,21 +28,11 @@ export function ofertaDinDraft(values: Values) {
     offer: offerCurrencyInput(values),
     mode: 'by_age' as const,
     agePrices: preturiPeVarstaDinDraft(values.varste),
-    componente: values.varste.flatMap((categorie, category_index) =>
-      categorie.componente.map((item, display_order) => ({
-        age_from: Number(categorie.age_from),
-        age_to: Number(categorie.age_to),
-        name: item.name.trim(),
-        amount: parseScaledDecimal(item.amount_lei, 2) ?? 0,
-        display_order,
-        category_index,
-      })),
-    ),
   }
 }
 
 export function varsteDinDateSalvate(input: {
-  agePrices: { age_from: number; age_to: number; amount: number }[]
+  agePrices: { age_from: number; age_to: number; amount: number; components?: unknown }[]
   priceItems: { name: string; amount: number }[]
   campPrice: number
 }): Values['varste'] {
