@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Motion Timișoara — Ce este nou · 10–17 septembrie 2026</title>
+  <style>
+    :root { color-scheme: light; font: 17px/1.6 system-ui, sans-serif; }
+    body { margin: 0 auto; max-width: 68rem; padding: 2rem 1.25rem 5rem; }
+    h1 { font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.12; letter-spacing: -.04em; max-width: 18ch; }
+    h2 { margin-top: 2.5rem; line-height: 1.25; }
+    h3 { margin: 0 0 .5rem; font-size: 1.15rem; }
+    .intro { max-width: 48rem; font-size: 1.15rem; }
+    .actions { display: flex; flex-wrap: wrap; gap: .75rem; margin: 2rem 0; }
+    .actions a { border: 1px solid; border-radius: .5rem; padding: .65rem 1rem; text-decoration: none; font-weight: 650; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 27rem), 1fr)); gap: 1rem; }
+    article { border: 1px solid; border-radius: .75rem; padding: 1.25rem; break-inside: avoid; }
+    article p { margin: .5rem 0; }
+    small { display: block; margin-top: .75rem; }
+    li { margin-bottom: .65rem; }
+    footer { border-top: 1px solid; margin-top: 3rem; padding-top: 1rem; font-size: .85rem; }
+    @media print { body { max-width: none; font-size: 11pt; padding: 0; } .actions { display: none; } h1 { font-size: 28pt; } .grid { display: block; } article { margin-bottom: 1rem; } }
+  </style>
+</head>
+<body>
+  <p>MOTION TIMIȘOARA · PREZENTARE CLIENT</p>
+  <h1>O săptămână de progres.</h1>
+  <p class="intro"><strong>Joi, 10 septembrie – joi, 17 septembrie 2026.</strong><br>15 modificări livrate în ramura principală: experiența pe Android, comunicarea cu părinții, prețurile și organizarea taberelor.</p>
+  <nav class="actions" aria-label="Acces demonstrație">
+    <a href="https://motiontimisoara-demo.netlify.app/descarca">Descarcă aplicația Android</a>
+    <a href="https://motiontimisoara-demo.netlify.app/login">Deschide demonstrația în browser</a>
+    <a href="#traseu">Traseul prezentării</a>
+  </nav>
+  <p>Versiunea Android este pentru demonstrație. Interfața primește versiunile publicate după verificările ramurii principale, la închiderea completă și redeschiderea aplicației. Modificările native necesită un APK nou. Este necesară conexiunea la internet.</p>
+  <h2>Ce s-a schimbat</h2>
+  <div class="grid">
+    <article><h3>1. Locația live a antrenorului</h3><p>Antrenorul pornește explicit partajarea în timpul ședinței sau taberei. Părintele eligibil găsește cardul în Anunțuri și își dă acordul înainte de a vedea harta. La tabără, sosirea se confirmă o singură dată, iar partajarea durează maximum 8 ore.</p><small>10 septembrie · #320 · <a href="https://github.com/lakiedward/motion-timisoara/pull/75">Livrare</a></small></article>
+    <article><h3>2. Prețuri în lei și euro</h3><p>Organizatorul alege moneda și cursul de conversie pentru cursuri, activități și tabere. Părintele vede suma finală în lei înainte de plată; reluarea unei plăți păstrează prețul acceptat.</p><small>11 septembrie · #149 · <a href="https://github.com/lakiedward/motion-timisoara/pull/76">Contract</a> · <a href="https://github.com/lakiedward/motion-timisoara/pull/77">Interfață și flux complet</a></small></article>
+    <article><h3>3. Aplicația web pe domeniul Motion</h3><p>Aplicația React a fost publicată cu HTTPS pe motiontimisoara.com. Linkurile directe către paginile aplicației se deschid corect.</p><small>14 septembrie · <a href="https://github.com/lakiedward/motion-timisoara/pull/78">Publicare</a></small></article>
+    <article><h3>4. Autentificare Google pe Android</h3><p>După autentificare, utilizatorul revine în aplicație și la pagina de unde a început. Sesiunea se păstrează după repornire, iar completarea întreruptă a profilului poate fi reluată.</p><small>14 septembrie · #323 · <a href="https://github.com/lakiedward/motion-timisoara/pull/79">Livrare</a></small></article>
+    <article><h3>5. Linkurile din email deschid aplicația</h3><p>Confirmarea contului și resetarea parolei au retur în aplicația Android. Fluxul gestionează linkurile invalide, expirate și încercările repetate.</p><small>14 septembrie · #325 · <a href="https://github.com/lakiedward/motion-timisoara/pull/80">Livrare</a></small></article>
+    <article><h3>6. Termenii din înscriere se deschid corect</h3><p>Linkul „Termeni” din checkout duce la pagina dedicată, în locul unei erori 404.</p><small>14 septembrie · bug #1085 · <a href="https://github.com/lakiedward/motion-timisoara/pull/81">Corecție integrată</a></small></article>
+    <article><h3>7. Panoul părintelui are stări clare</h3><p>Încărcarea, lipsa datelor și erorile sunt prezentate distinct, cu posibilitatea de reîncercare. Panoul nu mai confundă o eroare cu un cont fără activitate.</p><small>14 septembrie · secțiunea #520 · <a href="https://github.com/lakiedward/motion-timisoara/pull/82">Corecție</a></small></article>
+    <article><h3>8. Anunțurile clubului și antrenorilor, împreună</h3><p>Părintele vede mesajele relevante într-un singur flux, cu autor, legătura către curs și atașamente. Poate filtra după curs și încărca mesajele mai vechi.</p><small>14 septembrie · #280 · <a href="https://github.com/lakiedward/motion-timisoara/pull/83">Livrare</a></small></article>
+    <article><h3>9. Notificări push pentru părinți</h3><p>Android primește notificări despre anunțuri și prezență. Preferințele și înregistrarea dispozitivului sunt legate de contul conectat.</p><small>15 septembrie · #326 · <a href="https://github.com/lakiedward/motion-timisoara/pull/84">Livrare</a></small></article>
+    <article><h3>10. Lista de bagaj pentru tabără</h3><p>Organizatorul grupează hainele și echipamentele pe categorii și stabilește cantitățile. Lista apare pe pagina publică a taberei.</p><small>15 septembrie · #154 · <a href="https://github.com/lakiedward/motion-timisoara/pull/85">Livrare</a></small></article>
+    <article><h3>11. Plăți native Android și recuperarea încercărilor</h3><p>Cardul, verificarea 3DS și Google Pay funcționează în Stripe TEST. După anulare, refuz sau repornire, părintele poate relua plata salvată, fără duplicarea înscrierii ori a ședințelor.</p><small>15 septembrie · #327 · <a href="https://github.com/lakiedward/motion-timisoara/pull/86">Livrare și probe Android</a></small></article>
+    <article><h3>12. Gratuitate pe categorii de vârstă</h3><p>Fiecare tabără poate avea categorii cu preț zero. Înscrierile gratuite se confirmă fără a solicita o plată inutilă.</p><small>16 septembrie · #151 · <a href="https://github.com/lakiedward/motion-timisoara/pull/87">Livrare</a></small></article>
+    <article><h3>13. Regulament propriu pentru fiecare tabără</h3><p>Organizatorul poate scrie și edita regulamentul; părinții îl citesc pe pagina taberei, înainte de înscriere.</p><small>16 septembrie · #155 · <a href="https://github.com/lakiedward/motion-timisoara/pull/88">Livrare</a></small></article>
+    <article><h3>14. Alegerea mai simplă a perioadei taberei</h3><p>Selecția intervalului este comună pentru administrator, club și antrenor, cu început și sfârșit mai ușor de ales.</p><small>16 septembrie · #150 · <a href="https://github.com/lakiedward/motion-timisoara/pull/89">Livrare</a></small></article>
+    <article><h3>15. Navigare nativă adaptată rolului</h3><p>Aplicația mobilă are bare fixe sus și jos, destinații potrivite fiecărui rol și acces la Cont și Explorează. Navigarea principală nu mai depinde de meniul hamburger.</p><small>16 septembrie · #156 · <a href="https://github.com/lakiedward/motion-timisoara/pull/91">Livrare</a></small></article>
+  </div>
+  <h2 id="traseu">Traseul prezentării · 10–15 minute</h2>
+  <ol>
+    <li><strong>Părinte:</strong> intră în cont; arată Alex și Sofia, înscrierile, soldul de ședințe, codul QR și mesajele clubului/antrenorului.</li>
+    <li><strong>Tabere:</strong> deschide <a href="https://motiontimisoara-demo.netlify.app/tabere/demo-triatlon-septembrie-2026">Tabăra de triatlon</a> pentru lista de bagaj și regulament, apoi <a href="https://motiontimisoara-demo.netlify.app/tabere/demo-weekend-octombrie-2026">Weekendul sportiv</a> pentru categoria gratuită și prețurile în euro.</li>
+    <li><strong>Club:</strong> arată cele trei cursuri, antrenorul asociat și editarea taberei: perioadă, prețuri, necesar, regulament.</li>
+    <li><strong>Antrenor:</strong> arată cursurile, ședințele și participanții taberei. Locația live începe numai la acțiunea explicită a antrenorului și după confirmarea sosirii copilului.</li>
+    <li><strong>Administrator:</strong> arată administrarea disponibilă. Contul are drepturi reale asupra bazei Motion.</li>
+  </ol>
+  <h2>Limitele demonstrației</h2>
+  <ul>
+    <li>Conturile și datele DEMO folosesc baza Motion existentă; nu este o bază izolată. Parolele sunt predate separat, într-un fișier privat.</li>
+    <li>Plățile sunt în modul TEST. Clubul demonstrativ nu are un cont Stripe Connect financiar configurat; nu este pregătit pentru încasări. Probele de plată Android sunt documentate în livrarea #327.</li>
+    <li>Google este încă în modul Testing; accesul unui cont Google nou depinde de lista de testeri. Pentru această prezentare sunt pregătite conturile cu email și parolă.</li>
+    <li>Înscrierea părinților ca participanți (#152), secțiunea Concursuri (#153) și Sign in with Apple pe iOS (#324) rămân de realizat.</li>
+  </ul>
+  <footer>Raport verificat din istoricul Git și Team Tracker la 17 septembrie 2026. Cele 17 PR-uri integrate în interval acoperă 15 modificări pentru utilizatori, inclusiv <a href="https://github.com/lakiedward/motion-timisoara/pull/90">confirmarea aplicării migrărilor pentru gratuitate și regulament</a>. Bugul #1085 are corecția integrată; statusul său din tracker era încă Open la verificare.</footer>
+</body>
+</html>
