@@ -12,7 +12,6 @@ import {
   getPreturilePeVarsta,
   getTabaraDeEditat,
   getTaberelemele,
-  saveCampOffer,
 } from '@/api/camps-admin'
 import { getClubSelectableLocations } from '@/api/club'
 import { getSelectableLocations } from '@/api/coach'
@@ -76,7 +75,11 @@ function renderForm(ruta = '/club/camps/new') {
       <MemoryRouter initialEntries={[ruta]}>
         <Routes>
           {PORTALE.flatMap((baza) => [
-            <Route key={`${baza}-new`} path={`${baza}/new`} element={<CampFormPage baza={baza} />} />,
+            <Route
+              key={`${baza}-new`}
+              path={`${baza}/new`}
+              element={<CampFormPage baza={baza} />}
+            />,
             <Route
               key={`${baza}-edit`}
               path={`${baza}/:id/edit`}
@@ -89,33 +92,45 @@ function renderForm(ruta = '/club/camps/new') {
   )
 }
 
-async function completeazaTabara(user: ReturnType<typeof userEvent.setup>) {
+async function completeazaDetalii(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText('Titlu'), 'Tabără de înot')
   await user.type(screen.getByLabelText('Adresa paginii'), 'tabara-inot')
   fireEvent.change(screen.getByLabelText('Începe'), { target: { value: '2027-07-10' } })
   fireEvent.change(screen.getByLabelText('Se termină'), { target: { value: '2027-07-17' } })
-  await user.type(screen.getByLabelText('Prețul taberei (lei)'), '900')
 }
 
-async function adaugaCategorie(
+async function laCosturi(user: ReturnType<typeof userEvent.setup>) {
+  await completeazaDetalii(user)
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  await screen.findByRole('heading', { name: 'Categorii și costuri' })
+}
+
+async function completeazaCategorie(
   user: ReturnType<typeof userEvent.setup>,
+  rand: HTMLElement,
   deLa: string,
   panaLa: string,
-  lei: string,
+  componente: { name: string; lei: string }[],
 ) {
-  await user.click(screen.getByRole('button', { name: 'Adaugă o categorie de vârstă' }))
-  const randuri = within(screen.getByRole('list', { name: 'Categorii de vârstă' })).getAllByRole(
-    'listitem',
-  )
-  const rand = randuri[randuri.length - 1]
   await user.type(within(rand).getByLabelText('De la (ani)'), deLa)
   await user.type(within(rand).getByLabelText('Până la (ani)'), panaLa)
-  await user.type(within(rand).getByLabelText('Sumă (lei)'), lei)
+  await user.type(within(rand).getAllByLabelText('Componentă')[0], componente[0].name)
+  await user.type(within(rand).getAllByLabelText(/Sumă \(/)[0], componente[0].lei)
+  for (let i = 1; i < componente.length; i++) {
+    await user.click(within(rand).getByRole('button', { name: 'Adaugă o componentă' }))
+    const names = within(rand).getAllByLabelText('Componentă')
+    await user.type(names[names.length - 1], componente[i].name)
+    const sume = within(rand).getAllByLabelText(/Sumă \(/)
+    await user.type(sume[sume.length - 1], componente[i].lei)
+  }
+}
+
+function randuriCategorii() {
+  return screen.getAllByRole('listitem', { name: /Categoria de vârstă/ })
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(saveCampOffer).mockResolvedValue(undefined)
   vi.mocked(getTaberelemele).mockResolvedValue([] as never)
   vi.mocked(getPreturilePeVarsta).mockResolvedValue([] as never)
   vi.mocked(getClubSelectableLocations).mockResolvedValue([
@@ -124,22 +139,20 @@ beforeEach(() => {
   ])
   vi.mocked(getSelectableLocations).mockResolvedValue([])
 })
-test('retry after an uncertain save reuses the camp identity and complete offer', async () => {
-  const user = userEvent.setup()
-  vi.mocked(saveCampOffer).mockRejectedValueOnce(new Error('Răspuns pierdut'))
+
+test('draftul pornește pe Detalii, cu banner de prototip, fără preț global', () => {
   renderForm()
-  await completeazaTabara(user)
-  await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
-  await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Răspuns pierdut'))
-  await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
-  await waitFor(() => expect(saveCampOffer).toHaveBeenCalledTimes(2))
-  expect(vi.mocked(saveCampOffer).mock.calls[0]).toEqual(vi.mocked(saveCampOffer).mock.calls[1])
+  expect(screen.getByRole('status')).toHaveTextContent(/Draft local/)
+  expect(screen.getByRole('heading', { name: 'Detalii' })).toBeInTheDocument()
+  expect(screen.getByRole('list', { name: 'Pașii formularului' })).toHaveTextContent(
+    '1Detalii2Categorii și costuri3Verificare',
+  )
+  expect(screen.queryByLabelText(/Prețul taberei/)).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Creează tabăra' })).not.toBeInTheDocument()
 })
 
-test('tabăra alege locul din locațiile clubului, iar salvarea trimite location_id', async () => {
-  const user = userEvent.setup()
+test('tabăra alege locul din locațiile clubului', async () => {
   renderForm()
-
   const select = await screen.findByLabelText('Loc')
   await waitFor(() =>
     expect(
@@ -154,32 +167,6 @@ test('tabăra alege locul din locațiile clubului, iar salvarea trimite location
     'href',
     '/club/locations/new',
   )
-
-  await completeazaTabara(user)
-  await user.selectOptions(select, CABANA)
-  await user.type(screen.getByLabelText('Detalii despre loc'), 'Intrarea din spate')
-  await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
-
-  await waitFor(() => expect(saveCampOffer).toHaveBeenCalled())
-  expect(vi.mocked(saveCampOffer).mock.calls[0][6]).toMatchObject({
-    location_id: CABANA,
-    location_text: 'Intrarea din spate',
-  })
-})
-
-test('fără loc ales, location_id pleacă null, nu șir gol', async () => {
-  const user = userEvent.setup()
-  renderForm()
-  await screen.findByLabelText('Loc')
-
-  await completeazaTabara(user)
-  await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
-
-  await waitFor(() => expect(saveCampOffer).toHaveBeenCalled())
-  expect(vi.mocked(saveCampOffer).mock.calls[0][6]).toMatchObject({
-    location_id: null,
-    rules: null,
-  })
 })
 
 test('la editare, locul salvat apare selectat chiar dacă lista vine după tabără', async () => {
@@ -198,10 +185,10 @@ test('la editare, locul salvat apare selectat chiar dacă lista vine după tabă
 
   renderForm('/club/camps/tabara-1/edit')
   await screen.findByDisplayValue('Tabără de înot')
-
   await waitFor(() => expect(screen.getByLabelText('Loc')).toHaveValue(BAZIN))
   expect(getClubSelectableLocations).toHaveBeenCalledWith('club-1', BAZIN)
 })
+
 test('la editare, necesarul salvat poate primi categorii și articole numerotate', async () => {
   const user = userEvent.setup()
   vi.mocked(getTabaraDeEditat).mockResolvedValue({
@@ -209,6 +196,7 @@ test('la editare, necesarul salvat poate primi categorii și articole numerotate
     camp_requirements: [{ name: 'Haine', items: [{ name: 'Chiloți', quantity: 7 }] }],
   } as never)
   vi.mocked(getCategoriile).mockResolvedValue([])
+  vi.mocked(getPreturilePeVarsta).mockResolvedValue([])
   renderForm('/club/camps/tabara-1/edit')
 
   await waitFor(() => expect(screen.getByLabelText('Categorie')).toHaveValue('Haine'))
@@ -219,38 +207,22 @@ test('la editare, necesarul salvat poate primi categorii și articole numerotate
   await user.click(screen.getAllByRole('button', { name: 'Adaugă articol' })[1])
   await user.type(screen.getAllByLabelText('Articol')[1], 'Schiuri')
   await user.type(screen.getAllByLabelText('Număr')[1], '1')
-  await user.click(screen.getAllByRole('button', { name: 'Adaugă articol' })[1])
-  await user.type(screen.getAllByLabelText('Articol')[2], 'Clăpari')
-  await user.type(screen.getAllByLabelText('Număr')[2], '1')
-  await user.click(screen.getByRole('button', { name: 'Salvează' }))
-
-  await waitFor(() => expect(saveCampOffer).toHaveBeenCalled())
-  expect(vi.mocked(saveCampOffer).mock.calls[0][6]).toMatchObject({
-    camp_requirements: [
-      { name: 'Haine', items: [{ name: 'Chiloți', quantity: 7 }] },
-      {
-        name: 'Ski',
-        items: [
-          { name: 'Schiuri', quantity: 1 },
-          { name: 'Clăpari', quantity: 1 },
-        ],
-      },
-    ],
-  })
+  expect(screen.getAllByLabelText('Categorie')[1]).toHaveValue('Ski')
 })
 
-test('regulamentul se salvează ca text, iar golul pleacă null', async () => {
+test('regulamentul se păstrează în draft când revii de pe costuri', async () => {
   const user = userEvent.setup()
   renderForm()
-  await completeazaTabara(user)
+  await completeazaDetalii(user)
   fireEvent.change(screen.getByLabelText('Regulamentul taberei'), {
     target: { value: 'Fără telefoane.\nFără dulciuri seara.' },
   })
-  await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
-  await waitFor(() => expect(saveCampOffer).toHaveBeenCalled())
-  expect(vi.mocked(saveCampOffer).mock.calls[0][6]).toMatchObject({
-    rules: 'Fără telefoane.\nFără dulciuri seara.',
-  })
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  await screen.findByRole('heading', { name: 'Categorii și costuri' })
+  await user.click(screen.getByRole('button', { name: 'Înapoi' }))
+  expect(screen.getByLabelText('Regulamentul taberei')).toHaveValue(
+    'Fără telefoane.\nFără dulciuri seara.',
+  )
 })
 
 test('la editare, regulamentul salvat revine în formular', async () => {
@@ -259,6 +231,7 @@ test('la editare, regulamentul salvat revine în formular', async () => {
     rules: 'Fără telefoane.',
   } as never)
   vi.mocked(getCategoriile).mockResolvedValue([])
+  vi.mocked(getPreturilePeVarsta).mockResolvedValue([])
   renderForm('/club/camps/tabara-1/edit')
   await waitFor(() =>
     expect(screen.getByLabelText('Regulamentul taberei')).toHaveValue('Fără telefoane.'),
@@ -293,6 +266,7 @@ test.each(PORTALE)('un început după sfârșit pe %s mută sfârșitul pe aceea
 test.each(PORTALE)('la editare pe %s, intervalul salvat arată durata inclusivă', async (baza) => {
   vi.mocked(getTabaraDeEditat).mockResolvedValue(TABARA as never)
   vi.mocked(getCategoriile).mockResolvedValue([])
+  vi.mocked(getPreturilePeVarsta).mockResolvedValue([])
   renderForm(`${baza}/tabara-1/edit`)
   await screen.findByDisplayValue('Tabără de înot')
   expect(screen.getByLabelText('Începe')).toHaveValue('2026-09-13')
@@ -300,182 +274,111 @@ test.each(PORTALE)('la editare pe %s, intervalul salvat arată durata inclusivă
   expect(screen.getByText(/· 8 zile/)).toBeInTheDocument()
 })
 
-test('o tabără nouă pornește pe preț unic, fără categorii de vârstă la vedere', async () => {
+test('fără titlu, pasul Detalii nu avansează', async () => {
   const user = userEvent.setup()
   renderForm()
-
-  expect(screen.getByRole('radio', { name: /Preț unic/ })).toBeChecked()
-  expect(screen.queryByRole('list', { name: 'Categorii de vârstă' })).not.toBeInTheDocument()
-
-  await completeazaTabara(user)
-  await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
-
-  await waitFor(() =>
-    expect(saveCampOffer).toHaveBeenCalledWith(
-      expect.any(String),
-      90000,
-      [],
-      { currency: 'RON', eur_ron_rate_micros: null },
-      'single',
-      [],
-      expect.any(Object),
-      { clubId: 'club-1', coachUserId: null },
-    ),
-  )
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  expect(await screen.findAllByText('Minim 3 caractere')).not.toHaveLength(0)
+  expect(screen.getByRole('heading', { name: 'Detalii' })).toBeInTheDocument()
 })
 
-test('o categorie de vârstă cu 0 lei se salvează ca sumă zero', async () => {
+test('componentele adună totalul, iar Înapoi păstrează draftul', async () => {
   const user = userEvent.setup()
   renderForm()
-
-  await completeazaTabara(user)
-  await user.click(screen.getByRole('radio', { name: /Pe categorii de vârstă/ }))
-  await adaugaCategorie(user, '0', '2', '0')
-  await adaugaCategorie(user, '3', '12', '800')
-  await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
-
-  await waitFor(() =>
-    expect(saveCampOffer).toHaveBeenCalledWith(
-      expect.any(String),
-      90000,
-      [],
-      { currency: 'RON', eur_ron_rate_micros: null },
-      'by_age',
-      [
-        { age_from: 0, age_to: 2, amount: 0 },
-        { age_from: 3, age_to: 12, amount: 80000 },
-      ],
-      expect.any(Object),
-      { clubId: 'club-1', coachUserId: null },
-    ),
-  )
+  await laCosturi(user)
+  const prima = randuriCategorii()[0]
+  await completeazaCategorie(user, prima, '6', '8', [
+    { name: 'Cazare', lei: '400' },
+    { name: 'Masă', lei: '200' },
+    { name: 'Antrenamente', lei: '100' },
+  ])
+  expect(within(prima).getByText(/Total 700,00 lei/)).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Înapoi' }))
+  expect(screen.getByLabelText('Titlu')).toHaveValue('Tabără de înot')
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  expect(screen.getByLabelText('De la (ani)')).toHaveValue(6)
+  expect(screen.getByDisplayValue('Cazare')).toBeInTheDocument()
+  expect(screen.getByText(/Total 700,00 lei/)).toBeInTheDocument()
 })
 
-test('Marchează gratuit pune suma categoriei pe zero', async () => {
+test('Marchează gratuit pune categoria pe zero', async () => {
   const user = userEvent.setup()
   renderForm()
-  await completeazaTabara(user)
-  await user.click(screen.getByRole('radio', { name: /Pe categorii de vârstă/ }))
-  await adaugaCategorie(user, '0', '2', '50')
-  expect(screen.getByLabelText('Sumă (lei)')).toHaveValue(50)
-  await user.click(screen.getByRole('button', { name: 'Marchează gratuit' }))
-  expect(screen.getByLabelText('Sumă (lei)')).toHaveValue(0)
-  expect(screen.getByText('Categoria este gratuită.')).toBeInTheDocument()
+  await laCosturi(user)
+  const prima = randuriCategorii()[0]
+  await completeazaCategorie(user, prima, '0', '2', [{ name: 'Cazare', lei: '50' }])
+  await user.click(within(prima).getByRole('button', { name: 'Marchează gratuit' }))
+  expect(await within(prima).findByDisplayValue('Participare')).toBeInTheDocument()
+  expect(within(prima).getByLabelText(/Sumă \(/)).toHaveValue(0)
+  expect(within(prima).getByText(/Total Gratuit/)).toBeInTheDocument()
 })
 
-test('pe categorii: comutatorul arată lista, iar salvarea trimite intervalele în ani și sumele în bani', async () => {
+test('două intervale care se suprapun opresc avansul și numesc perechea', async () => {
   const user = userEvent.setup()
   renderForm()
-
-  await completeazaTabara(user)
-  await user.click(screen.getByRole('radio', { name: /Pe categorii de vârstă/ }))
-  await adaugaCategorie(user, '6', '8', '700')
-  await adaugaCategorie(user, '9', '12', '900.5')
-  await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
-
-  await waitFor(() =>
-    expect(saveCampOffer).toHaveBeenCalledWith(
-      expect.any(String),
-      90000,
-      [],
-      { currency: 'RON', eur_ron_rate_micros: null },
-      'by_age',
-      [
-        { age_from: 6, age_to: 8, amount: 70000 },
-        { age_from: 9, age_to: 12, amount: 90050 },
-      ],
-      expect.any(Object),
-      { clubId: 'club-1', coachUserId: null },
-    ),
-  )
-})
-test('două intervale care se suprapun opresc salvarea și numesc perechea', async () => {
-  const user = userEvent.setup()
-  renderForm()
-
-  await completeazaTabara(user)
-  await user.click(screen.getByRole('radio', { name: /Pe categorii de vârstă/ }))
-  await adaugaCategorie(user, '6', '8', '700')
-  await adaugaCategorie(user, '8', '10', '800')
-  await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
-
+  await laCosturi(user)
+  await completeazaCategorie(user, randuriCategorii()[0], '6', '8', [
+    { name: 'Cazare', lei: '700' },
+  ])
+  await user.click(screen.getByRole('button', { name: 'Adaugă o categorie de vârstă' }))
+  const randuri = randuriCategorii()
+  await completeazaCategorie(user, randuri[randuri.length - 1], '8', '10', [
+    { name: 'Cazare', lei: '800' },
+  ])
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
   expect(await screen.findByRole('alert')).toHaveTextContent(
     'Categoria 6–8 ani se suprapune cu 8–10 ani',
   )
-  expect(saveCampOffer).not.toHaveBeenCalled()
-  expect(saveCampOffer).not.toHaveBeenCalled()
+  expect(screen.getByRole('heading', { name: 'Categorii și costuri' })).toBeInTheDocument()
 })
 
-test('pe categorii fără nicio categorie nu se poate salva', async () => {
+test('EUR cere cursul, iar verificarea arată componentele și totalul', async () => {
   const user = userEvent.setup()
   renderForm()
-
-  await completeazaTabara(user)
-  await user.click(screen.getByRole('radio', { name: /Pe categorii de vârstă/ }))
-  await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
-
-  expect(await screen.findByRole('alert')).toHaveTextContent(
-    'Prețul pe categorii are nevoie de cel puțin o categorie de vârstă',
-  )
-  expect(saveCampOffer).not.toHaveBeenCalled()
-})
-
-test('EUR requires an exchange rate and saves the exact source amount with its rate', async () => {
-  const user = userEvent.setup()
-  renderForm()
-  await completeazaTabara(user)
+  await laCosturi(user)
   await user.click(screen.getByRole('radio', { name: 'Euro (EUR)' }))
-  const price = screen.getByLabelText('Prețul taberei (EUR)')
-  await user.clear(price)
-  await user.type(price, '123.45')
-  await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
+  await completeazaCategorie(user, randuriCategorii()[0], '6', '12', [
+    { name: 'Cazare', lei: '100' },
+    { name: 'Masă', lei: '23.45' },
+  ])
+  await user.click(screen.getByRole('button', { name: 'Adaugă o categorie de vârstă' }))
+  const randuri = randuriCategorii()
+  await completeazaCategorie(user, randuri[randuri.length - 1], '13', '16', [
+    { name: 'Cazare', lei: '150' },
+  ])
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
   expect(await screen.findByRole('alert')).toHaveTextContent('Introdu un curs pozitiv')
-  expect(saveCampOffer).not.toHaveBeenCalled()
   await user.type(screen.getByLabelText('Cursul tău: 1 EUR în lei'), '5,123456')
-  await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
-  await waitFor(() =>
-    expect(saveCampOffer).toHaveBeenCalledWith(
-      expect.any(String),
-      12345,
-      [],
-      { currency: 'EUR', eur_ron_rate_micros: 5123456 },
-      'single',
-      [],
-      expect.any(Object),
-      { clubId: 'club-1', coachUserId: null },
-    ),
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  await screen.findByRole('heading', { name: 'Verificare' })
+  expect(screen.getByText('EUR, curs 5,123456 lei')).toBeInTheDocument()
+  expect(screen.getByText('6–12 ani')).toBeInTheDocument()
+  expect(screen.getAllByText('Cazare').length).toBeGreaterThan(0)
+  expect(screen.getByText('Masă')).toBeInTheDocument()
+  expect(screen.getByText('123,45 EUR')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Păstrează draftul local' }))
+  expect(toast.success).toHaveBeenCalledWith(
+    'Draft local păstrat. Salvarea în tabără urmează după acest prototip.',
   )
 })
 
-test('editing preserves EUR and switching to RON clears the saved exchange rate', async () => {
-  const user = userEvent.setup()
+test('editing preserves EUR on the cost step', async () => {
   vi.mocked(getTabaraDeEditat).mockResolvedValue({
     ...TABARA,
     currency: 'EUR',
     eur_ron_rate_micros: 5123456,
   } as never)
   vi.mocked(getCategoriile).mockResolvedValue([])
+  vi.mocked(getPreturilePeVarsta).mockResolvedValue([])
   renderForm('/club/camps/tabara-1/edit')
   await screen.findByDisplayValue('Tabără de înot')
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Continuă' }))
+  await screen.findByRole('heading', { name: 'Categorii și costuri' })
   expect(screen.getByRole('radio', { name: 'Euro (EUR)' })).toBeChecked()
   expect(screen.getByLabelText('Cursul tău: 1 EUR în lei')).toHaveValue('5.123456')
-  await user.click(screen.getByRole('radio', { name: 'Lei (RON)' }))
-  await user.click(screen.getByRole('button', { name: 'Salvează' }))
-  await waitFor(() =>
-    expect(saveCampOffer).toHaveBeenCalledWith(
-      'tabara-1',
-      90000,
-      [],
-      { currency: 'RON', eur_ron_rate_micros: null },
-      'single',
-      [],
-      expect.any(Object),
-      { clubId: 'club-1', coachUserId: null },
-    ),
-  )
 })
 
-test('la editare, categoriile salvate revin în formular, iar „copiază din" le înlocuiește cu ale altei tabere', async () => {
+test('la editare, categoriile salvate revin ca o componentă, iar copiază din le înlocuiește', async () => {
   const user = userEvent.setup()
   vi.mocked(getTabaraDeEditat).mockResolvedValue({ ...TABARA, pricing_mode: 'by_age' } as never)
   vi.mocked(getCategoriile).mockResolvedValue([])
@@ -520,23 +423,22 @@ test('la editare, categoriile salvate revin în formular, iar „copiază din" l
   ] as never)
 
   renderForm('/club/camps/tabara-1/edit')
-
   await screen.findByDisplayValue('Tabără de înot')
-  expect(screen.getByRole('radio', { name: /Pe categorii de vârstă/ })).toBeChecked()
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
   const lista = await screen.findByRole('list', { name: 'Categorii de vârstă' })
-  expect(within(lista).getAllByRole('listitem')).toHaveLength(1)
-  expect(within(lista).getByLabelText('Sumă (lei)')).toHaveValue(700)
+  expect(within(lista).getByLabelText(/Sumă \(/)).toHaveValue(700)
+  expect(within(lista).getByText(/Total 700,00 lei/)).toBeInTheDocument()
   const select = await screen.findByLabelText('Copiază categoriile din altă tabără')
-  const optiuni = within(select)
-    .getAllByRole('option')
-    .map((o) => o.textContent)
-  expect(optiuni).toEqual(['alege o tabără…', 'Tabăra de anul trecut'])
+  expect(
+    within(select)
+      .getAllByRole('option')
+      .map((o) => o.textContent),
+  ).toEqual(['alege o tabără…', 'Tabăra de anul trecut'])
 
   await user.selectOptions(select, 'tabara-2')
-
-  await waitFor(() => expect(within(lista).getAllByRole('listitem')).toHaveLength(2))
+  await waitFor(() => expect(within(lista).getAllByLabelText('De la (ani)')).toHaveLength(2))
   expect(getPreturilePeVarsta).toHaveBeenCalledWith('tabara-2')
-  const sume = within(lista).getAllByLabelText('Sumă (lei)')
+  const sume = within(lista).getAllByLabelText(/Sumă \(/)
   expect(sume[0]).toHaveValue(650)
   expect(sume[1]).toHaveValue(850)
 })

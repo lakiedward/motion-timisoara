@@ -101,7 +101,12 @@ export const router = createBrowserRouter([
           { path: '/contact', element: <ContactPage /> },
           { path: '/termeni', element: <TermsPage /> },
           { path: '/confidentialitate', element: <PrivacyPage /> },
-          ...(import.meta.env.DEV ? [{ path: '/dev/ui', element: <UiGalleryPage /> }] : []),
+          ...(import.meta.env.DEV
+            ? [
+                { path: '/dev/ui', element: <UiGalleryPage /> },
+                { path: '/dev/camp-form-draft', element: <CampFormPage baza="/club/camps" /> },
+              ]
+            : []),
           {
             element: <RequireAuth />,
             children: [

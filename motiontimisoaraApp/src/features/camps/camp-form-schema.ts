@@ -5,7 +5,6 @@ import {
   offerAmountSchema,
   offerCurrencyShape,
   validateOfferCurrency,
-  parseScaledDecimal,
 } from '@/lib/pricing/offer-currency'
 
 const lei = offerAmountSchema
@@ -22,22 +21,48 @@ const numarNecesar = z
     'Între 1 și 99',
   )
 
+export const COMPONENTA_GOALA = { name: '', amount_lei: '' }
+export const CATEGORIE_GOALA = {
+  age_from: '',
+  age_to: '',
+  componente: [{ ...COMPONENTA_GOALA }],
+}
+
+export const CAMP_FORM_STEPS = ['Detalii', 'Categorii și costuri', 'Verificare'] as const
+export const DETALII_FIELDS = [
+  'title',
+  'slug',
+  'period_start',
+  'period_end',
+  'rules',
+  'necesar',
+] as const
+export const COSTURI_FIELDS = ['currency', 'eur_ron_rate', 'varste'] as const
+
 export const schema = z
   .object({
     ...offerCurrencyShape,
-    pricing_mode: z.enum(['single', 'by_age']),
-    varste: z.array(
-      z
-        .object({
-          age_from: ani,
-          age_to: ani,
-          amount_lei: lei,
-        })
-        .refine((c) => Number(c.age_from) <= Number(c.age_to), {
-          message: 'Vârsta de început e după cea de sfârșit',
-          path: ['age_to'],
-        }),
-    ),
+    varste: z
+      .array(
+        z
+          .object({
+            age_from: ani,
+            age_to: ani,
+            componente: z
+              .array(
+                z.object({
+                  name: z.string().trim().min(1, 'Numele lipsește'),
+                  amount_lei: lei,
+                }),
+              )
+              .min(1, 'Adaugă cel puțin o componentă'),
+          })
+          .refine((c) => Number(c.age_from) <= Number(c.age_to), {
+            message: 'Vârsta de început e după cea de sfârșit',
+            path: ['age_to'],
+          }),
+      )
+      .min(1, 'Prețul pe categorii are nevoie de cel puțin o categorie de vârstă'),
     title: z.string().min(3, 'Minim 3 caractere'),
     slug: z
       .string()
@@ -48,7 +73,6 @@ export const schema = z
     location_id: z.string().optional(),
     location_text: z.string().optional(),
     capacity: z.string().optional(),
-    price_lei: lei,
     allow_cash: z.boolean(),
     description: z.string().optional(),
     rules: z.string().max(8000, 'Regulamentul poate avea cel mult 8000 de caractere'),
@@ -65,49 +89,25 @@ export const schema = z
           .min(1, 'Adaugă cel puțin un articol'),
       }),
     ),
-    categorii: z.array(
-      z.object({
-        name: z.string().min(1, 'Numele lipsește'),
-        amount_lei: lei,
-        description: z.string().optional(),
-      }),
-    ),
   })
   .superRefine(validateOfferCurrency)
   .refine((v) => v.period_end >= v.period_start, {
     message: 'Sfârșitul nu poate fi înaintea începutului',
     path: ['period_end'],
   })
-  .refine(
-    (v) =>
-      v.categorii.length === 0 ||
-      parseScaledDecimal(v.price_lei, 2) ===
-        v.categorii.reduce((t, c) => t + (parseScaledDecimal(c.amount_lei, 2) ?? 0), 0),
-    { message: 'Suma categoriilor trebuie să dea exact prețul taberei', path: ['categorii'] },
-  )
   .superRefine((v, ctx) => {
-    if (v.pricing_mode !== 'by_age') return
-    if (v.varste.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Prețul pe categorii are nevoie de cel puțin o categorie de vârstă',
-        path: ['varste'],
-      })
-      return
-    }
     const perechi = v.varste.map((c) => ({
       age_from: Number(c.age_from),
       age_to: Number(c.age_to),
     }))
     const suprapuse = intervaleSuprapuse(perechi)
-    if (suprapuse) {
-      const [a, b] = suprapuse
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: `Categoria ${perechi[a].age_from}–${perechi[a].age_to} ani se suprapune cu ${perechi[b].age_from}–${perechi[b].age_to} ani`,
-        path: ['varste'],
-      })
-    }
+    if (!suprapuse) return
+    const [a, b] = suprapuse
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `Categoria ${perechi[a].age_from}–${perechi[a].age_to} ani se suprapune cu ${perechi[b].age_from}–${perechi[b].age_to} ani`,
+      path: ['varste'],
+    })
   })
 
 export type Values = z.infer<typeof schema>
@@ -122,14 +122,11 @@ export const GOL: Values = {
   location_id: '',
   location_text: '',
   capacity: '',
-  price_lei: '',
   allow_cash: false,
   description: '',
   rules: '',
   necesar: [],
-  categorii: [],
-  pricing_mode: 'single',
-  varste: [],
+  varste: [{ ...CATEGORIE_GOALA, componente: [{ ...COMPONENTA_GOALA }] }],
 }
 
 export const num = (s: string | undefined) => (s && s.trim() ? Number(s) : null)
@@ -137,5 +134,5 @@ export const num = (s: string | undefined) => (s && s.trim() ? Number(s) : null)
 export const spreCamp = (c: { age_from: number; age_to: number; amount: number }) => ({
   age_from: String(c.age_from),
   age_to: String(c.age_to),
-  amount_lei: String(baniToRon(c.amount)),
+  componente: [{ name: 'Participare', amount_lei: String(baniToRon(c.amount)) }],
 })

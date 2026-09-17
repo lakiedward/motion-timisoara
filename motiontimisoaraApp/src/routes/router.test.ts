@@ -38,7 +38,9 @@ test(
   'în dezvoltare galeria de componente e accesibilă',
   async () => {
     vi.stubEnv('DEV', true)
-    expect(await caileRouterului()).toContain('/dev/ui')
+    const cai = await caileRouterului()
+    expect(cai).toContain('/dev/ui')
+    expect(cai).toContain('/dev/camp-form-draft')
   },
   TIMEOUT_REIMPORT_MS,
 )
@@ -49,7 +51,7 @@ test(
     vi.stubEnv('DEV', false)
     const cai = await caileRouterului()
     expect(cai).not.toContain('/dev/ui')
-    // Restul tabelei rămâne neatinsă — nu am scos rute publice din greșeală.
+    expect(cai).not.toContain('/dev/camp-form-draft')
     expect(cai).toEqual(expect.arrayContaining(['/', '/cursuri', '/contact', '/login']))
   },
   TIMEOUT_REIMPORT_MS,
