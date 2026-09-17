@@ -29,6 +29,19 @@ function view({
   ended = false,
   full = false,
   currency = 'RON',
+}: {
+  mode?: string
+  agePrices?: Array<{
+    id: string
+    age_from: number
+    age_to: number
+    amount: number
+    display_order: number
+    components?: unknown
+  }>
+  ended?: boolean
+  full?: boolean
+  currency?: string
 } = {}) {
   const data = {
     tabara: {
@@ -143,6 +156,32 @@ test('a zero age category is shown as Gratuit, not 0,00 lei', () => {
   expect(screen.getByText('800,00 lei')).toBeInTheDocument()
   expect(screen.queryByText('0,00 lei')).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Înscrie-te' })).toBeEnabled()
+})
+
+test('named age-price components appear under the category total', () => {
+  user = null
+  view({
+    agePrices: [
+      {
+        id: 'younger',
+        age_from: 6,
+        age_to: 8,
+        amount: 60000,
+        display_order: 0,
+        components: [
+          { name: 'Cazare', amount: 40000 },
+          { name: 'Masă', amount: 20000 },
+        ],
+      },
+    ],
+  })
+  const tarife = screen.getByRole('list', { name: 'Tarife pe vârste' })
+  const componente = screen.getByRole('list', { name: 'Componente, 6–8 ani' })
+  expect(within(componente).getByText('Cazare')).toBeInTheDocument()
+  expect(within(componente).getByText('Masă')).toBeInTheDocument()
+  expect(within(componente).getByText('400,00 lei')).toBeInTheDocument()
+  expect(within(componente).getByText('200,00 lei')).toBeInTheDocument()
+  expect(within(tarife).getByText('600,00 lei')).toBeInTheDocument()
 })
 
 test('missing age prices block enrollment without using the single price', () => {

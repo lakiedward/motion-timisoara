@@ -177,11 +177,27 @@ To-Do #155: `00062_camp_rules.sql` was applied as `20260916145126` (`camp_rules`
 on 2026-09-16. It adds nullable `camps.rules` (max 8000 characters) and persists
 it through `save_camp_offer` when the metadata JSON includes the `rules` key.
 
+Client presentations: `00063_demo_source_receipts.sql` was applied as
+`20260917130713` (`demo_source_receipts`) on 2026-09-17. It adds an empty
+private ownership ledger for presentation preparation/reset, with RLS enabled.
+Anonymous, authenticated and agent_sql access are revoked; service_role
+receives only SELECT, INSERT and UPDATE. No product rows were created or
+changed.
+
+To-Do #159: `00064_camp_age_price_components.sql` was applied as
+`20260917133554` (`camp_age_price_components`) on 2026-09-17 after isolated
+SQL tests and owner authorization (choice A). The ledger prefix is 00064 so
+it does not collide with `00063_demo_source_receipts.sql`. The remote version
+and function body were not re-applied. It stores named cost components on
+`camp_age_prices.components`. Existing age rows were backfilled as one
+`Participare` component equal to the stored amount. Ten live age-price rows
+matched the sum check after apply. `save_camp_offer` still writes `by_age`
+offers atomically; component names are kept with the totals. Templates are
+not part of this migration.
+
 To confirm git and the remote still agree:
 
 ```bash
 npx supabase link --project-ref ehdzafadshbaaghzdzdo
 npx supabase migration list
 ```
-
-Client presentations: `00063_demo_source_receipts.sql` was applied as `20260917130713` (`demo_source_receipts`) on 2026-09-17. It adds an empty private ownership ledger for presentation preparation/reset, with RLS enabled. Anonymous, authenticated and agent_sql access are revoked; service_role receives only SELECT, INSERT and UPDATE. No product rows were created or changed.

@@ -539,9 +539,13 @@ reorganizing this document; correct obsolete facts with current evidence.
 
 - 2026-09-17 — To-Do #159 stage 1 draft is a local three-step camp form
   (Detalii, Categorii și costuri, Verificare). Category totals are the sum of
-  named components; there is no competing global camp price. Live save,
-  enrollment display and templates are later slices. See
+  named components; there is no competing global camp price. See
   `docs/superpowers/specs/2026-09-17-todo-159-camp-form-draft.md`.
+- 2026-09-17 — To-Do #159 live save persists named components on
+  `camp_age_prices.components`, always `by_age`, `camps.price` 0, empty
+  `camp_price_items`. Existing enrollments are not recalculated. Templates
+  stay later. See
+  `docs/superpowers/specs/2026-09-17-todo-159-camp-form-live-save.md`.
 
 ## 11. Known Issues / WIP
 

@@ -340,6 +340,7 @@ export type Database = {
           age_to: number
           amount: number
           camp_id: string
+          components: Json
           created_at: string
           display_order: number
           id: string
@@ -349,6 +350,7 @@ export type Database = {
           age_to: number
           amount: number
           camp_id: string
+          components?: Json
           created_at?: string
           display_order?: number
           id?: string
@@ -358,6 +360,7 @@ export type Database = {
           age_to?: number
           amount?: number
           camp_id?: string
+          components?: Json
           created_at?: string
           display_order?: number
           id?: string
@@ -2434,6 +2437,7 @@ export type Database = {
           age_to: number
           amount: number
           camp_id: string
+          components: Json
           created_at: string
           display_order: number
           id: string
