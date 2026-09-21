@@ -19,6 +19,8 @@ on:
       - 'supabase/functions/create-payment-intent/**'
       - 'supabase/functions/_shared/payment-*.ts'
       - 'supabase/functions/enrollment-contract.test.ts'
+      - 'supabase/functions/bnr-rate/**'
+      - 'supabase/functions/bnr-rate-contract.test.ts'
       - 'supabase/tests/*atomic-enrollment-creation*'
   pull_request:
     paths:
@@ -38,6 +40,8 @@ on:
       - 'supabase/functions/create-payment-intent/**'
       - 'supabase/functions/_shared/payment-*.ts'
       - 'supabase/functions/enrollment-contract.test.ts'
+      - 'supabase/functions/bnr-rate/**'
+      - 'supabase/functions/bnr-rate-contract.test.ts'
       - 'supabase/tests/*atomic-enrollment-creation*'
 
 jobs:
@@ -58,7 +62,7 @@ jobs:
         shell: pwsh
         run: ./supabase/tests/run-atomic-enrollment-creation.ps1
       - name: Verify enrollment and payment-intent contracts
-        run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/payment-charge.test.ts
+        run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/bnr-rate-contract.test.ts
 
   push-contracts:
     runs-on: ubuntu-latest

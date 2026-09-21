@@ -21,6 +21,12 @@ three steps. The last step calls `save_camp_offer`.
   totals with the same en dash as the period on the card. Amount `0` is
   Gratuit. Legacy `single` cards still use `camps.price` and
   `camp_price_items`.
+- Camp EUR offers read the BNR daily EUR/RON rate automatically. The cost
+  step shows it read-only as `Curs BNR din <dd.mm.yyyy>: <rate> lei/EUR`.
+  There is no manual rate field. A missing feed blocks save with retry.
+  The fetched integer millionths are frozen on the offer at save, same as
+  the previous typed value. Existing offers and enrollments are untouched.
+  Course and activity forms still use the organizer-typed rate.
 
 A missing `components` array on an older save becomes one `Participare` row
 with the stored amount, so existing `by_age` camps remain editable.

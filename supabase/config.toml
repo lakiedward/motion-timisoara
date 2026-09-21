@@ -99,6 +99,9 @@ verify_jwt = false
 [functions.coach-live-location]
 verify_jwt = true
 
+[functions.bnr-rate]
+verify_jwt = true
+
 [functions.stripe-connect]
 verify_jwt = true
 

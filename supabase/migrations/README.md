@@ -195,6 +195,13 @@ matched the sum check after apply. `save_camp_offer` still writes `by_age`
 offers atomically; component names are kept with the totals. Templates are
 not part of this migration.
 
+To-Do #159 (owner choice C, 2026-09-21): Edge Function `bnr-rate` reads the
+official BNR daily feed `https://www.bnr.ro/nbrfxrates.xml`, returns
+`{ date, eur_ron_millionths }`, caches the day's rate in memory plus
+`Cache-Control`, and is called by the camp form with JWT verification.
+No table. EUR camp save freezes that rate on the offer; existing enrollments
+are not recalculated. Deployed version is recorded after apply.
+
 To confirm git and the remote still agree:
 
 ```bash
