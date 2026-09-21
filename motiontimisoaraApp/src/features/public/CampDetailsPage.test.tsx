@@ -162,6 +162,40 @@ test('o tabără fără regulament nu arată o secțiune goală', async () => {
   await screen.findByRole('button', { name: 'Înscrie-te' })
   expect(screen.queryByRole('heading', { name: 'Regulament' })).not.toBeInTheDocument()
 })
+test('fișierul regulamentului se deschide cu nume, tip și mărime', async () => {
+  mocked.mockResolvedValue(
+    detaliu({
+      tabara: { rules: 'Fără telefoane.' },
+      regulamentFisier: {
+        name: 'regulament.pdf',
+        contentType: 'application/pdf',
+        sizeBytes: 2048,
+        url: 'https://public/camp-rules/camp-1/uuid.pdf',
+      },
+    }) as never,
+  )
+  renderPage()
+  const link = await screen.findByRole('link', { name: /regulament.pdf/ })
+  expect(link).toHaveAttribute('href', 'https://public/camp-rules/camp-1/uuid.pdf')
+  expect(link).toHaveTextContent('PDF')
+  expect(link).toHaveTextContent('2 KB')
+  expect(screen.getByText('Fără telefoane.')).toBeInTheDocument()
+})
+test('doar fișierul arată totuși secțiunea Regulament', async () => {
+  mocked.mockResolvedValue(
+    detaliu({
+      regulamentFisier: {
+        name: 'regulament.docx',
+        contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        sizeBytes: 4096,
+        url: 'https://public/camp-rules/camp-1/uuid.docx',
+      },
+    }) as never,
+  )
+  renderPage()
+  expect(await screen.findByRole('heading', { name: 'Regulament' })).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /regulament.docx/ })).toHaveTextContent('Word')
+})
 test('o tabără fără necesar nu arată o secțiune goală', async () => {
   renderPage()
   await screen.findByRole('button', { name: 'Înscrie-te' })

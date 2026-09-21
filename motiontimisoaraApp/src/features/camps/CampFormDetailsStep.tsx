@@ -8,6 +8,7 @@ import CampCoachesSection from './CampCoachesSection'
 import CampRequirementsSection from './CampRequirementsSection'
 import CampRulesSection from './CampRulesSection'
 import { slugDinTitlu } from '@/api/camps-admin'
+import type { CampRulesFileMeta } from '@/lib/camp-rules'
 import type { Values } from './camp-form-schema'
 
 type LocatieOptiune = { id: string; name: string; city: string | null }
@@ -23,6 +24,9 @@ export default function CampFormDetailsStep({
   eroareLocatii,
   slugViu,
   tabara,
+  fisierSalvat,
+  fisierLocal,
+  onFisierLocal,
 }: {
   register: UseFormRegister<Values>
   control: Control<Values>
@@ -34,6 +38,9 @@ export default function CampFormDetailsStep({
   eroareLocatii: boolean
   slugViu: string
   tabara: { id: string; hero_photo_storage_path: string | null } | null | undefined
+  fisierSalvat: CampRulesFileMeta | null
+  fisierLocal: File | null
+  onFisierLocal: (fisier: File | null) => void
 }) {
   const titluReg = register('title')
 
@@ -117,7 +124,14 @@ export default function CampFormDetailsStep({
         />
       </CampFormField>
 
-      <CampRulesSection register={register} errors={errors} />
+      <CampRulesSection
+        register={register}
+        errors={errors}
+        campId={tabara?.id}
+        fisierSalvat={fisierSalvat}
+        fisierLocal={fisierLocal}
+        onFisierLocal={onFisierLocal}
+      />
 
       <CampRequirementsSection control={control} register={register} errors={errors} />
 

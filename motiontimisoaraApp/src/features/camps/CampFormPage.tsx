@@ -26,7 +26,14 @@ import {
 import { getClubSelectableLocations } from '@/api/club'
 import { getSelectableLocations } from '@/api/coach'
 import { campRequirementsForSave, readCampRequirements } from '@/lib/camp-requirements'
-import { campRulesForSave } from '@/lib/camp-rules'
+import {
+  campRulesFileContentType,
+  campRulesFileFromRow,
+  campRulesFileKindLabel,
+  campRulesForSave,
+  formatCampRulesFileSize,
+} from '@/lib/camp-rules'
+import { incarcaRegulamentFisier } from '@/api/camp-rules-file'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useProprietarTabere } from './useProprietarTabere'
@@ -43,6 +50,7 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   const qc = useQueryClient()
   const { proprietar, gata, eClub } = useProprietarTabere()
   const [step, setStep] = useState(0)
+  const [fisierLocal, setFisierLocal] = useState<File | null>(null)
 
   const { data: tabara, isError: eroareTabara } = useQuery({
     queryKey: ['tabara-de-editat', id],
@@ -115,6 +123,20 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   const cursEur = useWatch({ control, name: 'eur_ron_rate' })
   const slugViu = useWatch({ control, name: 'slug' })
   const faraCurs = eurFaraCurs(currency, cursEur)
+  const fisierSalvat = tabara ? campRulesFileFromRow(tabara) : null
+  const fisierRegulament = fisierLocal
+    ? {
+        name: fisierLocal.name,
+        eticheta: campRulesFileKindLabel(campRulesFileContentType(fisierLocal) ?? ''),
+        marime: formatCampRulesFileSize(fisierLocal.size),
+      }
+    : fisierSalvat
+      ? {
+          name: fisierSalvat.name,
+          eticheta: campRulesFileKindLabel(fisierSalvat.contentType),
+          marime: formatCampRulesFileSize(fisierSalvat.sizeBytes),
+        }
+      : null
 
   const inapoiLaPas = (urmatorul: number) => {
     if (urmatorul < step) setStep(urmatorul)
@@ -157,6 +179,16 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
         },
         proprietar,
       )
+      if (!eEditare && fisierLocal) {
+        try {
+          await incarcaRegulamentFisier(campId, fisierLocal)
+        } catch {
+          toast.error('Tabăra a fost creată, dar fișierul regulamentului nu a putut fi urcat.')
+          void qc.invalidateQueries({ queryKey: ['taberele-mele'] })
+          navigate(baza)
+          return
+        }
+      }
       void qc.invalidateQueries({ queryKey: ['taberele-mele'] })
       void qc.invalidateQueries({ queryKey: ['tabara-de-editat', campId] })
       void qc.invalidateQueries({ queryKey: ['categoriile-taberei', campId] })
@@ -247,6 +279,9 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
             eroareLocatii={eroareLocatii}
             slugViu={slugViu ?? ''}
             tabara={tabara}
+            fisierSalvat={fisierSalvat}
+            fisierLocal={fisierLocal}
+            onFisierLocal={setFisierLocal}
           />
         )}
         {step === 1 && (
@@ -261,7 +296,13 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
             gata={gata}
           />
         )}
-        {step === 2 && <CampFormReviewStep values={getValues()} locatii={locatii} />}
+        {step === 2 && (
+          <CampFormReviewStep
+            values={getValues()}
+            locatii={locatii}
+            fisierRegulament={fisierRegulament}
+          />
+        )}
 
         <div className="flex flex-wrap gap-3">
           {step > 0 && (

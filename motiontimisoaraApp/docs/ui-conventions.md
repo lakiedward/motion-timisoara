@@ -24,7 +24,7 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
     Cât timp tokenul nu există, asta NU e o convenție — e un item de lucru.
 
     canonic  — lipsește —
-    măsurat  108 valori scrise de mână, în 41 fișiere
+    măsurat  111 valori scrise de mână, în 43 fișiere
     →        unde trăiește tokenul e o alegere, nu o măsurătoare. Deschis pe Focus.
 
 ## Forme de așteptare  [RESPECTATĂ]

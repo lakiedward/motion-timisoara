@@ -204,6 +204,13 @@ No table. EUR camp save freezes that rate on the offer; existing enrollments
 are not recalculated. Deployed as version 1 with JWT verification on
 2026-09-21; source matches this branch.
 
+To-Do #160: `00065_camp_rules_file.sql` was applied as `20260921130941`
+(`camp_rules_file`) on 2026-09-21 after isolated SQL tests and owner
+authorization for this slice. It adds one optional rules file per camp (PDF,
+images, Word, Excel, 10 MB) on `camps` plus public bucket `camp-rules`.
+`save_camp_offer` does not write the file columns. Listing stays closed; public
+pages download through the public URL, like `camp-photos`.
+
 To confirm git and the remote still agree:
 
 ```bash

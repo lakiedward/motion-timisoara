@@ -556,6 +556,11 @@ reorganizing this document; correct obsolete facts with current evidence.
   integer millionths, in-memory + Cache-Control for the day, JWT). A missing
   feed blocks EUR save. Frozen on the offer at save; existing enrollments
   unchanged.
+- 2026-09-21 — To-Do #160 camp rules files use public bucket `camp-rules`
+  (same access model as `camp-photos`: public camp pages, no listing, owner
+  write path-scoped). One file per camp, 10 MB, PDF / images / Word / Excel.
+  Metadata is on `camps`; `save_camp_offer` does not touch it. See
+  `docs/superpowers/specs/2026-09-21-todo-160-camp-rules-file.md`.
 
 ## 11. Known Issues / WIP
 

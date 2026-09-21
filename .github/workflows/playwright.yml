@@ -109,6 +109,9 @@ jobs:
     - name: Test atomic camp offer pricing
       shell: pwsh
       run: ./supabase/tests/run-atomic-camp-offer-pricing.ps1
+    - name: Test isolated camp rules file
+      shell: pwsh
+      run: ./supabase/tests/run-camp-rules-file.ps1
     - name: Test atomic payment completion and concurrent confirmations
       shell: pwsh
       run: ./supabase/tests/run-enrollment-payment-completion.ps1

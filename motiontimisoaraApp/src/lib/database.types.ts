@@ -572,6 +572,10 @@ export type Database = {
           price: number
           pricing_mode: string
           rules: string | null
+          rules_file_content_type: string | null
+          rules_file_name: string | null
+          rules_file_size_bytes: number | null
+          rules_file_storage_path: string | null
           slug: string
           title: string
         }
@@ -594,6 +598,10 @@ export type Database = {
           price?: number
           pricing_mode?: string
           rules?: string | null
+          rules_file_content_type?: string | null
+          rules_file_name?: string | null
+          rules_file_size_bytes?: number | null
+          rules_file_storage_path?: string | null
           slug: string
           title: string
         }
@@ -616,6 +624,10 @@ export type Database = {
           price?: number
           pricing_mode?: string
           rules?: string | null
+          rules_file_content_type?: string | null
+          rules_file_name?: string | null
+          rules_file_size_bytes?: number | null
+          rules_file_storage_path?: string | null
           slug?: string
           title?: string
         }
