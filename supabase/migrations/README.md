@@ -201,7 +201,8 @@ file off `www.bnr.ro` on 2026-08-06; same `nbrfxrates.xml` EUR row), returns
 `{ date, eur_ron_millionths }`, caches the day's rate in memory plus
 `Cache-Control`, and is called by the camp form with JWT verification.
 No table. EUR camp save freezes that rate on the offer; existing enrollments
-are not recalculated. Deployed version is recorded after apply.
+are not recalculated. Deployed as version 1 with JWT verification on
+2026-09-21; source matches this branch.
 
 To confirm git and the remote still agree:
 
