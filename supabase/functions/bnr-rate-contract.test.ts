@@ -1,4 +1,5 @@
 import {
+  BNR_FX_URL,
   bucharestCalendarDate,
   createBnrRateHandler,
   decimalToMillionths,
@@ -23,11 +24,27 @@ function assert(value: unknown, message = "Assertion failed"): asserts value {
   if (!value) throw new Error(message);
 }
 
+Deno.test("the official daily XML lives on curs.bnr.ro", () => {
+  assert(BNR_FX_URL === "https://curs.bnr.ro/nbrfxrates.xml");
+});
+
 Deno.test("EUR from the official cube becomes integer millionths", () => {
   const parsed = parseBnrXml(SAMPLE);
   assert(parsed.date === "2026-09-19");
   assert(parsed.eur_ron_millionths === 5073100);
   assert(decimalToMillionths("5,0731") === 5073100);
+});
+
+Deno.test("the current BNR xmlns still yields EUR millionths", () => {
+  const xml = `<?xml version="1.0" encoding="utf-8"?>
+<DataSet xmlns="https://www.bnr.ro/xsd">
+  <Body><OrigCurrency>RON</OrigCurrency>
+    <Cube date="2026-09-21"><Rate currency="EUR">5.2649</Rate></Cube>
+  </Body>
+</DataSet>`;
+  const parsed = parseBnrXml(xml);
+  assert(parsed.date === "2026-09-21");
+  assert(parsed.eur_ron_millionths === 5264900);
 });
 
 Deno.test("the last Cube wins and EUR may carry multiplier 1", () => {

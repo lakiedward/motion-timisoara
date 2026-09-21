@@ -1,4 +1,4 @@
-export const BNR_FX_URL = "https://www.bnr.ro/nbrfxrates.xml";
+export const BNR_FX_URL = "https://curs.bnr.ro/nbrfxrates.xml";
 
 export type BnrRate = {
   date: string;
