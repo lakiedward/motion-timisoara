@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -11,13 +10,10 @@ import {
 } from 'react-hook-form'
 import { toast } from 'sonner'
 
-import { getCursBnr, formatBnrDate, CURS_BNR_EROARE } from '@/api/bnr-rate'
 import { getPreturilePeVarsta, getTaberelemele, type Proprietar } from '@/api/camps-admin'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Skeleton } from '@/components/ui/skeleton'
 import { OfferCurrencyFields } from '@/components/OfferCurrencyFields'
-import { formatExchangeRate, millionthsToDecimal } from '@/lib/pricing/offer-currency'
 import { formatOfferPrice } from '@/lib/money'
 import { spreCamp, type Values } from './camp-form-schema'
 import { categorieNoua, totalCategorieBani } from './camp-form-totals'
@@ -46,27 +42,6 @@ export default function CampAgePricesSection({
 }: Props) {
   const varsteArr = useFieldArray({ control, name: 'varste' })
   const varsteVii = useWatch({ control, name: 'varste' })
-  const cursBnr = useQuery({
-    queryKey: ['curs-bnr'],
-    queryFn: getCursBnr,
-    enabled: currency === 'EUR',
-    retry: false,
-    staleTime: 60_000,
-  })
-
-  useEffect(() => {
-    if (currency !== 'EUR') {
-      setValue('eur_ron_rate', '')
-      return
-    }
-    if (cursBnr.data) {
-      setValue('eur_ron_rate', millionthsToDecimal(cursBnr.data.eur_ron_millionths), {
-        shouldValidate: true,
-      })
-      return
-    }
-    if (!cursBnr.isFetching) setValue('eur_ron_rate', '')
-  }, [currency, cursBnr.data, cursBnr.isFetching, setValue])
   const {
     data: taberele,
     isError: eroareTabere,
@@ -108,18 +83,7 @@ export default function CampAgePricesSection({
           <OfferCurrencyFields
             currency={currency}
             currencyField={register('currency')}
-            rateSlot={
-              currency === 'EUR' ? (
-                <CursBnrAutomat
-                  date={cursBnr.data?.date}
-                  millionths={cursBnr.data?.eur_ron_millionths}
-                  loading={cursBnr.isFetching && !cursBnr.data}
-                  error={cursBnr.isError}
-                  onRetry={() => void cursBnr.refetch()}
-                />
-              ) : undefined
-            }
-            error={errors.eur_ron_rate?.message}
+            setValue={setValue}
           />
         </div>
 
@@ -201,55 +165,6 @@ export default function CampAgePricesSection({
         )}
       </fieldset>
     </section>
-  )
-}
-
-function CursBnrAutomat({
-  date,
-  millionths,
-  loading,
-  error,
-  onRetry,
-}: {
-  date?: string
-  millionths?: number
-  loading: boolean
-  error: boolean
-  onRetry: () => void
-}) {
-  if (loading) {
-    return (
-      <div className="space-y-1.5" aria-busy="true" aria-live="polite">
-        <Skeleton className="h-5 w-64 max-w-full" />
-        <p className="text-muted-foreground text-sm">Se citește cursul BNR…</p>
-      </div>
-    )
-  }
-  if (error || date == null || millionths == null) {
-    return (
-      <div className="space-y-2" role="alert">
-        <p className="text-destructive text-sm">{CURS_BNR_EROARE}</p>
-        <Button
-          type="button"
-          variant="outline"
-          className="h-11 min-h-11"
-          onClick={onRetry}
-          aria-label="Reîncearcă cursul BNR"
-        >
-          Reîncearcă
-        </Button>
-      </div>
-    )
-  }
-  return (
-    <div className="space-y-1.5">
-      <p className="text-sm font-medium" aria-live="polite">
-        Curs BNR din {formatBnrDate(date)}: {formatExchangeRate(millionths)} lei/EUR
-      </p>
-      <p className="text-muted-foreground text-sm">
-        Cursul BNR se salvează pe ofertă. Părintele confirmă și plătește suma finală în lei.
-      </p>
-    </div>
   )
 }
 

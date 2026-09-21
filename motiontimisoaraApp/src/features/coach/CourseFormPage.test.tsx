@@ -7,6 +7,7 @@ import { vi } from 'vitest'
 import CourseFormPage from './CourseFormPage'
 import { createCourse, getCourseById, getSelectableLocations, updateCourse } from '@/api/coach'
 import { fetchSports } from '@/api/sports'
+import { getCursBnr } from '@/api/bnr-rate'
 
 vi.mock('@/api/coach', () => ({
   getSelectableLocations: vi.fn(),
@@ -15,6 +16,10 @@ vi.mock('@/api/coach', () => ({
   updateCourse: vi.fn(),
 }))
 vi.mock('@/api/sports', () => ({ fetchSports: vi.fn() }))
+vi.mock('@/api/bnr-rate', async () => {
+  const real = await vi.importActual<typeof import('@/api/bnr-rate')>('@/api/bnr-rate')
+  return { ...real, getCursBnr: vi.fn() }
+})
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 const mockedLocations = vi.mocked(getSelectableLocations)
@@ -54,6 +59,7 @@ beforeEach(() => {
   mockedLocations.mockResolvedValue([
     { id: LOC, name: 'Bazin Olimpic Timișoara', city: 'Timișoara' },
   ] as never)
+  vi.mocked(getCursBnr).mockResolvedValue({ date: '2026-09-19', eur_ron_millionths: 5123456 })
 })
 
 test('fără program, salvarea e blocată și cursul nu se creează', async () => {
@@ -116,4 +122,35 @@ test('la editare, programul salvat apare selectat', async () => {
   const grup = screen.getByRole('group', { name: 'Miercuri' })
   expect(within(grup).getByLabelText('Ora start')).toHaveValue('16:00')
   expect(within(grup).getByLabelText('Ora final')).toHaveValue('17:00')
+})
+
+test('EUR citește cursul BNR și îl îngheață pe curs', async () => {
+  const user = userEvent.setup()
+  mockedCreate.mockResolvedValue({ id: 'c-eur' } as never)
+  renderForm()
+  await user.type(await screen.findByLabelText('Nume curs'), 'Înot euro')
+  await user.selectOptions(screen.getByLabelText('Sport'), SPORT)
+  await user.selectOptions(screen.getByLabelText('Locație'), LOC)
+  await user.click(screen.getByRole('radio', { name: 'Euro (EUR)' }))
+  expect(await screen.findByText('Curs BNR din 19.09.2026: 5,123456 lei/EUR')).toBeInTheDocument()
+  expect(screen.queryByLabelText('Cursul tău: 1 EUR în lei')).not.toBeInTheDocument()
+  await user.type(screen.getByLabelText('Preț / ședință (EUR)'), '20')
+  await completeazaProgram(user)
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() => expect(mockedCreate).toHaveBeenCalled())
+  expect(mockedCreate.mock.calls[0][0]).toMatchObject({
+    currency: 'EUR',
+    eur_ron_rate_micros: 5123456,
+    price_per_session: 2000,
+  })
+})
+
+test('fără curs BNR, EUR blochează salvarea cursului', async () => {
+  vi.mocked(getCursBnr).mockRejectedValue(new Error('Nu am putut citi cursul BNR. Reîncearcă.'))
+  const user = userEvent.setup()
+  renderForm()
+  await user.click(screen.getByRole('radio', { name: 'Euro (EUR)' }))
+  expect(await screen.findByText('Nu am putut citi cursul BNR. Reîncearcă.')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Salvează' })).toBeDisabled()
+  expect(mockedCreate).not.toHaveBeenCalled()
 })

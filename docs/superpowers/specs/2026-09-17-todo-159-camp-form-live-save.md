@@ -27,7 +27,8 @@ three steps. The last step calls `save_camp_offer`.
   lei/EUR`. There is no manual rate field. A missing feed blocks save with
   retry. The fetched integer millionths are frozen on the offer at save,
   same as the previous typed value. Existing offers and enrollments are
-  untouched. Course and activity forms still use the organizer-typed rate.
+  untouched. Club and coach course forms and the coach activity form use
+  the same automatic BNR rate (no typed field).
 
 A missing `components` array on an older save becomes one `Participare` row
 with the stored amount, so existing `by_age` camps remain editable.

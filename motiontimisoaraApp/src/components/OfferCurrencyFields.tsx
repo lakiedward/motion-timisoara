@@ -1,22 +1,51 @@
-import { useId, type ReactNode } from 'react'
+import { useEffect } from 'react'
 import type { UseFormRegisterReturn } from 'react-hook-form'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { useQuery } from '@tanstack/react-query'
+
+import { CURS_BNR_EROARE, formatBnrDate, getCursBnr } from '@/api/bnr-rate'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { formatExchangeRate, millionthsToDecimal } from '@/lib/pricing/offer-currency'
+
+function useCursBnrRate(
+  currency: string,
+  setValue: (name: 'eur_ron_rate', value: string, options?: { shouldValidate?: boolean }) => void,
+) {
+  const cursBnr = useQuery({
+    queryKey: ['curs-bnr'],
+    queryFn: getCursBnr,
+    enabled: currency === 'EUR',
+    retry: false,
+    staleTime: 60_000,
+  })
+
+  useEffect(() => {
+    if (currency !== 'EUR') {
+      setValue('eur_ron_rate', '')
+      return
+    }
+    if (cursBnr.data) {
+      setValue('eur_ron_rate', millionthsToDecimal(cursBnr.data.eur_ron_millionths), {
+        shouldValidate: true,
+      })
+      return
+    }
+    if (!cursBnr.isFetching) setValue('eur_ron_rate', '')
+  }, [currency, cursBnr.data, cursBnr.isFetching, setValue])
+
+  return cursBnr
+}
 
 export function OfferCurrencyFields({
   currency,
   currencyField,
-  rateField,
-  rateSlot,
-  error,
+  setValue,
 }: {
   currency: string
   currencyField: UseFormRegisterReturn
-  rateField?: UseFormRegisterReturn
-  rateSlot?: ReactNode
-  error?: string
+  setValue: (name: 'eur_ron_rate', value: string, options?: { shouldValidate?: boolean }) => void
 }) {
-  const id = useId()
+  const cursBnr = useCursBnrRate(currency, setValue)
   return (
     <div className="space-y-3 sm:col-span-2">
       <fieldset>
@@ -35,30 +64,66 @@ export function OfferCurrencyFields({
           ))}
         </div>
       </fieldset>
-      {currency === 'EUR' &&
-        (rateSlot ?? (
-          <div className="space-y-1.5">
-            <Label htmlFor={`${id}-rate`}>Cursul tău: 1 EUR în lei</Label>
-            <Input
-              id={`${id}-rate`}
-              inputMode="decimal"
-              {...rateField}
-              aria-invalid={!!error}
-              aria-describedby={`${id}-help${error ? ` ${id}-error` : ''}`}
-            />
-            {error && (
-              <p id={`${id}-error`} role="alert" className="text-destructive text-xs">
-                {error}
-              </p>
-            )}
-            <p id={`${id}-help`} className="text-muted-foreground text-sm">
-              Stabilești cursul pentru această ofertă. Părintele confirmă și plătește suma finală în
-              lei.
-            </p>
-          </div>
-        ))}
+      {currency === 'EUR' && (
+        <CursBnrAutomat
+          date={cursBnr.data?.date}
+          millionths={cursBnr.data?.eur_ron_millionths}
+          loading={cursBnr.isFetching && !cursBnr.data}
+          error={cursBnr.isError}
+          onRetry={() => void cursBnr.refetch()}
+        />
+      )}
       <p className="text-muted-foreground text-xs">
         Schimbarea monedei nu convertește automat valorile introduse.
+      </p>
+    </div>
+  )
+}
+
+function CursBnrAutomat({
+  date,
+  millionths,
+  loading,
+  error,
+  onRetry,
+}: {
+  date?: string
+  millionths?: number
+  loading: boolean
+  error: boolean
+  onRetry: () => void
+}) {
+  if (loading) {
+    return (
+      <div className="space-y-1.5" aria-busy="true" aria-live="polite">
+        <Skeleton className="h-5 w-64 max-w-full" />
+        <p className="text-muted-foreground text-sm">Se citește cursul BNR…</p>
+      </div>
+    )
+  }
+  if (error || date == null || millionths == null) {
+    return (
+      <div className="space-y-2" role="alert">
+        <p className="text-destructive text-sm">{CURS_BNR_EROARE}</p>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 min-h-11"
+          onClick={onRetry}
+          aria-label="Reîncearcă cursul BNR"
+        >
+          Reîncearcă
+        </Button>
+      </div>
+    )
+  }
+  return (
+    <div className="space-y-1.5">
+      <p className="text-sm font-medium" aria-live="polite">
+        Curs BNR din {formatBnrDate(date)}: {formatExchangeRate(millionths)} lei/EUR
+      </p>
+      <p className="text-muted-foreground text-sm">
+        Cursul BNR se salvează pe ofertă. Părintele confirmă și plătește suma finală în lei.
       </p>
     </div>
   )

@@ -5,7 +5,7 @@ import { intervaleSuprapuse } from '@/api/camps-admin'
 import {
   offerAmountSchema,
   offerCurrencyShape,
-  parseScaledDecimal,
+  validateOfferCurrency,
 } from '@/lib/pricing/offer-currency'
 
 const lei = offerAmountSchema
@@ -91,15 +91,7 @@ export const schema = z
       }),
     ),
   })
-  .superRefine((value, ctx) => {
-    if (value.currency === 'EUR' && !(parseScaledDecimal(value.eur_ron_rate, 6)! > 0)) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['eur_ron_rate'],
-        message: 'Nu am putut citi cursul BNR. Reîncearcă.',
-      })
-    }
-  })
+  .superRefine(validateOfferCurrency)
   .refine((v) => v.period_end >= v.period_start, {
     message: 'Sfârșitul nu poate fi înaintea începutului',
     path: ['period_end'],

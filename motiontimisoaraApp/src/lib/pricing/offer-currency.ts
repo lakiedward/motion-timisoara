@@ -30,15 +30,19 @@ export const offerCurrencyShape = {
   eur_ron_rate: z.string(),
 }
 
+export function eurFaraCurs(currency: string, rate: string | undefined) {
+  return currency === 'EUR' && !(parseScaledDecimal(rate ?? '', 6)! > 0)
+}
+
 export function validateOfferCurrency(
   value: { currency: string; eur_ron_rate: string },
   ctx: z.RefinementCtx,
 ) {
-  if (value.currency === 'EUR' && !(parseScaledDecimal(value.eur_ron_rate, 6)! > 0)) {
+  if (eurFaraCurs(value.currency, value.eur_ron_rate)) {
     ctx.addIssue({
       code: 'custom',
       path: ['eur_ron_rate'],
-      message: 'Introdu un curs pozitiv, cu cel mult șase zecimale',
+      message: 'Nu am putut citi cursul BNR. Reîncearcă.',
     })
   }
 }

@@ -550,12 +550,12 @@ reorganizing this document; correct obsolete facts with current evidence.
   `camp_age_prices`: category count and min–max of category totals, using the
   same en dash as the period on that card. Amount 0 is Gratuit. Legacy
   single-price cards still use `camps.price` and `camp_price_items`.
-- 2026-09-21 — To-Do #159 camp EUR rate is BNR automatic, not typed. The
-  form shows `Curs BNR din <date>: <rate> lei/EUR` from Edge Function
-  `bnr-rate` (`https://curs.bnr.ro/nbrfxrates.xml`, integer millionths,
-  in-memory + Cache-Control for the day, JWT). A missing feed blocks EUR
-  save. Frozen on the offer at save; existing enrollments unchanged.
-  Course/activity forms keep a typed rate.
+- 2026-09-21 — To-Do #159 camp, course and activity EUR rates are BNR
+  automatic, not typed. Organizer forms show `Curs BNR din <date>: <rate>
+  lei/EUR` from Edge Function `bnr-rate` (`https://curs.bnr.ro/nbrfxrates.xml`,
+  integer millionths, in-memory + Cache-Control for the day, JWT). A missing
+  feed blocks EUR save. Frozen on the offer at save; existing enrollments
+  unchanged.
 
 ## 11. Known Issues / WIP
 

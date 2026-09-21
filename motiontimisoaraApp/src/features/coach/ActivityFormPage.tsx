@@ -6,6 +6,7 @@ import {
   offerCurrencyInput,
   offerCurrencyValues,
   parseScaledDecimal,
+  eurFaraCurs,
 } from '@/lib/pricing/offer-currency'
 import { useEffect } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -69,12 +70,15 @@ export default function ActivityFormPage() {
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: { currency: 'RON', eur_ron_rate: '' },
   })
   const currency = useWatch({ control, name: 'currency' })
+  const cursEur = useWatch({ control, name: 'eur_ron_rate' })
+  const faraCurs = eurFaraCurs(currency, cursEur)
 
   useEffect(() => {
     if (existing) {
@@ -139,8 +143,7 @@ export default function ActivityFormPage() {
           <OfferCurrencyFields
             currency={currency}
             currencyField={register('currency')}
-            rateField={register('eur_ron_rate')}
-            error={errors.eur_ron_rate?.message}
+            setValue={setValue}
           />
           <div className="space-y-1.5">
             <Label htmlFor="sport_id">Sport</Label>
@@ -234,7 +237,7 @@ export default function ActivityFormPage() {
           />
         </div>
         <div className="flex gap-2 pt-2">
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting || faraCurs}>
             {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>
           <Button type="button" variant="outline" asChild>

@@ -8,7 +8,7 @@ import {
   type Values,
 } from './camp-form-schema'
 import { ofertaDinDraft, varsteDinDateSalvate } from './camp-form-totals'
-import { offerCurrencyValues, parseScaledDecimal } from '@/lib/pricing/offer-currency'
+import { eurFaraCurs, offerCurrencyValues } from '@/lib/pricing/offer-currency'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useForm, useWatch, type FieldErrors } from 'react-hook-form'
@@ -114,8 +114,7 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   const currency = useWatch({ control, name: 'currency' })
   const cursEur = useWatch({ control, name: 'eur_ron_rate' })
   const slugViu = useWatch({ control, name: 'slug' })
-  const eurFaraCurs =
-    currency === 'EUR' && !(parseScaledDecimal(cursEur ?? '', 6)! > 0)
+  const faraCurs = eurFaraCurs(currency, cursEur)
 
   const inapoiLaPas = (urmatorul: number) => {
     if (urmatorul < step) setStep(urmatorul)
@@ -275,7 +274,7 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
               Înapoi
             </Button>
           )}
-          <Button type="submit" className="h-11 min-h-11 px-6" disabled={isSubmitting || eurFaraCurs}>
+          <Button type="submit" className="h-11 min-h-11 px-6" disabled={isSubmitting || faraCurs}>
             {isSubmitting
               ? 'Se salvează…'
               : step < 2
