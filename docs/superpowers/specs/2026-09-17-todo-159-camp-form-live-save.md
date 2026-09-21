@@ -16,6 +16,11 @@ three steps. The last step calls `save_camp_offer`.
 - `0` remains free. RON/EUR remain.
 - Reopening edit shows the same steps with saved details and components.
 - The public camp page lists those components under each age category.
+- Organizer list cards on `/club/camps`, `/coach/camps` and `/admin/camps`
+  count `camp_age_prices` for `by_age` camps and show the min–max of those
+  totals with the same en dash as the period on the card. Amount `0` is
+  Gratuit. Legacy `single` cards still use `camps.price` and
+  `camp_price_items`.
 
 A missing `components` array on an older save becomes one `Participare` row
 with the stored amount, so existing `by_age` camps remain editable.

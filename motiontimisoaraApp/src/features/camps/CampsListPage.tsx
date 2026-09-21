@@ -4,7 +4,7 @@ import { Plus, Users, Images, ReceiptText, Clock } from 'lucide-react'
 
 import { getTaberelemele, type TabaraDinLista } from '@/api/camps-admin'
 import { formatZi, sAIncheiat } from '@/api/camps'
-import { formatMoney } from '@/lib/money'
+import { formatMoney, rezumatPretPeVarsta } from '@/lib/money'
 import { plural } from '@/lib/plural'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -86,6 +86,10 @@ function CardTabara({ tabara, baza }: { tabara: TabaraDinLista; baza: string }) 
   const incheiata = sAIncheiat(tabara.period_end)
   const plina = tabara.capacity !== null && tabara.locuriOcupate >= tabara.capacity
   const faraDesfasurare = tabara.categorii === 0
+  const pret =
+    tabara.pricing_mode === 'by_age'
+      ? rezumatPretPeVarsta(tabara.preturiPeVarsta, tabara.currency)
+      : formatMoney(tabara.price, tabara.currency)
 
   return (
     <Link
@@ -106,7 +110,7 @@ function CardTabara({ tabara, baza }: { tabara: TabaraDinLista; baza: string }) 
         {tabara.location_text ? ` · ${tabara.location_text}` : ''}
       </p>
 
-      <p className="mt-3 font-semibold">{formatMoney(tabara.price, tabara.currency)}</p>
+      <p className="mt-3 font-semibold">{pret}</p>
 
       <ul className="text-muted-foreground mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
         <li className="inline-flex items-center gap-1">

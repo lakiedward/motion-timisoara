@@ -546,6 +546,10 @@ reorganizing this document; correct obsolete facts with current evidence.
   `camp_price_items`. Existing enrollments are not recalculated. Templates
   stay later. See
   `docs/superpowers/specs/2026-09-17-todo-159-camp-form-live-save.md`.
+- 2026-09-21 — To-Do #159 organizer camp list cards for `by_age` read
+  `camp_age_prices`: category count and min–max of category totals, using the
+  same en dash as the period on that card. Amount 0 is Gratuit. Legacy
+  single-price cards still use `camps.price` and `camp_price_items`.
 
 ## 11. Known Issues / WIP
 

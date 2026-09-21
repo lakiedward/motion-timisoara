@@ -23,6 +23,14 @@ export function formatOfferPrice(amount: number, currency: string): string {
   return amount === 0 ? 'Gratuit' : formatMoney(amount, currency)
 }
 
+export function rezumatPretPeVarsta(sume: number[], currency: string): string {
+  if (sume.length === 0) return formatOfferPrice(0, currency)
+  const min = Math.min(...sume)
+  const max = Math.max(...sume)
+  if (min === max) return formatOfferPrice(min, currency)
+  return `${formatOfferPrice(min, currency)} – ${formatOfferPrice(max, currency)}`
+}
+
 export function formatRonOffer(bani: number): string {
   return bani === 0 ? 'Gratuit' : formatRon(bani)
 }

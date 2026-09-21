@@ -1,6 +1,34 @@
-import { expect, test } from 'vitest'
+import { beforeEach, expect, test, vi } from 'vitest'
 
-import { intervaleSuprapuse, slugDinTitlu, sumaCategoriilor } from './camps-admin'
+import {
+  getTaberelemele,
+  intervaleSuprapuse,
+  slugDinTitlu,
+  sumaCategoriilor,
+} from './camps-admin'
+
+let raspuns: Record<string, { data: unknown; error: unknown }> = {}
+let cereri: Record<string, string[]> = {}
+
+function tabela(nume: string) {
+  const proxy: unknown = new Proxy(() => undefined, {
+    get(_t, prop: string) {
+      if (prop === 'then') {
+        return (resolve: (v: unknown) => unknown) =>
+          Promise.resolve(resolve(raspuns[nume] ?? { data: [], error: null }))
+      }
+      return (...args: unknown[]) => {
+        ;(cereri[nume] ??= []).push(`${prop}(${args.map(String).join(',')})`)
+        return proxy
+      }
+    },
+  })
+  return proxy
+}
+
+vi.mock('@/lib/supabase', () => ({
+  supabase: { from: (nume: string) => tabela(nume) },
+}))
 
 // Capetele intervalelor sunt incluse, ca în baza de date (00037): un copil de 8
 // ani intră și în 6–8, și în 8–10, deci cele două se suprapun. Formularul arată
@@ -54,4 +82,65 @@ test('suma categoriilor se face în bani, nu în lei', () => {
 // vede „nu se potrivește" fără să înțeleagă de ce.
 test('o sumă încă necompletată nu otrăvește totalul', () => {
   expect(sumaCategoriilor([{ amount: 100 }, { amount: Number.NaN }])).toBe(100)
+})
+
+beforeEach(() => {
+  raspuns = {}
+  cereri = {}
+})
+
+const CAMP_BY_AGE = {
+  id: 'camp-age',
+  pricing_mode: 'by_age',
+  price: 0,
+  club_id: 'club-1',
+  coach_id: null,
+}
+const CAMP_SINGLE = {
+  id: 'camp-single',
+  pricing_mode: 'single',
+  price: 90000,
+  club_id: 'club-1',
+  coach_id: null,
+}
+
+test('lista by_age numără prețurile pe vârstă, nu itemele globale', async () => {
+  raspuns = {
+    camps: { data: [CAMP_BY_AGE, CAMP_SINGLE], error: null },
+    enrollments: { data: [], error: null },
+    camp_price_items: {
+      data: [{ camp_id: 'camp-age' }, { camp_id: 'camp-single' }, { camp_id: 'camp-single' }],
+      error: null,
+    },
+    camp_coaches: { data: [], error: null },
+    camp_age_prices: {
+      data: [
+        { camp_id: 'camp-age', amount: 0 },
+        { camp_id: 'camp-age', amount: 60000 },
+      ],
+      error: null,
+    },
+  }
+  const lista = await getTaberelemele({ clubId: 'club-1', coachUserId: null })
+  expect(cereri.camps.some((f) => f.includes('eq(club_id,club-1)'))).toBe(true)
+  expect(cereri.camp_age_prices.some((f) => f.includes('in(camp_id'))).toBe(true)
+  const peVarsta = lista.find((t) => t.id === 'camp-age')
+  const unica = lista.find((t) => t.id === 'camp-single')
+  expect(peVarsta?.categorii).toBe(2)
+  expect(peVarsta?.preturiPeVarsta).toEqual([0, 60000])
+  expect(unica?.categorii).toBe(2)
+  expect(unica?.preturiPeVarsta).toEqual([])
+})
+
+test('fără prețuri pe vârstă, by_age rămâne cu zero categorii', async () => {
+  raspuns = {
+    camps: { data: [CAMP_BY_AGE], error: null },
+    enrollments: { data: [], error: null },
+    camp_price_items: { data: [{ camp_id: 'camp-age' }], error: null },
+    camp_coaches: { data: [], error: null },
+    camp_age_prices: { data: [], error: null },
+  }
+  const [tabara] = await getTaberelemele({ clubId: 'club-1', coachUserId: null })
+  expect(tabara.categorii).toBe(0)
+  expect(tabara.preturiPeVarsta).toEqual([])
 })

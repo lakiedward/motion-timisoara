@@ -69,6 +69,7 @@ export interface Proprietar {
 export interface TabaraDinLista extends Tabara {
   locuriOcupate: number
   categorii: number
+  preturiPeVarsta: number[]
   antrenoriAcceptati: number
   antrenoriInAsteptare: number
 }
@@ -85,7 +86,7 @@ export async function getTaberelemele(p: Proprietar): Promise<TabaraDinLista[]> 
   if (!tabere.length) return []
 
   const ids = tabere.map((t) => t.id)
-  const [inscrieri, categorii, antrenori] = await Promise.all([
+  const [inscrieri, categorii, antrenori, varste] = await Promise.all([
     supabase
       .from('enrollments')
       .select('entity_id, status')
@@ -93,10 +94,12 @@ export async function getTaberelemele(p: Proprietar): Promise<TabaraDinLista[]> 
       .in('entity_id', ids),
     supabase.from('camp_price_items').select('camp_id').in('camp_id', ids),
     supabase.from('camp_coaches').select('camp_id, status').in('camp_id', ids),
+    supabase.from('camp_age_prices').select('camp_id, amount').in('camp_id', ids),
   ])
   if (inscrieri.error) throw inscrieri.error
   if (categorii.error) throw categorii.error
   if (antrenori.error) throw antrenori.error
+  if (varste.error) throw varste.error
 
   const numara = <T>(
     randuri: T[],
@@ -113,6 +116,12 @@ export async function getTaberelemele(p: Proprietar): Promise<TabaraDinLista[]> 
     (r) => r.status === 'ACTIVE' || r.status === 'PENDING',
   )
   const cat = numara(categorii.data ?? [], (r) => r.camp_id)
+  const sumePeTabara = (varste.data ?? []).reduce<Record<string, number[]>>((acc, r) => {
+    const amount = typeof r.amount === 'number' ? r.amount : Number(r.amount)
+    if (!Number.isFinite(amount)) return acc
+    ;(acc[r.camp_id] ??= []).push(amount)
+    return acc
+  }, {})
   const acceptati = numara(
     antrenori.data ?? [],
     (r) => r.camp_id,
@@ -124,13 +133,18 @@ export async function getTaberelemele(p: Proprietar): Promise<TabaraDinLista[]> 
     (r) => r.status === 'invited',
   )
 
-  return tabere.map((t) => ({
-    ...t,
-    locuriOcupate: ocupate[t.id] ?? 0,
-    categorii: cat[t.id] ?? 0,
-    antrenoriAcceptati: acceptati[t.id] ?? 0,
-    antrenoriInAsteptare: inAsteptare[t.id] ?? 0,
-  }))
+  return tabere.map((t) => {
+    const peVarsta = t.pricing_mode === 'by_age'
+    const sume = sumePeTabara[t.id] ?? []
+    return {
+      ...t,
+      locuriOcupate: ocupate[t.id] ?? 0,
+      categorii: peVarsta ? sume.length : (cat[t.id] ?? 0),
+      preturiPeVarsta: peVarsta ? sume : [],
+      antrenoriAcceptati: acceptati[t.id] ?? 0,
+      antrenoriInAsteptare: inAsteptare[t.id] ?? 0,
+    }
+  })
 }
 
 export async function getTabaraDeEditat(id: string): Promise<Tabara | null> {
