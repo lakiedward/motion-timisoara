@@ -539,9 +539,23 @@ reorganizing this document; correct obsolete facts with current evidence.
 
 - 2026-09-17 — To-Do #159 stage 1 draft is a local three-step camp form
   (Detalii, Categorii și costuri, Verificare). Category totals are the sum of
-  named components; there is no competing global camp price. Live save,
-  enrollment display and templates are later slices. See
+  named components; there is no competing global camp price. See
   `docs/superpowers/specs/2026-09-17-todo-159-camp-form-draft.md`.
+- 2026-09-17 — To-Do #159 live save persists named components on
+  `camp_age_prices.components`, always `by_age`, `camps.price` 0, empty
+  `camp_price_items`. Existing enrollments are not recalculated. Templates
+  stay later. See
+  `docs/superpowers/specs/2026-09-17-todo-159-camp-form-live-save.md`.
+- 2026-09-21 — To-Do #159 organizer camp list cards for `by_age` read
+  `camp_age_prices`: category count and min–max of category totals, using the
+  same en dash as the period on that card. Amount 0 is Gratuit. Legacy
+  single-price cards still use `camps.price` and `camp_price_items`.
+- 2026-09-21 — To-Do #159 camp, course and activity EUR rates are BNR
+  automatic, not typed. Organizer forms show `Curs BNR din <date>: <rate>
+  lei/EUR` from Edge Function `bnr-rate` (`https://curs.bnr.ro/nbrfxrates.xml`,
+  integer millionths, in-memory + Cache-Control for the day, JWT). A missing
+  feed blocks EUR save. Frozen on the offer at save; existing enrollments
+  unchanged.
 
 ## 11. Known Issues / WIP
 

@@ -6,6 +6,7 @@ import {
   type Control,
   type FieldErrors,
   type UseFormRegister,
+  type UseFormSetValue,
 } from 'react-hook-form'
 import { toast } from 'sonner'
 
@@ -21,6 +22,7 @@ import CampFormField from './CampFormField'
 type Props = {
   control: Control<Values>
   register: UseFormRegister<Values>
+  setValue: UseFormSetValue<Values>
   errors: FieldErrors<Values>
   currency: string
   proprietar: Proprietar
@@ -31,6 +33,7 @@ type Props = {
 export default function CampAgePricesSection({
   control,
   register,
+  setValue,
   errors,
   currency,
   proprietar,
@@ -80,8 +83,7 @@ export default function CampAgePricesSection({
           <OfferCurrencyFields
             currency={currency}
             currencyField={register('currency')}
-            rateField={register('eur_ron_rate')}
-            error={errors.eur_ron_rate?.message}
+            setValue={setValue}
           />
         </div>
 

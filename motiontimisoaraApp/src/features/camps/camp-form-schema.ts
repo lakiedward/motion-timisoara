@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { baniToRon } from '@/lib/money'
+import { citesteComponentePret } from '@/lib/camp-age-components'
 import { intervaleSuprapuse } from '@/api/camps-admin'
 import {
   offerAmountSchema,
@@ -131,8 +132,19 @@ export const GOL: Values = {
 
 export const num = (s: string | undefined) => (s && s.trim() ? Number(s) : null)
 
-export const spreCamp = (c: { age_from: number; age_to: number; amount: number }) => ({
-  age_from: String(c.age_from),
-  age_to: String(c.age_to),
-  componente: [{ name: 'Participare', amount_lei: String(baniToRon(c.amount)) }],
-})
+export const spreCamp = (c: {
+  age_from: number
+  age_to: number
+  amount: number
+  components?: unknown
+}) => {
+  const salvate = citesteComponentePret(c.components)
+  return {
+    age_from: String(c.age_from),
+    age_to: String(c.age_to),
+    componente:
+      salvate.length > 0
+        ? salvate.map((item) => ({ name: item.name, amount_lei: String(baniToRon(item.amount)) }))
+        : [{ name: 'Participare', amount_lei: String(baniToRon(c.amount)) }],
+  }
+}

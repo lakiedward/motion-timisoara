@@ -44,33 +44,20 @@ test('oferta din draft nu are preț global și păstrează suma pe categorie', (
   expect(oferta.breakdown).toEqual([])
   expect(oferta.mode).toBe('by_age')
   expect(oferta.agePrices).toEqual([
-    { age_from: 6, age_to: 8, amount: 60000 },
-    { age_from: 9, age_to: 12, amount: 0 },
-  ])
-  expect(oferta.componente).toEqual([
     {
       age_from: 6,
       age_to: 8,
-      name: 'Cazare',
-      amount: 40000,
-      display_order: 0,
-      category_index: 0,
-    },
-    {
-      age_from: 6,
-      age_to: 8,
-      name: 'Masă',
-      amount: 20000,
-      display_order: 1,
-      category_index: 0,
+      amount: 60000,
+      components: [
+        { name: 'Cazare', amount: 40000 },
+        { name: 'Masă', amount: 20000 },
+      ],
     },
     {
       age_from: 9,
       age_to: 12,
-      name: 'Cazare',
       amount: 0,
-      display_order: 0,
-      category_index: 1,
+      components: [{ name: 'Cazare', amount: 0 }],
     },
   ])
 })
@@ -87,6 +74,35 @@ test('datele salvate pe vârstă revin ca o componentă Participare', () => {
       age_from: '6',
       age_to: '8',
       componente: [{ name: 'Participare', amount_lei: '700' }],
+    },
+  ])
+})
+
+test('componentele salvate pe categorie revin cu numele lor', () => {
+  expect(
+    varsteDinDateSalvate({
+      agePrices: [
+        {
+          age_from: 6,
+          age_to: 8,
+          amount: 60000,
+          components: [
+            { name: 'Cazare', amount: 40000 },
+            { name: 'Masă', amount: 20000 },
+          ],
+        },
+      ],
+      priceItems: [],
+      campPrice: 0,
+    }),
+  ).toEqual([
+    {
+      age_from: '6',
+      age_to: '8',
+      componente: [
+        { name: 'Cazare', amount_lei: '400' },
+        { name: 'Masă', amount_lei: '200' },
+      ],
     },
   ])
 })

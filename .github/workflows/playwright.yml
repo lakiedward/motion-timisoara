@@ -93,9 +93,9 @@ jobs:
       with:
         deno-version: v2.9.6
     - name: Check enrollment functions
-      run: deno check --no-lock supabase/functions/validate-enrollment/index.ts supabase/functions/create-enrollment/index.ts supabase/functions/create-payment-intent/index.ts supabase/functions/record-attendance/index.ts supabase/functions/coach-live-location/index.ts
+      run: deno check --no-lock supabase/functions/validate-enrollment/index.ts supabase/functions/create-enrollment/index.ts supabase/functions/create-payment-intent/index.ts supabase/functions/record-attendance/index.ts supabase/functions/coach-live-location/index.ts supabase/functions/bnr-rate/index.ts
     - name: Test enrollment pricing contract
-      run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/price-snapshot.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/record-attendance-contract.test.ts supabase/functions/coach-live-location-contract.test.ts supabase/functions/camp-live-location-contract.test.ts
+      run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/price-snapshot.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/record-attendance-contract.test.ts supabase/functions/coach-live-location-contract.test.ts supabase/functions/camp-live-location-contract.test.ts supabase/functions/bnr-rate-contract.test.ts
     - name: Test payment confirmation and intent retries
       run: deno test --no-lock supabase/functions/payment-completion-contract.test.ts supabase/functions/_shared/payment-intent.test.ts
     - name: Check payment confirmation functions

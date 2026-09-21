@@ -8,6 +8,16 @@ export function parseScaledDecimal(value: string, decimals: number): number | nu
   return scaled <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(scaled) : null
 }
 
+export function millionthsToDecimal(millionths: number): string {
+  const sign = millionths < 0 ? '-' : ''
+  const abs = Math.abs(millionths)
+  const whole = Math.trunc(abs / 1_000_000)
+  const frac = String(abs % 1_000_000)
+    .padStart(6, '0')
+    .replace(/0+$/, '')
+  return frac ? `${sign}${whole}.${frac}` : `${sign}${whole}`
+}
+
 export const offerAmountSchema = z
   .string()
   .refine(
@@ -20,15 +30,19 @@ export const offerCurrencyShape = {
   eur_ron_rate: z.string(),
 }
 
+export function eurFaraCurs(currency: string, rate: string | undefined) {
+  return currency === 'EUR' && !(parseScaledDecimal(rate ?? '', 6)! > 0)
+}
+
 export function validateOfferCurrency(
   value: { currency: string; eur_ron_rate: string },
   ctx: z.RefinementCtx,
 ) {
-  if (value.currency === 'EUR' && !(parseScaledDecimal(value.eur_ron_rate, 6)! > 0)) {
+  if (eurFaraCurs(value.currency, value.eur_ron_rate)) {
     ctx.addIssue({
       code: 'custom',
       path: ['eur_ron_rate'],
-      message: 'Introdu un curs pozitiv, cu cel mult șase zecimale',
+      message: 'Nu am putut citi cursul BNR. Reîncearcă.',
     })
   }
 }
@@ -48,7 +62,7 @@ export function offerCurrencyValues(value: {
   return {
     currency: value.currency === 'EUR' ? ('EUR' as const) : ('RON' as const),
     eur_ron_rate:
-      value.eur_ron_rate_micros == null ? '' : String(value.eur_ron_rate_micros / 1000000),
+      value.eur_ron_rate_micros == null ? '' : millionthsToDecimal(value.eur_ron_rate_micros),
   }
 }
 

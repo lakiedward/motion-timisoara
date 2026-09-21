@@ -7,6 +7,7 @@ import {
   offerCurrencyInput,
   offerCurrencyValues,
   parseScaledDecimal,
+  eurFaraCurs,
 } from '@/lib/pricing/offer-currency'
 import {
   courseProgramSchema,
@@ -85,6 +86,8 @@ export default function CourseFormPage() {
     defaultValues: { currency: 'RON', eur_ron_rate: '', program: emptyCourseProgram() },
   })
   const currency = useWatch({ control, name: 'currency' })
+  const cursEur = useWatch({ control, name: 'eur_ron_rate' })
+  const faraCurs = eurFaraCurs(currency, cursEur)
 
   useEffect(() => {
     if (existing) {
@@ -156,8 +159,7 @@ export default function CourseFormPage() {
           <OfferCurrencyFields
             currency={currency}
             currencyField={register('currency')}
-            rateField={register('eur_ron_rate')}
-            error={errors.eur_ron_rate?.message}
+            setValue={setValue}
           />
           <div className="space-y-1.5">
             <Label htmlFor="sport_id">Sport</Label>
@@ -240,7 +242,7 @@ export default function CourseFormPage() {
           />
         </div>
         <div className="flex gap-2 pt-2">
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting || faraCurs}>
             {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>
           <Button type="button" variant="outline" asChild>

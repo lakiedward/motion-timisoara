@@ -4,22 +4,29 @@ import {
   CAMP_FORM_STEPS,
   COSTURI_FIELDS,
   DETALII_FIELDS,
+  num,
   type Values,
 } from './camp-form-schema'
-import { varsteDinDateSalvate } from './camp-form-totals'
-import { offerCurrencyValues } from '@/lib/pricing/offer-currency'
+import { ofertaDinDraft, varsteDinDateSalvate } from './camp-form-totals'
+import { eurFaraCurs, offerCurrencyValues } from '@/lib/pricing/offer-currency'
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useForm, useWatch, type FieldErrors } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Check } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { getCategoriile, getPreturilePeVarsta, getTabaraDeEditat } from '@/api/camps-admin'
+import {
+  getCategoriile,
+  getPreturilePeVarsta,
+  getTabaraDeEditat,
+  saveCampOffer,
+} from '@/api/camps-admin'
 import { getClubSelectableLocations } from '@/api/club'
 import { getSelectableLocations } from '@/api/coach'
-import { readCampRequirements } from '@/lib/camp-requirements'
+import { campRequirementsForSave, readCampRequirements } from '@/lib/camp-requirements'
+import { campRulesForSave } from '@/lib/camp-rules'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useProprietarTabere } from './useProprietarTabere'
@@ -31,6 +38,9 @@ import CampFormReviewStep from './CampFormReviewStep'
 export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   const { id } = useParams()
   const eEditare = !!id
+  const [newCampId] = useState(() => crypto.randomUUID())
+  const navigate = useNavigate()
+  const qc = useQueryClient()
   const { proprietar, gata, eClub } = useProprietarTabere()
   const [step, setStep] = useState(0)
 
@@ -68,7 +78,7 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
     getValues,
     control,
     trigger,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: GOL })
 
   useEffect(() => {
@@ -102,7 +112,9 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   }, [tabara, categorii, categoriiGata, varste, varsteGata, locatiiGata, reset])
 
   const currency = useWatch({ control, name: 'currency' })
+  const cursEur = useWatch({ control, name: 'eur_ron_rate' })
   const slugViu = useWatch({ control, name: 'slug' })
+  const faraCurs = eurFaraCurs(currency, cursEur)
 
   const inapoiLaPas = (urmatorul: number) => {
     if (urmatorul < step) setStep(urmatorul)
@@ -118,8 +130,43 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
     }
   }
 
-  const onLocalDraft = () => {
-    toast.success('Draft local păstrat. Salvarea în tabără urmează după acest prototip.')
+  const onSubmit = async (v: Values) => {
+    if (!gata) return
+    const oferta = ofertaDinDraft(v)
+    try {
+      const campId = id ?? newCampId
+      await saveCampOffer(
+        campId,
+        oferta.amount,
+        oferta.breakdown,
+        oferta.offer,
+        oferta.mode,
+        oferta.agePrices,
+        {
+          title: v.title,
+          slug: v.slug,
+          description: v.description?.trim() ? v.description : null,
+          rules: campRulesForSave(v.rules),
+          period_start: v.period_start,
+          period_end: v.period_end,
+          location_id: v.location_id || null,
+          location_text: v.location_text?.trim() ? v.location_text : null,
+          capacity: num(v.capacity),
+          allow_cash: v.allow_cash,
+          camp_requirements: campRequirementsForSave(v.necesar),
+        },
+        proprietar,
+      )
+      void qc.invalidateQueries({ queryKey: ['taberele-mele'] })
+      void qc.invalidateQueries({ queryKey: ['tabara-de-editat', campId] })
+      void qc.invalidateQueries({ queryKey: ['categoriile-taberei', campId] })
+      void qc.invalidateQueries({ queryKey: ['preturile-pe-varsta', campId] })
+      toast.success(eEditare ? 'Tabără actualizată.' : 'Tabără creată.')
+      navigate(baza)
+    } catch (e) {
+      const mesaj = e instanceof Error ? e.message : ''
+      toast.error(mesaj || 'Nu am putut salva tabăra.')
+    }
   }
 
   const onInvalid = (invalide: FieldErrors<Values>) => {
@@ -131,7 +178,7 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   const onFormSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (step < 2) void next()
-    else void handleSubmit(onLocalDraft, onInvalid)()
+    else void handleSubmit(onSubmit, onInvalid)()
   }
 
   if (eEditare && eroareTabara) {
@@ -153,14 +200,6 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
       <h1 className="font-display mt-2 text-2xl font-bold">
         {eEditare ? 'Editează tabăra' : 'Tabără nouă'}
       </h1>
-      <p
-        role="status"
-        className="border-border bg-muted text-muted-foreground mt-3 rounded-2xl border border-dashed p-4 text-sm"
-      >
-        Draft local — prototip pentru noul flux. Datele rămân în formular; nu se salvează încă în
-        tabără.
-      </p>
-
       <ol className="mt-6 mb-6 flex flex-wrap gap-2" aria-label="Pașii formularului">
         {CAMP_FORM_STEPS.map((label, i) => {
           const current = i === step
@@ -214,6 +253,7 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
           <CampAgePricesSection
             control={control}
             register={register}
+            setValue={setValue}
             errors={errors}
             currency={currency}
             proprietar={proprietar}
@@ -234,8 +274,14 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
               Înapoi
             </Button>
           )}
-          <Button type="submit" className="h-11 min-h-11 px-6">
-            {step < 2 ? 'Continuă' : 'Păstrează draftul local'}
+          <Button type="submit" className="h-11 min-h-11 px-6" disabled={isSubmitting || faraCurs}>
+            {isSubmitting
+              ? 'Se salvează…'
+              : step < 2
+                ? 'Continuă'
+                : eEditare
+                  ? 'Salvează tabăra'
+                  : 'Creează tabăra'}
           </Button>
         </div>
       </form>

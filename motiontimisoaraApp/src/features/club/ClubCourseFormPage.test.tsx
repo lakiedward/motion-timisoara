@@ -13,6 +13,7 @@ import {
   getMyClub,
 } from '@/api/club'
 import { fetchSports } from '@/api/sports'
+import { getCursBnr } from '@/api/bnr-rate'
 
 vi.mock('@/api/club', () => ({
   getMyClub: vi.fn(),
@@ -23,6 +24,10 @@ vi.mock('@/api/club', () => ({
   updateClubCourse: vi.fn(),
 }))
 vi.mock('@/api/sports', () => ({ fetchSports: vi.fn() }))
+vi.mock('@/api/bnr-rate', async () => {
+  const real = await vi.importActual<typeof import('@/api/bnr-rate')>('@/api/bnr-rate')
+  return { ...real, getCursBnr: vi.fn() }
+})
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 const mockedClub = vi.mocked(getMyClub)
@@ -64,6 +69,7 @@ beforeEach(() => {
   mockedLocations.mockResolvedValue([
     { id: LOC_COMUNA, name: 'Bazin Olimpic Timișoara', city: 'Timișoara' },
   ] as never)
+  vi.mocked(getCursBnr).mockResolvedValue({ date: '2026-09-19', eur_ron_millionths: 5123456 })
 })
 
 // --- Criteriul 1: precompletarea nu mai pierde antrenorul si locatia ---
@@ -253,4 +259,26 @@ test('titlul urmează modul: „Curs nou” la creare, „Editează curs” la e
   } as never)
   renderForm('/club/courses/c1/edit')
   expect(await screen.findByRole('heading', { name: 'Editează curs' })).toBeInTheDocument()
+})
+
+test('EUR citește cursul BNR și îl îngheață pe cursul de club', async () => {
+  const user = userEvent.setup()
+  vi.mocked(createClubCourse).mockResolvedValue(undefined as never)
+  renderForm()
+  await user.type(await screen.findByLabelText('Nume curs'), 'Curs euro')
+  await user.selectOptions(screen.getByLabelText('Antrenor'), ANTRENOR)
+  await user.selectOptions(screen.getByLabelText('Sport'), SPORT)
+  await user.selectOptions(screen.getByLabelText('Locație'), LOC_COMUNA)
+  await user.click(screen.getByRole('radio', { name: 'Euro (EUR)' }))
+  expect(await screen.findByText('Curs BNR din 19.09.2026: 5,123456 lei/EUR')).toBeInTheDocument()
+  expect(screen.queryByLabelText('Cursul tău: 1 EUR în lei')).not.toBeInTheDocument()
+  await user.type(screen.getByLabelText('Preț / ședință (EUR)'), '25')
+  await completeazaProgram(user)
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() => expect(createClubCourse).toHaveBeenCalled())
+  expect(vi.mocked(createClubCourse).mock.calls[0][1]).toMatchObject({
+    currency: 'EUR',
+    eur_ron_rate_micros: 5123456,
+    price_per_session: 2500,
+  })
 })

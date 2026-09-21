@@ -1,6 +1,6 @@
 import { formatZi } from '@/api/camps'
 import { formatOfferPrice } from '@/lib/money'
-import { parseScaledDecimal } from '@/lib/pricing/offer-currency'
+import { formatExchangeRate, parseScaledDecimal } from '@/lib/pricing/offer-currency'
 import { campPeriodDurationLabel } from '@/lib/camp-period'
 import { Badge } from '@/components/ui/badge'
 import { totalCategorieBani } from './camp-form-totals'
@@ -33,7 +33,7 @@ export default function CampFormReviewStep({
         Verificare
       </h2>
       <p className="text-muted-foreground text-sm">
-        Controlează categoriile și totalurile. Draftul rămâne local; nu se scrie în tabără.
+        Controlează categoriile și totalurile, apoi salvează tabăra.
       </p>
 
       <div className="rounded-2xl border p-5">
@@ -72,7 +72,9 @@ export default function CampFormReviewStep({
           <div className="flex flex-wrap justify-between gap-2">
             <dt className="text-muted-foreground">Monedă</dt>
             <dd className="font-medium">
-              {values.currency === 'EUR' ? `EUR, curs ${values.eur_ron_rate} lei` : 'RON'}
+              {values.currency === 'EUR'
+                ? `EUR, curs BNR ${formatExchangeRate(parseScaledDecimal(values.eur_ron_rate, 6) ?? 0)} lei`
+                : 'RON'}
             </dd>
           </div>
         </dl>
