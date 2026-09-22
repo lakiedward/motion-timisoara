@@ -10,7 +10,7 @@ $$;
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
 
 CREATE SCHEMA IF NOT EXISTS auth;
-CREATE FUNCTION auth.uid()
+CREATE OR REPLACE FUNCTION auth.uid()
 RETURNS UUID
 LANGUAGE sql
 STABLE
@@ -18,7 +18,7 @@ AS $$
     SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid
 $$;
 
-CREATE FUNCTION public.get_my_role()
+CREATE OR REPLACE FUNCTION public.get_my_role()
 RETURNS TEXT
 LANGUAGE sql
 STABLE
@@ -26,7 +26,7 @@ AS $$
     SELECT NULLIF(current_setting('request.jwt.claim.role', true), '')
 $$;
 
-CREATE FUNCTION public.my_club_ids()
+CREATE OR REPLACE FUNCTION public.my_club_ids()
 RETURNS SETOF UUID
 LANGUAGE sql
 STABLE
@@ -84,7 +84,7 @@ GRANT USAGE ON SCHEMA storage TO authenticated, anon;
 GRANT SELECT, INSERT, DELETE ON storage.objects TO authenticated, anon;
 GRANT SELECT, INSERT, UPDATE ON storage.buckets TO authenticated;
 
-CREATE FUNCTION storage.foldername(name TEXT)
+CREATE OR REPLACE FUNCTION storage.foldername(name TEXT)
 RETURNS TEXT[]
 LANGUAGE plpgsql
 IMMUTABLE
