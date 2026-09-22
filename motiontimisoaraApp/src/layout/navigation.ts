@@ -11,6 +11,7 @@ import {
   Megaphone,
   Tent,
   Ticket,
+  Trophy,
   Users,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -27,6 +28,7 @@ export const coachNavigation: PortalNavItem[] = [
   { to: '/coach/courses', label: 'Cursuri', icon: GraduationCap },
   { to: '/coach/activities', label: 'Activități', icon: CalendarRange },
   { to: '/coach/camps', label: 'Tabere', icon: Tent },
+  { to: '/coach/competitions', label: 'Concursuri', icon: Trophy },
   { to: '/coach/locations', label: 'Locații', icon: MapPin },
   { to: '/coach/attendance', label: 'Prezență', icon: ClipboardCheck },
 ]
@@ -39,6 +41,7 @@ export const clubNavigation: PortalNavItem[] = [
   { to: '/club/courses', label: 'Cursuri', icon: GraduationCap },
   { to: '/club/activities', label: 'Activități', icon: CalendarRange },
   { to: '/club/camps', label: 'Tabere', icon: Tent },
+  { to: '/club/competitions', label: 'Concursuri', icon: Trophy },
   { to: '/club/locations', label: 'Locații', icon: MapPin },
 ]
 
@@ -48,6 +51,7 @@ export const adminNavigation: PortalNavItem[] = [
   { to: '/admin/clubs', label: 'Cluburi', icon: Building2 },
   { to: '/admin/courses', label: 'Cursuri', icon: GraduationCap },
   { to: '/admin/camps', label: 'Tabere', icon: Tent },
+  { to: '/admin/competitions', label: 'Concursuri', icon: Trophy },
   { to: '/admin/sports', label: 'Sporturi', icon: Dumbbell },
   { to: '/admin/codes', label: 'Coduri invitație', icon: Ticket },
 ]
@@ -56,6 +60,7 @@ export const publicNavigation: PortalNavItem[] = [
   { to: '/cursuri', label: 'Cursuri', icon: GraduationCap },
   { to: '/activitati', label: 'Activități', icon: CalendarRange },
   { to: '/tabere', label: 'Tabere', icon: Tent },
+  { to: '/concursuri', label: 'Concursuri', icon: Trophy },
   { to: '/harta', label: 'Hartă', icon: MapPin },
   { to: '/antrenori', label: 'Antrenori', icon: Users },
   { to: '/cluburi', label: 'Cluburi', icon: Building2 },

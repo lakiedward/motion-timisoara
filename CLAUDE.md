@@ -571,6 +571,12 @@ reorganizing this document; correct obsolete facts with current evidence.
   as its courses, including the one rules file, and picks the coach from its
   roster. The activity column guard is removed. INSERT and UPDATE follow the
   course policies. Migration `00067_club_activity_management.sql`.
+- 2026-09-22 — To-Do #153 slice is a public competition presentation: name,
+  description, and an optional hero. Club, coach, and admin create it the same
+  way they create camps. A saved row is public immediately. GPX, age categories,
+  enrollment, payments, and podium stay later. Migration
+  `00069_competitions.sql`. See
+  `docs/superpowers/specs/2026-09-22-todo-153-competitions-skeleton.md`.
 - 2026-09-22 — To-Do #159 stage 2 camp templates are owner-scoped snapshots.
   They copy currency, age categories, components, description, rules text,
   packing list, cash, location and capacity. Title, slug, period, rules file,

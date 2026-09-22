@@ -244,10 +244,16 @@ then a copy error in the snapshot guard was corrected to match the git file.
 Edge Functions after that apply: `validate-enrollment` ACTIVE v8 JWT and
 `create-enrollment` ACTIVE v10 JWT.
 
+To-Do #153 skeleton: `00069_competitions.sql` was applied as remote version
+`20260922171407` (`competitions_skeleton`) on 2026-09-22. It adds
+`public.competitions`, `pot_administra_concurs`, and the public bucket
+`competition-photos` (owner select/insert/delete, no public listing). A
+rollback probe on a subset of the constraints ran first and left no rows.
+`00065`–`00068` were not re-applied. The table was empty after apply.
+
 To-Do #159 stage 2: git file `00070_camp_templates.sql` was applied once on
 2026-09-22 as `20260922172538` (`camp_templates`). It was not re-applied.
-`00069_competitions.sql` is To-Do #153 (`20260922171407`, `competitions_skeleton`)
-and is not part of this file. `00065`–`00068` were not re-applied.
+`00065`–`00069` were not re-applied.
 
 To confirm git and the remote still agree:
 
