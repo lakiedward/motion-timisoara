@@ -67,6 +67,15 @@ on:
       - '.github/workflows/playwright.yml'
 
 jobs:
+  competition-sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v4
+    - name: Test isolated competition SQL
+      shell: pwsh
+      run: ./supabase/tests/run-competition-offers-and-coaches.ps1
+
   test:
     # ~8 minute măsurate pentru chromium cu un singur worker. 20 lasă loc de
     # instalări și de o rulare lentă, fără să țină o oră un job blocat.
@@ -140,9 +149,6 @@ jobs:
     - name: Test isolated camp adult enrollment
       shell: pwsh
       run: ./supabase/tests/run-camp-adult-enrollment.ps1
-    - name: Test isolated competition SQL
-      shell: pwsh
-      run: ./supabase/tests/run-competition-offers-and-coaches.ps1
     - name: Test atomic payment completion and concurrent confirmations
       shell: pwsh
       run: ./supabase/tests/run-enrollment-payment-completion.ps1

@@ -42,7 +42,7 @@ The old skeleton remains available during the migration. No tracker human-gate f
 
 ## Local verification on 2026-09-23
 
-- Application typecheck, lint, 1,264 Vitest tests, and production build passed. The UI conventions document was regenerated from code after the initial test run found a stale inventory.
+- Application typecheck, lint, 1,265 Vitest tests, and production build passed. The UI conventions document was regenerated from code after the initial test run found a stale inventory.
 - Six isolated Chromium simulations passed: public details at 1440×900, 768×1024, and 375×812; free parent registration; correction of a published podium by an associated coach; and organizer editing at 375×812. The simulated backend and map tiles are explicit fixtures. Captures are written under `test-results/competition/` and are not live backend or native device proof.
 - Fifty-two Deno contract tests passed for competition registration, Stripe recipient selection, price snapshots, payment charge validation, and payment completion. The four affected Edge entrypoints passed `deno check`.
 - The SQL migrations and PL/pgSQL blocks passed static parsing. The isolated PostgreSQL runner is pending because Docker Desktop's service is stopped. No product migration or Edge Function was applied to the remote environment, and generated database types await an applied schema.
