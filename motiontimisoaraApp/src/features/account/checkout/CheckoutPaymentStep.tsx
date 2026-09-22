@@ -43,7 +43,7 @@ export function CheckoutPaymentStep({
         </div>
         <div className="mt-1 flex items-center justify-between text-sm">
           <span className="text-muted-foreground">
-            {childCount} {childCount === 1 ? 'copil' : 'copii'}
+            {childCount} {childCount === 1 ? 'participant' : 'participanți'}
             {packageSize !== undefined && ` × ${packageSize} ședințe`}
           </span>
           <span className="font-semibold">

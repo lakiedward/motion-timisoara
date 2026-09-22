@@ -130,6 +130,37 @@ export default function CampFormReviewStep({
             </li>
           )
         })}
+        {(() => {
+          const total = totalCategorieBani(values.adult.componente)
+          return (
+            <li className="rounded-2xl border p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-semibold">Adult</h3>
+                <span className="font-semibold tabular-nums">
+                  {formatOfferPrice(total, values.currency)}
+                </span>
+              </div>
+              {total === 0 && (
+                <Badge variant="secondary" className="mt-2">
+                  Gratuit
+                </Badge>
+              )}
+              <ul className="divide-border mt-3 divide-y">
+                {values.adult.componente.map((item, j) => (
+                  <li key={`${item.name}-${j}`} className="flex justify-between gap-3 py-2 text-sm">
+                    <span>{item.name}</span>
+                    <span className="tabular-nums">
+                      {formatOfferPrice(
+                        parseScaledDecimal(item.amount_lei, 2) ?? 0,
+                        values.currency,
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          )
+        })()}
       </ul>
     </section>
   )

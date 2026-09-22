@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { AlertTriangle, ArrowLeft, Phone, QrCode } from 'lucide-react'
@@ -10,7 +11,11 @@ import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
 import { plural } from '@/lib/plural'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { CampParticipationPanel } from '@/features/live-location/camps/CampParticipationPanel'
+import {
+  CampArrivalOnCard,
+  CampLocationShare,
+} from '@/features/live-location/camps/CampParticipationPanel'
+import { useCampStaffParticipation } from '@/features/live-location/camps/useCampStaffParticipation'
 import type { CampPortalBaza } from './camp-portal'
 
 export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
@@ -33,6 +38,9 @@ export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
   })
 
   const cuAlergii = inscrisi.filter((c) => c.alergii?.trim())
+  const sosire = useCampStaffParticipation(campId)
+  const participanti = sosire.participants.data
+  const poateConfirma = (participanti?.participants.length ?? 0) > 0
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -49,11 +57,33 @@ export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
           {tabara.title} · {formatZi(tabara.period_start)} – {formatZi(tabara.period_end)}
         </p>
       )}
-      {tabara && (
-        <CampRulesDisplay rules={tabara.rules} fisier={campRulesFileAfisabil(tabara)} />
-      )}
+      {tabara && <CampRulesDisplay rules={tabara.rules} fisier={campRulesFileAfisabil(tabara)} />}
 
-      <CampParticipationPanel campId={campId} />
+      <CampLocationShare
+        campId={campId}
+        actorId={sosire.userId}
+        canShare={!!participanti?.canShare}
+        startsAt={participanti?.startsAt}
+        endsAt={participanti?.endsAt}
+      />
+
+      {sosire.staff && sosire.participants.isError && (
+        <div role="alert" className="mt-6 space-y-2">
+          <p className="text-destructive text-sm">
+            {sosire.participants.error instanceof Error
+              ? sosire.participants.error.message
+              : 'Nu am putut încărca prezența.'}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 min-h-11"
+            onClick={() => void sosire.participants.refetch()}
+          >
+            Reîncearcă prezența
+          </Button>
+        </div>
+      )}
 
       {isError ? (
         <div className="py-16 text-center" role="alert">
@@ -66,17 +96,30 @@ export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
         <p className="text-muted-foreground mt-8 text-sm">Se încarcă…</p>
       ) : inscrisi.length === 0 ? (
         <div className="mt-8 rounded-2xl border p-8 text-center">
-          <p className="text-foreground font-medium">Niciun copil înscris încă.</p>
+          <p className="text-foreground font-medium">Niciun participant înscris încă.</p>
           <p className="text-muted-foreground mt-1 text-sm">
-            Aici apar copiii pe măsură ce părinții îi înscriu, inclusiv cei cu plata în curs.
+            Aici apar copiii și adulții pe măsură ce părinții îi înscriu, inclusiv cei cu plata în
+            curs.
           </p>
         </div>
       ) : (
         <>
           <p className="text-muted-foreground mt-6 text-sm">
-            {plural(inscrisi.length, 'copil înscris', 'copii înscriși')}
+            {plural(inscrisi.length, 'participant înscris', 'participanți înscriși')}
             {tabara?.capacity ? ` din ${plural(tabara.capacity, 'loc', 'locuri')}` : ''}.
           </p>
+
+          {sosire.staff && poateConfirma && (
+            <p className="text-muted-foreground mt-4 text-sm">
+              Confirmă sosirea pe cardul copilului, o singură dată. Părintele poate vedea locația în
+              Anunțuri când antrenorul o pornește. Plecarea închide accesul pentru acest copil.
+            </p>
+          )}
+          {sosire.mutation.isError && (
+            <p role="alert" className="text-destructive mt-4 text-sm">
+              {sosire.mutation.error.message}
+            </p>
+          )}
 
           {cuAlergii.length > 0 && (
             <div className="border-destructive/40 bg-destructive/5 mt-4 rounded-2xl border p-4">
@@ -93,7 +136,31 @@ export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
           <ul className="mt-4 space-y-3">
             {inscrisi.map((c) => (
               <li key={c.enrollmentId}>
-                <CardCopil copil={c} ziuaTaberei={tabara?.period_start ?? null} baza={baza} />
+                <CardCopil
+                  copil={c}
+                  ziuaTaberei={tabara?.period_start ?? null}
+                  baza={baza}
+                  sosire={
+                    <CampArrivalOnCard
+                      nume={c.nume}
+                      participant={sosire.byEnrollment.get(c.enrollmentId) ?? null}
+                      pending={sosire.mutation.isPending}
+                      confirmingDeparture={sosire.departure === c.enrollmentId}
+                      onArrive={() => {
+                        sosire.mutation.reset()
+                        sosire.mutation.mutate({ action: 'arrive', enrollmentId: c.enrollmentId })
+                      }}
+                      onAskDeparture={() => {
+                        sosire.mutation.reset()
+                        sosire.setDeparture(c.enrollmentId)
+                      }}
+                      onDepart={() =>
+                        sosire.mutation.mutate({ action: 'depart', enrollmentId: c.enrollmentId })
+                      }
+                      onCancelDeparture={() => sosire.setDeparture(null)}
+                    />
+                  }
+                />
               </li>
             ))}
           </ul>
@@ -107,12 +174,15 @@ function CardCopil({
   copil,
   ziuaTaberei,
   baza,
+  sosire,
 }: {
   copil: CopilInscris
   ziuaTaberei: string | null
   baza: CampPortalBaza
+  sosire: ReactNode
 }) {
-  const varsta = ziuaTaberei ? varstaLa(copil.dataNasterii, ziuaTaberei) : null
+  const eAdult = copil.fel === 'adult'
+  const varsta = !eAdult && ziuaTaberei ? varstaLa(copil.dataNasterii, ziuaTaberei) : null
 
   return (
     <div className="rounded-2xl border p-4">
@@ -120,27 +190,32 @@ function CardCopil({
         <div>
           <p className="font-medium">{copil.nume}</p>
           <p className="text-muted-foreground mt-0.5 text-sm">
-            {varsta !== null
-              ? `${plural(varsta, 'an', 'ani')} la începutul taberei`
-              : 'Vârstă necunoscută'}
-            {copil.marimeTricou ? ` · tricou ${copil.marimeTricou}` : ''}
+            {eAdult
+              ? 'Adult'
+              : varsta !== null
+                ? `${plural(varsta, 'an', 'ani')} la începutul taberei`
+                : 'Vârstă necunoscută'}
+            {!eAdult && copil.marimeTricou ? ` · tricou ${copil.marimeTricou}` : ''}
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {eAdult && <Badge variant="outline">Adult</Badge>}
           <Badge variant={copil.stare === 'ACTIVE' ? 'default' : 'secondary'}>
             {copil.stare === 'ACTIVE' ? 'Înscris' : 'Plata în curs'}
           </Badge>
-          <Button asChild size="sm" variant="outline" className="h-11 min-h-11 lg:h-9 lg:min-h-9">
-            <Link
-              to={`${baza === '/club/camps' ? '/club' : '/coach'}/children/${copil.copilId}/qr`}
-            >
-              <QrCode className="size-4" /> Cod QR
-            </Link>
-          </Button>
+          {!eAdult && copil.copilId && (
+            <Button asChild size="sm" variant="outline" className="h-11 min-h-11 lg:h-9 lg:min-h-9">
+              <Link
+                to={`${baza === '/club/camps' ? '/club' : '/coach'}/children/${copil.copilId}/qr`}
+              >
+                <QrCode className="size-4" /> Cod QR
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 
-      {copil.alergii?.trim() && (
+      {!eAdult && copil.alergii?.trim() && (
         <p className="text-destructive mt-3 inline-flex items-start gap-2 text-sm">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
           <span>
@@ -169,6 +244,7 @@ function CardCopil({
           )}
         </ul>
       )}
+      {sosire}
     </div>
   )
 }

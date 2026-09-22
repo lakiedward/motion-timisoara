@@ -69,12 +69,26 @@ export default function EnrollmentsPage() {
           {enrollments.map((e) => {
             const status = STATUS[e.status] ?? STATUS.PENDING
             const payment = e.payments?.[0]
+            const titlu = e.offerTitle?.trim() || KIND_LABEL[e.kind] || e.kind
+            const persoana = e.child?.name ?? (e.adult_profile_id ? 'Tu' : '')
+            const titluId = `inscriere-${e.id}`
             return (
-              <div key={e.id} className="bg-card shadow-card rounded-3xl p-5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="outline">{KIND_LABEL[e.kind] ?? e.kind}</Badge>
-                  <Badge variant={status.variant}>{status.label}</Badge>
-                  <span className="text-muted-foreground ml-auto text-sm">{e.child?.name}</span>
+              <article
+                key={e.id}
+                aria-labelledby={titluId}
+                className="bg-card shadow-card rounded-3xl p-5"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <h2 id={titluId} className="font-display text-lg font-bold">
+                      {titlu}
+                    </h2>
+                    {persoana ? <p className="mt-1 font-medium">{persoana}</p> : null}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline">{KIND_LABEL[e.kind] ?? e.kind}</Badge>
+                    <Badge variant={status.variant}>{status.label}</Badge>
+                  </div>
                 </div>
                 {e.kind === 'COURSE' && (
                   <p className="text-muted-foreground mt-3 text-sm">
@@ -101,7 +115,7 @@ export default function EnrollmentsPage() {
                     Reia plata
                   </Button>
                 ) : null}
-              </div>
+              </article>
             )
           })}
         </div>

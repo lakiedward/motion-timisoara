@@ -1,8 +1,9 @@
-import { checkoutIsFree, checkoutStepLabels, enrollmentNeedsCardPayment } from './checkout-flow'
+import { checkoutIsFree, checkoutParticipantCount, checkoutStepLabels, enrollmentNeedsCardPayment } from './checkout-flow'
 
 test('free checkout stops after confirming the zero total', () => {
   expect(checkoutStepLabels(true, 'CARD')).toEqual(['Copii', 'Detalii'])
   expect(checkoutStepLabels(true, 'CASH')).toEqual(['Copii', 'Detalii'])
+  expect(checkoutStepLabels(true, 'CARD', true)).toEqual(['Participanți', 'Detalii'])
 })
 
 test('an empty selection is not treated as a free enrollment', () => {
@@ -22,4 +23,10 @@ test('card payment is skipped when the accepted total is free', () => {
   expect(enrollmentNeedsCardPayment(0, false)).toBe(false)
   expect(enrollmentNeedsCardPayment(12000, true)).toBe(true)
   expect(enrollmentNeedsCardPayment(12000, false)).toBe(false)
+})
+
+test('adult-only selection counts as one participant', () => {
+  expect(checkoutParticipantCount([], true)).toBe(1)
+  expect(checkoutParticipantCount(['a', 'b'], true)).toBe(3)
+  expect(checkoutParticipantCount(['a'], false)).toBe(1)
 })

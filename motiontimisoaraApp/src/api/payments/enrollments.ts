@@ -4,7 +4,13 @@ import type { BillingDetails } from '@/api/checkout'
 
 export type EnrollmentPayment = Pick<
   Tables<'enrollments'>,
-  'id' | 'status' | 'kind' | 'entity_id' | 'purchased_sessions' | 'remaining_sessions'
+  | 'id'
+  | 'status'
+  | 'kind'
+  | 'entity_id'
+  | 'purchased_sessions'
+  | 'remaining_sessions'
+  | 'adult_profile_id'
 > & {
   child: { id: string; name: string } | null
   payments: Pick<
@@ -28,7 +34,7 @@ export async function getEnrollmentPayments(ids: string[]): Promise<EnrollmentPa
   const { data, error } = await supabase
     .from('enrollments')
     .select(
-      'id,status,kind,entity_id,purchased_sessions,remaining_sessions,child:children(id,name),payments(id,amount,currency,status,method,pricing_snapshot,billing_name,billing_email,billing_address_line1,billing_city,billing_postal_code)',
+      'id,status,kind,entity_id,purchased_sessions,remaining_sessions,adult_profile_id,child:children(id,name),payments(id,amount,currency,status,method,pricing_snapshot,billing_name,billing_email,billing_address_line1,billing_city,billing_postal_code)',
     )
     .in('id', [...new Set(ids)])
   if (error) throw new Error('Nu am putut verifica plățile. Reîncearcă.', { cause: error })
@@ -36,7 +42,7 @@ export async function getEnrollmentPayments(ids: string[]): Promise<EnrollmentPa
     throw new Error('Înscrierea nu este disponibilă în acest cont.')
   }
   const rows = data as EnrollmentPayment[]
-  if (rows.some((row) => !row.child || row.payments.length !== 1)) {
+  if (rows.some((row) => (!row.child && !row.adult_profile_id) || row.payments.length !== 1)) {
     throw new Error('Plata are nevoie de verificare. Contactează clubul.')
   }
   return ids.map((id) => rows.find((row) => row.id === id)!)

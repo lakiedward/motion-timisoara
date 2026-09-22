@@ -23,7 +23,7 @@ export default function CampPricingCard({
   full: boolean
   onEnroll: () => void
 }) {
-  const { tabara, categorii, agePrices } = data
+  const { tabara, categorii, agePrices, adultPrice } = data
   const { user } = useAuth()
   const byAge = tabara.pricing_mode === 'by_age'
   const personalize = byAge && user?.role === 'PARENT'
@@ -153,6 +153,35 @@ export default function CampPricingCard({
         </div>
       )}
 
+      {adultPrice && (
+        <div className="mt-4 rounded-xl border p-3" aria-label="Tarif adult">
+          <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+            <span className="font-medium">Adult</span>
+            <span className="font-semibold tabular-nums">
+              {formatOfferPrice(adultPrice.amount, tabara.currency)}
+            </span>
+          </div>
+          {citesteComponentePret(adultPrice.components).length > 0 && (
+            <ul className="divide-border mt-2 divide-y text-sm" aria-label="Componente, adult">
+              {citesteComponentePret(adultPrice.components).map((item, index) => (
+                <li
+                  key={`${item.name}-${index}`}
+                  className="text-muted-foreground flex justify-between gap-3 py-1.5"
+                >
+                  <span>{item.name}</span>
+                  <span className="tabular-nums">
+                    {formatOfferPrice(item.amount, tabara.currency)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="text-muted-foreground mt-2 text-sm">
+            Părintele se poate înscrie și el; ocupă un loc din capacitate.
+          </p>
+        </div>
+      )}
+
       {categorii.length > 0 && (
         <div className={byAge ? 'mt-6 border-t pt-4' : undefined}>
           <h2 className="font-display mb-1 text-lg font-bold">Ce include prețul</h2>
@@ -190,13 +219,13 @@ export default function CampPricingCard({
       <div
         className={cn(
           'flex flex-wrap items-center justify-between gap-4',
-          (byAge || categorii.length > 0) && 'border-border mt-4 border-t pt-4',
+          (byAge || categorii.length > 0 || adultPrice) && 'border-border mt-4 border-t pt-4',
         )}
       >
         <div>
           {byAge ? (
             <p className="text-muted-foreground text-sm">
-              Prețul fiecărui copil se confirmă la înscriere.
+              Prețul fiecărui participant se confirmă la înscriere.
             </p>
           ) : (
             <div className="font-display text-2xl font-extrabold">

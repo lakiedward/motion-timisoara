@@ -38,11 +38,16 @@ test('oferta din draft nu are preț global și păstrează suma pe categorie', (
         componente: [{ name: 'Cazare', amount_lei: '0' }],
       },
     ],
+    adult: { componente: [{ name: 'Participare', amount_lei: '0' }] },
   } satisfies Values
   const oferta = ofertaDinDraft(values)
   expect(oferta.amount).toBe(0)
   expect(oferta.breakdown).toEqual([])
   expect(oferta.mode).toBe('by_age')
+  expect(oferta.adultPrice).toEqual({
+    amount: 0,
+    components: [{ name: 'Participare', amount: 0 }],
+  })
   expect(oferta.agePrices).toEqual([
     {
       age_from: 6,
@@ -152,6 +157,7 @@ test('schema respinge intervalele suprapuse', () => {
         componente: [{ name: 'Cazare', amount_lei: '100' }],
       },
     ],
+    adult: { componente: [{ name: 'Participare', amount_lei: '0' }] },
   })
   expect(rezultat.success).toBe(false)
   if (rezultat.success) return

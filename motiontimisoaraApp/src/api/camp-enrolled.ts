@@ -1,22 +1,15 @@
 import { supabase } from '@/lib/supabase'
 
-/**
- * Cine s-a înscris la o tabără.
- *
- * Se vede de proprietar ȘI de antrenorii însoțitori — cerut explicit de
- * proprietar pe 27.08. Ambele drumuri trec prin `pot_vedea_inscrierile_taberei`
- * (migrarea 00028 pentru înscrieri, 00032 pentru fișa copilului), deci pagina
- * asta nu decide nimic despre cine are voie: dacă cineva n-are voie, primește
- * pur și simplu o listă goală de la bază.
- */
-
 export type StareInscriere = 'ACTIVE' | 'PENDING' | 'CANCELLED'
+
+export type FelParticipant = 'child' | 'adult'
 
 export interface CopilInscris {
   enrollmentId: string
   stare: StareInscriere
   inscrisLa: string
-  copilId: string
+  fel: FelParticipant
+  copilId: string | null
   nume: string
   dataNasterii: string | null
   marimeTricou: string | null
@@ -39,16 +32,16 @@ interface RandCopil {
   secondary_phone: string | null
 }
 
-/**
- * Înscrierile anulate nu se arată: locul e liber, iar lista de plecare în tabără
- * n-are ce face cu ele. Cele în curs de plată SE arată, fiindcă țin un loc —
- * aceeași socoteală ca `camp_spots_remaining`.
- */
+interface RandAdult {
+  id: string
+  name: string | null
+}
+
 export async function getInscrisiiTaberei(campId: string): Promise<CopilInscris[]> {
   const { data, error } = await supabase
     .from('enrollments')
     .select(
-      'id, status, created_at, child_id, child:children(id, name, birth_date, tshirt_size, allergies, emergency_contact_name, emergency_phone, secondary_contact_name, secondary_phone)',
+      'id, status, created_at, child_id, adult_profile_id, child:children(id, name, birth_date, tshirt_size, allergies, emergency_contact_name, emergency_phone, secondary_contact_name, secondary_phone), adult:profiles!enrollments_adult_profile_id_fkey(id, name)',
     )
     .eq('kind', 'CAMP')
     .eq('entity_id', campId)
@@ -57,15 +50,31 @@ export async function getInscrisiiTaberei(campId: string): Promise<CopilInscris[
   if (error) throw error
 
   return (data ?? []).map((r) => {
+    const adult = (r as { adult?: RandAdult | null }).adult
+    if (r.adult_profile_id) {
+      return {
+        enrollmentId: r.id,
+        stare: r.status as StareInscriere,
+        inscrisLa: r.created_at,
+        fel: 'adult',
+        copilId: null,
+        nume: adult?.name?.trim() || 'Adult fără nume vizibil',
+        dataNasterii: null,
+        marimeTricou: null,
+        alergii: null,
+        contactUrgenta: null,
+        telefonUrgenta: null,
+        contactSecundar: null,
+        telefonSecundar: null,
+      }
+    }
     const c = r.child as RandCopil | null
     return {
       enrollmentId: r.id,
       stare: r.status as StareInscriere,
       inscrisLa: r.created_at,
+      fel: 'child',
       copilId: r.child_id,
-      // Fișa poate lipsi dacă politica n-o lasă să treacă. Rândul rămâne, ca
-      // numărul de locuri ocupate să fie adevărat — dar spune limpede că nu are
-      // cine să-l citească, în loc să arate un nume gol.
       nume: c?.name ?? 'Copil fără fișă vizibilă',
       dataNasterii: c?.birth_date ?? null,
       marimeTricou: c?.tshirt_size ?? null,
@@ -78,7 +87,6 @@ export async function getInscrisiiTaberei(campId: string): Promise<CopilInscris[
   })
 }
 
-/** Vârsta împlinită la prima zi a taberei — asta contează pentru grupe, nu cea de azi. */
 export function varstaLa(dataNasterii: string | null, ziuaTaberei: string): number | null {
   if (!dataNasterii) return null
   const [an, luna, zi] = dataNasterii.split('-').map(Number)

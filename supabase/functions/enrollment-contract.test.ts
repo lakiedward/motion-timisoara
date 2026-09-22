@@ -25,6 +25,7 @@ class FakeQuery implements PromiseLike<QueryResult> {
   private operation = "select";
   private values: Row = {};
   private one = false;
+  private allowEmpty = false;
   private head = false;
 
   constructor(private db: FakeDatabase, private table: string) {}
@@ -34,6 +35,7 @@ class FakeQuery implements PromiseLike<QueryResult> {
   is(column: string, value: unknown) { return this.eq(column, value); }
   in(column: string, values: unknown[]) { this.filters.push({ column, values }); return this; }
   single() { this.one = true; return this; }
+  maybeSingle() { this.one = true; this.allowEmpty = true; return this; }
   insert(values: Row) { this.operation = "insert"; this.values = values; return this; }
   update(values: Row) { this.operation = "update"; this.values = values; return this; }
 
@@ -66,7 +68,10 @@ class FakeQuery implements PromiseLike<QueryResult> {
         this.db.writes.push({ table: this.table, operation: this.operation, values: structuredClone(this.values), filters: structuredClone(this.filters) });
       }
     }
-    if (this.one && rows.length !== 1) return { data: null, error: { message: "Expected one row" }, count: rows.length };
+    if (this.one && rows.length !== 1) {
+      if (this.allowEmpty && rows.length === 0) return { data: null, error: null, count: 0 };
+      return { data: null, error: { message: "Expected one row" }, count: rows.length };
+    }
     return { data: structuredClone(this.one ? rows[0] : rows), error: null, count: rows.length };
   }
 }
@@ -77,6 +82,8 @@ class FakeDatabase {
   writes: Mutation[] = [];
   rpcCalls: { name: string; childId: string; campId: string }[] = [];
   prices: Record<string, number | null> = { "child-a": 12000, "child-b": 18000 };
+  adultPrice: { amount: number; currency: string; eur_ron_rate_micros: number | null } | null = null;
+  adultRpcError = false;
   rpcErrorChild: string | null = null;
   capacityError = false;
   beforePaymentUpdate?: () => void;
@@ -87,6 +94,7 @@ class FakeDatabase {
       { id: "child-a", name: "Copil A", parent_id: "parent", birth_date: "2018-09-01" },
       { id: "child-b", name: "Copil B", parent_id: "parent", birth_date: "2014-09-01" },
     ],
+    profiles: [{ id: "parent", name: "Ana Părinte" }],
     camps: [{ id: "camp", price: 99999, pricing_mode: "by_age", currency: "RON", capacity: null, allow_cash: true }],
     courses: [{ id: "course", price_per_session: 1500, currency: "RON", capacity: null, active: true, age_from: null, age_to: null }],
     activities: [{ id: "activity", price: 2500, currency: "RON", capacity: null, active: true }],
@@ -101,6 +109,12 @@ class FakeDatabase {
 
   async rpc(name: string, args: Row) {
     if (name === "save_enrollment_batch") return this.saveBatch(args);
+    if (name === "enrollment_camp_adult_offer") {
+      return Promise.resolve({
+        data: this.adultPrice,
+        error: this.adultRpcError ? { message: "Adult pricing unavailable" } : null,
+      });
+    }
     const childId = String(args.p_child_id);
     const campId = String(args.p_camp_id);
     equal(name, "enrollment_camp_offer", "Server pricing RPC");
@@ -121,10 +135,12 @@ class FakeDatabase {
     const ids: string[] = [];
     const createdIds: string[] = [];
     const prices: Row[] = [];
-    const quotes = args.p_quotes as { childId: string; amount: number; currency: string; priceVersion: string; snapshot: PriceSnapshot | null }[];
+    const quotes = args.p_quotes as { childId?: string | null; adultProfileId?: string | null; amount: number; currency: string; priceVersion: string; snapshot: PriceSnapshot | null }[];
     const billing = args.p_billing as Record<string, string> | null;
     for (const quote of quotes) {
-      let enrollment = this.tables.enrollments.find((row) => row.kind === args.p_kind && row.entity_id === args.p_entity_id && row.child_id === quote.childId && ["PENDING", "ACTIVE"].includes(String(row.status)));
+      let enrollment = this.tables.enrollments.find((row) => row.kind === args.p_kind && row.entity_id === args.p_entity_id &&
+        (quote.adultProfileId ? row.adult_profile_id === quote.adultProfileId : row.child_id === quote.childId) &&
+        ["PENDING", "ACTIVE"].includes(String(row.status)));
       let payment = enrollment && this.tables.payments.find((row) => row.enrollment_id === enrollment!.id);
       const compatible = payment && payment.amount === quote.amount && payment.currency === quote.currency &&
         JSON.stringify(payment.pricing_snapshot ?? null) === JSON.stringify(quote.snapshot);
@@ -137,7 +153,8 @@ class FakeDatabase {
         return { data: null, error: { code: "23514", message: "Plata s-a schimbat." } };
       }
       if (!enrollment) {
-        enrollment = { id: `enrollments-${++this.sequence}`, child_id: quote.childId, kind: args.p_kind,
+        enrollment = { id: `enrollments-${++this.sequence}`, child_id: quote.childId ?? null,
+          adult_profile_id: quote.adultProfileId ?? null, kind: args.p_kind,
           entity_id: args.p_entity_id, status: quote.amount === 0 ? "ACTIVE" : "PENDING", purchased_sessions: 0, remaining_sessions: 0, sessions_used: 0 };
         this.tables.enrollments.push(enrollment);
         createdIds.push(String(enrollment.id));
@@ -157,7 +174,11 @@ class FakeDatabase {
       }
       if (quote.amount === 0) enrollment.status = "ACTIVE";
       ids.push(String(enrollment.id));
-      prices.push({ childId: quote.childId, amount: quote.amount, currency: quote.currency });
+      prices.push({
+        ...(quote.childId ? { childId: quote.childId } : {}),
+        ...(quote.adultProfileId ? { adultProfileId: quote.adultProfileId } : {}),
+        amount: quote.amount, currency: quote.currency,
+      });
     }
     return { data: { enrollmentId: ids[0], enrollmentIds: ids, createdEnrollmentIds: createdIds, prices,
       requiresPaymentIntent: args.p_method === "CARD" && quotes.some((quote) => quote.amount > 0) }, error: null };
@@ -577,6 +598,62 @@ Deno.test("a partially paid batch returns existing paid ids without another enro
   const replayed = await replay.json();
   equal([...replayed.enrollmentIds].sort(), [...original.enrollmentIds].sort());
   equal(context.db.tables, before);
+});
+
+Deno.test("camp validation quotes a dedicated adult tariff without counting it as a requested child seat", async () => {
+  const context = fixture();
+  context.db.adultPrice = { amount: 15000, currency: "RON", eur_ron_rate_micros: null };
+  const response = await context.validate(["child-a"]);
+  equal(response.status, 200);
+  const body = await response.json() as { results: ChildQuote[]; adult: { amount: number; eligible: boolean; adultProfileId: string }; capacity: { requested: number } };
+  equal(body.adult.adultProfileId, "parent");
+  equal([body.adult.eligible, body.adult.amount], [true, 15000]);
+  equal(body.capacity.requested, 1);
+  equal(context.db.rpcCalls.map((call) => call.childId), ["child-a"]);
+});
+
+Deno.test("a parent can enroll themselves alone when the camp has an adult tariff", async () => {
+  const context = fixture();
+  context.db.adultPrice = { amount: 15000, currency: "RON", eur_ron_rate_micros: null };
+  const validated = await (await context.validate([])).json() as { adult: { priceVersion: string } };
+  const response = await context.create([], { parent: validated.adult.priceVersion }, { includeSelf: true });
+  equal(response.status, 200);
+  const body = await response.json();
+  equal(body.prices, [{ adultProfileId: "parent", amount: 15000, currency: "RON" }]);
+  equal(context.db.tables.enrollments[0].adult_profile_id, "parent");
+  equal(context.db.tables.enrollments[0].child_id, null);
+  equal(context.db.rpcCalls, []);
+});
+
+Deno.test("a parent can enroll a child and themselves in one camp batch", async () => {
+  const context = fixture();
+  context.db.adultPrice = { amount: 15000, currency: "RON", eur_ron_rate_micros: null };
+  const quoted = await quote(context, ["child-a"]);
+  const validated = await (await context.validate(["child-a"])).json() as { adult: { priceVersion: string } };
+  const response = await context.create(["child-a"], { ...quoted.versions, parent: validated.adult.priceVersion }, { includeSelf: true });
+  equal(response.status, 200);
+  const body = await response.json();
+  equal(body.enrollmentIds.length, 2);
+  equal(context.db.tables.enrollments.map((row) => [row.child_id, row.adult_profile_id]), [["child-a", null], [null, "parent"]]);
+});
+
+Deno.test("cash creation refuses a second adult seat for the same parent", async () => {
+  const context = fixture();
+  context.db.adultPrice = { amount: 15000, currency: "RON", eur_ron_rate_micros: null };
+  context.db.tables.enrollments.push({ id: "adult-1", child_id: null, adult_profile_id: "parent", kind: "CAMP", entity_id: "camp", status: "PENDING" });
+  const validated = await (await context.validate([])).json() as { adult: { priceVersion?: string; eligible: boolean } };
+  equal(validated.adult.eligible, true);
+  equal((await context.create([], { parent: validated.adult.priceVersion ?? "" }, { includeSelf: true, paymentMethod: "CASH" })).status, 409);
+  equal(context.db.tables.enrollments.length, 1);
+});
+
+Deno.test("courses and activities reject includeSelf before pricing", async () => {
+  for (const kind of ["COURSE", "ACTIVITY"]) {
+    const context = fixture("PARENT", kind);
+    equal((await context.create(["child-a"], {}, { includeSelf: true })).status, 400);
+    equal(context.db.rpcCalls, []);
+    equal(context.db.attempts, []);
+  }
 });
 
 Deno.test("atomic persistence failures propagate authorization and price conflicts without partial client writes", async () => {

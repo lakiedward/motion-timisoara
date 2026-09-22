@@ -10,6 +10,7 @@ import type { CampPortalBaza } from './camp-portal'
 import {
   getCategoriile,
   getPreturilePeVarsta,
+  getPretulAdult,
   getTabaraDeEditat,
   getTaberelemele,
   saveCampOffer,
@@ -25,6 +26,7 @@ vi.mock('@/api/camps-admin', async () => {
     ...real,
     getCategoriile: vi.fn(),
     getPreturilePeVarsta: vi.fn(),
+    getPretulAdult: vi.fn(),
     getTabaraDeEditat: vi.fn(),
     getTaberelemele: vi.fn(),
     saveCampOffer: vi.fn(),
@@ -150,6 +152,7 @@ beforeEach(() => {
   vi.mocked(saveCampOffer).mockResolvedValue(undefined)
   vi.mocked(getTaberelemele).mockResolvedValue([] as never)
   vi.mocked(getPreturilePeVarsta).mockResolvedValue([] as never)
+  vi.mocked(getPretulAdult).mockResolvedValue(null)
   vi.mocked(getClubSelectableLocations).mockResolvedValue([
     { id: BAZIN, name: 'Bazin Olimpic Timișoara', city: 'Timișoara' },
     { id: CABANA, name: 'Cabana Muntele Mic', city: null },
@@ -414,6 +417,9 @@ test('Marchează gratuit pune categoria pe zero', async () => {
   const user = userEvent.setup()
   renderForm()
   await laCosturi(user)
+  expect(screen.getByRole('heading', { name: 'Tarif adult' })).toBeInTheDocument()
+  expect(screen.getByLabelText('Componentă adult')).toHaveValue('Participare')
+  expect(screen.getByLabelText(/Sumă adult/)).toHaveValue(0)
   const prima = randuriCategorii()[0]
   await completeazaCategorie(user, prima, '0', '2', [{ name: 'Cazare', lei: '50' }])
   await user.click(within(prima).getByRole('button', { name: 'Marchează gratuit' }))
@@ -469,6 +475,7 @@ test('EUR citește cursul BNR, iar verificarea arată componentele și totalul',
   await user.click(screen.getByRole('button', { name: 'Continuă' }))
   await screen.findByRole('heading', { name: 'Verificare' })
   expect(screen.getByText('EUR, curs BNR 5,123456 lei')).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Adult' })).toBeInTheDocument()
   expect(screen.getByText('6–12 ani')).toBeInTheDocument()
   expect(screen.getAllByText('Cazare').length).toBeGreaterThan(0)
   expect(screen.getByText('Masă')).toBeInTheDocument()
@@ -499,6 +506,10 @@ test('EUR citește cursul BNR, iar verificarea arată componentele și totalul',
       components: [{ name: 'Cazare', amount: 15000 }],
     },
   ])
+  expect(vi.mocked(saveCampOffer).mock.calls[0][8]).toEqual({
+    amount: 0,
+    components: [{ name: 'Participare', amount: 0 }],
+  })
   expect(toast.success).toHaveBeenCalledWith('Tabără creată.')
 })
 

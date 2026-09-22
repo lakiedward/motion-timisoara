@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 import { publicUrl } from '@/api/public'
-import { getPreturilePeVarsta, type PretPeVarsta } from '@/api/camps-admin'
+import { getPretulAdult, getPreturilePeVarsta, type PretAdult, type PretPeVarsta } from '@/api/camps-admin'
 import { campRulesFileAfisabil } from '@/api/camp-rules-file'
 import {
   readCampRequirements,
@@ -40,6 +40,7 @@ export type TabaraDetaliu = {
   organizator: OrganizatorTabara | null
   categorii: CategoriePret[]
   agePrices: PretPeVarsta[]
+  adultPrice: PretAdult | null
   antrenori: AntrenorTabara[]
   heroUrl: string | null
   galerieUrls: string[]
@@ -163,7 +164,7 @@ export async function getTabaraDetaliu(slug: string): Promise<TabaraDetaliu | nu
       ? { fel: 'antrenor', nume: coach.name, link: `/antrenori/${coach.id}` }
       : null
 
-  const [categorii, antrenori, poze, locuri, agePrices] = await Promise.all([
+  const [categorii, antrenori, poze, locuri, agePrices, adultPrice] = await Promise.all([
     supabase
       .from('camp_price_items')
       .select('id, name, description, amount, display_order')
@@ -181,6 +182,7 @@ export async function getTabaraDetaliu(slug: string): Promise<TabaraDetaliu | nu
       .order('display_order'),
     supabase.rpc('camp_spots_remaining', { p_camp_id: tabara.id }),
     tabara.pricing_mode === 'by_age' ? getPreturilePeVarsta(tabara.id) : Promise.resolve([]),
+    getPretulAdult(tabara.id),
   ])
 
   if (categorii.error) throw categorii.error
@@ -207,6 +209,7 @@ export async function getTabaraDetaliu(slug: string): Promise<TabaraDetaliu | nu
     organizator,
     categorii: categorii.data ?? [],
     agePrices,
+    adultPrice,
     antrenori: ((antrenori.data ?? []) as unknown as RandAntrenor[])
       .filter((r) => r.coach_profile)
       .map((r) => ({

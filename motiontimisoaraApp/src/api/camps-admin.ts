@@ -5,8 +5,14 @@ import type { CampRequirementCategory } from '@/lib/camp-requirements'
 export type Tabara = Tables<'camps'>
 export type CategoriePret = Tables<'camp_price_items'>
 export type PretPeVarsta = Tables<'camp_age_prices'>
+export type PretAdult = Tables<'camp_adult_prices'>
 
 export type ModPret = 'single' | 'by_age'
+
+export type PretAdultDeSalvat = {
+  amount: number
+  components: { name: string; amount: number }[]
+}
 
 export async function saveCampOffer(
   campId: string,
@@ -17,6 +23,7 @@ export async function saveCampOffer(
   agePrices: PretPeVarstaDeSalvat[],
   metadata: TabaraInput,
   owner: Proprietar,
+  adultPrice: PretAdultDeSalvat,
 ): Promise<void> {
   const { error } = await supabase.rpc('save_camp_offer', {
     p_camp_id: campId,
@@ -29,6 +36,7 @@ export async function saveCampOffer(
     p_breakdown: breakdown,
     p_pricing_mode: mode,
     p_age_prices: agePrices,
+    p_adult_price: adultPrice,
   })
   if (error) throw error
 }
@@ -86,7 +94,7 @@ export async function getTaberelemele(p: Proprietar): Promise<TabaraDinLista[]> 
   if (!tabere.length) return []
 
   const ids = tabere.map((t) => t.id)
-  const [inscrieri, categorii, antrenori, varste] = await Promise.all([
+  const [inscrieri, categorii, antrenori, varste, adulti] = await Promise.all([
     supabase
       .from('enrollments')
       .select('entity_id, status')
@@ -95,11 +103,13 @@ export async function getTaberelemele(p: Proprietar): Promise<TabaraDinLista[]> 
     supabase.from('camp_price_items').select('camp_id').in('camp_id', ids),
     supabase.from('camp_coaches').select('camp_id, status').in('camp_id', ids),
     supabase.from('camp_age_prices').select('camp_id, amount').in('camp_id', ids),
+    supabase.from('camp_adult_prices').select('camp_id, amount').in('camp_id', ids),
   ])
   if (inscrieri.error) throw inscrieri.error
   if (categorii.error) throw categorii.error
   if (antrenori.error) throw antrenori.error
   if (varste.error) throw varste.error
+  if (adulti.error) throw adulti.error
 
   const numara = <T>(
     randuri: T[],
@@ -116,12 +126,15 @@ export async function getTaberelemele(p: Proprietar): Promise<TabaraDinLista[]> 
     (r) => r.status === 'ACTIVE' || r.status === 'PENDING',
   )
   const cat = numara(categorii.data ?? [], (r) => r.camp_id)
-  const sumePeTabara = (varste.data ?? []).reduce<Record<string, number[]>>((acc, r) => {
-    const amount = typeof r.amount === 'number' ? r.amount : Number(r.amount)
-    if (!Number.isFinite(amount)) return acc
-    ;(acc[r.camp_id] ??= []).push(amount)
-    return acc
-  }, {})
+  const adunaSume = (randuri: { camp_id: string; amount: number | string }[]) =>
+    randuri.reduce<Record<string, number[]>>((acc, r) => {
+      const amount = typeof r.amount === 'number' ? r.amount : Number(r.amount)
+      if (!Number.isFinite(amount)) return acc
+      ;(acc[r.camp_id] ??= []).push(amount)
+      return acc
+    }, {})
+  const sumeVarsta = adunaSume(varste.data ?? [])
+  const sumeAdult = adunaSume(adulti.data ?? [])
   const acceptati = numara(
     antrenori.data ?? [],
     (r) => r.camp_id,
@@ -135,11 +148,11 @@ export async function getTaberelemele(p: Proprietar): Promise<TabaraDinLista[]> 
 
   return tabere.map((t) => {
     const peVarsta = t.pricing_mode === 'by_age'
-    const sume = sumePeTabara[t.id] ?? []
+    const sume = [...(sumeVarsta[t.id] ?? []), ...(sumeAdult[t.id] ?? [])]
     return {
       ...t,
       locuriOcupate: ocupate[t.id] ?? 0,
-      categorii: peVarsta ? sume.length : (cat[t.id] ?? 0),
+      categorii: peVarsta ? (sumeVarsta[t.id] ?? []).length : (cat[t.id] ?? 0),
       preturiPeVarsta: peVarsta ? sume : [],
       antrenoriAcceptati: acceptati[t.id] ?? 0,
       antrenoriInAsteptare: inAsteptare[t.id] ?? 0,
@@ -176,6 +189,18 @@ export async function getPreturilePeVarsta(campId: string): Promise<PretPeVarsta
     .order('display_order')
   if (error) throw error
   return data ?? []
+}
+
+export async function getPretulAdult(campId: string): Promise<PretAdult | null> {
+  const { data, error } = await supabase
+    .from('camp_adult_prices')
+    .select('*')
+    .eq('camp_id', campId)
+    .maybeSingle()
+  if (error) throw error
+  if (!data) return null
+  if (Array.isArray(data)) return data[0] ?? null
+  return data
 }
 
 export function intervaleSuprapuse(

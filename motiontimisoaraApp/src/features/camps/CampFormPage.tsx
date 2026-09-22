@@ -5,6 +5,7 @@ import {
   COSTURI_FIELDS,
   DETALII_FIELDS,
   num,
+  spreAdult,
   type Values,
 } from './camp-form-schema'
 import { ofertaDinDraft, varsteDinDateSalvate } from './camp-form-totals'
@@ -19,6 +20,7 @@ import { toast } from 'sonner'
 
 import {
   getCategoriile,
+  getPretulAdult,
   getPreturilePeVarsta,
   getTabaraDeEditat,
   saveCampOffer,
@@ -67,6 +69,11 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
     queryFn: () => getPreturilePeVarsta(id as string),
     enabled: eEditare,
   })
+  const { data: adultSalvat, isSuccess: adultGata } = useQuery({
+    queryKey: ['pretul-adult', id],
+    queryFn: () => getPretulAdult(id as string),
+    enabled: eEditare,
+  })
   const locatiaSalvata = tabara?.location_id ?? null
   const { data: locatii, isError: eroareLocatii } = useQuery({
     queryKey: ['locatii-pentru-tabara', proprietar.clubId, eClub, locatiaSalvata],
@@ -90,7 +97,7 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: GOL })
 
   useEffect(() => {
-    if (tabara && categoriiGata && varsteGata && locatiiGata) {
+    if (tabara && categoriiGata && varsteGata && locatiiGata && adultGata) {
       reset({
         ...offerCurrencyValues(tabara),
         title: tabara.title,
@@ -115,9 +122,10 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
           priceItems: categorii ?? [],
           campPrice: tabara.price,
         }),
+        adult: adultSalvat ? spreAdult(adultSalvat) : { componente: [{ name: 'Participare', amount_lei: '0' }] },
       })
     }
-  }, [tabara, categorii, categoriiGata, varste, varsteGata, locatiiGata, reset])
+  }, [tabara, categorii, categoriiGata, varste, varsteGata, locatiiGata, adultSalvat, adultGata, reset])
 
   const currency = useWatch({ control, name: 'currency' })
   const cursEur = useWatch({ control, name: 'eur_ron_rate' })
@@ -178,6 +186,7 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
           camp_requirements: campRequirementsForSave(v.necesar),
         },
         proprietar,
+        oferta.adultPrice,
       )
       if (!eEditare && fisierLocal) {
         try {
@@ -193,6 +202,7 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
       void qc.invalidateQueries({ queryKey: ['tabara-de-editat', campId] })
       void qc.invalidateQueries({ queryKey: ['categoriile-taberei', campId] })
       void qc.invalidateQueries({ queryKey: ['preturile-pe-varsta', campId] })
+      void qc.invalidateQueries({ queryKey: ['pretul-adult', campId] })
       toast.success(eEditare ? 'Tabără actualizată.' : 'Tabără creată.')
       navigate(baza)
     } catch (e) {

@@ -84,11 +84,14 @@ async function simulate(page: Page, scenario: Scenario = 'by-age', role: 'PARENT
     if (path === '/auth/v1/user') return respond({ ...activeProfile, aud: 'authenticated', user_metadata: {} });
     if (path === '/rest/v1/children') return scenario === 'children-error' && !recovered
       ? respond({ message: 'Simulated children failure' }, 503) : respond(fixtureChildren);
-    if (path === '/rest/v1/courses' || path === '/rest/v1/activities') return respond({
-      id: 'offer-simulation', name: 'Ofertă EUR simulată #149', currency: 'EUR',
-      price: 99999, price_per_session: 99999, eur_ron_rate_micros: 6000000,
-      package_options: '[5,10,20]',
-    });
+    if (path === '/rest/v1/courses' || path === '/rest/v1/activities') {
+      const offer = {
+        id: 'offer-simulation', name: 'Ofertă EUR simulată #149', currency: 'EUR',
+        price: 99999, price_per_session: 99999, eur_ron_rate_micros: 6000000,
+        package_options: '[5,10,20]',
+      };
+      return respond(request.headers().accept?.includes('vnd.pgrst.object') ? offer : [offer]);
+    }
     if (path === '/rest/v1/camps') {
       if (scenario === 'offering-error' && !recovered && url.searchParams.get('select') === '*') return respond({ message: 'Simulated offering failure' }, 503);
       const camp = {
@@ -106,10 +109,14 @@ async function simulate(page: Page, scenario: Scenario = 'by-age', role: 'PARENT
     if (path === '/rest/v1/camp_price_items') return respond([
       { id: 'included-service', name: 'Cazare și masă', description: 'Servicii simulate comune', amount: scenario === 'single' ? 50000 : 99000, display_order: 0 },
     ]);
+    if (path === '/rest/v1/camp_adult_prices') return respond([]);
     if (['/rest/v1/camp_coaches', '/rest/v1/camp_photos'].includes(path)) return respond([]);
     if (path === '/rest/v1/rpc/camp_spots_remaining') return respond(20);
     if (path === '/rest/v1/enrollments') return respond(created ? quote().map((item, index) => ({
       id: `simulated-enrollment-${index}`, kind, status: 'PENDING', child: children[index],
+      entity_id: kind === 'CAMP' ? 'camp-simulation' : 'offer-simulation',
+      purchased_sessions: kind === 'COURSE' ? quantity : 0,
+      remaining_sessions: kind === 'COURSE' ? quantity : 0,
       payments: [{ amount: item.amount, currency: item.currency, pricing_snapshot: item.pricingSnapshot, status: 'PENDING', method: 'CASH', paid_at: null }],
     })) : []);
     if (path === '/functions/v1/validate-enrollment') {
@@ -119,7 +126,12 @@ async function simulate(page: Page, scenario: Scenario = 'by-age', role: 'PARENT
       if (scenario === 'old-backend') results = results.map(({ amount: _amount, currency: _currency, priceVersion: _version, ...item }) => item);
       if (scenario === 'missing-quote') results = results.slice(0, 1);
       if (scenario === 'unmatched') results[1] = { childId: children[1].id, name: children[1].name, eligible: false, severity: 'error', reason: 'Nu există o categorie de preț pentru vârsta copilului la începutul taberei.' };
-      return respond({ results, capacity: { available: 20, requested: 2, sufficient: true }, allowCash: true });
+      return respond({
+        results,
+        ...(kind === 'CAMP' ? { adult: null } : {}),
+        capacity: { available: 20, requested: 2, sufficient: true },
+        allowCash: true,
+      });
     }
     if (path === '/functions/v1/create-enrollment') {
       submissions.push(request.postDataJSON());
@@ -200,7 +212,8 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 768, height: 1024
     await expect(page.getByText('600,00 lei', { exact: true })).toBeVisible();
     await expect(page.getByText('800,00 lei', { exact: true })).toBeVisible();
     expect(state.submissions).toEqual([{
-      kind: 'CAMP', entityId: 'camp-simulation', childIds: ['child-a', 'child-b'], paymentMethod: 'CASH',
+      kind: 'CAMP', entityId: 'camp-simulation', childIds: ['child-a', 'child-b'], includeSelf: false,
+      paymentMethod: 'CASH',
       priceVersions: { 'child-a': 'simulated-version-child-a-original', 'child-b': 'simulated-version-child-b-original' },
     }]);
     await proof(info, state);
@@ -486,6 +499,8 @@ for (const kind of ['CAMP', 'COURSE', 'ACTIVITY'] as const) {
       await capture(page, info, `eur-${kind}-payment`);
       await page.getByRole('button', { name: 'Finalizează', exact: true }).click();
       await expect(page).toHaveURL(/\/account\/enrollments$/);
+      const offerName = kind === 'CAMP' ? 'Tabără simulată #315' : 'Ofertă EUR simulată #149';
+      await expect(page.getByRole('heading', { name: offerName })).toHaveCount(2);
       await expect(page.getByText(/1 EUR = 5,123456 lei/)).toHaveCount(2);
       expect(state.submissions).toHaveLength(1);
       expect(state.submissions[0].kind).toBe(kind);

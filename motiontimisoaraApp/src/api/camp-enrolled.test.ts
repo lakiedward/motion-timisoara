@@ -46,7 +46,32 @@ test('un copil fără fișă vizibilă lasă rândul, dar spune de ce', async ()
   const lista = await getInscrisiiTaberei('c1')
   expect(lista).toHaveLength(1)
   expect(lista[0]!.nume).toBe('Copil fără fișă vizibilă')
+  expect(lista[0]!.fel).toBe('child')
   expect(lista[0]!.alergii).toBeNull()
+})
+
+test('un adult apare cu badge-ul de participant, fără fișă de copil', async () => {
+  raspuns = {
+    data: [
+      {
+        id: 'e2',
+        status: 'ACTIVE',
+        created_at: '2026-01-01',
+        child_id: null,
+        adult_profile_id: 'p1',
+        child: null,
+        adult: { id: 'p1', name: 'Ana Părinte' },
+      },
+    ],
+    error: null,
+  }
+  const [adult] = await getInscrisiiTaberei('c1')
+  expect(adult).toMatchObject({
+    fel: 'adult',
+    nume: 'Ana Părinte',
+    copilId: null,
+    alergii: null,
+  })
 })
 
 test('fișa completă ajunge întreagă la pagină', async () => {

@@ -41,6 +41,7 @@ function enrollment(paid = false): EnrollmentPayment {
     entity_id: 'course',
     purchased_sessions: 5,
     remaining_sessions: paid ? 5 : 0,
+    adult_profile_id: null,
     child: { id: 'child', name: 'Copil Audit' },
     payments: [
       {
