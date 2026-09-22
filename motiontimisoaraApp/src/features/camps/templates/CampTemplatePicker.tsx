@@ -107,12 +107,12 @@ export default function CampTemplatePicker({
             Formular gol
           </label>
           {(sabloane.data ?? []).map((sablon) => (
-            <div key={sablon.id} className="flex flex-wrap items-center gap-2">
-              <label className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-sm">
+            <div key={sablon.id} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <label className="flex min-h-11 min-w-0 items-center gap-3 text-sm sm:flex-1">
                 <input
                   type="radio"
                   name="sablon-tabara"
-                  className="size-4"
+                  className="size-4 shrink-0"
                   checked={selectatId === sablon.id}
                   onChange={() => aplica(sablon)}
                 />
@@ -121,13 +121,14 @@ export default function CampTemplatePicker({
               <Button
                 type="button"
                 variant="outline"
-                className="h-11 min-h-11"
+                className="h-11 min-h-11 sm:w-auto"
+                aria-label={`Șterge ${sablon.name}`}
                 onClick={() => {
                   setAsteptare(null)
                   setDeSters(sablon)
                 }}
               >
-                Șterge {sablon.name}
+                Șterge
               </Button>
             </div>
           ))}
