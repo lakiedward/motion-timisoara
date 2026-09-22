@@ -9,6 +9,7 @@ const GROUPS = [
       { to: '/cursuri', label: 'Cursuri' },
       { to: '/activitati', label: 'Activități' },
       { to: '/tabere', label: 'Tabere' },
+      { to: '/concursuri', label: 'Concursuri' },
     ],
   },
   {
@@ -44,8 +45,8 @@ export function Footer() {
         <div className="space-y-3">
           <Logo />
           <p className="text-muted-foreground max-w-xs text-sm">
-            Sport pentru copii în Timișoara — cursuri, tabere și activități multi-sport, alături de
-            antrenori și cluburi de încredere.
+            Sport pentru copii în Timișoara — cursuri, tabere, concursuri și activități multi-sport,
+            alături de antrenori și cluburi de încredere.
           </p>
         </div>
         {GROUPS.map((group) => (
