@@ -39,15 +39,24 @@ function renderLayout() {
   )
 }
 
-test('club chrome keeps the six nav links in order and logo to public home', () => {
+test('club chrome keeps the portal nav links and logo to public home', () => {
   renderLayout()
-  const labels = ['Panou', 'Profil club', 'Antrenori', 'Anunțuri', 'Cursuri', 'Locații']
+  const labels = [
+    'Panou',
+    'Profil club',
+    'Antrenori',
+    'Anunțuri',
+    'Cursuri',
+    'Activități',
+    'Locații',
+  ]
   const hrefs = [
     '/club',
     '/club/profile',
     '/club/coaches',
     '/club/announcements',
     '/club/courses',
+    '/club/activities',
     '/club/locations',
   ]
   const links = labels.map((label) => screen.getByRole('link', { name: label }))

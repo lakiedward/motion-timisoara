@@ -11,9 +11,11 @@ type LocatieOptiune = { id: string; name: string; city: string | null }
 export default function CampFormReviewStep({
   values,
   locatii,
+  fisierRegulament,
 }: {
   values: Values
   locatii: LocatieOptiune[] | undefined
+  fisierRegulament: { name: string; eticheta: string; marime: string } | null
 }) {
   const loc = locatii?.find((l) => l.id === values.location_id)
   const locLabel = loc
@@ -79,6 +81,11 @@ export default function CampFormReviewStep({
           </div>
         </dl>
         {values.rules.trim() && <p className="mt-3 text-sm whitespace-pre-wrap">{values.rules}</p>}
+        {fisierRegulament && (
+          <p className="mt-3 text-sm">
+            Fișier: {fisierRegulament.name} · {fisierRegulament.eticheta} · {fisierRegulament.marime}
+          </p>
+        )}
         {values.necesar.length > 0 && (
           <p className="text-muted-foreground mt-3 text-sm">
             Necesar: {values.necesar.map((c) => c.name).join(', ')}

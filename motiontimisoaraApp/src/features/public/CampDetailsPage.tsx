@@ -110,7 +110,7 @@ export default function CampDetailsPage() {
           <p className="text-muted-foreground mt-6 leading-relaxed">{tabara.description}</p>
         )}
 
-        <CampRulesDisplay rules={tabara.rules} />
+        <CampRulesDisplay rules={tabara.rules} fisier={data.regulamentFisier} />
 
         {necesar.length > 0 && (
           <div className="mt-8">

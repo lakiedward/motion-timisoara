@@ -3,8 +3,10 @@ import { useQuery } from '@tanstack/react-query'
 import { AlertTriangle, ArrowLeft, Phone, QrCode } from 'lucide-react'
 
 import { getInscrisiiTaberei, varstaLa, type CopilInscris } from '@/api/camp-enrolled'
+import { campRulesFileAfisabil } from '@/api/camp-rules-file'
 import { getTabaraDeEditat } from '@/api/camps-admin'
 import { formatZi } from '@/api/camps'
+import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
 import { plural } from '@/lib/plural'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -46,6 +48,9 @@ export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
         <p className="text-muted-foreground mt-1 text-sm">
           {tabara.title} · {formatZi(tabara.period_start)} – {formatZi(tabara.period_end)}
         </p>
+      )}
+      {tabara && (
+        <CampRulesDisplay rules={tabara.rules} fisier={campRulesFileAfisabil(tabara)} />
       )}
 
       <CampParticipationPanel campId={campId} />

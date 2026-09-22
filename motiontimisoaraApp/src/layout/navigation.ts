@@ -37,6 +37,7 @@ export const clubNavigation: PortalNavItem[] = [
   { to: '/club/coaches', label: 'Antrenori', icon: Users },
   { to: '/club/announcements', label: 'Anunțuri', icon: Megaphone },
   { to: '/club/courses', label: 'Cursuri', icon: GraduationCap },
+  { to: '/club/activities', label: 'Activități', icon: CalendarRange },
   { to: '/club/camps', label: 'Tabere', icon: Tent },
   { to: '/club/locations', label: 'Locații', icon: MapPin },
 ]

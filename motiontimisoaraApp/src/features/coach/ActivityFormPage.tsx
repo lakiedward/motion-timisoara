@@ -8,7 +8,7 @@ import {
   parseScaledDecimal,
   eurFaraCurs,
 } from '@/lib/pricing/offer-currency'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -17,6 +17,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { incarcaRegulamentActivitate, stergeRegulamentActivitate } from '@/api/camp-rules-file'
 import {
   createActivity,
   getActivityById,
@@ -24,6 +25,8 @@ import {
   updateActivity,
 } from '@/api/coach'
 import { fetchSports } from '@/api/sports'
+import { OfferRulesFieldset } from '@/components/RulesFileField'
+import { campRulesFileFromRow, type CampRulesFileMeta } from '@/lib/camp-rules'
 import { baniToRon } from '@/lib/money'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -76,6 +79,16 @@ export default function ActivityFormPage() {
     resolver: zodResolver(schema),
     defaultValues: { currency: 'RON', eur_ron_rate: '' },
   })
+  const [fisierLocal, setFisierLocal] = useState<File | null>(null)
+  const [fisierSuprascris, setFisierSuprascris] = useState<CampRulesFileMeta | null | undefined>(
+    undefined,
+  )
+  const fisierSalvat =
+    fisierSuprascris !== undefined
+      ? fisierSuprascris
+      : existing
+        ? campRulesFileFromRow(existing)
+        : null
   const currency = useWatch({ control, name: 'currency' })
   const cursEur = useWatch({ control, name: 'eur_ron_rate' })
   const faraCurs = eurFaraCurs(currency, cursEur)
@@ -112,7 +125,21 @@ export default function ActivityFormPage() {
     }
     try {
       if (isEdit) await updateActivity(id as string, payload)
-      else await createActivity(payload)
+      else {
+        const creata = await createActivity(payload)
+        if (fisierLocal) {
+          try {
+            await incarcaRegulamentActivitate(creata.id, fisierLocal)
+          } catch {
+            toast.error(
+              'Activitatea a fost creată, dar fișierul regulamentului nu a putut fi urcat.',
+            )
+            qc.invalidateQueries({ queryKey: ['my-activities'] })
+            navigate('/coach/activities')
+            return
+          }
+        }
+      }
       qc.invalidateQueries({ queryKey: ['my-activities'] })
       toast.success(isEdit ? 'Activitate actualizată.' : 'Activitate creată.')
       navigate('/coach/activities')
@@ -236,6 +263,16 @@ export default function ActivityFormPage() {
             className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
           />
         </div>
+        <OfferRulesFieldset
+          entityId={isEdit ? id : undefined}
+          saved={fisierSalvat}
+          localFile={fisierLocal}
+          onLocalFile={setFisierLocal}
+          onSaved={setFisierSuprascris}
+          upload={incarcaRegulamentActivitate}
+          remove={stergeRegulamentActivitate}
+          intro="Fișierul apare pe pagina publică a activității. Părinții îl pot deschide; nu trebuie să îl accepte la înscriere."
+        />
         <div className="flex gap-2 pt-2">
           <Button type="submit" disabled={isSubmitting || faraCurs}>
             {isSubmitting ? 'Se salvează…' : 'Salvează'}

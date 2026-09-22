@@ -2,10 +2,12 @@ import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 import { publicUrl } from '@/api/public'
 import { getPreturilePeVarsta, type PretPeVarsta } from '@/api/camps-admin'
+import { campRulesFileAfisabil } from '@/api/camp-rules-file'
 import {
   readCampRequirements,
   type CampRequirementCategory,
 } from '@/lib/camp-requirements'
+import type { CampRulesFileLink } from '@/lib/camp-rules'
 
 const BUCKET = 'camp-photos'
 
@@ -42,6 +44,7 @@ export type TabaraDetaliu = {
   heroUrl: string | null
   galerieUrls: string[]
   locuriRamase: number | null
+  regulamentFisier: CampRulesFileLink | null
 }
 
 function ziLocala(data: string, ore = 0, minute = 0, secunde = 0, ms = 0): Date {
@@ -214,5 +217,6 @@ export async function getTabaraDetaliu(slug: string): Promise<TabaraDetaliu | nu
     heroUrl: publicUrl(BUCKET, tabara.hero_photo_storage_path) ?? galerieUrls[0] ?? null,
     galerieUrls,
     locuriRamase: locuri.data as number | null,
+    regulamentFisier: campRulesFileAfisabil(tabara),
   }
 }

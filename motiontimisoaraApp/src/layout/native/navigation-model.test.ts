@@ -28,7 +28,10 @@ describe('native role navigation', () => {
 
   test.each<[Role, string[]]>([
     ['COACH', ['/coach/activities', '/coach/locations', '/coach/profile', '/coach/stripe']],
-    ['CLUB', ['/club/profile', '/club/coaches', '/club/locations', '/club/stripe']],
+    [
+      'CLUB',
+      ['/club/profile', '/club/coaches', '/club/activities', '/club/locations', '/club/stripe'],
+    ],
     [
       'ADMIN',
       ['/admin/courses', '/admin/sports', '/admin/codes', '/coach/profile', '/coach/stripe'],
@@ -46,6 +49,7 @@ describe('native role navigation', () => {
     ['/account/child/kid/qr', 'PARENT', '/account/children', '/account/children'],
     ['/coach/camps/camp/enrolled', 'COACH', '/coach/camps', '/coach/camps'],
     ['/club/courses/course/edit', 'CLUB', '/club/courses', '/club/courses'],
+    ['/club/activities/act/edit', 'CLUB', '/cont', '/club/activities'],
     ['/coach/children/kid/qr', 'COACH', '/coach/attendance', '/coach/attendance'],
     ['/club/children/kid/qr', 'CLUB', '/club/camps', '/club/camps'],
     ['/account/checkout', 'PARENT', '/cont', '/account/enrollments'],

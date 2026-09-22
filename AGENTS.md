@@ -556,6 +556,21 @@ reorganizing this document; correct obsolete facts with current evidence.
   integer millionths, in-memory + Cache-Control for the day, JWT). A missing
   feed blocks EUR save. Frozen on the offer at save; existing enrollments
   unchanged.
+- 2026-09-21 — To-Do #160 camp rules files use public bucket `camp-rules`
+  (same access model as `camp-photos`: public camp pages, no listing, owner
+  write path-scoped). One file per camp, 10 MB, PDF / images / Word / Excel.
+  Metadata is on `camps`; `save_camp_offer` does not touch it. See
+  `docs/superpowers/specs/2026-09-21-todo-160-camp-rules-file.md`.
+- 2026-09-22 — To-Do #160 rules files also cover courses and activities, one
+  file each, with the same PDF, image, Word, Excel and 10 MB limits as camps.
+  Public buckets `course-rules` and `activity-rules` use `getPublicUrl`.
+  A club may change only the activity file columns. Migration
+  `00066_course_activity_rules_file.sql`. See
+  `docs/superpowers/specs/2026-09-22-todo-160-course-activity-rules-file.md`.
+- 2026-09-22 — A club creates and edits its activities with the same full form
+  as its courses, including the one rules file, and picks the coach from its
+  roster. The activity column guard is removed. INSERT and UPDATE follow the
+  course policies. Migration `00067_club_activity_management.sql`.
 
 ## 11. Known Issues / WIP
 

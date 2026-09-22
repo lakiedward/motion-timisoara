@@ -26,6 +26,7 @@ import ClubCoachesPage from '@/features/club/ClubCoachesPage'
 import ClubAnnouncementsPage from '@/features/club/ClubAnnouncementsPage'
 import ClubCoursesPage from '@/features/club/ClubCoursesPage'
 import ClubCourseFormPage from '@/features/club/ClubCourseFormPage'
+import ClubActivitiesPage from '@/features/club/ClubActivitiesPage'
 import ClubLocationsPage from '@/features/club/ClubLocationsPage'
 import ClubLocationFormPage from '@/features/club/ClubLocationFormPage'
 import CampsListPage from '@/features/camps/CampsListPage'
@@ -206,6 +207,9 @@ export const router = createBrowserRouter([
               { path: '/club/courses', element: <ClubCoursesPage /> },
               { path: '/club/courses/new', element: <ClubCourseFormPage /> },
               { path: '/club/courses/:id/edit', element: <ClubCourseFormPage /> },
+              { path: '/club/activities', element: <ClubActivitiesPage /> },
+              { path: '/club/activities/new', element: <ClubActivitiesPage /> },
+              { path: '/club/activities/:id/edit', element: <ClubActivitiesPage /> },
               { path: '/club/locations', element: <ClubLocationsPage /> },
               { path: '/club/locations/new', element: <ClubLocationFormPage /> },
               { path: '/club/locations/:id/edit', element: <ClubLocationFormPage /> },

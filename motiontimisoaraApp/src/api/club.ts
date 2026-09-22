@@ -377,6 +377,7 @@ export async function createClubCourse(clubId: string, input: ClubCourseFormInpu
     await supabase.from('courses').delete().eq('id', data.id)
     throw generationError
   }
+  return data
 }
 export async function updateClubCourse(id: string, input: ClubCourseFormInput) {
   const { error } = await supabase
@@ -391,4 +392,73 @@ export async function updateClubCourse(id: string, input: ClubCourseFormInput) {
 export async function setClubCourseActive(id: string, active: boolean) {
   const { error } = await supabase.from('courses').update({ active }).eq('id', id).select().single()
   if (error) throw error
+}
+
+export type ClubActivity = Tables<'activities'> & {
+  sport: Pick<Tables<'sports'>, 'id' | 'name'> | null
+  location: Pick<Tables<'locations'>, 'id' | 'name'> | null
+  coach: Pick<Tables<'profiles'>, 'id' | 'name'> | null
+}
+
+export async function getClubActivities(clubId: string): Promise<ClubActivity[]> {
+  const { data, error } = await supabase
+    .from('activities')
+    .select(
+      '*, sport:sports(id,name), location:locations(id,name), coach:profiles!activities_coach_id_fkey(id,name)',
+    )
+    .eq('club_id', clubId)
+    .order('activity_date', { ascending: false })
+  if (error) throw error
+  return (data ?? []) as unknown as ClubActivity[]
+}
+
+export interface ClubActivityFormInput {
+  currency: 'RON' | 'EUR'
+  eur_ron_rate_micros: number | null
+  name: string
+  description: string | null
+  sport_id: string
+  location_id: string
+  coach_id: string
+  activity_date: string
+  start_time: string
+  end_time: string
+  price: number
+  capacity: number | null
+}
+
+export async function createClubActivity(clubId: string, input: ClubActivityFormInput) {
+  const { data, error } = await supabase
+    .from('activities')
+    .insert({
+      ...input,
+      club_id: clubId,
+      payment_recipient: 'CLUB',
+      active: true,
+    })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateClubActivity(id: string, input: ClubActivityFormInput) {
+  const { error } = await supabase.from('activities').update(input).eq('id', id).select().single()
+  if (error) throw error
+}
+
+export async function setClubActivityActive(id: string, active: boolean) {
+  const { error } = await supabase
+    .from('activities')
+    .update({ active })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+}
+
+export async function getClubActivityById(id: string): Promise<Tables<'activities'> | null> {
+  const { data, error } = await supabase.from('activities').select('*').eq('id', id).single()
+  if (error) return null
+  return data
 }

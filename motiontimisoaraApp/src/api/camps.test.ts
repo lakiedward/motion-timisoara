@@ -175,6 +175,27 @@ test('detaliul adună categoriile, antrenorii, pozele și locurile rămase', asy
   expect(d!.galerieUrls).toEqual(['https://public/camp-photos/camp-1/gallery/a.jpg'])
   expect(d!.locuriRamase).toBe(12)
 })
+test('fișierul regulamentului primește URL-ul public din bucketul camp-rules', async () => {
+  raspuns = {
+    camps: {
+      data: {
+        ...TABARA,
+        rules_file_storage_path: 'camp-1/uuid.pdf',
+        rules_file_name: 'regulament.pdf',
+        rules_file_content_type: 'application/pdf',
+        rules_file_size_bytes: 2048,
+      },
+      error: null,
+    },
+  }
+  const d = await getTabaraDetaliu('tabara-inot')
+  expect(d!.regulamentFisier).toEqual({
+    name: 'regulament.pdf',
+    contentType: 'application/pdf',
+    sizeBytes: 2048,
+    url: 'https://public/camp-rules/camp-1/uuid.pdf',
+  })
+})
 test('fără poză hero aleasă, prima din galerie îi ține locul', async () => {
   raspuns = {
     camps: { data: TABARA, error: null },
