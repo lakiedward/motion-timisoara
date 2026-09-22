@@ -58,7 +58,7 @@ CREATE TRIGGER competition_routes_set_updated_at
 ALTER TABLE public.competition_routes ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.competition_routes FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.competition_routes TO anon, authenticated;
-GRANT INSERT (competition_id, name, description, gpx_storage_path, display_order)
+GRANT INSERT (id, competition_id, name, description, gpx_storage_path, display_order)
     ON public.competition_routes TO authenticated;
 GRANT UPDATE (name, description, gpx_storage_path, display_order)
     ON public.competition_routes TO authenticated;
@@ -127,7 +127,7 @@ CREATE TRIGGER competition_age_categories_set_updated_at
 ALTER TABLE public.competition_age_categories ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.competition_age_categories FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.competition_age_categories TO anon, authenticated;
-GRANT INSERT (competition_id, route_id, name, age_from, age_to, price_bani, display_order)
+GRANT INSERT (id, competition_id, route_id, name, age_from, age_to, price_bani, display_order)
     ON public.competition_age_categories TO authenticated;
 GRANT UPDATE (route_id, name, age_from, age_to, price_bani, display_order)
     ON public.competition_age_categories TO authenticated;
