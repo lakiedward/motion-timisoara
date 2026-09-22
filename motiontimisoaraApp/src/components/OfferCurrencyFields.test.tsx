@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useForm, useWatch } from 'react-hook-form'
@@ -70,7 +70,9 @@ test('EUR arată încărcarea, apoi cursul BNR read-only', async () => {
   expect(screen.queryByLabelText('Cursul tău: 1 EUR în lei')).not.toBeInTheDocument()
   elibereaza({ date: '2026-09-21', eur_ron_millionths: 5264900 })
   expect(await screen.findByText('Curs BNR din 21.09.2026: 5,2649 lei/EUR')).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Salvează' })).toBeEnabled()
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'Salvează' })).toBeEnabled()
+  })
 })
 
 test('fără curs BNR, EUR blochează salvarea și oferă reîncercare', async () => {
@@ -83,5 +85,7 @@ test('fără curs BNR, EUR blochează salvarea și oferă reîncercare', async (
   vi.mocked(getCursBnr).mockResolvedValue({ date: '2026-09-19', eur_ron_millionths: 5073100 })
   await user.click(screen.getByRole('button', { name: 'Reîncearcă cursul BNR' }))
   expect(await screen.findByText('Curs BNR din 19.09.2026: 5,0731 lei/EUR')).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Salvează' })).toBeEnabled()
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'Salvează' })).toBeEnabled()
+  })
 })
