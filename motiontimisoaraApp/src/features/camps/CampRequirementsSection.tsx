@@ -4,6 +4,7 @@ import { useFieldArray, type Control, type FieldErrors, type UseFormRegister } f
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import CampFormField, { campFormRandAction, CampFormRand } from './CampFormField'
 import type { Values } from './camp-form-schema'
 
 type Props = {
@@ -95,37 +96,26 @@ function CampRequirementCategoryEditor({
 
       <ul className="mt-4 space-y-3" aria-label={`Articole categoria ${categoryIndex + 1}`}>
         {items.fields.map((item, itemIndex) => (
-          <li key={item.id} className="flex items-start gap-3">
-            <div className="grid flex-1 gap-3 sm:grid-cols-[1fr_120px]">
-              <div>
-                <Label
-                  htmlFor={`necesar-${categoryIndex}-item-${itemIndex}-name`}
-                  className="mb-1.5 block"
-                >
-                  Articol
-                </Label>
+          <li key={item.id}>
+            <CampFormRand columns="article">
+              <CampFormField
+                rand
+                eticheta="Articol"
+                eroare={categoryError?.items?.[itemIndex]?.name?.message}
+              >
                 <Input
-                  id={`necesar-${categoryIndex}-item-${itemIndex}-name`}
                   {...register(`necesar.${categoryIndex}.items.${itemIndex}.name` as const)}
                   className="h-11 lg:h-9"
                   aria-invalid={!!categoryError?.items?.[itemIndex]?.name}
                   placeholder="Chiloți"
                 />
-                {categoryError?.items?.[itemIndex]?.name?.message && (
-                  <p className="text-destructive mt-1 text-xs" role="alert">
-                    {categoryError.items[itemIndex].name.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <Label
-                  htmlFor={`necesar-${categoryIndex}-item-${itemIndex}-quantity`}
-                  className="mb-1.5 block"
-                >
-                  Număr
-                </Label>
+              </CampFormField>
+              <CampFormField
+                rand
+                eticheta="Număr"
+                eroare={categoryError?.items?.[itemIndex]?.quantity?.message}
+              >
                 <Input
-                  id={`necesar-${categoryIndex}-item-${itemIndex}-quantity`}
                   type="number"
                   min={1}
                   max={99}
@@ -133,22 +123,17 @@ function CampRequirementCategoryEditor({
                   className="h-11 lg:h-9"
                   aria-invalid={!!categoryError?.items?.[itemIndex]?.quantity}
                 />
-                {categoryError?.items?.[itemIndex]?.quantity?.message && (
-                  <p className="text-destructive mt-1 text-xs" role="alert">
-                    {categoryError.items[itemIndex].quantity.message}
-                  </p>
-                )}
-              </div>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              className="mt-6 size-11 min-h-11 shrink-0"
-              onClick={() => items.remove(itemIndex)}
-              aria-label={`Șterge articolul ${itemIndex + 1}`}
-            >
-              <Trash2 className="size-4" />
-            </Button>
+              </CampFormField>
+              <Button
+                type="button"
+                variant="ghost"
+                className={campFormRandAction}
+                onClick={() => items.remove(itemIndex)}
+                aria-label={`Șterge articolul ${itemIndex + 1}`}
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </CampFormRand>
           </li>
         ))}
       </ul>

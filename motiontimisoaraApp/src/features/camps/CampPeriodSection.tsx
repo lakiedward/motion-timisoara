@@ -10,7 +10,7 @@ import {
   campPeriodDurationLabel,
 } from '@/lib/camp-period'
 import { plural } from '@/lib/plural'
-import CampFormField from './CampFormField'
+import CampFormField, { CampFormRand } from './CampFormField'
 import type { Values } from './camp-form-schema'
 
 const DURATE = [7, 8, 14] as const
@@ -48,8 +48,8 @@ export default function CampPeriodSection({
           {rezumat}
         </p>
       )}
-      <div className="mt-3 grid gap-5 sm:grid-cols-2">
-        <CampFormField eticheta="Începe" eroare={errors.period_start?.message}>
+      <CampFormRand columns="two" className="mt-3 flex-none">
+        <CampFormField rand eticheta="Începe" eroare={errors.period_start?.message}>
           <Input
             type="date"
             className="h-11 lg:h-9"
@@ -64,7 +64,7 @@ export default function CampPeriodSection({
             }}
           />
         </CampFormField>
-        <CampFormField eticheta="Se termină" eroare={errors.period_end?.message}>
+        <CampFormField rand eticheta="Se termină" eroare={errors.period_end?.message}>
           <Input
             type="date"
             min={campIsoDate(start) ? start : undefined}
@@ -73,7 +73,7 @@ export default function CampPeriodSection({
             {...register('period_end')}
           />
         </CampFormField>
-      </div>
+      </CampFormRand>
       <div className="mt-3 flex flex-wrap gap-2">
         {DURATE.map((zile) => (
           <Button
