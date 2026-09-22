@@ -84,11 +84,14 @@ async function simulate(page: Page, scenario: Scenario = 'by-age', role: 'PARENT
     if (path === '/auth/v1/user') return respond({ ...activeProfile, aud: 'authenticated', user_metadata: {} });
     if (path === '/rest/v1/children') return scenario === 'children-error' && !recovered
       ? respond({ message: 'Simulated children failure' }, 503) : respond(fixtureChildren);
-    if (path === '/rest/v1/courses' || path === '/rest/v1/activities') return respond({
-      id: 'offer-simulation', name: 'Ofertă EUR simulată #149', currency: 'EUR',
-      price: 99999, price_per_session: 99999, eur_ron_rate_micros: 6000000,
-      package_options: '[5,10,20]',
-    });
+    if (path === '/rest/v1/courses' || path === '/rest/v1/activities') {
+      const offer = {
+        id: 'offer-simulation', name: 'Ofertă EUR simulată #149', currency: 'EUR',
+        price: 99999, price_per_session: 99999, eur_ron_rate_micros: 6000000,
+        package_options: '[5,10,20]',
+      };
+      return respond(request.headers().accept?.includes('vnd.pgrst.object') ? offer : [offer]);
+    }
     if (path === '/rest/v1/camps') {
       if (scenario === 'offering-error' && !recovered && url.searchParams.get('select') === '*') return respond({ message: 'Simulated offering failure' }, 503);
       const camp = {
@@ -111,6 +114,9 @@ async function simulate(page: Page, scenario: Scenario = 'by-age', role: 'PARENT
     if (path === '/rest/v1/rpc/camp_spots_remaining') return respond(20);
     if (path === '/rest/v1/enrollments') return respond(created ? quote().map((item, index) => ({
       id: `simulated-enrollment-${index}`, kind, status: 'PENDING', child: children[index],
+      entity_id: kind === 'CAMP' ? 'camp-simulation' : 'offer-simulation',
+      purchased_sessions: kind === 'COURSE' ? quantity : 0,
+      remaining_sessions: kind === 'COURSE' ? quantity : 0,
       payments: [{ amount: item.amount, currency: item.currency, pricing_snapshot: item.pricingSnapshot, status: 'PENDING', method: 'CASH', paid_at: null }],
     })) : []);
     if (path === '/functions/v1/validate-enrollment') {
@@ -493,6 +499,8 @@ for (const kind of ['CAMP', 'COURSE', 'ACTIVITY'] as const) {
       await capture(page, info, `eur-${kind}-payment`);
       await page.getByRole('button', { name: 'Finalizează', exact: true }).click();
       await expect(page).toHaveURL(/\/account\/enrollments$/);
+      const offerName = kind === 'CAMP' ? 'Tabără simulată #315' : 'Ofertă EUR simulată #149';
+      await expect(page.getByRole('heading', { name: offerName })).toHaveCount(2);
       await expect(page.getByText(/1 EUR = 5,123456 lei/)).toHaveCount(2);
       expect(state.submissions).toHaveLength(1);
       expect(state.submissions[0].kind).toBe(kind);

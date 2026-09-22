@@ -81,9 +81,14 @@ test('the offer name leads the card and keeps the person and amount', async () =
       remaining_sessions: 5,
       payments: [
         {
-          amount: 15000,
+          amount: 31612,
           currency: 'RON',
-          pricing_snapshot: null,
+          pricing_snapshot: {
+            sourceUnitAmount: 1234,
+            sourceCurrency: 'EUR',
+            quantity: 5,
+            eurRonRateMicros: 5123456,
+          },
           status: 'SUCCEEDED',
           method: 'CASH',
           paid_at: null,
@@ -118,8 +123,15 @@ test('the offer name leads the card and keeps the person and amount', async () =
 
   const course = screen.getByRole('article', { name: 'Curs de înot' })
   expect(within(course).getByText('Copil Spec 520')).toBeInTheDocument()
-  expect(within(course).getByText('150,00 lei')).toBeInTheDocument()
+  expect(within(course).getByText('316,12 lei')).toBeInTheDocument()
+  expect(within(course).getByText(/1 EUR = 5,123456 lei/)).toBeInTheDocument()
   expect(within(course).getByText('Ședințe: 5 rămase din 8')).toBeInTheDocument()
+  expect(
+    within(course)
+      .getByRole('heading', { name: 'Curs de înot' })
+      .compareDocumentPosition(within(course).getByText(/1 EUR = 5,123456 lei/)) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy()
 
   const activity = screen.getByRole('article', { name: 'Activitate de ciclism' })
   expect(within(activity).getByText('Copil Audit 152')).toBeInTheDocument()
