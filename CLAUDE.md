@@ -561,6 +561,12 @@ reorganizing this document; correct obsolete facts with current evidence.
   write path-scoped). One file per camp, 10 MB, PDF / images / Word / Excel.
   Metadata is on `camps`; `save_camp_offer` does not touch it. See
   `docs/superpowers/specs/2026-09-21-todo-160-camp-rules-file.md`.
+- 2026-09-22 — To-Do #160 rules files also cover courses and activities, one
+  file each, with the same PDF, image, Word, Excel and 10 MB limits as camps.
+  Public buckets `course-rules` and `activity-rules` use `getPublicUrl`.
+  A club may change only the activity file columns. Migration
+  `00066_course_activity_rules_file.sql`. See
+  `docs/superpowers/specs/2026-09-22-todo-160-course-activity-rules-file.md`.
 
 ## 11. Known Issues / WIP
 

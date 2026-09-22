@@ -377,6 +377,7 @@ export async function createClubCourse(clubId: string, input: ClubCourseFormInpu
     await supabase.from('courses').delete().eq('id', data.id)
     throw generationError
   }
+  return data
 }
 export async function updateClubCourse(id: string, input: ClubCourseFormInput) {
   const { error } = await supabase
@@ -391,4 +392,24 @@ export async function updateClubCourse(id: string, input: ClubCourseFormInput) {
 export async function setClubCourseActive(id: string, active: boolean) {
   const { error } = await supabase.from('courses').update({ active }).eq('id', id).select().single()
   if (error) throw error
+}
+
+export type ClubActivity = Tables<'activities'> & {
+  sport: Pick<Tables<'sports'>, 'id' | 'name'> | null
+}
+
+export async function getClubActivities(clubId: string): Promise<ClubActivity[]> {
+  const { data, error } = await supabase
+    .from('activities')
+    .select('*, sport:sports(id,name)')
+    .eq('club_id', clubId)
+    .order('activity_date', { ascending: false })
+  if (error) throw error
+  return (data ?? []) as unknown as ClubActivity[]
+}
+
+export async function getClubActivityById(id: string): Promise<Tables<'activities'> | null> {
+  const { data, error } = await supabase.from('activities').select('*').eq('id', id).single()
+  if (error) return null
+  return data
 }

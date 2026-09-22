@@ -3,7 +3,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, CalendarDays, Clock, MapPin } from 'lucide-react'
 
+import { ACTIVITY_RULES_FILE_BUCKET, rulesFileAfisabil } from '@/api/camp-rules-file'
 import { getActivity } from '@/api/public'
+import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
 import { formatMoney } from '@/lib/money'
 import { useAuth } from '@/lib/auth-context'
 import { Badge } from '@/components/ui/badge'
@@ -74,6 +76,8 @@ export default function ActivityDetailPage() {
       {a.description && (
         <p className="text-muted-foreground mt-6 leading-relaxed">{a.description}</p>
       )}
+
+      <CampRulesDisplay rules={null} fisier={rulesFileAfisabil(ACTIVITY_RULES_FILE_BUCKET, a)} />
 
       <div className="bg-card shadow-card mt-8 flex flex-col items-start gap-4 rounded-3xl border p-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="font-display shrink-0 whitespace-nowrap text-2xl font-extrabold">

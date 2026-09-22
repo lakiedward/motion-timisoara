@@ -4,7 +4,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, CalendarDays, MapPin, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { COURSE_RULES_FILE_BUCKET, rulesFileAfisabil } from '@/api/camp-rules-file'
 import { courseHeroUrl, getCourse, getCourseSpotsRemaining } from '@/api/public'
+import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
 import { getCourseRatingSummary, getMyCourseRating, submitCourseRating } from '@/api/ratings'
 import { formatLevel } from '@/lib/level'
 import { formatMoney } from '@/lib/money'
@@ -196,6 +198,11 @@ export default function CourseDetailsPage() {
                 <p className="text-muted-foreground mt-3 leading-relaxed">{course.description}</p>
               </section>
             )}
+
+            <CampRulesDisplay
+              rules={null}
+              fisier={rulesFileAfisabil(COURSE_RULES_FILE_BUCKET, course)}
+            />
 
             {sessions.length > 0 && (
               <section className="mt-8">

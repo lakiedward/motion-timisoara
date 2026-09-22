@@ -211,6 +211,14 @@ images, Word, Excel, 10 MB) on `camps` plus public bucket `camp-rules`.
 `save_camp_offer` does not write the file columns. Listing stays closed; public
 pages download through the public URL, like `camp-photos`.
 
+To-Do #160, same file on courses and activities: `00066_course_activity_rules_file.sql`
+was applied as `20260922071648` (`course_activity_rules_file`) on 2026-09-22
+after the isolated SQL test on PostgreSQL 16. It adds the same optional file
+columns to `courses` and `activities`, public buckets `course-rules` and
+`activity-rules`, and path-scoped organizer policies. A club may update an
+activity it owns, and only those four columns. `00065` was not re-applied.
+Listing stays closed.
+
 To confirm git and the remote still agree:
 
 ```bash

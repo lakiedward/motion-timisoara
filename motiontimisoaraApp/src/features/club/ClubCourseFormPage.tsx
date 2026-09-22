@@ -16,7 +16,7 @@ import {
   requireSerializedProgram,
   validateCourseProgramFields,
 } from '@/lib/course-program/recurrence'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -33,7 +33,10 @@ import {
   getMyClub,
   updateClubCourse,
 } from '@/api/club'
+import { incarcaRegulamentCurs, stergeRegulamentCurs } from '@/api/camp-rules-file'
 import { fetchSports } from '@/api/sports'
+import { OfferRulesFieldset } from '@/components/RulesFileField'
+import { campRulesFileFromRow, type CampRulesFileMeta } from '@/lib/camp-rules'
 import { baniToRon } from '@/lib/money'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -101,6 +104,16 @@ export default function ClubCourseFormPage() {
     resolver: zodResolver(schema),
     defaultValues: { currency: 'RON', eur_ron_rate: '', program: emptyCourseProgram() },
   })
+  const [fisierLocal, setFisierLocal] = useState<File | null>(null)
+  const [fisierSuprascris, setFisierSuprascris] = useState<CampRulesFileMeta | null | undefined>(
+    undefined,
+  )
+  const fisierSalvat =
+    fisierSuprascris !== undefined
+      ? fisierSuprascris
+      : existing
+        ? campRulesFileFromRow(existing)
+        : null
   const currency = useWatch({ control, name: 'currency' })
   const cursEur = useWatch({ control, name: 'eur_ron_rate' })
   const faraCurs = eurFaraCurs(currency, cursEur)
@@ -144,7 +157,19 @@ export default function ClubCourseFormPage() {
     }
     try {
       if (isEdit) await updateClubCourse(id as string, payload)
-      else await createClubCourse(club.id, payload)
+      else {
+        const creat = await createClubCourse(club.id, payload)
+        if (fisierLocal) {
+          try {
+            await incarcaRegulamentCurs(creat.id, fisierLocal)
+          } catch {
+            toast.error('Cursul a fost creat, dar fișierul regulamentului nu a putut fi urcat.')
+            qc.invalidateQueries({ queryKey: ['club-courses'] })
+            navigate('/club/courses')
+            return
+          }
+        }
+      }
       qc.invalidateQueries({ queryKey: ['club-courses'] })
       toast.success(
         isEdit
@@ -342,6 +367,16 @@ export default function ClubCourseFormPage() {
             className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
           />
         </div>
+        <OfferRulesFieldset
+          entityId={isEdit ? id : undefined}
+          saved={fisierSalvat}
+          localFile={fisierLocal}
+          onLocalFile={setFisierLocal}
+          onSaved={setFisierSuprascris}
+          upload={incarcaRegulamentCurs}
+          remove={stergeRegulamentCurs}
+          intro="Fișierul apare pe pagina publică a cursului. Părinții îl pot deschide; nu trebuie să îl accepte la înscriere."
+        />
         <div className="flex gap-2 pt-2">
           <Button type="submit" className="h-11 lg:h-9" disabled={isSubmitting || faraCurs}>
             {isSubmitting ? 'Se salvează…' : 'Salvează'}

@@ -1,6 +1,12 @@
 import { beforeEach, expect, test, vi } from 'vitest'
 
-import { incarcaRegulamentFisier, stergeRegulamentFisier } from './camp-rules-file'
+import {
+  incarcaRegulamentActivitate,
+  incarcaRegulamentCurs,
+  incarcaRegulamentFisier,
+  stergeRegulamentActivitate,
+  stergeRegulamentFisier,
+} from './camp-rules-file'
 
 let jurnal: string[] = []
 let raspunsuri: Record<string, { data: unknown; error: unknown }> = {}
@@ -13,7 +19,9 @@ function lant(tabela: string) {
       if (prop === 'then') {
         return (resolve: (v: unknown) => unknown) =>
           Promise.resolve(
-            resolve(raspunsuri[`${tabela}.${verb}`] ?? raspunsuri[tabela] ?? { data: {}, error: null }),
+            resolve(
+              raspunsuri[`${tabela}.${verb}`] ?? raspunsuri[tabela] ?? { data: {}, error: null },
+            ),
           )
       }
       return () => {
@@ -34,10 +42,13 @@ vi.mock('@/lib/supabase', () => ({
   supabase: {
     from: (t: string) => lant(t),
     storage: {
-      from: () => ({
-        getPublicUrl: (cale: string) => ({ data: { publicUrl: `https://public/${cale}` } }),
+      from: (bucket: string) => ({
+        getPublicUrl: (cale: string) => ({
+          data: { publicUrl: `https://public/${bucket}/${cale}` },
+        }),
         upload: async (cale: string) => {
           jurnal.push(`storage.upload ${cale.split('/')[1]}`)
+          jurnal.push(`storage.bucket ${bucket}`)
           return raspunsUpload
         },
         remove: async (cai: string[]) => {
@@ -62,7 +73,9 @@ beforeEach(() => {
 test('fișierul se urcă înainte să fie pus pe tabără', async () => {
   raspunsuri.camps = { data: { rules_file_storage_path: null }, error: null }
   await incarcaRegulamentFisier('c1', pdf())
-  expect(jurnal.indexOf('storage.upload uuid-nou.pdf')).toBeLessThan(jurnal.indexOf('db.camps.update'))
+  expect(jurnal.indexOf('storage.upload uuid-nou.pdf')).toBeLessThan(
+    jurnal.indexOf('db.camps.update'),
+  )
 })
 
 test('fișierul vechi se scoate abia după ce rândul arată spre cel nou', async () => {
@@ -90,6 +103,26 @@ test('un fișier peste 10 MB e refuzat înainte de urcare', async () => {
   Object.defineProperty(mare, 'size', { value: 10 * 1024 * 1024 + 1 })
   await expect(incarcaRegulamentFisier('c1', mare)).rejects.toThrow(/10 MB/)
   expect(jurnal).toEqual([])
+})
+
+test('cursul și activitatea folosesc bucketul propriu', async () => {
+  raspunsuri.courses = { data: { rules_file_storage_path: null }, error: null }
+  await incarcaRegulamentCurs('curs-1', pdf('regulament-curs.pdf'))
+  expect(jurnal).toContain('db.courses.update')
+  expect(jurnal).toContain('storage.bucket course-rules')
+
+  jurnal = []
+  raspunsuri.activities = { data: { rules_file_storage_path: 'a1/vechi.pdf' }, error: null }
+  await incarcaRegulamentActivitate('act-1', pdf('regulament-activitate.pdf'))
+  expect(jurnal).toContain('db.activities.update')
+  expect(jurnal).toContain('storage.bucket activity-rules')
+  expect(jurnal.indexOf('storage.remove 1')).toBeGreaterThan(jurnal.indexOf('db.activities.update'))
+})
+
+test('ștergerea activității golește rândul înainte de fișier', async () => {
+  raspunsuri.activities = { data: { rules_file_storage_path: 'a1/vechi.pdf' }, error: null }
+  await stergeRegulamentActivitate('act-1')
+  expect(jurnal.indexOf('db.activities.update')).toBeLessThan(jurnal.indexOf('storage.remove 1'))
 })
 
 test('ștergerea golește rândul înainte de fișier', async () => {

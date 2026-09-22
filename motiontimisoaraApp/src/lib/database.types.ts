@@ -33,6 +33,10 @@ export type Database = {
           payment_recipient: string
           price: number
           sport_id: string
+          rules_file_content_type: string | null
+          rules_file_name: string | null
+          rules_file_size_bytes: number | null
+          rules_file_storage_path: string | null
           start_time: string
           updated_at: string | null
         }
@@ -53,6 +57,10 @@ export type Database = {
           name: string
           payment_recipient?: string
           price?: number
+          rules_file_content_type?: string | null
+          rules_file_name?: string | null
+          rules_file_size_bytes?: number | null
+          rules_file_storage_path?: string | null
           sport_id: string
           start_time: string
           updated_at?: string | null
@@ -74,6 +82,10 @@ export type Database = {
           name?: string
           payment_recipient?: string
           price?: number
+          rules_file_content_type?: string | null
+          rules_file_name?: string | null
+          rules_file_size_bytes?: number | null
+          rules_file_storage_path?: string | null
           sport_id?: string
           start_time?: string
           updated_at?: string | null
@@ -1494,6 +1506,10 @@ export type Database = {
           price: number
           price_per_session: number
           recurrence_rule: string | null
+          rules_file_content_type: string | null
+          rules_file_name: string | null
+          rules_file_size_bytes: number | null
+          rules_file_storage_path: string | null
           sport_id: string
         }
         Insert: {
@@ -1516,6 +1532,10 @@ export type Database = {
           price?: number
           price_per_session?: number
           recurrence_rule?: string | null
+          rules_file_content_type?: string | null
+          rules_file_name?: string | null
+          rules_file_size_bytes?: number | null
+          rules_file_storage_path?: string | null
           sport_id: string
         }
         Update: {
@@ -1538,6 +1558,10 @@ export type Database = {
           price?: number
           price_per_session?: number
           recurrence_rule?: string | null
+          rules_file_content_type?: string | null
+          rules_file_name?: string | null
+          rules_file_size_bytes?: number | null
+          rules_file_storage_path?: string | null
           sport_id?: string
         }
         Relationships: [
