@@ -74,7 +74,7 @@ ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 
 CREATE FUNCTION storage.foldername(name TEXT) RETURNS TEXT[]
 LANGUAGE sql IMMUTABLE AS $$
-    SELECT string_to_array(name, '/')[1:array_length(string_to_array(name, '/'), 1) - 1]
+    SELECT (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1]
 $$;
 
 CREATE FUNCTION public.safe_uuid(value TEXT) RETURNS UUID
