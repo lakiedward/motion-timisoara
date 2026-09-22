@@ -48,3 +48,18 @@ Deno.test("snapshot versions bind identity and all conversion inputs, including 
   equal(next.priceVersion === baseline.priceVersion, false);
   equal(await readPriceSnapshot(baseline), baseline);
 });
+
+Deno.test("adult camp snapshots keep child hashes byte-compatible and refuse a mixed subject", async () => {
+  const child = await createPriceSnapshot("CAMP", "camp", "child-a", 8000, "RON", null, 1);
+  const again = await createPriceSnapshot("CAMP", "camp", "child-a", 8000, "RON", null, 1);
+  equal(child.priceVersion, again.priceVersion);
+  equal(child.childId, "child-a");
+  equal("adultProfileId" in child, false);
+  const adult = await createPriceSnapshot("CAMP", "camp", null, 15000, "RON", null, 1, "parent");
+  equal(adult.childId, null);
+  equal(adult.adultProfileId, "parent");
+  equal(await readPriceSnapshot(adult), adult);
+  let rejected = false;
+  try { await readPriceSnapshot({ ...adult, childId: "child-a" }); } catch { rejected = true; }
+  equal(rejected, true);
+});

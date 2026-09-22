@@ -107,8 +107,60 @@ test('a free camp child can confirm Gratuit and enroll without card billing', as
     paymentMethod: 'CARD',
     billingDetails: undefined,
     childIds: ['bebe'],
+    includeSelf: false,
   })
   await waitFor(() =>
     expect(mocks.toast.success).toHaveBeenCalledWith('Înscriere confirmată. Nu este nevoie de plată.'),
   )
+})
+
+test('a parent can enroll themselves as an adult without selecting a child', async () => {
+  mocks.validate.mockResolvedValue({
+    allowCash: false,
+    capacity: { available: 10, requested: 0, sufficient: true },
+    results: [
+      {
+        childId: 'bebe',
+        name: 'Bebe',
+        eligible: true,
+        amount: 80000,
+        currency: 'RON',
+        priceVersion: 'a'.repeat(64),
+      },
+    ],
+    adult: {
+      adultProfileId: 'parent',
+      name: 'Părinte',
+      eligible: true,
+      amount: 0,
+      currency: 'RON',
+      priceVersion: 'b'.repeat(64),
+    },
+  })
+  mocks.create.mockResolvedValue({
+    enrollmentId: 'enroll-adult',
+    enrollmentIds: ['enroll-adult'],
+    requiresPaymentIntent: false,
+    prices: [{ adultProfileId: 'parent', amount: 0, currency: 'RON' }],
+  })
+  const user = userEvent.setup()
+  renderWizard()
+  expect(await screen.findByText('Participanți')).toBeInTheDocument()
+  await user.click(await screen.findByRole('checkbox', { name: /Mă înscriu și eu/ }))
+  expect(screen.getByRole('checkbox', { name: /Bebe/ })).not.toBeChecked()
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  expect(await screen.findByText('Părinte')).toBeInTheDocument()
+  expect(screen.getByText('Adult')).toBeInTheDocument()
+  expect(screen.getByText('Total').parentElement).toHaveTextContent('Gratuit')
+  await user.click(screen.getByRole('checkbox', { name: /Confirm suma finală/ }))
+  await user.click(screen.getByRole('button', { name: 'Finalizează' }))
+  await waitFor(() => expect(mocks.create).toHaveBeenCalled())
+  expect(mocks.create.mock.calls[0][0]).toMatchObject({
+    includeSelf: true,
+    childIds: [],
+    paymentMethod: 'CARD',
+  })
+  expect(mocks.create.mock.calls[0][0].priceVersions).toMatchObject({
+    parent: 'b'.repeat(64),
+  })
 })

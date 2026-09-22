@@ -25,11 +25,16 @@ export async function completedEnrollmentPrices(
     } catch {
       throw enrollmentJson({ error: "Oferta salvată nu este validă. Contactează clubul." }, 409);
     }
-    if (snapshot.kind !== kind || snapshot.entityId !== entityId || snapshot.childId !== enrollment.child_id ||
+    if (snapshot.kind !== kind || snapshot.entityId !== entityId ||
+      (enrollment.child_id
+        ? snapshot.childId !== enrollment.child_id
+        : snapshot.adultProfileId !== enrollment.adult_profile_id) ||
       snapshot.quantity !== quantity || snapshot.amount !== payment.amount || payment.currency !== "RON") {
       throw enrollmentJson({ error: "Înscrierea este deja procesată. Verifică în Înscrieri." }, 409);
     }
-    return { childId: enrollment.child_id, amount: snapshot.amount, currency: "RON", priceVersion: snapshot.priceVersion, snapshot };
+    return enrollment.child_id
+      ? { childId: enrollment.child_id, amount: snapshot.amount, currency: "RON", priceVersion: snapshot.priceVersion, snapshot }
+      : { adultProfileId: enrollment.adult_profile_id ?? undefined, amount: snapshot.amount, currency: "RON", priceVersion: snapshot.priceVersion, snapshot };
   }));
 }
 
@@ -46,14 +51,21 @@ interface SavedBatch {
   enrollmentId: string;
   enrollmentIds: string[];
   createdEnrollmentIds: string[];
-  prices: { childId: string; amount: number; currency: string }[];
+  prices: { childId?: string; adultProfileId?: string; amount: number; currency: string }[];
   requiresPaymentIntent: boolean;
 }
 
 export async function saveEnrollmentBatch(db: SupabaseClient, input: SaveBatchInput): Promise<SavedBatch> {
   const { data, error } = await db.rpc("save_enrollment_batch", {
     p_parent_id: input.parentId, p_kind: input.kind, p_entity_id: input.entityId, p_method: input.paymentMethod,
-    p_quotes: input.quotes.map(({ childId, amount, currency, priceVersion, snapshot }) => ({ childId, amount, currency, priceVersion, snapshot: snapshot ?? null })),
+    p_quotes: input.quotes.map((quote) => ({
+      childId: quote.childId ?? null,
+      adultProfileId: quote.adultProfileId ?? null,
+      amount: quote.amount,
+      currency: quote.currency,
+      priceVersion: quote.priceVersion,
+      snapshot: quote.snapshot ?? null,
+    })),
     p_billing: input.billingDetails ?? null,
   });
   if (error) {

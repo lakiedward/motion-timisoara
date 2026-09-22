@@ -38,7 +38,7 @@ export const DETALII_FIELDS = [
   'rules',
   'necesar',
 ] as const
-export const COSTURI_FIELDS = ['currency', 'eur_ron_rate', 'varste'] as const
+export const COSTURI_FIELDS = ['currency', 'eur_ron_rate', 'varste', 'adult'] as const
 
 export const schema = z
   .object({
@@ -64,6 +64,16 @@ export const schema = z
           }),
       )
       .min(1, 'Prețul pe categorii are nevoie de cel puțin o categorie de vârstă'),
+    adult: z.object({
+      componente: z
+        .array(
+          z.object({
+            name: z.string().trim().min(1, 'Numele lipsește'),
+            amount_lei: lei,
+          }),
+        )
+        .min(1, 'Adaugă cel puțin o componentă'),
+    }),
     title: z.string().min(3, 'Minim 3 caractere'),
     slug: z
       .string()
@@ -113,6 +123,8 @@ export const schema = z
 
 export type Values = z.infer<typeof schema>
 
+export const ADULT_GOL = { componente: [{ name: 'Participare', amount_lei: '0' }] }
+
 export const GOL: Values = {
   currency: 'RON',
   eur_ron_rate: '',
@@ -128,6 +140,7 @@ export const GOL: Values = {
   rules: '',
   necesar: [],
   varste: [{ ...CATEGORIE_GOALA, componente: [{ ...COMPONENTA_GOALA }] }],
+  adult: { componente: [{ ...ADULT_GOL.componente[0] }] },
 }
 
 export const num = (s: string | undefined) => (s && s.trim() ? Number(s) : null)
@@ -142,6 +155,16 @@ export const spreCamp = (c: {
   return {
     age_from: String(c.age_from),
     age_to: String(c.age_to),
+    componente:
+      salvate.length > 0
+        ? salvate.map((item) => ({ name: item.name, amount_lei: String(baniToRon(item.amount)) }))
+        : [{ name: 'Participare', amount_lei: String(baniToRon(c.amount)) }],
+  }
+}
+
+export const spreAdult = (c: { amount: number; components?: unknown }) => {
+  const salvate = citesteComponentePret(c.components)
+  return {
     componente:
       salvate.length > 0
         ? salvate.map((item) => ({ name: item.name, amount_lei: String(baniToRon(item.amount)) }))

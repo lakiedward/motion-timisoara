@@ -1,4 +1,4 @@
-import { getEnrollmentChildPrices, validSelection, enrollmentJson, type EnrollmentServices, type EnrollmentOffer } from "../_shared/enrollment-pricing.ts";
+import { getEnrollmentAdultPrice, getEnrollmentChildPrices, quoteSubjectKey, validSelection, enrollmentJson, type EnrollmentServices, type EnrollmentOffer, type ExistingEnrollment } from "../_shared/enrollment-pricing.ts";
 import { completedEnrollmentPrices, notifyCashEnrollments, saveEnrollmentBatch } from "./persistence.ts";
 import { validQuantity } from "../_shared/price-snapshot.ts";
 
@@ -6,6 +6,7 @@ interface EnrollmentRequest {
   kind: "COURSE" | "CAMP" | "ACTIVITY";
   entityId: string;
   childIds: string[];
+  includeSelf?: boolean;
   paymentMethod: "CARD" | "CASH";
   sessionPackageSize?: number;
   priceVersions?: Record<string, string>;
@@ -27,6 +28,40 @@ function ageOf(birthDate: string): number {
   return age;
 }
 
+async function loadExisting(
+  db: EnrollmentServices["db"],
+  kind: string,
+  entityId: string,
+  childIds: string[],
+  parentId: string,
+  includeSelf: boolean,
+): Promise<ExistingEnrollment[]> {
+  const rows: ExistingEnrollment[] = [];
+  if (childIds.length) {
+    const { data, error } = await db
+      .from("enrollments")
+      .select("id, child_id, adult_profile_id, status")
+      .eq("kind", kind)
+      .eq("entity_id", entityId)
+      .in("child_id", childIds)
+      .in("status", ["PENDING", "ACTIVE"]);
+    if (error) throw enrollmentJson({ error: "Nu am putut verifica înscrierile existente." }, 500);
+    rows.push(...(data ?? []));
+  }
+  if (includeSelf) {
+    const { data, error } = await db
+      .from("enrollments")
+      .select("id, child_id, adult_profile_id, status")
+      .eq("kind", kind)
+      .eq("entity_id", entityId)
+      .eq("adult_profile_id", parentId)
+      .in("status", ["PENDING", "ACTIVE"]);
+    if (error) throw enrollmentJson({ error: "Nu am putut verifica înscrierile existente." }, 500);
+    rows.push(...(data ?? []));
+  }
+  return rows;
+}
+
 export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRole }: EnrollmentServices) {
   return async (req: Request) => {
     if (req.method !== "POST") {
@@ -45,27 +80,33 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
     }
 
     const body: EnrollmentRequest = await req.json();
-    const { kind, entityId, childIds, paymentMethod, billingDetails } = body;
+    const { kind, entityId, paymentMethod, billingDetails } = body;
+    const childIds = Array.isArray(body.childIds) ? body.childIds : [];
+    const includeSelf = body.includeSelf === true;
     const sessionPackageSize = body.sessionPackageSize === undefined ? 1 : body.sessionPackageSize;
     if (!validQuantity(sessionPackageSize) || (kind !== "COURSE" && sessionPackageSize !== 1)) {
       return enrollmentJson({ error: "Numărul de ședințe nu este valid." }, 400);
     }
 
-    if (!validSelection(kind, entityId, childIds) || !["CARD", "CASH"].includes(paymentMethod)) {
+    if (!validSelection(kind, entityId, childIds, includeSelf) || !["CARD", "CASH"].includes(paymentMethod)) {
       return new Response(
-        JSON.stringify({ error: "At least one child must be specified" }),
+        JSON.stringify({ error: "Selectează cel puțin un participant." }),
         { status: 400, headers: { "Content-Type": "application/json" } },
       );
     }
-    const { data: children, error: childErr } = await supabaseAdmin
-      .from("children")
-      .select("id, name, parent_id, birth_date")
-      .in("id", childIds);
-    if (childErr || !children || children.length !== childIds.length) {
-      return new Response(
-        JSON.stringify({ error: "Children not found" }),
-        { status: 400, headers: { "Content-Type": "application/json" } },
-      );
+    let children: { id: string; name: string; parent_id: string; birth_date: string }[] = [];
+    if (childIds.length) {
+      const { data, error: childErr } = await supabaseAdmin
+        .from("children")
+        .select("id, name, parent_id, birth_date")
+        .in("id", childIds);
+      if (childErr || !data || data.length !== childIds.length) {
+        return new Response(
+          JSON.stringify({ error: "Children not found" }),
+          { status: 400, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      children = data;
     }
     for (const child of children) {
       if (child.parent_id !== user.id) {
@@ -77,17 +118,16 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
         );
       }
     }
-    const { data: existingEnrollments, error: existingError } = await supabaseAdmin
-      .from("enrollments")
-      .select("id, child_id, status")
-      .eq("kind", kind)
-      .eq("entity_id", entityId)
-      .in("child_id", childIds)
-      .in("status", ["PENDING", "ACTIVE"]);
-
-    if (existingError) return enrollmentJson({ error: "Nu am putut verifica înscrierile existente." }, 500);
-    const existingByChild = new Map<string, typeof existingEnrollments>();
-    for (const e of existingEnrollments ?? []) {
+    let existingEnrollments: ExistingEnrollment[];
+    try {
+      existingEnrollments = await loadExisting(supabaseAdmin, kind, entityId, childIds, user.id, includeSelf);
+    } catch (response) {
+      if (response instanceof Response) return response;
+      throw response;
+    }
+    const existingByChild = new Map<string, ExistingEnrollment[]>();
+    for (const e of existingEnrollments) {
+      if (!e.child_id) continue;
       const list = existingByChild.get(e.child_id) ?? [];
       list.push(e);
       existingByChild.set(e.child_id, list);
@@ -98,12 +138,15 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
         return enrollmentJson({ error: `Child already enrolled: ${child.name}` }, 409);
       }
     }
-    const newEnrollmentCount = paymentMethod === "CARD"
-      ? children.filter((c: any) => {
-          const existing = existingByChild.get(c.id) ?? [];
-          return existing.length === 0;
-        }).length
+    const existingAdult = existingEnrollments.filter((row) => row.adult_profile_id === user.id);
+    if (includeSelf && paymentMethod === "CASH" && existingAdult.length > 0) {
+      return enrollmentJson({ error: "Ești deja înscris la această tabără." }, 409);
+    }
+    const newChildCount = paymentMethod === "CARD"
+      ? children.filter((c) => (existingByChild.get(c.id) ?? []).length === 0).length
       : children.length;
+    const newAdultCount = includeSelf && (paymentMethod !== "CARD" || existingAdult.length === 0) ? 1 : 0;
+    const newEnrollmentCount = newChildCount + newAdultCount;
     let offer: EnrollmentOffer;
 
     if (kind === "COURSE") {
@@ -241,23 +284,27 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
     }
 
     const completed = paymentMethod === "CARD"
-      ? await completedEnrollmentPrices(supabaseAdmin, kind, entityId, existingEnrollments ?? [], sessionPackageSize)
+      ? await completedEnrollmentPrices(supabaseAdmin, kind, entityId, existingEnrollments, sessionPackageSize)
       : [];
-    const completedChildIds = new Set(completed.map((price) => price.childId));
-    const childPrices = [
+    const completedChildIds = new Set(completed.map((price) => price.childId).filter((id): id is string => !!id));
+    const quotes = [
       ...await getEnrollmentChildPrices(supabaseAdmin, kind, entityId, childIds.filter((id) => !completedChildIds.has(id)), offer,
-        (existingEnrollments ?? []).filter((row) => !completedChildIds.has(row.child_id)), sessionPackageSize),
-      ...completed,
+        existingEnrollments.filter((row) => row.child_id && !completedChildIds.has(row.child_id)), sessionPackageSize),
+      ...completed.filter((price) => price.childId),
     ];
-    if (childPrices.some((price) => price.reason)) {
-      return enrollmentJson({ error: childPrices.find((price) => price.reason)!.reason }, 409);
+    if (includeSelf) {
+      const completedAdult = completed.find((price) => price.adultProfileId === user.id);
+      quotes.push(completedAdult ?? await getEnrollmentAdultPrice(supabaseAdmin, entityId, user.id, existingAdult));
     }
-    if (childPrices.some((price) => body.priceVersions?.[price.childId] !== price.priceVersion)) {
+    if (quotes.some((price) => price.reason)) {
+      return enrollmentJson({ error: quotes.find((price) => price.reason)!.reason }, 409);
+    }
+    if (quotes.some((price) => body.priceVersions?.[quoteSubjectKey(price)] !== price.priceVersion)) {
       return enrollmentJson({ error: "Prețul s-a schimbat. Revino la Detalii și verifică din nou suma.", code: "PRICE_CHANGED" }, 409);
     }
 
     const batch = await saveEnrollmentBatch(supabaseAdmin, {
-      parentId: user.id, kind, entityId, paymentMethod, quotes: childPrices, billingDetails,
+      parentId: user.id, kind, entityId, paymentMethod, quotes, billingDetails,
     });
     if (paymentMethod === "CASH" && batch.prices.some((price) => price.amount > 0)) {
       await notifyCashEnrollments(supabaseAdmin, batch, { kind, entityId, sessionPackageSize, children });

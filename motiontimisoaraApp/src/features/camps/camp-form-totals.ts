@@ -28,6 +28,13 @@ export function ofertaDinDraft(values: Values) {
     offer: offerCurrencyInput(values),
     mode: 'by_age' as const,
     agePrices: preturiPeVarstaDinDraft(values.varste),
+    adultPrice: {
+      amount: totalCategorieBani(values.adult.componente),
+      components: values.adult.componente.map((item) => ({
+        name: item.name.trim(),
+        amount: parseScaledDecimal(item.amount_lei, 2) ?? 0,
+      })),
+    },
   }
 }
 

@@ -32,8 +32,21 @@ export interface ChildValidation {
   pricingSnapshot?: PriceSnapshot
 }
 
+export interface AdultValidation {
+  adultProfileId: string
+  name: string
+  eligible: boolean
+  severity?: 'error' | 'warning'
+  reason?: string
+  amount?: number
+  currency?: string
+  priceVersion?: string
+  pricingSnapshot?: PriceSnapshot
+}
+
 export interface ValidationResponse {
   results: ChildValidation[]
+  adult?: AdultValidation | null
   capacity: { available: number | null; requested: number; sufficient: boolean }
   allowCash: boolean
 }
@@ -42,7 +55,7 @@ export interface CreateEnrollmentResponse {
   enrollmentId: string
   enrollmentIds: string[]
   requiresPaymentIntent: boolean
-  prices?: { childId: string; amount: number; currency: string }[]
+  prices?: { childId?: string; adultProfileId?: string; amount: number; currency: string }[]
 }
 
 interface FunctionErrorBody {
@@ -104,6 +117,7 @@ export async function createEnrollment(input: {
   kind: EnrollmentKind
   entityId: string
   childIds: string[]
+  includeSelf?: boolean
   paymentMethod: PaymentMethod
   sessionPackageSize?: number
   priceVersions?: Record<string, string>

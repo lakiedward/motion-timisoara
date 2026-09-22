@@ -10,12 +10,12 @@ import {
 } from 'react-hook-form'
 import { toast } from 'sonner'
 
-import { getPreturilePeVarsta, getTaberelemele, type Proprietar } from '@/api/camps-admin'
+import { getPretulAdult, getPreturilePeVarsta, getTaberelemele, type Proprietar } from '@/api/camps-admin'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { OfferCurrencyFields } from '@/components/OfferCurrencyFields'
 import { formatOfferPrice } from '@/lib/money'
-import { spreCamp, type Values } from './camp-form-schema'
+import { spreAdult, spreCamp, type Values } from './camp-form-schema'
 import { categorieNoua, totalCategorieBani } from './camp-form-totals'
 import CampFormField from './CampFormField'
 
@@ -58,8 +58,12 @@ export default function CampAgePricesSection({
   const copiazaDin = async (sursaId: string) => {
     if (!sursaId) return
     try {
-      const randuri = await getPreturilePeVarsta(sursaId)
+      const [randuri, adult] = await Promise.all([
+        getPreturilePeVarsta(sursaId),
+        getPretulAdult(sursaId),
+      ])
       varsteArr.replace(randuri.map(spreCamp))
+      if (adult) setValue('adult', spreAdult(adult))
     } catch {
       toast.error('Nu am putut citi categoriile taberei alese.')
     }
@@ -101,6 +105,8 @@ export default function CampAgePricesSection({
             />
           ))}
         </ul>
+
+        <CampAdultPriceEditor control={control} register={register} errors={errors} currency={currency} />
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <Button
@@ -300,5 +306,98 @@ function CampAgeCategoryEditor({
         </Button>
       </div>
     </li>
+  )
+}
+
+function CampAdultPriceEditor({
+  control,
+  register,
+  errors,
+  currency,
+}: {
+  control: Control<Values>
+  register: UseFormRegister<Values>
+  errors: FieldErrors<Values>
+  currency: string
+}) {
+  const componenteArr = useFieldArray({ control, name: 'adult.componente' })
+  const componenteVii = useWatch({ control, name: 'adult.componente' })
+  const total = totalCategorieBani(componenteVii)
+  const gratuit = total === 0
+  const moneda = currency === 'EUR' ? 'EUR' : 'lei'
+  const erori = errors.adult
+
+  return (
+    <div className="mt-4 rounded-xl border p-4" aria-label="Tarif adult">
+      <h3 className="font-semibold">Tarif adult</h3>
+      <p className="text-muted-foreground mt-1 text-sm">
+        Părintele se poate înscrie cu același tip de componente. 0 înseamnă Gratuit. Un adult ocupă
+        un loc din capacitate, ca un copil.
+      </p>
+      <ul className="mt-3 space-y-3" aria-label="Componente tarif adult">
+        {componenteArr.fields.map((f, j) => (
+          <li key={f.id} className="grid gap-3 sm:grid-cols-[1fr_140px_auto]">
+            <CampFormField eticheta="Componentă adult" eroare={erori?.componente?.[j]?.name?.message}>
+              <Input
+                {...register(`adult.componente.${j}.name`)}
+                className="h-11 lg:h-9"
+                placeholder="ex. Participare"
+                aria-invalid={!!erori?.componente?.[j]?.name}
+              />
+            </CampFormField>
+            <CampFormField
+              eticheta={`Sumă adult (${moneda})`}
+              eroare={erori?.componente?.[j]?.amount_lei?.message}
+            >
+              <Input
+                type="number"
+                step="0.01"
+                min={0}
+                {...register(`adult.componente.${j}.amount_lei`)}
+                className="h-11 lg:h-9"
+                aria-invalid={!!erori?.componente?.[j]?.amount_lei}
+              />
+            </CampFormField>
+            <Button
+              type="button"
+              variant="ghost"
+              className="size-11 min-h-11 self-end"
+              disabled={componenteArr.fields.length <= 1}
+              onClick={() => componenteArr.remove(j)}
+              aria-label={`Șterge componenta adult ${j + 1}`}
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          </li>
+        ))}
+      </ul>
+      {typeof erori?.componente?.message === 'string' && (
+        <p className="text-destructive mt-2 text-sm" role="alert">
+          {erori.componente.message}
+        </p>
+      )}
+      <p className="mt-3 text-sm font-medium" aria-live="polite">
+        Total adult {formatOfferPrice(total, currency)}
+        {gratuit ? ' — tariful adult este gratuit.' : ''}
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 min-h-11"
+          onClick={() => componenteArr.append({ name: '', amount_lei: '' })}
+        >
+          <Plus className="size-4" /> Adaugă o componentă adult
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 min-h-11"
+          onClick={() => componenteArr.replace([{ name: 'Participare', amount_lei: '0' }])}
+        >
+          Adult gratuit
+        </Button>
+      </div>
+    </div>
   )
 }

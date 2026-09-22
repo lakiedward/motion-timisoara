@@ -29,6 +29,7 @@ function view({
   ended = false,
   full = false,
   currency = 'RON',
+  adultPrice,
 }: {
   mode?: string
   agePrices?: Array<{
@@ -42,6 +43,7 @@ function view({
   ended?: boolean
   full?: boolean
   currency?: string
+  adultPrice?: { amount: number; components?: unknown } | null
 } = {}) {
   const data = {
     tabara: {
@@ -54,6 +56,7 @@ function view({
     },
     categorii: [{ id: 'item', name: 'Cazare', description: 'Pensiune completă', amount: 99900 }],
     agePrices,
+    adultPrice: adultPrice ?? null,
   } as unknown as TabaraDetaliu
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const rendered = render(
@@ -200,6 +203,40 @@ test('existing child mutations invalidate personalized categories', async () => 
   ).toBeInTheDocument()
   await client.invalidateQueries({ queryKey: ['children'] })
   expect(await screen.findByText('Pentru Ana, Mara')).toBeInTheDocument()
+})
+
+test('the adult tariff sits next to age prices and stays Gratuit at 0', () => {
+  user = null
+  view({
+    adultPrice: {
+      amount: 0,
+      components: [
+        { name: 'Participare', amount: 0 },
+        { name: 'Cazare extra', amount: 0 },
+      ],
+    },
+  })
+  const tarif = screen.getByLabelText('Tarif adult')
+  expect(within(tarif).getByText('Adult')).toBeInTheDocument()
+  expect(within(tarif).getAllByText('Gratuit').length).toBeGreaterThan(0)
+  expect(within(tarif).getByText('Părintele se poate înscrie și el; ocupă un loc din capacitate.')).toBeInTheDocument()
+  expect(screen.getByRole('list', { name: 'Componente, adult' })).toHaveTextContent('Participare')
+  expect(screen.queryByText('0,00 lei')).not.toBeInTheDocument()
+})
+
+test('a legacy single-price camp still publishes the adult tariff', () => {
+  user = null
+  view({
+    mode: 'single',
+    adultPrice: {
+      amount: 15000,
+      components: [{ name: 'Participare', amount: 15000 }],
+    },
+  })
+  expect(screen.queryByRole('list', { name: 'Tarife pe vârste' })).not.toBeInTheDocument()
+  const tarif = screen.getByLabelText('Tarif adult')
+  expect(within(tarif).getByText('150,00 lei')).toBeInTheDocument()
+  expect(within(tarif).getByText('Participare')).toBeInTheDocument()
 })
 
 test.each([

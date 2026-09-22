@@ -74,7 +74,9 @@ export default function EnrollmentsPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline">{KIND_LABEL[e.kind] ?? e.kind}</Badge>
                   <Badge variant={status.variant}>{status.label}</Badge>
-                  <span className="text-muted-foreground ml-auto text-sm">{e.child?.name}</span>
+                  <span className="text-muted-foreground ml-auto text-sm">
+                    {e.child?.name ?? (e.adult_profile_id ? 'Tu' : '')}
+                  </span>
                 </div>
                 {e.kind === 'COURSE' && (
                   <p className="text-muted-foreground mt-3 text-sm">

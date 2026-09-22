@@ -346,6 +346,35 @@ export type Database = {
         }
         Relationships: []
       }
+      camp_adult_prices: {
+        Row: {
+          amount: number
+          camp_id: string
+          components: Json
+          created_at: string
+        }
+        Insert: {
+          amount: number
+          camp_id: string
+          components?: Json
+          created_at?: string
+        }
+        Update: {
+          amount?: number
+          camp_id?: string
+          components?: Json
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camp_adult_prices_camp_id_fkey"
+            columns: ["camp_id"]
+            isOneToOne: true
+            referencedRelation: "camps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       camp_age_prices: {
         Row: {
           age_from: number
@@ -1597,7 +1626,8 @@ export type Database = {
       }
       enrollments: {
         Row: {
-          child_id: string
+          adult_profile_id: string | null
+          child_id: string | null
           created_at: string
           entity_id: string
           first_session_date: string | null
@@ -1609,7 +1639,8 @@ export type Database = {
           status: string
         }
         Insert: {
-          child_id: string
+          adult_profile_id?: string | null
+          child_id?: string | null
           created_at?: string
           entity_id: string
           first_session_date?: string | null
@@ -1621,7 +1652,8 @@ export type Database = {
           status: string
         }
         Update: {
-          child_id?: string
+          adult_profile_id?: string | null
+          child_id?: string | null
           created_at?: string
           entity_id?: string
           first_session_date?: string | null
@@ -1633,6 +1665,13 @@ export type Database = {
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "enrollments_adult_profile_id_fkey"
+            columns: ["adult_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "enrollments_child_id_fkey"
             columns: ["child_id"]
@@ -2292,6 +2331,10 @@ export type Database = {
       }
       course_spots_remaining: { Args: { p_course_id: string }; Returns: number }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      enrollment_camp_adult_offer: {
+        Args: { p_camp_id: string }
+        Returns: Json
+      }
       enrollment_camp_offer: {
         Args: { p_camp_id: string; p_child_id: string }
         Returns: Json
@@ -2466,6 +2509,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      salveaza_pretul_adult: {
+        Args: { p_adult: Json; p_camp_id: string }
+        Returns: undefined
+      }
       salveaza_preturile_pe_varsta: {
         Args: { p_camp_id: string; p_categorii: Json; p_pricing_mode: string }
         Returns: {
@@ -2487,6 +2534,7 @@ export type Database = {
       }
       save_camp_offer: {
         Args: {
+          p_adult_price?: Json
           p_age_prices: Json
           p_breakdown: Json
           p_camp_id: string
@@ -2502,6 +2550,7 @@ export type Database = {
       }
       save_camp_offer_pricing: {
         Args: {
+          p_adult_price?: Json
           p_age_prices: Json
           p_breakdown: Json
           p_camp_id: string

@@ -66,7 +66,7 @@ export async function processEnrollmentPayments(
     onProgress({
       index: index + 1,
       total: selected.length,
-      child: row.child!.name,
+      child: row.child?.name ?? 'Adult',
       confirming: false,
     })
     try {
@@ -126,7 +126,7 @@ function resultFor(
 export function paymentResultMessage(result: PaymentResult): string {
   if (result.outcome === 'ready') return 'Plată confirmată. Înscrierea este activă.'
   if (result.outcome === 'partial') {
-    return `Plata este confirmată pentru ${result.completed} din ${result.total} copii. Poți relua separat plățile rămase din Înscrieri.`
+    return `Plata este confirmată pentru ${result.completed} din ${result.total} participanți. Poți relua separat plățile rămase din Înscrieri.`
   }
   if (result.outcome === 'canceled') {
     return 'Ai închis plata. Înscrierea și suma sunt salvate; poți relua plata din Înscrieri.'

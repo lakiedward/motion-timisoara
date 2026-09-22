@@ -66,15 +66,16 @@ export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
         <p className="text-muted-foreground mt-8 text-sm">Se încarcă…</p>
       ) : inscrisi.length === 0 ? (
         <div className="mt-8 rounded-2xl border p-8 text-center">
-          <p className="text-foreground font-medium">Niciun copil înscris încă.</p>
+          <p className="text-foreground font-medium">Niciun participant înscris încă.</p>
           <p className="text-muted-foreground mt-1 text-sm">
-            Aici apar copiii pe măsură ce părinții îi înscriu, inclusiv cei cu plata în curs.
+            Aici apar copiii și adulții pe măsură ce părinții îi înscriu, inclusiv cei cu plata în
+            curs.
           </p>
         </div>
       ) : (
         <>
           <p className="text-muted-foreground mt-6 text-sm">
-            {plural(inscrisi.length, 'copil înscris', 'copii înscriși')}
+            {plural(inscrisi.length, 'participant înscris', 'participanți înscriși')}
             {tabara?.capacity ? ` din ${plural(tabara.capacity, 'loc', 'locuri')}` : ''}.
           </p>
 
@@ -112,7 +113,8 @@ function CardCopil({
   ziuaTaberei: string | null
   baza: CampPortalBaza
 }) {
-  const varsta = ziuaTaberei ? varstaLa(copil.dataNasterii, ziuaTaberei) : null
+  const eAdult = copil.fel === 'adult'
+  const varsta = !eAdult && ziuaTaberei ? varstaLa(copil.dataNasterii, ziuaTaberei) : null
 
   return (
     <div className="rounded-2xl border p-4">
@@ -120,27 +122,32 @@ function CardCopil({
         <div>
           <p className="font-medium">{copil.nume}</p>
           <p className="text-muted-foreground mt-0.5 text-sm">
-            {varsta !== null
-              ? `${plural(varsta, 'an', 'ani')} la începutul taberei`
-              : 'Vârstă necunoscută'}
-            {copil.marimeTricou ? ` · tricou ${copil.marimeTricou}` : ''}
+            {eAdult
+              ? 'Adult'
+              : varsta !== null
+                ? `${plural(varsta, 'an', 'ani')} la începutul taberei`
+                : 'Vârstă necunoscută'}
+            {!eAdult && copil.marimeTricou ? ` · tricou ${copil.marimeTricou}` : ''}
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {eAdult && <Badge variant="outline">Adult</Badge>}
           <Badge variant={copil.stare === 'ACTIVE' ? 'default' : 'secondary'}>
             {copil.stare === 'ACTIVE' ? 'Înscris' : 'Plata în curs'}
           </Badge>
-          <Button asChild size="sm" variant="outline" className="h-11 min-h-11 lg:h-9 lg:min-h-9">
-            <Link
-              to={`${baza === '/club/camps' ? '/club' : '/coach'}/children/${copil.copilId}/qr`}
-            >
-              <QrCode className="size-4" /> Cod QR
-            </Link>
-          </Button>
+          {!eAdult && copil.copilId && (
+            <Button asChild size="sm" variant="outline" className="h-11 min-h-11 lg:h-9 lg:min-h-9">
+              <Link
+                to={`${baza === '/club/camps' ? '/club' : '/coach'}/children/${copil.copilId}/qr`}
+              >
+                <QrCode className="size-4" /> Cod QR
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 
-      {copil.alergii?.trim() && (
+      {!eAdult && copil.alergii?.trim() && (
         <p className="text-destructive mt-3 inline-flex items-start gap-2 text-sm">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
           <span>

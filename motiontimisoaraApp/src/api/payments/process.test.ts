@@ -10,6 +10,7 @@ function enrollment(id: string, paid = false): EnrollmentPayment {
     entity_id: 'course',
     purchased_sessions: paid ? 5 : 0,
     remaining_sessions: paid ? 5 : 0,
+    adult_profile_id: null,
     child: { id: `child-${id}`, name: `Copil ${id}` },
     payments: [
       {

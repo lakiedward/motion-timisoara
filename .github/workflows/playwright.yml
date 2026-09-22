@@ -23,6 +23,7 @@ on:
       - 'supabase/migrations/00048_enrollment_price_snapshots.sql'
       - 'supabase/migrations/00049_atomic_camp_offer_pricing.sql'
       - 'supabase/migrations/0005*.sql'
+      - 'supabase/migrations/0006*.sql'
       - 'playwright.config.ts'
       - 'playwright.pricing.config.ts'
       - 'playwright.location.config.ts'
@@ -47,6 +48,7 @@ on:
       - 'supabase/migrations/00048_enrollment_price_snapshots.sql'
       - 'supabase/migrations/00049_atomic_camp_offer_pricing.sql'
       - 'supabase/migrations/0005*.sql'
+      - 'supabase/migrations/0006*.sql'
       - 'playwright.config.ts'
       - 'playwright.pricing.config.ts'
       - 'playwright.location.config.ts'
@@ -118,6 +120,9 @@ jobs:
     - name: Test club activity management
       shell: pwsh
       run: ./supabase/tests/run-club-activity-management.ps1
+    - name: Test isolated camp adult enrollment
+      shell: pwsh
+      run: ./supabase/tests/run-camp-adult-enrollment.ps1
     - name: Test atomic payment completion and concurrent confirmations
       shell: pwsh
       run: ./supabase/tests/run-enrollment-payment-completion.ps1

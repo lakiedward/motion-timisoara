@@ -1,4 +1,4 @@
-import { getEnrollmentChildPrices, validSelection, type EnrollmentServices, type EnrollmentOffer } from "../_shared/enrollment-pricing.ts";
+import { getEnrollmentAdultPrice, getEnrollmentChildPrices, validChildIds, type EnrollmentServices, type EnrollmentOffer, type ExistingEnrollment } from "../_shared/enrollment-pricing.ts";
 import { validQuantity, type PriceSnapshot } from "../_shared/price-snapshot.ts";
 
 interface ValidateRequest {
@@ -12,6 +12,18 @@ type Severity = "error" | "warning";
 
 interface ChildResult {
   childId: string;
+  name: string;
+  eligible: boolean;
+  severity?: Severity;
+  reason?: string;
+  amount?: number;
+  currency?: string;
+  priceVersion?: string;
+  pricingSnapshot?: PriceSnapshot;
+}
+
+interface AdultResult {
+  adultProfileId: string;
   name: string;
   eligible: boolean;
   severity?: Severity;
@@ -49,19 +61,27 @@ export function createValidationHandler({ db: supabaseAdmin, getUser, getUserRol
       return json({ error: "Only parents can enroll children" }, 403);
     }
 
-    const { kind, entityId, childIds, sessionPackageSize = 1 }: ValidateRequest = await req.json();
-    if (!validSelection(kind, entityId, childIds)) {
+    const { kind, entityId, childIds = [], sessionPackageSize = 1 }: ValidateRequest = await req.json();
+    if (!["CAMP", "COURSE", "ACTIVITY"].includes(String(kind)) || typeof entityId !== "string" || !entityId ||
+      !validChildIds(childIds)) {
+      return json({ error: "kind, entityId and childIds are required" }, 400);
+    }
+    if (kind !== "CAMP" && childIds.length === 0) {
       return json({ error: "kind, entityId and childIds are required" }, 400);
     }
     if (!validQuantity(sessionPackageSize) || (kind !== "COURSE" && sessionPackageSize !== 1)) {
       return json({ error: "Numărul de ședințe nu este valid." }, 400);
     }
 
-    const { data: children, error: childErr } = await supabaseAdmin
-      .from("children")
-      .select("id, name, birth_date, parent_id")
-      .in("id", childIds);
-    if (childErr) return json({ error: "Failed to load children" }, 500);
+    let children: { id: string; name: string; birth_date: string; parent_id: string }[] = [];
+    if (childIds.length) {
+      const { data, error: childErr } = await supabaseAdmin
+        .from("children")
+        .select("id, name, birth_date, parent_id")
+        .in("id", childIds);
+      if (childErr) return json({ error: "Failed to load children" }, 500);
+      children = data ?? [];
+    }
     let ageFrom: number | null = null;
     let ageTo: number | null = null;
     let capacity: number | null = null;
@@ -101,25 +121,42 @@ export function createValidationHandler({ db: supabaseAdmin, getUser, getUserRol
       capacity = activity.capacity;
       offer = activity;
     }
-    const { data: existing, error: existingError } = await supabaseAdmin
-      .from("enrollments")
-      .select("id, child_id, status")
-      .eq("kind", kind)
-      .eq("entity_id", entityId)
-      .in("child_id", childIds)
-      .in("status", ["PENDING", "ACTIVE"]);
-
-    if (existingError) return json({ error: "Nu am putut verifica înscrierile existente." }, 500);
-    const ownedIds = (children ?? []).filter((child) => child.parent_id === user.id).map((child) => child.id);
-    const childPrices = await getEnrollmentChildPrices(supabaseAdmin, kind, entityId, ownedIds, offer,
-      existing ?? [], sessionPackageSize);
+    const existing: ExistingEnrollment[] = [];
+    if (childIds.length) {
+      const { data, error: existingError } = await supabaseAdmin
+        .from("enrollments")
+        .select("id, child_id, adult_profile_id, status")
+        .eq("kind", kind)
+        .eq("entity_id", entityId)
+        .in("child_id", childIds)
+        .in("status", ["PENDING", "ACTIVE"]);
+      if (existingError) return json({ error: "Nu am putut verifica înscrierile existente." }, 500);
+      existing.push(...(data ?? []));
+    }
+    if (kind === "CAMP") {
+      const { data, error: adultExistingError } = await supabaseAdmin
+        .from("enrollments")
+        .select("id, child_id, adult_profile_id, status")
+        .eq("kind", "CAMP")
+        .eq("entity_id", entityId)
+        .eq("adult_profile_id", user.id)
+        .in("status", ["PENDING", "ACTIVE"]);
+      if (adultExistingError) return json({ error: "Nu am putut verifica înscrierile existente." }, 500);
+      existing.push(...(data ?? []));
+    }
+    const ownedIds = children.filter((child) => child.parent_id === user.id).map((child) => child.id);
+    const childPrices = ownedIds.length
+      ? await getEnrollmentChildPrices(supabaseAdmin, kind, entityId, ownedIds, offer,
+        existing.filter((row) => row.child_id), sessionPackageSize)
+      : [];
     const byChild = new Map<string, string[]>();
-    for (const e of existing ?? []) {
+    for (const e of existing) {
+      if (!e.child_id) continue;
       byChild.set(e.child_id, [...(byChild.get(e.child_id) ?? []), e.status]);
     }
 
     const results: ChildResult[] = childIds.map((childId) => {
-      const child = children?.find((c) => c.id === childId);
+      const child = children.find((c) => c.id === childId);
       if (!child) {
         return { childId, name: "—", eligible: false, severity: "error", reason: "Copilul nu a fost găsit" };
       }
@@ -174,6 +211,36 @@ export function createValidationHandler({ db: supabaseAdmin, getUser, getUserRol
 
       return { childId, name: child.name, eligible: true, ...priceFields };
     });
+    let adult: AdultResult | null = null;
+    if (kind === "CAMP") {
+      const { data: profile } = await supabaseAdmin.from("profiles").select("id, name").eq("id", user.id).maybeSingle();
+      const quote = await getEnrollmentAdultPrice(
+        supabaseAdmin,
+        entityId,
+        user.id,
+        existing.filter((row) => row.adult_profile_id === user.id),
+      );
+      const name = profile?.name?.trim() || "Tu";
+      if (quote.reason === "Tabăra nu are un tarif adult.") {
+        adult = null;
+      } else if (quote.reason) {
+        adult = { adultProfileId: user.id, name, eligible: false, severity: "error", reason: quote.reason };
+      } else {
+        const adultExisting = existing.filter((row) => row.adult_profile_id === user.id);
+        const pending = adultExisting.some((row) => row.status === "PENDING");
+        adult = {
+          adultProfileId: user.id,
+          name,
+          eligible: true,
+          severity: pending ? "warning" : undefined,
+          reason: pending ? "Există o înscriere neplătită; plata cash nu este disponibilă" : undefined,
+          amount: quote.amount,
+          currency: quote.currency,
+          priceVersion: quote.priceVersion,
+          pricingSnapshot: quote.snapshot,
+        };
+      }
+    }
     let available: number | null = null;
     if (capacity !== null) {
       const { count, error: capacityError } = await supabaseAdmin
@@ -190,6 +257,7 @@ export function createValidationHandler({ db: supabaseAdmin, getUser, getUserRol
 
     return json({
       results,
+      adult,
       capacity: { available, requested, sufficient: available === null || available >= requested },
       allowCash,
     });

@@ -51,12 +51,22 @@ describe('owner-scoped enrollment payment reads', () => {
   })
 
   it.each([
-    { ...row('first'), child: null },
+    { ...row('first'), child: null, adult_profile_id: null },
     { ...row('first'), payments: [] },
     { ...row('first'), payments: [row('first').payments[0], row('second').payments[0]] },
   ])('rejects unavailable children or ambiguous payment records', async (invalid) => {
     query.mockResolvedValue({ data: [invalid], error: null })
     await expect(getEnrollmentPayments(['first'])).rejects.toThrow('Contactează clubul')
+  })
+
+  it('accepts an adult camp enrollment without a child sheet', async () => {
+    query.mockResolvedValue({
+      data: [{ ...row('first'), child: null, adult_profile_id: 'parent' }],
+      error: null,
+    })
+    const [enrollment] = await getEnrollmentPayments(['first'])
+    expect(enrollment.adult_profile_id).toBe('parent')
+    expect(enrollment.child).toBeNull()
   })
 })
 

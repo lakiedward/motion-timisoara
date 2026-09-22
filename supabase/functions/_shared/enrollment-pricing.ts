@@ -9,7 +9,8 @@ export interface EnrollmentServices {
 
 export interface ExistingEnrollment {
   id: string;
-  child_id: string;
+  child_id: string | null;
+  adult_profile_id?: string | null;
   status: string;
 }
 
@@ -24,7 +25,8 @@ export interface EnrollmentPayment {
 }
 
 export interface EnrollmentChildPrice {
-  childId: string;
+  childId?: string;
+  adultProfileId?: string;
   amount?: number;
   currency?: string;
   priceVersion?: string;
@@ -47,12 +49,23 @@ export function enrollmentJson(body: unknown, status = 200) {
   });
 }
 
-export function validSelection(kind: unknown, entityId: unknown, childIds: unknown): childIds is string[] {
-  return ["CAMP", "COURSE", "ACTIVITY"].includes(String(kind)) &&
-    typeof entityId === "string" && entityId.length > 0 &&
-    Array.isArray(childIds) && childIds.length > 0 &&
+export function validChildIds(childIds: unknown): childIds is string[] {
+  return Array.isArray(childIds) &&
     childIds.every((id) => typeof id === "string" && id.length > 0) &&
     new Set(childIds).size === childIds.length;
+}
+
+export function validSelection(kind: unknown, entityId: unknown, childIds: unknown, includeSelf = false): childIds is string[] {
+  if (!["CAMP", "COURSE", "ACTIVITY"].includes(String(kind)) ||
+    typeof entityId !== "string" || entityId.length === 0 || !validChildIds(childIds)) {
+    return false;
+  }
+  if (kind === "CAMP") return childIds.length > 0 || includeSelf;
+  return childIds.length > 0 && !includeSelf;
+}
+
+export function quoteSubjectKey(quote: Pick<EnrollmentChildPrice, "childId" | "adultProfileId">) {
+  return quote.childId ?? quote.adultProfileId ?? "";
 }
 
 async function priceVersion(campId: string, childId: string, amount: number, currency: string) {
@@ -137,3 +150,58 @@ export async function getEnrollmentChildPrices(
     }
   }));
 }
+
+export async function getEnrollmentAdultPrice(
+  db: SupabaseClient,
+  entityId: string,
+  parentId: string,
+  existing: ExistingEnrollment[],
+): Promise<EnrollmentChildPrice> {
+  const enrollments = existing.filter((row) => row.adult_profile_id === parentId);
+  if (enrollments.some((row) => row.status === "ACTIVE")) {
+    return { adultProfileId: parentId, reason: "Deja înscris" };
+  }
+  const pendingIds = existing.filter((row) => row.status === "PENDING").map((row) => row.id);
+  let payments: EnrollmentPayment[] = [];
+  if (pendingIds.length) {
+    const result = await db.from("payments")
+      .select("id, enrollment_id, amount, currency, status, gateway_txn_id, pricing_snapshot")
+      .in("enrollment_id", pendingIds);
+    if (result.error) throw enrollmentJson({ error: "Nu am putut verifica plățile existente." }, 500);
+    payments = result.data ?? [];
+  }
+  const adultPayments = payments.filter((row) => enrollments.some((enrollment) => enrollment.id === row.enrollment_id));
+  if (adultPayments.length > 1 || enrollments.length > 1) {
+    return { adultProfileId: parentId, reason: "Înscrierea are nevoie de verificare. Contactează clubul." };
+  }
+  const payment = adultPayments[0];
+  if (payment && !["PENDING", "FAILED", "CANCELLED"].includes(payment.status)) {
+    return { adultProfileId: parentId, reason: "Plata a fost deja procesată. Verifică în Înscrieri." };
+  }
+  if (payment?.pricing_snapshot) {
+    let snapshot: PriceSnapshot;
+    try {
+      snapshot = await readPriceSnapshot(payment.pricing_snapshot);
+    } catch {
+      throw enrollmentJson({ error: "Oferta salvată nu este validă. Contactează clubul." }, 500);
+    }
+    if (snapshot.kind !== "CAMP" || snapshot.entityId !== entityId || snapshot.adultProfileId !== parentId ||
+      snapshot.amount !== payment.amount || snapshot.currency !== payment.currency) {
+      throw enrollmentJson({ error: "Oferta salvată nu corespunde înscrierii." }, 500);
+    }
+    return { adultProfileId: parentId, amount: snapshot.amount, currency: snapshot.currency, priceVersion: snapshot.priceVersion, payment, snapshot };
+  }
+  const result = await db.rpc("enrollment_camp_adult_offer", { p_camp_id: entityId });
+  if (result.error) throw enrollmentJson({ error: "Nu am putut calcula prețul adult. Încearcă din nou." }, 500);
+  if (result.data === null || result.data.amount === null) {
+    return { adultProfileId: parentId, reason: "Tabăra nu are un tarif adult." };
+  }
+  try {
+    const snapshot = await createPriceSnapshot("CAMP", entityId, null, result.data.amount, result.data.currency,
+      result.data.eur_ron_rate_micros ?? null, 1, parentId);
+    return { adultProfileId: parentId, amount: snapshot.amount, currency: snapshot.currency, priceVersion: snapshot.priceVersion, payment, snapshot };
+  } catch {
+    throw enrollmentJson({ error: "Prețul sau cursul valutar nu este valid. Contactează clubul." }, 500);
+  }
+}
+

@@ -15,13 +15,19 @@ on:
       - 'supabase/tests/*push*'
       - 'supabase/migrations/00060_atomic_enrollment_creation.sql'
       - 'supabase/migrations/00061_free_enrollment_fulfillment.sql'
+      - 'supabase/migrations/00068_camp_adult_enrollment.sql'
       - 'supabase/functions/create-enrollment/**'
+      - 'supabase/functions/validate-enrollment/**'
       - 'supabase/functions/create-payment-intent/**'
       - 'supabase/functions/_shared/payment-*.ts'
+      - 'supabase/functions/_shared/enrollment-pricing.ts'
+      - 'supabase/functions/_shared/price-snapshot.ts'
+      - 'supabase/functions/_shared/price-snapshot.test.ts'
       - 'supabase/functions/enrollment-contract.test.ts'
       - 'supabase/functions/bnr-rate/**'
       - 'supabase/functions/bnr-rate-contract.test.ts'
       - 'supabase/tests/*atomic-enrollment-creation*'
+      - 'supabase/tests/*camp-adult*'
   pull_request:
     paths:
       - 'motiontimisoaraApp/**'
@@ -36,13 +42,19 @@ on:
       - 'supabase/tests/*push*'
       - 'supabase/migrations/00060_atomic_enrollment_creation.sql'
       - 'supabase/migrations/00061_free_enrollment_fulfillment.sql'
+      - 'supabase/migrations/00068_camp_adult_enrollment.sql'
       - 'supabase/functions/create-enrollment/**'
+      - 'supabase/functions/validate-enrollment/**'
       - 'supabase/functions/create-payment-intent/**'
       - 'supabase/functions/_shared/payment-*.ts'
+      - 'supabase/functions/_shared/enrollment-pricing.ts'
+      - 'supabase/functions/_shared/price-snapshot.ts'
+      - 'supabase/functions/_shared/price-snapshot.test.ts'
       - 'supabase/functions/enrollment-contract.test.ts'
       - 'supabase/functions/bnr-rate/**'
       - 'supabase/functions/bnr-rate-contract.test.ts'
       - 'supabase/tests/*atomic-enrollment-creation*'
+      - 'supabase/tests/*camp-adult*'
 
 jobs:
   enrollment-payments:
@@ -61,8 +73,11 @@ jobs:
       - name: Verify atomic enrollment retries and concurrent fulfillment
         shell: pwsh
         run: ./supabase/tests/run-atomic-enrollment-creation.ps1
+      - name: Verify camp adult enrollment SQL
+        shell: pwsh
+        run: ./supabase/tests/run-camp-adult-enrollment.ps1
       - name: Verify enrollment and payment-intent contracts
-        run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/bnr-rate-contract.test.ts
+        run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/price-snapshot.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/bnr-rate-contract.test.ts
 
   push-contracts:
     runs-on: ubuntu-latest

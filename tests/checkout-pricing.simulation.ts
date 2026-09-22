@@ -106,6 +106,7 @@ async function simulate(page: Page, scenario: Scenario = 'by-age', role: 'PARENT
     if (path === '/rest/v1/camp_price_items') return respond([
       { id: 'included-service', name: 'Cazare și masă', description: 'Servicii simulate comune', amount: scenario === 'single' ? 50000 : 99000, display_order: 0 },
     ]);
+    if (path === '/rest/v1/camp_adult_prices') return respond([]);
     if (['/rest/v1/camp_coaches', '/rest/v1/camp_photos'].includes(path)) return respond([]);
     if (path === '/rest/v1/rpc/camp_spots_remaining') return respond(20);
     if (path === '/rest/v1/enrollments') return respond(created ? quote().map((item, index) => ({

@@ -2,7 +2,8 @@ export interface PriceSnapshot {
   schemaVersion: 1;
   kind: "COURSE" | "CAMP" | "ACTIVITY";
   entityId: string;
-  childId: string;
+  childId: string | null;
+  adultProfileId?: string | null;
   sourceUnitAmount: number;
   sourceCurrency: "RON" | "EUR";
   quantity: number;
@@ -32,8 +33,12 @@ export function convertToRon(unitAmount: number, currency: string, rate: number 
   return Number(amount);
 }
 
+function snapshotSubjectId(snapshot: Pick<PriceSnapshot, "childId" | "adultProfileId">) {
+  return snapshot.adultProfileId ?? snapshot.childId;
+}
+
 export async function snapshotVersion(snapshot: Omit<PriceSnapshot, "priceVersion">): Promise<string> {
-  const canonical = [snapshot.schemaVersion, snapshot.kind, snapshot.entityId, snapshot.childId,
+  const canonical = [snapshot.schemaVersion, snapshot.kind, snapshot.entityId, snapshotSubjectId(snapshot),
     snapshot.sourceUnitAmount, snapshot.sourceCurrency, snapshot.quantity, snapshot.eurRonRateMicros,
     snapshot.amount, snapshot.currency];
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(canonical)));
@@ -41,13 +46,17 @@ export async function snapshotVersion(snapshot: Omit<PriceSnapshot, "priceVersio
 }
 
 export async function createPriceSnapshot(
-  kind: PriceSnapshot["kind"], entityId: string, childId: string,
+  kind: PriceSnapshot["kind"], entityId: string, childId: string | null,
   sourceUnitAmount: number, sourceCurrency: string, eurRonRateMicros: number | null, quantity: number,
+  adultProfileId: string | null = null,
 ): Promise<PriceSnapshot> {
   const amount = convertToRon(sourceUnitAmount, sourceCurrency, eurRonRateMicros, quantity);
   const snapshot: Omit<PriceSnapshot, "priceVersion"> = {
-    schemaVersion: 1, kind, entityId, childId, sourceUnitAmount,
+    schemaVersion: 1, kind, entityId,
+    childId: adultProfileId ? null : childId,
+    sourceUnitAmount,
     sourceCurrency: sourceCurrency as PriceSnapshot["sourceCurrency"], quantity, eurRonRateMicros, amount, currency: "RON",
+    ...(adultProfileId ? { adultProfileId } : {}),
   };
   return { ...snapshot, priceVersion: await snapshotVersion(snapshot) };
 }
@@ -55,8 +64,11 @@ export async function createPriceSnapshot(
 export async function readPriceSnapshot(value: unknown): Promise<PriceSnapshot> {
   if (!value || typeof value !== "object") throw new Error("Missing price snapshot");
   const snapshot = value as PriceSnapshot;
+  const hasChild = typeof snapshot.childId === "string" && snapshot.childId.length > 0;
+  const hasAdult = typeof snapshot.adultProfileId === "string" && snapshot.adultProfileId.length > 0;
   if (snapshot.schemaVersion !== 1 || !["COURSE", "CAMP", "ACTIVITY"].includes(snapshot.kind) ||
-    typeof snapshot.entityId !== "string" || !snapshot.entityId || typeof snapshot.childId !== "string" || !snapshot.childId ||
+    typeof snapshot.entityId !== "string" || !snapshot.entityId || hasChild === hasAdult ||
+    (hasAdult && snapshot.kind !== "CAMP") ||
     (snapshot.kind !== "COURSE" && snapshot.quantity !== 1) || snapshot.currency !== "RON" ||
     snapshot.amount !== convertToRon(snapshot.sourceUnitAmount, snapshot.sourceCurrency, snapshot.eurRonRateMicros, snapshot.quantity) ||
     snapshot.priceVersion !== await snapshotVersion(snapshot)) {
