@@ -16,4 +16,4 @@ The same controls are on `/club/camps`, `/coach/camps` and `/admin/camps`, in th
 
 ## Persistence
 
-`00069_camp_templates.sql` adds `camp_templates` with owner RLS, a partial unique name per owner, and `save_camp_template` (security invoker) for the insert-or-replace. Deleting a location clears `location_id`. Deleting the owner removes the templates. Camps do not reference templates.
+`00070_camp_templates.sql` adds `camp_templates` with owner RLS, a partial unique name per owner, and `save_camp_template` (security invoker) for the insert-or-replace. It was applied once on 2026-09-22 as remote version `20260922172538` (`camp_templates`) and was not re-applied. `00069_competitions.sql` belongs to To-Do #153. Deleting a location clears `location_id`. Deleting the owner removes the templates. Camps do not reference templates.

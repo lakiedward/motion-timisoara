@@ -75,7 +75,7 @@ GRANT EXECUTE ON FUNCTION public.get_my_role() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.my_club_ids() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.componentele_categoriei_valide(JSONB) TO authenticated;
 
-\i /tmp/migrations/00069_camp_templates.sql
+\i /tmp/migrations/00070_camp_templates.sql
 
 INSERT INTO public.profiles (id) VALUES
     ('11111111-1111-1111-1111-111111111111'),
