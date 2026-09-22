@@ -255,6 +255,15 @@ To-Do #159 stage 2: git file `00070_camp_templates.sql` was applied once on
 2026-09-22 as `20260922172538` (`camp_templates`). It was not re-applied.
 `00065`–`00069` were not re-applied.
 
+To-Do #153 completion: git files `00071_competition_offers_and_coaches.sql`,
+`00072_competition_registrations.sql`, and `00073_competition_podium.sql` are
+pending isolated PostgreSQL verification and remote application. They add the
+required schedule, route GPX storage, age categories, coach invitations,
+atomic enrollment and price snapshots, cash-payment access, and podiums.
+No remote version is recorded for these files yet. Apply them in numeric
+order only after the isolated runner passes, then record the actual remote
+versions here and regenerate `motiontimisoaraApp/src/lib/database.types.ts`.
+
 To confirm git and the remote still agree:
 
 ```bash

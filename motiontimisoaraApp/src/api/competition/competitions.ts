@@ -1,8 +1,17 @@
 import { supabase } from '@/lib/supabase'
-import type { Tables } from '@/lib/database.types'
+import type { Tables, TablesInsert, TablesUpdate } from '@/lib/database.types'
 import { slugDinTitlu } from '@/api/camps-admin'
+import type { CompetitionSchedule } from '@/lib/competition-schedule'
+import { getCompetitionRoutes } from '@/api/competition/competition-offers'
 
-export type Competition = Tables<'competitions'>
+export type Competition = Tables<'competitions'> & {
+  start_at: string | null
+  end_at: string | null
+  registration_deadline_at: string | null
+  location_id: string | null
+  location_text: string | null
+  allow_cash: boolean
+}
 
 export type CompetitionRole = 'CLUB' | 'COACH' | 'ADMIN'
 
@@ -12,9 +21,12 @@ export interface CompetitionOwner {
   coachUserId: string | null
 }
 
-export interface CompetitionInput {
+export interface CompetitionInput extends CompetitionSchedule {
   title: string
   description: string
+  location_id: string | null
+  location_text: string
+  allow_cash: boolean
 }
 
 export interface CompetitionOrganizer {
@@ -30,6 +42,11 @@ export interface PublicCompetition {
   description: string
   heroUrl: string | null
   organizator: CompetitionOrganizer | null
+  startAt: string | null
+  endAt: string | null
+  registrationDeadlineAt: string | null
+  locationText: string | null
+  allowCash: boolean
 }
 
 const TITLU_FARA_SLUG = 'Titlul trebuie să conțină litere sau cifre.'
@@ -79,6 +96,11 @@ function prezinta(rand: Competition & Partial<Legaturi>): PublicCompetition {
     description: rand.description,
     heroUrl: urlHeroConcurs(rand.hero_photo_storage_path),
     organizator: organizatorDinLegaturi(rand.club ?? null, rand.coach ?? null),
+    startAt: rand.start_at,
+    endAt: rand.end_at,
+    registrationDeadlineAt: rand.registration_deadline_at,
+    locationText: rand.location_text,
+    allowCash: rand.allow_cash,
   }
 }
 
@@ -108,13 +130,13 @@ export async function getConcursurileMele(owner: CompetitionOwner): Promise<Comp
   if (owner.role === 'COACH') cerere = cerere.eq('coach_id', owner.coachUserId ?? '')
   const { data, error } = await cerere
   if (error) throw error
-  return data ?? []
+  return (data ?? []) as Competition[]
 }
 
 export async function getConcurs(id: string): Promise<Competition | null> {
   const { data, error } = await supabase.from('competitions').select('*').eq('id', id).maybeSingle()
   if (error) throw error
-  return data
+  return data as Competition | null
 }
 
 async function slugPentru(titlu: string, id: string): Promise<string> {
@@ -151,11 +173,17 @@ export async function createConcurs(
       slug,
       club_id: proprietar.club_id,
       coach_id: proprietar.coach_id,
-    })
+      start_at: input.start_at,
+      end_at: input.end_at,
+      registration_deadline_at: input.registration_deadline_at,
+      location_id: input.location_id,
+      location_text: input.location_text.trim(),
+      allow_cash: input.allow_cash,
+    } as TablesInsert<'competitions'>)
     .select()
     .single()
   if (error) throw error
-  return data
+  return data as Competition
 }
 
 export async function updateConcurs(id: string, input: CompetitionInput): Promise<void> {
@@ -164,7 +192,13 @@ export async function updateConcurs(id: string, input: CompetitionInput): Promis
     .update({
       title: input.title.trim(),
       description: input.description.trim(),
-    })
+      start_at: input.start_at,
+      end_at: input.end_at,
+      registration_deadline_at: input.registration_deadline_at,
+      location_id: input.location_id,
+      location_text: input.location_text.trim(),
+      allow_cash: input.allow_cash,
+    } as TablesUpdate<'competitions'>)
     .eq('id', id)
     .select()
     .single()
@@ -172,6 +206,10 @@ export async function updateConcurs(id: string, input: CompetitionInput): Promis
 }
 
 export async function stergeConcurs(id: string): Promise<void> {
+  const routes = await getCompetitionRoutes(id)
+  if (routes.length > 0) {
+    throw new Error('Șterge mai întâi categoriile și traseele concursului.')
+  }
   const { data, error: citire } = await supabase
     .from('competitions')
     .select('hero_photo_storage_path')

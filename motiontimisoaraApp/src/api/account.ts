@@ -65,7 +65,6 @@ export async function deleteChild(id: string) {
   if (error) throw error
 }
 
-/** Enrollment rows for the current parent (RLS-scoped via children), with payment + child. */
 export type EnrollmentRow = Tables<'enrollments'> & {
   child: Pick<Tables<'children'>, 'id' | 'name'> | null
   payments: Pick<
@@ -73,20 +72,26 @@ export type EnrollmentRow = Tables<'enrollments'> & {
     'amount' | 'currency' | 'pricing_snapshot' | 'status' | 'method' | 'paid_at'
   >[]
   offerTitle: string | null
+  competition_registration?: {
+    category_name_snapshot: string
+    route_name_snapshot: string
+  } | null
 }
 
 async function namesById(
-  kind: 'CAMP' | 'COURSE' | 'ACTIVITY',
+  kind: 'CAMP' | 'COURSE' | 'ACTIVITY' | 'COMPETITION',
   ids: string[],
 ): Promise<Map<string, string>> {
   const titles = new Map<string, string>()
   if (!ids.length) return titles
   const result =
-    kind === 'CAMP'
-      ? await supabase.from('camps').select('id, title').in('id', ids)
-      : kind === 'COURSE'
-        ? await supabase.from('courses').select('id, name').in('id', ids)
-        : await supabase.from('activities').select('id, name').in('id', ids)
+    kind === 'COMPETITION'
+      ? await supabase.from('competitions').select('id, title').in('id', ids)
+      : kind === 'CAMP'
+        ? await supabase.from('camps').select('id, title').in('id', ids)
+        : kind === 'COURSE'
+          ? await supabase.from('courses').select('id, name').in('id', ids)
+          : await supabase.from('activities').select('id, name').in('id', ids)
   if (result.error) throw result.error
   for (const row of result.data ?? []) {
     const name = 'title' in row ? row.title : row.name
@@ -99,15 +104,17 @@ async function offerTitles(rows: { kind: string; entity_id: string }[]) {
   const idsFor = (kind: string) => [
     ...new Set(rows.filter((row) => row.kind === kind).map((row) => row.entity_id)),
   ]
-  const [camps, courses, activities] = await Promise.all([
+  const [camps, courses, activities, competitions] = await Promise.all([
     namesById('CAMP', idsFor('CAMP')),
     namesById('COURSE', idsFor('COURSE')),
     namesById('ACTIVITY', idsFor('ACTIVITY')),
+    namesById('COMPETITION', idsFor('COMPETITION')),
   ])
   return new Map<string, string>([
     ...[...camps].map(([id, title]) => [`CAMP:${id}`, title] as const),
     ...[...courses].map(([id, title]) => [`COURSE:${id}`, title] as const),
     ...[...activities].map(([id, title]) => [`ACTIVITY:${id}`, title] as const),
+    ...[...competitions].map(([id, title]) => [`COMPETITION:${id}`, title] as const),
   ])
 }
 
@@ -115,7 +122,7 @@ export async function getMyEnrollments(): Promise<EnrollmentRow[]> {
   const { data, error } = await supabase
     .from('enrollments')
     .select(
-      '*, child:children(id,name), payments(amount,currency,pricing_snapshot,status,method,paid_at)',
+      '*, child:children(id,name), payments(amount,currency,pricing_snapshot,status,method,paid_at), competition_registration:competition_registrations(category_name_snapshot,route_name_snapshot)',
     )
     .order('created_at', { ascending: false })
   if (error) throw error

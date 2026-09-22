@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { getMyClub } from '@/api/club'
-import type { CompetitionOwner } from '@/api/competitions'
+import type { CompetitionOwner } from '@/api/competition/competitions'
 import { useAuth } from '@/lib/auth-context'
 
 export function useCompetitionOwner(): {

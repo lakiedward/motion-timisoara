@@ -16,6 +16,7 @@ const KIND_LABEL: Record<string, string> = {
   COURSE: 'Curs',
   CAMP: 'Tabără',
   ACTIVITY: 'Activitate',
+  COMPETITION: 'Concurs',
 }
 const STATUS: Record<
   string,
@@ -84,6 +85,12 @@ export default function EnrollmentsPage() {
                       {titlu}
                     </h2>
                     {persoana ? <p className="mt-1 font-medium">{persoana}</p> : null}
+                    {e.competition_registration && (
+                      <p className="text-muted-foreground mt-1 text-sm">
+                        {e.competition_registration.category_name_snapshot} ·{' '}
+                        {e.competition_registration.route_name_snapshot}
+                      </p>
+                    )}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline">{KIND_LABEL[e.kind] ?? e.kind}</Badge>

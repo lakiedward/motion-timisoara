@@ -5,15 +5,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 
 import CompetitionDetailsPage from './CompetitionDetailsPage'
-import { getConcursPublic, type PublicCompetition } from '@/api/competitions'
+import { getConcursPublic, type PublicCompetition } from '@/api/competition/competitions'
 
 vi.mock('react-router-dom', async () => {
   const real = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
   return { ...real, useParams: () => ({ slug: 'cupa' }) }
 })
 
-vi.mock('@/api/competitions', async () => {
-  const real = await vi.importActual<typeof import('@/api/competitions')>('@/api/competitions')
+vi.mock('@/api/competition/competitions', async () => {
+  const real = await vi.importActual<typeof import('@/api/competition/competitions')>('@/api/competition/competitions')
   return { ...real, getConcursPublic: vi.fn() }
 })
 
@@ -26,6 +26,11 @@ const CONCURS: PublicCompetition = {
   description: 'Linie unu.\nLinie doi.',
   heroUrl: 'https://public/hero.jpg',
   organizator: { fel: 'club', nume: 'Club Audit', link: '/cluburi/c1' },
+  startAt: '2026-10-01T07:00:00Z',
+  endAt: '2026-10-01T09:00:00Z',
+  registrationDeadlineAt: '2026-09-30T21:00:00Z',
+  locationText: 'Timișoara',
+  allowCash: false,
 }
 
 function deseneaza() {

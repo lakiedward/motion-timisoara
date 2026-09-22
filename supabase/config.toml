@@ -80,6 +80,12 @@ verify_jwt = true
 [functions.create-enrollment]
 verify_jwt = true
 
+[functions.validate-competition-registration]
+verify_jwt = true
+
+[functions.create-competition-registration]
+verify_jwt = true
+
 [functions.cancel-draft-enrollment]
 verify_jwt = true
 
