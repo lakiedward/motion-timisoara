@@ -43,6 +43,15 @@ import type { CampPortalBaza } from './camp-portal'
 import CampAgePricesSection from './CampAgePricesSection'
 import CampFormDetailsStep from './CampFormDetailsStep'
 import CampFormReviewStep from './CampFormReviewStep'
+import CampTemplatePicker from './templates/CampTemplatePicker'
+import CampTemplateSave from './templates/CampTemplateSave'
+import {
+  aplicaSablon,
+  golesteCampuriCopiate,
+  pasCuEroareSablon,
+  payloadSablon,
+  formularAreDate,
+} from './templates/camp-template-draft'
 
 export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   const { id } = useParams()
@@ -53,6 +62,8 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   const { proprietar, gata, eClub } = useProprietarTabere()
   const [step, setStep] = useState(0)
   const [fisierLocal, setFisierLocal] = useState<File | null>(null)
+  const [sablonSelectat, setSablonSelectat] = useState('')
+  const [locatiePastrata, setLocatiePastrata] = useState<string | null>(null)
 
   const { data: tabara, isError: eroareTabara } = useQuery({
     queryKey: ['tabara-de-editat', id],
@@ -74,7 +85,7 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
     queryFn: () => getPretulAdult(id as string),
     enabled: eEditare,
   })
-  const locatiaSalvata = tabara?.location_id ?? null
+  const locatiaSalvata = tabara?.location_id ?? locatiePastrata
   const { data: locatii, isError: eroareLocatii } = useQuery({
     queryKey: ['locatii-pentru-tabara', proprietar.clubId, eClub, locatiaSalvata],
     queryFn: () =>
@@ -130,6 +141,7 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   const currency = useWatch({ control, name: 'currency' })
   const cursEur = useWatch({ control, name: 'eur_ron_rate' })
   const slugViu = useWatch({ control, name: 'slug' })
+  const titluViu = useWatch({ control, name: 'title' })
   const faraCurs = eurFaraCurs(currency, cursEur)
   const fisierSalvat = tabara ? campRulesFileFromRow(tabara) : null
   const fisierRegulament = fisierLocal
@@ -145,6 +157,17 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
           marime: formatCampRulesFileSize(fisierSalvat.sizeBytes),
         }
       : null
+
+  const pregatesteSablon = async (nume: string) => {
+    const valori = getValues()
+    const pas = pasCuEroareSablon(valori)
+    if (pas !== null) {
+      await trigger(pas === 1 ? [...COSTURI_FIELDS] : ['rules', 'necesar'])
+      setStep(pas)
+      return null
+    }
+    return payloadSablon(nume, valori)
+  }
 
   const inapoiLaPas = (urmatorul: number) => {
     if (urmatorul < step) setStep(urmatorul)
@@ -242,6 +265,39 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
       <h1 className="font-display mt-2 text-2xl font-bold">
         {eEditare ? 'Editează tabăra' : 'Tabără nouă'}
       </h1>
+      {eEditare ? (
+        <div className="mt-6">
+          <CampTemplateSave
+            proprietar={proprietar}
+            gata={gata}
+            numeImplicit={titluViu ?? ''}
+            pregateste={pregatesteSablon}
+          />
+        </div>
+      ) : (
+        <div className="mt-6 mb-6">
+          <CampTemplatePicker
+            proprietar={proprietar}
+            gata={gata}
+            selectatId={sablonSelectat}
+            citesteAreDate={() => formularAreDate(getValues())}
+            onAlege={(sablon) => {
+              if (sablon) {
+                reset(aplicaSablon(getValues(), sablon))
+                setLocatiePastrata(sablon.location_id)
+                setSablonSelectat(sablon.id)
+              } else {
+                reset(golesteCampuriCopiate(getValues()))
+                setLocatiePastrata(null)
+                setSablonSelectat('')
+              }
+            }}
+            onSters={(id) => {
+              if (sablonSelectat === id) setSablonSelectat('')
+            }}
+          />
+        </div>
+      )}
       <ol className="mt-6 mb-6 flex flex-wrap gap-2" aria-label="Pașii formularului">
         {CAMP_FORM_STEPS.map((label, i) => {
           const current = i === step

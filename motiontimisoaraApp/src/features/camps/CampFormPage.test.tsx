@@ -13,7 +13,10 @@ import {
   getPretulAdult,
   getTabaraDeEditat,
   getTaberelemele,
+  listeazaSabloaneTabara,
+  salveazaSablonTabara,
   saveCampOffer,
+  stergeSablonTabara,
 } from '@/api/camps-admin'
 import { incarcaRegulamentFisier, stergeRegulamentFisier } from '@/api/camp-rules-file'
 import { getCursBnr } from '@/api/bnr-rate'
@@ -29,7 +32,10 @@ vi.mock('@/api/camps-admin', async () => {
     getPretulAdult: vi.fn(),
     getTabaraDeEditat: vi.fn(),
     getTaberelemele: vi.fn(),
+    listeazaSabloaneTabara: vi.fn(),
+    salveazaSablonTabara: vi.fn(),
     saveCampOffer: vi.fn(),
+    stergeSablonTabara: vi.fn(),
   }
 })
 vi.mock('@/api/bnr-rate', async () => {
@@ -150,6 +156,9 @@ function randuriCategorii() {
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(saveCampOffer).mockResolvedValue(undefined)
+  vi.mocked(listeazaSabloaneTabara).mockResolvedValue([])
+  vi.mocked(salveazaSablonTabara).mockResolvedValue('sablon-1')
+  vi.mocked(stergeSablonTabara).mockResolvedValue(undefined)
   vi.mocked(getTaberelemele).mockResolvedValue([] as never)
   vi.mocked(getPreturilePeVarsta).mockResolvedValue([] as never)
   vi.mocked(getPretulAdult).mockResolvedValue(null)
@@ -212,7 +221,7 @@ test('la editare, locul salvat apare selectat chiar dacă lista vine după tabă
   )
 
   renderForm('/club/camps/tabara-1/edit')
-  await screen.findByDisplayValue('Tabără de înot')
+  await waitFor(() => expect(screen.getByLabelText('Titlu')).toHaveValue('Tabără de înot'))
   await waitFor(() => expect(screen.getByLabelText('Loc')).toHaveValue(BAZIN))
   expect(getClubSelectableLocations).toHaveBeenCalledWith('club-1', BAZIN)
 })
@@ -380,7 +389,7 @@ test.each(PORTALE)('la editare pe %s, intervalul salvat arată durata inclusivă
   vi.mocked(getCategoriile).mockResolvedValue([])
   vi.mocked(getPreturilePeVarsta).mockResolvedValue([])
   renderForm(`${baza}/tabara-1/edit`)
-  await screen.findByDisplayValue('Tabără de înot')
+  await waitFor(() => expect(screen.getByLabelText('Titlu')).toHaveValue('Tabără de înot'))
   expect(screen.getByLabelText('Începe')).toHaveValue('2026-09-13')
   expect(screen.getByLabelText('Se termină')).toHaveValue('2026-09-20')
   expect(screen.getByText(/· 8 zile/)).toBeInTheDocument()
@@ -538,7 +547,7 @@ test('editing preserves EUR on the cost step', async () => {
   vi.mocked(getPreturilePeVarsta).mockResolvedValue([])
   vi.mocked(getCursBnr).mockResolvedValue({ date: '2026-09-19', eur_ron_millionths: 5073100 })
   renderForm('/club/camps/tabara-1/edit')
-  await screen.findByDisplayValue('Tabără de înot')
+  await waitFor(() => expect(screen.getByLabelText('Titlu')).toHaveValue('Tabără de înot'))
   await userEvent.setup().click(screen.getByRole('button', { name: 'Continuă' }))
   await screen.findByRole('heading', { name: 'Categorii și costuri' })
   expect(screen.getByRole('radio', { name: 'Euro (EUR)' })).toBeChecked()
@@ -595,7 +604,7 @@ test('la editare, categoriile salvate revin ca o componentă, iar copiază din l
   ] as never)
 
   renderForm('/club/camps/tabara-1/edit')
-  await screen.findByDisplayValue('Tabără de înot')
+  await waitFor(() => expect(screen.getByLabelText('Titlu')).toHaveValue('Tabără de înot'))
   await user.click(screen.getByRole('button', { name: 'Continuă' }))
   const lista = await screen.findByRole('list', { name: 'Categorii de vârstă' })
   expect(within(lista).getByDisplayValue('Cazare')).toBeInTheDocument()
@@ -683,7 +692,7 @@ test('la editare, Salvează tabăra actualizează oferta existentă', async () =
     },
   ] as never)
   renderForm('/club/camps/tabara-1/edit')
-  await screen.findByDisplayValue('Tabără de înot')
+  await waitFor(() => expect(screen.getByLabelText('Titlu')).toHaveValue('Tabără de înot'))
   await user.click(screen.getByRole('button', { name: 'Continuă' }))
   await screen.findByRole('heading', { name: 'Categorii și costuri' })
   await user.click(screen.getByRole('button', { name: 'Continuă' }))

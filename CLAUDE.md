@@ -571,6 +571,13 @@ reorganizing this document; correct obsolete facts with current evidence.
   as its courses, including the one rules file, and picks the coach from its
   roster. The activity column guard is removed. INSERT and UPDATE follow the
   course policies. Migration `00067_club_activity_management.sql`.
+- 2026-09-22 — To-Do #159 stage 2 camp templates are owner-scoped snapshots.
+  They copy currency, age categories, components, description, rules text,
+  packing list, cash, location and capacity. Title, slug, period, rules file,
+  photos, coaches and the BNR rate stay on the edition. The same template name
+  replaces that owner's snapshot. Selection is only on create and asks before
+  overwriting a started form. Migration `00069_camp_templates.sql`. See
+  `docs/superpowers/specs/2026-09-22-todo-159-camp-templates.md`.
 - 2026-09-22 — To-Do #152 a parent can enroll themselves as an adult camp
   participant. Dedicated `camp_adult_prices` sits next to age categories, with
   the same named components, total, RON/EUR and Gratuit-at-0 rules. An enrolled
