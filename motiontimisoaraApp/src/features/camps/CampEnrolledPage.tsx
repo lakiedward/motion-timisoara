@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { AlertTriangle, ArrowLeft, Phone, QrCode } from 'lucide-react'
@@ -10,7 +11,11 @@ import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
 import { plural } from '@/lib/plural'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { CampParticipationPanel } from '@/features/live-location/camps/CampParticipationPanel'
+import {
+  CampArrivalOnCard,
+  CampLocationShare,
+} from '@/features/live-location/camps/CampParticipationPanel'
+import { useCampStaffParticipation } from '@/features/live-location/camps/useCampStaffParticipation'
 import type { CampPortalBaza } from './camp-portal'
 
 export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
@@ -33,6 +38,9 @@ export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
   })
 
   const cuAlergii = inscrisi.filter((c) => c.alergii?.trim())
+  const sosire = useCampStaffParticipation(campId)
+  const participanti = sosire.participants.data
+  const poateConfirma = (participanti?.participants.length ?? 0) > 0
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -49,11 +57,33 @@ export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
           {tabara.title} · {formatZi(tabara.period_start)} – {formatZi(tabara.period_end)}
         </p>
       )}
-      {tabara && (
-        <CampRulesDisplay rules={tabara.rules} fisier={campRulesFileAfisabil(tabara)} />
-      )}
+      {tabara && <CampRulesDisplay rules={tabara.rules} fisier={campRulesFileAfisabil(tabara)} />}
 
-      <CampParticipationPanel campId={campId} />
+      <CampLocationShare
+        campId={campId}
+        actorId={sosire.userId}
+        canShare={!!participanti?.canShare}
+        startsAt={participanti?.startsAt}
+        endsAt={participanti?.endsAt}
+      />
+
+      {sosire.staff && sosire.participants.isError && (
+        <div role="alert" className="mt-6 space-y-2">
+          <p className="text-destructive text-sm">
+            {sosire.participants.error instanceof Error
+              ? sosire.participants.error.message
+              : 'Nu am putut încărca prezența.'}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 min-h-11"
+            onClick={() => void sosire.participants.refetch()}
+          >
+            Reîncearcă prezența
+          </Button>
+        </div>
+      )}
 
       {isError ? (
         <div className="py-16 text-center" role="alert">
@@ -79,6 +109,18 @@ export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
             {tabara?.capacity ? ` din ${plural(tabara.capacity, 'loc', 'locuri')}` : ''}.
           </p>
 
+          {sosire.staff && poateConfirma && (
+            <p className="text-muted-foreground mt-4 text-sm">
+              Confirmă sosirea pe cardul copilului, o singură dată. Părintele poate vedea locația în
+              Anunțuri când antrenorul o pornește. Plecarea închide accesul pentru acest copil.
+            </p>
+          )}
+          {sosire.mutation.isError && (
+            <p role="alert" className="text-destructive mt-4 text-sm">
+              {sosire.mutation.error.message}
+            </p>
+          )}
+
           {cuAlergii.length > 0 && (
             <div className="border-destructive/40 bg-destructive/5 mt-4 rounded-2xl border p-4">
               <p className="inline-flex items-center gap-2 text-sm font-medium">
@@ -94,7 +136,31 @@ export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
           <ul className="mt-4 space-y-3">
             {inscrisi.map((c) => (
               <li key={c.enrollmentId}>
-                <CardCopil copil={c} ziuaTaberei={tabara?.period_start ?? null} baza={baza} />
+                <CardCopil
+                  copil={c}
+                  ziuaTaberei={tabara?.period_start ?? null}
+                  baza={baza}
+                  sosire={
+                    <CampArrivalOnCard
+                      nume={c.nume}
+                      participant={sosire.byEnrollment.get(c.enrollmentId) ?? null}
+                      pending={sosire.mutation.isPending}
+                      confirmingDeparture={sosire.departure === c.enrollmentId}
+                      onArrive={() => {
+                        sosire.mutation.reset()
+                        sosire.mutation.mutate({ action: 'arrive', enrollmentId: c.enrollmentId })
+                      }}
+                      onAskDeparture={() => {
+                        sosire.mutation.reset()
+                        sosire.setDeparture(c.enrollmentId)
+                      }}
+                      onDepart={() =>
+                        sosire.mutation.mutate({ action: 'depart', enrollmentId: c.enrollmentId })
+                      }
+                      onCancelDeparture={() => sosire.setDeparture(null)}
+                    />
+                  }
+                />
               </li>
             ))}
           </ul>
@@ -108,10 +174,12 @@ function CardCopil({
   copil,
   ziuaTaberei,
   baza,
+  sosire,
 }: {
   copil: CopilInscris
   ziuaTaberei: string | null
   baza: CampPortalBaza
+  sosire: ReactNode
 }) {
   const eAdult = copil.fel === 'adult'
   const varsta = !eAdult && ziuaTaberei ? varstaLa(copil.dataNasterii, ziuaTaberei) : null
@@ -176,6 +244,7 @@ function CardCopil({
           )}
         </ul>
       )}
+      {sosire}
     </div>
   )
 }

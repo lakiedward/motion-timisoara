@@ -72,6 +72,43 @@ export type EnrollmentRow = Tables<'enrollments'> & {
     Tables<'payments'>,
     'amount' | 'currency' | 'pricing_snapshot' | 'status' | 'method' | 'paid_at'
   >[]
+  offerTitle: string | null
+}
+
+async function namesById(
+  kind: 'CAMP' | 'COURSE' | 'ACTIVITY',
+  ids: string[],
+): Promise<Map<string, string>> {
+  const titles = new Map<string, string>()
+  if (!ids.length) return titles
+  const result =
+    kind === 'CAMP'
+      ? await supabase.from('camps').select('id, title').in('id', ids)
+      : kind === 'COURSE'
+        ? await supabase.from('courses').select('id, name').in('id', ids)
+        : await supabase.from('activities').select('id, name').in('id', ids)
+  if (result.error) throw result.error
+  for (const row of result.data ?? []) {
+    const name = 'title' in row ? row.title : row.name
+    if (name.trim()) titles.set(row.id, name.trim())
+  }
+  return titles
+}
+
+async function offerTitles(rows: { kind: string; entity_id: string }[]) {
+  const idsFor = (kind: string) => [
+    ...new Set(rows.filter((row) => row.kind === kind).map((row) => row.entity_id)),
+  ]
+  const [camps, courses, activities] = await Promise.all([
+    namesById('CAMP', idsFor('CAMP')),
+    namesById('COURSE', idsFor('COURSE')),
+    namesById('ACTIVITY', idsFor('ACTIVITY')),
+  ])
+  return new Map<string, string>([
+    ...[...camps].map(([id, title]) => [`CAMP:${id}`, title] as const),
+    ...[...courses].map(([id, title]) => [`COURSE:${id}`, title] as const),
+    ...[...activities].map(([id, title]) => [`ACTIVITY:${id}`, title] as const),
+  ])
 }
 
 export async function getMyEnrollments(): Promise<EnrollmentRow[]> {
@@ -82,7 +119,13 @@ export async function getMyEnrollments(): Promise<EnrollmentRow[]> {
     )
     .order('created_at', { ascending: false })
   if (error) throw error
-  return (data ?? []) as unknown as EnrollmentRow[]
+  const rows = (data ?? []) as unknown as Omit<EnrollmentRow, 'offerTitle'>[]
+  if (!rows.length) return []
+  const titles = await offerTitles(rows)
+  return rows.map((row) => ({
+    ...row,
+    offerTitle: titles.get(`${row.kind}:${row.entity_id}`) ?? null,
+  }))
 }
 
 /** Attendance for a child, joined to occurrence + course, newest first. */
