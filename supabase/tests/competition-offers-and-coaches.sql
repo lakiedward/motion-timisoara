@@ -229,6 +229,32 @@ BEGIN
 END;
 $$;
 
+DO $$
+DECLARE
+    path TEXT := 'dddddddd-dddd-dddd-dddd-dddddddddddd/routes/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee/ffffffff-ffff-ffff-ffff-ffffffffffff.gpx';
+BEGIN
+    IF storage.foldername(path) IS DISTINCT FROM ARRAY[
+        'dddddddd-dddd-dddd-dddd-dddddddddddd', 'routes',
+        'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'
+    ]::TEXT[] THEN
+        RAISE EXCEPTION 'Storage folder extraction is incorrect';
+    END IF;
+    IF path !~ '^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}/routes/[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}/[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}\.gpx$' THEN
+        RAISE EXCEPTION 'GPX path pattern rejected a valid upload';
+    END IF;
+    IF public.pot_administra_concurs('dddddddd-dddd-dddd-dddd-dddddddddddd') IS DISTINCT FROM TRUE THEN
+        RAISE EXCEPTION 'Organizer check failed for route upload';
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM public.competition_routes route
+        WHERE route.id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'
+          AND route.competition_id = 'dddddddd-dddd-dddd-dddd-dddddddddddd'
+    ) THEN
+        RAISE EXCEPTION 'Route is not visible to storage policy';
+    END IF;
+END;
+$$;
+
 INSERT INTO storage.objects(bucket_id, name)
 VALUES (
     'competition-routes',
