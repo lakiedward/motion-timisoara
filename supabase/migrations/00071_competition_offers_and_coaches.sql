@@ -255,6 +255,25 @@ ON CONFLICT (id) DO UPDATE SET
     file_size_limit = EXCLUDED.file_size_limit,
     allowed_mime_types = EXCLUDED.allowed_mime_types;
 
+CREATE OR REPLACE FUNCTION public.can_upload_competition_route(p_path TEXT)
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+    SELECT p_path ~ '^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}/routes/[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}/[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}\.gpx$'
+        AND EXISTS (
+            SELECT 1 FROM public.competition_routes route
+            WHERE route.id = public.safe_uuid(split_part(p_path, '/', 3))
+              AND route.competition_id = public.safe_uuid(split_part(p_path, '/', 1))
+              AND public.pot_administra_concurs(route.competition_id)
+        )
+$$;
+
+REVOKE ALL ON FUNCTION public.can_upload_competition_route(TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.can_upload_competition_route(TEXT) TO authenticated;
+
 CREATE POLICY competition_routes_storage_select ON storage.objects
     FOR SELECT TO authenticated
     USING (
@@ -266,13 +285,7 @@ CREATE POLICY competition_routes_storage_insert ON storage.objects
     FOR INSERT TO authenticated
     WITH CHECK (
         bucket_id = 'competition-routes'
-        AND name ~ '^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}/routes/[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}/[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}\.gpx$'
-        AND public.pot_administra_concurs(public.safe_uuid((storage.foldername(name))[1]))
-        AND EXISTS (
-            SELECT 1 FROM public.competition_routes AS route
-            WHERE route.id = public.safe_uuid((storage.foldername(name))[3])
-              AND route.competition_id = public.safe_uuid((storage.foldername(name))[1])
-        )
+        AND public.can_upload_competition_route(name)
     );
 
 CREATE POLICY competition_routes_storage_delete ON storage.objects
