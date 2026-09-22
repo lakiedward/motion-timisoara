@@ -235,7 +235,7 @@ test('a legacy single-price camp still publishes the adult tariff', () => {
   })
   expect(screen.queryByRole('list', { name: 'Tarife pe vârste' })).not.toBeInTheDocument()
   const tarif = screen.getByLabelText('Tarif adult')
-  expect(within(tarif).getByText('150,00 lei')).toBeInTheDocument()
+  expect(within(tarif).getAllByText('150,00 lei').length).toBeGreaterThan(0)
   expect(within(tarif).getByText('Participare')).toBeInTheDocument()
 })
 

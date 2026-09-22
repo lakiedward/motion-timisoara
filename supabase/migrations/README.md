@@ -226,6 +226,24 @@ insert and update its activities the same way it can for courses, assigning a
 roster coach. Coaches and admins keep their access. `00065` and `00066` were
 not re-applied.
 
+To-Do #152: git file `00068_camp_adult_enrollment.sql` is the complete isolated
+migration (adult tariff table, XOR enrollments, snapshot/batch/offer save).
+It was applied remotely on 2026-09-22 in slices because of MCP payload limits,
+then a copy error in the snapshot guard was corrected to match the git file.
+`00065`–`00067` were not re-applied.
+
+| File | Remote `version` | Remote `name` |
+|------|------------------|---------------|
+| `00068_camp_adult_enrollment.sql` (table, RLS, XOR, policies) | `20260922112747` | `camp_adult_enrollment` |
+| same file (snapshot validator, adult offer RPC) | `20260922112848` | `camp_adult_enrollment_snapshot` |
+| same file (guard adult match; `IS NOT DISTINCT FROM`) | `20260922112900` | `camp_adult_enrollment_guard_fix` |
+| same file (`apply_enrollment_payment_result`) | `20260922112918` | `camp_adult_enrollment_payment_result` |
+| same file (`save_enrollment_batch`) | `20260922113006` | `camp_adult_enrollment_batch` |
+| same file (`salveaza_pretul_adult`, `save_camp_offer`) | `20260922113039` | `camp_adult_enrollment_offer_save` |
+
+Edge Functions after that apply: `validate-enrollment` ACTIVE v8 JWT and
+`create-enrollment` ACTIVE v10 JWT.
+
 To confirm git and the remote still agree:
 
 ```bash

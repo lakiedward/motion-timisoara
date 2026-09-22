@@ -120,7 +120,12 @@ async function simulate(page: Page, scenario: Scenario = 'by-age', role: 'PARENT
       if (scenario === 'old-backend') results = results.map(({ amount: _amount, currency: _currency, priceVersion: _version, ...item }) => item);
       if (scenario === 'missing-quote') results = results.slice(0, 1);
       if (scenario === 'unmatched') results[1] = { childId: children[1].id, name: children[1].name, eligible: false, severity: 'error', reason: 'Nu există o categorie de preț pentru vârsta copilului la începutul taberei.' };
-      return respond({ results, capacity: { available: 20, requested: 2, sufficient: true }, allowCash: true });
+      return respond({
+        results,
+        ...(kind === 'CAMP' ? { adult: null } : {}),
+        capacity: { available: 20, requested: 2, sufficient: true },
+        allowCash: true,
+      });
     }
     if (path === '/functions/v1/create-enrollment') {
       submissions.push(request.postDataJSON());
@@ -201,7 +206,8 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 768, height: 1024
     await expect(page.getByText('600,00 lei', { exact: true })).toBeVisible();
     await expect(page.getByText('800,00 lei', { exact: true })).toBeVisible();
     expect(state.submissions).toEqual([{
-      kind: 'CAMP', entityId: 'camp-simulation', childIds: ['child-a', 'child-b'], paymentMethod: 'CASH',
+      kind: 'CAMP', entityId: 'camp-simulation', childIds: ['child-a', 'child-b'], includeSelf: false,
+      paymentMethod: 'CASH',
       priceVersions: { 'child-a': 'simulated-version-child-a-original', 'child-b': 'simulated-version-child-b-original' },
     }]);
     await proof(info, state);
