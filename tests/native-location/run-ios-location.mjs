@@ -151,6 +151,39 @@ async function requestRestart(session) {
   await waitFor(`${session}: explicit foreground handshake starts next watcher`, () => event('start', session))
 }
 
+async function stopSimulator() {
+  stoppingConsole = true
+  clearTimeout(consoleTimeout)
+  consoleTimeout = undefined
+  if (device) {
+    if (consoleProcess) await sim('terminate', device, appId).catch(() => undefined)
+    await sim('shutdown', device).catch(() => undefined)
+    await sim('delete', device).catch(() => undefined)
+  }
+  if (consoleProcess) {
+    consoleProcess.kill('SIGKILL')
+    await Promise.race([consoleClosed, delay(3000)])
+  }
+  device = undefined
+  consoleProcess = undefined
+  consoleFailure = undefined
+  stoppingConsole = false
+  consoleClosed = Promise.resolve()
+  lastResult = undefined
+}
+
+function simulatorDiedBeforeReady(error) {
+  return !lastResult && /harness ready|closed unexpectedly|server died|Mach error -308/.test(error.message)
+}
+
+async function startHarness() {
+  await createSimulator()
+  await command('xcrun', ['simctl', 'install', device, builtApp], { timeout: 180000 })
+  await sim('privacy', device, 'grant', 'location-always', appId)
+  await launchHarness()
+  await waitFor('harness ready', () => event('ready'), 180000)
+}
+
 async function createSimulator() {
   const help = await command('xcrun', ['simctl', 'help', 'privacy'], { includeStderr: true })
   assert(help.includes('location-always'), 'Simulator must support location-always permission')
@@ -204,11 +237,14 @@ try {
   await writeFile(index, harness)
   await command('xcodebuild', ['-project', 'ios/App/App.xcodeproj', '-scheme', 'App', '-sdk', 'iphonesimulator', '-configuration', 'Debug', '-derivedDataPath', 'ios/build', 'CODE_SIGNING_ALLOWED=NO', 'build'], { timeout: 600000 })
   assert((await readFile(path.join(builtApp, 'public/index.html'))).equals(harness), 'Only the isolated harness may be installed in the test simulator')
-  await createSimulator()
-  await command('xcrun', ['simctl', 'install', device, builtApp], { timeout: 180000 })
-  await sim('privacy', device, 'grant', 'location-always', appId)
-  await launchHarness()
-  await waitFor('harness ready', () => event('ready'), 180000)
+  try {
+    await startHarness()
+  } catch (error) {
+    if (!simulatorDiedBeforeReady(error)) throw error
+    log.push({ retry: error.message })
+    await stopSimulator()
+    await startHarness()
+  }
   timing.harnessReadyAt = Date.now()
   timing.startupDurationMs = timing.harnessReadyAt - timing.launchRequestedAt
   consoleTimeout = setTimeout(() => {
