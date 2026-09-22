@@ -32,7 +32,10 @@ for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 
     try {
       await coach.goto(`/coach/camps/${ids.camp}/enrolled`);
       await parent.goto('/account/announcements');
-      await expect(coach.getByRole('heading', { name: 'Prezență în tabără' })).toBeVisible();
+      await expect(coach.getByRole('heading', { name: 'Cine s-a înscris' })).toBeVisible();
+      await expect(coach.getByRole('heading', { name: 'Prezență în tabără' })).toHaveCount(0);
+      const copil = coach.getByRole('listitem').filter({ hasText: 'Copil Simulat Ana' });
+      await expect(copil.getByRole('button', { name: 'Confirmă sosirea', exact: true })).toBeVisible();
       await expect.poll(() => parentActions('list').length).toBeGreaterThan(0);
       await expect(parent.getByText(activeHeading, { exact: true })).toHaveCount(0);
       await expect(coachPanel(coach).getByRole('button', { name: 'Pornește partajarea' })).toBeDisabled();
