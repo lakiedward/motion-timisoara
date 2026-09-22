@@ -385,7 +385,7 @@ DECLARE
     route public.competition_routes;
     quote JSONB;
     snapshot JSONB;
-    child_id UUID;
+    registration_child_id UUID;
     category_id UUID;
     enrollment_id UUID;
     price_bani BIGINT;
@@ -460,14 +460,14 @@ BEGIN
         SELECT item FROM jsonb_array_elements(p_quotes) item
         ORDER BY item->>'childId'
     LOOP
-        child_id := (quote->>'childId')::UUID;
+        registration_child_id := (quote->>'childId')::UUID;
         category_id := (quote->>'categoryId')::UUID;
         price_bani := (quote->>'amount')::BIGINT;
         snapshot := quote->'snapshot';
         IF price_bani NOT BETWEEN 0 AND 99999999
             OR public.valid_enrollment_price_snapshot(snapshot, price_bani, 'RON') IS DISTINCT FROM TRUE
             OR snapshot->>'entityId' IS DISTINCT FROM p_competition_id::TEXT
-            OR snapshot->>'childId' IS DISTINCT FROM child_id::TEXT
+            OR snapshot->>'childId' IS DISTINCT FROM registration_child_id::TEXT
             OR snapshot->>'categoryId' IS DISTINCT FROM category_id::TEXT
             OR snapshot->>'priceVersion' IS DISTINCT FROM quote->>'priceVersion' THEN
             RAISE EXCEPTION 'Oferta confirmată nu este validă'
@@ -475,7 +475,7 @@ BEGIN
         END IF;
 
         SELECT * INTO child FROM public.children
-        WHERE id = child_id FOR SHARE;
+        WHERE id = registration_child_id FOR SHARE;
         IF NOT FOUND OR child.parent_id IS DISTINCT FROM p_parent_id THEN
             RAISE EXCEPTION 'Copilul nu îți aparține'
                 USING ERRCODE = '42501';
@@ -512,7 +512,7 @@ BEGIN
             OR snapshot->>'routeId' IS DISTINCT FROM route.id::TEXT
             OR snapshot->>'gpxStoragePath' IS DISTINCT FROM route.gpx_storage_path
             OR snapshot->>'priceVersion' IS DISTINCT FROM public.competition_price_version(
-                p_competition_id, child_id, category.id, route.id,
+                p_competition_id, registration_child_id, category.id, route.id,
                 route.gpx_storage_path, category.price_bani
             ) THEN
             RAISE EXCEPTION 'Prețul sau traseul s-a schimbat. Confirmă din nou oferta'
@@ -523,7 +523,7 @@ BEGIN
             SELECT 1 FROM public.enrollments enrollment
             WHERE enrollment.kind = 'COMPETITION'
               AND enrollment.entity_id = p_competition_id
-              AND enrollment.child_id = child_id
+              AND enrollment.child_id = registration_child_id
               AND enrollment.status IN ('PENDING', 'ACTIVE')
         ) THEN
             RAISE EXCEPTION 'Există deja o înscriere. Verifică în Înscrieri'
@@ -540,7 +540,7 @@ BEGIN
             kind, entity_id, child_id, status,
             purchased_sessions, remaining_sessions, sessions_used
         ) VALUES (
-            'COMPETITION', p_competition_id, child_id,
+            'COMPETITION', p_competition_id, registration_child_id,
             CASE WHEN price_bani = 0 THEN 'ACTIVE' ELSE 'PENDING' END,
             0, 0, 0
         ) RETURNING id INTO enrollment_id;
@@ -573,7 +573,7 @@ BEGIN
 
         enrollment_ids := enrollment_ids || jsonb_build_array(enrollment_id);
         prices := prices || jsonb_build_array(jsonb_build_object(
-            'childId', child_id, 'amount', price_bani, 'currency', 'RON'
+            'childId', registration_child_id, 'amount', price_bani, 'currency', 'RON'
         ));
         needs_card := needs_card OR (payment_method = 'CARD' AND price_bani > 0);
     END LOOP;
