@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
-import type { CampRequirementCategory } from '@/lib/camp-requirements'
+import { readCampRequirements, type CampRequirementCategory } from '@/lib/camp-requirements'
 
 export type Tabara = Tables<'camps'>
 export type CategoriePret = Tables<'camp_price_items'>
@@ -218,6 +218,105 @@ export function intervaleSuprapuse(
 
 export function sumaCategoriilor(categorii: { amount: number }[]): number {
   return categorii.reduce((t, c) => t + (Number.isFinite(c.amount) ? c.amount : 0), 0)
+}
+
+export type PretSablon = {
+  age_from: number
+  age_to: number
+  components: { name: string; amount: number }[]
+}
+
+export type SablonTabara = {
+  id: string
+  name: string
+  description: string | null
+  rules: string | null
+  location_id: string | null
+  location_text: string | null
+  capacity: number | null
+  allow_cash: boolean
+  currency: 'RON' | 'EUR'
+  camp_requirements: CampRequirementCategory[]
+  age_prices: PretSablon[]
+}
+
+export type SablonDeSalvat = Omit<SablonTabara, 'id'>
+
+function intreg(value: unknown): number | null {
+  const amount = typeof value === 'number' ? value : Number(value)
+  return Number.isSafeInteger(amount) ? amount : null
+}
+
+function citestePreturiSablon(value: unknown): PretSablon[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((category) => {
+    if (!category || typeof category !== 'object' || Array.isArray(category)) return []
+    const row = category as { age_from?: unknown; age_to?: unknown; components?: unknown }
+    const ageFrom = intreg(row.age_from)
+    const ageTo = intreg(row.age_to)
+    if (ageFrom === null || ageTo === null || !Array.isArray(row.components)) return []
+    const components = row.components.flatMap((item) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) return []
+      const component = item as { name?: unknown; amount?: unknown }
+      const name = typeof component.name === 'string' ? component.name.trim() : ''
+      const amount = intreg(component.amount)
+      if (!name || amount === null || amount < 0) return []
+      return [{ name, amount }]
+    })
+    return [{ age_from: ageFrom, age_to: ageTo, components }]
+  })
+}
+
+function sablonDinRand(row: Tables<'camp_templates'>): SablonTabara {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    rules: row.rules,
+    location_id: row.location_id,
+    location_text: row.location_text,
+    capacity: row.capacity,
+    allow_cash: row.allow_cash,
+    currency: row.currency === 'EUR' ? 'EUR' : 'RON',
+    camp_requirements: readCampRequirements(row.camp_requirements),
+    age_prices: citestePreturiSablon(row.age_prices),
+  }
+}
+
+export async function listeazaSabloaneTabara(p: Proprietar): Promise<SablonTabara[]> {
+  if (!p.clubId && !p.coachUserId) return []
+  let q = supabase.from('camp_templates').select('*').order('name')
+  q = p.clubId ? q.eq('club_id', p.clubId) : q.eq('coach_id', p.coachUserId as string)
+  const { data, error } = await q
+  if (error) throw error
+  return (data ?? []).map(sablonDinRand)
+}
+
+export async function salveazaSablonTabara(
+  owner: Proprietar,
+  sablon: SablonDeSalvat,
+): Promise<string> {
+  const { data, error } = await supabase.rpc('save_camp_template', {
+    p_name: sablon.name,
+    p_club_id: owner.clubId,
+    p_coach_id: owner.clubId ? null : owner.coachUserId,
+    p_description: sablon.description,
+    p_rules: sablon.rules,
+    p_location_id: sablon.location_id,
+    p_location_text: sablon.location_text,
+    p_capacity: sablon.capacity,
+    p_allow_cash: sablon.allow_cash,
+    p_currency: sablon.currency,
+    p_camp_requirements: sablon.camp_requirements,
+    p_age_prices: sablon.age_prices,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function stergeSablonTabara(id: string): Promise<void> {
+  const { error } = await supabase.from('camp_templates').delete().eq('id', id)
+  if (error) throw error
 }
 
 export function slugDinTitlu(titlu: string): string {

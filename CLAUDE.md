@@ -577,6 +577,14 @@ reorganizing this document; correct obsolete facts with current evidence.
   enrollment, payments, and podium stay later. Migration
   `00069_competitions.sql`. See
   `docs/superpowers/specs/2026-09-22-todo-153-competitions-skeleton.md`.
+- 2026-09-22 — To-Do #159 stage 2 camp templates are owner-scoped snapshots.
+  They copy currency, age categories, components, description, rules text,
+  packing list, cash, location and capacity. Title, slug, period, rules file,
+  photos, coaches and the BNR rate stay on the edition. The same template name
+  replaces that owner's snapshot. Selection is only on create and asks before
+  overwriting a started form. Migration `00070_camp_templates.sql`, applied
+  once as remote `20260922172538` (`camp_templates`). See
+  `docs/superpowers/specs/2026-09-22-todo-159-camp-templates.md`.
 - 2026-09-22 — To-Do #152 a parent can enroll themselves as an adult camp
   participant. Dedicated `camp_adult_prices` sits next to age categories, with
   the same named components, total, RON/EUR and Gratuit-at-0 rules. An enrolled

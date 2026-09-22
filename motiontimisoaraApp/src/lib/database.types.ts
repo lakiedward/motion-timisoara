@@ -593,6 +593,82 @@ export type Database = {
           },
         ]
       }
+      camp_templates: {
+        Row: {
+          age_prices: Json
+          allow_cash: boolean
+          camp_requirements: Json
+          capacity: number | null
+          club_id: string | null
+          coach_id: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          location_id: string | null
+          location_text: string | null
+          name: string
+          rules: string | null
+          updated_at: string
+        }
+        Insert: {
+          age_prices: Json
+          allow_cash?: boolean
+          camp_requirements?: Json
+          capacity?: number | null
+          club_id?: string | null
+          coach_id?: string | null
+          created_at?: string
+          currency: string
+          description?: string | null
+          id?: string
+          location_id?: string | null
+          location_text?: string | null
+          name: string
+          rules?: string | null
+          updated_at?: string
+        }
+        Update: {
+          age_prices?: Json
+          allow_cash?: boolean
+          camp_requirements?: Json
+          capacity?: number | null
+          club_id?: string | null
+          coach_id?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          location_id?: string | null
+          location_text?: string | null
+          name?: string
+          rules?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camp_templates_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "camp_templates_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "camp_templates_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       camps: {
         Row: {
           allow_cash: boolean
@@ -2582,6 +2658,23 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      save_camp_template: {
+        Args: {
+          p_age_prices: Json
+          p_allow_cash: boolean
+          p_camp_requirements: Json
+          p_capacity: number | null
+          p_club_id: string | null
+          p_coach_id: string | null
+          p_currency: string
+          p_description: string | null
+          p_location_id: string | null
+          p_location_text: string | null
+          p_name: string
+          p_rules: string | null
+        }
+        Returns: string
       }
       save_camp_offer: {
         Args: {

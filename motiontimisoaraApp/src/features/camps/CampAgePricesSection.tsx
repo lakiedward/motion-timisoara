@@ -17,7 +17,7 @@ import { OfferCurrencyFields } from '@/components/OfferCurrencyFields'
 import { formatOfferPrice } from '@/lib/money'
 import { spreAdult, spreCamp, type Values } from './camp-form-schema'
 import { categorieNoua, totalCategorieBani } from './camp-form-totals'
-import CampFormField from './CampFormField'
+import CampFormField, { campFormRandAction, CampFormRand } from './CampFormField'
 
 type Props = {
   control: Control<Values>
@@ -201,8 +201,8 @@ function CampAgeCategoryEditor({
   return (
     <li className="rounded-xl border p-4" aria-label={`Categoria de vârstă ${index + 1}`}>
       <div className="flex items-start gap-3">
-        <div className="grid flex-1 gap-3 sm:grid-cols-2">
-          <CampFormField eticheta="De la (ani)" eroare={eroriCategorie?.age_from?.message}>
+        <CampFormRand columns="ages">
+          <CampFormField rand eticheta="De la (ani)" eroare={eroriCategorie?.age_from?.message}>
             <Input
               type="number"
               min={0}
@@ -212,7 +212,7 @@ function CampAgeCategoryEditor({
               aria-invalid={!!eroriCategorie?.age_from}
             />
           </CampFormField>
-          <CampFormField eticheta="Până la (ani)" eroare={eroriCategorie?.age_to?.message}>
+          <CampFormField rand eticheta="Până la (ani)" eroare={eroriCategorie?.age_to?.message}>
             <Input
               type="number"
               min={0}
@@ -222,7 +222,7 @@ function CampAgeCategoryEditor({
               aria-invalid={!!eroriCategorie?.age_to}
             />
           </CampFormField>
-        </div>
+        </CampFormRand>
         {canRemove && (
           <Button
             type="button"
@@ -238,41 +238,45 @@ function CampAgeCategoryEditor({
 
       <ul className="mt-3 space-y-3" aria-label={`Componente de cost, categoria ${index + 1}`}>
         {componenteArr.fields.map((f, j) => (
-          <li key={f.id} className="grid gap-3 sm:grid-cols-[1fr_140px_auto]">
-            <CampFormField
-              eticheta="Componentă"
-              eroare={eroriCategorie?.componente?.[j]?.name?.message}
-            >
-              <Input
-                {...register(`varste.${index}.componente.${j}.name`)}
-                className="h-11 lg:h-9"
-                placeholder="ex. Cazare"
-                aria-invalid={!!eroriCategorie?.componente?.[j]?.name}
-              />
-            </CampFormField>
-            <CampFormField
-              eticheta={`Sumă (${moneda})`}
-              eroare={eroriCategorie?.componente?.[j]?.amount_lei?.message}
-            >
-              <Input
-                type="number"
-                step="0.01"
-                min={0}
-                {...register(`varste.${index}.componente.${j}.amount_lei`)}
-                className="h-11 lg:h-9"
-                aria-invalid={!!eroriCategorie?.componente?.[j]?.amount_lei}
-              />
-            </CampFormField>
-            <Button
-              type="button"
-              variant="ghost"
-              className="size-11 min-h-11 self-end"
-              disabled={componenteArr.fields.length <= 1}
-              onClick={() => componenteArr.remove(j)}
-              aria-label={`Șterge componenta ${j + 1} din categoria ${index + 1}`}
-            >
-              <Trash2 className="size-4" />
-            </Button>
+          <li key={f.id}>
+            <CampFormRand columns="amount">
+              <CampFormField
+                rand
+                eticheta="Componentă"
+                eroare={eroriCategorie?.componente?.[j]?.name?.message}
+              >
+                <Input
+                  {...register(`varste.${index}.componente.${j}.name`)}
+                  className="h-11 lg:h-9"
+                  placeholder="ex. Cazare"
+                  aria-invalid={!!eroriCategorie?.componente?.[j]?.name}
+                />
+              </CampFormField>
+              <CampFormField
+                rand
+                eticheta={`Sumă (${moneda})`}
+                eroare={eroriCategorie?.componente?.[j]?.amount_lei?.message}
+              >
+                <Input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  {...register(`varste.${index}.componente.${j}.amount_lei`)}
+                  className="h-11 lg:h-9"
+                  aria-invalid={!!eroriCategorie?.componente?.[j]?.amount_lei}
+                />
+              </CampFormField>
+              <Button
+                type="button"
+                variant="ghost"
+                className={campFormRandAction}
+                disabled={componenteArr.fields.length <= 1}
+                onClick={() => componenteArr.remove(j)}
+                aria-label={`Șterge componenta ${j + 1} din categoria ${index + 1}`}
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </CampFormRand>
           </li>
         ))}
       </ul>
@@ -336,38 +340,45 @@ function CampAdultPriceEditor({
       </p>
       <ul className="mt-3 space-y-3" aria-label="Componente tarif adult">
         {componenteArr.fields.map((f, j) => (
-          <li key={f.id} className="grid gap-3 sm:grid-cols-[1fr_140px_auto]">
-            <CampFormField eticheta="Componentă adult" eroare={erori?.componente?.[j]?.name?.message}>
-              <Input
-                {...register(`adult.componente.${j}.name`)}
-                className="h-11 lg:h-9"
-                placeholder="ex. Participare"
-                aria-invalid={!!erori?.componente?.[j]?.name}
-              />
-            </CampFormField>
-            <CampFormField
-              eticheta={`Sumă adult (${moneda})`}
-              eroare={erori?.componente?.[j]?.amount_lei?.message}
-            >
-              <Input
-                type="number"
-                step="0.01"
-                min={0}
-                {...register(`adult.componente.${j}.amount_lei`)}
-                className="h-11 lg:h-9"
-                aria-invalid={!!erori?.componente?.[j]?.amount_lei}
-              />
-            </CampFormField>
-            <Button
-              type="button"
-              variant="ghost"
-              className="size-11 min-h-11 self-end"
-              disabled={componenteArr.fields.length <= 1}
-              onClick={() => componenteArr.remove(j)}
-              aria-label={`Șterge componenta adult ${j + 1}`}
-            >
-              <Trash2 className="size-4" />
-            </Button>
+          <li key={f.id}>
+            <CampFormRand columns="amount">
+              <CampFormField
+                rand
+                eticheta="Componentă adult"
+                eroare={erori?.componente?.[j]?.name?.message}
+              >
+                <Input
+                  {...register(`adult.componente.${j}.name`)}
+                  className="h-11 lg:h-9"
+                  placeholder="ex. Participare"
+                  aria-invalid={!!erori?.componente?.[j]?.name}
+                />
+              </CampFormField>
+              <CampFormField
+                rand
+                eticheta={`Sumă adult (${moneda})`}
+                eroare={erori?.componente?.[j]?.amount_lei?.message}
+              >
+                <Input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  {...register(`adult.componente.${j}.amount_lei`)}
+                  className="h-11 lg:h-9"
+                  aria-invalid={!!erori?.componente?.[j]?.amount_lei}
+                />
+              </CampFormField>
+              <Button
+                type="button"
+                variant="ghost"
+                className={campFormRandAction}
+                disabled={componenteArr.fields.length <= 1}
+                onClick={() => componenteArr.remove(j)}
+                aria-label={`Șterge componenta adult ${j + 1}`}
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </CampFormRand>
           </li>
         ))}
       </ul>

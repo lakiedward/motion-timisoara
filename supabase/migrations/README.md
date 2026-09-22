@@ -251,6 +251,10 @@ To-Do #153 skeleton: `00069_competitions.sql` was applied as remote version
 rollback probe on a subset of the constraints ran first and left no rows.
 `00065`–`00068` were not re-applied. The table was empty after apply.
 
+To-Do #159 stage 2: git file `00070_camp_templates.sql` was applied once on
+2026-09-22 as `20260922172538` (`camp_templates`). It was not re-applied.
+`00065`–`00069` were not re-applied.
+
 To confirm git and the remote still agree:
 
 ```bash
