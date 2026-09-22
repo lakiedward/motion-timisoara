@@ -49,7 +49,7 @@ describe('native role navigation', () => {
     ['/account/child/kid/qr', 'PARENT', '/account/children', '/account/children'],
     ['/coach/camps/camp/enrolled', 'COACH', '/coach/camps', '/coach/camps'],
     ['/club/courses/course/edit', 'CLUB', '/club/courses', '/club/courses'],
-    ['/club/activities/act', 'CLUB', '/cont', '/club/activities'],
+    ['/club/activities/act/edit', 'CLUB', '/cont', '/club/activities'],
     ['/coach/children/kid/qr', 'COACH', '/coach/attendance', '/coach/attendance'],
     ['/club/children/kid/qr', 'CLUB', '/club/camps', '/club/camps'],
     ['/account/checkout', 'PARENT', '/cont', '/account/enrollments'],

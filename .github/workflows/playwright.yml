@@ -115,6 +115,9 @@ jobs:
     - name: Test course and activity rules files
       shell: pwsh
       run: ./supabase/tests/run-course-activity-rules-file.ps1
+    - name: Test club activity management
+      shell: pwsh
+      run: ./supabase/tests/run-club-activity-management.ps1
     - name: Test atomic payment completion and concurrent confirmations
       shell: pwsh
       run: ./supabase/tests/run-enrollment-payment-completion.ps1

@@ -567,6 +567,10 @@ reorganizing this document; correct obsolete facts with current evidence.
   A club may change only the activity file columns. Migration
   `00066_course_activity_rules_file.sql`. See
   `docs/superpowers/specs/2026-09-22-todo-160-course-activity-rules-file.md`.
+- 2026-09-22 — A club creates and edits its activities with the same full form
+  as its courses, including the one rules file, and picks the coach from its
+  roster. The activity column guard is removed. INSERT and UPDATE follow the
+  course policies. Migration `00067_club_activity_management.sql`.
 
 ## 11. Known Issues / WIP
 

@@ -145,7 +145,8 @@ const secondaryScreens = [
     [`/${role}/locations/new`, 'Adaugă locație', `/${role}/locations`],
     [`/${role}/locations/:id/edit`, 'Editează locația', `/${role}/locations`],
   ]),
-  ['/club/activities/:id', 'Regulament activitate', '/club/activities'],
+  ['/club/activities/new', 'Adaugă activitate', '/club/activities'],
+  ['/club/activities/:id/edit', 'Editează activitatea', '/club/activities'],
   ['/coach/activities/new', 'Adaugă activitate', '/coach/activities'],
   ['/coach/activities/:id/edit', 'Editează activitatea', '/coach/activities'],
 ]

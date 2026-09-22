@@ -39,3 +39,13 @@ not a club. Coaches and admins keep full activity updates.
 - Marking To-Do #160 Gata or writing human-gate columns.
 - Re-applying migration `00065`.
 - Competition templates, parent camp enrollment, or Apple sign-in.
+
+## Club activity form
+
+The file-only club screen is replaced by the course pattern. A club creates
+and edits its activities on `/club/activities/new` and
+`/club/activities/:id/edit`, choosing a coach from its roster. The rules file
+stays on that form. Migration `00067_club_activity_management.sql` drops
+`limiteaza_regulament_activitate_club` and aligns activity INSERT/UPDATE with
+the course policies. Coaches and admins keep their access. `00065` and
+`00066` are not re-applied.

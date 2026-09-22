@@ -219,6 +219,13 @@ columns to `courses` and `activities`, public buckets `course-rules` and
 activity it owns, and only those four columns. `00065` was not re-applied.
 Listing stays closed.
 
+To-Do #160, club activity form: `00067_club_activity_management.sql` was applied
+as `20260922074443` (`club_activity_management`) on 2026-09-22 after the
+isolated SQL test on PostgreSQL 16. It drops the column guard and lets a club
+insert and update its activities the same way it can for courses, assigning a
+roster coach. Coaches and admins keep their access. `00065` and `00066` were
+not re-applied.
+
 To confirm git and the remote still agree:
 
 ```bash
