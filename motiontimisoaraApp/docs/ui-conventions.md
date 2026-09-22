@@ -33,7 +33,7 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
 
     canonic  src/components/ui/skeleton.tsx
     blocat   0 animate-pulse în afara primitivei
-    folosit  51 fișiere
+    folosit  50 fișiere
 
 ## Culorile de brand  [DERIVĂ 1]
 

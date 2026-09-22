@@ -6,6 +6,7 @@ import { vi } from 'vitest'
 import { toast } from 'sonner'
 
 import CampFormPage from '../CampFormPage'
+import CampTemplatePicker from './CampTemplatePicker'
 import {
   getCategoriile,
   getPretulAdult,
@@ -113,6 +114,61 @@ beforeEach(() => {
     sizeBytes: 12,
   })
   vi.mocked(stergeRegulamentFisier).mockResolvedValue(undefined)
+})
+
+test('fără șabloane spune de unde se salvează', async () => {
+  vi.mocked(listeazaSabloaneTabara).mockResolvedValue([])
+  renderForm('/club/camps/new')
+  expect(
+    await screen.findByText(
+      'Nu ai șabloane. Le salvezi dintr-o tabără existentă, cu „Salvează ca șablon”.',
+    ),
+  ).toBeInTheDocument()
+  expect(screen.getByRole('radio', { name: 'Formular gol' })).toBeChecked()
+  expect(screen.queryByText('Se încarcă șabloanele…')).not.toBeInTheDocument()
+  expect(screen.queryByText('Nu am putut încărca șabloanele.')).not.toBeInTheDocument()
+})
+
+test('încărcarea șabloanelor nu e o cutie goală', async () => {
+  vi.mocked(listeazaSabloaneTabara).mockReturnValue(new Promise(() => {}))
+  renderForm('/club/camps/new')
+  expect(await screen.findByRole('status')).toHaveTextContent('Se încarcă șabloanele…')
+  expect(screen.queryByText(/Nu ai șabloane/)).not.toBeInTheDocument()
+  expect(screen.queryByRole('radio', { name: 'Formular gol' })).not.toBeInTheDocument()
+})
+
+test('eroarea de șabloane e separată de lista goală', async () => {
+  const user = userEvent.setup()
+  vi.mocked(listeazaSabloaneTabara).mockRejectedValue(new Error('retea'))
+  renderForm('/club/camps/new')
+  expect(await screen.findByRole('alert')).toHaveTextContent('Nu am putut încărca șabloanele.')
+  expect(screen.queryByText(/Nu ai șabloane/)).not.toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Reîncearcă' }))
+  await waitFor(() => expect(listeazaSabloaneTabara).toHaveBeenCalledTimes(2))
+})
+
+test('proprietarul eșuat nu rămâne pe un schelet', async () => {
+  const user = userEvent.setup()
+  const reincearca = vi.fn()
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  render(
+    <QueryClientProvider client={queryClient}>
+      <CampTemplatePicker
+        proprietar={{ clubId: null, coachUserId: null }}
+        gata={false}
+        eroareProprietar
+        reincearcaProprietar={reincearca}
+        selectatId=""
+        citesteAreDate={() => false}
+        onAlege={() => {}}
+        onSters={() => {}}
+      />
+    </QueryClientProvider>,
+  )
+  expect(screen.getByRole('alert')).toHaveTextContent('Nu am putut încărca șabloanele.')
+  expect(document.querySelector('[data-slot="skeleton"]')).not.toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Reîncearcă' }))
+  expect(reincearca).toHaveBeenCalledOnce()
 })
 
 test('tabăra nouă alege șablonul și lasă titlul gol', async () => {

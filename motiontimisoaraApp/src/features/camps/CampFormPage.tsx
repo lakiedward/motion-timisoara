@@ -59,7 +59,7 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   const [newCampId] = useState(() => crypto.randomUUID())
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const { proprietar, gata, eClub } = useProprietarTabere()
+  const { proprietar, gata, eClub, eroare, reincearca } = useProprietarTabere()
   const [step, setStep] = useState(0)
   const [fisierLocal, setFisierLocal] = useState<File | null>(null)
   const [sablonSelectat, setSablonSelectat] = useState('')
@@ -279,6 +279,8 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
           <CampTemplatePicker
             proprietar={proprietar}
             gata={gata}
+            eroareProprietar={eroare}
+            reincearcaProprietar={reincearca}
             selectatId={sablonSelectat}
             citesteAreDate={() => formularAreDate(getValues())}
             onAlege={(sablon) => {

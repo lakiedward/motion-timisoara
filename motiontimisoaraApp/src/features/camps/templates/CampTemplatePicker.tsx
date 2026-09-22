@@ -9,11 +9,12 @@ import {
   type SablonTabara,
 } from '@/api/camps-admin'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
 
 export default function CampTemplatePicker({
   proprietar,
   gata,
+  eroareProprietar = false,
+  reincearcaProprietar,
   selectatId,
   citesteAreDate,
   onAlege,
@@ -21,6 +22,8 @@ export default function CampTemplatePicker({
 }: {
   proprietar: Proprietar
   gata: boolean
+  eroareProprietar?: boolean
+  reincearcaProprietar?: () => void
   selectatId: string
   citesteAreDate: () => boolean
   onAlege: (sablon: SablonTabara | null) => void
@@ -75,25 +78,30 @@ export default function CampTemplatePicker({
   return (
     <fieldset className="space-y-3">
       <legend className="font-display text-lg font-bold">Pornește de la un șablon</legend>
-      {sabloane.isPending ? (
-        <Skeleton className="h-11 w-full" />
-      ) : sabloane.isError ? (
+      {eroareProprietar || sabloane.isError ? (
         <div className="space-y-2" role="alert">
           <p className="text-sm">Nu am putut încărca șabloanele.</p>
           <Button
             type="button"
             variant="outline"
             className="h-11 min-h-11"
-            onClick={() => void sabloane.refetch()}
+            onClick={() => {
+              reincearcaProprietar?.()
+              void sabloane.refetch()
+            }}
           >
             Reîncearcă
           </Button>
         </div>
+      ) : !gata || sabloane.isLoading ? (
+        <p className="text-muted-foreground text-sm" role="status">
+          Se încarcă șabloanele…
+        </p>
       ) : (
         <div className="space-y-2" role="radiogroup" aria-label="Pornește de la un șablon">
           {(sabloane.data ?? []).length === 0 && (
             <p className="text-muted-foreground text-sm">
-              Nu ai șabloane. Le salvezi dintr-o tabără existentă.
+              Nu ai șabloane. Le salvezi dintr-o tabără existentă, cu „Salvează ca șablon”.
             </p>
           )}
           <label className="flex min-h-11 items-center gap-3 text-sm">
