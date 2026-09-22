@@ -252,8 +252,22 @@ BEGIN
     ) THEN
         RAISE EXCEPTION 'Route is not visible to storage policy';
     END IF;
+    IF public.pot_administra_concurs(public.safe_uuid((storage.foldername(path))[1])) IS DISTINCT FROM TRUE THEN
+        RAISE EXCEPTION 'Storage policy owner expression rejected upload';
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM public.competition_routes route
+        WHERE route.id = public.safe_uuid((storage.foldername(path))[3])
+          AND route.competition_id = public.safe_uuid((storage.foldername(path))[1])
+    ) THEN
+        RAISE EXCEPTION 'Storage policy route expression rejected upload';
+    END IF;
 END;
 $$;
+
+SELECT policyname, permissive, cmd
+FROM pg_policies
+WHERE schemaname = 'storage' AND tablename = 'objects';
 
 INSERT INTO storage.objects(bucket_id, name)
 VALUES (
