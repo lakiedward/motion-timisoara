@@ -696,6 +696,57 @@ export type Database = {
           },
         ]
       }
+      competitions: {
+        Row: {
+          club_id: string | null
+          coach_id: string | null
+          created_at: string
+          description: string
+          hero_photo_storage_path: string | null
+          id: string
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          club_id?: string | null
+          coach_id?: string | null
+          created_at?: string
+          description: string
+          hero_photo_storage_path?: string | null
+          id?: string
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string | null
+          coach_id?: string | null
+          created_at?: string
+          description?: string
+          hero_photo_storage_path?: string | null
+          id?: string
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitions_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitions_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       children: {
         Row: {
           allergies: string | null

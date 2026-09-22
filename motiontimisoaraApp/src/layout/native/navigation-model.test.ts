@@ -54,6 +54,8 @@ describe('native role navigation', () => {
     ['/club/children/kid/qr', 'CLUB', '/club/camps', '/club/camps'],
     ['/account/checkout', 'PARENT', '/cont', '/account/enrollments'],
     ['/tabere/camp', 'PARENT', '/exploreaza', '/tabere'],
+    ['/concursuri/cupa', 'PARENT', '/exploreaza', '/concursuri'],
+    ['/club/competitions/nou/edit', 'CLUB', '/cont', '/club/competitions'],
     ['/register-coach', null, '/cont', '/signup'],
     ['/club/stripe/onboarding/complete', 'CLUB', '/cont', '/club/stripe'],
   ])('%s preserves context and has a direct-link back destination', (path, role, active, back) => {

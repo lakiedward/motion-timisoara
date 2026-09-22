@@ -114,6 +114,7 @@ const secondaryScreens = [
   ['/cursuri/:id', 'Detalii curs', '/cursuri'],
   ['/activitati/:id', 'Detalii activitate', '/activitati'],
   ['/tabere/:slug', 'Detalii tabără', '/tabere'],
+  ['/concursuri/:slug', 'Detalii concurs', '/concursuri'],
   ['/antrenori/:id', 'Profil antrenor', '/antrenori'],
   ['/cluburi/:id', 'Detalii club', '/cluburi'],
   ['/login', 'Autentificare', '/cont'],
@@ -133,6 +134,8 @@ const secondaryScreens = [
   ['/club/stripe/onboarding/:state', 'Configurare încasări', '/club/stripe'],
   ...['coach', 'club', 'admin'].flatMap((role) => [
     [`/${role}/camps/new`, 'Adaugă tabără', `/${role}/camps`],
+    [`/${role}/competitions/new`, 'Adaugă concurs', `/${role}/competitions`],
+    [`/${role}/competitions/:id/edit`, 'Editează concursul', `/${role}/competitions`],
     [`/${role}/camps/:id/edit`, 'Editează tabăra', `/${role}/camps`],
     [`/${role}/camps/:id/enrolled`, 'Participanți', `/${role}/camps`],
     [
@@ -169,12 +172,12 @@ export function nativeScreen(pathname: string, role: Role | null) {
 }
 
 export const informationNavigation: PortalNavItem[] = [
-  ...publicNavigation.slice(6),
+  ...publicNavigation.slice(7),
   { to: '/termeni', label: 'Termeni și condiții', icon: ShieldCheck },
   { to: '/confidentialitate', label: 'Confidențialitate', icon: ShieldCheck },
 ]
 
 export const discoveryNavigation: PortalNavItem[] = [
   { to: '/', label: 'Motion Timișoara', icon: LayoutDashboard, end: true },
-  ...publicNavigation.slice(0, 6),
+  ...publicNavigation.slice(0, 7),
 ]

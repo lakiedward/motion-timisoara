@@ -7,7 +7,7 @@ export default function NativeExplorePage() {
       <div className="space-y-2">
         <h1 className="font-display text-2xl font-bold">Descoperă următoarea aventură</h1>
         <p className="text-muted-foreground text-sm">
-          Cursuri, activități și tabere pentru copilul tău.
+          Cursuri, activități, tabere și concursuri pentru copilul tău.
         </p>
       </div>
       <NativeLinkGroup title="Sport și comunitate" items={discoveryNavigation} />

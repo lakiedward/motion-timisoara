@@ -41,6 +41,10 @@ import ActivitiesPage from '@/features/public/ActivitiesPage'
 import ActivityDetailPage from '@/features/public/ActivityDetailPage'
 import CampsPage from '@/features/public/CampsPage'
 import CampDetailsPage from '@/features/public/CampDetailsPage'
+import CompetitionsPage from '@/features/competitions/CompetitionsPage'
+import CompetitionDetailsPage from '@/features/competitions/CompetitionDetailsPage'
+import CompetitionsListPage from '@/features/competitions/CompetitionsListPage'
+import CompetitionFormPage from '@/features/competitions/CompetitionFormPage'
 import CoachesPage from '@/features/public/CoachesPage'
 import CoachProfilePage from '@/features/public/CoachProfilePage'
 import ClubsPage from '@/features/public/ClubsPage'
@@ -93,6 +97,8 @@ export const router = createBrowserRouter([
           { path: '/activitati/:id', element: <ActivityDetailPage /> },
           { path: '/tabere', element: <CampsPage /> },
           { path: '/tabere/:slug', element: <CampDetailsPage /> },
+          { path: '/concursuri', element: <CompetitionsPage /> },
+          { path: '/concursuri/:slug', element: <CompetitionDetailsPage /> },
           { path: '/antrenori', element: <CoachesPage /> },
           { path: '/antrenori/:id', element: <CoachProfilePage /> },
           { path: '/cluburi', element: <ClubsPage /> },
@@ -148,6 +154,18 @@ export const router = createBrowserRouter([
               { path: '/coach/locations', element: <CoachLocationsPage /> },
               { path: '/coach/locations/new', element: <LocationFormPage /> },
               { path: '/coach/locations/:id/edit', element: <LocationFormPage /> },
+              {
+                path: '/coach/competitions',
+                element: <CompetitionsListPage baza="/coach/competitions" />,
+              },
+              {
+                path: '/coach/competitions/new',
+                element: <CompetitionFormPage baza="/coach/competitions" />,
+              },
+              {
+                path: '/coach/competitions/:id/edit',
+                element: <CompetitionFormPage baza="/coach/competitions" />,
+              },
               { path: '/coach/camps', element: <CampsListPage baza="/coach/camps" /> },
               { path: '/coach/camps/new', element: <CampFormPage baza="/coach/camps" /> },
               { path: '/coach/camps/:id/edit', element: <CampFormPage baza="/coach/camps" /> },
@@ -178,6 +196,18 @@ export const router = createBrowserRouter([
               { path: '/admin/users', element: <AdminUsersPage /> },
               { path: '/admin/clubs', element: <AdminClubsPage /> },
               { path: '/admin/courses', element: <AdminCoursesPage /> },
+              {
+                path: '/admin/competitions',
+                element: <CompetitionsListPage baza="/admin/competitions" />,
+              },
+              {
+                path: '/admin/competitions/new',
+                element: <CompetitionFormPage baza="/admin/competitions" />,
+              },
+              {
+                path: '/admin/competitions/:id/edit',
+                element: <CompetitionFormPage baza="/admin/competitions" />,
+              },
               { path: '/admin/camps', element: <CampsListPage baza="/admin/camps" /> },
               { path: '/admin/camps/new', element: <CampFormPage baza="/admin/camps" /> },
               { path: '/admin/camps/:id/edit', element: <CampFormPage baza="/admin/camps" /> },
@@ -213,6 +243,18 @@ export const router = createBrowserRouter([
               { path: '/club/locations', element: <ClubLocationsPage /> },
               { path: '/club/locations/new', element: <ClubLocationFormPage /> },
               { path: '/club/locations/:id/edit', element: <ClubLocationFormPage /> },
+              {
+                path: '/club/competitions',
+                element: <CompetitionsListPage baza="/club/competitions" />,
+              },
+              {
+                path: '/club/competitions/new',
+                element: <CompetitionFormPage baza="/club/competitions" />,
+              },
+              {
+                path: '/club/competitions/:id/edit',
+                element: <CompetitionFormPage baza="/club/competitions" />,
+              },
               { path: '/club/camps', element: <CampsListPage baza="/club/camps" /> },
               { path: '/club/camps/new', element: <CampFormPage baza="/club/camps" /> },
               { path: '/club/camps/:id/edit', element: <CampFormPage baza="/club/camps" /> },

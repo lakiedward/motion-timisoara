@@ -41,5 +41,9 @@ function renderLayout(ruta = '/admin') {
 test('admin chrome include Tabere către formularul de tabără', () => {
   renderLayout()
   expect(screen.getByRole('link', { name: 'Tabere' })).toHaveAttribute('href', '/admin/camps')
+  expect(screen.getByRole('link', { name: 'Concursuri' })).toHaveAttribute(
+    'href',
+    '/admin/competitions',
+  )
   expect(screen.getByRole('link', { name: 'Cursuri' })).toHaveAttribute('href', '/admin/courses')
 })
