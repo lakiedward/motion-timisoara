@@ -98,7 +98,7 @@ async function simulate(page: Page, scenario: Scenario) {
         contentType: "application/javascript",
         body: 'window.Stripe = function () { throw new Error("Real Stripe is forbidden in this simulation") }',
       });
-    if (url.hostname.endsWith("basemaps.cartocdn.com"))
+    if (url.hostname.endsWith("basemaps.cartocdn.com") || url.hostname === "tile.openstreetmap.org")
       return route.fulfill({ body: tile, contentType: "image/png" });
     if (path.includes("/storage/v1/object/public/competition-routes/")) {
       return route.fulfill({
@@ -379,6 +379,8 @@ for (const viewport of [
     await expect(
       page.getByRole("region", { name: "Harta traseului Traseul Parcului" }),
     ).toBeVisible();
+    await expect(page.locator(".leaflet-tile-loaded").first()).toBeVisible();
+    await expect(page.getByText("Fundalul hărții nu este disponibil momentan")).toHaveCount(0);
     await expect(
       page.getByRole("link", { name: "Înscriere la concurs" }),
     ).toBeVisible();

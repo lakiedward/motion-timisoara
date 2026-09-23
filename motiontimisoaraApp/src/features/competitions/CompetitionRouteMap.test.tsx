@@ -90,14 +90,20 @@ test('uses OpenStreetMap tiles when the CARTO key is missing', async () => {
   )
 })
 
-test('shows the route without external tiles when the production key is missing', async () => {
+test('uses attributed OpenStreetMap tiles on the production web build without a CARTO key', async () => {
   vi.stubEnv('DEV', false)
   vi.stubEnv('VITE_CARTO_BASEMAP_API_KEY', '')
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(gpx, { status: 200 })))
   renderRoute('https://example.test/route.gpx')
   expect(await screen.findByTestId('route-line')).toBeVisible()
-  expect(screen.getByRole('alert')).toHaveTextContent('Traseul GPX rămâne vizibil')
-  expect(screen.queryByTestId('tile-layer')).not.toBeInTheDocument()
+  expect(screen.getByTestId('tile-layer')).toHaveAttribute(
+    'data-url',
+    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  )
+  expect(screen.getByTestId('tile-layer')).toHaveAttribute(
+    'data-attribution',
+    expect.stringContaining('OpenStreetMap contributors'),
+  )
 })
 
 test('separates missing, fetch error, and basemap failure states', async () => {

@@ -37,7 +37,7 @@ function FitRoute({ segments }: { segments: GpxPoint[][] }) {
 
 function RouteMapSurface({ routeLabel, gpx }: { routeLabel: string; gpx: CompetitionGpx }) {
   const cartoUrl = cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY)
-  const tileUrl = cartoUrl ?? (import.meta.env.DEV && !isNative() ? openStreetMapTileUrl : null)
+  const tileUrl = cartoUrl ?? (!isNative() ? openStreetMapTileUrl : null)
   const tileAttribution = cartoUrl ? basemapAttribution : openStreetMapAttribution
   const [tileStatus, setTileStatus] = useState<'loading' | 'ready' | 'error'>(
     tileUrl ? 'loading' : 'error',
