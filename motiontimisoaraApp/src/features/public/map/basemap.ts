@@ -7,3 +7,8 @@ export function cartoTileUrl(key: string | undefined): string | null {
 
 export const basemapAttribution =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+
+export const openStreetMapTileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+
+export const openStreetMapAttribution =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'

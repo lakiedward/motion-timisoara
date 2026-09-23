@@ -5,7 +5,13 @@ import { Download } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { basemapAttribution, cartoTileUrl } from '@/features/public/map/basemap'
+import { isNative } from '@/lib/platform'
+import {
+  basemapAttribution,
+  cartoTileUrl,
+  openStreetMapAttribution,
+  openStreetMapTileUrl,
+} from '@/features/public/map/basemap'
 import {
   loadCompetitionGpx,
   publicCompetitionGpxUrl,
@@ -30,7 +36,9 @@ function FitRoute({ segments }: { segments: GpxPoint[][] }) {
 }
 
 function RouteMapSurface({ routeLabel, gpx }: { routeLabel: string; gpx: CompetitionGpx }) {
-  const tileUrl = cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY)
+  const cartoUrl = cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY)
+  const tileUrl = cartoUrl ?? (import.meta.env.DEV && !isNative() ? openStreetMapTileUrl : null)
+  const tileAttribution = cartoUrl ? basemapAttribution : openStreetMapAttribution
   const [tileStatus, setTileStatus] = useState<'loading' | 'ready' | 'error'>(
     tileUrl ? 'loading' : 'error',
   )
@@ -42,29 +50,26 @@ function RouteMapSurface({ routeLabel, gpx }: { routeLabel: string; gpx: Competi
     return () => window.clearTimeout(timeout)
   }, [tileStatus, attempt])
 
-  if (!tileUrl || tileStatus === 'error') {
-    return (
-      <div role="alert" className="bg-muted space-y-3 rounded-xl p-4 text-sm">
-        <p>Fundalul hărții nu este disponibil momentan. Poți descărca traseul GPX.</p>
-        {tileUrl && (
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            onClick={() => {
-              setTileStatus('loading')
-              setAttempt((value) => value + 1)
-            }}
-          >
-            Reîncearcă harta
-          </Button>
-        )}
-      </div>
-    )
-  }
-
   return (
-    <>
+    <div className="space-y-3">
+      {(!tileUrl || tileStatus === 'error') && (
+        <div role="alert" className="bg-muted space-y-3 rounded-xl p-4 text-sm">
+          <p>Fundalul hărții nu este disponibil momentan. Traseul GPX rămâne vizibil.</p>
+          {tileUrl && (
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11"
+              onClick={() => {
+                setTileStatus('loading')
+                setAttempt((value) => value + 1)
+              }}
+            >
+              Reîncearcă harta
+            </Button>
+          )}
+        </div>
+      )}
       {tileStatus === 'loading' && (
         <p role="status" className="text-muted-foreground text-sm">
           Se încarcă fundalul hărții…
@@ -81,15 +86,18 @@ function RouteMapSurface({ routeLabel, gpx }: { routeLabel: string; gpx: Competi
           zoom={13}
           scrollWheelZoom={false}
           className="h-full w-full"
+          style={{ backgroundColor: 'var(--muted)' }}
         >
-          <TileLayer
-            url={tileUrl}
-            attribution={basemapAttribution}
-            eventHandlers={{
-              load: () => setTileStatus('ready'),
-              tileerror: () => setTileStatus('error'),
-            }}
-          />
+          {tileUrl && tileStatus !== 'error' && (
+            <TileLayer
+              url={tileUrl}
+              attribution={tileAttribution}
+              eventHandlers={{
+                load: () => setTileStatus('ready'),
+                tileerror: () => setTileStatus('error'),
+              }}
+            />
+          )}
           {gpx.segments.map((segment, index) =>
             segment.length === 1 ? (
               <CircleMarker
@@ -110,7 +118,7 @@ function RouteMapSurface({ routeLabel, gpx }: { routeLabel: string; gpx: Competi
         </MapContainer>
       </div>
       <p className="text-muted-foreground text-xs">{gpx.pointCount} puncte pe traseu</p>
-    </>
+    </div>
   )
 }
 

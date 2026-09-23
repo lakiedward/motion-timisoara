@@ -13,9 +13,17 @@ vi.mock('react-leaflet', () => ({
   MapContainer: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="route-map">{children}</div>
   ),
-  TileLayer: ({ eventHandlers }: { eventHandlers: { tileerror: () => void } }) => {
+  TileLayer: ({
+    url,
+    attribution,
+    eventHandlers,
+  }: {
+    url: string
+    attribution: string
+    eventHandlers: { tileerror: () => void }
+  }) => {
     map.fail = eventHandlers.tileerror
-    return null
+    return <span data-testid="tile-layer" data-url={url} data-attribution={attribution} />
   },
   Polyline: ({ positions }: { positions: number[][] }) => (
     <span data-testid="route-line">{positions.map((point) => point.join(',')).join(';')}</span>
@@ -52,6 +60,10 @@ test('renders route geometry, fits the map, and offers the GPX download', async 
     'https://example.test/route.gpx?download=true',
   )
   expect(await screen.findByTestId('route-line')).toHaveTextContent('45,21;46,22')
+  expect(screen.getByTestId('tile-layer')).toHaveAttribute(
+    'data-url',
+    expect.stringContaining('key=test-only'),
+  )
   expect(map.fitBounds).toHaveBeenCalledWith(
     [
       [45, 21],
@@ -60,6 +72,32 @@ test('renders route geometry, fits the map, and offers the GPX download', async 
     { padding: [16, 16], maxZoom: 15 },
   )
   expect(screen.getByRole('region', { name: 'Harta traseului Copii 8-10 ani' })).toBeVisible()
+})
+
+test('uses OpenStreetMap tiles when the CARTO key is missing', async () => {
+  vi.stubEnv('DEV', true)
+  vi.stubEnv('VITE_CARTO_BASEMAP_API_KEY', '')
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(gpx, { status: 200 })))
+  renderRoute('https://example.test/route.gpx')
+  expect(await screen.findByTestId('route-line')).toHaveTextContent('45,21;46,22')
+  expect(screen.getByTestId('tile-layer')).toHaveAttribute(
+    'data-url',
+    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  )
+  expect(screen.getByTestId('tile-layer')).toHaveAttribute(
+    'data-attribution',
+    expect.stringContaining('OpenStreetMap contributors'),
+  )
+})
+
+test('shows the route without external tiles when the production key is missing', async () => {
+  vi.stubEnv('DEV', false)
+  vi.stubEnv('VITE_CARTO_BASEMAP_API_KEY', '')
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(gpx, { status: 200 })))
+  renderRoute('https://example.test/route.gpx')
+  expect(await screen.findByTestId('route-line')).toBeVisible()
+  expect(screen.getByRole('alert')).toHaveTextContent('Traseul GPX rămâne vizibil')
+  expect(screen.queryByTestId('tile-layer')).not.toBeInTheDocument()
 })
 
 test('separates missing, fetch error, and basemap failure states', async () => {
@@ -79,6 +117,7 @@ test('separates missing, fetch error, and basemap failure states', async () => {
   expect(await screen.findByTestId('route-line')).toBeVisible()
   act(() => map.fail())
   expect(screen.getByRole('alert')).toHaveTextContent('Fundalul hărții nu este disponibil')
+  expect(screen.getByTestId('route-line')).toBeVisible()
   fireEvent.click(screen.getByRole('button', { name: 'Reîncearcă harta' }))
   expect(screen.getByTestId('route-line')).toBeVisible()
 })
