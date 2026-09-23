@@ -270,6 +270,11 @@ To-Do #153 route gallery: `00074_competition_route_photos.sql` was applied on
 ordered JPEG, PNG or WebP photos per route in the public `competition-photos`
 bucket, with organizer writes and a route-scoped storage path.
 
+To-Do #153 large GPX support: `00075_competition_route_gpx_limit.sql` was applied
+on 2026-09-23 as `20260923131404` (`competition_route_gpx_limit`). The public
+`competition-routes` bucket now accepts GPX files up to 12 MiB, including the
+10,183,045-byte Via Maior source file supplied for the demonstration contest.
+
 After these migrations, the competition registration Edge Functions were
 deployed as `validate-competition-registration` v1 and
 `create-competition-registration` v1. The shared adult payment contract was

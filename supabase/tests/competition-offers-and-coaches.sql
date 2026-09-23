@@ -161,6 +161,7 @@ INSERT INTO public.competitions(id, title, slug, description, club_id) VALUES
 \i /tmp/migrations/00072_competition_registrations.sql
 \i /tmp/migrations/00073_competition_podium.sql
 \i /tmp/migrations/00074_competition_route_photos.sql
+\i /tmp/migrations/00075_competition_route_gpx_limit.sql
 
 DO $$
 BEGIN
@@ -345,7 +346,7 @@ BEGIN
         SELECT 1 FROM storage.buckets
         WHERE id = 'competition-routes'
           AND public IS TRUE
-          AND file_size_limit = 2097152
+          AND file_size_limit = 12582912
           AND 'application/gpx+xml' = ANY(allowed_mime_types)
     ) THEN
         RAISE EXCEPTION 'GPX bucket settings are missing';

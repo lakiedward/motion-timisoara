@@ -59,8 +59,19 @@ test('bounds geometry before rendering', () => {
   const points = '<rtept lat="45" lon="21"/>'.repeat(maxCompetitionGpxPoints + 1)
   expect(() => parseCompetitionGpx(`<gpx><rte>${points}</rte></gpx>`)).toThrow('prea multe puncte')
   expect(() => parseCompetitionGpx(`<gpx>${' '.repeat(maxCompetitionGpxBytes)}</gpx>`)).toThrow(
-    'limita de 2 MB',
+    'limita de 12 MB',
   )
+})
+
+test('keeps the original GPX and endpoints while limiting map geometry', () => {
+  const middle = '<trkpt lat="45.5" lon="21.5"/>'.repeat(8)
+  const xml = `<gpx><trk><trkseg><trkpt lat="45" lon="21"/>${middle}<trkpt lat="46" lon="22"/></trkseg></trk></gpx>`
+  const parsed = parseCompetitionGpx(xml, 6)
+  expect(parsed.pointCount).toBe(10)
+  expect(parsed.segments[0]).toHaveLength(6)
+  expect(parsed.segments[0][0]).toEqual([45, 21])
+  expect(parsed.segments[0].at(-1)).toEqual([46, 22])
+  expect(parsed.xml).toBe(xml)
 })
 
 test('loads a public GPX response and blocks unsafe URLs', async () => {
@@ -73,10 +84,10 @@ test('loads a public GPX response and blocks unsafe URLs', async () => {
   expect(fetchMock).toHaveBeenCalledTimes(1)
 })
 
-test('stops reading a response as soon as it exceeds the 2 MiB limit', async () => {
+test('stops reading a response as soon as it exceeds the 12 MiB limit', async () => {
   const response = new Response(new Uint8Array(maxCompetitionGpxBytes + 1), { status: 200 })
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response))
   await expect(loadCompetitionGpx('https://example.test/oversized.gpx')).rejects.toThrow(
-    'limita de 2 MB',
+    'limita de 12 MB',
   )
 })
