@@ -7,15 +7,36 @@ import { MemoryRouter } from 'react-router-dom'
 import CompetitionDetailsPage from './CompetitionDetailsPage'
 import { getConcursPublic, type PublicCompetition } from '@/api/competition/competitions'
 
+const galleryApi = vi.hoisted(() => ({ offers: vi.fn(), photos: vi.fn(), coaches: vi.fn() }))
+
 vi.mock('react-router-dom', async () => {
   const real = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
   return { ...real, useParams: () => ({ slug: 'cupa' }) }
 })
 
 vi.mock('@/api/competition/competitions', async () => {
-  const real = await vi.importActual<typeof import('@/api/competition/competitions')>('@/api/competition/competitions')
+  const real = await vi.importActual<typeof import('@/api/competition/competitions')>(
+    '@/api/competition/competitions',
+  )
   return { ...real, getConcursPublic: vi.fn() }
 })
+
+vi.mock('@/api/competition/competition-offers', async () => {
+  const real = await vi.importActual<typeof import('@/api/competition/competition-offers')>(
+    '@/api/competition/competition-offers',
+  )
+  return { ...real, listCompetitionOffers: galleryApi.offers }
+})
+
+vi.mock('@/api/competition/competition-route-photos', () => ({
+  listCompetitionRoutePhotos: galleryApi.photos,
+}))
+
+vi.mock('@/api/competition/competition-coaches', () => ({
+  getPublicCompetitionCoaches: galleryApi.coaches,
+}))
+
+vi.mock('./CompetitionRouteMap', () => ({ CompetitionRouteMap: () => <div>Hartă GPX</div> }))
 
 const mocked = vi.mocked(getConcursPublic)
 
@@ -46,6 +67,9 @@ function deseneaza() {
 
 beforeEach(() => {
   mocked.mockReset()
+  galleryApi.offers.mockReset().mockResolvedValue({ routes: [], categories: [] })
+  galleryApi.photos.mockReset().mockResolvedValue([])
+  galleryApi.coaches.mockReset().mockResolvedValue([])
 })
 
 test('pagina arată titlul, descrierea, organizatorul și poza', async () => {
@@ -75,4 +99,52 @@ test('eroarea de încărcare se poate reîncerca', async () => {
   await waitFor(() =>
     expect(screen.getByRole('heading', { name: 'Cupa Timișoara' })).toBeInTheDocument(),
   )
+})
+
+test('fiecare traseu își păstrează descrierea și propriile poze', async () => {
+  mocked.mockResolvedValue(CONCURS)
+  galleryApi.offers.mockResolvedValue({
+    routes: [
+      {
+        id: 'r1',
+        competition_id: CONCURS.id,
+        name: 'Via Maior',
+        description: 'Descriere Via Maior',
+        gpx_storage_path: 'via-maior.gpx',
+        display_order: 0,
+      },
+      {
+        id: 'r2',
+        competition_id: CONCURS.id,
+        name: 'Dognecea – Ghiroda Nouă',
+        description: 'Descriere Dognecea',
+        gpx_storage_path: 'dognecea.gpx',
+        display_order: 1,
+      },
+    ],
+    categories: [],
+  })
+  galleryApi.photos.mockResolvedValue([
+    { id: 'p1', route_id: 'r1', url: 'https://example.test/via-maior.jpg' },
+    { id: 'p2', route_id: 'r2', url: 'https://example.test/dognecea.jpg' },
+  ])
+
+  deseneaza()
+
+  const viaMaior = await screen.findByRole('heading', { name: 'Via Maior' })
+  const dognecea = await screen.findByRole('heading', { name: 'Dognecea – Ghiroda Nouă' })
+  const viaMaiorCard = viaMaior.closest('article')
+  const dogneceaCard = dognecea.closest('article')
+  expect(viaMaiorCard).toHaveTextContent('Descriere Via Maior')
+  expect(dogneceaCard).toHaveTextContent('Descriere Dognecea')
+  await waitFor(() => {
+    expect(viaMaiorCard?.querySelector('img')).toHaveAttribute(
+      'src',
+      'https://example.test/via-maior.jpg',
+    )
+    expect(dogneceaCard?.querySelector('img')).toHaveAttribute(
+      'src',
+      'https://example.test/dognecea.jpg',
+    )
+  })
 })

@@ -236,3 +236,30 @@ test('refuses route deletion while a category references it', async () => {
   await expect(deleteCompetitionRoute(competitionId, routeId)).rejects.toThrow('Șterge sau mută')
   expect(state.queries.map((query) => query.action)).toEqual(['select'])
 })
+
+test('deletes route gallery files and GPX only after deleting the route', async () => {
+  const gpxPath = `${competitionId}/routes/${routeId}/${fileId}.gpx`
+  const photoPath = `${competitionId}/routes/${routeId}/gallery/${fileId}.png`
+  state.replies = [
+    { data: [], error: null },
+    {
+      data: [
+        {
+          id: fileId,
+          competition_id: competitionId,
+          route_id: routeId,
+          storage_path: photoPath,
+          display_order: 0,
+          created_at: '',
+        },
+      ],
+      error: null,
+    },
+    { data: { ...route, gpx_storage_path: gpxPath }, error: null },
+  ]
+  await expect(deleteCompetitionRoute(competitionId, routeId)).resolves.toEqual({
+    cleanupFailed: false,
+  })
+  expect(state.queries.map((query) => query.action)).toEqual(['select', 'select', 'delete'])
+  expect(state.removed).toEqual([[gpxPath], [photoPath]])
+})

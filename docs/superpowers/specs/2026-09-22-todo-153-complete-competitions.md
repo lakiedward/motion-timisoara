@@ -22,6 +22,12 @@ The merged skeleton provides public competition lists and details, organizer cre
 - Associated coaches may edit podium results after publication. The organizer publishes each category once; edits made afterward are visible publicly immediately. The owner confirmed the edit permission in this session; the publication rule is the implementation choice.
 - Competition enrollment reuses Stripe and cash, and a zero-priced category enrolls without payment. Confirmed in this session.
 
+## Route presentation follow-up — 2026-09-23
+
+The owner asked for a description and gallery on each route. Route descriptions are already required, editable, and public. Add an optional photo gallery belonging to each route, separate from the competition hero. Organizers can add up to twelve photos after saving a route, change their order, and remove them. The public detail places the gallery next to that route's description and map, using the shared photo viewer. Empty, loading, and error states remain distinct.
+
+Store gallery metadata in `competition_route_photos` with route-scoped paths in the existing public `competition-photos` bucket. Read permission follows public competition visibility; writes follow competition organizer ownership. Delete gallery files when a route is deleted, and report failed cleanup. This follow-up does not imply that example photos exist for the two GPX routes in the local demo.
+
 ## Proposed architecture
 
 Extend `competitions` with schedule, location, and registration deadline fields using append-only migrations. Keep route metadata and GPX storage paths in a route table, categories in a separate table referencing one route, and enrollment snapshots separate from mutable offer rows. A route needs a valid GPX before a category can accept registrations. Validate age, ownership, enrollment uniqueness, price, and podium candidate eligibility on the server. A category may publish one to three unique podium places after the event, and only its active registrants are candidates. Reuse the established coach consent and payment contracts with competition-specific authorization and fulfillment paths.
@@ -42,8 +48,9 @@ The old skeleton remains available during the migration. No tracker human-gate f
 
 ## Local verification on 2026-09-23
 
-- Application typecheck, lint, 1,265 Vitest tests, and production build passed. The UI conventions document was regenerated from code after the initial test run found a stale inventory.
+- Application typecheck, lint, 1,277 Vitest tests in 142 files, and production build passed. The UI conventions document was regenerated from code after the gallery component changed the measured inventory.
 - Six isolated Chromium simulations passed: public details at 1440×900, 768×1024, and 375×812; free parent registration; correction of a published podium by an associated coach; and organizer editing at 375×812. The simulated backend and map tiles are explicit fixtures. Captures are written under `test-results/competition/` and are not live backend or native device proof.
 - Fifty-two Deno contract tests passed for competition registration, Stripe recipient selection, price snapshots, payment charge validation, and payment completion. The four affected Edge entrypoints passed `deno check`.
-- The SQL migrations and PL/pgSQL blocks passed static parsing. The isolated PostgreSQL runner is pending because Docker Desktop's service is stopped. No product migration or Edge Function was applied to the remote environment, and generated database types await an applied schema.
+- The isolated PostgreSQL runner passed, including route gallery ownership, file paths, the twelve-photo limit, and deletion. No product migration or Edge Function was applied to the remote environment, and generated database types await an applied schema.
+- The local Chrome mock showed two distinct GPX routes, their descriptions, and the empty gallery under each route. At 1440×900, 768×1024, and 375×812, the page had no horizontal overflow. Uploading as an authenticated organizer still needs browser verification after the schema is applied.
 - Final integration, authenticated role checks, payment confirmation, native device review, CI, and human UI and production gates remain required before tracker completion.

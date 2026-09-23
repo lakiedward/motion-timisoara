@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { baniToRon, formatRonOffer, ronToBani } from '@/lib/money'
+import { CompetitionRouteGalleryEditor } from './CompetitionRouteGalleryEditor'
 
 type RouteDraft = {
   id: string | null
@@ -166,7 +167,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
       const result = await deleteCompetitionRoute(competitionId, routeId)
       setConfirmRouteId(null)
       if (result.cleanupFailed)
-        toast.warning('Traseul a fost șters, dar fișierul GPX nu a putut fi curățat.')
+        toast.warning('Traseul a fost șters, dar unele fișiere nu au putut fi curățate.')
       else toast.success('Traseul a fost șters.')
       await invalidateOffers()
     } catch (deleteError) {
@@ -226,7 +227,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
           Trasee și categorii
         </h2>
         <p className="text-muted-foreground mt-1 text-sm">
-          Salvează concursul înainte de a adăuga trasee. Vârsta copilului se verifică la data
+          Salvează concursul înainte de a adăuga trasee. Vârsta participantului se verifică la data
           înscrierii.
         </p>
       </div>
@@ -317,6 +318,11 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
                       Mută sau șterge categoriile înainte de a șterge traseul.
                     </p>
                   )}
+                  <CompetitionRouteGalleryEditor
+                    competitionId={competitionId}
+                    routeId={route.id}
+                    routeName={route.name}
+                  />
                 </li>
               )
             })}

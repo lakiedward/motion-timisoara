@@ -140,6 +140,7 @@ INSERT INTO public.competitions(id, title, slug, description, club_id) VALUES
 \i /tmp/migrations/00071_competition_offers_and_coaches.sql
 \i /tmp/migrations/00072_competition_registrations.sql
 \i /tmp/migrations/00073_competition_podium.sql
+\i /tmp/migrations/00074_competition_route_photos.sql
 
 DO $$
 BEGIN
@@ -204,6 +205,8 @@ VALUES ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'dddddddd-dddd-dddd-dddd-ddddddd
 UPDATE public.competition_routes
 SET gpx_storage_path = 'dddddddd-dddd-dddd-dddd-dddddddddddd/routes/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee/ffffffff-ffff-ffff-ffff-ffffffffffff.gpx'
 WHERE id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
+
+\i /tmp/competition-route-photos.sql
 
 INSERT INTO public.competition_age_categories(competition_id, route_id, name, age_from, age_to, price_bani)
 VALUES ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '6–8 ani', 6, 8, 0);

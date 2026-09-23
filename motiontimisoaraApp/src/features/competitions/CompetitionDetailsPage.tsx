@@ -15,7 +15,9 @@ import { formatRonOffer } from '@/lib/money'
 import { CompetitionRouteMap } from './CompetitionRouteMap'
 import { getPublishedCompetitionPodium } from '@/api/competition/competition-podium'
 import { getPublicCompetitionCoaches } from '@/api/competition/competition-coaches'
+import { listCompetitionRoutePhotos } from '@/api/competition/competition-route-photos'
 import { useCompetitionClock } from './useCompetitionClock'
+import PhotoGallery from '@/components/PhotoGallery'
 
 export default function CompetitionDetailsPage() {
   const { slug = '' } = useParams()
@@ -38,6 +40,11 @@ export default function CompetitionDetailsPage() {
   const coaches = useQuery({
     queryKey: ['competition-public-coaches', data?.id],
     queryFn: () => getPublicCompetitionCoaches(data!.id),
+    enabled: Boolean(data?.id),
+  })
+  const routePhotos = useQuery({
+    queryKey: ['competition-route-photos', data?.id],
+    queryFn: () => listCompetitionRoutePhotos(data!.id),
     enabled: Boolean(data?.id),
   })
 
@@ -208,6 +215,33 @@ export default function CompetitionDetailsPage() {
                       downloadUrl={competitionRouteGpxDownloadUrl(route.gpx_storage_path)}
                     />
                   </div>
+                  <section className="mt-5" aria-label={`Galeria traseului ${route.name}`}>
+                    <h4 className="font-display text-lg font-semibold">Galerie foto</h4>
+                    {routePhotos.isLoading ? (
+                      <Skeleton className="mt-3 h-32 w-full rounded-xl" />
+                    ) : routePhotos.isError ? (
+                      <div role="alert" className="mt-3 space-y-2 text-sm">
+                        <p>Nu am putut încărca pozele traseului.</p>
+                        <Button variant="outline" onClick={() => void routePhotos.refetch()}>
+                          Reîncearcă
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="mt-3">
+                        <PhotoGallery
+                          urls={(routePhotos.data ?? [])
+                            .filter((photo) => photo.route_id === route.id)
+                            .map((photo) => photo.url)}
+                          alt={`Galeria traseului ${route.name}`}
+                        />
+                        {!routePhotos.data?.some((photo) => photo.route_id === route.id) && (
+                          <p className="text-muted-foreground text-sm">
+                            Organizatorul nu a adăugat încă poze pentru acest traseu.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </section>
                   <div className="mt-5 space-y-2">
                     {offers.data.categories
                       .filter((category) => category.route_id === route.id)

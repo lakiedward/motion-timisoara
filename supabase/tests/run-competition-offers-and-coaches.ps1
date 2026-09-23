@@ -19,6 +19,7 @@ try {
     if (-not $ready) { throw 'Isolated PostgreSQL did not become ready within 30 seconds.' }
     Invoke-CompetitionDocker @('cp', (Join-Path $PSScriptRoot '../migrations'), "${containerName}:/tmp/migrations")
     Invoke-CompetitionDocker @('cp', (Join-Path $PSScriptRoot 'competition-offers-and-coaches.sql'), "${containerName}:/tmp/test.sql")
+    Invoke-CompetitionDocker @('cp', (Join-Path $PSScriptRoot 'competition-route-photos.sql'), "${containerName}:/tmp/competition-route-photos.sql")
     Invoke-CompetitionDocker @('cp', (Join-Path $PSScriptRoot 'competition-deletion-and-erasure.sql'), "${containerName}:/tmp/competition-deletion-and-erasure.sql")
     Invoke-CompetitionDocker @('exec', $containerName, 'psql', '-X', '-U', 'supabase_admin', '-d', 'competition_offers_test', '-v', 'ON_ERROR_STOP=1', '-f', '/tmp/test.sql')
 } finally {

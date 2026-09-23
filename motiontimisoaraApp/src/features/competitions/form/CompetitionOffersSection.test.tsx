@@ -30,6 +30,7 @@ vi.mock('@/api/competition/competition-offers', () => ({
 }))
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), warning: vi.fn() } }))
+vi.mock('./CompetitionRouteGalleryEditor', () => ({ CompetitionRouteGalleryEditor: () => null }))
 
 const competitionId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
 const route: CompetitionRoute = {

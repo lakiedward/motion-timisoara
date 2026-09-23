@@ -264,6 +264,12 @@ No remote version is recorded for these files yet. Apply them in numeric
 order only after the isolated runner passes, then record the actual remote
 versions here and regenerate `motiontimisoaraApp/src/lib/database.types.ts`.
 
+To-Do #153 route gallery: `00074_competition_route_photos.sql` is pending remote
+application after `00073`. Its isolated PostgreSQL runner passes. It adds up to
+12 ordered JPEG, PNG or WebP photos per route in the public
+`competition-photos` bucket, with organizer writes and a route-scoped storage
+path. No remote version is recorded.
+
 To confirm git and the remote still agree:
 
 ```bash

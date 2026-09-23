@@ -5,6 +5,7 @@ import {
   maxCompetitionGpxBytes,
   parseCompetitionGpx,
 } from '@/features/competitions/competition-gpx'
+import { listCompetitionRoutePhotos } from './competition-route-photos'
 
 export type CompetitionRoute = {
   id: string
@@ -316,6 +317,10 @@ export async function deleteCompetitionRoute(
     throw new Error('Șterge sau mută mai întâi categoriile care folosesc acest traseu.')
   }
 
+  const photos = (await listCompetitionRoutePhotos(competitionId))
+    .filter((photo) => photo.route_id === routeId)
+    .map((photo) => photo.storage_path)
+
   const result = await offersDb
     .from('competition_routes')
     .delete()
@@ -324,10 +329,24 @@ export async function deleteCompetitionRoute(
     .select()
     .single()
   if (result.error) throw result.error
+  let cleanupFailed = false
+  if (result.data.gpx_storage_path) {
+    try {
+      cleanupFailed = await removeRouteGpx(result.data.gpx_storage_path)
+    } catch {
+      cleanupFailed = true
+    }
+  }
+  if (photos.length > 0) {
+    try {
+      const removed = await supabase.storage.from('competition-photos').remove(photos)
+      cleanupFailed = cleanupFailed || Boolean(removed.error)
+    } catch {
+      cleanupFailed = true
+    }
+  }
   return {
-    cleanupFailed: result.data.gpx_storage_path
-      ? await removeRouteGpx(result.data.gpx_storage_path)
-      : false,
+    cleanupFailed,
   }
 }
 
