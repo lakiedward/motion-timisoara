@@ -25,9 +25,13 @@ on:
       - 'supabase/migrations/0005*.sql'
       - 'supabase/migrations/0006*.sql'
       - 'supabase/migrations/00070_camp_templates.sql'
+      - 'supabase/migrations/00071_competition_offers_and_coaches.sql'
+      - 'supabase/migrations/00072_competition_registrations.sql'
+      - 'supabase/migrations/00073_competition_podium.sql'
       - 'playwright.config.ts'
       - 'playwright.pricing.config.ts'
       - 'playwright.location.config.ts'
+      - 'playwright.competition.config.ts'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/playwright.yml'
@@ -51,14 +55,27 @@ on:
       - 'supabase/migrations/0005*.sql'
       - 'supabase/migrations/0006*.sql'
       - 'supabase/migrations/00070_camp_templates.sql'
+      - 'supabase/migrations/00071_competition_offers_and_coaches.sql'
+      - 'supabase/migrations/00072_competition_registrations.sql'
+      - 'supabase/migrations/00073_competition_podium.sql'
       - 'playwright.config.ts'
       - 'playwright.pricing.config.ts'
       - 'playwright.location.config.ts'
+      - 'playwright.competition.config.ts'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/playwright.yml'
 
 jobs:
+  competition-sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v4
+    - name: Test isolated competition SQL
+      shell: pwsh
+      run: ./supabase/tests/run-competition-offers-and-coaches.ps1
+
   test:
     # ~8 minute măsurate pentru chromium cu un singur worker. 20 lasă loc de
     # instalări și de o rulare lentă, fără să țină o oră un job blocat.
@@ -93,6 +110,8 @@ jobs:
       run: npm run test:checkout-pricing
     - name: Run isolated coach location browser simulations
       run: npx playwright test --config playwright.location.config.ts
+    - name: Run isolated competition browser simulations
+      run: npm run test:competition
     - uses: denoland/setup-deno@v2
       with:
         deno-version: v2.9.6
@@ -102,6 +121,8 @@ jobs:
       run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/price-snapshot.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/record-attendance-contract.test.ts supabase/functions/coach-live-location-contract.test.ts supabase/functions/camp-live-location-contract.test.ts supabase/functions/bnr-rate-contract.test.ts
     - name: Test payment confirmation and intent retries
       run: deno test --no-lock supabase/functions/payment-completion-contract.test.ts supabase/functions/_shared/payment-intent.test.ts
+    - name: Check competition functions and contracts
+      run: deno check --no-lock supabase/functions/create-competition-registration/index.ts supabase/functions/validate-competition-registration/index.ts && deno test --no-lock supabase/functions/competition-registration-contract.test.ts supabase/functions/_shared/competition-payment-recipient.test.ts
     - name: Check payment confirmation functions
       run: deno check --no-lock supabase/functions/mark-cash-paid/index.ts supabase/functions/stripe-webhook/index.ts supabase/functions/cancel-draft-enrollment/index.ts
     - name: Test isolated camp pricing SQL
@@ -148,4 +169,5 @@ jobs:
           playwright-report/
           test-results/checkout-pricing/
           test-results/live-location/
+          test-results/competition/
         retention-days: 30

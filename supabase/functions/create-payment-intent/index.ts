@@ -1,10 +1,10 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { supabaseAdmin, getUser } from "../_shared/supabase.ts";
+import { getUser, supabaseAdmin } from "../_shared/supabase.ts";
 import { authorizedRonCharge } from "../_shared/payment-charge.ts";
+import { competitionPaymentRecipient } from "../_shared/competition-payment-recipient.ts";
 import { preparePaymentIntent } from "../_shared/payment-intent.ts";
 import { withCors } from "../_shared/cors.ts";
-import { getStripe, calculatePlatformFee } from "../_shared/stripe.ts";
+import { calculatePlatformFee, getStripe } from "../_shared/stripe.ts";
 
 serve(
   withCors(async (req: Request) => {
@@ -44,13 +44,18 @@ serve(
       .eq("id", enrollmentId)
       .single();
     if (!enrollment) {
-      return new Response(
-        JSON.stringify({ error: "Enrollment not found" }),
-        { status: 404, headers: { "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Enrollment not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    const amountInBani = await authorizedRonCharge(supabaseAdmin, user.id, enrollment, payment);
+    const amountInBani = await authorizedRonCharge(
+      supabaseAdmin,
+      user.id,
+      enrollment,
+      payment,
+    );
 
     let destinationAccountId: string | null = null;
     let destinationType = "PLATFORM";
@@ -61,9 +66,7 @@ serve(
       const table = enrollment.kind === "COURSE" ? "courses" : "activities";
       const { data: entity } = await supabaseAdmin
         .from(table)
-        .select(
-          "coach_id, club_id, payment_recipient",
-        )
+        .select("coach_id, club_id, payment_recipient")
         .eq("id", enrollment.entity_id)
         .single();
 
@@ -83,7 +86,8 @@ serve(
             .eq("user_id", coachId)
             .single();
           if (
-            cp?.stripe_onboarding_complete && cp?.stripe_charges_enabled &&
+            cp?.stripe_onboarding_complete &&
+            cp?.stripe_charges_enabled &&
             cp?.stripe_payouts_enabled
           ) {
             coachStripeAccount = cp.stripe_account_id;
@@ -102,7 +106,8 @@ serve(
             .eq("id", clubId)
             .single();
           if (
-            cl?.stripe_onboarding_complete && cl?.stripe_charges_enabled &&
+            cl?.stripe_onboarding_complete &&
+            cl?.stripe_charges_enabled &&
             cl?.stripe_payouts_enabled
           ) {
             clubStripeAccount = cl.stripe_account_id;
@@ -136,6 +141,15 @@ serve(
           }
         }
       }
+    } else if (enrollment.kind === "COMPETITION") {
+      const recipient = await competitionPaymentRecipient(
+        supabaseAdmin,
+        enrollment.entity_id,
+      );
+      destinationAccountId = recipient.accountId;
+      destinationType = recipient.type;
+      coachId = recipient.coachId;
+      clubId = recipient.clubId;
     }
 
     const stripe = getStripe();
@@ -162,19 +176,22 @@ serve(
       if (destinationType === "CLUB" && clubId) {
         params.metadata.clubId = clubId;
       }
-
-
     }
 
     if (payment.billing_email) {
       params.receipt_email = payment.billing_email;
     }
 
-    const prepared = await preparePaymentIntent(supabaseAdmin, stripe, payment, params);
-
-    return new Response(
-      JSON.stringify(prepared),
-      { status: 200, headers: { "Content-Type": "application/json" } },
+    const prepared = await preparePaymentIntent(
+      supabaseAdmin,
+      stripe,
+      payment,
+      params,
     );
+
+    return new Response(JSON.stringify(prepared), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   }),
 );

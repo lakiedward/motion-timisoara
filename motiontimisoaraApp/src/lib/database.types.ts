@@ -32,11 +32,11 @@ export type Database = {
           name: string
           payment_recipient: string
           price: number
-          sport_id: string
           rules_file_content_type: string | null
           rules_file_name: string | null
           rules_file_size_bytes: number | null
           rules_file_storage_path: string | null
+          sport_id: string
           start_time: string
           updated_at: string | null
         }
@@ -772,57 +772,6 @@ export type Database = {
           },
         ]
       }
-      competitions: {
-        Row: {
-          club_id: string | null
-          coach_id: string | null
-          created_at: string
-          description: string
-          hero_photo_storage_path: string | null
-          id: string
-          slug: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          club_id?: string | null
-          coach_id?: string | null
-          created_at?: string
-          description: string
-          hero_photo_storage_path?: string | null
-          id?: string
-          slug: string
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          club_id?: string | null
-          coach_id?: string | null
-          created_at?: string
-          description?: string
-          hero_photo_storage_path?: string | null
-          id?: string
-          slug?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "competitions_club_id_fkey"
-            columns: ["club_id"]
-            isOneToOne: false
-            referencedRelation: "clubs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "competitions_coach_id_fkey"
-            columns: ["coach_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       children: {
         Row: {
           allergies: string | null
@@ -1483,6 +1432,446 @@ export type Database = {
             columns: ["sport_id"]
             isOneToOne: false
             referencedRelation: "sports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competition_age_categories: {
+        Row: {
+          age_from: number
+          age_to: number
+          competition_id: string
+          created_at: string
+          display_order: number
+          id: string
+          name: string
+          price_bani: number
+          route_id: string
+          updated_at: string
+        }
+        Insert: {
+          age_from: number
+          age_to: number
+          competition_id: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          name: string
+          price_bani: number
+          route_id: string
+          updated_at?: string
+        }
+        Update: {
+          age_from?: number
+          age_to?: number
+          competition_id?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          name?: string
+          price_bani?: number
+          route_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_age_categories_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_age_categories_route_fk"
+            columns: ["competition_id", "route_id"]
+            isOneToOne: false
+            referencedRelation: "competition_routes"
+            referencedColumns: ["competition_id", "id"]
+          },
+        ]
+      }
+      competition_coaches: {
+        Row: {
+          coach_profile_id: string
+          competition_id: string
+          id: string
+          invited_at: string
+          responded_at: string | null
+          status: string
+        }
+        Insert: {
+          coach_profile_id: string
+          competition_id: string
+          id?: string
+          invited_at?: string
+          responded_at?: string | null
+          status?: string
+        }
+        Update: {
+          coach_profile_id?: string
+          competition_id?: string
+          id?: string
+          invited_at?: string
+          responded_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_coaches_coach_profile_id_fkey"
+            columns: ["coach_profile_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_coaches_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competition_podium_publications: {
+        Row: {
+          category_id: string
+          competition_id: string
+          id: string
+          published_at: string
+          published_by: string | null
+        }
+        Insert: {
+          category_id: string
+          competition_id: string
+          id?: string
+          published_at?: string
+          published_by?: string | null
+        }
+        Update: {
+          category_id?: string
+          competition_id?: string
+          id?: string
+          published_at?: string
+          published_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_podium_publications_category_fk"
+            columns: ["category_id", "competition_id"]
+            isOneToOne: false
+            referencedRelation: "competition_age_categories"
+            referencedColumns: ["id", "competition_id"]
+          },
+          {
+            foreignKeyName: "competition_podium_publications_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_podium_publications_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competition_podium_results: {
+        Row: {
+          category_id: string
+          competition_id: string
+          created_at: string
+          id: string
+          place: number
+          registration_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          category_id: string
+          competition_id: string
+          created_at?: string
+          id?: string
+          place: number
+          registration_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          category_id?: string
+          competition_id?: string
+          created_at?: string
+          id?: string
+          place?: number
+          registration_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_podium_results_category_fk"
+            columns: ["category_id", "competition_id"]
+            isOneToOne: false
+            referencedRelation: "competition_age_categories"
+            referencedColumns: ["id", "competition_id"]
+          },
+          {
+            foreignKeyName: "competition_podium_results_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_podium_results_registration_fk"
+            columns: ["registration_id", "competition_id", "category_id"]
+            isOneToOne: false
+            referencedRelation: "competition_registrations"
+            referencedColumns: ["id", "competition_id", "category_id"]
+          },
+          {
+            foreignKeyName: "competition_podium_results_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competition_registrations: {
+        Row: {
+          accepted_price_bani: number
+          adult_birth_date: string | null
+          adult_profile_id: string | null
+          age_at_registration: number
+          category_id: string
+          category_name_snapshot: string
+          competition_id: string
+          enrollment_id: string
+          gpx_storage_path_snapshot: string
+          id: string
+          registered_at: string
+          route_id: string
+          route_name_snapshot: string
+        }
+        Insert: {
+          accepted_price_bani: number
+          adult_birth_date?: string | null
+          adult_profile_id?: string | null
+          age_at_registration: number
+          category_id: string
+          category_name_snapshot: string
+          competition_id: string
+          enrollment_id: string
+          gpx_storage_path_snapshot: string
+          id?: string
+          registered_at?: string
+          route_id: string
+          route_name_snapshot: string
+        }
+        Update: {
+          accepted_price_bani?: number
+          adult_birth_date?: string | null
+          adult_profile_id?: string | null
+          age_at_registration?: number
+          category_id?: string
+          category_name_snapshot?: string
+          competition_id?: string
+          enrollment_id?: string
+          gpx_storage_path_snapshot?: string
+          id?: string
+          registered_at?: string
+          route_id?: string
+          route_name_snapshot?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_registrations_adult_profile_id_fkey"
+            columns: ["adult_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_registrations_category_fk"
+            columns: ["category_id", "competition_id"]
+            isOneToOne: false
+            referencedRelation: "competition_age_categories"
+            referencedColumns: ["id", "competition_id"]
+          },
+          {
+            foreignKeyName: "competition_registrations_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_registrations_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: true
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_registrations_route_fk"
+            columns: ["competition_id", "route_id"]
+            isOneToOne: false
+            referencedRelation: "competition_routes"
+            referencedColumns: ["competition_id", "id"]
+          },
+        ]
+      }
+      competition_route_photos: {
+        Row: {
+          competition_id: string
+          created_at: string
+          display_order: number
+          id: string
+          route_id: string
+          storage_path: string
+        }
+        Insert: {
+          competition_id: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          route_id: string
+          storage_path: string
+        }
+        Update: {
+          competition_id?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          route_id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_route_photos_route_fk"
+            columns: ["competition_id", "route_id"]
+            isOneToOne: false
+            referencedRelation: "competition_routes"
+            referencedColumns: ["competition_id", "id"]
+          },
+        ]
+      }
+      competition_routes: {
+        Row: {
+          competition_id: string
+          created_at: string
+          description: string
+          display_order: number
+          gpx_storage_path: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          competition_id: string
+          created_at?: string
+          description: string
+          display_order?: number
+          gpx_storage_path?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          competition_id?: string
+          created_at?: string
+          description?: string
+          display_order?: number
+          gpx_storage_path?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_routes_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competitions: {
+        Row: {
+          allow_cash: boolean
+          club_id: string | null
+          coach_id: string | null
+          created_at: string
+          description: string
+          end_at: string | null
+          hero_photo_storage_path: string | null
+          id: string
+          location_id: string | null
+          location_text: string | null
+          registration_deadline_at: string | null
+          slug: string
+          start_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          allow_cash?: boolean
+          club_id?: string | null
+          coach_id?: string | null
+          created_at?: string
+          description: string
+          end_at?: string | null
+          hero_photo_storage_path?: string | null
+          id?: string
+          location_id?: string | null
+          location_text?: string | null
+          registration_deadline_at?: string | null
+          slug: string
+          start_at?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          allow_cash?: boolean
+          club_id?: string | null
+          coach_id?: string | null
+          created_at?: string
+          description?: string
+          end_at?: string | null
+          hero_photo_storage_path?: string | null
+          id?: string
+          location_id?: string | null
+          location_text?: string | null
+          registration_deadline_at?: string | null
+          slug?: string
+          start_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitions_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitions_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitions_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
             referencedColumns: ["id"]
           },
         ]
@@ -2427,7 +2816,27 @@ export type Database = {
         Returns: string
       }
       camp_enrolled_child_ids: { Args: never; Returns: string[] }
+      camp_rules_file_content_type_permis: {
+        Args: { p_type: string }
+        Returns: boolean
+      }
       camp_spots_remaining: { Args: { p_camp_id: string }; Returns: number }
+      can_edit_competition_podium: {
+        Args: { p_competition_id: string }
+        Returns: boolean
+      }
+      can_upload_competition_photo: {
+        Args: { p_path: string }
+        Returns: boolean
+      }
+      can_upload_competition_route: {
+        Args: { p_path: string }
+        Returns: boolean
+      }
+      can_view_competition_registrations: {
+        Args: { p_competition_id: string }
+        Returns: boolean
+      }
       cancel_unaccepted_enrollment_draft: {
         Args: { p_enrollment_id: string; p_parent_id: string }
         Returns: Json
@@ -2448,6 +2857,34 @@ export type Database = {
       coach_live_location_transaction: {
         Args: { p_actor_id: string; p_payload: Json }
         Returns: Json
+      }
+      competition_price_version:
+        | {
+            Args: {
+              p_adult_birth_date: string
+              p_adult_profile_id: string
+              p_category_id: string
+              p_competition_id: string
+              p_gpx_storage_path: string
+              p_price_bani: number
+              p_route_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_category_id: string
+              p_child_id: string
+              p_competition_id: string
+              p_gpx_storage_path: string
+              p_price_bani: number
+              p_route_id: string
+            }
+            Returns: string
+          }
+      componentele_categoriei_valide: {
+        Args: { p_components: Json }
+        Returns: boolean
       }
       course_availability: {
         Args: never
@@ -2480,6 +2917,26 @@ export type Database = {
         Args: { p_params: Json; p_payment_id: string }
         Returns: Json
       }
+      get_competition_cash_payments: {
+        Args: { p_competition_id: string }
+        Returns: {
+          amount: number
+          category_name: string
+          currency: string
+          enrollment_id: string
+          participant_name: string
+          payment_id: string
+          status: string
+        }[]
+      }
+      get_competition_podium_candidates: {
+        Args: { p_category_id: string; p_competition_id: string }
+        Returns: {
+          age_at_registration: number
+          participant_name: string
+          registration_id: string
+        }[]
+      }
       get_my_coach_profile_id: { Args: never; Returns: string }
       get_my_push_preferences: { Args: never; Returns: Json }
       get_my_role: { Args: never; Returns: string }
@@ -2502,6 +2959,16 @@ export type Database = {
           p_page_size?: number
         }
         Returns: Json
+      }
+      get_published_competition_podium: {
+        Args: { p_competition_id: string }
+        Returns: {
+          category_id: string
+          participant_name: string
+          place: number
+          published_at: string
+          updated_at: string
+        }[]
       }
       mark_parent_announcements_seen: {
         Args: { p_as_of: string; p_expected_user_id: string }
@@ -2566,6 +3033,19 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      necesar_sablon_tabara_valid: {
+        Args: { p_requirements: Json }
+        Returns: boolean
+      }
+      pot_administra_activitate: {
+        Args: { p_activity_id: string }
+        Returns: boolean
+      }
+      pot_administra_concurs: {
+        Args: { p_competition_id: string }
+        Returns: boolean
+      }
+      pot_administra_curs: { Args: { p_course_id: string }; Returns: boolean }
       pot_administra_tabara: { Args: { p_camp_id: string }; Returns: boolean }
       pot_vedea_inscrierile_taberei: {
         Args: { p_camp_id: string }
@@ -2582,6 +3062,10 @@ export type Database = {
       pret_tabara_pentru_varsta: {
         Args: { p_camp_id: string; p_varsta: number }
         Returns: number
+      }
+      preturi_sablon_tabara_valide: {
+        Args: { p_prices: Json }
+        Returns: boolean
       }
       raspunde_invitatie_tabara: {
         Args: { p_accept: boolean; p_camp_id: string }
@@ -2615,6 +3099,23 @@ export type Database = {
           p_token: string
         }
         Returns: undefined
+      }
+      respond_to_competition_invitation: {
+        Args: { p_accept: boolean; p_competition_id: string }
+        Returns: {
+          coach_profile_id: string
+          competition_id: string
+          id: string
+          invited_at: string
+          responded_at: string | null
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "competition_coaches"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       revoke_push_device: { Args: { p_binding_id: string }; Returns: undefined }
       safe_uuid: { Args: { t: string }; Returns: string }
@@ -2659,23 +3160,6 @@ export type Database = {
           isSetofReturn: true
         }
       }
-      save_camp_template: {
-        Args: {
-          p_age_prices: Json
-          p_allow_cash: boolean
-          p_camp_requirements: Json
-          p_capacity: number | null
-          p_club_id: string | null
-          p_coach_id: string | null
-          p_currency: string
-          p_description: string | null
-          p_location_id: string | null
-          p_location_text: string | null
-          p_name: string
-          p_rules: string | null
-        }
-        Returns: string
-      }
       save_camp_offer: {
         Args: {
           p_adult_price?: Json
@@ -2705,6 +3189,33 @@ export type Database = {
         }
         Returns: undefined
       }
+      save_camp_template: {
+        Args: {
+          p_age_prices: Json
+          p_allow_cash: boolean
+          p_camp_requirements: Json
+          p_capacity: number
+          p_club_id: string
+          p_coach_id: string
+          p_currency: string
+          p_description: string
+          p_location_id: string
+          p_location_text: string
+          p_name: string
+          p_rules: string
+        }
+        Returns: string
+      }
+      save_competition_registration: {
+        Args: {
+          p_billing?: Json
+          p_competition_id: string
+          p_method: string
+          p_parent_id: string
+          p_quotes: Json
+        }
+        Returns: Json
+      }
       save_enrollment_batch: {
         Args: {
           p_billing?: Json
@@ -2717,6 +3228,14 @@ export type Database = {
         Returns: Json
       }
       set_my_push_enabled: { Args: { p_enabled: boolean }; Returns: Json }
+      suma_componentelor_categoriei: {
+        Args: { p_components: Json }
+        Returns: number
+      }
+      valid_competition_price_snapshot: {
+        Args: { p_amount: number; p_currency: string; p_snapshot: Json }
+        Returns: boolean
+      }
       valid_enrollment_price_snapshot: {
         Args: { p_amount: number; p_currency: string; p_snapshot: Json }
         Returns: boolean

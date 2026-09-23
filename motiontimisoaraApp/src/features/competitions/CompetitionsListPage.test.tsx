@@ -5,10 +5,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 
 import CompetitionsListPage from './CompetitionsListPage'
-import { getConcursurileMele } from '@/api/competitions'
+import { getConcursurileMele } from '@/api/competition/competitions'
 
-vi.mock('@/api/competitions', async () => {
-  const real = await vi.importActual<typeof import('@/api/competitions')>('@/api/competitions')
+vi.mock('@/api/competition/competitions', async () => {
+  const real = await vi.importActual<typeof import('@/api/competition/competitions')>('@/api/competition/competitions')
   return { ...real, getConcursurileMele: vi.fn(), urlHeroConcurs: () => null }
 })
 
@@ -61,6 +61,12 @@ test('cardul duce la editare', async () => {
       coach_id: null,
       created_at: '2026-09-22T00:00:00Z',
       updated_at: '2026-09-22T00:00:00Z',
+      start_at: '2026-10-01T07:00:00Z',
+      end_at: '2026-10-01T09:00:00Z',
+      registration_deadline_at: '2026-09-30T21:00:00Z',
+      location_id: null,
+      location_text: 'Timișoara',
+      allow_cash: false,
     },
   ])
   deseneaza()

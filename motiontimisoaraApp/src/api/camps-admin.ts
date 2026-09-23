@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import type { Tables } from '@/lib/database.types'
+import type { Database, Tables } from '@/lib/database.types'
 import { readCampRequirements, type CampRequirementCategory } from '@/lib/camp-requirements'
 
 export type Tabara = Tables<'camps'>
@@ -296,7 +296,7 @@ export async function salveazaSablonTabara(
   owner: Proprietar,
   sablon: SablonDeSalvat,
 ): Promise<string> {
-  const { data, error } = await supabase.rpc('save_camp_template', {
+  const args = {
     p_name: sablon.name,
     p_club_id: owner.clubId,
     p_coach_id: owner.clubId ? null : owner.coachUserId,
@@ -309,7 +309,11 @@ export async function salveazaSablonTabara(
     p_currency: sablon.currency,
     p_camp_requirements: sablon.camp_requirements,
     p_age_prices: sablon.age_prices,
-  })
+  }
+  const { data, error } = await supabase.rpc(
+    'save_camp_template',
+    args as unknown as Database['public']['Functions']['save_camp_template']['Args'],
+  )
   if (error) throw error
   return data
 }

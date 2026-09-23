@@ -2,10 +2,11 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
 
-import { getConcursurileMele, urlHeroConcurs } from '@/api/competitions'
+import { getConcursurileMele, urlHeroConcurs } from '@/api/competition/competitions'
 import { Button } from '@/components/ui/button'
 import type { CompetitionPortalBaza } from './competition-portal'
 import { useCompetitionOwner } from './useCompetitionOwner'
+import { CompetitionInvitations } from './CompetitionInvitations'
 
 export default function CompetitionsListPage({ baza }: { baza: CompetitionPortalBaza }) {
   const { owner, gata, eroare, reincearca } = useCompetitionOwner()
@@ -37,6 +38,7 @@ export default function CompetitionsListPage({ baza }: { baza: CompetitionPortal
 
   return (
     <div>
+      {owner.role === 'COACH' && <CompetitionInvitations />}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl font-bold">Concursuri</h1>
         <Button asChild className="h-11 min-h-11">
@@ -52,7 +54,7 @@ export default function CompetitionsListPage({ baza }: { baza: CompetitionPortal
         <div className="mt-8 rounded-2xl border p-8 text-center">
           <p className="text-foreground font-medium">Niciun concurs încă.</p>
           <p className="text-muted-foreground mt-1 text-sm">
-            Un concurs are nevoie de titlu și descriere. Poza din capul paginii este opțională.
+            Adaugă programul și locația, apoi traseele GPX și categoriile de vârstă.
           </p>
         </div>
       ) : (

@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 
-import { getConcursuriPublice, type PublicCompetition } from '@/api/competitions'
+import { getConcursuriPublice, type PublicCompetition } from '@/api/competition/competitions'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { formatCompetitionDateTime } from '@/lib/competition-schedule'
 
 export default function CompetitionsPage() {
   const {
@@ -71,6 +72,12 @@ function CardConcurs({ concurs }: { concurs: PublicCompetition }) {
           </Link>
         </h2>
         <p className="text-muted-foreground mt-3 line-clamp-3 text-sm">{concurs.description}</p>
+        {concurs.startAt && (
+          <p className="text-muted-foreground mt-3 text-sm">
+            {formatCompetitionDateTime(concurs.startAt)}
+            {concurs.locationText ? ` · ${concurs.locationText}` : ''}
+          </p>
+        )}
         {concurs.organizator && (
           <p className="text-muted-foreground mt-4 text-sm">
             Organizat de{' '}

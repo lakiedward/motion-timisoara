@@ -7,7 +7,8 @@
   "scripts": {
     "test:e2e": "playwright test",
     "test:checkout-pricing": "playwright test --config playwright.pricing.config.ts",
-    "test:live-location": "playwright test --config playwright.location.config.ts"
+    "test:live-location": "playwright test --config playwright.location.config.ts",
+    "test:competition": "playwright test --config playwright.competition.config.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",

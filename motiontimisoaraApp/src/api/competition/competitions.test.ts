@@ -128,7 +128,16 @@ test('lista publică păstrează hero-ul și organizatorul', async () => {
 test('un titlu fără litere nu se salvează', async () => {
   await expect(
     createConcurs(
-      { title: '???', description: 'Descriere.' },
+      {
+        title: '???',
+        description: 'Descriere.',
+        start_at: '2026-10-01T07:00:00Z',
+        end_at: '2026-10-01T09:00:00Z',
+        registration_deadline_at: '2026-09-30T21:00:00Z',
+        location_id: null,
+        location_text: 'Timișoara',
+        allow_cash: false,
+      },
       { role: 'CLUB', clubId: 'club-1', coachUserId: null },
     ),
   ).rejects.toThrow('Titlul trebuie să conțină litere sau cifre.')
@@ -137,7 +146,16 @@ test('un titlu fără litere nu se salvează', async () => {
 test('crearea pune slugul și proprietarul clubului', async () => {
   raspuns.competitions = { data: null, error: null }
   await createConcurs(
-    { title: 'Cupa Audit', description: '  Descriere scurtă.  ' },
+    {
+      title: 'Cupa Audit',
+      description: '  Descriere scurtă.  ',
+      start_at: '2026-10-01T07:00:00Z',
+      end_at: '2026-10-01T09:00:00Z',
+      registration_deadline_at: '2026-09-30T21:00:00Z',
+      location_id: null,
+      location_text: 'Timișoara',
+      allow_cash: false,
+    },
     { role: 'CLUB', clubId: 'club-1', coachUserId: null },
   )
   const insert = cereri.competitions.find((c) => c.startsWith('insert('))
@@ -145,6 +163,7 @@ test('crearea pune slugul și proprietarul clubului', async () => {
   expect(insert).toContain('"club_id":"club-1"')
   expect(insert).toContain('"coach_id":null')
   expect(insert).toContain('"description":"Descriere scurtă."')
+  expect(insert).toContain('"location_text":"Timișoara"')
 })
 
 test('ștergerea scoate poza cât timp rândul încă există', async () => {

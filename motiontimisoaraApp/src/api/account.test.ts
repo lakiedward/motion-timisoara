@@ -3,16 +3,24 @@ import { beforeEach, expect, test, vi } from 'vitest'
 import { getMyEnrollments } from './account'
 
 const tables: string[] = []
+const filters: string[] = []
 const responses = new Map<string, { data: unknown; error: unknown }>()
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
+    auth: {
+      getUser: async () => ({ data: { user: { id: 'parent-1' } }, error: null }),
+    },
     from(name: string) {
       tables.push(name)
       const current = name
       const api: Record<string, unknown> = {}
       const chain = () => api
       for (const method of ['select', 'order', 'in', 'eq']) api[method] = chain
+      api.or = (filter: string) => {
+        filters.push(filter)
+        return api
+      }
       api.then = (resolve: (value: unknown) => unknown) =>
         Promise.resolve(resolve(responses.get(current) ?? { data: [], error: null }))
       return api
@@ -34,13 +42,16 @@ const enrollment = (kind: string, entityId: string, id = entityId) => ({
 
 beforeEach(() => {
   tables.length = 0
+  filters.length = 0
   responses.clear()
+  responses.set('children', { data: [{ id: 'child-1' }], error: null })
 })
 
 test('an empty enrollment list does not look up offer titles', async () => {
   responses.set('enrollments', { data: [], error: null })
   expect(await getMyEnrollments()).toEqual([])
-  expect(tables).toEqual(['enrollments'])
+  expect(tables).toEqual(['children', 'enrollments'])
+  expect(filters).toEqual(['adult_profile_id.eq.parent-1,child_id.in.(child-1)'])
 })
 
 test('camp, course and activity titles lead from the matching offer', async () => {
@@ -69,7 +80,13 @@ test('camp, course and activity titles lead from the matching offer', async () =
     'Activitate de ciclism',
     null,
   ])
-  expect(tables).toEqual(['enrollments', 'camps', 'courses', 'activities'])
+  expect(tables).toEqual(['children', 'enrollments', 'camps', 'courses', 'activities'])
+})
+
+test('a participant without children only requests their own adult enrollments', async () => {
+  responses.set('children', { data: [], error: null })
+  expect(await getMyEnrollments()).toEqual([])
+  expect(filters).toEqual(['adult_profile_id.eq.parent-1'])
 })
 
 test('a failed offer lookup keeps the enrollment page in its error state', async () => {

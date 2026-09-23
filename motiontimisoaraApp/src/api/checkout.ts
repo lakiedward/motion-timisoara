@@ -73,7 +73,10 @@ export class EnrollmentRequestError extends Error {
   }
 }
 
-async function invoke<T>(name: string, body: Record<string, unknown>): Promise<T> {
+export async function invokeCheckoutFunction<T>(
+  name: string,
+  body: Record<string, unknown>,
+): Promise<T> {
   const { data, error } = await supabase.functions.invoke(name, { body })
   if (error) {
     const details = (data as FunctionErrorBody | null)?.error
@@ -105,7 +108,7 @@ export function validateEnrollment(
   childIds: string[],
   sessionPackageSize = 1,
 ): Promise<ValidationResponse> {
-  return invoke<ValidationResponse>('validate-enrollment', {
+  return invokeCheckoutFunction<ValidationResponse>('validate-enrollment', {
     kind,
     entityId,
     childIds,
@@ -123,7 +126,7 @@ export async function createEnrollment(input: {
   priceVersions?: Record<string, string>
   billingDetails?: BillingDetails
 }): Promise<CreateEnrollmentResponse> {
-  const data = await invoke<CreateEnrollmentResponse>('create-enrollment', input)
+  const data = await invokeCheckoutFunction<CreateEnrollmentResponse>('create-enrollment', input)
   const enrollmentIds =
     data.enrollmentIds?.length > 0
       ? data.enrollmentIds
@@ -151,5 +154,5 @@ export interface PaymentIntentResponse {
 }
 
 export function createPaymentIntent(enrollmentId: string): Promise<PaymentIntentResponse> {
-  return invoke<PaymentIntentResponse>('create-payment-intent', { enrollmentId })
+  return invokeCheckoutFunction<PaymentIntentResponse>('create-payment-intent', { enrollmentId })
 }
