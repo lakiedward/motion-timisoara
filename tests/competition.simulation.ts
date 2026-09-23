@@ -351,7 +351,7 @@ for (const viewport of [
       page.getByRole("region", { name: "Harta traseului Traseul Parcului" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Înscrie copilul" }),
+      page.getByRole("link", { name: "Înscriere la concurs" }),
     ).toBeVisible();
     await capture(page, info, "public-competition");
     expect(state.errors).toEqual([]);
