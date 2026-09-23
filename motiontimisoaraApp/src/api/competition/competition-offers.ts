@@ -206,7 +206,7 @@ export async function getCompetitionCategories(
 
 async function readGpxFile(file: File): Promise<Blob> {
   if (!/\.gpx$/i.test(file.name)) throw new Error('Alege un fișier cu extensia .gpx.')
-  if (file.size > maxCompetitionGpxBytes) throw new Error('Fișierul GPX depășește limita de 2 MB.')
+  if (file.size > maxCompetitionGpxBytes) throw new Error('Fișierul GPX depășește limita de 12 MB.')
   const xml = await file.text()
   parseCompetitionGpx(xml)
   return new Blob([xml], { type: 'application/gpx+xml' })

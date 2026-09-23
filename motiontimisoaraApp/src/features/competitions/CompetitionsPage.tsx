@@ -22,7 +22,7 @@ export default function CompetitionsPage() {
           <h1 className="font-display text-foreground text-4xl font-extrabold lg:text-5xl">
             Concursuri
           </h1>
-          <p className="text-muted-foreground mt-2">Concursuri sportive pentru copii.</p>
+          <p className="text-muted-foreground mt-2">Concursuri sportive pentru copii și adulți.</p>
         </div>
       </section>
 

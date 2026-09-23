@@ -363,7 +363,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
             </div>
             <div className="space-y-2">
               <Label htmlFor="competition-route-file">
-                Fișier GPX (obligatoriu pentru un traseu nou, maximum 2 MB)
+                Fișier GPX (obligatoriu pentru un traseu nou, maximum 12 MB)
               </Label>
               <Input
                 id="competition-route-file"
