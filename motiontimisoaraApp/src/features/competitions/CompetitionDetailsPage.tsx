@@ -288,7 +288,7 @@ export default function CompetitionDetailsPage() {
         {data.registrationDeadlineAt && offers.data?.categories.length ? (
           Date.parse(data.registrationDeadlineAt) > now ? (
             <Button asChild className="mt-8 h-11 min-h-11">
-              <Link to={`/account/competitions/${data.slug}/register`}>Înscrie copilul</Link>
+              <Link to={`/account/competitions/${data.slug}/register`}>Înscriere la concurs</Link>
             </Button>
           ) : (
             <p className="text-muted-foreground mt-8 text-sm">
