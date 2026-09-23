@@ -4,6 +4,7 @@ const backendOrigin = "http://127.0.0.1:54329";
 const competitionId = "dddddddd-dddd-dddd-dddd-dddddddddddd";
 const routeId = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee";
 const categoryId = "cccccccc-cccc-cccc-cccc-cccccccccccc";
+const adultCategoryId = "77777777-7777-7777-7777-777777777777";
 const parentId = "11111111-1111-1111-1111-111111111111";
 const childId = "22222222-2222-2222-2222-222222222222";
 const coachId = "33333333-3333-3333-3333-333333333333";
@@ -18,7 +19,7 @@ const tile = Buffer.from(
   "base64",
 );
 
-type Scenario = "public" | "free" | "podium" | "form";
+type Scenario = "public" | "free" | "adult" | "podium" | "form";
 
 async function simulate(page: Page, scenario: Scenario) {
   await page.clock.setFixedTime(new Date("2026-09-22T12:00:00Z"));
@@ -28,9 +29,9 @@ async function simulate(page: Page, scenario: Scenario) {
   let created = false;
   let podiumRegistrationId = registrationId;
   const userId =
-    scenario === "podium" || scenario === "form" ? coachId : parentId;
+    scenario === "podium" || scenario === "form" || scenario === "adult" ? coachId : parentId;
   const role =
-    scenario === "podium" || scenario === "form" ? "COACH" : "PARENT";
+    scenario === "podium" || scenario === "form" || scenario === "adult" ? "COACH" : "PARENT";
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
     if (message.type() === "error")
@@ -179,16 +180,27 @@ async function simulate(page: Page, scenario: Scenario) {
       ]);
     if (path === "/rest/v1/competition_age_categories")
       return respond([
-        {
-          id: categoryId,
-          competition_id: competitionId,
-          route_id: routeId,
-          name: "8–10 ani",
-          age_from: 8,
-          age_to: 10,
-          price_bani: 0,
-          display_order: 0,
-        },
+        scenario === "adult"
+          ? {
+              id: adultCategoryId,
+              competition_id: competitionId,
+              route_id: routeId,
+              name: "18–39 ani",
+              age_from: 18,
+              age_to: 39,
+              price_bani: 0,
+              display_order: 0,
+            }
+          : {
+              id: categoryId,
+              competition_id: competitionId,
+              route_id: routeId,
+              name: "8–10 ani",
+              age_from: 8,
+              age_to: 10,
+              price_bani: 0,
+              display_order: 0,
+            },
       ]);
     if (path === "/rest/v1/competition_coaches") return respond([]);
     if (
@@ -233,17 +245,17 @@ async function simulate(page: Page, scenario: Scenario) {
       return respond([
         {
           registration_id: registrationId,
-          child_name: "Copil Ana",
+          participant_name: "Copil Ana",
           age_at_registration: 9,
         },
         {
           registration_id: alternateRegistrationId,
-          child_name: "Copil Bogdan",
+          participant_name: "Copil Bogdan",
           age_at_registration: 9,
         },
       ]);
     if (path === "/rest/v1/children")
-      return respond([
+      return respond(scenario === "adult" ? [] : [
         {
           id: childId,
           name: "Copil Simulat",
@@ -254,16 +266,30 @@ async function simulate(page: Page, scenario: Scenario) {
     if (path === "/functions/v1/validate-competition-registration")
       return respond({
         results: [
-          {
-            childId,
-            categoryId,
-            routeId,
-            name: "Copil Simulat",
-            eligible: true,
-            amount: 0,
-            currency: "RON",
-            priceVersion: "simulation-version",
-          },
+          scenario === "adult"
+            ? {
+                participantKey: "self",
+                adultProfileId: coachId,
+                adultBirthDate: "1990-04-12",
+                categoryId: adultCategoryId,
+                routeId,
+                name: "Utilizator Simulat",
+                eligible: true,
+                amount: 0,
+                currency: "RON",
+                priceVersion: "simulation-version",
+              }
+            : {
+                participantKey: childId,
+                childId,
+                categoryId,
+                routeId,
+                name: "Copil Simulat",
+                eligible: true,
+                amount: 0,
+                currency: "RON",
+                priceVersion: "simulation-version",
+              },
         ],
         allowCash: true,
       });
@@ -274,7 +300,9 @@ async function simulate(page: Page, scenario: Scenario) {
         enrollmentId: "enrollment-simulated",
         enrollmentIds: ["enrollment-simulated"],
         requiresPaymentIntent: false,
-        prices: [{ childId, amount: 0, currency: "RON" }],
+        prices: [scenario === "adult"
+          ? { adultProfileId: coachId, amount: 0, currency: "RON" }
+          : { childId, amount: 0, currency: "RON" }],
       });
     }
     if (path === "/rest/v1/enrollments")
@@ -287,10 +315,11 @@ async function simulate(page: Page, scenario: Scenario) {
                 entity_id: competitionId,
                 status: "ACTIVE",
                 created_at: "2026-09-22T12:00:00Z",
-                child_id: childId,
-                child: { id: childId, name: "Copil Simulat" },
+                child_id: scenario === "adult" ? null : childId,
+                adult_profile_id: scenario === "adult" ? coachId : null,
+                child: scenario === "adult" ? null : { id: childId, name: "Copil Simulat" },
                 competition_registration: {
-                  category_name_snapshot: "8–10 ani",
+                  category_name_snapshot: scenario === "adult" ? "18–39 ani" : "8–10 ani",
                   route_name_snapshot: "Traseul Parcului",
                 },
                 payments: [
@@ -385,6 +414,38 @@ test("SIMULATED free competition registration on native viewport", async ({
       selections: [{ childId, categoryId }],
       paymentMethod: "CARD",
       priceVersions: { [childId]: "simulation-version" },
+    },
+  ]);
+  expect(state.errors).toEqual([]);
+  expect(state.unexpectedApi).toEqual([]);
+});
+
+test("SIMULATED adult self-registration without children on native viewport", async ({
+  page,
+}, info) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  const state = await simulate(page, "adult");
+  await page.goto("/account/competitions/concurs-simulat/register");
+  await expect(
+    page.getByRole("heading", { name: "Înscriere la Concurs Simulat" }),
+  ).toBeVisible();
+  await page.getByRole("checkbox", { name: "Mă înscriu eu" }).check();
+  await page.getByLabel("Data mea de naștere").fill("1990-04-12");
+  await page.getByLabel("Categoria mea").selectOption(adultCategoryId);
+  await expect(page.getByText("Preț verificat: Gratuit")).toBeVisible();
+  await page
+    .getByRole("checkbox", { name: /Confirm categoriile și suma finală/ })
+    .check();
+  await capture(page, info, "adult-self-registration");
+  await page.getByRole("button", { name: "Confirmă înscrierea gratuită" }).click();
+  await expect(page).toHaveURL(/\/account\/enrollments$/);
+  await expect(page.getByText("18–39 ani · Traseul Parcului")).toBeVisible();
+  expect(state.submissions).toMatchObject([
+    {
+      competitionId,
+      selections: [{ selfBirthDate: "1990-04-12", categoryId: adultCategoryId }],
+      paymentMethod: "CARD",
+      priceVersions: { self: "simulation-version" },
     },
   ]);
   expect(state.errors).toEqual([]);

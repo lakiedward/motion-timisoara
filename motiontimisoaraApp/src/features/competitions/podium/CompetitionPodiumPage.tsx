@@ -115,8 +115,8 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
       <div>
         <h1 className="font-display text-2xl font-bold">Podium · {competition.data.title}</h1>
         <p className="text-muted-foreground mt-2 text-sm">
-          Poți alege numai copii cu înscriere activă în categoria respectivă. Modificările după
-          publicare apar imediat public.
+          Poți alege numai participanți cu înscriere activă în categoria respectivă. Modificările
+          după publicare apar imediat public.
         </p>
       </div>
 
@@ -162,7 +162,7 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
             </div>
           ) : candidateCount === 0 ? (
             <p className="rounded-2xl border border-dashed p-5">
-              Niciun copil înscris și confirmat în această categorie.
+              Niciun participant înscris și confirmat în această categorie.
             </p>
           ) : (
             <div className="space-y-4">
@@ -194,7 +194,7 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
                         ?.filter((candidate) => !taken.has(candidate.registration_id))
                         .map((candidate) => (
                           <option key={candidate.registration_id} value={candidate.registration_id}>
-                            {candidate.child_name} · {candidate.age_at_registration} ani la
+                            {candidate.participant_name} · {candidate.age_at_registration} ani la
                             înscriere
                           </option>
                         ))}

@@ -1,6 +1,6 @@
 # To-Do #153 — Complete competitions
 
-Status: local implementation complete; integration with the product database and human UI acceptance are pending. The presentation slice in `2026-09-22-todo-153-competitions-skeleton.md` remains the accepted baseline. This document records the full tracker brief and the owner's decisions in this session.
+Status: the competition schema and required Edge Functions are deployed, while the adult self-registration UI remains on PR #101. Authenticated end-to-end proof, CI for the final diff, and human UI and production acceptance remain pending. The presentation slice in `2026-09-22-todo-153-competitions-skeleton.md` remains the accepted baseline. This document records the full tracker brief and the owner's decisions in this session.
 
 ## Existing baseline
 
@@ -21,6 +21,7 @@ The merged skeleton provides public competition lists and details, organizer cre
 - The organizer configures a registration deadline no later than the competition start. Confirmed in this session.
 - Associated coaches may edit podium results after publication. The organizer publishes each category once; edits made afterward are visible publicly immediately. The owner confirmed the edit permission in this session; the publication rule is the implementation choice.
 - Competition enrollment reuses Stripe and cash, and a zero-priced category enrolls without payment. Confirmed in this session.
+- On 2026-09-23, the owner confirmed that an adult must also be able to enroll themself in an adult category now. They enter their birth date during competition registration. The server calculates age in Europe/Bucharest on the registration date, requires the self-registrant to be at least 18, and keeps the birth date private on the registration rather than adding it to the publicly readable profile. Child and adult registrations use the same free, cash, and Stripe payment rules. Podium candidates include either type of registered participant.
 
 ## Route presentation follow-up — 2026-09-23
 
@@ -48,9 +49,10 @@ The old skeleton remains available during the migration. No tracker human-gate f
 
 ## Local verification on 2026-09-23
 
-- Application typecheck, lint, 1,277 Vitest tests in 142 files, and production build passed. The UI conventions document was regenerated from code after the gallery component changed the measured inventory.
-- Six isolated Chromium simulations passed: public details at 1440×900, 768×1024, and 375×812; free parent registration; correction of a published podium by an associated coach; and organizer editing at 375×812. The simulated backend and map tiles are explicit fixtures. Captures are written under `test-results/competition/` and are not live backend or native device proof.
-- Fifty-two Deno contract tests passed for competition registration, Stripe recipient selection, price snapshots, payment charge validation, and payment completion. The four affected Edge entrypoints passed `deno check`.
-- The isolated PostgreSQL runner passed, including route gallery ownership, file paths, the twelve-photo limit, and deletion. No product migration or Edge Function was applied to the remote environment, and generated database types await an applied schema.
+- Application typecheck, lint, 1,283 Vitest tests in 142 files, and production build passed. The UI conventions document was regenerated from code after the gallery component changed the measured inventory. Regenerated database types match the applied schema; the pre-existing camp template RPC requires a local type assertion because the generator marks nullable PostgreSQL function arguments as non-nullable.
+- Seven isolated Chromium simulations passed: public details at 1440×900, 768×1024, and 375×812; free parent registration; adult self-registration without children; correction of a published podium by an associated coach; and organizer editing at 375×812. The simulated backend and map tiles are explicit fixtures. Captures are written under `test-results/competition/` and are not live backend or native device proof.
+- Twenty-seven focused Deno contract tests passed for competition registration, price snapshots, payment charge validation, and payment completion.
+- The isolated PostgreSQL runner passed, including adult free/cash/card registrations, route gallery ownership, file paths, the twelve-photo limit, and deletion. Product migrations `00071`–`00074` were applied in order on 2026-09-23; exact remote versions are recorded in `supabase/migrations/README.md`. The live catalog has registration, podium, and route gallery tables with RLS and the expected RPCs. No real competition registration row was created during verification.
+- `validate-competition-registration` and `create-competition-registration` are ACTIVE at v1; `create-payment-intent` v9, `mark-cash-paid` v6, and `stripe-webhook` v6 were redeployed with adult support. The webhook retains `verify_jwt=false`, while the other four require JWT. ACTIVE state and contract tests do not prove a real payment.
 - The local Chrome mock showed two distinct GPX routes, their descriptions, and the empty gallery under each route. At 1440×900, 768×1024, and 375×812, the page had no horizontal overflow. Uploading as an authenticated organizer still needs browser verification after the schema is applied.
-- Final integration, authenticated role checks, payment confirmation, native device review, CI, and human UI and production gates remain required before tracker completion.
+- Final authenticated role checks, payment confirmation, native device review, CI on the final PR diff, and human UI and production gates remain required before tracker completion. The owner explicitly waived the disabled Bugbot review for this PR and authorized the product migrations; no Team Tracker human-gate field was written.

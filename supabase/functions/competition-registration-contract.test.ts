@@ -1,5 +1,9 @@
 import type { EnrollmentServices } from "./_shared/enrollment-pricing.ts";
-import { ageAtRegistration, quoteCompetitionRegistration } from "./_shared/competition-registration.ts";
+import {
+  ageAtRegistration,
+  quoteCompetitionRegistration,
+  validCompetitionSelection,
+} from "./_shared/competition-registration.ts";
 import { createCompetitionRegistrationHandler } from "./create-competition-registration/handler.ts";
 import { validateCompetitionRegistrationHandler } from "./validate-competition-registration/handler.ts";
 import { withCors } from "./_shared/cors.ts";
@@ -85,13 +89,18 @@ function fixture(priceBani = 12000, allowCash = true) {
         then<T>(resolve: (value: { data: Row[]; error: null }) => T) {
           return Promise.resolve(
             resolve({
-              data: rows[table].filter((row) => filters.every((filter) => filter(row))),
+              data: rows[table].filter((row) =>
+                filters.every((filter) => filter(row))
+              ),
               error: null,
             }),
           );
         },
         single() {
-          const data = rows[table].filter((row) => filters.every((filter) => filter(row)))[0] ?? null;
+          const data =
+            rows[table].filter((row) =>
+              filters.every((filter) => filter(row))
+            )[0] ?? null;
           return Promise.resolve({
             data,
             error: data ? null : { message: "not found" },
@@ -135,6 +144,136 @@ Deno.test(
   () => {
     equal(ageAtRegistration("2018-09-22", new Date("2026-09-21T20:59:59Z")), 7);
     equal(ageAtRegistration("2018-09-22", new Date("2026-09-21T21:00:00Z")), 8);
+    equal(
+      ageAtRegistration("2008-09-23", new Date("2026-09-22T20:59:59Z")),
+      17,
+    );
+    equal(
+      ageAtRegistration("2008-09-23", new Date("2026-09-22T21:00:00Z")),
+      18,
+    );
+  },
+);
+
+Deno.test(
+  "self selection requires a real birth date, one self entry and no supplied adult identity",
+  () => {
+    equal(
+      validCompetitionSelection([{
+        selfBirthDate: "1985-05-10",
+        categoryId: "adult",
+      }]),
+      true,
+    );
+    for (
+      const selection of [
+        [{ selfBirthDate: "2026-02-31", categoryId: "adult" }],
+        [{
+          selfBirthDate: "1985-05-10",
+          childId: "child",
+          categoryId: "adult",
+        }],
+        [{
+          selfBirthDate: "1985-05-10",
+          adultProfileId: "other",
+          categoryId: "adult",
+        }],
+        [{ selfBirthDate: "1985-05-10", categoryId: "adult" }, {
+          selfBirthDate: "1980-01-01",
+          categoryId: "adult",
+        }],
+        [{ childId: "child", categoryId: "first" }, {
+          childId: "child",
+          categoryId: "second",
+        }],
+      ]
+    ) {
+      equal(validCompetitionSelection(selection), false);
+    }
+  },
+);
+
+Deno.test(
+  "authenticated non-parent can quote and create a self registration with identity bound to session",
+  async () => {
+    const context = fixture();
+    context.services.getUserRole = () => Promise.resolve("COACH");
+    context.rows.competition_age_categories[0].age_from = 18;
+    const selfSelection = {
+      competitionId: "competition",
+      selections: [{ selfBirthDate: "1985-05-10", categoryId: "category" }],
+    };
+    const validation = await withCors(
+      validateCompetitionRegistrationHandler(context.services),
+    )(
+      context.request(selfSelection),
+    );
+    equal(validation.status, 200);
+    const quote = await validation.json();
+    equal(quote.results[0].participantKey, "self");
+    equal(quote.results[0].adultProfileId, "parent");
+    equal(quote.results[0].adultBirthDate, "1985-05-10");
+    equal(quote.results[0].eligible, true);
+    equal(quote.results[0].pricingSnapshot.childId, null);
+    equal(quote.results[0].pricingSnapshot.adultProfileId, "parent");
+    const response = await withCors(
+      createCompetitionRegistrationHandler(context.services),
+    )(
+      context.request({
+        ...selfSelection,
+        paymentMethod: "CARD",
+        priceVersions: { self: quote.results[0].priceVersion },
+      }),
+    );
+    equal(response.status, 200);
+    equal(context.rpcCalls.length, 1);
+    const saved = (context.rpcCalls[0].args.p_quotes as Row[])[0];
+    equal(saved.childId, undefined);
+    equal(saved.adultProfileId, "parent");
+    equal(saved.adultBirthDate, "1985-05-10");
+    const childResponse = await withCors(
+      validateCompetitionRegistrationHandler(context.services),
+    )(
+      context.request(context.selection),
+    );
+    equal(childResponse.status, 403);
+  },
+);
+
+Deno.test(
+  "underage and duplicate adult entries cannot be registered",
+  async () => {
+    const context = fixture();
+    const selfSelection = [{
+      selfBirthDate: "2015-01-01",
+      categoryId: "category",
+    }];
+    let quote = await quoteCompetitionRegistration(
+      context.db,
+      "parent",
+      "competition",
+      selfSelection,
+    );
+    equal(quote.results[0].eligible, false);
+    equal(quote.results[0].reason?.includes("18 ani"), true);
+    context.rows.enrollments.push({
+      id: "adult-existing",
+      kind: "COMPETITION",
+      entity_id: "competition",
+      child_id: null,
+      adult_profile_id: "parent",
+      status: "PENDING",
+    });
+    quote = await quoteCompetitionRegistration(
+      context.db,
+      "parent",
+      "competition",
+      [
+        { selfBirthDate: "1985-05-10", categoryId: "category" },
+      ],
+    );
+    equal(quote.results[0].eligible, false);
+    equal(quote.results[0].reason?.includes("deja o înscriere"), true);
   },
 );
 
@@ -348,7 +487,8 @@ Deno.test(
       "competition",
       context.selection.selections,
     );
-    context.rows.competition_routes[0].gpx_storage_path = "competition/replaced.gpx";
+    context.rows.competition_routes[0].gpx_storage_path =
+      "competition/replaced.gpx";
     context.storagePaths.add("competition/replaced.gpx");
     const after = await quoteCompetitionRegistration(
       context.db,
@@ -404,7 +544,8 @@ Deno.test(
       else throw error;
     }
     equal(status, 409);
-    context.rows.competitions[0].registration_deadline_at = "2099-06-01T08:00:00Z";
+    context.rows.competitions[0].registration_deadline_at =
+      "2099-06-01T08:00:00Z";
     status = 0;
     try {
       await quoteCompetitionRegistration(

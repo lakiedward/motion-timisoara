@@ -88,6 +88,19 @@ beforeEach(() => {
 })
 
 describe('saved enrollment payment panel', () => {
+  it('labels an adult competition payment as their own', async () => {
+    mocks.read.mockResolvedValue([{
+      ...enrollment(),
+      kind: 'COMPETITION',
+      adult_profile_id: mocks.userId,
+      child: null,
+    }])
+    renderPanel()
+    expect(await screen.findByText((_, node) =>
+      node?.tagName === 'P' && node.textContent?.includes('Tu ·') === true,
+    )).toBeInTheDocument()
+  })
+
   it('shows the accepted RON amount and EUR snapshot and never pays on mount or refresh', async () => {
     const { client } = renderPanel()
     const button = await screen.findByRole('button', {

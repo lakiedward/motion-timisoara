@@ -13,6 +13,8 @@ import {
 import type { PublicCompetition } from '@/api/competition/competitions'
 import type { CompetitionCategory } from '@/api/competition/competition-offers'
 
+const authRole = vi.hoisted(() => ({ value: 'PARENT' }))
+
 vi.mock('@/api/account', () => ({ getMyChildren: vi.fn() }))
 vi.mock('@/api/competition/competition-registration', () => ({
   validateCompetitionRegistration: vi.fn(),
@@ -20,12 +22,18 @@ vi.mock('@/api/competition/competition-registration', () => ({
 }))
 vi.mock('@/lib/auth-context', () => ({
   useAuth: () => ({
-    user: { id: 'parent-1', name: 'Părinte Audit', email: 'parent@example.test', role: 'PARENT' },
+    user: {
+      id: 'parent-1',
+      name: 'Părinte Audit',
+      email: 'parent@example.test',
+      role: authRole.value,
+    },
   }),
 }))
 vi.mock('@/features/account/checkout/usePaymentAdapter', () => ({
   usePaymentAdapter: () => ({ adapter: { confirm: vi.fn() }, ready: false }),
 }))
+vi.mock('@stripe/react-stripe-js', () => ({ CardElement: () => <div /> }))
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), message: vi.fn() } }))
 
 const competition: PublicCompetition = {
@@ -55,7 +63,7 @@ const category: CompetitionCategory = {
   updated_at: '2026-09-22T00:00:00Z',
 }
 
-function renderRegistration() {
+function renderRegistration(availableCategories = [category]) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={queryClient}>
@@ -64,7 +72,10 @@ function renderRegistration() {
           <Route
             path="/account/competitions/:slug/register"
             element={
-              <CompetitionRegistrationForm competition={competition} categories={[category]} />
+              <CompetitionRegistrationForm
+                competition={competition}
+                categories={availableCategories}
+              />
             }
           />
           <Route path="/account/enrollments" element={<p>Înscrieri salvate</p>} />
@@ -75,6 +86,7 @@ function renderRegistration() {
 }
 
 beforeEach(() => {
+  authRole.value = 'PARENT'
   vi.mocked(getMyChildren).mockReset()
   vi.mocked(validateCompetitionRegistration).mockReset()
   vi.mocked(createCompetitionRegistration).mockReset()
@@ -92,6 +104,7 @@ test('categoria eligibilă gratuită se înscrie fără card sau cash', async ()
   vi.mocked(validateCompetitionRegistration).mockResolvedValue({
     results: [
       {
+        participantKey: 'child-1',
         childId: 'child-1',
         categoryId: category.id,
         routeId: category.route_id,
@@ -112,7 +125,7 @@ test('categoria eligibilă gratuită se înscrie fără card sau cash', async ()
   renderRegistration()
   await user.selectOptions(await screen.findByLabelText('Copil Audit'), category.id)
   expect(await screen.findByText('Preț verificat: Gratuit')).toBeInTheDocument()
-  await user.click(screen.getByRole('checkbox'))
+  await user.click(screen.getByRole('checkbox', { name: /Confirm categoriile/ }))
   await user.click(screen.getByRole('button', { name: 'Confirmă înscrierea gratuită' }))
   await waitFor(() =>
     expect(createCompetitionRegistration).toHaveBeenCalledWith({
@@ -131,6 +144,7 @@ test('categoria respinsă nu permite înscrierea', async () => {
   vi.mocked(validateCompetitionRegistration).mockResolvedValue({
     results: [
       {
+        participantKey: 'child-1',
         childId: 'child-1',
         categoryId: category.id,
         routeId: category.route_id,
@@ -146,4 +160,176 @@ test('categoria respinsă nu permite înscrierea', async () => {
   expect(await screen.findByRole('alert')).toHaveTextContent('Vârsta la data înscrierii')
   expect(screen.getByRole('button', { name: 'Finalizează înscrierea' })).toBeDisabled()
   expect(createCompetitionRegistration).not.toHaveBeenCalled()
+})
+
+test('adultul fără copii se înscrie gratuit cu data nașterii introdusă doar aici', async () => {
+  const user = userEvent.setup()
+  vi.mocked(getMyChildren).mockResolvedValue([])
+  const adultCategory = {
+    ...category,
+    id: 'adult-category',
+    name: 'Adulți',
+    age_from: 18,
+    age_to: 99,
+  }
+  vi.mocked(validateCompetitionRegistration).mockResolvedValue({
+    results: [
+      {
+        participantKey: 'self',
+        adultProfileId: 'parent-1',
+        adultBirthDate: '1990-05-12',
+        categoryId: adultCategory.id,
+        routeId: category.route_id,
+        name: 'Părinte Audit',
+        eligible: true,
+        amount: 0,
+        currency: 'RON',
+        priceVersion: 'b'.repeat(64),
+      },
+    ],
+    allowCash: false,
+  })
+  vi.mocked(createCompetitionRegistration).mockResolvedValue({
+    enrollmentId: 'enrollment-adult',
+    enrollmentIds: ['enrollment-adult'],
+    requiresPaymentIntent: false,
+  })
+  renderRegistration([adultCategory])
+  expect(
+    await screen.findByText('Nu ai copii adăugați. Te poți înscrie pe tine mai jos.'),
+  ).toBeInTheDocument()
+  await user.click(screen.getByRole('checkbox', { name: 'Mă înscriu eu' }))
+  await user.type(screen.getByLabelText('Data mea de naștere'), '1990-05-12')
+  await user.selectOptions(screen.getByLabelText('Categoria mea'), adultCategory.id)
+  await waitFor(() =>
+    expect(validateCompetitionRegistration).toHaveBeenCalledWith(competition.id, [
+      { selfBirthDate: '1990-05-12', categoryId: adultCategory.id },
+    ]),
+  )
+  expect(await screen.findByText('Preț verificat: Gratuit')).toBeInTheDocument()
+  await user.click(screen.getByRole('checkbox', { name: /Confirm categoriile/ }))
+  await user.click(screen.getByRole('button', { name: 'Confirmă înscrierea gratuită' }))
+  await waitFor(() =>
+    expect(createCompetitionRegistration).toHaveBeenCalledWith({
+      competitionId: competition.id,
+      selections: [{ selfBirthDate: '1990-05-12', categoryId: adultCategory.id }],
+      paymentMethod: 'CARD',
+      priceVersions: { self: 'b'.repeat(64) },
+      billingDetails: undefined,
+    }),
+  )
+})
+
+test('schimbarea datei nașterii cere un preț nou și reconfirmare', async () => {
+  const user = userEvent.setup()
+  vi.mocked(getMyChildren).mockResolvedValue([])
+  const adultCategory = {
+    ...category,
+    id: 'adult-category',
+    name: 'Adulți',
+    age_from: 18,
+    age_to: 99,
+  }
+  vi.mocked(validateCompetitionRegistration).mockImplementation(async (_, selections) => {
+    const self = selections.find((selection) => 'selfBirthDate' in selection)
+    const adultBirthDate = self && 'selfBirthDate' in self ? self.selfBirthDate : ''
+    return {
+      results: [
+        {
+          participantKey: 'self',
+          adultProfileId: 'parent-1',
+          adultBirthDate,
+          categoryId: adultCategory.id,
+          routeId: category.route_id,
+          name: 'Părinte Audit',
+          eligible: true,
+          amount: 0,
+          currency: 'RON',
+          priceVersion: adultBirthDate === '1990-05-12' ? 'a'.repeat(64) : 'b'.repeat(64),
+        },
+      ],
+      allowCash: false,
+    }
+  })
+  renderRegistration([adultCategory])
+  await user.click(screen.getByRole('checkbox', { name: 'Mă înscriu eu' }))
+  const birthDate = screen.getByLabelText('Data mea de naștere')
+  await user.type(birthDate, '1990-05-12')
+  await user.selectOptions(screen.getByLabelText('Categoria mea'), adultCategory.id)
+  await screen.findByText('Preț verificat: Gratuit')
+  await user.click(screen.getByRole('checkbox', { name: /Confirm categoriile/ }))
+  expect(screen.getByRole('button', { name: 'Confirmă înscrierea gratuită' })).toBeEnabled()
+  await user.clear(birthDate)
+  await user.type(birthDate, '1991-05-12')
+  await waitFor(() =>
+    expect(validateCompetitionRegistration).toHaveBeenCalledWith(competition.id, [
+      { selfBirthDate: '1991-05-12', categoryId: adultCategory.id },
+    ]),
+  )
+  expect(screen.getByRole('checkbox', { name: /Confirm categoriile/ })).not.toBeChecked()
+  expect(screen.getByRole('button', { name: 'Confirmă înscrierea gratuită' })).toBeDisabled()
+})
+
+test('antrenorul poate selecta propria înscriere fără încărcarea copiilor', async () => {
+  authRole.value = 'COACH'
+  vi.mocked(validateCompetitionRegistration).mockResolvedValue({
+    results: [],
+    allowCash: false,
+  })
+  renderRegistration()
+  expect(await screen.findByRole('checkbox', { name: 'Mă înscriu eu' })).toBeInTheDocument()
+  expect(screen.queryByLabelText('Copil Audit')).not.toBeInTheDocument()
+  expect(getMyChildren).not.toHaveBeenCalled()
+})
+
+test('adultul poate alege plata cash pentru propria înscriere cu preț pozitiv', async () => {
+  const user = userEvent.setup()
+  vi.mocked(getMyChildren).mockResolvedValue([])
+  const adultCategory = {
+    ...category,
+    id: 'adult-category',
+    name: 'Adulți',
+    age_from: 18,
+    age_to: 99,
+    price_bani: 12000,
+  }
+  vi.mocked(validateCompetitionRegistration).mockResolvedValue({
+    results: [
+      {
+        participantKey: 'self',
+        adultProfileId: 'parent-1',
+        adultBirthDate: '1990-05-12',
+        categoryId: adultCategory.id,
+        routeId: category.route_id,
+        name: 'Părinte Audit',
+        eligible: true,
+        amount: 12000,
+        currency: 'RON',
+        priceVersion: 'c'.repeat(64),
+      },
+    ],
+    allowCash: true,
+  })
+  vi.mocked(createCompetitionRegistration).mockResolvedValue({
+    enrollmentId: 'enrollment-adult',
+    enrollmentIds: ['enrollment-adult'],
+    requiresPaymentIntent: false,
+  })
+  renderRegistration([adultCategory])
+  await user.click(screen.getByRole('checkbox', { name: 'Mă înscriu eu' }))
+  await user.type(screen.getByLabelText('Data mea de naștere'), '1990-05-12')
+  await user.selectOptions(screen.getByLabelText('Categoria mea'), adultCategory.id)
+  await screen.findByText('Preț verificat: 120,00 lei')
+  await user.click(screen.getByRole('radio', { name: /Cash, la antrenor/ }))
+  await user.click(screen.getByRole('checkbox', { name: /Confirm categoriile/ }))
+  await user.click(screen.getByRole('button', { name: 'Finalizează înscrierea' }))
+  await waitFor(() =>
+    expect(createCompetitionRegistration).toHaveBeenCalledWith({
+      competitionId: competition.id,
+      selections: [{ selfBirthDate: '1990-05-12', categoryId: adultCategory.id }],
+      paymentMethod: 'CASH',
+      priceVersions: { self: 'c'.repeat(64) },
+      billingDetails: undefined,
+    }),
+  )
 })

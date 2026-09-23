@@ -119,11 +119,25 @@ async function offerTitles(rows: { kind: string; entity_id: string }[]) {
 }
 
 export async function getMyEnrollments(): Promise<EnrollmentRow[]> {
+  const { data: userData, error: userError } = await supabase.auth.getUser()
+  if (userError) throw userError
+  if (!userData.user) throw new Error('Autentificarea este necesară pentru înscrieri')
+  const userId = userData.user.id
+  const { data: children, error: childrenError } = await supabase
+    .from('children')
+    .select('id')
+    .eq('parent_id', userId)
+  if (childrenError) throw childrenError
+  const childIds = (children ?? []).map((child) => child.id)
+  const participantFilter = childIds.length
+    ? `adult_profile_id.eq.${userId},child_id.in.(${childIds.join(',')})`
+    : `adult_profile_id.eq.${userId}`
   const { data, error } = await supabase
     .from('enrollments')
     .select(
       '*, child:children(id,name), payments(amount,currency,pricing_snapshot,status,method,paid_at), competition_registration:competition_registrations(category_name_snapshot,route_name_snapshot)',
     )
+    .or(participantFilter)
     .order('created_at', { ascending: false })
   if (error) throw error
   const rows = (data ?? []) as unknown as Omit<EnrollmentRow, 'offerTitle'>[]

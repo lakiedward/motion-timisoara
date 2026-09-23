@@ -9,7 +9,7 @@ BEGIN
     IF EXISTS (
         SELECT 1 FROM public.get_published_competition_podium(
             'dddddddd-dddd-dddd-dddd-dddddddddddd'
-        )
+        ) WHERE participant_name = 'Copil Gratuit'
     ) THEN
         RAISE EXCEPTION 'Cancelled registration remained on the public podium';
     END IF;
@@ -35,8 +35,10 @@ WHERE id = '11111111-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 DO $$
 BEGIN
     IF EXISTS (
-        SELECT 1 FROM public.competition_podium_results
-        WHERE competition_id = 'dddddddd-dddd-dddd-dddd-dddddddddddd'
+        SELECT 1 FROM public.competition_podium_results result
+        JOIN public.competition_age_categories category ON category.id = result.category_id
+        WHERE result.competition_id = 'dddddddd-dddd-dddd-dddd-dddddddddddd'
+          AND category.age_from = 6
     ) OR EXISTS (
         SELECT 1 FROM public.competition_registrations registration
         JOIN public.enrollments enrollment ON enrollment.id = registration.enrollment_id

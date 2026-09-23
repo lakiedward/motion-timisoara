@@ -2,7 +2,10 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { confirmCompetitionCashPayment, getCompetitionCashPayments } from '@/api/competition/competition-cash'
+import {
+  confirmCompetitionCashPayment,
+  getCompetitionCashPayments,
+} from '@/api/competition/competition-cash'
 import { formatMoney } from '@/lib/money'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -30,7 +33,7 @@ export function CompetitionCashPaymentsSection({ competitionId }: { competitionI
       <div>
         <h2 className="font-display text-lg font-bold">Plăți cash</h2>
         <p className="text-muted-foreground mt-1 text-sm">
-          Confirmă plata numai după ce ai încasat suma de la părinte.
+          Confirmă plata numai după ce ai încasat suma de la participant sau părinte.
         </p>
       </div>
       {payments.isLoading ? (
@@ -51,7 +54,7 @@ export function CompetitionCashPaymentsSection({ competitionId }: { competitionI
             >
               <div>
                 <p className="font-medium">
-                  {payment.child_name} · {payment.category_name}
+                  {payment.participant_name} · {payment.category_name}
                 </p>
                 <p className="text-muted-foreground mt-1">
                   {formatMoney(payment.amount, payment.currency)} ·{' '}

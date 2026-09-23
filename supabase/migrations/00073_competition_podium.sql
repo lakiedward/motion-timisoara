@@ -150,7 +150,7 @@ CREATE FUNCTION public.get_published_competition_podium(p_competition_id UUID)
 RETURNS TABLE (
     category_id UUID,
     place INTEGER,
-    child_name TEXT,
+    participant_name TEXT,
     published_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ
 )
@@ -159,7 +159,7 @@ STABLE
 SECURITY DEFINER
 SET search_path = ''
 AS $$
-    SELECT result.category_id, result.place, child.name,
+    SELECT result.category_id, result.place, COALESCE(child.name, adult.name),
         publication.published_at, result.updated_at
     FROM public.competition_podium_results result
     JOIN public.competition_podium_publications publication
@@ -169,7 +169,8 @@ AS $$
       ON registration.id = result.registration_id
     JOIN public.enrollments enrollment
       ON enrollment.id = registration.enrollment_id
-    JOIN public.children child ON child.id = enrollment.child_id
+    LEFT JOIN public.children child ON child.id = enrollment.child_id
+    LEFT JOIN public.profiles adult ON adult.id = enrollment.adult_profile_id
     WHERE result.competition_id = p_competition_id
       AND enrollment.status = 'ACTIVE'
     ORDER BY result.category_id, result.place
@@ -186,7 +187,7 @@ CREATE FUNCTION public.get_competition_podium_candidates(
 )
 RETURNS TABLE (
     registration_id UUID,
-    child_name TEXT,
+    participant_name TEXT,
     age_at_registration INTEGER
 )
 LANGUAGE plpgsql
@@ -201,14 +202,15 @@ BEGIN
     END IF;
 
     RETURN QUERY
-    SELECT registration.id, child.name, registration.age_at_registration
+    SELECT registration.id, COALESCE(child.name, adult.name), registration.age_at_registration
     FROM public.competition_registrations registration
     JOIN public.enrollments enrollment ON enrollment.id = registration.enrollment_id
-    JOIN public.children child ON child.id = enrollment.child_id
+    LEFT JOIN public.children child ON child.id = enrollment.child_id
+    LEFT JOIN public.profiles adult ON adult.id = enrollment.adult_profile_id
     WHERE registration.competition_id = p_competition_id
       AND registration.category_id = p_category_id
       AND enrollment.status = 'ACTIVE'
-    ORDER BY child.name, registration.id;
+    ORDER BY COALESCE(child.name, adult.name), registration.id;
 END;
 $$;
 
@@ -221,7 +223,7 @@ CREATE FUNCTION public.get_competition_cash_payments(p_competition_id UUID)
 RETURNS TABLE (
     payment_id UUID,
     enrollment_id UUID,
-    child_name TEXT,
+    participant_name TEXT,
     category_name TEXT,
     amount BIGINT,
     currency TEXT,
@@ -239,16 +241,17 @@ BEGIN
     END IF;
 
     RETURN QUERY
-    SELECT payment.id, enrollment.id, child.name,
+    SELECT payment.id, enrollment.id, COALESCE(child.name, adult.name),
         registration.category_name_snapshot, payment.amount,
         payment.currency, payment.status
     FROM public.competition_registrations registration
     JOIN public.enrollments enrollment ON enrollment.id = registration.enrollment_id
-    JOIN public.children child ON child.id = enrollment.child_id
+    LEFT JOIN public.children child ON child.id = enrollment.child_id
+    LEFT JOIN public.profiles adult ON adult.id = enrollment.adult_profile_id
     JOIN public.payments payment ON payment.enrollment_id = enrollment.id
     WHERE registration.competition_id = p_competition_id
       AND payment.method = 'CASH'
-    ORDER BY registration.registered_at, child.name, payment.id;
+    ORDER BY registration.registered_at, COALESCE(child.name, adult.name), payment.id;
 END;
 $$;
 

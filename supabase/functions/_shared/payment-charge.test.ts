@@ -1,5 +1,8 @@
 import { authorizedRonCharge } from "./payment-charge.ts";
-import { createCompetitionPriceSnapshot, createPriceSnapshot } from "./price-snapshot.ts";
+import {
+  createCompetitionPriceSnapshot,
+  createPriceSnapshot,
+} from "./price-snapshot.ts";
 
 const enrollment = {
   kind: "COURSE",
@@ -11,7 +14,8 @@ const db = {
   from: () => ({
     select: () => ({
       eq: () => ({
-        single: () => Promise.resolve({ data: { parent_id: "parent" }, error: null }),
+        single: () =>
+          Promise.resolve({ data: { parent_id: "parent" }, error: null }),
       }),
     }),
   }),
@@ -162,7 +166,8 @@ Deno.test(
     };
     for (const status of ["CANCELLED", "", "ARCHIVED"]) {
       await rejected(
-        () => authorizedRonCharge(db, "parent", { ...enrollment, status }, payment),
+        () =>
+          authorizedRonCharge(db, "parent", { ...enrollment, status }, payment),
         409,
       );
     }
@@ -248,3 +253,78 @@ Deno.test(
     );
   },
 );
+
+Deno.test("adult competition charge verifies self ownership and frozen birth date", async () => {
+  const adultEnrollment = {
+    id: "enrollment",
+    kind: "COMPETITION",
+    entity_id: "competition",
+    child_id: null,
+    adult_profile_id: "adult",
+    status: "PENDING",
+  };
+  const pricing_snapshot = await createCompetitionPriceSnapshot(
+    "competition",
+    { adultProfileId: "adult", adultBirthDate: "1985-05-10" },
+    "category",
+    "route",
+    "competition/route.gpx",
+    12000,
+  );
+  const payment = {
+    amount: 12000,
+    currency: "RON",
+    status: "PENDING",
+    pricing_snapshot,
+  };
+  let savedBirthDate = "1985-05-10";
+  const adultDb = {
+    from(table: string) {
+      if (table !== "competition_registrations") {
+        throw new Error("Child lookup for adult");
+      }
+      return {
+        select() {
+          return this;
+        },
+        eq() {
+          return this;
+        },
+        single: () =>
+          Promise.resolve({
+            data: {
+              competition_id: "competition",
+              category_id: "category",
+              route_id: "route",
+              gpx_storage_path_snapshot: "competition/route.gpx",
+              accepted_price_bani: 12000,
+              adult_profile_id: "adult",
+              adult_birth_date: savedBirthDate,
+            },
+            error: null,
+          }),
+      };
+    },
+  } as unknown as Parameters<typeof authorizedRonCharge>[0];
+  if (
+    await authorizedRonCharge(adultDb, "adult", adultEnrollment, payment) !==
+      12000
+  ) {
+    throw new Error("Adult charge changed");
+  }
+  await rejected(
+    () => authorizedRonCharge(adultDb, "stranger", adultEnrollment, payment),
+    403,
+  );
+  savedBirthDate = "1985-05-11";
+  await rejected(
+    () => authorizedRonCharge(adultDb, "adult", adultEnrollment, payment),
+    409,
+  );
+  savedBirthDate = "1985-05-10";
+  await rejected(() =>
+    authorizedRonCharge(adultDb, "adult", {
+      ...adultEnrollment,
+      adult_profile_id: "other",
+    }, payment), 403);
+});

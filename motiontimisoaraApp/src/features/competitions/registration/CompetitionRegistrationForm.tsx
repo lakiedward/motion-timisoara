@@ -17,6 +17,7 @@ import { useAuth } from '@/lib/auth-context'
 import { formatRonOffer } from '@/lib/money'
 import { stripeConfigured } from '@/lib/stripe'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CheckoutBillingFields } from '@/features/account/checkout/CheckoutBillingFields'
@@ -30,7 +31,28 @@ function selectionKey(
   selections: CompetitionSelection[],
   versions: Record<string, string>,
 ): string {
-  return JSON.stringify(selections.map((s) => [s.childId, s.categoryId, versions[s.childId] ?? '']))
+  return JSON.stringify(
+    selections.map((selection) => [
+      participantKey(selection),
+      selection.categoryId,
+      'selfBirthDate' in selection ? selection.selfBirthDate : null,
+      versions[participantKey(selection)] ?? '',
+    ]),
+  )
+}
+
+function participantKey(selection: CompetitionSelection): string {
+  return selection.childId ?? 'self'
+}
+
+function validBirthDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const parsed = new Date(`${value}T00:00:00Z`)
+  return (
+    !Number.isNaN(parsed.getTime()) &&
+    parsed.toISOString().slice(0, 10) === value &&
+    value <= new Date().toISOString().slice(0, 10)
+  )
 }
 
 export function CompetitionRegistrationForm({ competition, categories }: Props) {
@@ -41,6 +63,9 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
   const now = useCompetitionClock(competition.registrationDeadlineAt)
   const createdIds = useRef<string[]>([])
   const [choice, setChoice] = useState<Record<string, string>>({})
+  const [includeSelf, setIncludeSelf] = useState(false)
+  const [selfBirthDate, setSelfBirthDate] = useState('')
+  const [selfCategoryId, setSelfCategoryId] = useState('')
   const [acceptedKey, setAcceptedKey] = useState<string | null>(null)
   const [method, setMethod] = useState<PaymentMethod>('CARD')
   const [billing, setBilling] = useState<BillingDetails>({
@@ -57,38 +82,51 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
     queryFn: getMyChildren,
     enabled: user?.role === 'PARENT',
   })
-  const selections = Object.entries(choice)
+  const childSelections: CompetitionSelection[] = Object.entries(choice)
     .filter(([, categoryId]) => Boolean(categoryId))
     .map(([childId, categoryId]) => ({ childId, categoryId }))
-    .sort((a, b) => a.childId.localeCompare(b.childId))
+    .sort((a, b) => participantKey(a).localeCompare(participantKey(b)))
+  const selfComplete = !includeSelf || (validBirthDate(selfBirthDate) && Boolean(selfCategoryId))
+  const selections: CompetitionSelection[] = [
+    ...childSelections,
+    ...(includeSelf && selfComplete ? [{ selfBirthDate, categoryId: selfCategoryId }] : []),
+  ]
   const validation = useQuery({
     queryKey: ['competition-registration-validation', competition.id, selections],
     queryFn: () => validateCompetitionRegistration(competition.id, selections),
-    enabled: user?.role === 'PARENT' && selections.length > 0,
+    enabled: Boolean(user && selections.length > 0 && selfComplete),
     retry: false,
   })
   const verdicts = validation.data?.results ?? []
-  const verdictFor = (childId: string) => verdicts.find((verdict) => verdict.childId === childId)
+  const verdictFor = (key: string) => verdicts.find((verdict) => verdict.participantKey === key)
   const pricesReady =
+    selfComplete &&
     validation.isSuccess &&
     verdicts.length === selections.length &&
     selections.every((selection) => {
-      const verdict = verdictFor(selection.childId)
+      const verdict = verdictFor(participantKey(selection))
       return (
         verdict?.eligible &&
         verdict.categoryId === selection.categoryId &&
+        ('selfBirthDate' in selection
+          ? verdict.adultBirthDate === selection.selfBirthDate &&
+            verdict.adultProfileId === user?.id
+          : verdict.childId === selection.childId) &&
         typeof verdict.amount === 'number' &&
         Boolean(verdict.priceVersion)
       )
     })
   const total = pricesReady
-    ? selections.reduce((sum, selection) => sum + (verdictFor(selection.childId)?.amount ?? 0), 0)
+    ? selections.reduce(
+        (sum, selection) => sum + (verdictFor(participantKey(selection))?.amount ?? 0),
+        0,
+      )
     : 0
   const free = pricesReady && total === 0
   const versions = Object.fromEntries(
     selections.map((selection) => [
-      selection.childId,
-      verdictFor(selection.childId)?.priceVersion ?? '',
+      participantKey(selection),
+      verdictFor(participantKey(selection))?.priceVersion ?? '',
     ]),
   )
   const currentKey = selectionKey(selections, versions)
@@ -110,7 +148,7 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
   const finalize = useMutation({
     mutationFn: async () => {
       if (closed) throw new Error('Înscrierile la acest concurs sunt închise.')
-      if (!pricesReady || !accepted || selections.length === 0) {
+      if (!selfComplete || !pricesReady || !accepted || selections.length === 0) {
         throw new Error('Verifică selecția și confirmă prețul înainte de înscriere.')
       }
       if (!methodAvailable || (paymentMethod === 'CARD' && !free && !billingValid)) {
@@ -122,11 +160,23 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
       setProgress('Verificăm din nou categoriile și prețurile…')
       const fresh = await validateCompetitionRegistration(competition.id, selections)
       const freshVersions = Object.fromEntries(
-        fresh.results.map((result) => [result.childId, result.priceVersion ?? '']),
+        fresh.results.map((result) => [result.participantKey, result.priceVersion ?? '']),
       )
       if (
         fresh.results.length !== selections.length ||
-        fresh.results.some((result) => !result.eligible) ||
+        fresh.results.some(
+          (result) =>
+            !result.eligible ||
+            !selections.some(
+              (selection) =>
+                result.participantKey === participantKey(selection) &&
+                result.categoryId === selection.categoryId &&
+                ('selfBirthDate' in selection
+                  ? result.adultBirthDate === selection.selfBirthDate &&
+                    result.adultProfileId === user?.id
+                  : result.childId === selection.childId),
+            ),
+        ) ||
         selectionKey(selections, freshVersions) !== currentKey
       ) {
         throw new EnrollmentRequestError(
@@ -182,10 +232,10 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
     },
   })
 
-  if (user?.role !== 'PARENT') {
+  if (!user) {
     return (
       <p role="alert" className="py-10">
-        Înscrierea la concurs este disponibilă pentru conturile de părinte.
+        Autentifică-te pentru a te înscrie la concurs.
       </p>
     )
   }
@@ -201,7 +251,7 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
         </Link>
         <h1 className="font-display text-2xl font-bold">Înscriere la {competition.title}</h1>
         <p className="text-muted-foreground mt-2 text-sm">
-          Alege câte o categorie pentru fiecare copil pe care dorești să îl înscrii.
+          Alege categoriile participanților pe care dorești să îi înscrii.
         </p>
       </div>
 
@@ -213,41 +263,114 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
         <p className="rounded-2xl border border-dashed p-5 text-sm">
           Organizatorul nu a adăugat încă nicio categorie.
         </p>
-      ) : children.isLoading ? (
-        <Skeleton className="h-48 rounded-3xl" />
-      ) : children.isError ? (
-        <div role="alert" className="space-y-2 rounded-2xl border p-5">
-          <p>Nu am putut încărca lista de copii.</p>
-          <Button variant="outline" onClick={() => void children.refetch()}>
-            Reîncearcă
-          </Button>
-        </div>
-      ) : children.data?.length === 0 ? (
-        <div className="space-y-3 rounded-2xl border border-dashed p-5">
-          <p>Adaugă mai întâi un copil în cont.</p>
-          <Button asChild variant="outline">
-            <Link to="/account/child/new">Adaugă copil</Link>
-          </Button>
-        </div>
       ) : (
         <>
-          <section className="space-y-4" aria-label="Copii și categorii">
-            {children.data?.map((child) => {
-              const verdict = verdictFor(child.id)
-              return (
-                <div key={child.id} className="bg-card shadow-card rounded-2xl p-5">
-                  <Label htmlFor={`competition-category-${child.id}`} className="font-semibold">
-                    {child.name}
-                  </Label>
+          {user.role === 'PARENT' &&
+            (children.isLoading ? (
+              <Skeleton className="h-48 rounded-3xl" />
+            ) : children.isError ? (
+              <div role="alert" className="space-y-2 rounded-2xl border p-5">
+                <p>Nu am putut încărca lista de copii.</p>
+                <Button variant="outline" onClick={() => void children.refetch()}>
+                  Reîncearcă
+                </Button>
+              </div>
+            ) : children.data?.length === 0 ? (
+              <div className="space-y-3 rounded-2xl border border-dashed p-5">
+                <p>Nu ai copii adăugați. Te poți înscrie pe tine mai jos.</p>
+                <Button asChild variant="outline">
+                  <Link to="/account/child/new">Adaugă copil</Link>
+                </Button>
+              </div>
+            ) : (
+              <section className="space-y-4" aria-label="Copii și categorii">
+                {children.data?.map((child) => {
+                  const verdict = verdictFor(child.id)
+                  return (
+                    <div key={child.id} className="bg-card shadow-card rounded-2xl p-5">
+                      <Label htmlFor={`competition-category-${child.id}`} className="font-semibold">
+                        {child.name}
+                      </Label>
+                      <select
+                        id={`competition-category-${child.id}`}
+                        value={choice[child.id] ?? ''}
+                        onChange={(event) => {
+                          setChoice((previous) => ({ ...previous, [child.id]: event.target.value }))
+                          setAcceptedKey(null)
+                        }}
+                        className="border-input focus-visible:border-ring focus-visible:ring-ring/50 mt-3 h-11 w-full rounded-md border bg-transparent px-3 text-sm outline-none focus-visible:ring-[3px]"
+                      >
+                        <option value="">Nu înscrie acest copil</option>
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name} · {category.age_from}–{category.age_to} ani ·{' '}
+                            {formatRonOffer(category.price_bani)}
+                          </option>
+                        ))}
+                      </select>
+                      {verdict && !verdict.eligible && (
+                        <p role="alert" className="text-destructive mt-2 text-sm">
+                          {verdict.reason ?? 'Categoria nu este disponibilă pentru acest copil.'}
+                        </p>
+                      )}
+                      {verdict?.eligible && typeof verdict.amount === 'number' && (
+                        <p className="text-muted-foreground mt-2 text-sm">
+                          Preț verificat: {formatRonOffer(verdict.amount)}
+                        </p>
+                      )}
+                    </div>
+                  )
+                })}
+              </section>
+            ))}
+
+          <section
+            className="bg-card shadow-card space-y-4 rounded-2xl p-5"
+            aria-label="Înscriere proprie"
+          >
+            <label className="flex min-h-11 items-center gap-3 font-semibold">
+              <input
+                type="checkbox"
+                className="size-4"
+                checked={includeSelf}
+                onChange={(event) => {
+                  setIncludeSelf(event.target.checked)
+                  setAcceptedKey(null)
+                }}
+              />
+              Mă înscriu eu
+            </label>
+            {includeSelf && (
+              <div className="space-y-4">
+                <p className="text-muted-foreground text-sm">
+                  Data nașterii este folosită pentru categoria de vârstă la data înscrierii.
+                </p>
+                <div className="space-y-2">
+                  <Label htmlFor="competition-self-birth-date">Data mea de naștere</Label>
+                  <Input
+                    id="competition-self-birth-date"
+                    type="date"
+                    value={selfBirthDate}
+                    max={new Date().toISOString().slice(0, 10)}
+                    onChange={(event) => {
+                      setSelfBirthDate(event.target.value)
+                      setAcceptedKey(null)
+                    }}
+                    className="min-h-11"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="competition-self-category">Categoria mea</Label>
                   <select
-                    id={`competition-category-${child.id}`}
-                    value={choice[child.id] ?? ''}
-                    onChange={(event) =>
-                      setChoice((previous) => ({ ...previous, [child.id]: event.target.value }))
-                    }
-                    className="border-input focus-visible:border-ring focus-visible:ring-ring/50 mt-3 h-11 w-full rounded-md border bg-transparent px-3 text-sm outline-none focus-visible:ring-[3px]"
+                    id="competition-self-category"
+                    value={selfCategoryId}
+                    onChange={(event) => {
+                      setSelfCategoryId(event.target.value)
+                      setAcceptedKey(null)
+                    }}
+                    className="border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-md border bg-transparent px-3 text-sm outline-none focus-visible:ring-[3px]"
                   >
-                    <option value="">Nu înscrie acest copil</option>
+                    <option value="">Alege categoria</option>
                     {categories.map((category) => (
                       <option key={category.id} value={category.id}>
                         {category.name} · {category.age_from}–{category.age_to} ani ·{' '}
@@ -255,19 +378,24 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
                       </option>
                     ))}
                   </select>
-                  {verdict && !verdict.eligible && (
-                    <p role="alert" className="text-destructive mt-2 text-sm">
-                      {verdict.reason ?? 'Categoria nu este disponibilă pentru acest copil.'}
-                    </p>
-                  )}
-                  {verdict?.eligible && typeof verdict.amount === 'number' && (
-                    <p className="text-muted-foreground mt-2 text-sm">
-                      Preț verificat: {formatRonOffer(verdict.amount)}
-                    </p>
-                  )}
                 </div>
-              )
-            })}
+                {!selfComplete && (
+                  <p className="text-muted-foreground text-sm">
+                    Completează data nașterii și categoria pentru verificarea prețului.
+                  </p>
+                )}
+                {verdictFor('self') && !verdictFor('self')?.eligible && (
+                  <p role="alert" className="text-destructive text-sm">
+                    {verdictFor('self')?.reason ?? 'Categoria nu este disponibilă pentru tine.'}
+                  </p>
+                )}
+                {verdictFor('self')?.eligible && typeof verdictFor('self')?.amount === 'number' && (
+                  <p className="text-muted-foreground text-sm">
+                    Preț verificat: {formatRonOffer(verdictFor('self')!.amount!)}
+                  </p>
+                )}
+              </div>
+            )}
           </section>
 
           {selections.length > 0 && (
@@ -287,20 +415,23 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
                     <h2 className="font-display text-lg font-bold">Prețul înscrierii</h2>
                     {selections.map((selection) => (
                       <div
-                        key={selection.childId}
+                        key={participantKey(selection)}
                         className="mt-3 flex justify-between gap-3 text-sm"
                       >
                         <span>
-                          {children.data?.find((child) => child.id === selection.childId)?.name} ·{' '}
+                          {'childId' in selection
+                            ? children.data?.find((child) => child.id === selection.childId)?.name
+                            : user.name}{' '}
+                          ·{' '}
                           {
                             categories.find((category) => category.id === selection.categoryId)
                               ?.name
                           }
                         </span>
                         <strong>
-                          {verdictFor(selection.childId)?.amount === undefined
+                          {verdictFor(participantKey(selection))?.amount === undefined
                             ? 'Indisponibil'
-                            : formatRonOffer(verdictFor(selection.childId)!.amount!)}
+                            : formatRonOffer(verdictFor(participantKey(selection))!.amount!)}
                         </strong>
                       </div>
                     ))}

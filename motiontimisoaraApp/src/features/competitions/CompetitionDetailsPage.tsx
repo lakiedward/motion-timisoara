@@ -304,7 +304,7 @@ export default function CompetitionDetailsPage() {
                               className="flex justify-between gap-3 rounded-xl border p-3 text-sm"
                             >
                               <span>Locul {result.place}</span>
-                              <strong>{result.child_name}</strong>
+                              <strong>{result.participant_name}</strong>
                             </li>
                           ))}
                       </ol>

@@ -12,10 +12,16 @@ export function validateCompetitionRegistrationHandler({
       return enrollmentJson({ error: "Method not allowed" }, 405);
     }
     const user = await getUser(req);
-    if ((await getUserRole(user.id)) !== "PARENT") {
+    const body = await req.json();
+    if (
+      Array.isArray(body?.selections) && body.selections.some(
+        (selection: unknown) =>
+          selection !== null && typeof selection === "object" &&
+          "childId" in selection,
+      ) && (await getUserRole(user.id)) !== "PARENT"
+    ) {
       return enrollmentJson({ error: "Doar părinții pot înscrie copii." }, 403);
     }
-    const body = await req.json();
     const quote = await quoteCompetitionRegistration(
       db,
       user.id,

@@ -13,10 +13,16 @@ export function createCompetitionRegistrationHandler({
       return enrollmentJson({ error: "Method not allowed" }, 405);
     }
     const user = await getUser(req);
-    if ((await getUserRole(user.id)) !== "PARENT") {
+    const body = await req.json();
+    if (
+      Array.isArray(body?.selections) && body.selections.some(
+        (selection: unknown) =>
+          selection !== null && typeof selection === "object" &&
+          "childId" in selection,
+      ) && (await getUserRole(user.id)) !== "PARENT"
+    ) {
       return enrollmentJson({ error: "Doar părinții pot înscrie copii." }, 403);
     }
-    const body = await req.json();
     if (body?.paymentMethod !== "CARD" && body?.paymentMethod !== "CASH") {
       return enrollmentJson({ error: "Metoda de plată nu este validă." }, 400);
     }
@@ -37,12 +43,14 @@ export function createCompetitionRegistrationHandler({
     }
     if (
       quote.results.some(
-        (result) => body.priceVersions?.[result.childId] !== result.priceVersion,
+        (result) =>
+          body.priceVersions?.[result.participantKey] !== result.priceVersion,
       )
     ) {
       return enrollmentJson(
         {
-          error: "Prețul sau categoria s-a schimbat. Verifică din nou înscrierea.",
+          error:
+            "Prețul sau categoria s-a schimbat. Verifică din nou înscrierea.",
           code: "PRICE_CHANGED",
         },
         409,
@@ -64,7 +72,8 @@ export function createCompetitionRegistrationHandler({
       (typeof billing !== "object" ||
         Array.isArray(billing) ||
         ["name", "email", "addressLine1", "city", "postalCode"].some(
-          (key) => typeof billing[key] !== "string" || billing[key].length > 500,
+          (key) =>
+            typeof billing[key] !== "string" || billing[key].length > 500,
         ))
     ) {
       return enrollmentJson(
@@ -77,7 +86,10 @@ export function createCompetitionRegistrationHandler({
       p_competition_id: body.competitionId,
       p_method: paid ? body.paymentMethod : "CARD",
       p_quotes: quote.results.map((result) => ({
-        childId: result.childId,
+        ...(result.childId ? { childId: result.childId } : {
+          adultProfileId: result.adultProfileId,
+          adultBirthDate: result.adultBirthDate,
+        }),
         categoryId: result.categoryId,
         amount: result.amount,
         currency: result.currency,
@@ -96,8 +108,12 @@ export function createCompetitionRegistrationHandler({
         : 500;
       return enrollmentJson(
         {
-          error: status === 500 ? "Nu am putut salva înscrierea. Reîncearcă." : error.message,
-          ...(error.details === "PRICE_CHANGED" ? { code: "PRICE_CHANGED" } : {}),
+          error: status === 500
+            ? "Nu am putut salva înscrierea. Reîncearcă."
+            : error.message,
+          ...(error.details === "PRICE_CHANGED"
+            ? { code: "PRICE_CHANGED" }
+            : {}),
         },
         status,
       );

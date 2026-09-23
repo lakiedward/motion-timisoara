@@ -6,10 +6,15 @@ import {
 } from '@/api/checkout'
 import type { PriceSnapshot } from '../../../../supabase/functions/_shared/price-snapshot'
 
-export type CompetitionSelection = { childId: string; categoryId: string }
+export type CompetitionSelection =
+  | { childId: string; categoryId: string; selfBirthDate?: never }
+  | { selfBirthDate: string; categoryId: string; childId?: never }
 
 export type CompetitionRegistrationVerdict = {
-  childId: string
+  participantKey: string
+  childId?: string
+  adultProfileId?: string
+  adultBirthDate?: string
   categoryId: string
   routeId: string
   name: string

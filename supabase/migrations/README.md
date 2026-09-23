@@ -255,20 +255,26 @@ To-Do #159 stage 2: git file `00070_camp_templates.sql` was applied once on
 2026-09-22 as `20260922172538` (`camp_templates`). It was not re-applied.
 `00065`–`00069` were not re-applied.
 
-To-Do #153 completion: git files `00071_competition_offers_and_coaches.sql`,
-`00072_competition_registrations.sql`, and `00073_competition_podium.sql` are
-pending isolated PostgreSQL verification and remote application. They add the
-required schedule, route GPX storage, age categories, coach invitations,
-atomic enrollment and price snapshots, cash-payment access, and podiums.
-No remote version is recorded for these files yet. Apply them in numeric
-order only after the isolated runner passes, then record the actual remote
-versions here and regenerate `motiontimisoaraApp/src/lib/database.types.ts`.
+To-Do #153 completion: git file `00071_competition_offers_and_coaches.sql` was
+applied once on 2026-09-23 as `20260923093854`
+(`competition_offers_and_coaches`). The remote now has the schedule fields,
+routes, age categories, associated coaches, and public GPX bucket.
+`00072_competition_registrations.sql` was applied on 2026-09-23 as
+`20260923100151` (`competition_registrations`). It adds child and adult
+registrations, server-side eligibility and offer snapshots, and payment access.
+`00073_competition_podium.sql` was applied on 2026-09-23 as `20260923100211`
+(`competition_podium`). It adds editable results and publication by category.
 
-To-Do #153 route gallery: `00074_competition_route_photos.sql` is pending remote
-application after `00073`. Its isolated PostgreSQL runner passes. It adds up to
-12 ordered JPEG, PNG or WebP photos per route in the public
-`competition-photos` bucket, with organizer writes and a route-scoped storage
-path. No remote version is recorded.
+To-Do #153 route gallery: `00074_competition_route_photos.sql` was applied on
+2026-09-23 as `20260923100241` (`competition_route_photos`). It adds up to 12
+ordered JPEG, PNG or WebP photos per route in the public `competition-photos`
+bucket, with organizer writes and a route-scoped storage path.
+
+After these migrations, the competition registration Edge Functions were
+deployed as `validate-competition-registration` v1 and
+`create-competition-registration` v1. The shared adult payment contract was
+deployed in `create-payment-intent` v9, `mark-cash-paid` v6, and
+`stripe-webhook` v6. All five are ACTIVE as of 2026-09-23.
 
 To confirm git and the remote still agree:
 

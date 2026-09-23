@@ -14,7 +14,12 @@ CREATE OR REPLACE FUNCTION auth.uid() RETURNS UUID LANGUAGE sql STABLE AS $$
     SELECT NULLIF(current_setting('request.jwt.claim.sub', TRUE), '')::UUID
 $$;
 
-CREATE TABLE public.profiles (id UUID PRIMARY KEY, role TEXT NOT NULL);
+CREATE TABLE public.profiles (
+    id UUID PRIMARY KEY,
+    name TEXT NOT NULL,
+    role TEXT NOT NULL,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE
+);
 CREATE TABLE public.clubs (id UUID PRIMARY KEY, owner_user_id UUID NOT NULL REFERENCES public.profiles(id));
 CREATE TABLE public.coach_profiles (
     id UUID PRIMARY KEY,
@@ -32,12 +37,16 @@ CREATE TABLE public.enrollments (
     kind TEXT NOT NULL,
     entity_id UUID NOT NULL,
     child_id UUID REFERENCES public.children(id) ON DELETE CASCADE,
-    adult_profile_id UUID,
+    adult_profile_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
     status TEXT NOT NULL,
     purchased_sessions INTEGER NOT NULL DEFAULT 0,
     remaining_sessions INTEGER NOT NULL DEFAULT 0,
     sessions_used INTEGER NOT NULL DEFAULT 0,
-    CONSTRAINT enrollments_kind_check CHECK (kind IN ('COURSE', 'CAMP', 'ACTIVITY'))
+    CONSTRAINT enrollments_kind_check CHECK (kind IN ('COURSE', 'CAMP', 'ACTIVITY')),
+    CONSTRAINT enrollments_participant_xor_ck CHECK (
+        (child_id IS NOT NULL AND adult_profile_id IS NULL)
+        OR (child_id IS NULL AND adult_profile_id IS NOT NULL AND kind = 'CAMP')
+    )
 );
 ALTER TABLE public.enrollments ENABLE ROW LEVEL SECURITY;
 CREATE TABLE public.payments (
@@ -118,13 +127,24 @@ GRANT SELECT ON public.coach_profiles TO authenticated;
 GRANT SELECT ON public.enrollments, public.payments TO authenticated;
 GRANT SELECT, INSERT, DELETE ON storage.objects TO authenticated;
 
+CREATE POLICY enrollments_owner_select ON public.enrollments
+    FOR SELECT TO authenticated
+    USING (child_id IN (SELECT public.my_child_ids()) OR adult_profile_id = (SELECT auth.uid()));
+CREATE POLICY payments_owner_select ON public.payments
+    FOR SELECT TO authenticated
+    USING (enrollment_id IN (
+        SELECT enrollment.id FROM public.enrollments enrollment
+        WHERE enrollment.child_id IN (SELECT public.my_child_ids())
+           OR enrollment.adult_profile_id = (SELECT auth.uid())
+    ));
+
 \i /tmp/migrations/00069_competitions.sql
 
-INSERT INTO public.profiles(id, role) VALUES
-    ('11111111-1111-1111-1111-111111111111', 'CLUB'),
-    ('22222222-2222-2222-2222-222222222222', 'CLUB'),
-    ('33333333-3333-3333-3333-333333333333', 'COACH'),
-    ('44444444-4444-4444-4444-444444444444', 'PARENT');
+INSERT INTO public.profiles(id, name, role) VALUES
+    ('11111111-1111-1111-1111-111111111111', 'Club Organizator', 'CLUB'),
+    ('22222222-2222-2222-2222-222222222222', 'Alt Club', 'CLUB'),
+    ('33333333-3333-3333-3333-333333333333', 'Antrenor Adult', 'COACH'),
+    ('44444444-4444-4444-4444-444444444444', 'Părinte Adult', 'PARENT');
 INSERT INTO public.clubs(id, owner_user_id) VALUES
     ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111'),
     ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '22222222-2222-2222-2222-222222222222');
@@ -452,6 +472,8 @@ BEGIN
 END;
 $$;
 
+\i /tmp/competition-adult-registrations.sql
+
 SELECT set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', TRUE);
 SELECT set_config('request.jwt.claim.user_role', 'CLUB', TRUE);
 SELECT set_config('request.jwt.claim.club', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', TRUE);
@@ -477,6 +499,18 @@ BEGIN
 END;
 $$;
 
+RESET ROLE;
+SET ROLE authenticated;
+DO $$
+BEGIN
+    IF (SELECT count(*) FROM public.get_competition_cash_payments(
+        'dddddddd-dddd-dddd-dddd-dddddddddddd'
+    ) WHERE participant_name = 'Club Organizator'
+        AND amount = 6000 AND status = 'PENDING') <> 1 THEN
+        RAISE EXCEPTION 'Adult cash payment is missing from organizer list';
+    END IF;
+END;
+$$;
 RESET ROLE;
 UPDATE public.competitions
 SET start_at = now() - INTERVAL '2 days',
@@ -512,11 +546,29 @@ SET ROLE authenticated;
 
 DO $$
 BEGIN
-    IF EXISTS (SELECT 1 FROM public.payments) THEN
-        RAISE EXCEPTION 'Accepted coach can read payment billing data';
+    IF EXISTS (
+        SELECT 1 FROM public.payments payment
+        JOIN public.enrollments enrollment ON enrollment.id = payment.enrollment_id
+        WHERE enrollment.adult_profile_id IS DISTINCT FROM '33333333-3333-3333-3333-333333333333'
+    ) THEN
+        RAISE EXCEPTION 'Accepted coach can read another participant payment billing data';
     END IF;
-    IF (SELECT count(*) FROM public.enrollments WHERE kind = 'COMPETITION') <> 2 THEN
+    IF (SELECT count(*) FROM public.enrollments WHERE kind = 'COMPETITION') <> 5 THEN
         RAISE EXCEPTION 'Accepted coach cannot read competition enrollment status';
+    END IF;
+    IF (SELECT count(*) FROM public.get_competition_podium_candidates(
+        'dddddddd-dddd-dddd-dddd-dddddddddddd',
+        (SELECT id FROM public.competition_age_categories WHERE age_from = 18)
+    ) WHERE participant_name = 'Antrenor Adult') <> 1 THEN
+        RAISE EXCEPTION 'Adult is missing from podium candidates';
+    END IF;
+    IF EXISTS (
+        SELECT 1 FROM public.get_competition_podium_candidates(
+            'dddddddd-dddd-dddd-dddd-dddddddddddd',
+            (SELECT id FROM public.competition_age_categories WHERE age_from = 40)
+        )
+    ) THEN
+        RAISE EXCEPTION 'Unpaid adults appeared on podium candidates';
     END IF;
     BEGIN
         PERFORM * FROM public.get_competition_cash_payments(
@@ -551,8 +603,13 @@ DO $$
 BEGIN
     IF (SELECT count(*) FROM public.get_published_competition_podium(
         'dddddddd-dddd-dddd-dddd-dddddddddddd'
-    ) WHERE child_name = 'Copil Gratuit' AND place = 1) <> 1 THEN
+    ) WHERE participant_name = 'Copil Gratuit' AND place = 1) <> 1 THEN
         RAISE EXCEPTION 'Published winner missing from public RPC';
+    END IF;
+    IF (SELECT count(*) FROM public.get_published_competition_podium(
+        'dddddddd-dddd-dddd-dddd-dddddddddddd'
+    ) WHERE participant_name = 'Antrenor Adult' AND place = 1) <> 1 THEN
+        RAISE EXCEPTION 'Published adult winner missing from public RPC';
     END IF;
 END;
 $$;
@@ -570,7 +627,7 @@ DO $$
 BEGIN
     IF (SELECT count(*) FROM public.get_published_competition_podium(
         'dddddddd-dddd-dddd-dddd-dddddddddddd'
-    ) WHERE child_name = 'Copil Gratuit' AND place = 2) <> 1 THEN
+    ) WHERE participant_name = 'Copil Gratuit' AND place = 2) <> 1 THEN
         RAISE EXCEPTION 'Post-publication correction did not become public';
     END IF;
 END;

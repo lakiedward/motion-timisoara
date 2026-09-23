@@ -4,6 +4,7 @@ export interface PriceSnapshot {
   entityId: string;
   childId: string | null;
   adultProfileId?: string | null;
+  adultBirthDate?: string;
   categoryId?: string;
   routeId?: string;
   gpxStoragePath?: string;
@@ -40,7 +41,9 @@ export function convertToRon(
     throw new Error("Invalid currency or exchange rate");
   }
   const sourceAmount = BigInt(unitAmount) * BigInt(quantity);
-  const amount = currency === "RON" ? sourceAmount : (sourceAmount * BigInt(rate!) + 500000n) / 1000000n;
+  const amount = currency === "RON"
+    ? sourceAmount
+    : (sourceAmount * BigInt(rate!) + 500000n) / 1000000n;
   if (
     sourceAmount > BigInt(Number.MAX_SAFE_INTEGER) ||
     amount > BigInt(Number.MAX_SAFE_INTEGER)
@@ -64,7 +67,12 @@ export async function snapshotVersion(
     snapshot.kind,
     snapshot.entityId,
     snapshotSubjectId(snapshot),
-    ...(snapshot.schemaVersion === 2 ? [snapshot.categoryId, snapshot.routeId, snapshot.gpxStoragePath] : []),
+    ...(snapshot.kind === "COMPETITION" && snapshot.adultProfileId
+      ? [snapshot.adultBirthDate]
+      : []),
+    ...(snapshot.schemaVersion === 2
+      ? [snapshot.categoryId, snapshot.routeId, snapshot.gpxStoragePath]
+      : []),
     snapshot.sourceUnitAmount,
     snapshot.sourceCurrency,
     snapshot.quantity,
@@ -76,7 +84,10 @@ export async function snapshotVersion(
     "SHA-256",
     new TextEncoder().encode(JSON.stringify(canonical)),
   );
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return Array.from(
+    new Uint8Array(digest),
+    (byte) => byte.toString(16).padStart(2, "0"),
+  ).join("");
 }
 
 export async function createPriceSnapshot(
@@ -113,15 +124,23 @@ export async function createPriceSnapshot(
 
 export async function createCompetitionPriceSnapshot(
   competitionId: string,
-  childId: string,
+  subject: string | { adultProfileId: string; adultBirthDate: string },
   categoryId: string,
   routeId: string,
   gpxStoragePath: string,
   priceBani: number,
 ): Promise<PriceSnapshot> {
+  const childId = typeof subject === "string" ? subject : null;
+  const adultProfileId = typeof subject === "string"
+    ? null
+    : subject.adultProfileId;
+  const adultBirthDate = typeof subject === "string"
+    ? null
+    : subject.adultBirthDate;
   if (
     !competitionId ||
-    !childId ||
+    (!childId && !adultProfileId) ||
+    (adultProfileId !== null && !validCalendarBirthDate(adultBirthDate)) ||
     !categoryId ||
     !routeId ||
     !gpxStoragePath ||
@@ -136,6 +155,9 @@ export async function createCompetitionPriceSnapshot(
     kind: "COMPETITION",
     entityId: competitionId,
     childId,
+    ...(adultProfileId
+      ? { adultProfileId, adultBirthDate: adultBirthDate! }
+      : {}),
     categoryId,
     routeId,
     gpxStoragePath,
@@ -149,6 +171,16 @@ export async function createCompetitionPriceSnapshot(
   return { ...snapshot, priceVersion: await snapshotVersion(snapshot) };
 }
 
+export function validCalendarBirthDate(value: unknown): value is string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+  const year = Number(value.slice(0, 4));
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return year > 0 && Number.isFinite(date.getTime()) &&
+    date.toISOString().slice(0, 10) === value;
+}
+
 export async function readPriceSnapshot(
   value: unknown,
 ): Promise<PriceSnapshot> {
@@ -156,10 +188,12 @@ export async function readPriceSnapshot(
     throw new Error("Missing price snapshot");
   }
   const snapshot = value as PriceSnapshot;
-  const hasChild = typeof snapshot.childId === "string" && snapshot.childId.length > 0;
+  const hasChild = typeof snapshot.childId === "string" &&
+    snapshot.childId.length > 0;
   const hasAdult = typeof snapshot.adultProfileId === "string" &&
     snapshot.adultProfileId.length > 0;
-  const competition = snapshot.schemaVersion === 2 && snapshot.kind === "COMPETITION";
+  const competition = snapshot.schemaVersion === 2 &&
+    snapshot.kind === "COMPETITION";
   const standard = snapshot.schemaVersion === 1 &&
     ["COURSE", "CAMP", "ACTIVITY"].includes(snapshot.kind);
   if (
@@ -167,9 +201,12 @@ export async function readPriceSnapshot(
     typeof snapshot.entityId !== "string" ||
     !snapshot.entityId ||
     hasChild === hasAdult ||
-    (hasAdult && snapshot.kind !== "CAMP") ||
+    (hasAdult && snapshot.kind !== "CAMP" && snapshot.kind !== "COMPETITION") ||
     (competition &&
-      (!hasChild ||
+      ((hasAdult
+        ? snapshot.childId !== null ||
+          !validCalendarBirthDate(snapshot.adultBirthDate)
+        : snapshot.adultBirthDate !== undefined) ||
         typeof snapshot.categoryId !== "string" ||
         !snapshot.categoryId ||
         typeof snapshot.routeId !== "string" ||
@@ -182,7 +219,8 @@ export async function readPriceSnapshot(
     (standard &&
       (snapshot.categoryId !== undefined ||
         snapshot.routeId !== undefined ||
-        snapshot.gpxStoragePath !== undefined)) ||
+        snapshot.gpxStoragePath !== undefined ||
+        snapshot.adultBirthDate !== undefined)) ||
     (snapshot.kind !== "COURSE" && snapshot.quantity !== 1) ||
     snapshot.currency !== "RON" ||
     snapshot.amount !==

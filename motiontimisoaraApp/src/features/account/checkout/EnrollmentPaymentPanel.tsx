@@ -83,7 +83,8 @@ function SavedPayment({ enrollmentId, onClose }: { enrollmentId: string; onClose
       ) : enrollment && saved ? (
         <>
           <p className="text-sm">
-            {enrollment.child?.name} · <strong>{formatOfferPrice(saved.amount, saved.currency)}</strong>
+            {enrollment.child?.name ?? (enrollment.adult_profile_id ? 'Tu' : 'Participant')} ·{' '}
+            <strong>{formatOfferPrice(saved.amount, saved.currency)}</strong>
           </p>
           <AcceptedPriceDetails snapshot={saved.pricing_snapshot} />
           {enrollmentPaid(enrollment) ? (

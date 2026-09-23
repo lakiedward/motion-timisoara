@@ -4,7 +4,10 @@ import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import { CompetitionCashPaymentsSection } from './CompetitionCashPaymentsSection'
-import { confirmCompetitionCashPayment, getCompetitionCashPayments } from '@/api/competition/competition-cash'
+import {
+  confirmCompetitionCashPayment,
+  getCompetitionCashPayments,
+} from '@/api/competition/competition-cash'
 
 vi.mock('@/api/competition/competition-cash', () => ({
   getCompetitionCashPayments: vi.fn(),
@@ -18,8 +21,8 @@ test('confirmarea cash cere alegerea explicită a sumei încasate', async () => 
     {
       payment_id: 'payment-1',
       enrollment_id: 'enrollment-1',
-      child_name: 'Copil Audit',
-      category_name: '8–10 ani',
+      participant_name: 'Adult Audit',
+      category_name: 'Adulți',
       amount: 12000,
       currency: 'RON',
       status: 'PENDING',
@@ -33,6 +36,7 @@ test('confirmarea cash cere alegerea explicită a sumei încasate', async () => 
     </QueryClientProvider>,
   )
   await user.click(await screen.findByRole('button', { name: 'Confirmă încasarea' }))
+  expect(screen.getByText('Adult Audit · Adulți')).toBeInTheDocument()
   expect(confirmCompetitionCashPayment).not.toHaveBeenCalled()
   await user.click(screen.getByRole('button', { name: 'Confirmă suma încasată' }))
   await waitFor(() =>

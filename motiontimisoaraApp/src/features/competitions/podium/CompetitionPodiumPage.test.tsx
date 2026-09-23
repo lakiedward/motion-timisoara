@@ -42,9 +42,9 @@ test('antrenorul asociat corectează podiumul după publicare', async () => {
       id: 'category-1',
       competition_id: 'competition-1',
       route_id: 'route-1',
-      name: '8–10 ani',
-      age_from: 8,
-      age_to: 10,
+      name: 'Adulți',
+      age_from: 18,
+      age_to: 99,
       price_bani: 0,
       display_order: 0,
       created_at: '',
@@ -75,8 +75,8 @@ test('antrenorul asociat corectează podiumul după publicare', async () => {
     ],
   })
   vi.mocked(getCompetitionPodiumCandidates).mockResolvedValue([
-    { registration_id: 'registration-1', child_name: 'Ana', age_at_registration: 9 },
-    { registration_id: 'registration-2', child_name: 'Maria', age_at_registration: 10 },
+    { registration_id: 'registration-1', participant_name: 'Ana', age_at_registration: 35 },
+    { registration_id: 'registration-2', participant_name: 'Adult Audit', age_at_registration: 36 },
   ])
   vi.mocked(saveCompetitionPodiumPlace).mockResolvedValue()
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -93,6 +93,9 @@ test('antrenorul asociat corectează podiumul după publicare', async () => {
     </QueryClientProvider>,
   )
   expect(await screen.findByText(/Publicat. Corecțiile/)).toBeInTheDocument()
+  expect(
+    (await screen.findAllByRole('option', { name: 'Adult Audit · 36 ani la înscriere' })).length,
+  ).toBeGreaterThan(0)
   await user.selectOptions(await screen.findByLabelText('Locul 1'), 'registration-2')
   await waitFor(() =>
     expect(vi.mocked(saveCompetitionPodiumPlace).mock.calls[0]?.[0]).toEqual({

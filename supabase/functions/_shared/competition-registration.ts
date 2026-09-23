@@ -1,14 +1,20 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enrollmentJson } from "./enrollment-pricing.ts";
-import { createCompetitionPriceSnapshot, type PriceSnapshot } from "./price-snapshot.ts";
+import {
+  createCompetitionPriceSnapshot,
+  type PriceSnapshot,
+  validCalendarBirthDate,
+} from "./price-snapshot.ts";
 
-export interface CompetitionSelection {
-  childId: string;
-  categoryId: string;
-}
+export type CompetitionSelection =
+  | { childId: string; categoryId: string; selfBirthDate?: never }
+  | { selfBirthDate: string; categoryId: string; childId?: never };
 
 export interface CompetitionQuote {
-  childId: string;
+  participantKey: string;
+  childId?: string;
+  adultProfileId?: string;
+  adultBirthDate?: string;
   categoryId: string;
   routeId: string;
   name: string;
@@ -26,20 +32,25 @@ export function validCompetitionSelection(
   if (!Array.isArray(value) || value.length === 0 || value.length > 20) {
     return false;
   }
-  if (
-    value.some(
-      (item) =>
-        !item ||
-        typeof item !== "object" ||
-        typeof item.childId !== "string" ||
-        !item.childId ||
-        typeof item.categoryId !== "string" ||
-        !item.categoryId,
-    )
-  ) {
-    return false;
+  const keys: string[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return false;
+    if (
+      typeof item.categoryId !== "string" || !item.categoryId ||
+      "adultProfileId" in item
+    ) return false;
+    const child = "childId" in item;
+    const self = "selfBirthDate" in item;
+    if (child === self) return false;
+    if (child) {
+      if (typeof item.childId !== "string" || !item.childId) return false;
+      keys.push(item.childId);
+    } else {
+      if (!validCalendarBirthDate(item.selfBirthDate)) return false;
+      keys.push("self");
+    }
   }
-  return new Set(value.map((item) => item.childId)).size === value.length;
+  return new Set(keys).size === keys.length;
 }
 
 function localDateParts(now: Date): [number, number, number] {
@@ -49,7 +60,8 @@ function localDateParts(now: Date): [number, number, number] {
     month: "2-digit",
     day: "2-digit",
   }).formatToParts(now);
-  const value = (name: string) => Number(parts.find((part) => part.type === name)?.value);
+  const value = (name: string) =>
+    Number(parts.find((part) => part.type === name)?.value);
   return [value("year"), value("month"), value("day")];
 }
 
@@ -57,9 +69,10 @@ export function ageAtRegistration(birthDate: string, now: Date): number {
   const [year, month, day] = localDateParts(now);
   const [birthYear, birthMonth, birthDay] = birthDate.split("-").map(Number);
   if (
+    !validCalendarBirthDate(birthDate) ||
     ![year, month, day, birthYear, birthMonth, birthDay].every(Number.isInteger)
   ) {
-    throw new Error("Invalid child birth date");
+    throw new Error("Invalid birth date");
   }
   return (
     year -
@@ -70,7 +83,7 @@ export function ageAtRegistration(birthDate: string, now: Date): number {
 
 export async function quoteCompetitionRegistration(
   db: SupabaseClient,
-  parentId: string,
+  userId: string,
   competitionId: string,
   selections: CompetitionSelection[],
   now = new Date(),
@@ -81,7 +94,7 @@ export async function quoteCompetitionRegistration(
     !validCompetitionSelection(selections)
   ) {
     throw enrollmentJson(
-      { error: "Alege un concurs, un copil și o categorie." },
+      { error: "Alege un concurs, un participant și o categorie." },
       400,
     );
   }
@@ -107,27 +120,43 @@ export async function quoteCompetitionRegistration(
       409,
     );
   }
-  const childIds = selections.map((item) => item.childId);
+  const childIds = selections.flatMap((item) =>
+    item.childId ? [item.childId] : []
+  );
+  const hasSelf = selections.some((item) => item.selfBirthDate);
   const categoryIds = [...new Set(selections.map((item) => item.categoryId))];
-  const [childrenResult, categoriesResult, existingResult] = await Promise.all([
-    db
-      .from("children")
-      .select("id,name,parent_id,birth_date")
-      .in("id", childIds),
+  const [
+    childrenResult,
+    categoriesResult,
+    existingResult,
+    adultExistingResult,
+  ] = await Promise.all([
+    childIds.length
+      ? db.from("children").select("id,name,parent_id,birth_date").in(
+        "id",
+        childIds,
+      )
+      : Promise.resolve({ data: [], error: null }),
     db
       .from("competition_age_categories")
       .select("id,competition_id,route_id,age_from,age_to,price_bani")
       .eq("competition_id", competitionId)
       .in("id", categoryIds),
-    db
-      .from("enrollments")
-      .select("id,child_id,status")
-      .eq("kind", "COMPETITION")
-      .eq("entity_id", competitionId)
-      .in("child_id", childIds)
-      .in("status", ["PENDING", "ACTIVE"]),
+    childIds.length
+      ? db.from("enrollments").select("id,child_id,status")
+        .eq("kind", "COMPETITION").eq("entity_id", competitionId)
+        .in("child_id", childIds).in("status", ["PENDING", "ACTIVE"])
+      : Promise.resolve({ data: [], error: null }),
+    hasSelf
+      ? db.from("enrollments").select("id,adult_profile_id,status")
+        .eq("kind", "COMPETITION").eq("entity_id", competitionId)
+        .eq("adult_profile_id", userId).in("status", ["PENDING", "ACTIVE"])
+      : Promise.resolve({ data: [], error: null }),
   ]);
-  if (childrenResult.error || categoriesResult.error || existingResult.error) {
+  if (
+    childrenResult.error || categoriesResult.error || existingResult.error ||
+    adultExistingResult.error
+  ) {
     throw enrollmentJson(
       {
         error: "Nu am putut verifica participanții și categoriile. Reîncearcă.",
@@ -183,23 +212,29 @@ export async function quoteCompetitionRegistration(
   const existing = new Set(
     (existingResult.data ?? []).map((enrollment) => enrollment.child_id),
   );
+  const selfAlreadyRegistered = (adultExistingResult.data ?? []).length > 0;
   const results = await Promise.all(
     selections.map(
-      async ({ childId, categoryId }): Promise<CompetitionQuote> => {
-        const child = children.get(childId);
+      async (selection): Promise<CompetitionQuote> => {
+        const { childId, categoryId, selfBirthDate } = selection;
+        const child = childId ? children.get(childId) : null;
+        const self = selfBirthDate !== undefined;
         const category = categories.get(categoryId);
         const base = {
-          childId,
+          participantKey: self ? "self" : childId!,
+          ...(self
+            ? { adultProfileId: userId, adultBirthDate: selfBirthDate }
+            : { childId }),
           categoryId,
           routeId: category?.route_id ?? "",
-          name: child?.parent_id === parentId ? child.name : "—",
+          name: self ? "Tu" : child?.parent_id === userId ? child.name : "—",
         };
         const reject = (reason: string): CompetitionQuote => ({
           ...base,
           eligible: false,
           reason,
         });
-        if (!child || child.parent_id !== parentId) {
+        if (!self && (!child || child.parent_id !== userId)) {
           return reject("Copilul nu îți aparține.");
         }
         if (
@@ -218,10 +253,24 @@ export async function quoteCompetitionRegistration(
         ) {
           return reject("Traseul categoriei nu are încă un fișier GPX.");
         }
-        if (existing.has(childId)) {
+        if (
+          (self && selfAlreadyRegistered) || (!self && existing.has(childId))
+        ) {
           return reject("Există deja o înscriere. Verifică în Înscrieri.");
         }
-        const age = ageAtRegistration(child.birth_date, now);
+        const birthDate = self ? selfBirthDate! : child!.birth_date;
+        if (!validCalendarBirthDate(birthDate)) {
+          return reject("Data nașterii nu este validă.");
+        }
+        const age = ageAtRegistration(birthDate, now);
+        if (age < 0) {
+          return reject("Data nașterii nu poate fi în viitor.");
+        }
+        if (self && age < 18) {
+          return reject(
+            "Înscrierea în nume propriu este disponibilă de la 18 ani.",
+          );
+        }
         if (age < category.age_from || age > category.age_to) {
           return reject(
             `Categoria acceptă vârste de la ${category.age_from} la ${category.age_to} ani.`,
@@ -231,7 +280,9 @@ export async function quoteCompetitionRegistration(
         try {
           snapshot = await createCompetitionPriceSnapshot(
             competitionId,
-            childId,
+            self
+              ? { adultProfileId: userId, adultBirthDate: selfBirthDate! }
+              : childId!,
             categoryId,
             category.route_id,
             route.gpx_storage_path,
@@ -240,7 +291,8 @@ export async function quoteCompetitionRegistration(
         } catch {
           throw enrollmentJson(
             {
-              error: "Prețul categoriei nu este valid. Contactează organizatorul.",
+              error:
+                "Prețul categoriei nu este valid. Contactează organizatorul.",
             },
             409,
           );

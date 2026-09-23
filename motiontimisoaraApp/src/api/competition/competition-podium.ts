@@ -23,14 +23,14 @@ export type CompetitionPodiumPublication = {
 
 export type CompetitionPodiumCandidate = {
   registration_id: string
-  child_name: string
+  participant_name: string
   age_at_registration: number
 }
 
 export type PublishedCompetitionPodium = {
   category_id: string
   place: number
-  child_name: string
+  participant_name: string
   published_at: string
   updated_at: string
 }

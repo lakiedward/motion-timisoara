@@ -6,7 +6,7 @@ import { invokeCheckoutFunction } from '@/api/checkout'
 export type CompetitionCashPayment = {
   payment_id: string
   enrollment_id: string
-  child_name: string
+  participant_name: string
   category_name: string
   amount: number
   currency: string

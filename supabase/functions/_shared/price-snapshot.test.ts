@@ -240,3 +240,51 @@ Deno.test(
     }
   },
 );
+
+Deno.test("adult competition snapshot binds profile and birth date without changing child prices", async () => {
+  const child = await createCompetitionPriceSnapshot(
+    "competition",
+    "child",
+    "category",
+    "route",
+    "competition/route.gpx",
+    12000,
+  );
+  const adult = await createCompetitionPriceSnapshot(
+    "competition",
+    { adultProfileId: "adult", adultBirthDate: "1985-05-10" },
+    "category",
+    "route",
+    "competition/route.gpx",
+    12000,
+  );
+  equal(adult.childId, null);
+  equal(adult.adultProfileId, "adult");
+  equal(adult.adultBirthDate, "1985-05-10");
+  equal(adult.priceVersion === child.priceVersion, false);
+  equal(await readPriceSnapshot(adult), adult);
+  for (
+    const patch of [
+      { adultBirthDate: "1985-05-11" },
+      { adultBirthDate: "1985-02-31" },
+      { adultBirthDate: undefined },
+      { adultProfileId: "other" },
+      { childId: "child" },
+    ]
+  ) {
+    let rejected = false;
+    try {
+      await readPriceSnapshot({ ...adult, ...patch });
+    } catch {
+      rejected = true;
+    }
+    equal(rejected, true);
+  }
+  let rejected = false;
+  try {
+    await readPriceSnapshot({ ...child, adultBirthDate: "1985-05-10" });
+  } catch {
+    rejected = true;
+  }
+  equal(rejected, true);
+});
