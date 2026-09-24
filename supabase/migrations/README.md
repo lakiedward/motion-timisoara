@@ -281,6 +281,12 @@ deployed as `validate-competition-registration` v1 and
 deployed in `create-payment-intent` v9, `mark-cash-paid` v6, and
 `stripe-webhook` v6. All five are ACTIVE as of 2026-09-23.
 
+Section #629 public activity cards: `00076_activity_spots_remaining.sql` was
+applied once on 2026-09-24 as `20260924141924` (`activity_spots_remaining`).
+It returns capacity minus PENDING and ACTIVE activity enrollments. NULL
+capacity stays unlimited. Anon and authenticated may execute it; they still
+cannot read `enrollments`.
+
 To confirm git and the remote still agree:
 
 ```bash

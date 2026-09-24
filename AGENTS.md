@@ -591,6 +591,13 @@ reorganizing this document; correct obsolete facts with current evidence.
   adult occupies one seat from `camps.capacity`. Courses and activities stay
   child-only. Migration `00068_camp_adult_enrollment.sql`. See
   `docs/superpowers/specs/2026-09-22-todo-152-adult-camp-enrollment.md`.
+- 2026-09-24 — The public activities list (`/activitati`) keeps only activities
+  whose Europe/Bucharest end time is still ahead, nearest first. The detail
+  page stays available on a direct link. Card photo is the activity photo,
+  then the sport photo, then a Lucide icon. Remaining seats use
+  `activity_spots_remaining` (capacity minus PENDING and ACTIVE enrollments;
+  NULL capacity stays unlimited). Migration `00076_activity_spots_remaining.sql`,
+  applied once as remote `20260924141924` (`activity_spots_remaining`).
 
 ## 11. Known Issues / WIP
 

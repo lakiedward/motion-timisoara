@@ -24,7 +24,7 @@ export async function getCourses(filters: CourseFilters = {}): Promise<CourseLis
   let q = supabase
     .from('courses')
     .select(
-      '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order)'
+      '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order)',
     )
     .eq('active', true)
   if (filters.level) q = q.eq('level', filters.level)
@@ -40,7 +40,7 @@ export async function getCourse(id: string): Promise<CourseListItem | null> {
   const { data, error } = await supabase
     .from('courses')
     .select(
-      '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order)'
+      '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order)',
     )
     .eq('id', id)
     .single()
@@ -109,7 +109,7 @@ export async function getCoaches(): Promise<CoachListItem[]> {
   const { data, error } = await supabase
     .from('coach_profiles')
     .select(
-      'id, user_id, bio, avatar_url, photo_storage_path, profile:profiles(id,name,avatar_url), coach_sports(sport:sports(id,code,name))'
+      'id, user_id, bio, avatar_url, photo_storage_path, profile:profiles(id,name,avatar_url), coach_sports(sport:sports(id,code,name))',
     )
   if (error) throw error
   return (data ?? []) as unknown as CoachListItem[]
@@ -119,7 +119,7 @@ export async function getCoachByUserId(userId: string): Promise<CoachListItem | 
   const { data, error } = await supabase
     .from('coach_profiles')
     .select(
-      'id, user_id, bio, avatar_url, photo_storage_path, profile:profiles(id,name,avatar_url), coach_sports(sport:sports(id,code,name))'
+      'id, user_id, bio, avatar_url, photo_storage_path, profile:profiles(id,name,avatar_url), coach_sports(sport:sports(id,code,name))',
     )
     .eq('user_id', userId)
     .single()
@@ -135,7 +135,7 @@ export async function getPublicClubs(): Promise<ClubListItem[]> {
   const { data, error } = await supabase
     .from('clubs')
     .select(
-      'id, owner_user_id, name, description, logo_storage_path, hero_photo_storage_path, website, phone, email, public_email_consent, address, city, created_at, club_sports(sport:sports(id,code,name))'
+      'id, owner_user_id, name, description, logo_storage_path, hero_photo_storage_path, website, phone, email, public_email_consent, address, city, created_at, club_sports(sport:sports(id,code,name))',
     )
     .order('name')
   if (error) throw error
@@ -146,7 +146,7 @@ export async function getPublicClub(id: string): Promise<ClubListItem | null> {
   const { data, error } = await supabase
     .from('clubs')
     .select(
-      'id, owner_user_id, name, description, logo_storage_path, hero_photo_storage_path, website, phone, email, public_email_consent, address, city, created_at, club_sports(sport:sports(id,code,name))'
+      'id, owner_user_id, name, description, logo_storage_path, hero_photo_storage_path, website, phone, email, public_email_consent, address, city, created_at, club_sports(sport:sports(id,code,name))',
     )
     .eq('id', id)
     .single()
@@ -172,11 +172,143 @@ export function courseHeroUrl(course: {
   course_photos?: { storage_path: string; display_order: number }[] | null
   sport?: { default_photo_storage_path?: string | null } | null
 }): string | null {
-  const hero = [...(course.course_photos ?? [])].sort((a, b) => a.display_order - b.display_order)[0]
+  const hero = [...(course.course_photos ?? [])].sort(
+    (a, b) => a.display_order - b.display_order,
+  )[0]
   return (
     publicUrl('course-photos', hero?.storage_path ?? null) ??
     publicUrl('sport-photos', course.sport?.default_photo_storage_path ?? null)
   )
+}
+
+export function activityHeroUrl(activity: {
+  hero_photo_storage_path?: string | null
+  sport?: { default_photo_storage_path?: string | null } | null
+}): string | null {
+  return (
+    publicUrl('activity-photos', activity.hero_photo_storage_path) ??
+    publicUrl('sport-photos', activity.sport?.default_photo_storage_path)
+  )
+}
+
+type ActivitateProgramata = {
+  activity_date: string
+  start_time: string
+  end_time: string
+}
+
+function parteZona(parti: Intl.DateTimeFormatPart[], tip: Intl.DateTimeFormatPartTypes): number {
+  return Number(parti.find((parte) => parte.type === tip)?.value)
+}
+
+export function sfarsitActivitate(activityDate: string, endTime: string): number {
+  const [an, luna, zi] = activityDate.split('-').map(Number)
+  const [ora, minut, secunda] = endTime.split(':').map(Number)
+  const caUtc = Date.UTC(an, (luna ?? 1) - 1, zi ?? 1, ora ?? 0, minut ?? 0, secunda ?? 0)
+  const parti = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Bucharest',
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).formatToParts(new Date(caUtc))
+  const inZona = Date.UTC(
+    parteZona(parti, 'year'),
+    parteZona(parti, 'month') - 1,
+    parteZona(parti, 'day'),
+    parteZona(parti, 'hour'),
+    parteZona(parti, 'minute'),
+    parteZona(parti, 'second'),
+  )
+  return caUtc - (inZona - caUtc)
+}
+
+export function activitateSAincheiat(
+  activityDate: string,
+  endTime: string,
+  acum = new Date(),
+): boolean {
+  return sfarsitActivitate(activityDate, endTime) <= acum.getTime()
+}
+
+export function activitatiVizibile<T extends ActivitateProgramata>(
+  randuri: T[],
+  acum = new Date(),
+): T[] {
+  return randuri
+    .filter((rand) => !activitateSAincheiat(rand.activity_date, rand.end_time, acum))
+    .sort(
+      (a, b) =>
+        a.activity_date.localeCompare(b.activity_date) || a.start_time.localeCompare(b.start_time),
+    )
+}
+
+export type ActivitateDinLista = {
+  id: string
+  name: string
+  activityDate: string
+  startTime: string
+  endTime: string
+  price: number
+  currency: string
+  locationName: string | null
+  sportName: string | null
+  heroUrl: string | null
+  organizator: string | null
+  locuriRamase: number | null
+}
+
+type ActivitateBruta = ActivitateProgramata & {
+  id: string
+  name: string
+  price: number
+  currency: string
+  hero_photo_storage_path: string | null
+  sport: SportRow | null
+  location: { name: string } | null
+  club: { name: string } | null
+  coach: { name: string } | null
+}
+
+export async function getActivitatiPublice(acum = new Date()): Promise<ActivitateDinLista[]> {
+  const { data, error } = await supabase
+    .from('activities')
+    .select(
+      'id, name, activity_date, start_time, end_time, price, currency, hero_photo_storage_path, sport:sports(id, code, name, default_photo_storage_path), location:locations(name), club:clubs(name), coach:profiles(name)',
+    )
+    .eq('active', true)
+    .order('activity_date')
+    .order('start_time')
+  if (error) throw error
+
+  const vizibile = activitatiVizibile((data ?? []) as unknown as ActivitateBruta[], acum)
+  const locuri = await Promise.all(
+    vizibile.map(async (activitate) => {
+      const { data: ramase, error: eLocuri } = await supabase.rpc('activity_spots_remaining', {
+        p_activity_id: activitate.id,
+      })
+      if (eLocuri) throw eLocuri
+      return ramase
+    }),
+  )
+
+  return vizibile.map((activitate, index) => ({
+    id: activitate.id,
+    name: activitate.name,
+    activityDate: activitate.activity_date,
+    startTime: activitate.start_time,
+    endTime: activitate.end_time,
+    price: activitate.price,
+    currency: activitate.currency,
+    locationName: activitate.location?.name ?? null,
+    sportName: activitate.sport?.name ?? null,
+    heroUrl: activityHeroUrl(activitate),
+    organizator: activitate.club?.name ?? activitate.coach?.name ?? null,
+    locuriRamase: locuri[index] ?? null,
+  }))
 }
 
 export async function submitContactForm(input: {
