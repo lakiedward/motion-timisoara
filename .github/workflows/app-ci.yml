@@ -2,6 +2,7 @@ name: App CI
 
 on:
   push:
+    branches: [master]
     paths:
       - 'motiontimisoaraApp/**'
       - '.github/workflows/app-ci.yml'
