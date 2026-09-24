@@ -2789,6 +2789,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activity_spots_remaining: { Args: { p_activity_id: string }; Returns: number }
       admin_users: {
         Args: never
         Returns: {
