@@ -12,6 +12,7 @@
   --radius: 0.75rem;
 
   --background: #ffffff;
+  --page: color-mix(in srgb, var(--primary) 6%, var(--background));
   --foreground: #0f172a;
 
   --card: #ffffff;
@@ -112,6 +113,7 @@
   --sidebar-accent-foreground: #bfdbfe;
   --sidebar-border: rgba(255, 255, 255, 0.1);
   --sidebar-ring: #3b82f6;
+  --page: var(--background);
 }
 
 @theme inline {
@@ -121,6 +123,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 
   --color-background: var(--background);
+  --color-page: var(--page);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
@@ -169,8 +172,11 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    background-color: var(--page);
+  }
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-page text-foreground font-sans;
   }
   h1,
   h2,

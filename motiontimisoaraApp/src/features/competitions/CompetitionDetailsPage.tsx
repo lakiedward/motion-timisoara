@@ -89,7 +89,7 @@ export default function CompetitionDetailsPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
         </div>
       ) : (
-        <div className="from-primary/20 to-background h-32 w-full bg-gradient-to-b md:h-44" />
+        <div className="from-primary/20 to-page h-32 w-full bg-gradient-to-b md:h-44" />
       )}
 
       <div className="mx-auto max-w-4xl px-6 py-8">

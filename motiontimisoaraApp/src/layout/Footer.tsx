@@ -40,7 +40,7 @@ const GROUPS = [
 export function Footer() {
   const year = new Date().getFullYear()
   return (
-    <footer className="border-border bg-muted/30 border-t">
+    <footer className="border-border border-t">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 md:grid-cols-[1.4fr_repeat(4,1fr)]">
         <div className="space-y-3">
           <Logo />

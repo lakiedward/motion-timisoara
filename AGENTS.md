@@ -598,6 +598,12 @@ reorganizing this document; correct obsolete facts with current evidence.
   `activity_spots_remaining` (capacity minus PENDING and ACTIVE enrollments;
   NULL capacity stays unlimited). Migration `00076_activity_spots_remaining.sql`,
   applied once as remote `20260924141924` (`activity_spots_remaining`).
+- 2026-09-25 — The shared page wash is `--page`, six percent of `--primary`
+  mixed into `--background`. `--background` stays white because the header,
+  fields, and sheets use it; `--card` stays the content surface. `--accent`
+  is the hover color, so the page does not use it. Dark mode keeps the
+  existing dark canvas. The wash is a flat color on `html`, `body`, and the
+  native shell. No pattern, photo, or motion.
 
 ## 11. Known Issues / WIP
 

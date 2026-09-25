@@ -42,7 +42,7 @@ export function NativeAppShell({ role, children }: { role: Role | null; children
   }
 
   return (
-    <div className="native-app-shell bg-background min-h-dvh">
+    <div className="native-app-shell bg-page min-h-dvh">
       <header className="native-topbar bg-card fixed inset-x-0 top-0 z-40 border-b">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
           {screen.backTo ? (

@@ -27,7 +27,7 @@ export default function ActivitiesPage() {
 
   return (
     <div>
-      <section className="from-primary/8 to-background border-b bg-gradient-to-b">
+      <section className="from-primary/8 to-page border-b bg-gradient-to-b">
         <div className="mx-auto max-w-7xl px-6 py-14">
           <span className="eyebrow mb-3">Evenimente</span>
           <h1 className="font-display text-4xl font-extrabold text-foreground">Activități</h1>

@@ -16,7 +16,7 @@ export default function CompetitionsPage() {
 
   return (
     <div>
-      <section className="from-primary/8 to-background border-b bg-gradient-to-b">
+      <section className="from-primary/8 to-page border-b bg-gradient-to-b">
         <div className="mx-auto max-w-7xl px-6 py-14">
           <span className="eyebrow mb-3">Întreceri</span>
           <h1 className="font-display text-foreground text-4xl font-extrabold lg:text-5xl">
