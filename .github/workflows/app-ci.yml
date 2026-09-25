@@ -166,28 +166,15 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: motiontimisoaraApp/package-lock.json
-      - name: Build the app and boot the simulator
+      - run: npm ci
+      - run: npm run build
         env:
           VITE_SUPABASE_URL: https://placeholder.supabase.co
           VITE_SUPABASE_ANON_KEY: placeholder
           VITE_STRIPE_PUBLISHABLE_KEY: ''
-        run: |
-          set -euo pipefail
-          node ../tests/native-location/run-ios-location.mjs --preboot > "$RUNNER_TEMP/ios-sim-preboot.log" 2>&1 &
-          pid=$!
-          code=0
-          npm ci || code=$?
-          if [ "$code" -eq 0 ]; then npm run build || code=$?; fi
-          if [ "$code" -eq 0 ]; then npx cap sync ios || code=$?; fi
-          if [ "$code" -eq 0 ]; then xcodebuild -project ios/App/App.xcodeproj -scheme App -sdk iphonesimulator -configuration Debug -derivedDataPath ios/build CODE_SIGNING_ALLOWED=NO build || code=$?; fi
-          if [ "$code" -ne 0 ]; then
-            kill "$pid" 2>/dev/null || true
-            wait "$pid" || true
-          else
-            wait "$pid" || code=$?
-          fi
-          cat "$RUNNER_TEMP/ios-sim-preboot.log"
-          exit "$code"
+      - run: npx cap sync ios
+      - name: Compile iOS simulator app without signing
+        run: xcodebuild -project ios/App/App.xcodeproj -scheme App -sdk iphonesimulator -configuration Debug -derivedDataPath ios/build CODE_SIGNING_ALLOWED=NO build
       - name: Verify synthetic iOS native location lifecycle
         run: node ../tests/native-location/run-ios-location.mjs
       - uses: actions/upload-artifact@v4

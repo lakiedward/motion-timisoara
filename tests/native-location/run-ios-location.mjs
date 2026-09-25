@@ -218,24 +218,7 @@ async function refuseStalledLocationLookups() {
   await command('dscacheutil', ['-flushcache'], { acceptFailure: true })
 }
 
-async function adoptPreparedSimulator() {
-  let saved
-  try {
-    saved = JSON.parse(await readFile(path.join(output, 'simulator.json'), 'utf8'))
-  } catch {
-    return false
-  }
-  if (typeof saved.device !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(saved.device)) return false
-  const inventory = JSON.parse(await sim('list', '--json'))
-  const booted = Object.values(inventory.devices).some((devices) => devices.some((item) => item.udid === saved.device && item.state === 'Booted'))
-  if (!booted) return false
-  device = saved.device
-  console.log(`Using prepared simulator ${device}`)
-  return true
-}
-
 async function createSimulator() {
-  if (await adoptPreparedSimulator()) return
   await refuseStalledLocationLookups()
   const help = await command('xcrun', ['simctl', 'help', 'privacy'], { includeStderr: true })
   assert(help.includes('location-always'), 'Simulator must support location-always permission')
@@ -278,24 +261,6 @@ function verifyResults() {
   assert(event('expired-start-rejected'), 'Expired start must be rejected')
   assert(point('after-expiry', 3.25), 'Restart after native expiry must receive a point')
   assert.equal(lastResult.status, 'passed')
-}
-
-if (process.argv.includes('--preboot')) {
-  try {
-    assert.equal(process.platform, 'darwin', 'This isolated test requires macOS with Xcode')
-    await mkdir(output, { recursive: true })
-    await createSimulator()
-    const boot = log.find((item) => item.args?.includes('bootstatus'))
-    console.log(`Simulator bootstatus finished in ${boot?.durationMs ?? 'unknown'} ms`)
-    await writeFile(path.join(output, 'boot-commands.json'), JSON.stringify(log, null, 2))
-  } catch (error) {
-    process.exitCode = 1
-    console.error(error.message)
-    log.push({ failure: error.message })
-    await mkdir(output, { recursive: true }).catch(() => undefined)
-    await writeFile(path.join(output, 'boot-commands.json'), JSON.stringify(log, null, 2)).catch(() => undefined)
-  }
-  process.exit(process.exitCode ?? 0)
 }
 
 try {
