@@ -1,6 +1,6 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, CalendarDays, Clock, MapPin } from 'lucide-react'
+import { ArrowLeft, CalendarDays, Clock, MapPin, Users, type LucideIcon } from 'lucide-react'
 
 import { ACTIVITY_RULES_FILE_BUCKET, rulesFileAfisabil } from '@/api/camp-rules-file'
 import { activitateSAincheiat, getActivitateDetaliu, type PersoanaActivitate } from '@/api/public'
@@ -18,6 +18,24 @@ import { Skeleton } from '@/components/ui/skeleton'
 function ziActivitate(data: string): string {
   const [an, luna, zi] = data.split('-').map(Number)
   return new Date(an, (luna ?? 1) - 1, zi ?? 1).toLocaleDateString('ro-RO')
+}
+
+function Fapt({
+  icon: Icon,
+  eticheta,
+  children,
+}: {
+  icon: LucideIcon
+  eticheta: string
+  children: string
+}) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <Icon className="size-4 shrink-0" aria-hidden />
+      <span className="text-foreground font-medium">{eticheta}</span>
+      <span>{children}</span>
+    </div>
+  )
 }
 
 function Portret({ persoana }: { persoana: PersoanaActivitate }) {
@@ -132,20 +150,22 @@ export default function ActivityDetailPage() {
         </div>
       )}
 
-      <div className="text-muted-foreground mt-5 flex flex-wrap gap-5 text-sm">
-        <span className="flex items-center gap-1.5">
-          <CalendarDays className="size-4" /> {ziActivitate(a.activityDate)}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Clock className="size-4" /> {`${a.startTime.slice(0, 5)}–${a.endTime.slice(0, 5)}`}
-        </span>
+      <div className="text-muted-foreground mt-5 flex flex-col gap-2 text-sm">
+        <Fapt icon={CalendarDays} eticheta="Data">
+          {ziActivitate(a.activityDate)}
+        </Fapt>
+        <Fapt icon={Clock} eticheta="Ore">
+          {`${a.startTime.slice(0, 5)}–${a.endTime.slice(0, 5)}`}
+        </Fapt>
         {a.location && (
-          <span className="flex items-center gap-1.5">
-            <MapPin className="size-4" /> {a.location.name}
-          </span>
+          <Fapt icon={MapPin} eticheta="Loc">
+            {a.location.name}
+          </Fapt>
         )}
         {!incheiata && a.locuriRamase !== null && a.locuriRamase > 0 && (
-          <span>{plural(a.locuriRamase, 'loc rămas', 'locuri rămase')}</span>
+          <Fapt icon={Users} eticheta="Locuri">
+            {plural(a.locuriRamase, 'loc rămas', 'locuri rămase')}
+          </Fapt>
         )}
       </div>
 

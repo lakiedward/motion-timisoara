@@ -131,10 +131,22 @@ test('organizatorul stă sub titlu, antrenorul e separat, iar numele locului nu 
     'src',
     'https://public/coach-photos/demo.jpg',
   )
-  const loc = screen.getByText('DEMO — Parc de antrenament')
-  expect(loc.closest('a')).toBeNull()
-  expect(screen.getByText('10:00–12:00')).toBeInTheDocument()
-  expect(screen.getByText('11 locuri rămase')).toBeInTheDocument()
+  const dataEticheta = screen.getByText('Data')
+  const ore = screen.getByText('Ore')
+  const locEticheta = screen.getByText('Loc')
+  const locuri = screen.getByText('Locuri')
+  expect(dataEticheta.parentElement).toHaveTextContent('26.09.2099')
+  expect(ore.parentElement).toHaveTextContent('10:00–12:00')
+  expect(locEticheta.parentElement).toHaveTextContent('DEMO — Parc de antrenament')
+  expect(locEticheta.closest('a')).toBeNull()
+  expect(screen.getByText('DEMO — Parc de antrenament').closest('a')).toBeNull()
+  expect(locuri.parentElement).toHaveTextContent('11 locuri rămase')
+  expect(dataEticheta.compareDocumentPosition(ore) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(ore.compareDocumentPosition(locEticheta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(
+    locEticheta.compareDocumentPosition(locuri) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy()
+  expect(dataEticheta.parentElement?.parentElement?.className).toContain('flex-col')
   expect(screen.queryByRole('heading', { name: 'Regulament' })).not.toBeInTheDocument()
 })
 
@@ -214,6 +226,10 @@ test('activitatea încheiată închide înscrierea și nu mai spune locurile', a
   expect(screen.queryByRole('button', { name: 'Înscrie-te' })).not.toBeInTheDocument()
   expect(screen.queryByText(/locuri rămase/)).not.toBeInTheDocument()
   expect(screen.queryByText(/loc rămas/)).not.toBeInTheDocument()
+  expect(screen.queryByText('Locuri')).not.toBeInTheDocument()
+  expect(screen.getByText('Data')).toBeInTheDocument()
+  expect(screen.getByText('Ore')).toBeInTheDocument()
+  expect(screen.getByText('Loc')).toBeInTheDocument()
 })
 
 test('fără locuri, înscrierea dispare; fără număr, rămâne', async () => {
