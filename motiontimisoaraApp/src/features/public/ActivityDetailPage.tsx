@@ -170,12 +170,15 @@ export default function ActivityDetailPage() {
       </div>
 
       {a.description && (
-        <p className="text-muted-foreground mt-6 leading-relaxed">{a.description}</p>
+        <div className="mt-6">
+          <p className="text-foreground text-sm font-medium">Descriere</p>
+          <p className="text-muted-foreground mt-2 leading-relaxed">{a.description}</p>
+        </div>
       )}
 
       {a.galerieUrls.length > 0 && (
         <div className="mt-8">
-          <h2 className="font-display mb-3 text-lg font-bold">Din activitate</h2>
+          <h2 className="font-display mb-3 text-lg font-bold">Poze</h2>
           <PhotoGallery urls={a.galerieUrls} alt={a.name} />
         </div>
       )}
