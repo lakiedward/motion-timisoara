@@ -44,6 +44,31 @@ beforeEach(() => {
   mocked.mockReset()
 })
 
+test('banda de titlu păstrează sprânceana, titlul și propoziția, pe banda deschisă', async () => {
+  mocked.mockResolvedValue([])
+  deseneaza()
+  const titlu = screen.getByRole('heading', { level: 1, name: 'Activități' })
+  expect(titlu).toHaveClass('text-4xl')
+  expect(titlu.className).not.toMatch(/\b(?:sm:|md:|lg:|xl:)?text-(?:5xl|6xl)\b/)
+  const banda = titlu.closest('section')
+  expect(banda).toHaveAttribute(
+    'data-section',
+    'motion-react:page:/activitati:section:toata-pagina',
+  )
+  expect(banda).toHaveClass('from-primary/8', 'to-transparent', 'bg-gradient-to-b')
+  expect(banda?.className ?? '').not.toMatch(/bg-foreground|text-white/)
+  const spranceana = screen.getByText('Evenimente')
+  expect(spranceana).toHaveClass('eyebrow')
+  expect(spranceana.compareDocumentPosition(titlu) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  const propozitie = screen.getByText('Evenimente și workshop-uri punctuale.')
+  expect(propozitie).toHaveClass('text-muted-foreground')
+  expect(titlu.compareDocumentPosition(propozitie) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(banda?.contains(spranceana)).toBe(true)
+  expect(banda?.contains(propozitie)).toBe(true)
+  const gol = await screen.findByText('Nicio activitate programată momentan.')
+  expect(banda?.contains(gol)).toBe(false)
+})
+
 test('o listă care nu se încarcă spune asta și are Reîncearcă', async () => {
   mocked.mockRejectedValue(new Error('retea picata'))
   deseneaza()

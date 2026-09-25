@@ -27,10 +27,19 @@ export default function ActivitiesPage() {
 
   return (
     <div>
-      <section className="from-primary/8 to-transparent border-b bg-gradient-to-b">
+      <section
+        aria-labelledby="activities-page-title"
+        data-section="motion-react:page:/activitati:section:toata-pagina"
+        className="from-primary/8 to-transparent border-b bg-gradient-to-b"
+      >
         <div className="mx-auto max-w-7xl px-6 py-14">
           <span className="eyebrow mb-3">Evenimente</span>
-          <h1 className="font-display text-4xl font-extrabold text-foreground">Activități</h1>
+          <h1
+            id="activities-page-title"
+            className="font-display text-4xl font-extrabold text-foreground"
+          >
+            Activități
+          </h1>
           <p className="text-muted-foreground mt-2">Evenimente și workshop-uri punctuale.</p>
         </div>
       </section>
