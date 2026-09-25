@@ -166,6 +166,8 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: motiontimisoaraApp/package-lock.json
+      - name: Point stalled simulator location hosts at loopback
+        run: node ../tests/native-location/run-ios-location.mjs --prepare-hosts
       - run: npm ci
       - run: npm run build
         env:

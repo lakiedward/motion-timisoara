@@ -24,7 +24,6 @@ let originalBuiltIndex
 let lastResult
 const timing = {}
 const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds))
-
 const stalledLocationHosts = [
   'gsp-ssl.ls.apple.com',
   'gspe1-ssl.ls.apple.com',
@@ -39,7 +38,6 @@ const stalledLocationHosts = [
   'cl4.apple.com',
   'configuration.ls.apple.com',
 ]
-let locationLookupsRefused = false
 
 async function command(binary, args, { timeout = 60000, acceptFailure = false, includeStderr = false, input = '' } = {}) {
   return new Promise((resolve, reject) => {
@@ -202,8 +200,7 @@ async function startHarness() {
 }
 
 async function refuseStalledLocationLookups() {
-  if (locationLookupsRefused || process.env.CI !== 'true') return
-  locationLookupsRefused = true
+  if (process.env.CI !== 'true') return
   let hosts = ''
   try {
     hosts = await readFile('/etc/hosts', 'utf8')
@@ -214,8 +211,6 @@ async function refuseStalledLocationLookups() {
   if (missing.length === 0) return
   const block = `${missing.flatMap((host) => [`127.0.0.1 ${host}`, `::1 ${host}`]).join('\n')}\n`
   await command('sudo', ['-n', 'tee', '-a', '/etc/hosts'], { input: block, acceptFailure: true, includeStderr: true })
-  await command('sudo', ['-n', 'killall', '-HUP', 'mDNSResponder'], { acceptFailure: true })
-  await command('dscacheutil', ['-flushcache'], { acceptFailure: true })
 }
 
 async function createSimulator() {
@@ -261,6 +256,16 @@ function verifyResults() {
   assert(event('expired-start-rejected'), 'Expired start must be rejected')
   assert(point('after-expiry', 3.25), 'Restart after native expiry must receive a point')
   assert.equal(lastResult.status, 'passed')
+}
+
+if (process.argv.includes('--prepare-hosts')) {
+  try {
+    await refuseStalledLocationLookups()
+  } catch (error) {
+    process.exitCode = 1
+    console.error(error.message)
+  }
+  process.exit(process.exitCode ?? 0)
 }
 
 try {
