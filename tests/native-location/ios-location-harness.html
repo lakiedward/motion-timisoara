@@ -78,7 +78,7 @@
       })
     }
     const startExpiry = () => {
-      start('expiry', Date.now() + 120000, () => undefined, (error) => {
+      start('expiry', Date.now() + 30000, () => undefined, (error) => {
         if (error.code !== 'CAPTURE_EXPIRED') return fail(error)
         if (expiryHandled) return
         expiryHandled = true

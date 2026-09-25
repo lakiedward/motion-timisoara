@@ -24,11 +24,26 @@ let originalBuiltIndex
 let lastResult
 const timing = {}
 const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds))
+const stalledLocationHosts = [
+  'gsp-ssl.ls.apple.com',
+  'gspe1-ssl.ls.apple.com',
+  'gspe19-ssl.ls.apple.com',
+  'gspe35-ssl.ls.apple.com',
+  'gs-loc.apple.com',
+  'gsp9-ssl.apple.com',
+  'gsp10-ssl.apple.com',
+  'iphone-ld.apple.com',
+  'cl2.apple.com',
+  'cl3.apple.com',
+  'cl4.apple.com',
+  'configuration.ls.apple.com',
+]
 
-async function command(binary, args, { timeout = 60000, acceptFailure = false, includeStderr = false } = {}) {
+async function command(binary, args, { timeout = 60000, acceptFailure = false, includeStderr = false, input = '' } = {}) {
   return new Promise((resolve, reject) => {
     const startedAt = Date.now()
-    const process = spawn(binary, args, { cwd: appRoot, stdio: ['ignore', 'pipe', 'pipe'] })
+    const process = spawn(binary, args, { cwd: appRoot, stdio: [input ? 'pipe' : 'ignore', 'pipe', 'pipe'] })
+    if (input) process.stdin.end(input)
     let stdout = ''
     let stderr = ''
     let timedOut = false
@@ -184,7 +199,22 @@ async function startHarness() {
   await waitFor('harness ready', () => event('ready'), 180000)
 }
 
+async function refuseStalledLocationLookups() {
+  if (process.env.CI !== 'true') return
+  let hosts = ''
+  try {
+    hosts = await readFile('/etc/hosts', 'utf8')
+  } catch {
+    hosts = ''
+  }
+  const missing = stalledLocationHosts.filter((host) => !hosts.includes(` ${host}`) && !hosts.includes(`\t${host}`))
+  if (missing.length === 0) return
+  const block = `${missing.flatMap((host) => [`127.0.0.1 ${host}`, `::1 ${host}`]).join('\n')}\n`
+  await command('sudo', ['-n', 'tee', '-a', '/etc/hosts'], { input: block, acceptFailure: true, includeStderr: true })
+}
+
 async function createSimulator() {
+  await refuseStalledLocationLookups()
   const help = await command('xcrun', ['simctl', 'help', 'privacy'], { includeStderr: true })
   assert(help.includes('location-always'), 'Simulator must support location-always permission')
   const locationHelp = await command('xcrun', ['simctl', 'help', 'location'], { includeStderr: true })
@@ -226,6 +256,16 @@ function verifyResults() {
   assert(event('expired-start-rejected'), 'Expired start must be rejected')
   assert(point('after-expiry', 3.25), 'Restart after native expiry must receive a point')
   assert.equal(lastResult.status, 'passed')
+}
+
+if (process.argv.includes('--prepare-hosts')) {
+  try {
+    await refuseStalledLocationLookups()
+  } catch (error) {
+    process.exitCode = 1
+    console.error(error.message)
+  }
+  process.exit(process.exitCode ?? 0)
 }
 
 try {
