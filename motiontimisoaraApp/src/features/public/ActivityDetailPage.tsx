@@ -20,6 +20,14 @@ function ziActivitate(data: string): string {
   return new Date(an, (luna ?? 1) - 1, zi ?? 1).toLocaleDateString('ro-RO')
 }
 
+function paragrafeDescriere(text: string): string[] {
+  const parti = text
+    .split(/\n\s*\n/)
+    .map((parte) => parte.trim())
+    .filter(Boolean)
+  return parti.length > 0 ? parti : [text]
+}
+
 function Fapt({
   icon: Icon,
   eticheta,
@@ -172,7 +180,13 @@ export default function ActivityDetailPage() {
       {a.description && (
         <div className="mt-6">
           <p className="text-foreground text-sm font-medium">Descriere</p>
-          <p className="text-muted-foreground mt-2 leading-relaxed">{a.description}</p>
+          <div className="mt-2 space-y-3">
+            {paragrafeDescriere(a.description).map((parte) => (
+              <p key={parte} className="text-muted-foreground leading-relaxed">
+                {parte}
+              </p>
+            ))}
+          </div>
         </div>
       )}
 

@@ -150,6 +150,21 @@ test('organizatorul stă sub titlu, antrenorul e separat, iar numele locului nu 
   expect(screen.queryByRole('heading', { name: 'Regulament' })).not.toBeInTheDocument()
 })
 
+test('descrierea cu mai multe paragrafe stă sub eticheta Descriere', async () => {
+  mocked.mockResolvedValue({
+    ...DETALIU,
+    description: 'Primul paragraf despre traseu.\n\nAl doilea paragraf despre echipament.',
+  })
+  deseneaza()
+  const eticheta = await screen.findByText('Descriere')
+  const primul = screen.getByText('Primul paragraf despre traseu.')
+  const alDoilea = screen.getByText('Al doilea paragraf despre echipament.')
+  expect(eticheta.compareDocumentPosition(primul) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(primul.compareDocumentPosition(alDoilea) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(eticheta.className).toContain('text-sm')
+  expect(eticheta.className).toContain('font-medium')
+})
+
 test('galerie, regulament, hartă și nota de curs stau în ordinea aleasă', async () => {
   const user = userEvent.setup()
   mocked.mockResolvedValue({

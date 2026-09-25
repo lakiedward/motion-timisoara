@@ -272,6 +272,29 @@ test('poza activității intră în galerie înaintea pozei sportului', async ()
   expect(detaliu?.galerieUrls).toEqual(['https://public/activity-photos/a/hero.jpg'])
 })
 
+test('activitatea din preview primește descrierea lungă și cel puțin șase poze', async () => {
+  raspuns.activities = {
+    data: randDetaliu({
+      id: '74a9d327-fb4e-450f-866f-f24575edc204',
+      description: 'Siguranță și îndemânare pe bicicletă.',
+      sport: {
+        id: 's',
+        code: 'ciclism',
+        name: 'Ciclism',
+        default_photo_storage_path: '/ui/20221013_183129.webp',
+      },
+    }),
+    error: null,
+  }
+  const detaliu = await getActivitateDetaliu('74a9d327-fb4e-450f-866f-f24575edc204')
+  const paragrafe = detaliu?.description?.split(/\n\s*\n/) ?? []
+  expect(paragrafe.length).toBeGreaterThanOrEqual(3)
+  expect(paragrafe[0]).toBe('Siguranță și îndemânare pe bicicletă.')
+  expect(detaliu?.galerieUrls[0]).toBe('/ui/20221013_183129.webp')
+  expect(detaliu?.galerieUrls.length).toBeGreaterThanOrEqual(6)
+  expect(new Set(detaliu?.galerieUrls).size).toBe(detaliu?.galerieUrls.length)
+})
+
 test('locurile rămase pot fi zero sau necunoscute, fără să fie inventate', async () => {
   raspuns.activities = { data: randDetaliu(), error: null }
   rpcPentru = () => ({ data: 0, error: null })

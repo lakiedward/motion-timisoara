@@ -1,3 +1,4 @@
+import { descriereActivitatePreview, pozeActivitatePreview } from '@/api/preview-activity'
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 
@@ -425,7 +426,7 @@ export async function getActivitateDetaliu(id: string): Promise<ActivitateDetali
   return {
     id: rand.id,
     name: rand.name,
-    description: rand.description,
+    description: descriereActivitatePreview(rand.id, rand.description),
     activityDate: rand.activity_date,
     startTime: rand.start_time,
     endTime: rand.end_time,
@@ -436,7 +437,7 @@ export async function getActivitateDetaliu(id: string): Promise<ActivitateDetali
     location: rand.location,
     organizator,
     antrenori: rand.club && antrenor ? [antrenor] : [],
-    galerieUrls: poza ? [poza] : [],
+    galerieUrls: pozeActivitatePreview(rand.id, poza ? [poza] : []),
     locuriRamase: typeof ramase === 'number' ? ramase : null,
     regulament: {
       rules_file_storage_path: rand.rules_file_storage_path,
