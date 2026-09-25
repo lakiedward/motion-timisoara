@@ -604,6 +604,12 @@ reorganizing this document; correct obsolete facts with current evidence.
   is the hover color, so the page does not use it. Dark mode keeps the
   existing dark canvas. The wash is a flat color on `html`, `body`, and the
   native shell. No pattern, photo, or motion.
+- 2026-09-25 — The page wash stays, and three soft shapes sit on it: two
+  circles and one arc, drawn from `--primary` at low opacity, fixed to the
+  viewport and not repeated. Opaque page fills on the portal and the native
+  shell are removed so the same field shows on every screen. Cards and the
+  scrolled header stay on `--background` / `--card`. No pattern, photo, or
+  motion.
 
 ## 11. Known Issues / WIP
 

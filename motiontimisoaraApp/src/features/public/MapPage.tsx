@@ -43,7 +43,7 @@ export default function MapPage() {
       <section
         aria-labelledby="map-page-title"
         data-section="motion-react:page:/harta:section:toata-pagina"
-        className="from-primary/8 to-page border-b bg-gradient-to-b"
+        className="from-primary/8 to-transparent border-b bg-gradient-to-b"
       >
         <div className="mx-auto max-w-7xl px-6 py-12">
           <span className="eyebrow text-accent-foreground mb-3">Locații</span>
