@@ -1,3 +1,4 @@
+import { descriereActivitatePreview, pozeActivitatePreview } from '@/api/preview-activity'
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 
@@ -309,6 +310,142 @@ export async function getActivitatiPublice(acum = new Date()): Promise<Activitat
     organizator: activitate.club?.name ?? activitate.coach?.name ?? null,
     locuriRamase: locuri[index] ?? null,
   }))
+}
+
+export type PersoanaActivitate = {
+  id: string
+  nume: string
+  link: string
+  pozaUrl: string | null
+}
+
+export type ActivitateDetaliu = {
+  id: string
+  name: string
+  description: string | null
+  activityDate: string
+  startTime: string
+  endTime: string
+  price: number
+  currency: string
+  eur_ron_rate_micros: number | null
+  sportName: string | null
+  location: { name: string; lat: number | null; lng: number | null } | null
+  organizator: PersoanaActivitate | null
+  antrenori: PersoanaActivitate[]
+  galerieUrls: string[]
+  locuriRamase: number | null
+  regulament: {
+    rules_file_storage_path: string | null
+    rules_file_name: string | null
+    rules_file_content_type: string | null
+    rules_file_size_bytes: number | null
+  }
+}
+
+type ActivitateDetaliuBruta = {
+  id: string
+  name: string
+  description: string | null
+  activity_date: string
+  start_time: string
+  end_time: string
+  price: number
+  currency: string
+  eur_ron_rate_micros: number | null
+  hero_photo_storage_path: string | null
+  rules_file_storage_path: string | null
+  rules_file_name: string | null
+  rules_file_content_type: string | null
+  rules_file_size_bytes: number | null
+  sport: SportRow | null
+  location: { name: string; lat: number | null; lng: number | null } | null
+  club: { id: string; name: string; logo_storage_path: string | null } | null
+  coach: { id: string; name: string; avatar_url: string | null } | null
+}
+
+function pozaAntrenor(cale: string | null | undefined, avatar: string | null | undefined) {
+  const dinDosar = publicUrl('coach-photos', cale)
+  if (dinDosar) return dinDosar
+  if (avatar && (avatar.startsWith('http') || avatar.startsWith('/'))) return avatar
+  return null
+}
+
+function persoanaAntrenor(
+  coach: NonNullable<ActivitateDetaliuBruta['coach']>,
+  cale: string | null,
+): PersoanaActivitate {
+  return {
+    id: coach.id,
+    nume: coach.name,
+    link: `/antrenori/${coach.id}`,
+    pozaUrl: pozaAntrenor(cale, coach.avatar_url),
+  }
+}
+
+export async function getActivitateDetaliu(id: string): Promise<ActivitateDetaliu | null> {
+  const { data, error } = await supabase
+    .from('activities')
+    .select(
+      'id, name, description, activity_date, start_time, end_time, price, currency, eur_ron_rate_micros, hero_photo_storage_path, rules_file_storage_path, rules_file_name, rules_file_content_type, rules_file_size_bytes, sport:sports(id, code, name, default_photo_storage_path), location:locations(name, lat, lng), club:clubs(id, name, logo_storage_path), coach:profiles(id, name, avatar_url)',
+    )
+    .eq('id', id)
+    .maybeSingle()
+  if (error) throw error
+  if (!data) return null
+
+  const rand = data as unknown as ActivitateDetaliuBruta
+  let calePoza: string | null = null
+  if (rand.coach) {
+    const profil = await supabase
+      .from('coach_profiles')
+      .select('photo_storage_path')
+      .eq('user_id', rand.coach.id)
+      .maybeSingle()
+    if (profil.error) throw profil.error
+    const gasit = profil.data as { photo_storage_path: string | null } | null
+    calePoza = gasit?.photo_storage_path ?? null
+  }
+
+  const { data: ramase, error: eLocuri } = await supabase.rpc('activity_spots_remaining', {
+    p_activity_id: rand.id,
+  })
+  if (eLocuri) throw eLocuri
+
+  const antrenor = rand.coach ? persoanaAntrenor(rand.coach, calePoza) : null
+  const organizator: PersoanaActivitate | null = rand.club
+    ? {
+        id: rand.club.id,
+        nume: rand.club.name,
+        link: `/cluburi/${rand.club.id}`,
+        pozaUrl: publicUrl('club-assets', rand.club.logo_storage_path),
+      }
+    : antrenor
+  const poza = activityHeroUrl(rand)
+
+  return {
+    id: rand.id,
+    name: rand.name,
+    description: descriereActivitatePreview(rand.id, rand.description),
+    activityDate: rand.activity_date,
+    startTime: rand.start_time,
+    endTime: rand.end_time,
+    price: rand.price,
+    currency: rand.currency,
+    eur_ron_rate_micros: rand.eur_ron_rate_micros,
+    sportName: rand.sport?.name ?? null,
+    location: rand.location,
+    organizator,
+    antrenori: rand.club && antrenor ? [antrenor] : [],
+    galerieUrls: pozeActivitatePreview(rand.id, poza ? [poza] : []),
+    locuriRamase: typeof ramase === 'number' ? ramase : null,
+    regulament: {
+      rules_file_storage_path: rand.rules_file_storage_path,
+      rules_file_name: rand.rules_file_name,
+      rules_file_content_type: rand.rules_file_content_type,
+      rules_file_size_bytes: rand.rules_file_size_bytes,
+    },
+  }
 }
 
 export async function submitContactForm(input: {

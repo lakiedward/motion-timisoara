@@ -4,6 +4,7 @@ import {
   activitateSAincheiat,
   activitatiVizibile,
   activityHeroUrl,
+  getActivitateDetaliu,
   getActivitatiPublice,
 } from './public'
 
@@ -183,4 +184,123 @@ test('locurile eșuate opresc lista, nu inventează un număr', async () => {
   raspuns.activities = { data: [rand()], error: null }
   rpcPentru = () => ({ data: null, error: { message: 'rpc' } })
   await expect(getActivitatiPublice(ACUM)).rejects.toEqual({ message: 'rpc' })
+})
+
+function randDetaliu(
+  peste: Record<string, unknown> = {},
+  club: Record<string, unknown> | null = {
+    id: 'club-1',
+    name: 'DEMO — Club Sportiv Motion',
+    logo_storage_path: null,
+  },
+) {
+  return {
+    id: 'viitoare',
+    name: 'DEMO — Atelier de ciclism',
+    description: 'Atelier de mecanică și traseu scurt.',
+    activity_date: '2026-09-26',
+    start_time: '10:00:00',
+    end_time: '12:00:00',
+    price: 2000,
+    currency: 'EUR',
+    eur_ron_rate_micros: 5_100_000,
+    hero_photo_storage_path: null,
+    rules_file_storage_path: null,
+    rules_file_name: null,
+    rules_file_content_type: null,
+    rules_file_size_bytes: null,
+    sport: {
+      id: 's',
+      code: 'ciclism',
+      name: 'Ciclism',
+      default_photo_storage_path: 'ciclism.jpg',
+    },
+    location: { name: 'DEMO — Parc de antrenament', lat: 45.751, lng: 21.238 },
+    club,
+    coach: { id: 'coach-1', name: 'Antrenor Demo', avatar_url: null },
+    ...peste,
+  }
+}
+
+test('detaliul aruncă la eroare și întoarce null când rândul lipsește', async () => {
+  raspuns.activities = { data: null, error: { message: 'down' } }
+  await expect(getActivitateDetaliu('x')).rejects.toEqual({ message: 'down' })
+  raspuns.activities = { data: null, error: null }
+  await expect(getActivitateDetaliu('x')).resolves.toBeNull()
+  expect(apeluriRpc).toEqual([])
+})
+
+test('clubul e organizatorul, antrenorul stă separat, iar galeria ia poza sportului', async () => {
+  raspuns.activities = { data: randDetaliu(), error: null }
+  raspuns.coach_profiles = { data: { photo_storage_path: 'demo.jpg' }, error: null }
+  const detaliu = await getActivitateDetaliu('viitoare')
+  expect(detaliu?.organizator).toEqual({
+    id: 'club-1',
+    nume: 'DEMO — Club Sportiv Motion',
+    link: '/cluburi/club-1',
+    pozaUrl: null,
+  })
+  expect(detaliu?.antrenori).toEqual([
+    {
+      id: 'coach-1',
+      nume: 'Antrenor Demo',
+      link: '/antrenori/coach-1',
+      pozaUrl: 'https://public/coach-photos/demo.jpg',
+    },
+  ])
+  expect(detaliu?.galerieUrls).toEqual(['https://public/sport-photos/ciclism.jpg'])
+  expect(detaliu?.locuriRamase).toBe(11)
+  expect(apeluriRpc).toEqual([
+    { nume: 'activity_spots_remaining', argumente: { p_activity_id: 'viitoare' } },
+  ])
+})
+
+test('fără club, antrenorul e organizatorul și nu mai apare la ceilalți', async () => {
+  raspuns.activities = { data: randDetaliu({}, null), error: null }
+  const detaliu = await getActivitateDetaliu('viitoare')
+  expect(detaliu?.organizator?.nume).toBe('Antrenor Demo')
+  expect(detaliu?.organizator?.link).toBe('/antrenori/coach-1')
+  expect(detaliu?.antrenori).toEqual([])
+})
+
+test('poza activității intră în galerie înaintea pozei sportului', async () => {
+  raspuns.activities = {
+    data: randDetaliu({ hero_photo_storage_path: 'a/hero.jpg' }),
+    error: null,
+  }
+  const detaliu = await getActivitateDetaliu('viitoare')
+  expect(detaliu?.galerieUrls).toEqual(['https://public/activity-photos/a/hero.jpg'])
+})
+
+test('activitatea din preview primește descrierea lungă și cel puțin șase poze', async () => {
+  raspuns.activities = {
+    data: randDetaliu({
+      id: '74a9d327-fb4e-450f-866f-f24575edc204',
+      description: 'Siguranță și îndemânare pe bicicletă.',
+      sport: {
+        id: 's',
+        code: 'ciclism',
+        name: 'Ciclism',
+        default_photo_storage_path: '/ui/20221013_183129.webp',
+      },
+    }),
+    error: null,
+  }
+  const detaliu = await getActivitateDetaliu('74a9d327-fb4e-450f-866f-f24575edc204')
+  const paragrafe = detaliu?.description?.split(/\n\s*\n/) ?? []
+  expect(paragrafe.length).toBeGreaterThanOrEqual(3)
+  expect(paragrafe[0]).toBe('Siguranță și îndemânare pe bicicletă.')
+  expect(detaliu?.galerieUrls[0]).toBe('/ui/20221013_183129.webp')
+  expect(detaliu?.galerieUrls.length).toBeGreaterThanOrEqual(6)
+  expect(new Set(detaliu?.galerieUrls).size).toBe(detaliu?.galerieUrls.length)
+})
+
+test('locurile rămase pot fi zero sau necunoscute, fără să fie inventate', async () => {
+  raspuns.activities = { data: randDetaliu(), error: null }
+  rpcPentru = () => ({ data: 0, error: null })
+  expect((await getActivitateDetaliu('viitoare'))?.locuriRamase).toBe(0)
+  rpcPentru = () => ({ data: null, error: null })
+  expect((await getActivitateDetaliu('viitoare'))?.locuriRamase).toBeNull()
+  rpcPentru = () => ({ data: null, error: { message: 'rpc' } })
+  await expect(getActivitateDetaliu('viitoare')).rejects.toEqual({ message: 'rpc' })
 })

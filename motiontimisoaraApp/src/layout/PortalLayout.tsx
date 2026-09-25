@@ -123,7 +123,7 @@ export function PortalLayout({
   }
 
   return (
-    <div className="bg-muted/30 min-h-dvh lg:pl-64">
+    <div className="min-h-dvh lg:pl-64">
       <aside className="bg-card fixed inset-y-0 left-0 hidden w-64 flex-col border-r lg:flex">
         <div className="flex h-16 items-center border-b px-5">
           <Link to="/">
