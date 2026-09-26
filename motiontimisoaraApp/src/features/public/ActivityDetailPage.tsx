@@ -11,7 +11,6 @@ import ActivityPlaceMap from '@/features/public/map/ActivityPlaceMap'
 import { useAuth } from '@/lib/auth-context'
 import { formatOfferPrice } from '@/lib/money'
 import { plural } from '@/lib/plural'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -44,6 +43,18 @@ function Fapt({
       <span>{children}</span>
     </div>
   )
+}
+
+function BandaActivitate({ url }: { url: string | null }) {
+  if (url) {
+    return (
+      <div className="relative h-64 w-full overflow-hidden md:h-96">
+        <img src={url} alt="" className="size-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+      </div>
+    )
+  }
+  return <div className="from-primary/20 to-transparent h-32 w-full bg-gradient-to-b md:h-44" />
 }
 
 function Portret({ persoana }: { persoana: PersoanaActivitate }) {
@@ -108,126 +119,128 @@ export default function ActivityDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-10">
-      <Link
-        to="/activitati"
-        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
-      >
-        <ArrowLeft className="size-4" /> Înapoi la activități
-      </Link>
-      <div className="mt-6 flex flex-wrap items-center gap-2">
-        {a.sportName && <Badge>{a.sportName}</Badge>}
-      </div>
-      <h1 className="font-display mt-3 text-3xl font-extrabold text-foreground md:text-4xl">
-        {a.name}
-      </h1>
+    <div>
+      <BandaActivitate url={a.bandUrl} />
+      <div className="mx-auto max-w-4xl px-6 py-10">
+        <Link
+          to="/activitati"
+          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
+        >
+          <ArrowLeft className="size-4" /> Înapoi la activități
+        </Link>
+        <h1 className="font-display text-foreground mt-4 text-3xl font-extrabold md:text-4xl">
+          {a.name}
+        </h1>
 
-      {a.organizator && (
-        <div className="mt-6">
-          <h2 className="font-display mb-3 text-lg font-bold">Organizată de</h2>
-          <div className="flex items-center gap-3">
-            <Portret persoana={a.organizator} />
-            <Link
-              to={a.organizator.link}
-              className="text-primary inline-flex h-11 items-center font-semibold"
+        {a.organizator && (
+          <div className="mt-6">
+            <h2 className="font-display mb-3 text-lg font-bold">Organizată de</h2>
+            <div className="flex items-center gap-3">
+              <Portret persoana={a.organizator} />
+              <Link
+                to={a.organizator.link}
+                className="text-primary inline-flex h-11 items-center font-semibold"
+              >
+                {a.organizator.nume}
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {a.antrenori.length > 0 && (
+          <div className="mt-6">
+            <h2 className="font-display mb-3 text-lg font-bold">
+              {a.antrenori.length === 1 ? 'Antrenor' : 'Antrenori'}
+            </h2>
+            <ul className="flex flex-wrap gap-4">
+              {a.antrenori.map((antrenor) => (
+                <li key={antrenor.id} className="flex items-center gap-3">
+                  <Portret persoana={antrenor} />
+                  <Link
+                    to={antrenor.link}
+                    className="text-primary inline-flex h-11 items-center font-semibold"
+                  >
+                    {antrenor.nume}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="text-muted-foreground mt-5 flex flex-col gap-2 text-sm">
+          <Fapt icon={CalendarDays} eticheta="Data">
+            {ziActivitate(a.activityDate)}
+          </Fapt>
+          <Fapt icon={Clock} eticheta="Ore">
+            {`${a.startTime.slice(0, 5)}–${a.endTime.slice(0, 5)}`}
+          </Fapt>
+          {a.location && (
+            <Fapt icon={MapPin} eticheta="Loc">
+              {a.location.name}
+            </Fapt>
+          )}
+          {!incheiata && a.locuriRamase !== null && a.locuriRamase > 0 && (
+            <Fapt icon={Users} eticheta="Locuri">
+              {plural(a.locuriRamase, 'loc rămas', 'locuri rămase')}
+            </Fapt>
+          )}
+        </div>
+
+        {a.description && (
+          <div className="mt-6">
+            <p className="text-foreground text-sm font-medium">Descriere</p>
+            <div className="mt-2 space-y-3">
+              {paragrafeDescriere(a.description).map((parte) => (
+                <p key={parte} className="text-muted-foreground leading-relaxed">
+                  {parte}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {a.galerieUrls.length > 0 && (
+          <div className="mt-8">
+            <h2 className="font-display mb-3 text-lg font-bold">Poze</h2>
+            <PhotoGallery urls={a.galerieUrls} alt={a.name} />
+          </div>
+        )}
+
+        <CampRulesDisplay
+          rules={null}
+          fisier={rulesFileAfisabil(ACTIVITY_RULES_FILE_BUCKET, a.regulament)}
+        />
+
+        {a.location?.lat != null && a.location.lng != null && (
+          <ActivityPlaceMap lat={a.location.lat} lng={a.location.lng} name={a.location.name} />
+        )}
+
+        <div className="bg-card shadow-card mt-8 flex flex-col items-start gap-4 rounded-3xl border p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <div className="font-display whitespace-nowrap text-2xl font-extrabold">
+              {formatOfferPrice(a.price, a.currency)}
+            </div>
+            <OfferExchangeNote offer={a} className="text-xs" />
+          </div>
+          {incheiata ? (
+            <p className="text-muted-foreground text-sm font-medium">
+              Activitatea s-a încheiat, înscrierile sunt închise.
+            </p>
+          ) : plina ? (
+            <p className="text-muted-foreground text-sm font-medium">
+              Toate locurile sunt ocupate.
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={onEnroll}
+              className="btn-cta btn-cta--primary shrink-0 whitespace-nowrap"
             >
-              {a.organizator.nume}
-            </Link>
-          </div>
+              Înscrie-te
+            </button>
+          )}
         </div>
-      )}
-
-      {a.antrenori.length > 0 && (
-        <div className="mt-6">
-          <h2 className="font-display mb-3 text-lg font-bold">
-            {a.antrenori.length === 1 ? 'Antrenor' : 'Antrenori'}
-          </h2>
-          <ul className="flex flex-wrap gap-4">
-            {a.antrenori.map((antrenor) => (
-              <li key={antrenor.id} className="flex items-center gap-3">
-                <Portret persoana={antrenor} />
-                <Link
-                  to={antrenor.link}
-                  className="text-primary inline-flex h-11 items-center font-semibold"
-                >
-                  {antrenor.nume}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <div className="text-muted-foreground mt-5 flex flex-col gap-2 text-sm">
-        <Fapt icon={CalendarDays} eticheta="Data">
-          {ziActivitate(a.activityDate)}
-        </Fapt>
-        <Fapt icon={Clock} eticheta="Ore">
-          {`${a.startTime.slice(0, 5)}–${a.endTime.slice(0, 5)}`}
-        </Fapt>
-        {a.location && (
-          <Fapt icon={MapPin} eticheta="Loc">
-            {a.location.name}
-          </Fapt>
-        )}
-        {!incheiata && a.locuriRamase !== null && a.locuriRamase > 0 && (
-          <Fapt icon={Users} eticheta="Locuri">
-            {plural(a.locuriRamase, 'loc rămas', 'locuri rămase')}
-          </Fapt>
-        )}
-      </div>
-
-      {a.description && (
-        <div className="mt-6">
-          <p className="text-foreground text-sm font-medium">Descriere</p>
-          <div className="mt-2 space-y-3">
-            {paragrafeDescriere(a.description).map((parte) => (
-              <p key={parte} className="text-muted-foreground leading-relaxed">
-                {parte}
-              </p>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {a.galerieUrls.length > 0 && (
-        <div className="mt-8">
-          <h2 className="font-display mb-3 text-lg font-bold">Poze</h2>
-          <PhotoGallery urls={a.galerieUrls} alt={a.name} />
-        </div>
-      )}
-
-      <CampRulesDisplay
-        rules={null}
-        fisier={rulesFileAfisabil(ACTIVITY_RULES_FILE_BUCKET, a.regulament)}
-      />
-
-      {a.location?.lat != null && a.location.lng != null && (
-        <ActivityPlaceMap lat={a.location.lat} lng={a.location.lng} name={a.location.name} />
-      )}
-
-      <div className="bg-card shadow-card mt-8 flex flex-col items-start gap-4 rounded-3xl border p-6 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <div className="font-display whitespace-nowrap text-2xl font-extrabold">
-            {formatOfferPrice(a.price, a.currency)}
-          </div>
-          <OfferExchangeNote offer={a} className="text-xs" />
-        </div>
-        {incheiata ? (
-          <p className="text-muted-foreground text-sm font-medium">
-            Activitatea s-a încheiat, înscrierile sunt închise.
-          </p>
-        ) : plina ? (
-          <p className="text-muted-foreground text-sm font-medium">Toate locurile sunt ocupate.</p>
-        ) : (
-          <button
-            type="button"
-            onClick={onEnroll}
-            className="btn-cta btn-cta--primary shrink-0 whitespace-nowrap"
-          >
-            Înscrie-te
-          </button>
-        )}
       </div>
     </div>
   )

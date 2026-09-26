@@ -249,6 +249,7 @@ test('clubul e organizatorul, antrenorul stă separat, iar galeria ia poza sport
     },
   ])
   expect(detaliu?.galerieUrls).toEqual(['https://public/sport-photos/ciclism.jpg'])
+  expect(detaliu?.bandUrl).toBeNull()
   expect(detaliu?.locuriRamase).toBe(11)
   expect(apeluriRpc).toEqual([
     { nume: 'activity_spots_remaining', argumente: { p_activity_id: 'viitoare' } },
@@ -270,6 +271,7 @@ test('poza activității intră în galerie înaintea pozei sportului', async ()
   }
   const detaliu = await getActivitateDetaliu('viitoare')
   expect(detaliu?.galerieUrls).toEqual(['https://public/activity-photos/a/hero.jpg'])
+  expect(detaliu?.bandUrl).toBe('https://public/activity-photos/a/hero.jpg')
 })
 
 test('activitatea din preview primește descrierea lungă și cel puțin șase poze', async () => {
@@ -290,6 +292,7 @@ test('activitatea din preview primește descrierea lungă și cel puțin șase p
   const paragrafe = detaliu?.description?.split(/\n\s*\n/) ?? []
   expect(paragrafe.length).toBeGreaterThanOrEqual(3)
   expect(paragrafe[0]).toBe('Siguranță și îndemânare pe bicicletă.')
+  expect(detaliu?.bandUrl).toBeNull()
   expect(detaliu?.galerieUrls[0]).toBe('/ui/20221013_183129.webp')
   expect(detaliu?.galerieUrls.length).toBeGreaterThanOrEqual(6)
   expect(new Set(detaliu?.galerieUrls).size).toBe(detaliu?.galerieUrls.length)
