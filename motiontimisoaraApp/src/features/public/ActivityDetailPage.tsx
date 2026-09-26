@@ -124,7 +124,7 @@ export default function ActivityDetailPage() {
       <div className="mx-auto max-w-4xl px-6 py-10">
         <Link
           to="/activitati"
-          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
+          className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
         >
           <ArrowLeft className="size-4" /> Înapoi la activități
         </Link>
