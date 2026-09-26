@@ -34,7 +34,7 @@ const DETALIU: ActivitateDetaliu = {
   price: 2000,
   currency: 'EUR',
   eur_ron_rate_micros: 5_100_000,
-  sportName: 'Ciclism',
+  bandUrl: null,
   location: { name: 'DEMO — Parc de antrenament', lat: 45.751, lng: 21.238 },
   organizator: {
     id: 'club-1',
@@ -107,6 +107,43 @@ test('un id lipsă rămâne „nu a fost găsită”, cu linkul înapoi', async 
     '/activitati',
   )
   expect(screen.queryByRole('button', { name: 'Reîncearcă' })).not.toBeInTheDocument()
+})
+
+test('fără poza activității, hero-ul e degradeul scurt și titlul stă la o treaptă sub link', async () => {
+  deseneaza()
+  const titlu = await screen.findByRole('heading', { level: 1, name: 'DEMO — Atelier de ciclism' })
+  const link = screen.getByRole('link', { name: /Înapoi la activități/ })
+  expect(document.querySelector('.h-32')).toBeInTheDocument()
+  expect(document.querySelector('.md\\:h-44')).toBeInTheDocument()
+  expect(document.querySelector('.from-primary\\/20')).toBeInTheDocument()
+  expect(document.querySelector('.md\\:h-96')).not.toBeInTheDocument()
+  expect(link.className).toContain('h-11')
+  expect(link.compareDocumentPosition(titlu) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(document.querySelector('.h-32')?.compareDocumentPosition(link)).toBe(
+    Node.DOCUMENT_POSITION_FOLLOWING,
+  )
+  expect(titlu.className).toContain('mt-4')
+  expect(titlu.className).toContain('text-3xl')
+  expect(titlu.className).toContain('md:text-4xl')
+  expect(titlu.className).toContain('text-foreground')
+  expect(screen.queryByText('Ciclism')).not.toBeInTheDocument()
+  expect(screen.queryByText('Încheiată')).not.toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Poze' })).toBeInTheDocument()
+})
+
+test('poza activității umple banda, iar poza sportului rămâne în galerie', async () => {
+  mocked.mockResolvedValue({
+    ...DETALIU,
+    bandUrl: 'https://public/activity-photos/a/hero.jpg',
+  })
+  deseneaza()
+  await screen.findByRole('heading', { level: 1 })
+  const banda = document.querySelector('.h-64 img')
+  expect(banda).toHaveAttribute('src', 'https://public/activity-photos/a/hero.jpg')
+  expect(document.querySelector('.md\\:h-96')).toBeInTheDocument()
+  expect(document.querySelector('.from-primary\\/20')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Deschide poza 1 din 1' })).toBeInTheDocument()
+  expect(screen.queryByText('Ciclism')).not.toBeInTheDocument()
 })
 
 test('organizatorul stă sub titlu, antrenorul e separat, iar numele locului nu e link', async () => {
@@ -257,6 +294,7 @@ test('activitatea încheiată închide înscrierea și nu mai spune locurile', a
   expect(screen.getByText('Data')).toBeInTheDocument()
   expect(screen.getByText('Ore')).toBeInTheDocument()
   expect(screen.getByText('Loc')).toBeInTheDocument()
+  expect(screen.queryByText('Încheiată')).not.toBeInTheDocument()
 })
 
 test('fără locuri, înscrierea dispare; fără număr, rămâne', async () => {

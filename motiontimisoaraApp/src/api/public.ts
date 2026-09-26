@@ -329,7 +329,7 @@ export type ActivitateDetaliu = {
   price: number
   currency: string
   eur_ron_rate_micros: number | null
-  sportName: string | null
+  bandUrl: string | null
   location: { name: string; lat: number | null; lng: number | null } | null
   organizator: PersoanaActivitate | null
   antrenori: PersoanaActivitate[]
@@ -433,7 +433,7 @@ export async function getActivitateDetaliu(id: string): Promise<ActivitateDetali
     price: rand.price,
     currency: rand.currency,
     eur_ron_rate_micros: rand.eur_ron_rate_micros,
-    sportName: rand.sport?.name ?? null,
+    bandUrl: publicUrl('activity-photos', rand.hero_photo_storage_path),
     location: rand.location,
     organizator,
     antrenori: rand.club && antrenor ? [antrenor] : [],
