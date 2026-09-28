@@ -10,10 +10,12 @@ export function HeroPhotoField({
   savedUrl,
   error,
   onFile,
+  hint = 'Obligatorie. Se vede în banda de deasupra titlului, pe pagina publică. Galeria rămâne separată.',
 }: {
   savedUrl: string | null
   error: string | null
   onFile: (file: File) => void
+  hint?: string
 }) {
   const [preview, setPreview] = useState<string | null>(null)
 
@@ -50,10 +52,7 @@ export function HeroPhotoField({
   return (
     <fieldset className="rounded-2xl border p-5">
       <legend className="px-2 font-semibold">Poza din capul paginii</legend>
-      <p className="text-muted-foreground text-sm">
-        Obligatorie. Se vede în banda de deasupra titlului, pe pagina publică. Galeria rămâne
-        separată.
-      </p>
+      <p className="text-muted-foreground text-sm">{hint}</p>
       {afisat && <img src={afisat} alt="" className="mt-3 h-40 w-full rounded-xl object-cover" />}
       <div className="mt-3">
         {galeriaSeDeschideNativ() ? (
