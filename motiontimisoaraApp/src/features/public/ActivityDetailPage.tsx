@@ -13,6 +13,7 @@ import { formatOfferPrice } from '@/lib/money'
 import { plural } from '@/lib/plural'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PublicHeroBand } from './PublicHeroBand'
 
 function ziActivitate(data: string): string {
   const [an, luna, zi] = data.split('-').map(Number)
@@ -43,18 +44,6 @@ function Fapt({
       <span>{children}</span>
     </div>
   )
-}
-
-function BandaActivitate({ url }: { url: string | null }) {
-  if (url) {
-    return (
-      <div className="relative h-64 w-full overflow-hidden md:h-96">
-        <img src={url} alt="" className="size-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-      </div>
-    )
-  }
-  return <div className="from-primary/20 to-transparent h-32 w-full bg-gradient-to-b md:h-44" />
 }
 
 function Portret({ persoana }: { persoana: PersoanaActivitate }) {
@@ -120,7 +109,7 @@ export default function ActivityDetailPage() {
 
   return (
     <div>
-      <BandaActivitate url={a.bandUrl} />
+      <PublicHeroBand url={a.bandUrl} />
       <div className="mx-auto max-w-4xl px-6 py-10">
         <Link
           to="/activitati"

@@ -8,6 +8,7 @@ import CampCoachesSection from './CampCoachesSection'
 import CampRequirementsSection from './CampRequirementsSection'
 import CampRulesSection from './CampRulesSection'
 import { slugDinTitlu } from '@/api/camps-admin'
+import { HeroPhotoField } from '@/components/HeroPhotoField'
 import type { CampRulesFileMeta } from '@/lib/camp-rules'
 import type { Values } from './camp-form-schema'
 
@@ -27,6 +28,8 @@ export default function CampFormDetailsStep({
   fisierSalvat,
   fisierLocal,
   onFisierLocal,
+  eroareHero,
+  onPozaHero,
 }: {
   register: UseFormRegister<Values>
   control: Control<Values>
@@ -41,6 +44,8 @@ export default function CampFormDetailsStep({
   fisierSalvat: CampRulesFileMeta | null
   fisierLocal: File | null
   onFisierLocal: (fisier: File | null) => void
+  eroareHero: string | null
+  onPozaHero: (fisier: File) => void
 }) {
   const titluReg = register('title')
 
@@ -142,13 +147,22 @@ export default function CampFormDetailsStep({
 
       {eEditare && tabara ? (
         <>
+          {eroareHero && (
+            <p className="text-destructive text-sm" role="alert">
+              {eroareHero}
+            </p>
+          )}
           <CampPhotosSection campId={tabara.id} heroCale={tabara.hero_photo_storage_path} />
           <CampCoachesSection campId={tabara.id} />
         </>
       ) : (
-        <p className="text-muted-foreground rounded-2xl border border-dashed p-4 text-sm">
-          Pozele și antrenorii se adaugă după ce tabăra există deja.
-        </p>
+        <>
+          <HeroPhotoField savedUrl={null} error={eroareHero} onFile={onPozaHero} />
+          <p className="text-muted-foreground rounded-2xl border border-dashed p-4 text-sm">
+            Galeria și antrenorii se adaugă după ce tabăra există. Poza din cap se alege acum și nu
+            ține locul galeriei.
+          </p>
+        </>
       )}
     </section>
   )

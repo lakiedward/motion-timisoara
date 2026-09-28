@@ -15,6 +15,11 @@ import {
 import { fetchSports } from '@/api/sports'
 import { getCursBnr } from '@/api/bnr-rate'
 
+vi.mock('@/api/offer-hero', () => ({
+  schimbaPozaOferta: vi.fn().mockResolvedValue('c/hero/a.jpg'),
+  renuntaLaOfertaFaraHero: vi.fn(),
+}))
+
 vi.mock('@/api/club', () => ({
   getMyClub: vi.fn(),
   getClubSelectableLocations: vi.fn(),
@@ -52,6 +57,12 @@ function renderForm(ruta = '/club/courses/new') {
       </MemoryRouter>
     </QueryClientProvider>,
   )
+}
+
+function punePozaHero() {
+  fireEvent.change(screen.getByLabelText('Poza din capul paginii'), {
+    target: { files: [new File(['poza'], 'hero.jpg', { type: 'image/jpeg' })] },
+  })
 }
 
 async function completeazaProgram(user: ReturnType<typeof userEvent.setup>, zi = 'Luni') {
@@ -198,7 +209,7 @@ test('mesajul „Adaugă o locație” apare doar când nu există nicio locați
 // --- Criteriul 5: salvarea reusita duce in lista, cu mesaj ---
 test('salvarea reușită creează cursul și duce înapoi în listă', async () => {
   const user = userEvent.setup()
-  vi.mocked(createClubCourse).mockResolvedValue(undefined as never)
+  vi.mocked(createClubCourse).mockResolvedValue({ id: 'c-nou' } as never)
   renderForm()
   await user.type(await screen.findByLabelText('Nume curs'), 'Curs nou de test')
   await user.selectOptions(screen.getByLabelText('Antrenor'), ANTRENOR)
@@ -206,6 +217,7 @@ test('salvarea reușită creează cursul și duce înapoi în listă', async () 
   await user.selectOptions(screen.getByLabelText('Locație'), LOC_COMUNA)
   await user.type(screen.getByLabelText('Preț / ședință (lei)'), '80')
   await completeazaProgram(user)
+  punePozaHero()
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
 
   await waitFor(() => expect(createClubCourse).toHaveBeenCalled())
@@ -229,6 +241,7 @@ test('salvarea eșuată păstrează valorile completate și anunță eroarea', a
   await user.selectOptions(screen.getByLabelText('Locație'), LOC_COMUNA)
   await user.type(screen.getByLabelText('Preț / ședință (lei)'), '80')
   await completeazaProgram(user)
+  punePozaHero()
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
 
   const { toast } = await import('sonner')
@@ -263,7 +276,7 @@ test('titlul urmează modul: „Curs nou” la creare, „Editează curs” la e
 
 test('EUR citește cursul BNR și îl îngheață pe cursul de club', async () => {
   const user = userEvent.setup()
-  vi.mocked(createClubCourse).mockResolvedValue(undefined as never)
+  vi.mocked(createClubCourse).mockResolvedValue({ id: 'c-eur' } as never)
   renderForm()
   await user.type(await screen.findByLabelText('Nume curs'), 'Curs euro')
   await user.selectOptions(screen.getByLabelText('Antrenor'), ANTRENOR)
@@ -274,6 +287,7 @@ test('EUR citește cursul BNR și îl îngheață pe cursul de club', async () =
   expect(screen.queryByLabelText('Cursul tău: 1 EUR în lei')).not.toBeInTheDocument()
   await user.type(screen.getByLabelText('Preț / ședință (EUR)'), '25')
   await completeazaProgram(user)
+  punePozaHero()
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() => expect(createClubCourse).toHaveBeenCalled())
   expect(vi.mocked(createClubCourse).mock.calls[0][1]).toMatchObject({

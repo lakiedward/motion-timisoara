@@ -18,6 +18,7 @@ import { getPublicCompetitionCoaches } from '@/api/competition/competition-coach
 import { listCompetitionRoutePhotos } from '@/api/competition/competition-route-photos'
 import { useCompetitionClock } from './useCompetitionClock'
 import PhotoGallery from '@/components/PhotoGallery'
+import { PublicHeroBand } from '@/features/public/PublicHeroBand'
 
 export default function CompetitionDetailsPage() {
   const { slug = '' } = useParams()
@@ -83,14 +84,7 @@ export default function CompetitionDetailsPage() {
 
   return (
     <div>
-      {data.heroUrl ? (
-        <div className="relative h-64 w-full overflow-hidden md:h-96">
-          <img src={data.heroUrl} alt="" className="size-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-        </div>
-      ) : (
-        <div className="from-primary/20 to-transparent h-32 w-full bg-gradient-to-b md:h-44" />
-      )}
+      <PublicHeroBand url={data.heroUrl} />
 
       <div className="mx-auto max-w-4xl px-6 py-8">
         <Link

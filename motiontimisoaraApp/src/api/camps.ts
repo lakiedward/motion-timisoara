@@ -1,12 +1,14 @@
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 import { publicUrl } from '@/api/public'
-import { getPretulAdult, getPreturilePeVarsta, type PretAdult, type PretPeVarsta } from '@/api/camps-admin'
-import { campRulesFileAfisabil } from '@/api/camp-rules-file'
 import {
-  readCampRequirements,
-  type CampRequirementCategory,
-} from '@/lib/camp-requirements'
+  getPretulAdult,
+  getPreturilePeVarsta,
+  type PretAdult,
+  type PretPeVarsta,
+} from '@/api/camps-admin'
+import { campRulesFileAfisabil } from '@/api/camp-rules-file'
+import { readCampRequirements, type CampRequirementCategory } from '@/lib/camp-requirements'
 import type { CampRulesFileLink } from '@/lib/camp-rules'
 
 const BUCKET = 'camp-photos'
@@ -217,7 +219,7 @@ export async function getTabaraDetaliu(slug: string): Promise<TabaraDetaliu | nu
         nume: r.coach_profile!.profile?.name ?? 'Antrenor',
         pozaUrl: publicUrl('coach-photos', r.coach_profile!.photo_storage_path),
       })),
-    heroUrl: publicUrl(BUCKET, tabara.hero_photo_storage_path) ?? galerieUrls[0] ?? null,
+    heroUrl: publicUrl(BUCKET, tabara.hero_photo_storage_path),
     galerieUrls,
     locuriRamase: locuri.data as number | null,
     regulamentFisier: campRulesFileAfisabil(tabara),

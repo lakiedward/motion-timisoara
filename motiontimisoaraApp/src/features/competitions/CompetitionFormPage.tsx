@@ -12,11 +12,11 @@ import {
   updateConcurs,
   urlHeroConcurs,
 } from '@/api/competition/competitions'
-import { schimbaPozaConcurs, scoatePozaConcurs } from '@/api/competition/competition-hero'
+import { schimbaPozaConcurs } from '@/api/competition/competition-hero'
 import { getClubSelectableLocations } from '@/api/club'
 import { getSelectableLocations } from '@/api/coach'
-import { alegeDinGalerie, galeriaSeDeschideNativ } from '@/lib/galerie'
-import { esteImagine } from '@/lib/media'
+import { HeroPhotoField } from '@/components/HeroPhotoField'
+import { mesajHeroLipsa } from '@/lib/hero-photo'
 import {
   competitionScheduleFromFields,
   competitionScheduleToFields,
@@ -52,8 +52,7 @@ export default function CompetitionFormPage({ baza }: { baza: CompetitionPortalB
   const qc = useQueryClient()
   const { owner, gata, eroare, reincearca } = useCompetitionOwner()
   const [fisier, setFisier] = useState<File | null>(null)
-  const [previzualizare, setPrevizualizare] = useState<string | null>(null)
-  const [scoate, setScoate] = useState(false)
+  const [eroareHero, setEroareHero] = useState<string | null>(null)
   const [confirmaStergerea, setConfirmaStergerea] = useState(false)
 
   const existent = useQuery({
@@ -94,13 +93,6 @@ export default function CompetitionFormPage({ baza }: { baza: CompetitionPortalB
     }
   }, [existent.data, reset])
 
-  const inlocuiestePrevizualizarea = (ales: File | null) => {
-    setPrevizualizare((veche) => {
-      if (veche) URL.revokeObjectURL(veche)
-      return ales ? URL.createObjectURL(ales) : null
-    })
-  }
-
   const sterge = useMutation({
     mutationFn: () => stergeConcurs(id as string),
     onSuccess: () => {
@@ -113,61 +105,47 @@ export default function CompetitionFormPage({ baza }: { baza: CompetitionPortalB
       toast.error(error instanceof Error ? error.message : 'Nu am putut șterge concursul.'),
   })
 
-  const alegePoza = (ales: File | null) => {
-    if (ales && !esteImagine(ales)) {
-      toast.error('Poza trebuie să fie o imagine.')
-      return
-    }
-    setFisier(ales)
-    setScoate(false)
-    inlocuiestePrevizualizarea(ales)
-  }
-
-  const dinGalerie = async () => {
-    try {
-      const alese = await alegeDinGalerie(1)
-      alegePoza(alese.find(esteImagine) ?? null)
-    } catch {
-      toast.error('Nu am putut deschide galeria.')
-    }
-  }
-
-  const salveaza = handleSubmit(async (valori) => {
-    try {
-      let destination: string = baza
-      const input = {
-        title: valori.title,
-        description: valori.description,
-        ...competitionScheduleFromFields(valori),
-        location_id: valori.locationId || null,
-        location_text: valori.locationText,
-        allow_cash: valori.allowCash,
-      }
-      if (id) {
-        await updateConcurs(id, input)
-        if (fisier) await schimbaPozaConcurs(id, fisier)
-        else if (scoate) await scoatePozaConcurs(id)
-      } else {
-        const creat = await createConcurs(input, owner)
-        destination = `${baza}/${creat.id}/edit`
-        if (fisier) {
+  const salveaza = handleSubmit(
+    async (valori) => {
+      const lipsa = mesajHeroLipsa(fisier, existent.data?.hero_photo_storage_path ?? null)
+      setEroareHero(lipsa)
+      if (lipsa) return
+      try {
+        let destination: string = baza
+        const input = {
+          title: valori.title,
+          description: valori.description,
+          ...competitionScheduleFromFields(valori),
+          location_id: valori.locationId || null,
+          location_text: valori.locationText,
+          allow_cash: valori.allowCash,
+        }
+        if (id) {
+          await updateConcurs(id, input)
+          if (fisier) await schimbaPozaConcurs(id, fisier)
+        } else {
+          const creat = await createConcurs(input, owner)
+          destination = `${baza}/${creat.id}/edit`
           try {
-            await schimbaPozaConcurs(creat.id, fisier)
+            await schimbaPozaConcurs(creat.id, fisier as File)
           } catch {
-            toast.error('Concursul a fost salvat, dar poza nu a putut fi încărcată.')
-            navigate(`${baza}/${creat.id}/edit`)
+            await stergeConcurs(creat.id)
+            toast.error('Fără poza din capul paginii concursul nu se salvează.')
             return
           }
         }
+        toast.success('Concursul a fost salvat.')
+        void qc.invalidateQueries({ queryKey: ['concursurile-mele'] })
+        void qc.invalidateQueries({ queryKey: ['concursuri-publice'] })
+        navigate(destination)
+      } catch (eroareSalvare) {
+        toast.error(mesajSalvare(eroareSalvare))
       }
-      toast.success('Concursul a fost salvat.')
-      void qc.invalidateQueries({ queryKey: ['concursurile-mele'] })
-      void qc.invalidateQueries({ queryKey: ['concursuri-publice'] })
-      navigate(destination)
-    } catch (eroareSalvare) {
-      toast.error(mesajSalvare(eroareSalvare))
-    }
-  })
+    },
+    () => {
+      setEroareHero(mesajHeroLipsa(fisier, existent.data?.hero_photo_storage_path ?? null))
+    },
+  )
 
   if (eroare || existent.isError) {
     return (
@@ -200,7 +178,6 @@ export default function CompetitionFormPage({ baza }: { baza: CompetitionPortalB
   }
 
   const heroSalvat = existent.data?.hero_photo_storage_path ?? null
-  const heroAfisat = previzualizare ?? (scoate ? null : urlHeroConcurs(heroSalvat))
 
   return (
     <>
@@ -240,49 +217,14 @@ export default function CompetitionFormPage({ baza }: { baza: CompetitionPortalB
             )}
           </div>
 
-          <fieldset className="rounded-2xl border p-5">
-            <legend className="px-2 font-semibold">Poza din capul paginii</legend>
-            <p className="text-muted-foreground text-sm">Opțională. Se vede deasupra titlului.</p>
-            {heroAfisat && (
-              <img src={heroAfisat} alt="" className="mt-3 h-40 w-full rounded-xl object-cover" />
-            )}
-            <div className="mt-3 flex flex-wrap gap-2">
-              {galeriaSeDeschideNativ() ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 min-h-11"
-                  onClick={() => void dinGalerie()}
-                >
-                  Alege din galerie
-                </Button>
-              ) : (
-                <Label className="border-input inline-flex h-11 min-h-11 cursor-pointer items-center rounded-md border px-4 text-sm font-medium">
-                  Alege o poză
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="sr-only"
-                    onChange={(e) => alegePoza(e.target.files?.[0] ?? null)}
-                  />
-                </Label>
-              )}
-              {(heroSalvat || fisier) && !scoate && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 min-h-11"
-                  onClick={() => {
-                    setFisier(null)
-                    setScoate(true)
-                    inlocuiestePrevizualizarea(null)
-                  }}
-                >
-                  Scoate poza
-                </Button>
-              )}
-            </div>
-          </fieldset>
+          <HeroPhotoField
+            savedUrl={urlHeroConcurs(heroSalvat)}
+            error={eroareHero}
+            onFile={(ales) => {
+              setFisier(ales)
+              setEroareHero(null)
+            }}
+          />
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">

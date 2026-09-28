@@ -109,19 +109,15 @@ test('un id lipsă rămâne „nu a fost găsită”, cu linkul înapoi', async 
   expect(screen.queryByRole('button', { name: 'Reîncearcă' })).not.toBeInTheDocument()
 })
 
-test('fără poza activității, hero-ul e degradeul scurt și titlul stă la o treaptă sub link', async () => {
+test('fără poza activității, pagina nu pune degradeul gol, iar titlul stă sub link', async () => {
   deseneaza()
   const titlu = await screen.findByRole('heading', { level: 1, name: 'DEMO — Atelier de ciclism' })
   const link = screen.getByRole('link', { name: /Înapoi la activități/ })
-  expect(document.querySelector('.h-32')).toBeInTheDocument()
-  expect(document.querySelector('.md\\:h-44')).toBeInTheDocument()
-  expect(document.querySelector('.from-primary\\/20')).toBeInTheDocument()
+  expect(document.querySelector('.h-32')).not.toBeInTheDocument()
+  expect(document.querySelector('.from-primary\\/20')).not.toBeInTheDocument()
   expect(document.querySelector('.md\\:h-96')).not.toBeInTheDocument()
   expect(link.className).toContain('h-11')
   expect(link.compareDocumentPosition(titlu) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-  expect(document.querySelector('.h-32')?.compareDocumentPosition(link)).toBe(
-    Node.DOCUMENT_POSITION_FOLLOWING,
-  )
   expect(titlu.className).toContain('mt-4')
   expect(titlu.className).toContain('text-3xl')
   expect(titlu.className).toContain('md:text-4xl')

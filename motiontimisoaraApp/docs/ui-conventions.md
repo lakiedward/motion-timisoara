@@ -7,7 +7,7 @@
 Citește-l înainte de a scrie criteriile unei secțiuni noi: ce e mai jos se
 moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întrebare.
 
-6 convenții · 3 respectate · 2 în derivă · 1 fără canonic
+6 convenții · 4 respectate · 1 în derivă · 1 fără canonic
 
 ## Stare de eroare ≠ listă goală  [DERIVĂ 23/75]
 
@@ -24,7 +24,7 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
     Cât timp tokenul nu există, asta NU e o convenție — e un item de lucru.
 
     canonic  — lipsește —
-    măsurat  183 valori scrise de mână, în 63 fișiere
+    măsurat  181 valori scrise de mână, în 64 fișiere
     →        unde trăiește tokenul e o alegere, nu o măsurătoare. Deschis pe Focus.
 
 ## Forme de așteptare  [RESPECTATĂ]
@@ -35,13 +35,12 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
     blocat   0 animate-pulse în afara primitivei
     folosit  59 fișiere
 
-## Culorile de brand  [DERIVĂ 1]
+## Culorile de brand  [RESPECTATĂ]
 
     Nicio culoare literală în componente; totul prin tokeni, ambele teme.
 
     canonic   src/index.css :root + .dark
-    plafon    1 literal hex rămas, în 1 fișier — poate doar scădea
-              src/features/public/CourseDetailsPage.tsx (1)
+    plafon    0 literale hex rămase, în 0 fișiere — poate doar scădea
     excepție  src/features/auth/GoogleSignInButton.tsx — culorile oficiale ale logoului Google — marca altcuiva, nu se tokenizează
 
 ## Contrast pe perechile de tokeni  [RESPECTATĂ]

@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import CampPricingCard from './camp-pricing/CampPricingCard'
 import CampLocation from '@/components/camps/CampLocation'
 import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
+import { PublicHeroBand } from './PublicHeroBand'
 
 export default function CampDetailsPage() {
   const { slug = '' } = useParams()
@@ -70,14 +71,7 @@ export default function CampDetailsPage() {
 
   return (
     <div>
-      {heroUrl ? (
-        <div className="relative h-64 w-full overflow-hidden md:h-96">
-          <img src={heroUrl} alt="" className="size-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-        </div>
-      ) : (
-        <div className="from-primary/20 to-transparent h-32 w-full bg-gradient-to-b md:h-44" />
-      )}
+      <PublicHeroBand url={heroUrl} />
 
       <div className="mx-auto max-w-4xl px-6 py-8">
         <Link

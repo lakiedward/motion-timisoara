@@ -196,7 +196,7 @@ test('fișierul regulamentului primește URL-ul public din bucketul camp-rules',
     url: 'https://public/camp-rules/camp-1/uuid.pdf',
   })
 })
-test('fără poză hero aleasă, prima din galerie îi ține locul', async () => {
+test('galeria nu ține locul pozei din cap', async () => {
   raspuns = {
     camps: { data: TABARA, error: null },
     camp_photos: {
@@ -208,7 +208,8 @@ test('fără poză hero aleasă, prima din galerie îi ține locul', async () =>
     },
   }
   const d = await getTabaraDetaliu('tabara-inot')
-  expect(d!.heroUrl).toBe('https://public/camp-photos/camp-1/gallery/prima.jpg')
+  expect(d!.heroUrl).toBeNull()
+  expect(d!.galerieUrls[0]).toBe('https://public/camp-photos/camp-1/gallery/prima.jpg')
 })
 
 test('poza hero aleasă are întâietate față de galerie', async () => {

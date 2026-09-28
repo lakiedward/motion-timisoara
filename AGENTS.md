@@ -610,6 +610,12 @@ reorganizing this document; correct obsolete facts with current evidence.
   shell are removed so the same field shows on every screen. Cards and the
   scrolled header stay on `--background` / `--card`. No pattern, photo, or
   motion.
+- 2026-09-28 — Activity, course, camp, and competition hero photos are required
+  in the coach or club form. Save does not proceed without one. The public
+  hero band is that photo. The gallery stays a separate requirement. The empty
+  gradient is not the hero. Migration `00077_club_activity_hero_photo.sql`
+  lets a club upload an activity hero; it is not applied remotely in this
+  change.
 
 ## 11. Known Issues / WIP
 
