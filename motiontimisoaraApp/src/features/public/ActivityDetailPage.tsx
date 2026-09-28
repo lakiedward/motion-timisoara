@@ -109,17 +109,26 @@ export default function ActivityDetailPage() {
 
   return (
     <div>
-      <PublicHeroBand url={a.bandUrl} />
+      <PublicHeroBand
+        url={a.bandUrl}
+        title={a.name}
+        backTo="/activitati"
+        backLabel="Înapoi la activități"
+      />
       <div className="mx-auto max-w-4xl px-6 py-10">
-        <Link
-          to="/activitati"
-          className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
-        >
-          <ArrowLeft className="size-4" /> Înapoi la activități
-        </Link>
-        <h1 className="font-display text-foreground mt-4 text-3xl font-extrabold md:text-4xl">
-          {a.name}
-        </h1>
+        {!a.bandUrl && (
+          <>
+            <Link
+              to="/activitati"
+              className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
+            >
+              <ArrowLeft className="size-4" /> Înapoi la activități
+            </Link>
+            <h1 className="font-display text-foreground mt-4 text-3xl font-extrabold md:text-4xl">
+              {a.name}
+            </h1>
+          </>
+        )}
 
         {a.organizator && (
           <div className="mt-6">

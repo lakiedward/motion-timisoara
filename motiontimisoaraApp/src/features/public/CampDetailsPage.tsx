@@ -71,23 +71,40 @@ export default function CampDetailsPage() {
 
   return (
     <div>
-      <PublicHeroBand url={heroUrl} />
+      <PublicHeroBand
+        url={heroUrl}
+        title={tabara.title}
+        backTo="/tabere"
+        backLabel="Înapoi la tabere"
+      />
 
       <div className="mx-auto max-w-4xl px-6 py-8">
-        <Link
-          to="/tabere"
-          className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
-        >
-          <ArrowLeft className="size-4" /> Înapoi la tabere
-        </Link>
+        {!heroUrl && (
+          <Link
+            to="/tabere"
+            className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
+          >
+            <ArrowLeft className="size-4" /> Înapoi la tabere
+          </Link>
+        )}
 
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <h1 className="font-display text-3xl font-extrabold text-foreground md:text-4xl">
-            {tabara.title}
-          </h1>
-          {incheiata && <Badge variant="secondary">Încheiată</Badge>}
-          {!incheiata && plina && <Badge variant="destructive">Locuri epuizate</Badge>}
-        </div>
+        {(!heroUrl || incheiata || plina) && (
+          <div
+            className={
+              heroUrl
+                ? 'flex flex-wrap items-center gap-3'
+                : 'mt-4 flex flex-wrap items-center gap-3'
+            }
+          >
+            {!heroUrl && (
+              <h1 className="font-display text-3xl font-extrabold text-foreground md:text-4xl">
+                {tabara.title}
+              </h1>
+            )}
+            {incheiata && <Badge variant="secondary">Încheiată</Badge>}
+            {!incheiata && plina && <Badge variant="destructive">Locuri epuizate</Badge>}
+          </div>
+        )}
 
         <div className="text-muted-foreground mt-4 flex flex-wrap gap-5 text-sm">
           <span className="flex items-center gap-1.5">

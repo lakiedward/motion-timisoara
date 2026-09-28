@@ -6,7 +6,9 @@ The empty hero gradient is not the public hero. An activity, course, camp, and
 competition each need a hero photo chosen in the organizer form before save.
 The coach or the club sets it. A save with no new file and no stored path
 stops and shows `Poza din capul paginii este obligatorie.` The public hero
-band renders that photo. It does not render the empty gradient.
+band renders that photo across the full width, with the title in white on the
+photo, the same frame as the course detail. It does not render the empty
+gradient, and it does not add the course sport or level chips.
 
 The gallery stays a separate set of photos. A gallery image does not fill the
 hero band, and removing the hero is not offered. A row with no stored hero

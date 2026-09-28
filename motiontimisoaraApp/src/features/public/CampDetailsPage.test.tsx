@@ -364,8 +364,12 @@ test('poza mare și galeria apar când există', async () => {
     }) as never,
   )
   const { container } = renderPage()
-  await screen.findByText('Din tabără')
-  expect(container.querySelector('img[src="https://public/camp-photos/hero.jpg"]')).toBeTruthy()
+  const titlu = await screen.findByRole('heading', { level: 1 })
+  expect(titlu.className).toContain('text-white')
+  expect(container.querySelector('.h-\\[46vh\\] img')).toHaveAttribute(
+    'src',
+    'https://public/camp-photos/hero.jpg',
+  )
   expect(screen.getByRole('button', { name: 'Deschide poza 1 din 2' })).toBeInTheDocument()
 })
 
