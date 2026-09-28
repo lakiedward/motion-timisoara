@@ -9,9 +9,14 @@ stops and shows `Poza din capul paginii este obligatorie.` The public hero
 band renders that photo. It does not render the empty gradient.
 
 The gallery stays a separate set of photos. A gallery image does not fill the
-hero band, and removing the hero is not offered. Existing rows that already
-have no hero stay readable; their public page simply has no hero band until
-the organizer adds the photo on the next save.
+hero band, and removing the hero is not offered. A row with no stored hero
+stays readable; its public page has no hero band until a photo is set.
 
 Club uploads to `activity-photos` need migration
-`00077_club_activity_hero_photo.sql`. That file is not applied by this change.
+`00077_club_activity_hero_photo.sql`. Applied once on 2026-09-28 as remote
+`20260928094434` (`club_activity_hero_photo`).
+
+On the same day, every existing activity, course, and camp that had no hero
+received one. Where a gallery photo already existed, that first photo became
+the hero and the gallery row stayed. A row with no photo received a new hero
+file. No competition rows existed.

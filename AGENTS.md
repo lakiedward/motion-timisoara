@@ -614,8 +614,8 @@ reorganizing this document; correct obsolete facts with current evidence.
   in the coach or club form. Save does not proceed without one. The public
   hero band is that photo. The gallery stays a separate requirement. The empty
   gradient is not the hero. Migration `00077_club_activity_hero_photo.sql`
-  lets a club upload an activity hero; it is not applied remotely in this
-  change.
+  lets a club upload an activity hero. It was applied once on 2026-09-28 as
+  remote `20260928094434` (`club_activity_hero_photo`).
 
 ## 11. Known Issues / WIP
 
