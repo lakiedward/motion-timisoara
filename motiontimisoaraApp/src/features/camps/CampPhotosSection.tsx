@@ -10,7 +10,6 @@ import {
   mutaInGalerie,
   schimbaPozaHero,
   stergeDinGalerie,
-  stergePozaHero,
   urlPublic,
 } from '@/api/camp-photos'
 import { alegeDinGalerie, galeriaSeDeschideNativ } from '@/lib/galerie'
@@ -59,15 +58,6 @@ export default function CampPhotosSection({
     onError: () => toast.error('Nu am putut schimba poza din cap.'),
   })
 
-  const scoateHero = useMutation({
-    mutationFn: () => stergePozaHero(campId),
-    onSuccess: () => {
-      toast.success('Poza din cap a fost scoasă.')
-      reimprospateaza()
-    },
-    onError: () => toast.error('Nu am putut scoate poza.'),
-  })
-
   const sterge = useMutation({
     mutationFn: (poza: (typeof poze)[number]) => stergeDinGalerie(poza),
     onSuccess: () => {
@@ -112,7 +102,7 @@ export default function CampPhotosSection({
   }
 
   const plina = poze.length >= MAX_POZE_GALERIE
-  const ocupat = seLucreaza || hero.isPending || scoateHero.isPending || muta.isPending
+  const ocupat = seLucreaza || hero.isPending || muta.isPending
 
   return (
     <fieldset className="rounded-2xl border p-5">
@@ -120,16 +110,12 @@ export default function CampPhotosSection({
 
       <h3 className="text-sm font-medium">Poza din capul paginii</h3>
       <p className="text-muted-foreground mt-1 text-xs">
-        Se vede lată, deasupra titlului. Merge cel mai bine una în care subiectul stă pe orizontală.
+        Obligatorie. Se vede lată, deasupra titlului. Galeria de mai jos rămâne separată.
       </p>
 
       {heroCale ? (
         <div className="mt-3">
-          <img
-            src={urlPublic(heroCale)}
-            alt=""
-            className="h-40 w-full rounded-xl object-cover"
-          />
+          <img src={urlPublic(heroCale)} alt="" className="h-40 w-full rounded-xl object-cover" />
           <div className="mt-2 flex flex-wrap gap-2">
             <Button
               type="button"
@@ -139,15 +125,6 @@ export default function CampPhotosSection({
               onClick={() => inputHero.current?.click()}
             >
               Schimbă
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-11 min-h-11"
-              disabled={ocupat}
-              onClick={() => scoateHero.mutate()}
-            >
-              <Trash2 className="size-4" /> Scoate
             </Button>
           </div>
         </div>

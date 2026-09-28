@@ -44,6 +44,9 @@ vi.mock('@/api/bnr-rate', async () => {
 })
 vi.mock('@/api/club', () => ({ getClubSelectableLocations: vi.fn() }))
 vi.mock('@/api/coach', () => ({ getSelectableLocations: vi.fn() }))
+vi.mock('@/api/camp-photos', () => ({
+  schimbaPozaHero: vi.fn().mockResolvedValue('tabara-1/hero/a.jpg'),
+}))
 vi.mock('@/api/camp-rules-file', () => ({
   incarcaRegulamentFisier: vi.fn(),
   stergeRegulamentFisier: vi.fn(),
@@ -73,7 +76,7 @@ const TABARA = {
   price: 90000,
   allow_cash: false,
   description: '',
-  hero_photo_storage_path: null,
+  hero_photo_storage_path: 'tabara-1/hero/a.jpg',
   pricing_mode: 'single',
   location_id: null,
   club_id: 'club-1',
@@ -121,6 +124,9 @@ async function completeazaDetalii(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText('Adresa paginii'), 'tabara-inot')
   fireEvent.change(screen.getByLabelText('Începe'), { target: { value: '2027-07-10' } })
   fireEvent.change(screen.getByLabelText('Se termină'), { target: { value: '2027-07-17' } })
+  fireEvent.change(screen.getByLabelText('Poza din capul paginii'), {
+    target: { files: [new File(['poza'], 'hero.jpg', { type: 'image/jpeg' })] },
+  })
 }
 
 async function laCosturi(user: ReturnType<typeof userEvent.setup>) {
@@ -335,9 +341,7 @@ test('la editare, un PDF se urcă imediat, fără să aștepte salvarea', async 
   await screen.findByLabelText('Regulamentul taberei')
   const pdf = new File(['x'.repeat(12)], 'regulament.pdf', { type: 'application/pdf' })
   await user.upload(screen.getByLabelText('Fișierul regulamentului'), pdf)
-  await waitFor(() =>
-    expect(incarcaRegulamentFisier).toHaveBeenCalledWith('tabara-1', pdf),
-  )
+  await waitFor(() => expect(incarcaRegulamentFisier).toHaveBeenCalledWith('tabara-1', pdf))
   expect(saveCampOffer).not.toHaveBeenCalled()
 })
 

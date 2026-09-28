@@ -24,7 +24,10 @@ import {
   getPreturilePeVarsta,
   getTabaraDeEditat,
   saveCampOffer,
+  stergeTabara,
 } from '@/api/camps-admin'
+import { schimbaPozaHero } from '@/api/camp-photos'
+import { mesajHeroLipsa } from '@/lib/hero-photo'
 import { getClubSelectableLocations } from '@/api/club'
 import { getSelectableLocations } from '@/api/coach'
 import { campRequirementsForSave, readCampRequirements } from '@/lib/camp-requirements'
@@ -62,6 +65,8 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   const { proprietar, gata, eClub, eroare, reincearca } = useProprietarTabere()
   const [step, setStep] = useState(0)
   const [fisierLocal, setFisierLocal] = useState<File | null>(null)
+  const [pozaHero, setPozaHero] = useState<File | null>(null)
+  const [eroareHero, setEroareHero] = useState<string | null>(null)
   const [sablonSelectat, setSablonSelectat] = useState('')
   const [locatiePastrata, setLocatiePastrata] = useState<string | null>(null)
 
@@ -133,10 +138,22 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
           priceItems: categorii ?? [],
           campPrice: tabara.price,
         }),
-        adult: adultSalvat ? spreAdult(adultSalvat) : { componente: [{ name: 'Participare', amount_lei: '0' }] },
+        adult: adultSalvat
+          ? spreAdult(adultSalvat)
+          : { componente: [{ name: 'Participare', amount_lei: '0' }] },
       })
     }
-  }, [tabara, categorii, categoriiGata, varste, varsteGata, locatiiGata, adultSalvat, adultGata, reset])
+  }, [
+    tabara,
+    categorii,
+    categoriiGata,
+    varste,
+    varsteGata,
+    locatiiGata,
+    adultSalvat,
+    adultGata,
+    reset,
+  ])
 
   const currency = useWatch({ control, name: 'currency' })
   const cursEur = useWatch({ control, name: 'eur_ron_rate' })
@@ -173,9 +190,17 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
     if (urmatorul < step) setStep(urmatorul)
   }
 
+  const heroLipseste = () => {
+    const cale = eEditare ? (tabara?.hero_photo_storage_path ?? null) : null
+    const mesaj = mesajHeroLipsa(eEditare ? null : pozaHero, cale)
+    setEroareHero(mesaj)
+    return mesaj !== null
+  }
+
   const next = async () => {
     if (step === 0) {
-      if (await trigger([...DETALII_FIELDS])) setStep(1)
+      const detalii = await trigger([...DETALII_FIELDS])
+      if (detalii && !heroLipseste()) setStep(1)
       return
     }
     if (step === 1) {
@@ -185,6 +210,10 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
 
   const onSubmit = async (v: Values) => {
     if (!gata) return
+    if (heroLipseste()) {
+      setStep(0)
+      return
+    }
     const oferta = ofertaDinDraft(v)
     try {
       const campId = id ?? newCampId
@@ -211,6 +240,15 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
         proprietar,
         oferta.adultPrice,
       )
+      if (!eEditare && pozaHero) {
+        try {
+          await schimbaPozaHero(campId, pozaHero)
+        } catch {
+          await stergeTabara(campId)
+          toast.error('Fără poza din capul paginii tabăra nu se salvează.')
+          return
+        }
+      }
       if (!eEditare && fisierLocal) {
         try {
           await incarcaRegulamentFisier(campId, fisierLocal)
@@ -350,6 +388,11 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
             fisierSalvat={fisierSalvat}
             fisierLocal={fisierLocal}
             onFisierLocal={setFisierLocal}
+            eroareHero={eroareHero}
+            onPozaHero={(fisier) => {
+              setPozaHero(fisier)
+              setEroareHero(null)
+            }}
           />
         )}
         {step === 1 && (

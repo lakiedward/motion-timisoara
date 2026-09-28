@@ -20,6 +20,10 @@ vi.mock('@/api/bnr-rate', async () => {
   const real = await vi.importActual<typeof import('@/api/bnr-rate')>('@/api/bnr-rate')
   return { ...real, getCursBnr: vi.fn() }
 })
+vi.mock('@/api/offer-hero', () => ({
+  schimbaPozaOferta: vi.fn().mockResolvedValue('a/hero/a.jpg'),
+  renuntaLaOfertaFaraHero: vi.fn(),
+}))
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 const LOC = 'b6d97609-d740-44aa-b930-fb222ffadb13'
@@ -63,6 +67,9 @@ test('EUR citește cursul BNR și îl îngheață pe activitate', async () => {
   expect(await screen.findByText('Curs BNR din 19.09.2026: 5,123456 lei/EUR')).toBeInTheDocument()
   expect(screen.queryByLabelText('Cursul tău: 1 EUR în lei')).not.toBeInTheDocument()
   await user.type(screen.getByLabelText('Preț (EUR)'), '15')
+  fireEvent.change(screen.getByLabelText('Poza din capul paginii'), {
+    target: { files: [new File(['poza'], 'hero.jpg', { type: 'image/jpeg' })] },
+  })
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() => expect(mockedCreate).toHaveBeenCalled())
   expect(mockedCreate.mock.calls[0][0]).toMatchObject({
@@ -70,6 +77,23 @@ test('EUR citește cursul BNR și îl îngheață pe activitate', async () => {
     eur_ron_rate_micros: 5123456,
     price: 1500,
   })
+})
+
+test('fără poza din cap, activitatea nu se salvează', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  await user.type(await screen.findByLabelText('Nume'), 'Fără poză')
+  await user.selectOptions(screen.getByLabelText('Sport'), SPORT)
+  await user.selectOptions(screen.getByLabelText('Locație'), LOC)
+  fireEvent.change(screen.getByLabelText('Data'), { target: { value: '2027-07-10' } })
+  fireEvent.change(screen.getByLabelText('Ora început'), { target: { value: '09:00' } })
+  fireEvent.change(screen.getByLabelText('Ora final'), { target: { value: '11:00' } })
+  await user.type(screen.getByLabelText('Preț (lei)'), '20')
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Poza din capul paginii este obligatorie.',
+  )
+  expect(mockedCreate).not.toHaveBeenCalled()
 })
 
 test('fără curs BNR, EUR blochează salvarea activității', async () => {

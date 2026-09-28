@@ -20,6 +20,10 @@ vi.mock('@/api/bnr-rate', async () => {
   const real = await vi.importActual<typeof import('@/api/bnr-rate')>('@/api/bnr-rate')
   return { ...real, getCursBnr: vi.fn() }
 })
+vi.mock('@/api/offer-hero', () => ({
+  schimbaPozaOferta: vi.fn().mockResolvedValue('c/hero/a.jpg'),
+  renuntaLaOfertaFaraHero: vi.fn(),
+}))
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 const mockedLocations = vi.mocked(getSelectableLocations)
@@ -44,6 +48,12 @@ function renderForm(ruta = '/coach/courses/new') {
       </MemoryRouter>
     </QueryClientProvider>,
   )
+}
+
+function punePozaHero() {
+  fireEvent.change(screen.getByLabelText('Poza din capul paginii'), {
+    target: { files: [new File(['poza'], 'hero.jpg', { type: 'image/jpeg' })] },
+  })
 }
 
 async function completeazaProgram(user: ReturnType<typeof userEvent.setup>, zi = 'Luni') {
@@ -85,6 +95,7 @@ test('crearea trimite regula și anunță generarea ședințelor', async () => {
   await user.selectOptions(screen.getByLabelText('Locație'), LOC)
   await user.type(screen.getByLabelText('Preț / ședință (lei)'), '80')
   await completeazaProgram(user)
+  punePozaHero()
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
 
   await waitFor(() => expect(mockedCreate).toHaveBeenCalled())
@@ -136,6 +147,7 @@ test('EUR citește cursul BNR și îl îngheață pe curs', async () => {
   expect(screen.queryByLabelText('Cursul tău: 1 EUR în lei')).not.toBeInTheDocument()
   await user.type(screen.getByLabelText('Preț / ședință (EUR)'), '20')
   await completeazaProgram(user)
+  punePozaHero()
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() => expect(mockedCreate).toHaveBeenCalled())
   expect(mockedCreate.mock.calls[0][0]).toMatchObject({

@@ -109,19 +109,15 @@ test('un id lipsă rămâne „nu a fost găsită”, cu linkul înapoi', async 
   expect(screen.queryByRole('button', { name: 'Reîncearcă' })).not.toBeInTheDocument()
 })
 
-test('fără poza activității, hero-ul e degradeul scurt și titlul stă la o treaptă sub link', async () => {
+test('fără poza activității, pagina nu pune degradeul gol, iar titlul stă sub link', async () => {
   deseneaza()
   const titlu = await screen.findByRole('heading', { level: 1, name: 'DEMO — Atelier de ciclism' })
   const link = screen.getByRole('link', { name: /Înapoi la activități/ })
-  expect(document.querySelector('.h-32')).toBeInTheDocument()
-  expect(document.querySelector('.md\\:h-44')).toBeInTheDocument()
-  expect(document.querySelector('.from-primary\\/20')).toBeInTheDocument()
+  expect(document.querySelector('.h-32')).not.toBeInTheDocument()
+  expect(document.querySelector('.from-primary\\/20')).not.toBeInTheDocument()
   expect(document.querySelector('.md\\:h-96')).not.toBeInTheDocument()
   expect(link.className).toContain('h-11')
   expect(link.compareDocumentPosition(titlu) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-  expect(document.querySelector('.h-32')?.compareDocumentPosition(link)).toBe(
-    Node.DOCUMENT_POSITION_FOLLOWING,
-  )
   expect(titlu.className).toContain('mt-4')
   expect(titlu.className).toContain('text-3xl')
   expect(titlu.className).toContain('md:text-4xl')
@@ -137,11 +133,16 @@ test('poza activității umple banda, iar poza sportului rămâne în galerie', 
     bandUrl: 'https://public/activity-photos/a/hero.jpg',
   })
   deseneaza()
-  await screen.findByRole('heading', { level: 1 })
-  const banda = document.querySelector('.h-64 img')
+  const titlu = await screen.findByRole('heading', { level: 1, name: 'DEMO — Atelier de ciclism' })
+  const banda = document.querySelector('.h-\\[46vh\\] img')
   expect(banda).toHaveAttribute('src', 'https://public/activity-photos/a/hero.jpg')
-  expect(document.querySelector('.md\\:h-96')).toBeInTheDocument()
+  expect(banda?.className).toContain('object-cover')
+  expect(document.querySelector('.md\\:h-\\[52vh\\]')).toBeInTheDocument()
+  expect(document.querySelector('.min-h-\\[320px\\]')).toBeInTheDocument()
+  expect(titlu.className).toContain('text-white')
+  expect(titlu.className).toContain('text-4xl')
   expect(document.querySelector('.from-primary\\/20')).not.toBeInTheDocument()
+  expect(document.querySelector('.md\\:h-96')).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Deschide poza 1 din 1' })).toBeInTheDocument()
   expect(screen.queryByText('Ciclism')).not.toBeInTheDocument()
 })

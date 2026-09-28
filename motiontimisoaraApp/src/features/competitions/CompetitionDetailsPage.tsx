@@ -18,6 +18,7 @@ import { getPublicCompetitionCoaches } from '@/api/competition/competition-coach
 import { listCompetitionRoutePhotos } from '@/api/competition/competition-route-photos'
 import { useCompetitionClock } from './useCompetitionClock'
 import PhotoGallery from '@/components/PhotoGallery'
+import { PublicHeroBand } from '@/features/public/PublicHeroBand'
 
 export default function CompetitionDetailsPage() {
   const { slug = '' } = useParams()
@@ -83,25 +84,27 @@ export default function CompetitionDetailsPage() {
 
   return (
     <div>
-      {data.heroUrl ? (
-        <div className="relative h-64 w-full overflow-hidden md:h-96">
-          <img src={data.heroUrl} alt="" className="size-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-        </div>
-      ) : (
-        <div className="from-primary/20 to-transparent h-32 w-full bg-gradient-to-b md:h-44" />
-      )}
+      <PublicHeroBand
+        url={data.heroUrl}
+        title={data.title}
+        backTo="/concursuri"
+        backLabel="Înapoi la concursuri"
+      />
 
       <div className="mx-auto max-w-4xl px-6 py-8">
-        <Link
-          to="/concursuri"
-          className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
-        >
-          <ArrowLeft className="size-4" /> Înapoi la concursuri
-        </Link>
-        <h1 className="font-display text-foreground mt-4 text-3xl font-extrabold md:text-4xl">
-          {data.title}
-        </h1>
+        {!data.heroUrl && (
+          <>
+            <Link
+              to="/concursuri"
+              className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
+            >
+              <ArrowLeft className="size-4" /> Înapoi la concursuri
+            </Link>
+            <h1 className="font-display text-foreground mt-4 text-3xl font-extrabold md:text-4xl">
+              {data.title}
+            </h1>
+          </>
+        )}
         {data.organizator && (
           <p className="text-muted-foreground mt-4 text-sm">
             Organizat de{' '}

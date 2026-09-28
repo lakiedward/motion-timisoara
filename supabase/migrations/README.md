@@ -287,6 +287,10 @@ It returns capacity minus PENDING and ACTIVE activity enrollments. NULL
 capacity stays unlimited. Anon and authenticated may execute it; they still
 cannot read `enrollments`.
 
+Hero photos, 2026-09-28: `00077_club_activity_hero_photo.sql` was applied
+once as remote `20260928094434` (`club_activity_hero_photo`). A club can
+write the public `activity-photos` bucket, the same way a coach already can.
+
 To confirm git and the remote still agree:
 
 ```bash

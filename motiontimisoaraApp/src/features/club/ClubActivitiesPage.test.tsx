@@ -15,6 +15,11 @@ import {
 } from '@/api/club'
 import { fetchSports } from '@/api/sports'
 
+vi.mock('@/api/offer-hero', () => ({
+  schimbaPozaOferta: vi.fn().mockResolvedValue('a/hero/a.jpg'),
+  renuntaLaOfertaFaraHero: vi.fn(),
+}))
+
 vi.mock('@/api/club', () => ({
   getMyClub: vi.fn(),
   getClubActivities: vi.fn(),
@@ -115,6 +120,9 @@ test('formularul nou cere un antrenor din club și salvează regulamentul pe for
   fireEvent.change(screen.getByLabelText('Ora început'), { target: { value: '10:00' } })
   fireEvent.change(screen.getByLabelText('Ora final'), { target: { value: '11:00' } })
   await user.type(screen.getByLabelText('Preț (lei)'), '40')
+  fireEvent.change(screen.getByLabelText('Poza din capul paginii'), {
+    target: { files: [new File(['poza'], 'hero.jpg', { type: 'image/jpeg' })] },
+  })
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() => expect(mockedCreate).toHaveBeenCalled())
   expect(mockedCreate.mock.calls[0][0]).toBe('club-1')

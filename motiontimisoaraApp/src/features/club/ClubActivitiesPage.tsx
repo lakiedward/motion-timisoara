@@ -28,6 +28,10 @@ import {
   updateClubActivity,
 } from '@/api/club'
 import { incarcaRegulamentActivitate, stergeRegulamentActivitate } from '@/api/camp-rules-file'
+import { renuntaLaOfertaFaraHero, schimbaPozaOferta } from '@/api/offer-hero'
+import { publicUrl } from '@/api/public'
+import { HeroPhotoField } from '@/components/HeroPhotoField'
+import { mesajHeroLipsa } from '@/lib/hero-photo'
 import { fetchSports } from '@/api/sports'
 import { OfferRulesFieldset } from '@/components/RulesFileField'
 import { campRulesFileFromRow, type CampRulesFileMeta } from '@/lib/camp-rules'
@@ -220,6 +224,8 @@ function Formular() {
     defaultValues: { currency: 'RON', eur_ron_rate: '' },
   })
   const [fisierLocal, setFisierLocal] = useState<File | null>(null)
+  const [pozaHero, setPozaHero] = useState<File | null>(null)
+  const [eroareHero, setEroareHero] = useState<string | null>(null)
   const [fisierSuprascris, setFisierSuprascris] = useState<CampRulesFileMeta | null | undefined>(
     undefined,
   )
@@ -256,6 +262,9 @@ function Formular() {
       toast.error('Clubul nu a fost găsit.')
       return
     }
+    const lipsa = mesajHeroLipsa(pozaHero, existing?.hero_photo_storage_path ?? null)
+    setEroareHero(lipsa)
+    if (lipsa) return
     const payload = {
       ...offerCurrencyInput(v),
       name: v.name,
@@ -270,9 +279,19 @@ function Formular() {
       capacity: v.capacity && v.capacity.trim() ? Number(v.capacity) : null,
     }
     try {
-      if (isEdit) await updateClubActivity(id as string, payload)
-      else {
+      if (isEdit) {
+        await updateClubActivity(id as string, payload)
+        if (pozaHero)
+          await schimbaPozaOferta('activities', 'activity-photos', id as string, pozaHero)
+      } else {
         const creata = await createClubActivity(club.id, payload)
+        try {
+          await schimbaPozaOferta('activities', 'activity-photos', creata.id, pozaHero as File)
+        } catch {
+          await renuntaLaOfertaFaraHero('activities', creata.id)
+          toast.error('Fără poza din capul paginii activitatea nu se salvează.')
+          return
+        }
         if (fisierLocal) {
           try {
             await incarcaRegulamentActivitate(creata.id, fisierLocal)
@@ -353,7 +372,13 @@ function Formular() {
           )}
         </div>
       )}
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4" noValidate>
+      <form
+        onSubmit={handleSubmit(onSubmit, () =>
+          setEroareHero(mesajHeroLipsa(pozaHero, existing?.hero_photo_storage_path ?? null)),
+        )}
+        className="mt-6 space-y-4"
+        noValidate
+      >
         <div className="space-y-1.5">
           <Label htmlFor="name">Nume</Label>
           <Input
@@ -484,6 +509,14 @@ function Formular() {
             className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
           />
         </div>
+        <HeroPhotoField
+          savedUrl={publicUrl('activity-photos', existing?.hero_photo_storage_path)}
+          error={eroareHero}
+          onFile={(fisier) => {
+            setPozaHero(fisier)
+            setEroareHero(null)
+          }}
+        />
         <OfferRulesFieldset
           entityId={isEdit ? id : undefined}
           saved={fisierSalvat}

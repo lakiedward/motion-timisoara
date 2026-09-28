@@ -18,7 +18,7 @@ vi.mock('@/api/competition/competitions', () => ({
 }))
 
 vi.mock('@/api/competition/competition-hero', () => ({
-  schimbaPozaConcurs: vi.fn(),
+  schimbaPozaConcurs: vi.fn().mockResolvedValue('k1/hero/a.jpg'),
   scoatePozaConcurs: vi.fn(),
 }))
 
@@ -105,6 +105,9 @@ test('un concurs nou se salvează cu proprietarul clubului', async () => {
     target: { value: '23:59' },
   })
   await user.type(screen.getByLabelText('Locația concursului'), 'Timișoara')
+  fireEvent.change(screen.getByLabelText('Poza din capul paginii'), {
+    target: { files: [new File(['poza'], 'hero.jpg', { type: 'image/jpeg' })] },
+  })
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() =>
     expect(createConcurs).toHaveBeenCalledWith(

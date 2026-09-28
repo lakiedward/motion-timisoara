@@ -26,7 +26,11 @@ import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { incarcaRegulamentCurs, stergeRegulamentCurs } from '@/api/camp-rules-file'
+import { renuntaLaOfertaFaraHero, schimbaPozaOferta } from '@/api/offer-hero'
 import { createCourse, getCourseById, getSelectableLocations, updateCourse } from '@/api/coach'
+import { publicUrl } from '@/api/public'
+import { HeroPhotoField } from '@/components/HeroPhotoField'
+import { mesajHeroLipsa } from '@/lib/hero-photo'
 import { fetchSports } from '@/api/sports'
 import { OfferRulesFieldset } from '@/components/RulesFileField'
 import { campRulesFileFromRow, type CampRulesFileMeta } from '@/lib/camp-rules'
@@ -89,6 +93,8 @@ export default function CourseFormPage() {
     defaultValues: { currency: 'RON', eur_ron_rate: '', program: emptyCourseProgram() },
   })
   const [fisierLocal, setFisierLocal] = useState<File | null>(null)
+  const [pozaHero, setPozaHero] = useState<File | null>(null)
+  const [eroareHero, setEroareHero] = useState<string | null>(null)
   const [fisierSuprascris, setFisierSuprascris] = useState<CampRulesFileMeta | null | undefined>(
     undefined,
   )
@@ -121,6 +127,9 @@ export default function CourseFormPage() {
   }, [existing, reset])
 
   const onSubmit = async (v: Values) => {
+    const lipsa = mesajHeroLipsa(pozaHero, existing?.hero_photo_storage_path ?? null)
+    setEroareHero(lipsa)
+    if (lipsa) return
     const payload = {
       ...offerCurrencyInput(v),
       name: v.name,
@@ -135,9 +144,18 @@ export default function CourseFormPage() {
       recurrence_rule: requireSerializedProgram(v.program),
     }
     try {
-      if (isEdit) await updateCourse(id as string, payload)
-      else {
+      if (isEdit) {
+        await updateCourse(id as string, payload)
+        if (pozaHero) await schimbaPozaOferta('courses', 'course-photos', id as string, pozaHero)
+      } else {
         const creat = await createCourse(payload)
+        try {
+          await schimbaPozaOferta('courses', 'course-photos', creat.id, pozaHero as File)
+        } catch {
+          await renuntaLaOfertaFaraHero('courses', creat.id)
+          toast.error('Fără poza din capul paginii cursul nu se salvează.')
+          return
+        }
         if (fisierLocal) {
           try {
             await incarcaRegulamentCurs(creat.id, fisierLocal)
@@ -175,7 +193,13 @@ export default function CourseFormPage() {
         {isEdit ? 'Editează curs' : 'Curs nou'}
       </h1>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4" noValidate>
+      <form
+        onSubmit={handleSubmit(onSubmit, () =>
+          setEroareHero(mesajHeroLipsa(pozaHero, existing?.hero_photo_storage_path ?? null)),
+        )}
+        className="mt-6 space-y-4"
+        noValidate
+      >
         <div className="space-y-1.5">
           <Label htmlFor="name">Nume curs</Label>
           <Input id="name" {...register('name')} aria-invalid={!!errors.name} />
@@ -267,6 +291,14 @@ export default function CourseFormPage() {
             className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
           />
         </div>
+        <HeroPhotoField
+          savedUrl={publicUrl('course-photos', existing?.hero_photo_storage_path)}
+          error={eroareHero}
+          onFile={(fisier) => {
+            setPozaHero(fisier)
+            setEroareHero(null)
+          }}
+        />
         <OfferRulesFieldset
           entityId={isEdit ? id : undefined}
           saved={fisierSalvat}
