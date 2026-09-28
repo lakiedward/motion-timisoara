@@ -113,13 +113,13 @@ test('fără poza activității, hero-ul e degradeul scurt și titlul stă la o 
   deseneaza()
   const titlu = await screen.findByRole('heading', { level: 1, name: 'DEMO — Atelier de ciclism' })
   const link = screen.getByRole('link', { name: /Înapoi la activități/ })
-  expect(document.querySelector('.h-32')).toBeInTheDocument()
-  expect(document.querySelector('.md\\:h-44')).toBeInTheDocument()
+  expect(document.querySelector('.h-16')).toBeInTheDocument()
+  expect(document.querySelector('.md\\:h-22')).toBeInTheDocument()
   expect(document.querySelector('.from-primary\\/20')).toBeInTheDocument()
   expect(document.querySelector('.md\\:h-96')).not.toBeInTheDocument()
   expect(link.className).toContain('h-11')
   expect(link.compareDocumentPosition(titlu) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-  expect(document.querySelector('.h-32')?.compareDocumentPosition(link)).toBe(
+  expect(document.querySelector('.h-16')?.compareDocumentPosition(link)).toBe(
     Node.DOCUMENT_POSITION_FOLLOWING,
   )
   expect(titlu.className).toContain('mt-4')

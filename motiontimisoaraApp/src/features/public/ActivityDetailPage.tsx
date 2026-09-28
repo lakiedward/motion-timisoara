@@ -54,7 +54,7 @@ function BandaActivitate({ url }: { url: string | null }) {
       </div>
     )
   }
-  return <div className="from-primary/20 to-transparent h-32 w-full bg-gradient-to-b md:h-44" />
+  return <div className="from-primary/20 to-transparent h-16 w-full bg-gradient-to-b md:h-22" />
 }
 
 function Portret({ persoana }: { persoana: PersoanaActivitate }) {
