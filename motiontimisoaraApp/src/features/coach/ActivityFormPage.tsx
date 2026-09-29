@@ -26,7 +26,7 @@ import {
   updateActivity,
 } from '@/api/coach'
 import { HeroPhotoField } from '@/components/HeroPhotoField'
-import { mesajHeroLipsa } from '@/lib/hero-photo'
+import { MESAJ_POZA_HERO, mesajHeroLipsa } from '@/lib/hero-photo'
 import { publicUrl } from '@/api/public'
 import { fetchSports } from '@/api/sports'
 import { OfferRulesFieldset } from '@/components/RulesFileField'
@@ -40,6 +40,15 @@ import { cn } from '@/lib/utils'
 const selectCls =
   'border-input focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px]'
 
+function minuteDinOra(ora: string) {
+  const [ore, minute] = ora.split(':')
+  if (ore === undefined || minute === undefined) return null
+  const h = Number(ore)
+  const m = Number(minute)
+  if (!Number.isInteger(h) || !Number.isInteger(m)) return null
+  return h * 60 + m
+}
+
 const schema = z
   .object({
     ...offerCurrencyShape,
@@ -51,9 +60,19 @@ const schema = z
     end_time: z.string().min(1, 'Obligatoriu'),
     price_lei: offerAmountSchema,
     capacity: z.string().optional(),
-    description: z.string().optional(),
+    description: z.string().trim().min(1, 'Descrierea este obligatorie.'),
   })
-  .superRefine(validateOfferCurrency)
+  .superRefine((value, ctx) => {
+    validateOfferCurrency(value, ctx)
+    const start = minuteDinOra(value.start_time)
+    const end = minuteDinOra(value.end_time)
+    if (start === null || end === null || end > start) return
+    ctx.addIssue({
+      code: 'custom',
+      path: ['end_time'],
+      message: 'Ora final trebuie să fie după ora de început.',
+    })
+  })
 type Values = z.infer<typeof schema>
 
 export default function ActivityFormPage() {
@@ -123,7 +142,7 @@ export default function ActivityFormPage() {
     const payload = {
       ...offerCurrencyInput(v),
       name: v.name,
-      description: v.description || null,
+      description: v.description,
       sport_id: v.sport_id,
       location_id: v.location_id,
       activity_date: v.activity_date,
@@ -274,9 +293,13 @@ export default function ActivityFormPage() {
               <p className="text-destructive text-xs">{errors.end_time.message}</p>
             )}
           </div>
+          <p className="text-muted-foreground text-sm sm:col-span-2">
+            Orele sunt în fusul României.
+          </p>
           <div className="space-y-1.5">
             <Label htmlFor="capacity">Capacitate</Label>
             <Input id="capacity" type="number" {...register('capacity')} />
+            <p className="text-muted-foreground text-sm">Lasă gol dacă nu ai limită.</p>
           </div>
         </div>
         <div className="space-y-1.5">
@@ -285,10 +308,15 @@ export default function ActivityFormPage() {
             id="description"
             rows={3}
             {...register('description')}
+            aria-invalid={!!errors.description}
             className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
           />
+          {errors.description && (
+            <p className="text-destructive text-xs">{errors.description.message}</p>
+          )}
         </div>
         <HeroPhotoField
+          hint={MESAJ_POZA_HERO}
           savedUrl={publicUrl('activity-photos', existing?.hero_photo_storage_path)}
           error={eroareHero}
           onFile={(fisier) => {
