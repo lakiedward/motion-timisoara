@@ -5,7 +5,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { vi } from 'vitest'
 
 import ActivityFormPage from './ActivityFormPage'
-import { createActivity, getSelectableLocations } from '@/api/coach'
+import {
+  createActivity,
+  getActivityById,
+  getSelectableLocations,
+  updateActivity,
+} from '@/api/coach'
 import { fetchSports } from '@/api/sports'
 import { getCursBnr } from '@/api/bnr-rate'
 
@@ -29,6 +34,7 @@ vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 const LOC = 'b6d97609-d740-44aa-b930-fb222ffadb13'
 const SPORT = '4c7a30c1-42a4-4bad-839c-f03d2b90e88a'
 const mockedCreate = vi.mocked(createActivity)
+const mockedUpdate = vi.mocked(updateActivity)
 
 function renderForm() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -126,6 +132,12 @@ test('frazele de fus și de capacitate stau pe formular, iar poza folosește fra
   expect(await screen.findByText('Orele sunt în fusul României.')).toBeInTheDocument()
   expect(screen.getByText('Lasă gol dacă nu ai limită.')).toBeInTheDocument()
   expect(screen.getByLabelText('Capacitate')).toHaveValue(null)
+  expect(screen.getByLabelText('Vârstă minimă')).toHaveValue(null)
+  expect(screen.getByLabelText('Vârstă maximă')).toHaveValue(null)
+  expect(
+    screen.getByText('Lasă gol dacă nu ai limită. Poți completa doar una.'),
+  ).toBeInTheDocument()
+  expect(screen.queryByRole('switch')).not.toBeInTheDocument()
   expect(screen.getByText('Poza din capul paginii este obligatorie.')).toBeInTheDocument()
   expect(
     screen.queryByText(
@@ -166,5 +178,57 @@ test('capacitatea goală se salvează fără limită de locuri', async () => {
   expect(mockedCreate.mock.calls[0][0]).toMatchObject({
     capacity: null,
     description: 'Ieșire pe lac.',
+    age_from: null,
+    age_to: null,
   })
+})
+
+test.each([
+  ['doar vârstă minimă', '8', '', 8, null],
+  ['doar vârstă maximă', '', '12', null, 12],
+  ['ambele vârste', '8', '12', 8, 12],
+  ['nicio vârstă', '', '', null, null],
+])('se salvează cu %s', async (_caz, minim, maxim, ageFrom, ageTo) => {
+  const user = userEvent.setup()
+  mockedCreate.mockResolvedValue({ id: 'a-varsta' } as never)
+  renderForm()
+  await completeaza(user)
+  if (minim) fireEvent.change(screen.getByLabelText('Vârstă minimă'), { target: { value: minim } })
+  if (maxim) fireEvent.change(screen.getByLabelText('Vârstă maximă'), { target: { value: maxim } })
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() => expect(mockedCreate).toHaveBeenCalled())
+  expect(mockedCreate.mock.calls[0][0]).toMatchObject({ age_from: ageFrom, age_to: ageTo })
+})
+
+test('editarea precompletează vârstele salvate', async () => {
+  vi.mocked(getActivityById).mockResolvedValue({
+    id: 'act-1',
+    name: 'Activitate salvată',
+    sport_id: SPORT,
+    location_id: LOC,
+    activity_date: '2027-07-10',
+    start_time: '09:00:00',
+    end_time: '11:00:00',
+    price: 2000,
+    capacity: null,
+    description: 'Ieșire de probă.',
+    currency: 'RON',
+    eur_ron_rate_micros: null,
+    age_from: 8,
+    age_to: null,
+    hero_photo_storage_path: 'act-1/hero/a.jpg',
+  } as never)
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={['/coach/activities/act-1/edit']}>
+        <Routes>
+          <Route path="/coach/activities/:id/edit" element={<ActivityFormPage />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  )
+  await waitFor(() => expect(screen.getByLabelText('Vârstă minimă')).toHaveValue(8))
+  expect(screen.getByLabelText('Vârstă maximă')).toHaveValue(null)
+  expect(mockedUpdate).not.toHaveBeenCalled()
 })

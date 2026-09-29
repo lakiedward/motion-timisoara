@@ -141,6 +141,8 @@ export interface ActivityFormInput {
   end_time: string
   price: number
   capacity: number | null
+  age_from: number | null
+  age_to: number | null
 }
 
 export async function createActivity(input: ActivityFormInput): Promise<Tables<'activities'>> {

@@ -17,6 +17,8 @@ export type Database = {
       activities: {
         Row: {
           active: boolean
+          age_from: number | null
+          age_to: number | null
           activity_date: string
           capacity: number | null
           club_id: string | null
@@ -42,6 +44,8 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          age_from?: number | null
+          age_to?: number | null
           activity_date: string
           capacity?: number | null
           club_id?: string | null
@@ -67,6 +71,8 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          age_from?: number | null
+          age_to?: number | null
           activity_date?: string
           capacity?: number | null
           club_id?: string | null
