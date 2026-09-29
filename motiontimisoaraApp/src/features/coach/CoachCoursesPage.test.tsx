@@ -181,7 +181,7 @@ test('filled cards show location under the title, badges, price, gray line and o
   expect(screen.getByRole('button', { name: 'Activează' }).className).toMatch(/border/)
 })
 
-test('cards with one bound or none keep the location and do not print null', async () => {
+test('cards say de la, până la, a full interval, or no age', async () => {
   mockedGetMyCourses.mockResolvedValue([
     course({
       id: 'both',
