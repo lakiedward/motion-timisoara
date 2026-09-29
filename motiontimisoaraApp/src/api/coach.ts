@@ -32,6 +32,17 @@ export async function getCourseById(id: string): Promise<Tables<'courses'> | nul
   return data
 }
 
+export async function cursulAreInscrieri(courseId: string): Promise<boolean> {
+  const { count, error } = await supabase
+    .from('enrollments')
+    .select('id', { count: 'exact', head: true })
+    .eq('kind', 'COURSE')
+    .eq('entity_id', courseId)
+    .in('status', ['ACTIVE', 'PENDING'])
+  if (error) throw error
+  return (count ?? 0) > 0
+}
+
 export interface CourseFormInput {
   currency: 'RON' | 'EUR'
   eur_ron_rate_micros: number | null

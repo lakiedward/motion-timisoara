@@ -1,3 +1,4 @@
+import * as Dialog from '@radix-ui/react-dialog'
 import { OfferCurrencyFields } from '@/components/OfferCurrencyFields'
 import CourseProgramFields from '@/components/CourseProgramFields'
 import {
@@ -16,7 +17,7 @@ import {
   requireSerializedProgram,
   validateCourseProgramFields,
 } from '@/lib/course-program/recurrence'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type MouseEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -27,7 +28,13 @@ import { toast } from 'sonner'
 
 import { incarcaRegulamentCurs, stergeRegulamentCurs } from '@/api/camp-rules-file'
 import { renuntaLaOfertaFaraHero, schimbaPozaOferta } from '@/api/offer-hero'
-import { createCourse, getCourseById, getSelectableLocations, updateCourse } from '@/api/coach'
+import {
+  createCourse,
+  cursulAreInscrieri,
+  getCourseById,
+  getSelectableLocations,
+  updateCourse,
+} from '@/api/coach'
 import { publicUrl } from '@/api/public'
 import { HeroPhotoField } from '@/components/HeroPhotoField'
 import { MESAJ_POZA_HERO, mesajHeroLipsa } from '@/lib/hero-photo'
@@ -41,7 +48,20 @@ import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 
 const selectCls =
-  'border-input focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px]'
+  'border-input focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50'
+
+const NOTA_SPORT = 'Sportul rămâne cel salvat: cursul are înscrieri.'
+const NOTA_LOCATIE = 'Locația rămâne cea salvată: cursul are înscrieri.'
+const NOTA_PRET = 'Prețul rămâne cel salvat: cursul are înscrieri.'
+
+function cheieOptiuneSalvata(
+  idSalvat: string | null | undefined,
+  optiuni: { id: string }[],
+  asteptare: string,
+) {
+  if (idSalvat && optiuni.some((optiune) => optiune.id === idSalvat)) return idSalvat
+  return asteptare
+}
 
 const schema = z
   .object({
@@ -80,6 +100,12 @@ export default function CourseFormPage() {
     queryFn: () => getCourseById(id as string),
     enabled: isEdit,
   })
+  const { data: areInscrieri = false } = useQuery({
+    queryKey: ['course-has-enrollments', id],
+    queryFn: () => cursulAreInscrieri(id as string),
+    enabled: isEdit,
+  })
+  const campuriBlocate = isEdit && areInscrieri
 
   const {
     register,
@@ -87,7 +113,7 @@ export default function CourseFormPage() {
     handleSubmit,
     reset,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -110,9 +136,19 @@ export default function CourseFormPage() {
       : existing
         ? campRulesFileFromRow(existing)
         : null
+  const [intrebarePlecare, setIntrebarePlecare] = useState(false)
   const currency = useWatch({ control, name: 'currency' })
   const cursEur = useWatch({ control, name: 'eur_ron_rate' })
   const faraCurs = eurFaraCurs(currency, cursEur)
+  const areModificari = isEdit && (isDirty || pozaHero !== null)
+  const cheieSport = cheieOptiuneSalvata(existing?.sport_id, sports, 'sport-in-asteptare')
+  const cheieLocatie = cheieOptiuneSalvata(existing?.location_id, locations, 'locatie-in-asteptare')
+
+  const pleaca = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (!areModificari) return
+    event.preventDefault()
+    setIntrebarePlecare(true)
+  }
 
   useEffect(() => {
     if (existing) {
@@ -191,6 +227,7 @@ export default function CourseFormPage() {
     <div className="mx-auto max-w-2xl">
       <Link
         to="/coach/courses"
+        onClick={pleaca}
         className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
       >
         <ArrowLeft className="size-4" /> Înapoi
@@ -216,10 +253,18 @@ export default function CourseFormPage() {
             currency={currency}
             currencyField={register('currency')}
             setValue={setValue}
+            disabled={campuriBlocate}
           />
           <div className="space-y-1.5">
             <Label htmlFor="sport_id">Sport</Label>
-            <select id="sport_id" className={cn(selectCls)} {...register('sport_id')}>
+            <select
+              id="sport_id"
+              key={cheieSport}
+              className={cn(selectCls)}
+              aria-describedby={campuriBlocate ? 'sport-blocat' : undefined}
+              {...register('sport_id')}
+              disabled={campuriBlocate}
+            >
               <option value="">—</option>
               {sports.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -227,13 +272,25 @@ export default function CourseFormPage() {
                 </option>
               ))}
             </select>
+            {campuriBlocate && (
+              <p id="sport-blocat" className="text-muted-foreground text-sm">
+                {NOTA_SPORT}
+              </p>
+            )}
             {errors.sport_id && (
               <p className="text-destructive text-xs">{errors.sport_id.message}</p>
             )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="location_id">Locație</Label>
-            <select id="location_id" className={cn(selectCls)} {...register('location_id')}>
+            <select
+              id="location_id"
+              key={cheieLocatie}
+              className={cn(selectCls)}
+              aria-describedby={campuriBlocate ? 'locatie-blocata' : undefined}
+              {...register('location_id')}
+              disabled={campuriBlocate}
+            >
               <option value="">—</option>
               {locations.map((l) => (
                 <option key={l.id} value={l.id}>
@@ -241,6 +298,11 @@ export default function CourseFormPage() {
                 </option>
               ))}
             </select>
+            {campuriBlocate && (
+              <p id="locatie-blocata" className="text-muted-foreground text-sm">
+                {NOTA_LOCATIE}
+              </p>
+            )}
             {errors.location_id && (
               <p className="text-destructive text-xs">{errors.location_id.message}</p>
             )}
@@ -262,9 +324,16 @@ export default function CourseFormPage() {
               id="price_per_session_lei"
               type="number"
               step="0.01"
+              aria-describedby={campuriBlocate ? 'pret-blocat' : undefined}
               {...register('price_per_session_lei')}
+              disabled={campuriBlocate}
               aria-invalid={!!errors.price_per_session_lei}
             />
+            {campuriBlocate && (
+              <p id="pret-blocat" className="text-muted-foreground text-sm">
+                {NOTA_PRET}
+              </p>
+            )}
             {errors.price_per_session_lei && (
               <p className="text-destructive text-xs">{errors.price_per_session_lei.message}</p>
             )}
@@ -336,10 +405,33 @@ export default function CourseFormPage() {
             {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>
           <Button type="button" variant="outline" asChild>
-            <Link to="/coach/courses">Anulează</Link>
+            <Link to="/coach/courses" onClick={pleaca}>
+              Anulează
+            </Link>
           </Button>
         </div>
       </form>
+      <Dialog.Root open={intrebarePlecare} onOpenChange={setIntrebarePlecare}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+          <Dialog.Content
+            aria-describedby={undefined}
+            className="bg-background text-foreground fixed top-1/2 right-4 left-4 z-50 mx-auto max-w-md -translate-y-1/2 rounded-lg border p-6 shadow-lg outline-none"
+          >
+            <Dialog.Title className="font-display text-lg font-semibold">
+              Renunți la modificări?
+            </Dialog.Title>
+            <div className="mt-6 flex flex-wrap gap-2">
+              <Button type="button" onClick={() => setIntrebarePlecare(false)}>
+                Rămân
+              </Button>
+              <Button type="button" variant="outline" onClick={() => navigate('/coach/courses')}>
+                Renunț
+              </Button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   )
 }
