@@ -181,6 +181,54 @@ test('filled cards show location under the title, badges, price, gray line and o
   expect(screen.getByRole('button', { name: 'Activează' }).className).toMatch(/border/)
 })
 
+test('cards say de la, până la, a full interval, or no age', async () => {
+  mockedGetMyCourses.mockResolvedValue([
+    course({
+      id: 'both',
+      name: 'Ambele',
+      age_from: 8,
+      age_to: 14,
+      location: { id: 'lb', name: 'Stadion Ambele', city: 'Timișoara' },
+    }),
+    course({
+      id: 'min',
+      name: 'Doar minim',
+      age_from: 7,
+      age_to: null,
+      location: { id: 'ln', name: 'Stadion Minim', city: 'Timișoara' },
+    }),
+    course({
+      id: 'max',
+      name: 'Doar maxim',
+      age_from: null,
+      age_to: 14,
+      location: { id: 'lx', name: 'Stadion Maxim', city: 'Timișoara' },
+    }),
+    course({
+      id: 'none',
+      name: 'Fără limite',
+      age_from: null,
+      age_to: null,
+      location: { id: 'l0', name: 'Stadion Nicio', city: 'Timișoara' },
+    }),
+    course({
+      id: 'zero',
+      name: 'De la zero',
+      age_from: 0,
+      age_to: 5,
+      location: { id: 'lz', name: 'Stadion Zero', city: 'Timișoara' },
+    }),
+  ])
+  renderPage()
+  expect(await screen.findByText('Stadion Ambele · 8–14 ani')).toBeInTheDocument()
+  expect(screen.getByText('Stadion Minim · de la 7 ani')).toBeInTheDocument()
+  expect(screen.getByText('Stadion Maxim · până la 14 ani')).toBeInTheDocument()
+  expect(screen.getByText('Stadion Zero · 0–5 ani')).toBeInTheDocument()
+  expect(screen.getAllByText('Stadion Nicio').length).toBeGreaterThan(0)
+  expect(screen.queryByText(/Stadion Nicio ·/)).not.toBeInTheDocument()
+  expect(screen.queryByText(/null/)).not.toBeInTheDocument()
+})
+
 test('grid uses one column on phone and two from sm up', async () => {
   mockedGetMyCourses.mockResolvedValue([course({ id: '1' }), course({ id: '2' })])
   renderPage()
