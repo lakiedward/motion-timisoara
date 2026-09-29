@@ -60,6 +60,8 @@ const schema = z
     end_time: z.string().min(1, 'Obligatoriu'),
     price_lei: offerAmountSchema,
     capacity: z.string().optional(),
+    age_from: z.string().optional(),
+    age_to: z.string().optional(),
     description: z.string().trim().min(1, 'Descrierea este obligatorie.'),
   })
   .superRefine((value, ctx) => {
@@ -74,6 +76,8 @@ const schema = z
     })
   })
 type Values = z.infer<typeof schema>
+
+const num = (s: string | undefined) => (s && s.trim() ? Number(s) : null)
 
 export default function ActivityFormPage() {
   const { id } = useParams()
@@ -130,6 +134,8 @@ export default function ActivityFormPage() {
         end_time: existing.end_time?.slice(0, 5),
         price_lei: String(baniToRon(existing.price)),
         capacity: existing.capacity?.toString() ?? '',
+        age_from: existing.age_from?.toString() ?? '',
+        age_to: existing.age_to?.toString() ?? '',
         description: existing.description ?? '',
       })
     }
@@ -150,6 +156,8 @@ export default function ActivityFormPage() {
       end_time: v.end_time,
       price: parseScaledDecimal(v.price_lei, 2)!,
       capacity: v.capacity && v.capacity.trim() ? Number(v.capacity) : null,
+      age_from: num(v.age_from),
+      age_to: num(v.age_to),
     }
     try {
       if (isEdit) {
@@ -301,6 +309,17 @@ export default function ActivityFormPage() {
             <Input id="capacity" type="number" {...register('capacity')} />
             <p className="text-muted-foreground text-sm">Lasă gol dacă nu ai limită.</p>
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="age_from">Vârstă minimă</Label>
+            <Input id="age_from" type="number" {...register('age_from')} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="age_to">Vârstă maximă</Label>
+            <Input id="age_to" type="number" {...register('age_to')} />
+          </div>
+          <p className="text-muted-foreground text-sm sm:col-span-2">
+            Lasă gol dacă nu ai limită. Poți completa doar una.
+          </p>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="description">Descriere</Label>
