@@ -291,6 +291,11 @@ Hero photos, 2026-09-28: `00077_club_activity_hero_photo.sql` was applied
 once as remote `20260928094434` (`club_activity_hero_photo`). A club can
 write the public `activity-photos` bucket, the same way a coach already can.
 
+Activity ages, 2026-09-29: `00078_activity_age_range.sql` was applied once
+as remote `20260929125751` (`activity_age_range`). `activities.age_from` and
+`activities.age_to` are nullable integers with no default and no check, the
+same shape as `courses`. Existing activity rows stay null on both columns.
+
 To confirm git and the remote still agree:
 
 ```bash
