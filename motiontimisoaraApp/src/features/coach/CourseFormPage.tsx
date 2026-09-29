@@ -30,7 +30,7 @@ import { renuntaLaOfertaFaraHero, schimbaPozaOferta } from '@/api/offer-hero'
 import { createCourse, getCourseById, getSelectableLocations, updateCourse } from '@/api/coach'
 import { publicUrl } from '@/api/public'
 import { HeroPhotoField } from '@/components/HeroPhotoField'
-import { mesajHeroLipsa } from '@/lib/hero-photo'
+import { MESAJ_POZA_HERO, mesajHeroLipsa } from '@/lib/hero-photo'
 import { fetchSports } from '@/api/sports'
 import { OfferRulesFieldset } from '@/components/RulesFileField'
 import { campRulesFileFromRow, type CampRulesFileMeta } from '@/lib/camp-rules'
@@ -52,9 +52,9 @@ const schema = z
     level: z.string().optional(),
     age_from: z.string().optional(),
     age_to: z.string().optional(),
-    capacity: z.string().optional(),
+    capacity: z.string().trim().min(1, 'Capacitatea este obligatorie.'),
     price_per_session_lei: offerAmountSchema,
-    description: z.string().optional(),
+    description: z.string().trim().min(1, 'Descrierea este obligatorie.'),
     program: courseProgramSchema,
   })
   .superRefine((value, ctx) => {
@@ -90,7 +90,13 @@ export default function CourseFormPage() {
     formState: { errors, isSubmitting },
   } = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { currency: 'RON', eur_ron_rate: '', program: emptyCourseProgram() },
+    defaultValues: {
+      currency: 'RON',
+      eur_ron_rate: '',
+      capacity: '',
+      description: '',
+      program: emptyCourseProgram(),
+    },
   })
   const [fisierLocal, setFisierLocal] = useState<File | null>(null)
   const [pozaHero, setPozaHero] = useState<File | null>(null)
@@ -138,9 +144,9 @@ export default function CourseFormPage() {
       level: v.level || null,
       age_from: num(v.age_from),
       age_to: num(v.age_to),
-      capacity: num(v.capacity),
+      capacity: Number(v.capacity),
       price_per_session: parseScaledDecimal(v.price_per_session_lei, 2)!,
-      description: v.description || null,
+      description: v.description,
       recurrence_rule: requireSerializedProgram(v.program),
     }
     try {
@@ -271,9 +277,20 @@ export default function CourseFormPage() {
             <Label htmlFor="age_to">Vârstă maximă</Label>
             <Input id="age_to" type="number" {...register('age_to')} />
           </div>
+          <p className="text-muted-foreground text-sm sm:col-span-2">
+            Lasă gol dacă nu ai limită. Poți completa doar una.
+          </p>
           <div className="space-y-1.5">
             <Label htmlFor="capacity">Capacitate</Label>
-            <Input id="capacity" type="number" {...register('capacity')} />
+            <Input
+              id="capacity"
+              type="number"
+              {...register('capacity')}
+              aria-invalid={!!errors.capacity}
+            />
+            {errors.capacity && (
+              <p className="text-destructive text-xs">{errors.capacity.message}</p>
+            )}
           </div>
         </div>
         <CourseProgramFields
@@ -288,10 +305,15 @@ export default function CourseFormPage() {
             id="description"
             rows={4}
             {...register('description')}
+            aria-invalid={!!errors.description}
             className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
           />
+          {errors.description && (
+            <p className="text-destructive text-xs">{errors.description.message}</p>
+          )}
         </div>
         <HeroPhotoField
+          hint={MESAJ_POZA_HERO}
           savedUrl={publicUrl('course-photos', existing?.hero_photo_storage_path)}
           error={eroareHero}
           onFile={(fisier) => {

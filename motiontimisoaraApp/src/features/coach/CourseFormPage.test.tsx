@@ -94,6 +94,8 @@ test('crearea trimite regula și anunță generarea ședințelor', async () => {
   await user.selectOptions(screen.getByLabelText('Sport'), SPORT)
   await user.selectOptions(screen.getByLabelText('Locație'), LOC)
   await user.type(screen.getByLabelText('Preț / ședință (lei)'), '80')
+  await user.type(screen.getByLabelText('Capacitate'), '12')
+  await user.type(screen.getByLabelText('Descriere'), 'Înot pentru începători.')
   await completeazaProgram(user)
   punePozaHero()
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
@@ -146,6 +148,8 @@ test('EUR citește cursul BNR și îl îngheață pe curs', async () => {
   expect(await screen.findByText('Curs BNR din 19.09.2026: 5,123456 lei/EUR')).toBeInTheDocument()
   expect(screen.queryByLabelText('Cursul tău: 1 EUR în lei')).not.toBeInTheDocument()
   await user.type(screen.getByLabelText('Preț / ședință (EUR)'), '20')
+  await user.type(screen.getByLabelText('Capacitate'), '12')
+  await user.type(screen.getByLabelText('Descriere'), 'Înot pentru începători.')
   await completeazaProgram(user)
   punePozaHero()
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
@@ -155,6 +159,50 @@ test('EUR citește cursul BNR și îl îngheață pe curs', async () => {
     eur_ron_rate_micros: 5123456,
     price_per_session: 2000,
   })
+})
+
+test('fără descriere, salvarea cursului se oprește', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  await user.type(await screen.findByLabelText('Nume curs'), 'Curs fără descriere')
+  await user.selectOptions(screen.getByLabelText('Sport'), SPORT)
+  await user.selectOptions(screen.getByLabelText('Locație'), LOC)
+  await user.type(screen.getByLabelText('Preț / ședință (lei)'), '80')
+  await user.type(screen.getByLabelText('Capacitate'), '12')
+  await completeazaProgram(user)
+  punePozaHero()
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  expect(await screen.findByText('Descrierea este obligatorie.')).toBeInTheDocument()
+  expect(mockedCreate).not.toHaveBeenCalled()
+})
+
+test('fără capacitate, salvarea cursului se oprește', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  await user.type(await screen.findByLabelText('Nume curs'), 'Curs fără capacitate')
+  await user.selectOptions(screen.getByLabelText('Sport'), SPORT)
+  await user.selectOptions(screen.getByLabelText('Locație'), LOC)
+  await user.type(screen.getByLabelText('Preț / ședință (lei)'), '80')
+  await user.type(screen.getByLabelText('Descriere'), 'Înot pentru începători.')
+  await completeazaProgram(user)
+  punePozaHero()
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  expect(await screen.findByText('Capacitatea este obligatorie.')).toBeInTheDocument()
+  expect(mockedCreate).not.toHaveBeenCalled()
+})
+
+test('sub vârste stă fraza despre limita opțională, fără toggle', async () => {
+  renderForm()
+  expect(
+    await screen.findByText('Lasă gol dacă nu ai limită. Poți completa doar una.'),
+  ).toBeInTheDocument()
+  expect(screen.queryByRole('switch')).not.toBeInTheDocument()
+})
+
+test('fraza de la poza din cap este cea obligatorie, iar butonul rămâne Alege o poză', async () => {
+  renderForm()
+  expect(await screen.findByText('Poza din capul paginii este obligatorie.')).toBeInTheDocument()
+  expect(screen.getByText('Alege o poză')).toBeInTheDocument()
 })
 
 test('fără curs BNR, EUR blochează salvarea cursului', async () => {
