@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
-export function courseListAgeLabel(ageFrom: number | null, ageTo: number | null) {
+function courseListAgeLabel(ageFrom: number | null, ageTo: number | null) {
   if (ageFrom == null || ageTo == null) return null
   return `${ageFrom}–${ageTo} ani`
 }
