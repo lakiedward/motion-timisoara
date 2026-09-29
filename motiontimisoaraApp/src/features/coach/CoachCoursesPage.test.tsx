@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { vi } from 'vitest'
 
-import CoachCoursesPage from './CoachCoursesPage'
+import CoachCoursesPage, { courseListAgeLabel } from './CoachCoursesPage'
 import { getMyCourses, type CoachCourse } from '@/api/coach'
 
 vi.mock('@/api/coach', () => ({
@@ -179,6 +179,58 @@ test('filled cards show location under the title, badges, price, gray line and o
   expect(deactivate.className).toMatch(/border/)
   expect(deactivate.className).not.toMatch(/ghost/)
   expect(screen.getByRole('button', { name: 'Activează' }).className).toMatch(/border/)
+})
+
+test('age line is a numeric interval, or absent when a bound is missing', () => {
+  expect(courseListAgeLabel(8, 14)).toBe('8–14 ani')
+  expect(courseListAgeLabel(7, null)).toBeNull()
+  expect(courseListAgeLabel(null, 12)).toBeNull()
+  expect(courseListAgeLabel(null, null)).toBeNull()
+  expect(courseListAgeLabel(0, 5)).toBe('0–5 ani')
+})
+
+test('cards with one bound or none keep the location and do not print null', async () => {
+  mockedGetMyCourses.mockResolvedValue([
+    course({
+      id: 'both',
+      name: 'Ambele',
+      age_from: 8,
+      age_to: 14,
+      location: { id: 'lb', name: 'Stadion Ambele', city: 'Timișoara' },
+    }),
+    course({
+      id: 'min',
+      name: 'Doar minim',
+      age_from: 7,
+      age_to: null,
+      location: { id: 'ln', name: 'Stadion Minim', city: 'Timișoara' },
+    }),
+    course({
+      id: 'max',
+      name: 'Doar maxim',
+      age_from: null,
+      age_to: 12,
+      location: { id: 'lx', name: 'Stadion Maxim', city: 'Timișoara' },
+    }),
+    course({
+      id: 'none',
+      name: 'Fără limite',
+      age_from: null,
+      age_to: null,
+      location: { id: 'l0', name: 'Stadion Nicio', city: 'Timișoara' },
+    }),
+  ])
+  renderPage()
+  expect(await screen.findByText('Stadion Ambele · 8–14 ani')).toBeInTheDocument()
+  expect(screen.getAllByText('Stadion Minim').length).toBeGreaterThan(0)
+  expect(screen.getAllByText('Stadion Maxim').length).toBeGreaterThan(0)
+  expect(screen.getAllByText('Stadion Nicio').length).toBeGreaterThan(0)
+  expect(screen.queryByText(/Stadion Minim ·/)).not.toBeInTheDocument()
+  expect(screen.queryByText(/Stadion Maxim ·/)).not.toBeInTheDocument()
+  expect(screen.queryByText(/Stadion Nicio ·/)).not.toBeInTheDocument()
+  expect(screen.queryByText(/null/)).not.toBeInTheDocument()
+  expect(screen.queryByText(/de la 7/)).not.toBeInTheDocument()
+  expect(screen.queryByText(/până la 12/)).not.toBeInTheDocument()
 })
 
 test('grid uses one column on phone and two from sm up', async () => {

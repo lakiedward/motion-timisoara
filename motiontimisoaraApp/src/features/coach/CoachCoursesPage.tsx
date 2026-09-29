@@ -9,6 +9,11 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
+export function courseListAgeLabel(ageFrom: number | null, ageTo: number | null) {
+  if (ageFrom == null || ageTo == null) return null
+  return `${ageFrom}–${ageTo} ani`
+}
+
 export default function CoachCoursesPage() {
   const qc = useQueryClient()
   const {
@@ -54,42 +59,47 @@ export default function CoachCoursesPage() {
         </div>
       ) : courses.length ? (
         <div className="grid gap-4 sm:grid-cols-2">
-          {courses.map((c) => (
-            <div key={c.id} className="bg-card shadow-card rounded-3xl p-5">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <h3 className="font-display text-lg font-bold">{c.name}</h3>
-                  <p className="text-muted-foreground mt-0.5 text-sm">{c.location?.name ?? '—'}</p>
-                  <div className="mt-1 flex flex-wrap gap-1.5">
-                    {c.sport && <Badge>{c.sport.name}</Badge>}
-                    <Badge variant={c.active ? 'success' : 'outline'}>
-                      {c.active ? 'Activ' : 'Inactiv'}
-                    </Badge>
+          {courses.map((c) => {
+            const ageLabel = courseListAgeLabel(c.age_from, c.age_to)
+            return (
+              <div key={c.id} className="bg-card shadow-card rounded-3xl p-5">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="font-display text-lg font-bold">{c.name}</h3>
+                    <p className="text-muted-foreground mt-0.5 text-sm">
+                      {c.location?.name ?? '—'}
+                    </p>
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      {c.sport && <Badge>{c.sport.name}</Badge>}
+                      <Badge variant={c.active ? 'success' : 'outline'}>
+                        {c.active ? 'Activ' : 'Inactiv'}
+                      </Badge>
+                    </div>
                   </div>
+                  <span className="font-display font-bold">{formatMoney(c.price, c.currency)}</span>
                 </div>
-                <span className="font-display font-bold">{formatMoney(c.price, c.currency)}</span>
+                <div className="text-muted-foreground mt-2 text-sm">
+                  {c.location?.name ?? '—'}
+                  {ageLabel != null && ` · ${ageLabel}`}
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <Button asChild size="sm" variant="outline">
+                    <Link to={`/coach/courses/${c.id}/edit`}>
+                      <Pencil /> Editează
+                    </Link>
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={toggle.isPending}
+                    onClick={() => toggle.mutate({ id: c.id, active: !c.active })}
+                  >
+                    {c.active ? 'Dezactivează' : 'Activează'}
+                  </Button>
+                </div>
               </div>
-              <div className="text-muted-foreground mt-2 text-sm">
-                {c.location?.name ?? '—'}
-                {c.age_from != null && ` · ${c.age_from}–${c.age_to} ani`}
-              </div>
-              <div className="mt-4 flex gap-2">
-                <Button asChild size="sm" variant="outline">
-                  <Link to={`/coach/courses/${c.id}/edit`}>
-                    <Pencil /> Editează
-                  </Link>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={toggle.isPending}
-                  onClick={() => toggle.mutate({ id: c.id, active: !c.active })}
-                >
-                  {c.active ? 'Dezactivează' : 'Activează'}
-                </Button>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       ) : (
         <div className="text-muted-foreground rounded-3xl border border-dashed py-16 text-center">
