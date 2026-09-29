@@ -67,6 +67,7 @@ test('EUR citește cursul BNR și îl îngheață pe activitate', async () => {
   expect(await screen.findByText('Curs BNR din 19.09.2026: 5,123456 lei/EUR')).toBeInTheDocument()
   expect(screen.queryByLabelText('Cursul tău: 1 EUR în lei')).not.toBeInTheDocument()
   await user.type(screen.getByLabelText('Preț (EUR)'), '15')
+  await user.type(screen.getByLabelText('Descriere'), 'Ieșire pe lac.')
   fireEvent.change(screen.getByLabelText('Poza din capul paginii'), {
     target: { files: [new File(['poza'], 'hero.jpg', { type: 'image/jpeg' })] },
   })
@@ -104,4 +105,66 @@ test('fără curs BNR, EUR blochează salvarea activității', async () => {
   expect(await screen.findByText('Nu am putut citi cursul BNR. Reîncearcă.')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Salvează' })).toBeDisabled()
   expect(mockedCreate).not.toHaveBeenCalled()
+})
+
+async function completeaza(user: ReturnType<typeof userEvent.setup>, descriere = 'Ieșire pe lac.') {
+  await user.type(await screen.findByLabelText('Nume'), 'Open water')
+  await user.selectOptions(screen.getByLabelText('Sport'), SPORT)
+  await user.selectOptions(screen.getByLabelText('Locație'), LOC)
+  fireEvent.change(screen.getByLabelText('Data'), { target: { value: '2027-07-10' } })
+  fireEvent.change(screen.getByLabelText('Ora început'), { target: { value: '09:00' } })
+  fireEvent.change(screen.getByLabelText('Ora final'), { target: { value: '11:00' } })
+  await user.type(screen.getByLabelText('Preț (lei)'), '20')
+  if (descriere) await user.type(screen.getByLabelText('Descriere'), descriere)
+  fireEvent.change(screen.getByLabelText('Poza din capul paginii'), {
+    target: { files: [new File(['poza'], 'hero.jpg', { type: 'image/jpeg' })] },
+  })
+}
+
+test('frazele de fus și de capacitate stau pe formular, iar poza folosește fraza scurtă', async () => {
+  renderForm()
+  expect(await screen.findByText('Orele sunt în fusul României.')).toBeInTheDocument()
+  expect(screen.getByText('Lasă gol dacă nu ai limită.')).toBeInTheDocument()
+  expect(screen.getByLabelText('Capacitate')).toHaveValue(null)
+  expect(screen.getByText('Poza din capul paginii este obligatorie.')).toBeInTheDocument()
+  expect(
+    screen.queryByText(
+      'Obligatorie. Se vede în banda de deasupra titlului, pe pagina publică. Galeria rămâne separată.',
+    ),
+  ).not.toBeInTheDocument()
+})
+
+test('ora final înainte de început oprește salvarea', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  await completeaza(user)
+  fireEvent.change(screen.getByLabelText('Ora final'), { target: { value: '08:00' } })
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  expect(
+    await screen.findByText('Ora final trebuie să fie după ora de început.'),
+  ).toBeInTheDocument()
+  expect(mockedCreate).not.toHaveBeenCalled()
+})
+
+test('descrierea goală oprește salvarea', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  await completeaza(user, '')
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  expect(await screen.findByText('Descrierea este obligatorie.')).toBeInTheDocument()
+  expect(mockedCreate).not.toHaveBeenCalled()
+})
+
+test('capacitatea goală se salvează fără limită de locuri', async () => {
+  const user = userEvent.setup()
+  mockedCreate.mockResolvedValue({ id: 'a-cap' } as never)
+  renderForm()
+  await completeaza(user)
+  expect(screen.getByLabelText('Capacitate')).toHaveValue(null)
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() => expect(mockedCreate).toHaveBeenCalled())
+  expect(mockedCreate.mock.calls[0][0]).toMatchObject({
+    capacity: null,
+    description: 'Ieșire pe lac.',
+  })
 })
