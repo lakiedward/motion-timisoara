@@ -201,7 +201,7 @@ test('cards with one bound or none keep the location and do not print null', asy
       id: 'max',
       name: 'Doar maxim',
       age_from: null,
-      age_to: 12,
+      age_to: 14,
       location: { id: 'lx', name: 'Stadion Maxim', city: 'Timișoara' },
     }),
     course({
@@ -221,16 +221,12 @@ test('cards with one bound or none keep the location and do not print null', asy
   ])
   renderPage()
   expect(await screen.findByText('Stadion Ambele · 8–14 ani')).toBeInTheDocument()
+  expect(screen.getByText('Stadion Minim · de la 7 ani')).toBeInTheDocument()
+  expect(screen.getByText('Stadion Maxim · până la 14 ani')).toBeInTheDocument()
   expect(screen.getByText('Stadion Zero · 0–5 ani')).toBeInTheDocument()
-  expect(screen.getAllByText('Stadion Minim').length).toBeGreaterThan(0)
-  expect(screen.getAllByText('Stadion Maxim').length).toBeGreaterThan(0)
   expect(screen.getAllByText('Stadion Nicio').length).toBeGreaterThan(0)
-  expect(screen.queryByText(/Stadion Minim ·/)).not.toBeInTheDocument()
-  expect(screen.queryByText(/Stadion Maxim ·/)).not.toBeInTheDocument()
   expect(screen.queryByText(/Stadion Nicio ·/)).not.toBeInTheDocument()
   expect(screen.queryByText(/null/)).not.toBeInTheDocument()
-  expect(screen.queryByText(/de la 7/)).not.toBeInTheDocument()
-  expect(screen.queryByText(/până la 12/)).not.toBeInTheDocument()
 })
 
 test('grid uses one column on phone and two from sm up', async () => {

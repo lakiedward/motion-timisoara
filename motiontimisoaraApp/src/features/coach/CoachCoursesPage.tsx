@@ -10,8 +10,10 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
 function courseListAgeLabel(ageFrom: number | null, ageTo: number | null) {
-  if (ageFrom == null || ageTo == null) return null
-  return `${ageFrom}–${ageTo} ani`
+  if (ageFrom != null && ageTo != null) return `${ageFrom}–${ageTo} ani`
+  if (ageFrom != null) return `de la ${ageFrom} ani`
+  if (ageTo != null) return `până la ${ageTo} ani`
+  return null
 }
 
 export default function CoachCoursesPage() {
