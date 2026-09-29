@@ -18,6 +18,8 @@ export default function ParentDashboard() {
   const children = childrenQuery.data ?? []
   const enrollments = enrollmentsQuery.data ?? []
   const activeCount = enrollments.filter((e) => e.status === 'ACTIVE').length
+  const childrenListLoading =
+    childrenQuery.isPending || (childrenQuery.isError && childrenQuery.isFetching)
 
   return (
     <div className="space-y-8">
@@ -72,11 +74,24 @@ export default function ParentDashboard() {
 
       <PushSettingsCard />
 
-      {childrenQuery.isPending && (
+      {childrenListLoading && (
         <div role="status" aria-label="Se încarcă lista copiilor" className="space-y-4">
           <Skeleton className="h-6 w-32" />
           <Skeleton className="h-24 rounded-3xl" />
         </div>
+      )}
+
+      {childrenQuery.isError && !childrenQuery.isFetching && (
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-display text-xl font-bold">Copiii mei</h2>
+          </div>
+          <LoadFailure
+            label="Copiii mei"
+            retrying={false}
+            onRetry={() => void childrenQuery.refetch()}
+          />
+        </section>
       )}
 
       {childrenQuery.isSuccess && (
@@ -125,6 +140,35 @@ export default function ParentDashboard() {
   )
 }
 
+function LoadFailure({
+  label,
+  retrying,
+  onRetry,
+  className,
+}: {
+  label: string
+  retrying: boolean
+  onRetry: () => void
+  className?: string
+}) {
+  return (
+    <div className={cn('space-y-2', className)}>
+      <p role="alert" className="text-sm">
+        Nu am putut încărca datele.
+      </p>
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={retrying}
+        onClick={onRetry}
+        aria-label={`Reîncearcă: ${label}`}
+      >
+        {retrying ? 'Se reîncearcă…' : 'Reîncearcă'}
+      </Button>
+    </div>
+  )
+}
+
 function Stat({
   icon,
   value,
@@ -165,20 +209,7 @@ function Stat({
         )}
         <div className="text-muted-foreground text-sm">{label}</div>
         {error && !pending && (
-          <div className="mt-2 space-y-2">
-            <p role="alert" className="text-sm">
-              Nu am putut încărca datele.
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={retrying}
-              onClick={onRetry}
-              aria-label={`Reîncearcă: ${label}`}
-            >
-              {retrying ? 'Se reîncearcă…' : 'Reîncearcă'}
-            </Button>
-          </div>
+          <LoadFailure label={label} retrying={retrying} onRetry={onRetry} className="mt-2" />
         )}
       </div>
     </div>
