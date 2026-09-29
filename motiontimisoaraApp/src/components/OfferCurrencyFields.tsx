@@ -40,10 +40,12 @@ export function OfferCurrencyFields({
   currency,
   currencyField,
   setValue,
+  disabled = false,
 }: {
   currency: string
   currencyField: UseFormRegisterReturn
   setValue: (name: 'eur_ron_rate', value: string, options?: { shouldValidate?: boolean }) => void
+  disabled?: boolean
 }) {
   const cursBnr = useCursBnrRate(currency, setValue)
   return (
@@ -57,6 +59,7 @@ export function OfferCurrencyFields({
                 type="radio"
                 value={value}
                 {...currencyField}
+                disabled={disabled}
                 className="size-4 accent-primary"
               />
               {value === 'RON' ? 'Lei (RON)' : 'Euro (EUR)'}
