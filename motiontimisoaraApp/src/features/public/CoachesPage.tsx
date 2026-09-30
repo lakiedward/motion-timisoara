@@ -38,7 +38,9 @@ export default function CoachesPage() {
         <div className="mx-auto max-w-7xl px-6 py-14">
           <span className="eyebrow mb-3">Echipă</span>
           <h1 className="font-display text-4xl font-extrabold text-foreground">Antrenori</h1>
-          <p className="text-muted-foreground mt-2">Antrenori dedicați sportului și copiilor</p>
+          <p className="text-foreground/80 dark:text-muted-foreground mt-2">
+            Antrenori dedicați sportului și copiilor
+          </p>
         </div>
       </section>
 

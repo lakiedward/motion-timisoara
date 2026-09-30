@@ -36,6 +36,11 @@ existing card appearance, adding visible keyboard focus and wrapping for long
 names and sport labels. Associate control labels with stable IDs. Preserve a
 single H1 and semantic theme tokens in both themes.
 
+The subtitle uses foreground at 80% opacity in the light theme and the canonical
+muted foreground in the dark theme. Browser sampling found that muted foreground
+over the existing light decorative background fell below the approved 4.5:1
+normal-text contrast threshold. Preserve the background and improve text contrast.
+
 Stable identities remain
 `motion-react:page:/antrenori:section:lista-antrenori` and
 `motion-react:page:/antrenori:section:toata-pagina`.
