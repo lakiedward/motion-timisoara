@@ -100,6 +100,38 @@ test('populated responses count only active enrollments and keep the child list 
   expect(screen.queryByRole('link', { name: 'Adaugă primul copil' })).not.toBeInTheDocument()
 })
 
+test('a failed child list keeps the error in place of the list and retry brings the children back', async () => {
+  const recovered = deferred<Child[]>()
+  childrenRequest
+    .mockRejectedValueOnce(new Error('Network unavailable'))
+    .mockReturnValueOnce(recovered.promise)
+  enrollmentsRequest.mockResolvedValue([enrollment('ACTIVE')])
+  renderDashboard()
+
+  expect(await screen.findByRole('button', { name: 'Reîncearcă: Copiii mei' })).toBeEnabled()
+  expect(screen.getByRole('heading', { name: 'Copiii mei' })).toBeInTheDocument()
+  expect(screen.getAllByText('Nu am putut încărca datele.')).toHaveLength(2)
+  expect(screen.queryByText('Niciun copil adăugat încă.')).not.toBeInTheDocument()
+  expect(screen.queryByRole('link', { name: 'Adaugă copil' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('link', { name: 'Adaugă primul copil' })).not.toBeInTheDocument()
+
+  fireEvent.click(screen.getByRole('button', { name: 'Reîncearcă: Copiii mei' }))
+  await waitFor(() => expect(childrenRequest).toHaveBeenCalledTimes(2))
+  expect(enrollmentsRequest).toHaveBeenCalledTimes(1)
+  expect(screen.queryByText('Niciun copil adăugat încă.')).not.toBeInTheDocument()
+  await act(async () => {
+    recovered.resolve([child])
+  })
+
+  expect(await screen.findByRole('link', { name: /Copil Test/ })).toHaveAttribute(
+    'href',
+    '/account/child/child-520',
+  )
+  expect(screen.queryByRole('button', { name: 'Reîncearcă: Copiii mei' })).not.toBeInTheDocument()
+  expect(screen.queryByText('Nu am putut încărca datele.')).not.toBeInTheDocument()
+  expect(screen.queryByText('Niciun copil adăugat încă.')).not.toBeInTheDocument()
+})
+
 test('a failed child request does not hide successful enrollments or claim there are no children', async () => {
   childrenRequest.mockRejectedValue(new Error('Network unavailable'))
   enrollmentsRequest.mockResolvedValue([enrollment('ACTIVE')])
