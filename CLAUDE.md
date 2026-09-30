@@ -620,6 +620,14 @@ reorganizing this document; correct obsolete facts with current evidence.
   frame. The photo fills the band and the title sits on it in white. Sport
   and level chips stay on the course page.
 
+- 2026-09-30 — Bug #1092 uses official `@capacitor/keyboard` pinned to 8.0.5 with
+  Native resize. Bootstrap restores visible iOS accessory arrows and Done before
+  rendering forms. The native shell owns a bounded DOM content scroller with bars
+  in flow; outer WKWebView scrolling is disabled only while that shell is mounted.
+  This is a candidate pending installed iOS keyboard verification; browser geometry
+  and a build do not prove native focus behavior. See
+  `docs/superpowers/specs/2026-09-30-bug-1092-ios-keyboard.md`.
+
 ## 11. Known Issues / WIP
 
 - **To-Do #149 completion in progress (2026-09-11):** migrations `00048` and `00049`
