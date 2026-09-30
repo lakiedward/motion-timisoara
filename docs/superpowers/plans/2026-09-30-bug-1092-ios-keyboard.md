@@ -16,3 +16,24 @@
    recording the reported sequence and long-form/search comparisons.
 6. Keep delivery and tracker completion with the coordinating session. Do not
    claim a native pass, merge, release or Fixed status from a local build alone.
+
+## Second cycle after installed SHA 9cc365f
+
+The installed first candidate passed header safety but failed offscreen accessory
+traversal, focused-input reveal and usable landscape content. The report is not a
+global native pass. Continue from the exact committed first candidate:
+
+1. Read the actual native failure report and official plugin/WebKit mechanisms.
+   Gather read-only runtime geometry and focus-event snapshots before choosing the
+   smallest fix. In particular, distinguish a refused next-field focus from a
+   completed focus whose input was not revealed.
+2. Preserve the bounded scroller, safe-area header and native accessory controls.
+   Resolve focused-field ownership and actual landscape viewport budget. Do not
+   subtract keyboard height twice or treat a focusin listener alone as a cure for
+   native traversal that never changes focus.
+3. Add focused contracts for geometry, keyboard visibility and lifecycle cleanup
+   relevant to the confirmed change. Run the complete required app commands in
+   order, stop on failure, sync native integration and review the final diff.
+4. The coordinating session verifies browser behavior and requests installed exact
+   SHA native retest. Keep F1/F2/F3 open until that evidence passes the full requested
+   sequence. Git, PR, merge, tracker status and release stay with that session.

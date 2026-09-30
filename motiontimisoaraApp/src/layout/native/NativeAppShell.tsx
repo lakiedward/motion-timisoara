@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { activeDestination, bottomNavigation, nativeScreen } from './navigation-model'
 import { setNativeDocumentScroll } from './native-keyboard'
+import { useNativeKeyboardViewport } from './useNativeKeyboardViewport'
 import './native-shell.css'
 
 export function NativeAppShell({ role, children }: { role: Role | null; children: ReactNode }) {
@@ -17,6 +18,7 @@ export function NativeAppShell({ role, children }: { role: Role | null; children
   const active = activeDestination(location.pathname, role)
   const screen = nativeScreen(location.pathname, role)
   const contentRef = useRef<HTMLElement>(null)
+  const keyboardOpen = useNativeKeyboardViewport(contentRef)
 
   useEffect(() => {
     const viewport = document.querySelector('meta[name="viewport"]')
@@ -50,7 +52,7 @@ export function NativeAppShell({ role, children }: { role: Role | null; children
   }
 
   return (
-    <div className="native-app-shell">
+    <div className="native-app-shell" data-keyboard-open={keyboardOpen ? 'true' : undefined}>
       <header className="native-topbar bg-card relative z-40 border-b">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
           {screen.backTo ? (
@@ -74,6 +76,7 @@ export function NativeAppShell({ role, children }: { role: Role | null; children
       </main>
       <nav
         aria-label="Navigare principală"
+        hidden={keyboardOpen}
         className="native-bottom-bar bg-card relative z-40 border-t"
       >
         <div className="mx-auto flex min-h-16 max-w-2xl items-stretch px-1">

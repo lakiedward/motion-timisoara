@@ -628,6 +628,14 @@ reorganizing this document; correct obsolete facts with current evidence.
   and a build do not prove native focus behavior. See
   `docs/superpowers/specs/2026-09-30-bug-1092-ios-keyboard.md`.
 
+- 2026-09-30 — The installed #1092 candidate `9cc365f` retained header safety but
+  failed offscreen field traversal/reveal and keyboard landscape space. The second
+  candidate keeps outer pan protection, releases bottom tabs only for a visible
+  software keyboard, compacts the landscape header to the existing h-11 scale and
+  reveals active/adjacent form fields inside main after actual geometry/content
+  changes. Native accessory arrows/Done and focus ownership remain unchanged.
+  The installed second-candidate result remains a separate verification gate.
+
 ## 11. Known Issues / WIP
 
 - **To-Do #149 completion in progress (2026-09-11):** migrations `00048` and `00049`

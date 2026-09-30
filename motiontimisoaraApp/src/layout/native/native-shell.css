@@ -47,3 +47,13 @@
   padding-left: env(safe-area-inset-left, 0px);
   padding-right: env(safe-area-inset-right, 0px);
 }
+
+.native-app-shell[data-keyboard-open='true'] .native-content {
+  scroll-padding-block: calc(var(--spacing) * 2);
+}
+
+@media (orientation: landscape) {
+  .native-app-shell[data-keyboard-open='true'] .native-topbar > div {
+    height: calc(var(--spacing) * 11);
+  }
+}
