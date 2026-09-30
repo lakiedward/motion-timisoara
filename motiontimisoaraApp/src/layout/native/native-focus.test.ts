@@ -25,6 +25,28 @@ function createForm(top = 127, height = 279) {
   return { content, email, password }
 }
 
+function createRegister(height = 344, top = 127) {
+  document.body.innerHTML =
+    '<main><form><input id="name"><input id="email" type="email"><input id="phone" type="tel"><input id="password" type="password"></form></main>'
+  const content = document.querySelector('main')!
+  const fields = Array.from(content.querySelectorAll('input'))
+  content.style.scrollPaddingTop = '8px'
+  content.style.scrollPaddingBottom = '8px'
+  Object.defineProperties(content, {
+    clientHeight: { configurable: true, value: height },
+    scrollHeight: { configurable: true, value: 900 },
+  })
+  vi.spyOn(content, 'getBoundingClientRect').mockImplementation(
+    () => new DOMRect(0, top, 402, height),
+  )
+  fields.forEach((field, index) =>
+    vi
+      .spyOn(field, 'getBoundingClientRect')
+      .mockImplementation(() => new DOMRect(24, 351 + 94 * index - content.scrollTop, 354, 36)),
+  )
+  return { content, fields }
+}
+
 beforeEach(() => vi.spyOn(window, 'scrollTo').mockImplementation(() => {}))
 afterEach(() => {
   document.body.replaceChildren()
@@ -69,6 +91,65 @@ test('an adjacent center can remain assistable until its own focus reveals the f
   revealNativeInput(content, true)
   expect(password.getBoundingClientRect().bottom).toBeLessThanOrEqual(255)
   expect(document.activeElement).toBe(password)
+})
+
+test('four portrait fields with validation spacing are prepared before Email receives focus', () => {
+  const { content, fields } = createRegister()
+  fields[0].focus()
+  revealNativeInput(content, true)
+  expect(content.scrollTop).toBe(206)
+  for (const field of fields) {
+    const rect = field.getBoundingClientRect()
+    expect(rect.top).toBeGreaterThanOrEqual(135)
+    expect(rect.bottom).toBeLessThanOrEqual(463)
+  }
+  expect(document.activeElement).toBe(fields[0])
+  for (const field of [...fields.slice(1), ...fields.slice(0, -1).reverse()]) {
+    field.focus()
+    revealNativeInput(content, true)
+    expect(content.scrollTop).toBe(206)
+    expect(document.activeElement).toBe(field)
+  }
+  expect(window.scrollTo).not.toHaveBeenCalled()
+})
+
+test('both immediate centers take priority over expanding the next field rectangle', () => {
+  const { content, fields } = createRegister(212)
+  fields[1].focus()
+  revealNativeInput(content, true)
+  const bounds = content.getBoundingClientRect()
+  for (const field of [fields[0], fields[2]]) {
+    const rect = field.getBoundingClientRect()
+    const center = (rect.top + rect.bottom) / 2
+    expect(center).toBeGreaterThanOrEqual(bounds.top + 8)
+    expect(center).toBeLessThanOrEqual(bounds.bottom - 8)
+  }
+  const active = fields[1].getBoundingClientRect()
+  expect(active.top).toBeGreaterThanOrEqual(bounds.top + 8)
+  expect(active.bottom).toBeLessThanOrEqual(bounds.bottom - 8)
+  const scroll = content.scrollTop
+  revealNativeInput(content, true)
+  expect(content.scrollTop).toBe(scroll)
+})
+
+test('all landscape row fields fit the measured 45..126 main in both traversal directions', () => {
+  const { content, fields } = createRegister(81, 45)
+  fields.forEach((field, index) =>
+    vi
+      .mocked(field.getBoundingClientRect)
+      .mockImplementation(() => new DOMRect(59 + index * 180, 277 - content.scrollTop, 164, 36)),
+  )
+  fields[0].focus()
+  revealNativeInput(content, true)
+  expect(content.scrollTop).toBe(195)
+  for (const field of [...fields, ...[...fields].reverse()]) {
+    field.focus()
+    revealNativeInput(content, true)
+    expect(content.scrollTop).toBe(195)
+    const rect = field.getBoundingClientRect()
+    expect(rect.top).toBeGreaterThanOrEqual(53)
+    expect(rect.bottom).toBeLessThanOrEqual(118)
+  }
 })
 
 test('a resized visual viewport bounds reveal without subtracting keyboard height twice', () => {

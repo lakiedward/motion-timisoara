@@ -46,26 +46,32 @@ export function revealNativeInput(container: HTMLElement, keyboardVisible: boole
 
   if (keyboardVisible) {
     const scope = active.closest('form') ?? container
-    const fields = Array.from(scope.querySelectorAll(fieldsSelector)).filter(isEditableField)
-    const index = fields.indexOf(active)
-    for (const neighbor of [fields[index + 1], fields[index - 1]]) {
-      if (!neighbor) continue
-      const rect = neighbor.getBoundingClientRect()
-      if (rect.width <= 0 || rect.height <= 0) continue
-      const unionTop = Math.min(start, rect.top)
-      const unionBottom = Math.max(end, rect.bottom)
-      if (unionBottom - unionTop <= available) {
-        start = unionTop
-        end = unionBottom
-      } else {
-        const center = (rect.top + rect.bottom) / 2
-        const centerTop = Math.min(start, center)
-        const centerBottom = Math.max(end, center)
-        if (centerBottom - centerTop <= available) {
-          start = centerTop
-          end = centerBottom
-        }
-      }
+    const fields = Array.from(scope.querySelectorAll(fieldsSelector))
+      .filter(isEditableField)
+      .map((field) => ({ field, rect: field.getBoundingClientRect() }))
+      .filter(({ rect }) => rect.width > 0 && rect.height > 0)
+    const index = fields.findIndex(({ field }) => field === active)
+    const neighbors = fields
+      .map(({ rect }, position) => ({
+        rect,
+        distance: Math.abs(position - index),
+        forward: position > index,
+      }))
+      .filter(({ distance }) => distance > 0)
+      .sort((a, b) => a.distance - b.distance || Number(b.forward) - Number(a.forward))
+    const include = (fieldTop: number, fieldBottom: number) => {
+      const unionTop = Math.min(start, fieldTop)
+      const unionBottom = Math.max(end, fieldBottom)
+      if (unionBottom - unionTop > available) return
+      start = unionTop
+      end = unionBottom
+    }
+    for (const { rect } of neighbors) {
+      const center = (rect.top + rect.bottom) / 2
+      include(center, center)
+    }
+    for (const { rect } of neighbors) {
+      include(rect.top, rect.bottom)
     }
   }
 

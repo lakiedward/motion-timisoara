@@ -636,6 +636,15 @@ reorganizing this document; correct obsolete facts with current evidence.
   changes. Native accessory arrows/Done and focus ownership remain unchanged.
   The installed second-candidate result remains a separate verification gate.
 
+- 2026-09-30 — Installed #1092 candidate `402fb29` passed Login portrait,
+  Coaches, Recovery and header/landscape-space safety, but Register's second
+  portrait Down and Login/Register landscape traversal still failed. The third
+  candidate prepares all form centers that fit before expanding field rectangles.
+  Login/Register opt into labeled two/four-column fields within max-w-3xl only
+  during native keyboard landscape; ordinary portrait/web spacing stays canonical.
+  Labels, errors, DOM order, input sizes, Back and native accessories remain intact.
+  Cached accessory eligibility is inferred; installed exact-SHA retest is required.
+
 ## 11. Known Issues / WIP
 
 - **To-Do #149 completion in progress (2026-09-11):** migrations `00048` and `00049`

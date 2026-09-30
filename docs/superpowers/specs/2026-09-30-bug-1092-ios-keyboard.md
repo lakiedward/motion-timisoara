@@ -194,12 +194,85 @@ F1/F2/F3 reproduction and header safety still require installed exact-SHA retest
   This simulation does not prove WKWebView accessory traversal or software keyboard
   behavior. Installed exact-SHA iOS verification remains pending; F1/F2/F3 stay open.
 
+## Third candidate after installed SHA 402fb29
+
+The installed second candidate matched all 27 bundled resources, without hot
+reload. Login portrait passed native Down/Up/Done three times. Coaches passed
+portrait and landscape search, filtering, profile return, route reset and final-row
+access. Recovery passed focused Email and reachable send action. Header safety,
+usable landscape content and navigation restoration passed. Register portrait
+passed Name to Email twice, then the native Down button was dimmed and could not
+reach Phone twice. Direct Password focus, Up traversal and Done passed. Login and
+Register landscape accessory traversal still failed without a manual swipe.
+
+Read-only Login landscape measurements were innerWidth 874, innerHeight 126 and
+visualViewport height 126 with offset zero. Both measured headers were 0..45 and
+both mains were 45..126 with
+clientHeight 81 and navigation hidden. Login Email was 82..118 and Password
+176..212, with main.scrollTop 187 and scrollHeight 511. Register Name was 61..97,
+Email 133..169, Phone 205..241 and Password 277..313, with main.scrollTop 208 and
+scrollHeight 612. Name's center hit itself; the other centers hit null. Document
+offsets remained zero. No Register portrait after-Down inspector measurement was
+captured, so the cached accessory-eligibility explanation remains an inference
+from the dimmed button and primary WebKit code, not a measured cause.
+Register's innerWidth and visualViewport width/scale were not recorded. WebKit
+accessory selection requires the candidate's center to hit that input. Its
+IgnoreClipping flag bypasses root viewport intersection, while nested RenderLayer
+hit tests still respect overflow clips. This supports the measured physical-fit
+constraint without claiming the exact installed WebKit cause is established.
+
+The third candidate preserves the current shell and native controls. Geometry
+reveal prioritizes the complete active field, immediate next/previous centers,
+then all remaining form centers that fit. Only then may it include complete
+neighbor rectangles, without displacing included centers. This prepares later
+fields before an accessory focus transition when the viewport can fit them.
+
+An 81-pixel main cannot contain Login's 94-pixel separation between input centers
+through scrolling alone. Login and Register therefore opt into a shared labeled
+field row only in native landscape while the software keyboard is visible: two
+columns for Login, four for Register, within the existing max-w-3xl width scale.
+Labels, errors, DOM order, canonical input sizes and controls stay present. Normal
+native portrait and web layout retain their existing spacing and max-w-sm width.
+No global form selector, forced focus, accessory interception or hidden errors is
+introduced. Installed exact-SHA retest remains required for this final candidate.
+
+## Third-candidate local verification
+
+- Typecheck and lint passed; lint reported no warnings.
+- The complete bounded suite passed: 153 files and 1,380 tests. New geometry cases
+  prepare all four portrait fields with validation spacing before Email focus,
+  retain both immediate centers before full-neighbor expansion, keep the active
+  field visible and scroll idempotent in both directions, and fit the four-field
+  row inside the measured 45..126 landscape main. Existing clamp, outside-focus
+  and keyboard listener/observer cleanup contracts still pass.
+- The initial full suite emitted three jsdom CSS-parser messages. A CSS-only flat
+  scoped margin reset replaced Tailwind's nested space-y-0 expansion without
+  changing layout policy. The affected auth/convention suite then passed 7 files
+  and 46 tests with no parser messages; TypeScript source stayed frozen.
+- The final production rebuild passed with 2,397 transformed modules. Existing
+  static/dynamic Capacitor import and large-chunk warnings remain. Final assets
+  include `index-BCMAfobg.js` and `index-Dvwz6mrW.css`.
+- Android/iOS sync and the native path normalizer passed after the final rebuild.
+  Both platforms include 11 plugins with Keyboard 8.0.5. There are no tracked
+  native integration changes in this cycle; generated bundle copies remain ignored.
+- The coordinating browser simulation confirmed Login landscape with validation
+  errors at 874x126: both input centers hit their inputs, labels/errors remain
+  present, header 45 and main 81. Register portrait with four errors prepared all
+  four input centers before Email focus; full rectangles 145..463 fit main
+  127..471, and scroll stayed 208 after Email focus. These simulated native events,
+  safe areas and backend data do not prove WKWebView accessory behavior.
+- Rule review found no authored comments or new design values. Changed source
+  files remain below 600 lines; auth has 19 files and native has 16. CLAUDE.md and
+  AGENTS.md remain byte-identical. Pending check:rules infrastructure is not
+  claimed as executed. Installed third-candidate iOS retest remains pending.
+
 ## References
 
 - [Official Keyboard API](https://capacitorjs.com/docs/apis/keyboard)
 - [Exact 8.0.5 iOS plugin source](https://github.com/ionic-team/capacitor-keyboard/blob/9f7acbf28984da0a3b224ceba3366e0707d75c06/ios/Sources/KeyboardPlugin/Keyboard.m)
 - [WebKit assistable-element selection](https://github.com/WebKit/WebKit/blob/main/Source/WebKit/WebProcess/WebPage/ios/WebPageIOS.mm)
 - [WebKit native focus and reveal](https://github.com/WebKit/WebKit/blob/main/Source/WebKit/UIProcess/ios/WKContentViewInteraction.mm)
+- [WebKit nested overflow hit testing](https://github.com/WebKit/WebKit/blob/main/Source/WebCore/rendering/RenderLayer.cpp)
 - `motiontimisoaraApp/src/layout/native/NativeAppShell.tsx`
 - `motiontimisoaraApp/src/layout/native/native-shell.css`
 - `motiontimisoaraApp/src/features/auth/AuthLayout.tsx`

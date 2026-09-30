@@ -37,3 +37,22 @@ global native pass. Continue from the exact committed first candidate:
 4. The coordinating session verifies browser behavior and requests installed exact
    SHA native retest. Keep F1/F2/F3 open until that evidence passes the full requested
    sequence. Git, PR, merge, tracker status and release stay with that session.
+
+## Third cycle after installed SHA 402fb29
+
+1. Record the second candidate's native passes and remaining Register portrait and
+   Login/Register landscape traversal failures, including the measured 81-pixel
+   landscape main. Keep the cached accessory-state explanation explicitly inferred.
+2. Prepare active and immediate neighbor centers before expanding full rectangles,
+   and retain all remaining form centers when they fit. Add four-field portrait
+   geometry contracts with validation spacing and traversal in both directions.
+3. Add a shared opt-in auth field wrapper: native keyboard landscape uses a widened
+   labeled two/four-column row for Login/Register. Preserve ordinary spacing,
+   errors, server feedback, submit controls, DOM order and canonical input sizes.
+   Verify the row against the measured landscape viewport without forcing focus.
+4. Run typecheck, freeze functional source for coordinating browser review, then
+   run lint, the complete bounded suite, build, native sync and path normalization.
+   Review comments, tokens, source/folder limits and exact documentation mirrors.
+5. The coordinating session reviews and commits the exact candidate for installed
+   native retest. No pass claim or tracker closure follows from simulated browser
+   geometry alone. This is the third and final local candidate in this task cycle.
