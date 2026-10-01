@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { AuthFields } from './AuthFields'
+import { AuthFields } from '../AuthFields'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
