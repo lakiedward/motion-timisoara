@@ -71,4 +71,3 @@ test('network exceptions use the safe fallback instead of SDK or transport detai
     error: { message: 'Nu am putut activa contul de antrenor. Încearcă din nou.' },
   })
 })
-
