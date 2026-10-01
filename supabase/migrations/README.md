@@ -296,6 +296,15 @@ as remote `20260929125751` (`activity_age_range`). `activities.age_from` and
 `activities.age_to` are nullable integers with no default and no check, the
 same shape as `courses`. Existing activity rows stay null on both columns.
 
+Google coach invitations, 2026-10-01: `00079_atomic_coach_invitation.sql` was
+applied once as remote `20261001100205` (`atomic_coach_invitation`). The
+service-only transaction promotes a verified PARENT identity, creates the coach
+profile and sport associations, and consumes the invitation atomically. Its
+private identity helper exposes only a boolean and grants no table access to
+`auth.users`. The authenticated Edge Function `redeem-coach-invitation` was
+deployed ACTIVE v1 with JWT verification; `register-coach` was updated to ACTIVE
+v7 and retains its anonymous entry point and optional Stripe setup.
+
 To confirm git and the remote still agree:
 
 ```bash
