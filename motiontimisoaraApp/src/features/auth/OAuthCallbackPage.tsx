@@ -5,7 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 import { AuthLayout } from './AuthLayout'
-import { useReturnUrl } from './return-url'
+import { useReturnUrl, withReturnUrl } from './return-url'
+import { isCoachContinuation } from './coach/continuation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,6 +27,7 @@ export default function OAuthCallbackPage() {
   const { refresh } = useAuth()
   const [phase, setPhase] = useState<Phase>('loading')
   const [pending, setPending] = useState<AppUser | null>(null)
+  const [attempt, setAttempt] = useState(0)
   const returnUrl = useReturnUrl()
 
   const {
@@ -37,9 +39,14 @@ export default function OAuthCallbackPage() {
 
   useEffect(() => {
     let active = true
-    const finish = (u: AppUser) => {
+    const finish = async (u: AppUser) => {
       if (!active) return
-      if (u.needsProfileCompletion) {
+      if (isCoachContinuation(returnUrl)) {
+        const confirmed = await refresh()
+        if (!active) return
+        if (!confirmed || confirmed.id !== u.id) setPhase('error')
+        else navigate(returnUrl!, { replace: true })
+      } else if (u.needsProfileCompletion) {
         setPending(u)
         reset({ name: u.name, phone: '' })
         setPhase('complete-profile')
@@ -53,7 +60,7 @@ export default function OAuthCallbackPage() {
       try {
         const user = await loadAppUser()
         if (!active) return
-        if (user) return finish(user)
+        if (user) return await finish(user)
         if (Date.now() >= deadline) setPhase('error')
         else
           timer = setTimeout(() => {
@@ -68,7 +75,7 @@ export default function OAuthCallbackPage() {
       active = false
       clearTimeout(timer)
     }
-  }, [navigate, returnUrl, reset])
+  }, [navigate, returnUrl, reset, refresh, attempt])
 
   const onSubmit = async (v: Values) => {
     if (!pending) return
@@ -94,7 +101,7 @@ export default function OAuthCallbackPage() {
       <AuthLayout
         title="Autentificare eșuată"
         footer={
-          <Link to="/login" className="text-primary font-semibold">
+          <Link to={withReturnUrl('/login', returnUrl)} className="text-primary font-semibold">
             Înapoi la autentificare
           </Link>
         }
@@ -102,6 +109,16 @@ export default function OAuthCallbackPage() {
         <p className="bg-destructive/10 text-destructive rounded-md px-3 py-3 text-sm">
           Nu am putut finaliza autentificarea. Încearcă din nou.
         </p>
+        <Button
+          type="button"
+          className="mt-4 w-full"
+          onClick={() => {
+            setPhase('loading')
+            setAttempt((current) => current + 1)
+          }}
+        >
+          Reîncearcă
+        </Button>
       </AuthLayout>
     )
   }

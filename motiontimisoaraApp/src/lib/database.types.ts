@@ -17,9 +17,9 @@ export type Database = {
       activities: {
         Row: {
           active: boolean
+          activity_date: string
           age_from: number | null
           age_to: number | null
-          activity_date: string
           capacity: number | null
           club_id: string | null
           coach_id: string
@@ -44,9 +44,9 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          activity_date: string
           age_from?: number | null
           age_to?: number | null
-          activity_date: string
           capacity?: number | null
           club_id?: string | null
           coach_id: string
@@ -71,9 +71,9 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          activity_date?: string
           age_from?: number | null
           age_to?: number | null
-          activity_date?: string
           capacity?: number | null
           club_id?: string | null
           coach_id?: string
@@ -2795,7 +2795,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      activity_spots_remaining: { Args: { p_activity_id: string }; Returns: number }
+      activity_spots_remaining: {
+        Args: { p_activity_id: string }
+        Returns: number
+      }
       admin_users: {
         Args: never
         Returns: {
@@ -3093,6 +3096,17 @@ export type Database = {
       }
       record_attendance_transaction: {
         Args: { p_actor_id: string; p_payload: Json }
+        Returns: Json
+      }
+      redeem_coach_invitation: {
+        Args: {
+          p_bio?: string
+          p_invitation_code: string
+          p_name: string
+          p_phone?: string
+          p_sport_ids?: string[]
+          p_user_id: string
+        }
         Returns: Json
       }
       regenereaza_codul_copilului: {

@@ -59,6 +59,9 @@ inspector_port = 8083
 [functions.register-coach]
 verify_jwt = false
 
+[functions.redeem-coach-invitation]
+verify_jwt = true
+
 [functions.register-club]
 verify_jwt = false
 
