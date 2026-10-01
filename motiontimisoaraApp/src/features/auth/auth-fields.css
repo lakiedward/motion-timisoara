@@ -1,5 +1,9 @@
 @reference "../../index.css";
 
+.native-app-shell .native-landscape-form [data-slot='input'] {
+  @apply text-base;
+}
+
 @media (orientation: landscape) {
   .native-app-shell[data-keyboard-open='true'] .native-landscape-form {
     @apply max-w-3xl;

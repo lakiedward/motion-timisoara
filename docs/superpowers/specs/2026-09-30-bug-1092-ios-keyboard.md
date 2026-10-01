@@ -268,6 +268,8 @@ introduced. Installed exact-SHA retest remains required for this final candidate
 
 ## References
 
+- [WebKit focus scale calculation](https://github.com/WebKit/WebKit/blob/main/Source/WebKit/UIProcess/API/ios/WKWebViewIOS.mm#L1588)
+
 - [Official Keyboard API](https://capacitorjs.com/docs/apis/keyboard)
 - [Exact 8.0.5 iOS plugin source](https://github.com/ionic-team/capacitor-keyboard/blob/9f7acbf28984da0a3b224ceba3366e0707d75c06/ios/Sources/KeyboardPlugin/Keyboard.m)
 - [WebKit assistable-element selection](https://github.com/WebKit/WebKit/blob/main/Source/WebKit/WebProcess/WebPage/ios/WebPageIOS.mm)
@@ -276,3 +278,30 @@ introduced. Installed exact-SHA retest remains required for this final candidate
 - `motiontimisoaraApp/src/layout/native/NativeAppShell.tsx`
 - `motiontimisoaraApp/src/layout/native/native-shell.css`
 - `motiontimisoaraApp/src/features/auth/AuthLayout.tsx`
+
+## Resumed landscape correction after installed SHA 4d45628
+
+The exact installed third candidate passed Login portrait three times, Register
+portrait twice, and all native Up/Down traversals across the nine planned cycles.
+Login and Register landscape each failed complete Password visibility twice:
+the right edge was clipped after accessory focus, with recovery text also clipped
+in Login. Portrait restoration, local validation, Coaches and Recovery passed
+their short regression checks. The existing inspector was unavailable, so that
+report did not measure visual viewport width/scale/offset or computed input fonts.
+
+The canonical Input uses text-base below the md breakpoint and md:text-sm above
+it. The previously measured 874-pixel landscape width activates the 14-pixel style;
+portrait remains 16 pixels. Current primary WebKit source passes the focused node's
+font size into its iOS focus/reveal path and computes an allowed focus scale from
+16 divided by that font size. A 14-pixel field can therefore request about 1.143
+scale. This is consistent with the installed row widening after a new focus, but
+does not prove the mechanism in the tested iOS 26.5 runtime without measurements.
+
+The correction keeps the existing text-base scale on canonical inputs inside the
+native Login/Register opt-in layout, irrespective of orientation or keyboard state.
+Applying it before focus avoids introducing the smaller target during rotation.
+Web retains its current responsive type scale. The two/four-column row, safe areas,
+DOM order, accessory controls, vertical reveal policy and manual zoom remain intact.
+No viewport scale lock, horizontal scroll manipulation or focus interception is
+added. Actual computed styles and complete row bounds require browser verification;
+native clipping remains open until the rebuilt exact-SHA installed retest passes.

@@ -56,3 +56,18 @@ global native pass. Continue from the exact committed first candidate:
 5. The coordinating session reviews and commits the exact candidate for installed
    native retest. No pass claim or tracker closure follows from simulated browser
    geometry alone. This is the third and final local candidate in this task cycle.
+
+## Resumed cycle after installed SHA 4d45628
+
+1. Preserve the installed third candidate's portrait and accessory traversal passes.
+   Record the remaining Login/Register landscape horizontal clipping and the lack
+   of runtime width, scale and computed-font measurements in that native report.
+2. Remove the confirmed 14-pixel landscape font risk only from the opted-in native
+   Login/Register inputs, using the canonical text-base scale before keyboard focus.
+   Keep the web breakpoint styling, field order, row layout and focus policy.
+3. Run the required app commands and review the focused CSS/documentation diff.
+   Verify actual computed font sizes and complete row bounds in the coordinating
+   browser regression; avoid a source-string test that merely mirrors the CSS.
+4. Commit the exact candidate for the coordinating installed iOS retest. Treat
+   focus zoom as an inference until runtime measurements or the native retest
+   establish the outcome. Keep tracker completion and delivery with that session.
