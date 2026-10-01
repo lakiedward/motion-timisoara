@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 import { AuthLayout } from './AuthLayout'
+import { AuthFields } from './AuthFields'
 import { GoogleSignInButton } from './GoogleSignInButton'
 import { useReturnUrl, withReturnUrl } from './return-url'
 import { Button } from '@/components/ui/button'
@@ -51,6 +52,7 @@ export default function LoginPage() {
     <AuthLayout
       title="Bine ai revenit"
       subtitle="Autentifică-te în contul tău"
+      nativeLandscapeFields
       footer={
         <>
           Nu ai cont?{' '}
@@ -71,27 +73,37 @@ export default function LoginPage() {
               {serverError}
             </p>
           )}
-          <div className="space-y-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" autoComplete="email" {...register('email')} aria-invalid={!!errors.email} />
-            {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
-          </div>
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Parolă</Label>
-              <Link to="/forgot-password" className="text-primary text-xs">
-                Ai uitat parola?
-              </Link>
+          <AuthFields columns={2}>
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                {...register('email')}
+                aria-invalid={!!errors.email}
+              />
+              {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
             </div>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              {...register('password')}
-              aria-invalid={!!errors.password}
-            />
-            {errors.password && <p className="text-destructive text-xs">{errors.password.message}</p>}
-          </div>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Parolă</Label>
+                <Link to="/forgot-password" className="text-primary text-xs">
+                  Ai uitat parola?
+                </Link>
+              </div>
+              <Input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                {...register('password')}
+                aria-invalid={!!errors.password}
+              />
+              {errors.password && (
+                <p className="text-destructive text-xs">{errors.password.message}</p>
+              )}
+            </div>
+          </AuthFields>
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? 'Se conectează…' : 'Autentificare'}
           </Button>

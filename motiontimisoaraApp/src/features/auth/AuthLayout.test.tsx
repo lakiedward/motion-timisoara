@@ -1,7 +1,13 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+import { vi } from 'vitest'
 
 import { AuthLayout } from './AuthLayout'
+import { usesNativeNavigation } from '@/layout/native/native-runtime'
+
+vi.mock('@/layout/native/native-runtime', () => ({ usesNativeNavigation: vi.fn(() => false) }))
+
+afterEach(() => vi.mocked(usesNativeNavigation).mockReturnValue(false))
 
 function renderLayout() {
   return render(
@@ -55,4 +61,30 @@ test('photo panel is desktop-only and compact logo wraps the 36px mark', () => {
   const compactLink = compactWrap?.querySelector('a')
   expect(compactLink).toHaveAttribute('href', '/')
   expect(compactLink?.className).toMatch(/inline-flex/)
+})
+
+test('wider landscape forms opt in only inside native navigation', () => {
+  const view = render(
+    <MemoryRouter>
+      <AuthLayout title="Autentificare" nativeLandscapeFields>
+        formular
+      </AuthLayout>
+    </MemoryRouter>,
+  )
+  expect(view.container.querySelector('.native-landscape-form')).not.toBeInTheDocument()
+  vi.mocked(usesNativeNavigation).mockReturnValue(true)
+  view.rerender(
+    <MemoryRouter>
+      <AuthLayout title="Autentificare" nativeLandscapeFields>
+        formular
+      </AuthLayout>
+    </MemoryRouter>,
+  )
+  expect(view.container.querySelector('.native-landscape-form')).toHaveTextContent('formular')
+  view.rerender(
+    <MemoryRouter>
+      <AuthLayout title="Recuperare">formular</AuthLayout>
+    </MemoryRouter>,
+  )
+  expect(view.container.querySelector('.native-landscape-form')).not.toBeInTheDocument()
 })
