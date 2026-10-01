@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { MailCheck } from 'lucide-react'
 
 import { AuthLayout } from './AuthLayout'
+import { AuthFields } from './AuthFields'
 import { GoogleSignInButton } from './GoogleSignInButton'
 import { useReturnUrl, withReturnUrl } from './return-url'
 import { Button } from '@/components/ui/button'
@@ -83,6 +84,7 @@ export default function RegisterPage() {
     <AuthLayout
       title="Creează cont de părinte"
       subtitle="Înscrie-ți copiii la cursuri în câteva minute"
+      nativeLandscapeFields
       footer={
         <>
           Ai deja cont?{' '}
@@ -107,52 +109,54 @@ export default function RegisterPage() {
               {serverError}
             </p>
           )}
-          <div className="space-y-1.5">
-            <Label htmlFor="name">Nume complet</Label>
-            <Input
-              id="name"
-              autoComplete="name"
-              {...register('name')}
-              aria-invalid={!!errors.name}
-            />
-            {errors.name && <p className="text-destructive text-xs">{errors.name.message}</p>}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              {...register('email')}
-              aria-invalid={!!errors.email}
-            />
-            {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="phone">Telefon</Label>
-            <Input
-              id="phone"
-              type="tel"
-              autoComplete="tel"
-              placeholder="+40..."
-              {...register('phone')}
-              aria-invalid={!!errors.phone}
-            />
-            {errors.phone && <p className="text-destructive text-xs">{errors.phone.message}</p>}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="password">Parolă</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              {...register('password')}
-              aria-invalid={!!errors.password}
-            />
-            {errors.password && (
-              <p className="text-destructive text-xs">{errors.password.message}</p>
-            )}
-          </div>
+          <AuthFields columns={4}>
+            <div className="space-y-1.5">
+              <Label htmlFor="name">Nume complet</Label>
+              <Input
+                id="name"
+                autoComplete="name"
+                {...register('name')}
+                aria-invalid={!!errors.name}
+              />
+              {errors.name && <p className="text-destructive text-xs">{errors.name.message}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                {...register('email')}
+                aria-invalid={!!errors.email}
+              />
+              {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="phone">Telefon</Label>
+              <Input
+                id="phone"
+                type="tel"
+                autoComplete="tel"
+                placeholder="+40..."
+                {...register('phone')}
+                aria-invalid={!!errors.phone}
+              />
+              {errors.phone && <p className="text-destructive text-xs">{errors.phone.message}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="password">Parolă</Label>
+              <Input
+                id="password"
+                type="password"
+                autoComplete="new-password"
+                {...register('password')}
+                aria-invalid={!!errors.password}
+              />
+              {errors.password && (
+                <p className="text-destructive text-xs">{errors.password.message}</p>
+              )}
+            </div>
+          </AuthFields>
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? 'Se creează…' : 'Creează cont'}
           </Button>

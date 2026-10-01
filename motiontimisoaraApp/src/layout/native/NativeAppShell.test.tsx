@@ -3,13 +3,50 @@ import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, MemoryRouter, Outlet, RouterProvider } from 'react-router-dom'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { NativeAppShell } from './NativeAppShell'
+import { setNativeDocumentScroll } from './native-keyboard'
+
+vi.mock('./native-keyboard', () => ({
+  setNativeDocumentScroll: vi.fn().mockResolvedValue(undefined),
+}))
 
 beforeEach(() => {
+  vi.clearAllMocks()
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
   window.history.replaceState(null, '')
 })
 
 afterEach(() => vi.restoreAllMocks())
+
+test('navigation resets the content scroller while keeping the document still', async () => {
+  const router = createMemoryRouter(
+    [
+      {
+        element: (
+          <NativeAppShell role={null}>
+            <Outlet />
+          </NativeAppShell>
+        ),
+        children: [
+          { path: '/', element: <h1>Acasă</h1> },
+          { path: '/exploreaza', element: <h1>Explorează</h1> },
+        ],
+      },
+    ],
+    { initialEntries: ['/'] },
+  )
+  const view = render(<RouterProvider router={router} />)
+  const content = screen.getByRole('main')
+  content.scrollTop = 480
+  await userEvent.click(screen.getByRole('link', { name: 'Explorează' }))
+  expect(await screen.findByRole('heading', { name: 'Explorează' })).toBeInTheDocument()
+  expect(screen.getByRole('main')).toBe(content)
+  expect(content.scrollTop).toBe(0)
+  expect(window.scrollTo).not.toHaveBeenCalled()
+  expect(setNativeDocumentScroll).toHaveBeenCalledWith(true)
+  view.unmount()
+  expect(setNativeDocumentScroll).toHaveBeenLastCalledWith(false)
+  expect(document.documentElement).not.toHaveClass('native-navigation')
+})
 
 test('a directly opened child profile can return to the child list', async () => {
   const router = createMemoryRouter(

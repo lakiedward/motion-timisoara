@@ -620,6 +620,31 @@ reorganizing this document; correct obsolete facts with current evidence.
   frame. The photo fills the band and the title sits on it in white. Sport
   and level chips stay on the course page.
 
+- 2026-09-30 — Bug #1092 uses official `@capacitor/keyboard` pinned to 8.0.5 with
+  Native resize. Bootstrap restores visible iOS accessory arrows and Done before
+  rendering forms. The native shell owns a bounded DOM content scroller with bars
+  in flow; outer WKWebView scrolling is disabled only while that shell is mounted.
+  This is a candidate pending installed iOS keyboard verification; browser geometry
+  and a build do not prove native focus behavior. See
+  `docs/superpowers/specs/2026-09-30-bug-1092-ios-keyboard.md`.
+
+- 2026-09-30 — The installed #1092 candidate `9cc365f` retained header safety but
+  failed offscreen field traversal/reveal and keyboard landscape space. The second
+  candidate keeps outer pan protection, releases bottom tabs only for a visible
+  software keyboard, compacts the landscape header to the existing h-11 scale and
+  reveals active/adjacent form fields inside main after actual geometry/content
+  changes. Native accessory arrows/Done and focus ownership remain unchanged.
+  The installed second-candidate result remains a separate verification gate.
+
+- 2026-09-30 — Installed #1092 candidate `402fb29` passed Login portrait,
+  Coaches, Recovery and header/landscape-space safety, but Register's second
+  portrait Down and Login/Register landscape traversal still failed. The third
+  candidate prepares all form centers that fit before expanding field rectangles.
+  Login/Register opt into labeled two/four-column fields within max-w-3xl only
+  during native keyboard landscape; ordinary portrait/web spacing stays canonical.
+  Labels, errors, DOM order, input sizes, Back and native accessories remain intact.
+  Cached accessory eligibility is inferred; installed exact-SHA retest is required.
+
 ## 11. Known Issues / WIP
 
 - **To-Do #149 completion in progress (2026-09-11):** migrations `00048` and `00049`

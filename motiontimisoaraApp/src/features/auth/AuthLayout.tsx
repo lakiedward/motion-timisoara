@@ -10,9 +10,16 @@ interface AuthLayoutProps {
   subtitle?: React.ReactNode
   children: React.ReactNode
   footer?: React.ReactNode
+  nativeLandscapeFields?: boolean
 }
 
-export function AuthLayout({ title, subtitle, children, footer }: AuthLayoutProps) {
+export function AuthLayout({
+  title,
+  subtitle,
+  children,
+  footer,
+  nativeLandscapeFields = false,
+}: AuthLayoutProps) {
   const native = usesNativeNavigation()
   return (
     <div className={cn('grid', native ? 'py-4' : 'min-h-dvh lg:grid-cols-2')}>
@@ -46,7 +53,12 @@ export function AuthLayout({ title, subtitle, children, footer }: AuthLayoutProp
       </div>
 
       <div className="flex items-center justify-center p-6">
-        <div className="w-full max-w-sm">
+        <div
+          className={cn(
+            'w-full max-w-sm',
+            native && nativeLandscapeFields && 'native-landscape-form',
+          )}
+        >
           <div className={cn('mb-8 lg:hidden', native && 'hidden')}>
             <Link to="/" className="inline-flex items-center">
               <Logo />

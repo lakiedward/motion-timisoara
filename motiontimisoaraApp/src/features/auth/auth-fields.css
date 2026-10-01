@@ -1,0 +1,27 @@
+@reference "../../index.css";
+
+.native-app-shell .native-landscape-form [data-slot='input'] {
+  @apply text-base;
+}
+
+@media (orientation: landscape) {
+  .native-app-shell[data-keyboard-open='true'] .native-landscape-form {
+    @apply max-w-3xl;
+  }
+
+  .native-app-shell[data-keyboard-open='true'] .auth-fields {
+    @apply grid items-start gap-4;
+  }
+
+  .native-app-shell[data-keyboard-open='true'] .auth-fields > :not(:last-child) {
+    margin-block: 0;
+  }
+
+  .native-app-shell[data-keyboard-open='true'] .auth-fields[data-landscape-columns='2'] {
+    @apply grid-cols-2;
+  }
+
+  .native-app-shell[data-keyboard-open='true'] .auth-fields[data-landscape-columns='4'] {
+    @apply grid-cols-4;
+  }
+}

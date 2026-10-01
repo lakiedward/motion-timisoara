@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 
@@ -7,6 +7,8 @@ import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { activeDestination, bottomNavigation, nativeScreen } from './navigation-model'
+import { setNativeDocumentScroll } from './native-keyboard'
+import { useNativeKeyboardViewport } from './useNativeKeyboardViewport'
 import './native-shell.css'
 
 export function NativeAppShell({ role, children }: { role: Role | null; children: ReactNode }) {
@@ -15,6 +17,8 @@ export function NativeAppShell({ role, children }: { role: Role | null; children
   const tabs = bottomNavigation(role)
   const active = activeDestination(location.pathname, role)
   const screen = nativeScreen(location.pathname, role)
+  const contentRef = useRef<HTMLElement>(null)
+  const keyboardOpen = useNativeKeyboardViewport(contentRef)
 
   useEffect(() => {
     const viewport = document.querySelector('meta[name="viewport"]')
@@ -23,14 +27,20 @@ export function NativeAppShell({ role, children }: { role: Role | null; children
       viewport.setAttribute('content', `${original}, viewport-fit=cover`)
     }
     document.documentElement.classList.add('native-navigation')
+    void setNativeDocumentScroll(true).catch((error) =>
+      console.error('Native document scroll could not be disabled', error),
+    )
     return () => {
+      void setNativeDocumentScroll(false).catch((error) =>
+        console.error('Native document scroll could not be restored', error),
+      )
       document.documentElement.classList.remove('native-navigation')
       if (viewport && original) viewport.setAttribute('content', original)
     }
   }, [])
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' })
+    if (contentRef.current) contentRef.current.scrollTop = 0
   }, [location.pathname])
 
   const goBack = () => {
@@ -42,8 +52,8 @@ export function NativeAppShell({ role, children }: { role: Role | null; children
   }
 
   return (
-    <div className="native-app-shell min-h-dvh">
-      <header className="native-topbar bg-card fixed inset-x-0 top-0 z-40 border-b">
+    <div className="native-app-shell" data-keyboard-open={keyboardOpen ? 'true' : undefined}>
+      <header className="native-topbar bg-card relative z-40 border-b">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
           {screen.backTo ? (
             <Button
@@ -61,10 +71,13 @@ export function NativeAppShell({ role, children }: { role: Role | null; children
           <p className="min-w-0 flex-1 truncate text-base font-semibold">{screen.title}</p>
         </div>
       </header>
-      <main className="native-content">{children}</main>
+      <main ref={contentRef} className="native-content">
+        {children}
+      </main>
       <nav
         aria-label="Navigare principală"
-        className="native-bottom-bar bg-card fixed inset-x-0 bottom-0 z-40 border-t"
+        hidden={keyboardOpen}
+        className="native-bottom-bar bg-card relative z-40 border-t"
       >
         <div className="mx-auto flex min-h-16 max-w-2xl items-stretch px-1">
           {tabs.map((item) => (
