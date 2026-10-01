@@ -33,10 +33,12 @@ export function GoogleSignInButton({
   label = 'Continuă cu Google',
   returnUrl,
   disabled = false,
+  onBeforeSignIn,
 }: {
   label?: string
   returnUrl?: string
   disabled?: boolean
+  onBeforeSignIn?: () => Promise<boolean | void>
 }) {
   const flow = useSyncExternalStore(nativeGoogle.subscribe, nativeGoogle.getState)
   const [loading, setLoading] = useState(false)
@@ -44,6 +46,7 @@ export function GoogleSignInButton({
   const onClick = async () => {
     setLoading(true)
     try {
+      if ((await onBeforeSignIn?.()) === false) return
       if (isNative()) await nativeGoogle.start(returnUrl)
       else {
         const base = `${window.location.origin}/auth/callback`

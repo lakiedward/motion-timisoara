@@ -13,7 +13,7 @@ interface AuthContextValue {
   user: AppUser | null
   loading: boolean
   profileError: string | null
-  refresh: () => Promise<void>
+  refresh: () => Promise<AppUser | null>
 }
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined)
@@ -28,8 +28,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const requestVersion = React.useRef({ value: 0 })
   const mounted = React.useRef(false)
 
-  const applyResult = React.useCallback(async () => {
-    if (!mounted.current) return
+  const applyResult = React.useCallback(async (): Promise<AppUser | null> => {
+    if (!mounted.current) return null
     const version = ++requestVersion.current.value
     const result = await loadAppUserResult().catch(
       (): LoadAppUserResult => ({
@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         message: PROFILE_LOAD_ERROR,
       }),
     )
-    if (!mounted.current || version !== requestVersion.current.value) return
+    if (!mounted.current || version !== requestVersion.current.value) return null
     const resultUserId =
       result.status === 'ok'
         ? result.user.id
@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfileError(PROFILE_LOAD_ERROR)
       setNeedsRecovery(true)
       setLoading(false)
-      return
+      return null
     }
     if (resultUserId) sessionUserId.current = resultUserId
     if (result.status === 'ok') {
@@ -86,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setNeedsRecovery(true)
     }
     setLoading(false)
+    return result.status === 'ok' ? result.user : null
   }, [])
 
   React.useEffect(() => {

@@ -1,0 +1,39 @@
+name: Coach Invitation CI
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/00079_atomic_coach_invitation.sql'
+      - 'supabase/functions/redeem-coach-invitation/**'
+      - 'supabase/functions/register-coach/**'
+      - 'supabase/functions/_shared/coach-invitation.ts'
+      - 'supabase/functions/coach-invitation-contract.test.ts'
+      - 'supabase/tests/coach-invitation/**'
+      - '.github/workflows/coach-invitation-ci.yml'
+  push:
+    branches: [master]
+    paths:
+      - 'supabase/migrations/00079_atomic_coach_invitation.sql'
+      - 'supabase/functions/redeem-coach-invitation/**'
+      - 'supabase/functions/register-coach/**'
+      - 'supabase/functions/_shared/coach-invitation.ts'
+      - 'supabase/functions/coach-invitation-contract.test.ts'
+      - 'supabase/tests/coach-invitation/**'
+      - '.github/workflows/coach-invitation-ci.yml'
+
+jobs:
+  coach-invitations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.6
+      - name: Verify authenticated invitation and password signup contracts
+        run: deno test --no-lock supabase/functions/coach-invitation-contract.test.ts
+      - name: Typecheck both coach registration entrypoints
+        run: deno check --no-lock --node-modules-dir=none supabase/functions/register-coach/index.ts supabase/functions/redeem-coach-invitation/index.ts
+      - name: Verify transactional invitation authorization and concurrency
+        shell: pwsh
+        run: ./supabase/tests/coach-invitation/run.ps1

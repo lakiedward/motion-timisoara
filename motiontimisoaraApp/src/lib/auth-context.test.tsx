@@ -1,6 +1,7 @@
 import { act, render, screen, waitFor } from '@testing-library/react'
+import { useEffect } from 'react'
 import { beforeEach, expect, it, vi } from 'vitest'
-import type { LoadAppUserResult } from '@/api/auth'
+import type { AppUser, LoadAppUserResult } from '@/api/auth'
 import { AuthProvider, useAuth } from './auth-context'
 
 const mocks = vi.hoisted(() => ({
@@ -53,8 +54,16 @@ const offline = (id = 'coach-a'): LoadAppUserResult => ({
   sessionUserId: id,
   retryable: true,
 })
+let refreshSession: (() => Promise<AppUser | null>) | undefined
+
 function State() {
-  const { user, profileError, loading } = useAuth()
+  const { user, profileError, loading, refresh } = useAuth()
+  useEffect(() => {
+    refreshSession = refresh
+    return () => {
+      refreshSession = undefined
+    }
+  }, [refresh])
   return (
     <output data-role={user?.role}>
       {loading ? 'Loading' : `${user?.id ?? 'no user'}|${profileError ?? 'no error'}`}
@@ -85,6 +94,55 @@ beforeEach(() => {
   mocks.native.mockReturnValue(true)
   mocks.authCallback = null
   mocks.foreground = null
+  refreshSession = undefined
+})
+
+it('returns the current applied profile when a parent becomes a coach', async () => {
+  const parent = verified()
+  if (parent.status !== 'ok') throw new Error('Fixture error')
+  parent.user.role = 'PARENT'
+  mocks.load.mockResolvedValueOnce(parent)
+  mount()
+  await screen.findByText('coach-a|no error')
+  expect(screen.getByText('coach-a|no error')).toHaveAttribute('data-role', 'PARENT')
+  const coach = verified()
+  mocks.load.mockResolvedValueOnce(coach)
+  let refreshed: AppUser | null | undefined
+  await act(async () => {
+    refreshed = await refreshSession?.()
+  })
+  if (coach.status !== 'ok') throw new Error('Fixture error')
+  expect(refreshed).toEqual(coach.user)
+  expect(screen.getByText('coach-a|no error')).toHaveAttribute('data-role', 'COACH')
+})
+
+it('does not return a cached role as proof of a successful refresh', async () => {
+  mocks.load.mockResolvedValueOnce(verified())
+  mount()
+  await screen.findByText('coach-a|no error')
+  mocks.load.mockResolvedValueOnce(offline())
+  let refreshed: AppUser | null | undefined
+  await act(async () => {
+    refreshed = await refreshSession?.()
+  })
+  expect(refreshed).toBeNull()
+  expect(screen.getByText('coach-a|no error')).toHaveAttribute('data-role', 'COACH')
+})
+
+it('returns no profile from a refresh invalidated by sign-out', async () => {
+  mocks.load.mockResolvedValueOnce(verified())
+  mount()
+  await screen.findByText('coach-a|no error')
+  const old = deferred()
+  mocks.load.mockReturnValueOnce(old.promise)
+  let refreshPromise: Promise<AppUser | null> | undefined
+  await act(async () => {
+    refreshPromise = refreshSession?.()
+  })
+  await auth('SIGNED_OUT', null)
+  await act(async () => old.resolve(verified()))
+  expect(await refreshPromise).toBeNull()
+  expect(screen.getByText('no user|no error')).toBeInTheDocument()
 })
 
 it('keeps only the verified native warm session after temporary network failure', async () => {

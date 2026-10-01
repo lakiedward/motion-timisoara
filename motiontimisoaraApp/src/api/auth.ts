@@ -4,6 +4,7 @@ import { nativeEmail, requestNativePasswordReset, signUpNativeParent } from './a
 import { webRecoveryGrant } from '@/lib/auth/recovery-grant'
 import { isNative } from '@/lib/platform'
 import { authenticateWithPushIsolation, clearPushBeforeSignOut } from './notifications'
+import { coachInvitationErrorMessage } from './coach-registration'
 
 export type Role = 'PARENT' | 'COACH' | 'CLUB' | 'ADMIN'
 
@@ -169,15 +170,21 @@ export interface RegisterClubInput {
 }
 
 export async function registerCoach(input: RegisterCoachInput) {
-  const { error } = await supabase.functions.invoke('register-coach', { body: input })
-  if (error) {
-    const { message } = await edgeError(error)
-    return { error: { message: coachRegisterMessage(message) } }
+  try {
+    const { error } = await supabase.functions.invoke('register-coach', { body: input })
+    if (error) {
+      const { message, code } = await edgeError(error)
+      return { error: { message: coachRegisterMessage(message, code) } }
+    }
+    return await signInWithPassword(input.email, input.password)
+  } catch {
+    return { error: { message: 'Nu am putut finaliza contul de antrenor. Încearcă din nou.' } }
   }
-  return signInWithPassword(input.email, input.password)
 }
 
-function coachRegisterMessage(raw: string): string {
+function coachRegisterMessage(raw: string, code?: string): string {
+  const message = coachInvitationErrorMessage(code, raw)
+  if (message) return message
   const m = raw.toLowerCase()
   if (m.includes('invitation code expired')) {
     return 'Codul de invitație a expirat. Cere unul nou clubului.'
@@ -186,6 +193,8 @@ function coachRegisterMessage(raw: string): string {
     return 'Codul de invitație a fost deja folosit de numărul maxim de ori.'
   }
   if (m.includes('invalid invitation code')) return 'Cod de invitație invalid.'
+  if (m.includes('already been registered') || m.includes('already registered'))
+    return 'Există deja un cont cu acest email. Autentifică-te pentru a folosi invitația.'
   return sharedRegisterMessage(m)
 }
 
@@ -216,11 +225,12 @@ export async function registerClub(input: RegisterClubInput) {
   return signInWithPassword(input.email, input.password)
 }
 
-async function edgeError(error: unknown): Promise<{ message: string }> {
+async function edgeError(error: unknown): Promise<{ message: string; code?: string }> {
   const ctx = (error as { context?: Response })?.context
   if (ctx && typeof ctx.json === 'function') {
     const body = await ctx.json().catch(() => null)
-    if (body?.error) return { message: body.error as string }
+    if (typeof body?.error === 'string')
+      return { message: body.error, code: typeof body.code === 'string' ? body.code : undefined }
   }
   return { message: (error as { message?: string })?.message ?? 'A apărut o eroare.' }
 }
