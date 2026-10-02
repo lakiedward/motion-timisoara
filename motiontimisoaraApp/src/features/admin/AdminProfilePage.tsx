@@ -44,7 +44,9 @@ export default function AdminProfilePage() {
 
   return (
     <div className="max-w-2xl">
-      <h1 className="font-display mb-6 text-2xl font-bold break-words text-foreground">Profil</h1>
+      <h1 className="font-display mb-6 text-2xl font-bold break-words text-foreground">
+        Profil administrator
+      </h1>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
         <section className="bg-card shadow-card space-y-4 rounded-3xl border p-6">
           <div className="space-y-1.5">
@@ -57,7 +59,7 @@ export default function AdminProfilePage() {
             <Input id="phone" type="tel" {...register('phone')} />
           </div>
         </section>
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting} className="h-11 min-h-11">
           {isSubmitting ? 'Se salvează…' : 'Salvează'}
         </Button>
       </form>

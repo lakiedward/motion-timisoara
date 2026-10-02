@@ -38,12 +38,13 @@ test('profilul admin are un singur h1 și câmpurile de nume și telefon', () =>
       <AdminProfilePage />
     </MemoryRouter>,
   )
-  expect(screen.getByRole('heading', { level: 1, name: 'Profil' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { level: 1, name: 'Profil administrator' })).toBeInTheDocument()
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
   expect(screen.getByLabelText('Nume')).toHaveValue('Audit Admin')
   expect(screen.getByLabelText('Telefon')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Salvează' })).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Salvează' }).className).not.toMatch(/min-h-11/)
+  expect(screen.getByRole('button', { name: 'Salvează' }).className).toMatch(/min-h-11/)
+  expect(screen.getByRole('button', { name: 'Salvează' }).className).toMatch(/h-11/)
 })
 
 test('cât user lipsește se vede skeleton, nu un ecran gol', () => {
@@ -54,6 +55,6 @@ test('cât user lipsește se vede skeleton, nu un ecran gol', () => {
       <AdminProfilePage />
     </MemoryRouter>,
   )
-  expect(screen.queryByRole('heading', { name: 'Profil' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Profil administrator' })).not.toBeInTheDocument()
   expect(container.querySelector('[data-slot="skeleton"]')).toBeTruthy()
 })

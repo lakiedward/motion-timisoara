@@ -71,6 +71,13 @@ describe('native role navigation', () => {
     expect(nativeScreen(path, role).backTo).toBe(back)
   })
 
+  test('admin profile native title is Profil administrator', () => {
+    expect(nativeScreen('/admin/profile', 'ADMIN')).toEqual({
+      title: 'Profil administrator',
+      backTo: '/admin',
+    })
+  })
+
   test('route prefixes do not select an unrelated tab', () => {
     expect(activeDestination('/coach/courses-other', 'COACH')).toBe('/cont')
   })

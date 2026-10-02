@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -76,7 +76,7 @@ test('titlul rămâne Administrare, cu un singur h1 și subtitlul de ansamblu', 
   expect(screen.getByText('Privire de ansamblu asupra platformei.')).toBeInTheDocument()
   expect(screen.getByRole('heading', { level: 1 }).className).toMatch(/break-words/)
   expect(screen.getByRole('heading', { level: 1 }).className).not.toMatch(/truncate/)
-  expect(screen.queryByRole('link', { name: 'Profil' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('link', { name: 'Profil administrator' })).not.toBeInTheDocument()
 })
 
 test('cele 8 contoare duc la secțiunile lor, Antrenori filtrat pe COACH', async () => {
@@ -139,14 +139,30 @@ test('numerele mari au separator de mii', async () => {
 })
 
 test('eroarea de încărcare are mesaj și Reîncearcă reia cererea', async () => {
-  mockedStats.mockRejectedValueOnce(new Error('500')).mockResolvedValueOnce(stats({ users: cell(2) }))
+  let resolveRetry: ((value: AdminStats) => void) | undefined
+  mockedStats
+    .mockRejectedValueOnce(new Error('500'))
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveRetry = resolve
+        }),
+    )
   renderDashboard()
   const alerta = await screen.findByRole('alert')
   expect(alerta).toHaveTextContent('Nu am putut încărca statisticile.')
   expect(screen.queryByTestId('admin-stat-utilizatori')).not.toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Reîncearcă' }))
+  const busy = await screen.findByRole('button', { name: 'Se reîncarcă…' })
+  expect(busy).toBeDisabled()
+  resolveRetry!(stats({ users: cell(2) }))
   expect(await screen.findByRole('link', { name: /utilizatori, 2/i })).toBeInTheDocument()
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  await waitFor(() => {
+    expect(document.activeElement).toBe(
+      screen.getByRole('heading', { level: 1, name: 'Administrare' }),
+    )
+  })
 })
 
 test('toate cardurile eșuate păstrează mesajul C4, fără grilă', async () => {
@@ -179,7 +195,8 @@ test('grila e 1 / 2 / 4 coloane, cardurile au înălțime stabilă și inel de f
   const grila = container.querySelector('.grid')
   expect(grila?.className).toMatch(/grid-cols-1/)
   expect(grila?.className).toMatch(/md:grid-cols-2/)
-  expect(grila?.className).toMatch(/xl:grid-cols-4/)
+  expect(grila?.className).toMatch(/lg:grid-cols-4/)
+  expect(grila?.className).not.toMatch(/xl:grid-cols-4/)
   expect(grila?.className).not.toMatch(/overflow-x-auto/)
   for (const id of [
     'admin-stat-utilizatori',
@@ -218,9 +235,12 @@ test('în încărcare cardurile au aria-busy și status', async () => {
   expect(screen.getByTestId('admin-stat-utilizatori')).not.toHaveAttribute('aria-busy')
 })
 
-test('în navigarea nativă există link de Profil, fără chrome de layout', async () => {
+test('în navigarea nativă există link de Profil administrator, fără chrome de layout', async () => {
   mockedNative.mockReturnValue(true)
   mockedStats.mockResolvedValue(stats())
   renderDashboard()
-  expect(await screen.findByRole('link', { name: 'Profil' })).toHaveAttribute('href', '/admin/profile')
+  expect(await screen.findByRole('link', { name: 'Profil administrator' })).toHaveAttribute(
+    'href',
+    '/admin/profile',
+  )
 })

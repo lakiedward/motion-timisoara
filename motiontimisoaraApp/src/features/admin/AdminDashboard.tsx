@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -100,19 +101,38 @@ function allStatsFailed(data: AdminStats) {
 }
 
 export default function AdminDashboard() {
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  const [retrying, setRetrying] = useState(false)
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: () => getAdminStats(),
     retry: false,
   })
   const native = usesNativeNavigation()
-  const totalFailure = isError || (data ? allStatsFailed(data) : false)
+  const failedNow = isError || (data ? allStatsFailed(data) : false)
+  const totalFailure = retrying && !data ? true : failedNow
   const partialFailed = data && !totalFailure ? failedLabels(data) : []
+
+  async function onRetry() {
+    setRetrying(true)
+    try {
+      const result = await refetch()
+      const next = result.data
+      const stillFailed = Boolean(result.error) || (next ? allStatsFailed(next) : true)
+      if (!stillFailed) headingRef.current?.focus()
+    } finally {
+      setRetrying(false)
+    }
+  }
 
   return (
     <div className="min-w-0 space-y-8">
       <div>
-        <h1 className="font-display text-3xl font-extrabold break-words text-foreground">
+        <h1
+          ref={headingRef}
+          tabIndex={-1}
+          className="font-display text-3xl font-extrabold break-words text-foreground outline-none"
+        >
           Administrare
         </h1>
         <p className="text-muted-foreground mt-1 break-words">
@@ -124,15 +144,20 @@ export default function AdminDashboard() {
             className="text-primary mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-medium underline-offset-4 outline-none hover:underline focus-visible:ring-ring/50 focus-visible:ring-[3px]"
           >
             <UserRound className="size-4" aria-hidden="true" />
-            Profil
+            Profil administrator
           </Link>
         ) : null}
       </div>
       {totalFailure ? (
         <div role="alert" className="rounded-3xl border border-dashed py-16 text-center">
           <p className="text-foreground font-medium">Nu am putut încărca statisticile.</p>
-          <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => void refetch()}>
-            Reîncearcă
+          <Button
+            className="mt-4 h-11 min-h-11"
+            type="button"
+            disabled={retrying}
+            onClick={() => void onRetry()}
+          >
+            {retrying ? 'Se reîncarcă…' : 'Reîncearcă'}
           </Button>
         </div>
       ) : (
@@ -142,12 +167,17 @@ export default function AdminDashboard() {
               <p className="text-foreground font-medium">
                 Nu am putut încărca: {partialFailed.join(', ')}.
               </p>
-              <Button className="mt-3 h-11 min-h-11" type="button" onClick={() => void refetch()}>
-                Reîncearcă
+              <Button
+                className="mt-3 h-11 min-h-11"
+                type="button"
+                disabled={retrying}
+                onClick={() => void onRetry()}
+              >
+                {retrying ? 'Se reîncarcă…' : 'Reîncearcă'}
               </Button>
             </div>
           ) : null}
-          <div className="grid grid-cols-1 items-stretch gap-4 overflow-visible py-1 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 items-stretch gap-4 overflow-visible py-1 md:grid-cols-2 lg:grid-cols-4">
             {STATS.map((stat) => (
               <StatCard
                 key={stat.key}

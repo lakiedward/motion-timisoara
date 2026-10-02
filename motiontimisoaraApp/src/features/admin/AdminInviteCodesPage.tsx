@@ -143,7 +143,7 @@ export default function AdminInviteCodesPage() {
 
       <section>
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="font-display text-xl font-bold text-foreground">Coduri invitație antrenori</h2>
+        <h2 className="font-display text-xl font-bold text-foreground">Coduri invitație</h2>
         <Button onClick={() => gen.mutate()} disabled={gen.isPending}>
           <Plus /> Generează cod
         </Button>
