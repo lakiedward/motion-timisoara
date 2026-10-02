@@ -142,7 +142,7 @@ export async function updatePassword(password: string) {
   return result
 }
 
-export function completeProfile(userId: string, input: { name: string; phone: string }) {
+export function completeProfile(userId: string, input: { name: string; phone: string | null }) {
   return supabase.from('profiles').update({ name: input.name, phone: input.phone }).eq('id', userId)
 }
 

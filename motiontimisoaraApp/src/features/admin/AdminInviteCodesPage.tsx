@@ -11,6 +11,7 @@ import {
   deleteInviteCode,
   generateCoachInviteCode,
   getCoachInviteCodes,
+  inviteCodeStatus,
   type CreatedCoach,
 } from '@/api/admin'
 import { Badge } from '@/components/ui/badge'
@@ -25,6 +26,29 @@ const coachSchema = z.object({
   phone: z.string().optional(),
 })
 type CoachValues = z.infer<typeof coachSchema>
+
+function formatExpiresAt(value: string | null) {
+  if (!value) return null
+  return new Date(value).toLocaleDateString('ro-RO', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+function CodeStatusBadge({
+  status,
+  currentUses,
+  maxUses,
+}: {
+  status: ReturnType<typeof inviteCodeStatus>
+  currentUses: number
+  maxUses: number
+}) {
+  if (status === 'used') return <Badge variant="outline">Folosit</Badge>
+  if (status === 'expired') return <Badge variant="outline">Expirat</Badge>
+  return <Badge variant="success">{`${currentUses}/${maxUses}`}</Badge>
+}
 
 export default function AdminInviteCodesPage() {
   const qc = useQueryClient()
@@ -119,7 +143,7 @@ export default function AdminInviteCodesPage() {
 
       <section>
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="font-display text-xl font-bold text-foreground">Coduri invitație antrenori</h2>
+        <h2 className="font-display text-xl font-bold text-foreground">Coduri invitație</h2>
         <Button onClick={() => gen.mutate()} disabled={gen.isPending}>
           <Plus /> Generează cod
         </Button>
@@ -130,14 +154,24 @@ export default function AdminInviteCodesPage() {
       ) : codes.length ? (
         <ul className="space-y-2">
           {codes.map((c) => {
-            const used = c.current_uses >= c.max_uses
+            const status = inviteCodeStatus(c)
+            const expires = formatExpiresAt(c.expires_at)
             return (
               <li key={c.id} className="bg-card flex items-center justify-between rounded-2xl border p-3">
-                <div className="flex items-center gap-3">
-                  <code className="bg-muted rounded px-2 py-1 font-mono text-sm">{c.code}</code>
-                  <Badge variant={used ? 'outline' : 'success'}>
-                    {used ? 'Folosit' : `${c.current_uses}/${c.max_uses}`}
-                  </Badge>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <code className="bg-muted rounded px-2 py-1 font-mono text-sm">{c.code}</code>
+                    <CodeStatusBadge
+                      status={status}
+                      currentUses={c.current_uses}
+                      maxUses={c.max_uses}
+                    />
+                  </div>
+                  {expires ? (
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      {status === 'expired' ? `Expirat pe ${expires}` : `Expiră pe ${expires}`}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="flex gap-1">
                   <Button

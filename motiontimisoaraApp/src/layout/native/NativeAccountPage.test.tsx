@@ -72,7 +72,25 @@ test('failed logout leaves the account available and permits retry', async () =>
   await user.click(screen.getByRole('button', { name: 'Deconectare' }))
   expect(screen.getByRole('alert')).toHaveTextContent('Nu te-am putut deconecta')
   expect(screen.getByRole('link', { name: 'Încasări' })).toHaveAttribute('href', '/coach/stripe')
+  expect(screen.queryByRole('link', { name: 'Profil administrator' })).not.toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Deconectare' }))
   expect(state.signOut).toHaveBeenCalledTimes(2)
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+})
+
+test('un admin are calea de Profil administrator în grupul de administrare', () => {
+  state.user = {
+    id: 'admin',
+    email: 'audit@example.test',
+    name: 'Audit Admin',
+    role: 'ADMIN',
+    phone: null,
+    avatarUrl: null,
+    needsProfileCompletion: false,
+  }
+  renderPage()
+  expect(screen.getByRole('link', { name: 'Profil administrator' })).toHaveAttribute(
+    'href',
+    '/admin/profile',
+  )
 })

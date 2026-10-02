@@ -1,6 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
 import { toast } from 'sonner'
 
@@ -16,11 +17,13 @@ vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 const mockedUsers = vi.mocked(getAllUsers)
 const mockedToggle = vi.mocked(setUserEnabled)
 
-function renderPage() {
+function renderPage(ruta = '/admin/users') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={queryClient}>
-      <AdminUsersPage />
+      <MemoryRouter initialEntries={[ruta]}>
+        <AdminUsersPage />
+      </MemoryRouter>
     </QueryClientProvider>,
   )
 }
@@ -121,7 +124,9 @@ test('in incarcare, sceletul pastreaza antetul tabelului, deci primul rand nu se
   mockedUsers.mockReturnValue(new Promise(() => {}) as never)
   renderPage()
 
-  const antet = within(tabel()).getAllByRole('columnheader').map((th) => th.textContent)
+  const antet = within(tabel())
+    .getAllByRole('columnheader')
+    .map((th) => th.textContent)
   expect(antet.slice(0, 4)).toEqual(['Nume', 'Email', 'Rol', 'Status'])
   expect(document.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(1)
   // Numaratorul apare doar cu date, deci in incarcare are nevoie de un loc rezervat:
@@ -155,7 +160,9 @@ test('cardul de telefon arata rolul, statusul si actiunea — cele trei lucruri 
   expect(within(card).getByText('Dezactivat')).toBeInTheDocument()
   expect(within(card).getByRole('button', { name: 'Activează' })).toBeInTheDocument()
   // Emailul lung se rupe, nu se taie: deosebeste conturile omonime.
-  expect(within(card).getByText('uiaudit.coach@motiontimisoara.test').className).toMatch(/break-all/)
+  expect(within(card).getByText('uiaudit.coach@motiontimisoara.test').className).toMatch(
+    /break-all/,
+  )
 })
 
 // --- Criteriul 3: 44px sub 1024px, 32px permis pe desktop ---
@@ -210,9 +217,7 @@ test('o comutare reusita confirma cu numele contului', async () => {
   renderPage()
   await asteaptaLista()
 
-  await userEvent.click(
-    within(rand('Audit Părinte')).getByRole('button', { name: 'Dezactivează' }),
-  )
+  await userEvent.click(within(rand('Audit Părinte')).getByRole('button', { name: 'Dezactivează' }))
 
   await waitFor(() =>
     expect(toast.success).toHaveBeenCalledWith('Contul lui Audit Părinte a fost dezactivat.'),
@@ -226,11 +231,11 @@ test('o comutare esuata pastreaza mesajul de eroare si nu confirma nimic', async
   renderPage()
   await asteaptaLista()
 
-  await userEvent.click(
-    within(rand('Audit Părinte')).getByRole('button', { name: 'Dezactivează' }),
-  )
+  await userEvent.click(within(rand('Audit Părinte')).getByRole('button', { name: 'Dezactivează' }))
 
-  await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Nu am putut actualiza utilizatorul.'))
+  await waitFor(() =>
+    expect(toast.error).toHaveBeenCalledWith('Nu am putut actualiza utilizatorul.'),
+  )
   expect(toast.success).not.toHaveBeenCalled()
 })
 
@@ -261,7 +266,9 @@ test('o cautare fara rezultate spune ca e o cautare, nu ca platforma e goala', a
 
   await userEvent.type(screen.getByLabelText(/Caută utilizatori/), 'zzz')
 
-  expect(await screen.findByText(/Niciun utilizator nu se potrivește cu căutarea/)).toBeInTheDocument()
+  expect(
+    await screen.findByText(/Niciun utilizator nu se potrivește cu căutarea/),
+  ).toBeInTheDocument()
   expect(screen.queryByText('Niciun utilizator înregistrat.')).not.toBeInTheDocument()
 
   await userEvent.click(screen.getByRole('button', { name: 'Șterge căutarea' }))
@@ -295,4 +302,20 @@ test('tabelul are coloana Înregistrat, ascunsa sub 1024px', async () => {
   expect(antet.className).toMatch(/(^|\s)hidden(\s|$)/)
   expect(antet.className).toMatch(/lg:table-cell/)
   expect(within(tabel()).getAllByText('11 aug. 2026').length).toBeGreaterThan(0)
+})
+
+test('?role=COACH arată doar antrenorii și Arată toți scoate filtrul', async () => {
+  mockedUsers.mockResolvedValue(lista())
+  renderPage('/admin/users?role=COACH')
+  await asteaptaLista()
+
+  expect(screen.getByText('Filtru: Antrenori')).toBeInTheDocument()
+  expect(within(tabel()).getByText('Audit Antrenor')).toBeInTheDocument()
+  expect(within(tabel()).queryByText('Laki Admin')).not.toBeInTheDocument()
+  expect(within(tabel()).queryByText('Audit Părinte')).not.toBeInTheDocument()
+  expect(screen.getByRole('status')).toHaveTextContent('1 utilizator')
+
+  await userEvent.click(screen.getByRole('button', { name: 'Arată toți' }))
+  expect(await screen.findByRole('status')).toHaveTextContent('3 utilizatori')
+  expect(within(tabel()).getByText('Laki Admin')).toBeInTheDocument()
 })

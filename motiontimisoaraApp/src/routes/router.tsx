@@ -19,6 +19,7 @@ import AdminClubsPage from '@/features/admin/AdminClubsPage'
 import AdminCoursesPage from '@/features/admin/AdminCoursesPage'
 import AdminSportsPage from '@/features/admin/AdminSportsPage'
 import AdminInviteCodesPage from '@/features/admin/AdminInviteCodesPage'
+import AdminProfilePage from '@/features/admin/AdminProfilePage'
 import ClubLayout from '@/features/club/ClubLayout'
 import ClubDashboard from '@/features/club/ClubDashboard'
 import ClubProfilePage from '@/features/club/ClubProfilePage'
@@ -203,6 +204,7 @@ export const router = createBrowserRouter([
             element: <AdminLayout />,
             children: [
               { path: '/admin', element: <AdminDashboard /> },
+              { path: '/admin/profile', element: <AdminProfilePage /> },
               { path: '/admin/users', element: <AdminUsersPage /> },
               { path: '/admin/clubs', element: <AdminClubsPage /> },
               { path: '/admin/courses', element: <AdminCoursesPage /> },
