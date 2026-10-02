@@ -25,6 +25,7 @@ function ProfileLoadError({ message, onRetry }: { message: string; onRetry: () =
   )
 }
 
+/** Gate: requires an authenticated user; otherwise redirects to /login with returnUrl. */
 export function RequireAuth() {
   const { user, loading, profileError, refresh } = useAuth()
   const location = useLocation()
@@ -38,6 +39,7 @@ export function RequireAuth() {
   return <Outlet />
 }
 
+/** Gate: requires the user's role to be in `roles`; otherwise redirects home. */
 export function RequireRole({ roles }: { roles: Role[] }) {
   const { user, loading, profileError, refresh } = useAuth()
   const location = useLocation()

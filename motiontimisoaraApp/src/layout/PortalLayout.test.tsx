@@ -63,6 +63,8 @@ test('first name is a profile control, not a sixth nav item', () => {
   expect(profileLinks.length).toBeGreaterThanOrEqual(1)
   for (const link of profileLinks) {
     expect(link).toHaveAttribute('href', '/coach/profile')
+    expect(link.className).toMatch(/text-primary/)
+    expect(link.querySelector('svg')).toBeTruthy()
   }
   const nav = screen.getByRole('navigation')
   expect(nav).not.toHaveTextContent('Audit')

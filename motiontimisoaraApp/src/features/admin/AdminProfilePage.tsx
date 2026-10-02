@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const schema = z.object({
   name: z.string().min(2, 'Minim 2 caractere'),
@@ -17,7 +18,7 @@ const schema = z.object({
 type Values = z.infer<typeof schema>
 
 export default function AdminProfilePage() {
-  const { user, refresh } = useAuth()
+  const { user, loading, refresh } = useAuth()
   const {
     register,
     handleSubmit,
@@ -29,10 +30,10 @@ export default function AdminProfilePage() {
     if (user) reset({ name: user.name, phone: user.phone ?? '' })
   }, [user, reset])
 
-  if (!user) return null
+  if (loading || !user) return <Skeleton className="h-96 rounded-3xl" />
 
   const onSubmit = async (v: Values) => {
-    const { error } = await completeProfile(user.id, { name: v.name, phone: v.phone ?? '' })
+    const { error } = await completeProfile(user.id, { name: v.name, phone: v.phone || null })
     if (error) {
       toast.error('Nu am putut salva profilul.')
       return
@@ -56,7 +57,7 @@ export default function AdminProfilePage() {
             <Input id="phone" type="tel" {...register('phone')} />
           </div>
         </section>
-        <Button type="submit" disabled={isSubmitting} className="h-11 min-h-11">
+        <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Se salvează…' : 'Salvează'}
         </Button>
       </form>

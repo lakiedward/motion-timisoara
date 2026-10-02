@@ -305,6 +305,16 @@ private identity helper exposes only a boolean and grants no table access to
 deployed ACTIVE v1 with JWT verification; `register-coach` was updated to ACTIVE
 v7 and retains its anonymous entry point and optional Stripe setup.
 
+Admin dashboard stats, proposed 2026-10-02: `00080_admin_stats.sql` is in git as
+a proposal only. Do not apply it on local, preview or production until Laki
+approves. `created_at` is outside the 00036 GRANT on `profiles`, and PostgREST
+cannot compare `current_uses < max_uses` column-to-column, so exact 7-day user
+and active-unexpired invite counts need this SECURITY DEFINER `admin_stats()`
+RPC (`get_my_role() = 'ADMIN'`). Until it is applied, the client tries the RPC
+then falls back to `count: exact` / `admin_users()` / invite-code rows, capped
+at `max_rows=1000` (`supabase/config.toml`). A capped fallback shows a `+`
+suffix. This file is intentionally absent from the applied-version table.
+
 To confirm git and the remote still agree:
 
 ```bash

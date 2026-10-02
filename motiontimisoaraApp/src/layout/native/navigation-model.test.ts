@@ -34,7 +34,14 @@ describe('native role navigation', () => {
     ],
     [
       'ADMIN',
-      ['/admin/courses', '/admin/sports', '/admin/codes', '/coach/profile', '/coach/stripe'],
+      [
+        '/admin/courses',
+        '/admin/sports',
+        '/admin/codes',
+        '/admin/profile',
+        '/coach/profile',
+        '/coach/stripe',
+      ],
     ],
     ['PARENT', ['/account/enrollments', '/account/attendance']],
   ])('%s retains secondary functions in account', (role, expected) => {
@@ -58,6 +65,7 @@ describe('native role navigation', () => {
     ['/club/competitions/nou/edit', 'CLUB', '/cont', '/club/competitions'],
     ['/register-coach', null, '/cont', '/signup'],
     ['/club/stripe/onboarding/complete', 'CLUB', '/cont', '/club/stripe'],
+    ['/admin/profile', 'ADMIN', '/cont', '/admin'],
   ])('%s preserves context and has a direct-link back destination', (path, role, active, back) => {
     expect(activeDestination(path, role)).toBe(active)
     expect(nativeScreen(path, role).backTo).toBe(back)

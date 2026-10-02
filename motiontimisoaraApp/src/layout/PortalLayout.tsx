@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LogOut, Menu } from 'lucide-react'
+import { LogOut, Menu, UserRound } from 'lucide-react'
 
 import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
@@ -83,11 +83,13 @@ function ProfileNameLink({
       to={to}
       onClick={onNavigate}
       className={cn(
-        'flex min-h-11 cursor-pointer items-center rounded-xl px-3 text-sm font-medium',
-        'hover:bg-secondary focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-primary',
+        'text-primary flex min-h-11 cursor-pointer items-center gap-2 rounded-xl px-3 text-sm font-medium underline-offset-4',
+        'hover:bg-secondary hover:underline [&:hover]:bg-secondary [&:hover]:underline',
+        'outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]',
         className,
       )}
     >
+      <UserRound className="size-4 shrink-0" aria-hidden="true" />
       {name}
     </Link>
   )

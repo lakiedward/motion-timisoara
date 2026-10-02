@@ -58,6 +58,10 @@ test('prenumele din dreapta e link către profil, nu un item de navigare', () =>
   expect(profileLinks.length).toBeGreaterThanOrEqual(1)
   for (const link of profileLinks) {
     expect(link).toHaveAttribute('href', '/admin/profile')
+    expect(link.className).toMatch(/text-primary/)
+    expect(link.className).toMatch(/hover:underline/)
+    expect(link.className).toMatch(/focus-visible:ring-\[3px\]/)
+    expect(link.querySelector('svg')).toBeTruthy()
   }
   const nav = screen.getByRole('navigation')
   expect(nav).not.toHaveTextContent('Audit')

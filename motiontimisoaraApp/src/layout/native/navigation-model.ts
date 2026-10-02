@@ -66,7 +66,11 @@ export function bottomNavigation(role: Role | null): PortalNavItem[] {
 
 export function accountGroups(role: Role) {
   const groups: { title: string; items: PortalNavItem[] }[] = []
-  if (role === 'ADMIN') groups.push({ title: 'Administrare', items: adminNavigation })
+  if (role === 'ADMIN')
+    groups.push({
+      title: 'Administrare',
+      items: [...adminNavigation, { to: '/admin/profile', label: 'Profil admin', icon: UserRound }],
+    })
   if (role === 'COACH' || role === 'ADMIN')
     groups.push({
       title: 'Antrenor',
@@ -127,6 +131,7 @@ const secondaryScreens = [
   ['/auth/callback', 'Contul tău', '/cont'],
   ['/termeni', 'Termeni și condiții', '/cont'],
   ['/confidentialitate', 'Confidențialitate', '/cont'],
+  ['/admin/profile', 'Profil admin', '/admin'],
   ['/coach/profile', 'Profil antrenor', '/cont'],
   ['/coach/stripe', 'Încasări', '/cont'],
   ['/club/stripe', 'Încasări', '/cont'],
