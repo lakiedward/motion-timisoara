@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Search } from 'lucide-react'
 import { toast } from 'sonner'
@@ -84,12 +85,32 @@ function ToggleAction({
 function StatusBadge({ enabled }: { enabled: boolean }) {
   // Badge, nu text colorat: acelasi limbaj cu badge-ul de ROL de alaturi si
   // acelasi tipar ca „Activ/Inactiv" de pe cursurile de club.
-  return (
-    <Badge variant={enabled ? 'success' : 'outline'}>{enabled ? 'Activ' : 'Dezactivat'}</Badge>
-  )
+  return <Badge variant={enabled ? 'success' : 'outline'}>{enabled ? 'Activ' : 'Dezactivat'}</Badge>
 }
 
+const ROLE_QUERY = new Set(['ADMIN', 'CLUB', 'COACH', 'PARENT'])
+
 const COLOANE = ['Nume', 'Email', 'Rol', 'Status'] as const
+
+const ROLE_FILTER_LABEL: Record<string, string> = {
+  ADMIN: 'Administratori',
+  CLUB: 'Cluburi',
+  COACH: 'Antrenori',
+  PARENT: 'Părinți',
+}
+
+const ROLE_EMPTY_LABEL: Record<string, string> = {
+  ADMIN: 'administrator',
+  CLUB: 'club',
+  COACH: 'antrenor',
+  PARENT: 'părinte',
+}
+
+function rolDinQuery(raw: string | null): string | null {
+  const value = raw?.trim().toUpperCase()
+  if (!value || !ROLE_QUERY.has(value)) return null
+  return value
+}
 
 /**
  * Sceletul reia exact structura tabelului, cu acelasi antet, ca primul rand sa
@@ -157,7 +178,9 @@ function LoadingState() {
 
 export default function AdminUsersPage() {
   const qc = useQueryClient()
+  const [params, setParams] = useSearchParams()
   const [q, setQ] = useState('')
+  const roleFilter = rolDinQuery(params.get('role'))
 
   const {
     data: users = [],
@@ -176,12 +199,20 @@ export default function AdminUsersPage() {
   })
 
   const filtered = useMemo(() => {
+    const byRole = roleFilter ? users.filter((u) => u.role === roleFilter) : users
     const needle = fold(q.trim())
-    if (!needle) return users
-    return users.filter((u) => fold(`${u.name} ${u.email}`).includes(needle))
-  }, [users, q])
+    if (!needle) return byRole
+    return byRole.filter((u) => fold(`${u.name} ${u.email}`).includes(needle))
+  }, [users, q, roleFilter])
 
   const onToggle = (args: ToggleArgs) => toggle.mutate(args)
+  const inRol = roleFilter ? users.filter((u) => u.role === roleFilter).length : users.length
+
+  const clearRoleFilter = () => {
+    const next = new URLSearchParams(params)
+    next.delete('role')
+    setParams(next, { replace: true })
+  }
 
   return (
     <div>
@@ -198,6 +229,20 @@ export default function AdminUsersPage() {
           />
         </div>
       </div>
+      {roleFilter ? (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <p className="text-sm">Filtru: {ROLE_FILTER_LABEL[roleFilter]}</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-11 min-h-11 lg:h-8 lg:min-h-8"
+            onClick={clearRoleFilter}
+          >
+            Arată toți
+          </Button>
+        </div>
+      ) : null}
 
       {isLoading ? (
         <LoadingState />
@@ -219,20 +264,35 @@ export default function AdminUsersPage() {
         <>
           <p role="status" className="text-muted-foreground mb-3 text-sm">
             {q.trim()
-              ? `${filtered.length} din ${numaraUtilizatori(users.length)}`
-              : numaraUtilizatori(users.length)}
+              ? `${filtered.length} din ${numaraUtilizatori(inRol)}`
+              : numaraUtilizatori(filtered.length)}
           </p>
 
           {filtered.length === 0 ? (
             <div className="text-muted-foreground rounded-3xl border border-dashed py-16 text-center">
-              Niciun utilizator nu se potrivește cu căutarea.{' '}
-              <button
-                type="button"
-                onClick={() => setQ('')}
-                className="text-primary inline-flex min-h-11 items-center font-semibold lg:min-h-0"
-              >
-                Șterge căutarea
-              </button>
+              {q.trim() ? (
+                <>
+                  Niciun utilizator nu se potrivește cu căutarea.{' '}
+                  <button
+                    type="button"
+                    onClick={() => setQ('')}
+                    className="text-primary inline-flex min-h-11 items-center font-semibold lg:min-h-0"
+                  >
+                    Șterge căutarea
+                  </button>
+                </>
+              ) : (
+                <>
+                  Niciun {ROLE_EMPTY_LABEL[roleFilter ?? ''] ?? 'utilizator'} în listă.{' '}
+                  <button
+                    type="button"
+                    onClick={clearRoleFilter}
+                    className="text-primary inline-flex min-h-11 items-center font-semibold lg:min-h-0"
+                  >
+                    Arată toți
+                  </button>
+                </>
+              )}
             </div>
           ) : (
             <>

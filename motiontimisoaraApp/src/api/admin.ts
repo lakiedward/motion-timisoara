@@ -1,27 +1,76 @@
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 
-async function count(table: 'profiles' | 'coach_profiles' | 'clubs' | 'courses'): Promise<number> {
-  // `select('id')`, nu `select('*')`: din migrările 00035–00036, rolul
-  // `authenticated` are grant doar pe coloanele publice ale acestor tabele, iar
-  // `SELECT *` cere grant pe TOATE coloanele — deci întorcea 403 chiar și
-  // pentru o simplă numărătoare. `id` e lizibil peste tot.
+type CountableTable = 'profiles' | 'coach_profiles' | 'clubs' | 'courses' | 'camps' | 'competitions'
+
+export const NEW_USERS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
+
+export type AdminStats = {
+  users: number
+  coaches: number
+  clubs: number
+  courses: number
+  camps: number
+  competitions: number
+  newUsers7d: number
+  activeInviteCodes: number
+}
+
+export type AdminUser = Pick<
+  Tables<'profiles'>,
+  'id' | 'name' | 'email' | 'role' | 'enabled' | 'created_at'
+>
+
+async function countRows(table: CountableTable): Promise<number> {
   const { count, error } = await supabase.from(table).select('id', { count: 'exact', head: true })
   if (error) throw error
   return count ?? 0
 }
 
-export async function getAdminStats() {
-  const [users, coaches, clubs, courses] = await Promise.all([
-    count('profiles'),
-    count('coach_profiles'),
-    count('clubs'),
-    count('courses'),
-  ])
-  return { users, coaches, clubs, courses }
+export function isActiveInviteCode(
+  code: { current_uses: number; max_uses: number; expires_at: string | null },
+  now = Date.now(),
+): boolean {
+  if (code.current_uses >= code.max_uses) return false
+  if (code.expires_at && new Date(code.expires_at).getTime() <= now) return false
+  return true
 }
 
-export type AdminUser = Pick<Tables<'profiles'>, 'id' | 'name' | 'email' | 'role' | 'enabled' | 'created_at'>
+export function countCreatedSince(rows: { created_at: string }[], sinceMs: number): number {
+  return rows.filter((row) => new Date(row.created_at).getTime() >= sinceMs).length
+}
+
+async function listInviteCodeUsage() {
+  const { data, error } = await supabase
+    .from('coach_invitation_codes')
+    .select('current_uses, max_uses, expires_at')
+  if (error) throw error
+  return data ?? []
+}
+
+export async function getAdminStats(now = Date.now()): Promise<AdminStats> {
+  const [users, coaches, clubs, courses, camps, competitions, profiles, inviteCodes] =
+    await Promise.all([
+      countRows('profiles'),
+      countRows('coach_profiles'),
+      countRows('clubs'),
+      countRows('courses'),
+      countRows('camps'),
+      countRows('competitions'),
+      getAllUsers(),
+      listInviteCodeUsage(),
+    ])
+  return {
+    users,
+    coaches,
+    clubs,
+    courses,
+    camps,
+    competitions,
+    newUsers7d: countCreatedSince(profiles, now - NEW_USERS_WINDOW_MS),
+    activeInviteCodes: inviteCodes.filter((code) => isActiveInviteCode(code, now)).length,
+  }
+}
 
 /**
  * Lista de utilizatori a administratorului.
@@ -46,7 +95,12 @@ export async function getAllUsers(): Promise<AdminUser[]> {
 // fara el, PostgREST raspunde 204 si pentru un id care nu exista sau nu poate fi
 // atins, iar ecranul anunta o schimbare care nu s-a facut.
 export async function setUserEnabled(id: string, enabled: boolean) {
-  const { error } = await supabase.from('profiles').update({ enabled }).eq('id', id).select().single()
+  const { error } = await supabase
+    .from('profiles')
+    .update({ enabled })
+    .eq('id', id)
+    .select()
+    .single()
   if (error) throw error
 }
 
@@ -57,7 +111,12 @@ export async function createSport(code: string, name: string) {
 }
 
 export async function updateSport(id: string, code: string, name: string) {
-  const { error } = await supabase.from('sports').update({ code, name }).eq('id', id).select().single()
+  const { error } = await supabase
+    .from('sports')
+    .update({ code, name })
+    .eq('id', id)
+    .select()
+    .single()
   if (error) throw error
 }
 
@@ -173,7 +232,9 @@ export async function createCoachAccount(input: {
 }
 
 // ===== Clubs / Courses (overview) =====
-export async function getAllClubs(): Promise<Pick<Tables<'clubs'>, 'id' | 'name' | 'city' | 'email'>[]> {
+export async function getAllClubs(): Promise<
+  Pick<Tables<'clubs'>, 'id' | 'name' | 'city' | 'email'>[]
+> {
   const { data, error } = await supabase.from('clubs').select('id, name, city, email').order('name')
   if (error) throw error
   return data ?? []
@@ -191,7 +252,9 @@ export type AdminCourse = Tables<'courses'> & {
 export async function getAllCourses(): Promise<AdminCourse[]> {
   const { data, error } = await supabase
     .from('courses')
-    .select('*, sport:sports(name), coach:profiles(name), location:locations(name), club:clubs(name)')
+    .select(
+      '*, sport:sports(name), coach:profiles(name), location:locations(name), club:clubs(name)',
+    )
     .order('name')
     // Doua cursuri pot purta acelasi nume; fara criterii suplimentare ordinea lor
     // se schimba de la o incarcare la alta si randurile sar sub cursor dupa

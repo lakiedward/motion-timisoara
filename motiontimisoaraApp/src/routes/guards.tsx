@@ -25,12 +25,12 @@ function ProfileLoadError({ message, onRetry }: { message: string; onRetry: () =
   )
 }
 
-/** Gate: requires an authenticated user; otherwise redirects to /login with returnUrl. */
 export function RequireAuth() {
   const { user, loading, profileError, refresh } = useAuth()
   const location = useLocation()
   if (loading) return <FullScreenLoader />
-  if (profileError) return <ProfileLoadError message={profileError} onRetry={() => void refresh()} />
+  if (profileError)
+    return <ProfileLoadError message={profileError} onRetry={() => void refresh()} />
   if (!user) {
     const returnUrl = encodeURIComponent(location.pathname + location.search)
     return <Navigate to={`/login?returnUrl=${returnUrl}`} replace />
@@ -38,12 +38,16 @@ export function RequireAuth() {
   return <Outlet />
 }
 
-/** Gate: requires the user's role to be in `roles`; otherwise redirects home. */
 export function RequireRole({ roles }: { roles: Role[] }) {
   const { user, loading, profileError, refresh } = useAuth()
+  const location = useLocation()
   if (loading) return <FullScreenLoader />
-  if (profileError) return <ProfileLoadError message={profileError} onRetry={() => void refresh()} />
-  if (!user) return <Navigate to="/login" replace />
+  if (profileError)
+    return <ProfileLoadError message={profileError} onRetry={() => void refresh()} />
+  if (!user) {
+    const returnUrl = encodeURIComponent(location.pathname + location.search)
+    return <Navigate to={`/login?returnUrl=${returnUrl}`} replace />
+  }
   if (!roles.includes(user.role)) return <Navigate to="/" replace />
   return <Outlet />
 }
