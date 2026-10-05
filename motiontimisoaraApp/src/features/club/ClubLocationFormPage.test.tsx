@@ -287,7 +287,7 @@ test('Reîncearcă cere din nou locația și, dacă merge, arată formularul', a
   expect(await screen.findByDisplayValue('Bazin Audit')).toBeInTheDocument()
 })
 
-const nearbySource: LocationRow = {
+const nearbySource = {
   ...locatie,
   id: 'source-location',
   name: 'Sala existentă',
@@ -301,7 +301,7 @@ const nearbySource: LocationRow = {
   club_id: 'other-club',
   created_by_user_id: 'other-owner',
   fts: null,
-}
+} satisfies LocationRow
 
 async function pickPoint(lat = 45.75, lng = 21.22) {
   await act(async () => {
@@ -484,16 +484,64 @@ test('choosing a source cancels reverse lookup and rejects its delayed result', 
   )
 })
 
-test('moving the pin after a choice requires choosing again for the new point', async () => {
+test.each(['source', 'new'])(
+  'returning to the original pin does not revive the %s choice',
+  async (choice) => {
+    const user = userEvent.setup()
+    mockedNearbyLocations.mockResolvedValue([nearbySource])
+    renderForm('/club/locations/new')
+    await pickPoint()
+    await user.click(
+      await screen.findByRole('button', {
+        name: choice === 'source' ? 'Folosește locul Sala existentă' : 'Creează un loc diferit',
+      }),
+    )
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Salvează' })).toBeEnabled())
+    const originalPoint = choice === 'source' ? nearbySource : { lat: 45.75, lng: 21.22 }
+    await pickPoint(45.7501, 21.22)
+    await screen.findByRole('button', { name: 'Folosește locul Sala existentă' })
+    expect(screen.getByRole('button', { name: 'Salvează' })).toBeDisabled()
+    await pickPoint(originalPoint.lat, originalPoint.lng)
+    const useSource = await screen.findByRole('button', { name: 'Folosește locul Sala existentă' })
+    expect(useSource).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: 'Creează un loc diferit' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    expect(screen.getByRole('button', { name: 'Salvează' })).toBeDisabled()
+    expect(mockedCreare).not.toHaveBeenCalled()
+  },
+)
+
+test('a delayed reverse result for the same pin preserves the explicit new-place choice', async () => {
   const user = userEvent.setup()
+  let finishReverse: () => void = () => undefined
+  vi.mocked(geocoding.reverse).mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finishReverse = () =>
+          resolve({
+            id: 'same-point',
+            label: 'Același punct',
+            detail: '',
+            address: 'Adresa punctului',
+            city: 'Timișoara',
+            lat: 45.75,
+            lng: 21.22,
+          })
+      }),
+  )
   mockedNearbyLocations.mockResolvedValue([nearbySource])
   renderForm('/club/locations/new')
   await pickPoint()
   await user.click(await screen.findByRole('button', { name: 'Creează un loc diferit' }))
+  await act(async () => finishReverse())
+  expect(screen.getByLabelText('Adresă')).toHaveValue('Adresa punctului')
+  expect(screen.getByRole('button', { name: 'Creează un loc diferit' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
   expect(screen.getByRole('button', { name: 'Salvează' })).toBeEnabled()
-  await pickPoint(45.7501, 21.22)
-  await screen.findByRole('button', { name: 'Folosește locul Sala existentă' })
-  expect(screen.getByRole('button', { name: 'Salvează' })).toBeDisabled()
 })
 
 test('a background lookup blocks saving even when cached results are empty', async () => {
@@ -520,18 +568,16 @@ test('returning to create at the saved point finds the new own-club location', a
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: 30_000 } },
   })
-  mockedNearbyLocations
-    .mockResolvedValueOnce([])
-    .mockResolvedValue([
-      {
-        ...nearbySource,
-        id: 'created-location',
-        name: 'Loc creat',
-        club_id: 'club-1',
-        lat: 45.75,
-        lng: 21.22,
-      },
-    ])
+  mockedNearbyLocations.mockResolvedValueOnce([]).mockResolvedValue([
+    {
+      ...nearbySource,
+      id: 'created-location',
+      name: 'Loc creat',
+      club_id: 'club-1',
+      lat: 45.75,
+      lng: 21.22,
+    },
+  ])
   renderForm('/club/locations/new', queryClient)
   await user.type(screen.getByLabelText('Nume'), 'Loc creat')
   await pickPoint()

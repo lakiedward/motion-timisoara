@@ -66,6 +66,7 @@ export default function ClubLocationFormPage() {
     handleSubmit,
     reset,
     setValue,
+    getValues,
     trigger,
     control,
     formState: { errors, isSubmitting },
@@ -235,6 +236,7 @@ export default function ClubLocationFormPage() {
           errorId={errors.lat ? 'punct-error' : undefined}
           onChange={(p) => {
             if (activePickerVersion.current !== pickerVersion) return
+            if (getValues('lat') !== p.lat || getValues('lng') !== p.lng) setLocationChoice(null)
             setValue('lat', p.lat)
             setValue('lng', p.lng)
             void trigger('lat')
