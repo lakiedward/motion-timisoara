@@ -110,6 +110,14 @@ export function signInWithGoogle(redirectTo: string) {
   return supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } })
 }
 
+export function signInWithApple(redirectTo: string) {
+  return supabase.auth.signInWithOAuth({ provider: 'apple', options: { redirectTo } })
+}
+
+export function signInWithAppleIdToken(token: string, nonce: string) {
+  return supabase.auth.signInWithIdToken({ provider: 'apple', token, nonce })
+}
+
 export async function signOut() {
   return authenticateNative(async () => {
     await clearPushBeforeSignOut()

@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { AuthLayout } from './AuthLayout'
 import { AuthFields } from './AuthFields'
 import { GoogleSignInButton } from './GoogleSignInButton'
+import { AppleSignInButton } from './social/AppleSignInButton'
 import { useReturnUrl, withReturnUrl } from './return-url'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -63,7 +64,10 @@ export default function LoginPage() {
       }
     >
       <div className="space-y-4">
-        <GoogleSignInButton returnUrl={returnUrl} disabled={isSubmitting} />
+        <div className="space-y-2">
+          <AppleSignInButton returnUrl={returnUrl} disabled={isSubmitting} />
+          <GoogleSignInButton returnUrl={returnUrl} disabled={isSubmitting} />
+        </div>
         <div className="text-muted-foreground flex items-center gap-3 text-xs">
           <span className="bg-border h-px flex-1" /> sau <span className="bg-border h-px flex-1" />
         </div>

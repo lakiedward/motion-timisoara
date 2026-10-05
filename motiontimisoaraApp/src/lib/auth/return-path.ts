@@ -10,3 +10,9 @@ export function validReturnPath(raw: string | null | undefined): string | undefi
     return undefined
   }
 }
+
+export function oauthCallbackUrl(origin: string, returnUrl?: string | null): string {
+  const base = `${origin.replace(/\/$/, '')}/auth/callback`
+  const path = validReturnPath(returnUrl)
+  return path ? `${base}?returnUrl=${encodeURIComponent(path)}` : base
+}

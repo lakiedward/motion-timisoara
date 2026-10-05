@@ -19,6 +19,7 @@
     "capacitor:sync:after": "node scripts/normalize-capacitor-paths.mjs"
   },
   "dependencies": {
+    "@capacitor-community/apple-sign-in": "^7.1.0",
     "@capacitor/android": "^8.4.0",
     "@capacitor/app": "^8.1.0",
     "@capacitor/barcode-scanner": "^3.1.2",
