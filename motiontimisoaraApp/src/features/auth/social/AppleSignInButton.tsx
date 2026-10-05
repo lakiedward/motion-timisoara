@@ -55,7 +55,8 @@ export function AppleSignInButton({
   return (
     <Button
       type="button"
-      className="w-full bg-foreground text-background hover:bg-foreground/90 hover:text-background"
+      variant="apple"
+      className="w-full"
       onClick={onClick}
       disabled={disabled || loading}
     >

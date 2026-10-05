@@ -4,6 +4,11 @@ App code is ready. **Do not put Apple or Supabase secrets in the repo.** Enable 
 provider in Apple Developer + Supabase Auth, then the existing `/login` and
 `/register` buttons work.
 
+The shared `Button` uses an `apple` variant with dedicated monochrome tokens:
+black with white text and logo in the light theme, white with black text and logo
+in the dark theme. Hover preserves those colors because Apple's custom-button
+guidelines require black or white logo, title and background colors.
+
 ## Android decision
 
 The «Continuă cu Apple» button is shown on **web** and **iOS native**. It is
