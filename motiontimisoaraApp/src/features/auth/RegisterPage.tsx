@@ -97,7 +97,11 @@ export default function RegisterPage() {
     >
       <div className="space-y-4">
         <div className="space-y-2">
-          <AppleSignInButton returnUrl={returnUrl} disabled={isSubmitting} />
+          <AppleSignInButton
+            label="Înregistrare cu Apple"
+            returnUrl={returnUrl}
+            disabled={isSubmitting}
+          />
           <GoogleSignInButton
             label="Înregistrare cu Google"
             returnUrl={returnUrl}

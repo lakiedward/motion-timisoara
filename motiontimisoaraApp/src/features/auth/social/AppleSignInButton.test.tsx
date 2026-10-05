@@ -94,3 +94,13 @@ test('the button is omitted on Android native', () => {
   renderButton()
   expect(screen.queryByRole('button', { name: 'Continuă cu Apple' })).not.toBeInTheDocument()
 })
+
+test('a custom label replaces the default Continuă cu Apple copy', () => {
+  render(
+    <MemoryRouter>
+      <AppleSignInButton label="Înregistrare cu Apple" />
+    </MemoryRouter>,
+  )
+  expect(screen.getByRole('button', { name: 'Înregistrare cu Apple' })).toBeEnabled()
+  expect(screen.queryByRole('button', { name: 'Continuă cu Apple' })).not.toBeInTheDocument()
+})

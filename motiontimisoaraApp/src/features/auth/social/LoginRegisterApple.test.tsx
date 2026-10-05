@@ -47,12 +47,12 @@ test('login shows Continuă cu Apple next to Google', () => {
   expect(screen.getByRole('button', { name: 'Continuă cu Google' })).toBeEnabled()
 })
 
-test('register shows Continuă cu Apple next to Google', () => {
+test('register shows Înregistrare cu Apple next to Google', () => {
   render(
     <MemoryRouter>
       <RegisterPage />
     </MemoryRouter>,
   )
-  expect(screen.getByRole('button', { name: 'Continuă cu Apple' })).toBeEnabled()
+  expect(screen.getByRole('button', { name: 'Înregistrare cu Apple' })).toBeEnabled()
   expect(screen.getByRole('button', { name: 'Înregistrare cu Google' })).toBeEnabled()
 })
