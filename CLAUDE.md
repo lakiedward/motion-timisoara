@@ -414,9 +414,31 @@ owns `Club Audit Motion`. These accounts are for read-mostly UI checks: no destr
 admin actions, payments or messages. Creating real test records requires task consent.
 
 Passwords are not stored in the repo. A shared password was committed on 2026-08-17
-and removed on 2026-08-20; treat it as compromised. Ask the owner for current credentials
-or use an explicitly authorized password reset in Supabase. Never recover a historical
-password from git or paste a password into a tracked file, commit or chat response.
+and removed on 2026-08-20; treat it as compromised. Never recover a historical password
+from Git or paste a password into a tracked file, commit, tool output or chat response.
+
+On this owner's Windows computer, reusable audit access is managed by
+`C:\Users\lakie\.codex\tools\motion-test-access\README.md`. Read that file before
+loading credentials. The four identities above have a local credential store at
+`%LOCALAPPDATA%\AlkiStudio\test-accounts\motiontimisoara.json`, encrypted with Windows
+DPAPI for the current Windows identity and protected by an owner-only ACL. Import
+`MotionTestAccess.psm1` from the helper directory and use `Get-MotionTestAccessStatus`
+to check saved-role metadata without decrypting or printing a password.
+
+When the requested scenario authorizes role-specific login and the saved account is
+ready, use its existing password without asking the owner to repeat it. The README's
+private child-process pattern loads credentials into CUA memory for the visible local
+login form. Never execute the credential exporter through a tool terminal, forward its
+stdout/stderr to output or logs, or put secrets in command arguments or environment
+files. Clear temporary credential references after filling the form, then verify the
+authenticated user's live profile role and destination. A saved password does not prove
+that login or profile loading works.
+
+If the store is absent or credentials are rejected, the owner can run
+`Set-TestAccounts.ps1` with the appropriate role and enter the current password in its
+masked local prompt. A password reset needs explicit owner authorization. Do not reset,
+create accounts or change roles simply because a test needs access. Saved credentials
+do not authorize payments, messages, destructive admin actions or fixture creation.
 
 - **Toasts:** `RootLayout.tsx` mounts the shared Toaster once. Sonner renders nothing
   when no toast is active, so an absent `[data-sonner-toaster]` is normal. Observe
@@ -644,6 +666,12 @@ reorganizing this document; correct obsolete facts with current evidence.
   during native keyboard landscape; ordinary portrait/web spacing stays canonical.
   Labels, errors, DOM order, input sizes, Back and native accessories remain intact.
   Cached accessory eligibility is inferred; installed exact-SHA retest is required.
+
+- 2026-10-05 — The owner authorized rotating the four existing `uiaudit` account
+  passwords and persisting them in a local Windows DPAPI store, with reusable helper
+  code at `C:\Users\lakie\.codex\tools\motion-test-access` — future authorized UI
+  checks should reuse saved credentials while verifying the live profile role; account
+  creation, role changes and business mutations retain their separate consent boundaries.
 
 ## 11. Known Issues / WIP
 
