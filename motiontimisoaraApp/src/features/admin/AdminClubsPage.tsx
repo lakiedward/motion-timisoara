@@ -7,7 +7,6 @@ import { getAllClubs, type AdminClub } from '@/api/admin'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { cn } from '@/lib/utils'
 
 function fold(s: string) {
   return s
@@ -28,10 +27,8 @@ function sortClubsByName(clubs: AdminClub[]) {
 const clubGridClass =
   'grid grid-cols-1 items-stretch gap-4 overflow-visible py-1 md:grid-cols-2 lg:grid-cols-4'
 
-const clubCardClass = cn(
-  'bg-card shadow-card flex h-full min-h-[7.5rem] min-w-0 items-start gap-3 rounded-3xl p-5 outline-none',
-  'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
-)
+const clubCardClass =
+  'bg-card shadow-card flex h-full min-h-[7.5rem] min-w-0 items-start gap-3 rounded-3xl p-5'
 
 function LoadingState() {
   return (
@@ -133,7 +130,14 @@ export default function AdminClubsPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-muted-foreground rounded-3xl border border-dashed py-16 text-center">
-          Niciun club găsit.
+          Niciun club găsit.{' '}
+          <button
+            type="button"
+            onClick={() => setQ('')}
+            className="text-primary inline-flex min-h-11 items-center font-semibold lg:min-h-0"
+          >
+            Șterge căutarea
+          </button>
         </div>
       ) : (
         <ul className={clubGridClass}>

@@ -106,8 +106,7 @@ test('cardurile rămân statice, fără link de detaliu', async () => {
   expect(screen.queryByRole('link', { name: 'Zebra Club' })).not.toBeInTheDocument()
   for (const card of carduri()) {
     expect(card.tagName).toBe('LI')
-    expect(card.className).toMatch(/focus-visible:ring-\[3px\]/)
-    expect(card.className).toMatch(/focus-visible:ring-ring\/50/)
+    expect(card.className).not.toMatch(/focus-visible:ring/)
   }
 })
 
@@ -132,22 +131,31 @@ test('cautarea filtreaza dupa nume, oras sau email, peste diacritice', async () 
   expect(screen.queryByText('Alpha Club')).not.toBeInTheDocument()
 })
 
-test('lista goala are mesajul ei si nu ofera reincercare', async () => {
+test('lista goala are mesajul ei si nu ofera reincercare sau stergerea cautarii', async () => {
   mockedClubs.mockResolvedValue([])
   renderPage()
   expect(await screen.findByText('Niciun club înregistrat.')).toBeInTheDocument()
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Reîncearcă' })).not.toBeInTheDocument()
   expect(screen.queryByText('Niciun club găsit.')).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Șterge căutarea' })).not.toBeInTheDocument()
 })
 
 test('o cautare fara rezultate spune Niciun club găsit, nu ca baza e goala', async () => {
   mockedClubs.mockResolvedValue(listaNesortata())
   renderPage()
   await asteaptaLista()
-  await userEvent.type(screen.getByLabelText(/Caută cluburi/), 'zzz')
-  expect(await screen.findByText('Niciun club găsit.')).toBeInTheDocument()
+  const camp = screen.getByLabelText(/Caută cluburi/)
+  await userEvent.type(camp, 'zzz')
+  expect(await screen.findByText(/Niciun club găsit/)).toBeInTheDocument()
   expect(screen.queryByText('Niciun club înregistrat.')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Șterge căutarea' })).toBeInTheDocument()
+
+  await userEvent.click(screen.getByRole('button', { name: 'Șterge căutarea' }))
+  expect(await screen.findByText('Alpha Club')).toBeInTheDocument()
+  expect(camp).toHaveValue('')
+  expect(screen.queryByText(/Niciun club găsit/)).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Șterge căutarea' })).not.toBeInTheDocument()
 })
 
 test('o incarcare esuata da mesaj propriu si reincercare, nu ecranul de lista goala', async () => {
