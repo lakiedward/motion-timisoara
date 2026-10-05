@@ -51,6 +51,7 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
 
     canonic  src/index.css — perechile <token> / <token>-foreground
              --accent / --accent-foreground — 6.16:1
+             --apple / --apple-foreground — 21.00:1
              --card / --card-foreground — 17.85:1
              --highlight / --highlight-foreground — 8.31:1
              --muted / --muted-foreground — 4.55:1

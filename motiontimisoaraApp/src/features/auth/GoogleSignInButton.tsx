@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { isNative } from '@/lib/platform'
 import { nativeGoogle } from '@/api/auth-native/google'
 import { GOOGLE_ERROR } from '@/api/auth-native/coordinator'
+import { oauthCallbackUrl } from '@/lib/auth/return-path'
 
 function GoogleIcon() {
   return (
@@ -49,9 +50,9 @@ export function GoogleSignInButton({
       if ((await onBeforeSignIn?.()) === false) return
       if (isNative()) await nativeGoogle.start(returnUrl)
       else {
-        const base = `${window.location.origin}/auth/callback`
-        const redirectTo = returnUrl ? `${base}?returnUrl=${encodeURIComponent(returnUrl)}` : base
-        const { error } = await signInWithGoogle(redirectTo)
+        const { error } = await signInWithGoogle(
+          oauthCallbackUrl(window.location.origin, returnUrl),
+        )
         if (error) toast.error(GOOGLE_ERROR)
       }
     } catch {

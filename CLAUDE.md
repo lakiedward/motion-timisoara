@@ -645,6 +645,11 @@ reorganizing this document; correct obsolete facts with current evidence.
   Labels, errors, DOM order, input sizes, Back and native accessories remain intact.
   Cached accessory eligibility is inferred; installed exact-SHA retest is required.
 
+- 2026-10-05 — Feature #324 uses dedicated `apple` / `apple-foreground` tokens
+  and the shared `Button`'s `apple` variant: black/white in the light theme and
+  white/black in the dark theme, including hover. Apple's custom Sign in with
+  Apple guidelines require monochrome logo, title and background colors.
+
 ## 11. Known Issues / WIP
 
 - **To-Do #149 completion in progress (2026-09-11):** migrations `00048` and `00049`

@@ -15,6 +15,9 @@
   --page: color-mix(in srgb, var(--primary) 6%, var(--background));
   --foreground: #0f172a;
 
+  --apple: #000000;
+  --apple-foreground: #ffffff;
+
   --card: #ffffff;
   --card-foreground: #0f172a;
   --popover: #ffffff;
@@ -79,6 +82,8 @@
 .dark {
   --background: #0b1220;
   --foreground: #e2e8f0;
+  --apple: #ffffff;
+  --apple-foreground: #000000;
   --card: #111a2e;
   --card-foreground: #e2e8f0;
   --popover: #111a2e;
@@ -125,6 +130,8 @@
   --color-background: var(--background);
   --color-page: var(--page);
   --color-foreground: var(--foreground);
+  --color-apple: var(--apple);
+  --color-apple-foreground: var(--apple-foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);

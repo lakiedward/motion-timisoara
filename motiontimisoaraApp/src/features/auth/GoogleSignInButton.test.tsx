@@ -4,6 +4,7 @@ import { GoogleSignInButton } from './GoogleSignInButton'
 import { signInWithGoogle } from '@/api/auth'
 import { nativeGoogle } from '@/api/auth-native/google'
 import { isNative } from '@/lib/platform'
+import { oauthCallbackUrl } from '@/lib/auth/return-path'
 
 vi.mock('@/api/auth', () => ({ signInWithGoogle: vi.fn() }))
 vi.mock('@/lib/platform', () => ({ isNative: vi.fn() }))
@@ -35,7 +36,11 @@ test('waits for invitation persistence before allowing the web OAuth redirect', 
   expect(signInWithGoogle).not.toHaveBeenCalled()
   expect(screen.getByRole('button', { name: 'Se conectează cu Google…' })).toBeDisabled()
   finish()
-  await waitFor(() => expect(signInWithGoogle).toHaveBeenCalledTimes(1))
+  await waitFor(() =>
+    expect(signInWithGoogle).toHaveBeenCalledExactlyOnceWith(
+      oauthCallbackUrl(window.location.origin, '/register-coach'),
+    ),
+  )
 })
 
 test('a rejected preflight leaves the flow on the invitation without OAuth', async () => {
