@@ -352,10 +352,9 @@ export async function createCoachAccount(input: {
   return data as CreatedCoach
 }
 
-// ===== Clubs / Courses (overview) =====
-export async function getAllClubs(): Promise<
-  Pick<Tables<'clubs'>, 'id' | 'name' | 'city' | 'email'>[]
-> {
+export type AdminClub = Pick<Tables<'clubs'>, 'id' | 'name' | 'city' | 'email'>
+
+export async function getAllClubs(): Promise<AdminClub[]> {
   const { data, error } = await supabase.from('clubs').select('id, name, city, email').order('name')
   if (error) throw error
   return data ?? []
