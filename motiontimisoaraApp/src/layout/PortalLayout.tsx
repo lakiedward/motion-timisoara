@@ -6,8 +6,8 @@ import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
-  SheetClose,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -33,11 +33,47 @@ const logoutClassName = cn(
   'text-destructive flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-xl px-3 text-sm font-medium',
   'hover:bg-secondary [&:hover]:bg-secondary',
   'focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-primary',
+  'disabled:cursor-wait disabled:opacity-60',
+)
+
+const logoLinkClassName = cn(
+  'inline-flex min-h-11 min-w-11 items-center rounded-md',
+  'focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-primary',
 )
 
 function firstNameOf(name: string | undefined) {
   const first = name?.trim().split(/\s+/)[0]
   return first || null
+}
+
+function LogoutControl({
+  pending,
+  error,
+  onLogout,
+}: {
+  pending: boolean
+  error: string | null
+  onLogout: () => Promise<void>
+}) {
+  return (
+    <>
+      {error && (
+        <p role="alert" className="text-destructive mb-2 px-3 text-sm">
+          {error}
+        </p>
+      )}
+      <button
+        type="button"
+        className={logoutClassName}
+        onClick={onLogout}
+        disabled={pending}
+        aria-busy={pending}
+      >
+        <LogOut className="size-4" aria-hidden="true" />
+        {pending ? 'Se deconectează…' : 'Deconectare'}
+      </button>
+    </>
+  )
 }
 
 function NavList({ nav, onNavigate }: { nav: PortalNavItem[]; onNavigate?: () => void }) {
@@ -51,7 +87,7 @@ function NavList({ nav, onNavigate }: { nav: PortalNavItem[]; onNavigate?: () =>
           onClick={onNavigate}
           className={navItemClass}
         >
-          <item.icon className="size-4.5" />
+          <item.icon className="size-4.5" aria-hidden="true" />
           {item.label}
         </NavLink>
       ))}
@@ -107,11 +143,28 @@ export function PortalLayout({
   const { user } = useAuth()
   const navigate = useNavigate()
   const [open, setOpen] = React.useState(false)
+  const [loggingOut, setLoggingOut] = React.useState(false)
+  const [logoutError, setLogoutError] = React.useState<string | null>(null)
+  const logoutPending = React.useRef(false)
+  const drawerLogo = React.useRef<HTMLAnchorElement>(null)
   const firstName = firstNameOf(user?.name)
 
   const onLogout = async () => {
-    await signOut()
-    navigate('/')
+    if (logoutPending.current) return
+    logoutPending.current = true
+    setLoggingOut(true)
+    setLogoutError(null)
+    try {
+      const result = await signOut()
+      if (result.error) throw result.error
+      setOpen(false)
+      navigate('/')
+    } catch {
+      setLogoutError('Nu te-am putut deconecta. Încearcă din nou.')
+    } finally {
+      logoutPending.current = false
+      setLoggingOut(false)
+    }
   }
 
   const closeSheet = () => setOpen(false)
@@ -128,21 +181,19 @@ export function PortalLayout({
     <div className="min-h-dvh lg:pl-64">
       <aside className="bg-card fixed inset-y-0 left-0 hidden w-64 flex-col border-r lg:flex">
         <div className="flex h-16 items-center border-b px-5">
-          <Link to="/">
+          <Link to="/" className={logoLinkClassName}>
             <Logo />
           </Link>
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           <RoleLabel>{roleLabel}</RoleLabel>
           <NavList nav={nav} />
         </div>
-        <div className="border-t p-3">
+        <div className="shrink-0 border-t p-3">
           {profileTo && firstName ? (
             <ProfileNameLink to={profileTo} name={firstName} className="mb-1" />
           ) : null}
-          <button type="button" className={logoutClassName} onClick={onLogout}>
-            <LogOut className="size-4" /> Deconectare
-          </button>
+          <LogoutControl pending={loggingOut} error={logoutError} onLogout={onLogout} />
         </div>
       </aside>
 
@@ -153,19 +204,33 @@ export function PortalLayout({
               <Menu />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 gap-0 p-0">
-            <SheetHeader className="border-b">
-              <SheetTitle className="text-left">
-                <Link to="/" onClick={closeSheet}>
-                  <Logo />
-                </Link>
+          <SheetContent
+            side="left"
+            className="w-64 gap-0 p-0 [&>button]:top-20"
+            onOpenAutoFocus={(event) => {
+              if (drawerLogo.current) {
+                event.preventDefault()
+                drawerLogo.current.focus()
+              }
+            }}
+          >
+            <SheetHeader className="shrink-0 border-b">
+              <SheetTitle className="sr-only">
+                Meniu {roleLabel.toLowerCase()} — Motion Timișoara
               </SheetTitle>
+              <SheetDescription className="sr-only">
+                Navighează în secțiunea {roleLabel.toLowerCase()}, deschide profilul sau
+                deconectează-te.
+              </SheetDescription>
+              <Link ref={drawerLogo} to="/" onClick={closeSheet} className={logoLinkClassName}>
+                <Logo />
+              </Link>
             </SheetHeader>
-            <div className="flex-1 overflow-y-auto">
+            <div className="min-h-0 flex-1 overflow-y-auto">
               <RoleLabel>{roleLabel}</RoleLabel>
               <NavList nav={nav} onNavigate={closeSheet} />
             </div>
-            <div className="mt-auto border-t p-3">
+            <div className="mt-auto shrink-0 border-t p-3">
               {profileTo && firstName ? (
                 <ProfileNameLink
                   to={profileTo}
@@ -174,15 +239,11 @@ export function PortalLayout({
                   className="mb-1"
                 />
               ) : null}
-              <SheetClose asChild>
-                <button type="button" className={logoutClassName} onClick={onLogout}>
-                  <LogOut className="size-4" /> Deconectare
-                </button>
-              </SheetClose>
+              <LogoutControl pending={loggingOut} error={logoutError} onLogout={onLogout} />
             </div>
           </SheetContent>
         </Sheet>
-        <Link to="/">
+        <Link to="/" className={logoLinkClassName}>
           <Logo />
         </Link>
         {profileTo && firstName ? (
