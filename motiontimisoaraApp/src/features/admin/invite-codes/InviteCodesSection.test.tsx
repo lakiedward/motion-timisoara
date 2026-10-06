@@ -48,15 +48,20 @@ function deferred<T>() {
   return { promise, resolve, reject }
 }
 
-function renderPage() {
+function renderPage(openForms = true) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
-  return render(
+  const result = render(
     <QueryClientProvider client={client}>
       <AdminInviteCodesPage />
     </QueryClientProvider>,
   )
+  if (openForms) {
+    fireEvent.click(screen.getByRole('button', { name: 'Adaugă antrenor' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cod nou' }))
+  }
+  return result
 }
 
 beforeEach(() => {
@@ -79,7 +84,10 @@ test('page hierarchy and active/used/expired states remain readable', async () =
   renderPage()
   expect(screen.getByRole('heading', { level: 1, name: 'Coduri și antrenori' })).toBeVisible()
   expect(screen.getByRole('heading', { level: 2, name: 'Adaugă antrenor direct' })).toBeVisible()
-  expect(await screen.findByText('Activ · 0/2')).toBeVisible()
+  expect(await screen.findByText('Activ')).toBeVisible()
+  expect(screen.getAllByText('Utilizări: 0/2')).toHaveLength(2)
+  expect(screen.getByText('Utilizări: 1/1')).toBeVisible()
+  expect(screen.getAllByText('Fără expirare')).toHaveLength(2)
   expect(screen.getByText('Folosit')).toBeVisible()
   expect(screen.getByText('Expirat')).toBeVisible()
   expect(inviteCodeStatus(firstCode)).toBe('active')
@@ -177,11 +185,11 @@ test('clipboard failure keeps the newly created code visible without false copy 
   renderPage()
   fireEvent.click(screen.getByRole('button', { name: 'Generează cod' }))
   expect(await screen.findByText('SYNTHETIC-NEW')).toBeVisible()
-  await waitFor(() =>
-    expect(mocks.error).toHaveBeenCalledWith(expect.stringContaining('Nu am putut copia')),
-  )
-  expect(mocks.success).toHaveBeenCalledWith('Cod generat.')
-  expect(mocks.success).not.toHaveBeenCalledWith('Codul nou a fost copiat.')
+  expect(await screen.findByText(/Nu am putut copia/)).toBeVisible()
+  expect(screen.getByText('Cod generat.')).toBeVisible()
+  expect(screen.queryByText('Codul nou a fost copiat.')).not.toBeInTheDocument()
+  expect(mocks.success).not.toHaveBeenCalled()
+  expect(mocks.error).not.toHaveBeenCalled()
   expect(mocks.error).not.toHaveBeenCalledWith('Nu am putut genera un cod nou. Încearcă din nou.')
   expect(
     screen.queryByText('Nu am putut genera un cod nou. Încearcă din nou.'),
@@ -196,9 +204,9 @@ test('existing-code copy confirms only after the clipboard resolves', async () =
   renderPage()
   fireEvent.click(await screen.findByRole('button', { name: 'Copiază codul invitație 1' }))
   expect(mocks.copy).toHaveBeenCalledWith('SYNTHETIC-ONE')
-  expect(mocks.success).not.toHaveBeenCalledWith('Codul existent a fost copiat.')
+  expect(screen.queryByText('Codul existent a fost copiat.')).not.toBeInTheDocument()
   await act(async () => request.resolve())
-  await waitFor(() => expect(mocks.success).toHaveBeenCalledWith('Codul existent a fost copiat.'))
+  expect(await screen.findByText('Codul existent a fost copiat.')).toBeVisible()
 })
 
 test('copying an existing code after generation fails keeps the generation error visible', async () => {
@@ -209,7 +217,7 @@ test('copying an existing code after generation fails keeps the generation error
     'Nu am putut genera un cod nou. Încearcă din nou.',
   )
   fireEvent.click(screen.getByRole('button', { name: 'Copiază codul invitație 1' }))
-  await waitFor(() => expect(mocks.success).toHaveBeenCalledWith('Codul existent a fost copiat.'))
+  expect(await screen.findByText('Codul existent a fost copiat.')).toBeVisible()
   expect(mocks.copy).toHaveBeenCalledWith('SYNTHETIC-ONE')
   expect(generationError).toBeVisible()
   expect(screen.queryByText('Cod nou:')).not.toBeInTheDocument()
@@ -222,12 +230,12 @@ test('successful generation automatically copies the new code and supports a lat
   renderPage()
   fireEvent.click(screen.getByRole('button', { name: 'Generează cod' }))
   expect(await screen.findByText('SYNTHETIC-NEW')).toBeVisible()
-  await waitFor(() => expect(mocks.success).toHaveBeenCalledWith('Codul nou a fost copiat.'))
+  expect(await screen.findByText('Codul nou a fost copiat.')).toBeVisible()
   expect(mocks.copy).toHaveBeenCalledWith('SYNTHETIC-NEW')
   mocks.copy.mockClear()
   mocks.success.mockClear()
   fireEvent.click(screen.getByRole('button', { name: 'Copiază codul nou' }))
-  await waitFor(() => expect(mocks.success).toHaveBeenCalledWith('Codul nou a fost copiat.'))
+  expect(await screen.findByText('Codul nou a fost copiat.')).toBeVisible()
   expect(mocks.copy).toHaveBeenCalledWith('SYNTHETIC-NEW')
   expect(mocks.generate).toHaveBeenCalledTimes(1)
 })
@@ -306,7 +314,7 @@ test('successful coach result and temporary-password copying use the returned va
   fireEvent.click(screen.getByRole('button', { name: 'Creează antrenor' }))
   fireEvent.click(await screen.findByRole('button', { name: 'Copiază parola temporară' }))
   expect(mocks.copy).toHaveBeenCalledWith('synthetic-only-value')
-  await waitFor(() => expect(mocks.success).toHaveBeenCalledWith('Parolă copiată.'))
+  expect(await screen.findByText('Parolă copiată.')).toBeVisible()
 })
 
 test('a later coach failure preserves credentials from the last successful creation', async () => {
@@ -342,4 +350,113 @@ test('repeated submit events keep the coach operation visibly pending until comp
   await waitFor(() => expect(screen.getByRole('button', { name: 'Se creează…' })).toBeDisabled())
   expect(mocks.createCoach).toHaveBeenCalledTimes(1)
   await act(async () => request.reject(new Error('Rejected')))
+})
+
+test('initial view shows both workflows and invitation list with closed forms', async () => {
+  renderPage(false)
+  expect(screen.getByRole('button', { name: 'Adaugă antrenor' })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  )
+  expect(screen.getByRole('button', { name: 'Cod nou' })).toHaveAttribute('aria-expanded', 'false')
+  expect(screen.getByLabelText('Nume')).not.toBeVisible()
+  expect(screen.getByLabelText('Număr maxim de utilizări')).not.toBeVisible()
+  expect(await screen.findByText('SYNTHETIC-ONE')).toBeVisible()
+  expect(
+    screen.getByText('Trimite codul unui antrenor ca să își creeze singur contul.'),
+  ).toBeVisible()
+})
+
+test('coach disclosure retains values and validation, and manages focus', async () => {
+  renderPage(false)
+  const name = screen.getByLabelText('Nume')
+  fireEvent.click(screen.getByRole('button', { name: 'Adaugă antrenor' }))
+  await waitFor(() => expect(name).toHaveFocus())
+  fireEvent.change(name, { target: { value: 'Entered Coach' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Creează antrenor' }))
+  expect(await screen.findByText('Email invalid')).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: 'Închide formularul' }))
+  const toggle = screen.getByRole('button', { name: 'Adaugă antrenor' })
+  expect(toggle).toHaveFocus()
+  expect(name).not.toBeVisible()
+  expect(name).toHaveValue('Entered Coach')
+  fireEvent.click(toggle)
+  expect(name).toBe(screen.getByLabelText('Nume'))
+  expect(screen.getByText('Email invalid')).toBeVisible()
+  await waitFor(() => expect(name).toHaveFocus())
+})
+
+test('generator disclosure retains settings and returns focus to its toggle', async () => {
+  renderPage(false)
+  fireEvent.click(screen.getByRole('button', { name: 'Cod nou' }))
+  const maximum = screen.getByLabelText('Număr maxim de utilizări')
+  await waitFor(() => expect(maximum).toHaveFocus())
+  fireEvent.change(maximum, { target: { value: '5' } })
+  fireEvent.change(screen.getByLabelText('Expiră la (opțional)'), {
+    target: { value: '2099-01-01T12:00' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Închide setările' }))
+  const toggle = screen.getByRole('button', { name: 'Cod nou' })
+  expect(toggle).toHaveFocus()
+  expect(maximum).not.toBeVisible()
+  fireEvent.click(toggle)
+  expect(maximum).toHaveValue(5)
+  expect(screen.getByLabelText('Expiră la (opțional)')).toHaveValue('2099-01-01T12:00')
+  await waitFor(() => expect(maximum).toHaveFocus())
+})
+
+test('pending creation disables collapse and successful credentials stay visible after collapse', async () => {
+  const request = deferred<{ userId: string; email: string; tempPassword: string }>()
+  mocks.createCoach.mockReturnValue(request.promise)
+  renderPage()
+  fireEvent.change(screen.getByLabelText('Nume'), { target: { value: 'Test Coach' } })
+  fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'coach@example.test' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Creează antrenor' }))
+  expect(await screen.findByRole('button', { name: 'Închide formularul' })).toBeDisabled()
+  fireEvent.click(screen.getByRole('button', { name: 'Închide formularul' }))
+  expect(screen.getByLabelText('Nume')).toBeVisible()
+  await act(async () =>
+    request.resolve({
+      userId: 'synthetic',
+      email: 'coach@example.test',
+      tempPassword: 'synthetic-only-value',
+    }),
+  )
+  fireEvent.click(screen.getByRole('button', { name: 'Închide formularul' }))
+  expect(screen.getByText('synthetic-only-value')).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: 'Copiază parola temporară' }))
+  expect(await screen.findByText('Parolă copiată.')).toBeVisible()
+  expect(mocks.success).not.toHaveBeenCalled()
+  expect(mocks.error).not.toHaveBeenCalled()
+})
+
+test('pending generation disables collapse and its result stays visible after collapse', async () => {
+  const request = deferred<string>()
+  mocks.generate.mockReturnValue(request.promise)
+  renderPage()
+  fireEvent.click(screen.getByRole('button', { name: 'Generează cod' }))
+  expect(await screen.findByRole('button', { name: 'Închide setările' })).toBeDisabled()
+  await act(async () => request.resolve('SYNTHETIC-NEW'))
+  expect(await screen.findByText('Codul nou a fost copiat.')).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: 'Închide setările' }))
+  expect(screen.getByText('SYNTHETIC-NEW')).toBeVisible()
+  expect(screen.getByText('Cod generat.')).toBeVisible()
+  expect(mocks.success).not.toHaveBeenCalled()
+  expect(mocks.error).not.toHaveBeenCalled()
+})
+
+test('an older clipboard rejection cannot replace the newer code copy success', async () => {
+  const clipboard = deferred<void>()
+  mocks.copy.mockReturnValueOnce(clipboard.promise)
+  mocks.generate.mockResolvedValueOnce('SYNTHETIC-NEW').mockResolvedValueOnce('SYNTHETIC-NEXT')
+  renderPage()
+  fireEvent.click(screen.getByRole('button', { name: 'Generează cod' }))
+  expect(await screen.findByText('SYNTHETIC-NEW')).toBeVisible()
+  await waitFor(() => expect(mocks.copy).toHaveBeenCalledWith('SYNTHETIC-NEW'))
+  fireEvent.click(screen.getByRole('button', { name: 'Generează cod' }))
+  expect(await screen.findByText('SYNTHETIC-NEXT')).toBeVisible()
+  expect(await screen.findByText('Codul nou a fost copiat.')).toBeVisible()
+  await act(async () => clipboard.reject(new Error('Denied')))
+  expect(screen.queryByText(/Nu am putut copia/)).not.toBeInTheDocument()
+  expect(screen.getByText('Codul nou a fost copiat.')).toBeVisible()
 })
