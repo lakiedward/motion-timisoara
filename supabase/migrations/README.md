@@ -315,6 +315,12 @@ then falls back to `count: exact` / `admin_users()` / invite-code rows, capped
 at `max_rows=1000` (`supabase/config.toml`). A capped fallback shows a `+`
 suffix. This file is intentionally absent from the applied-version table.
 
+Admin sports #457, proposed 2026-10-06: `00081_restrict_sport_deletion.sql`
+replaces cascading sport references in `coach_sports` and `club_sports` with
+`ON DELETE RESTRICT`. Existing course and activity references already block deletion.
+This migration has isolated SQL and concurrent-association tests; it has not been
+applied remotely. Remote application belongs to the separately authorized release.
+
 To confirm git and the remote still agree:
 
 ```bash
