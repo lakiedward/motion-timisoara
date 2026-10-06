@@ -207,56 +207,13 @@ export async function setUserEnabled(id: string, enabled: boolean) {
   if (error) throw error
 }
 
-export async function createSport(code: string, name: string) {
-  const { error } = await supabase.from('sports').insert({ code, name })
-  if (error) throw error
-}
-
-export async function updateSport(id: string, code: string, name: string) {
-  const { error } = await supabase
-    .from('sports')
-    .update({ code, name })
-    .eq('id', id)
-    .select()
-    .single()
-  if (error) throw error
-}
-
-export async function setSportDefaultPhoto(sportId: string, file: File): Promise<string> {
-  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
-  const path = `${sportId}/default.${ext}`
-  const { error: upErr } = await supabase.storage.from('sport-photos').upload(path, file, {
-    upsert: true,
-    contentType: file.type || `image/${ext}`,
-  })
-  if (upErr) throw upErr
-  const { error } = await supabase
-    .from('sports')
-    .update({ default_photo_storage_path: path })
-    .eq('id', sportId)
-    .select()
-    .single()
-  if (error) throw error
-  return path
-}
-
-export async function clearSportDefaultPhoto(sportId: string, currentPath: string | null) {
-  if (currentPath && !currentPath.startsWith('http') && !currentPath.startsWith('/')) {
-    await supabase.storage.from('sport-photos').remove([currentPath])
-  }
-  const { error } = await supabase
-    .from('sports')
-    .update({ default_photo_storage_path: null })
-    .eq('id', sportId)
-    .select()
-    .single()
-  if (error) throw error
-}
-
-export async function deleteSport(id: string) {
-  const { error } = await supabase.from('sports').delete().eq('id', id).select().single()
-  if (error) throw error
-}
+export {
+  createSport,
+  updateSport,
+  setSportDefaultPhoto,
+  clearSportDefaultPhoto,
+  deleteSport,
+} from './sports/admin-sports'
 
 export type InviteCode = Tables<'coach_invitation_codes'>
 
