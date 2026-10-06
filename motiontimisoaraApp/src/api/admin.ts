@@ -151,10 +151,16 @@ async function countActiveInviteCodes(now: number): Promise<AdminStatCell> {
     .select('current_uses, max_uses, expires_at')
   if (error) return errCell('activeInviteCodes')
   const rows = data ?? []
-  return okCell(rows.filter((code) => isActiveInviteCode(code, now)).length, rows.length >= POSTGREST_MAX_ROWS)
+  return okCell(
+    rows.filter((code) => isActiveInviteCode(code, now)).length,
+    rows.length >= POSTGREST_MAX_ROWS,
+  )
 }
 
-function fromSettled(result: PromiseSettledResult<AdminStatCell>, key: AdminStatKey): AdminStatCell {
+function fromSettled(
+  result: PromiseSettledResult<AdminStatCell>,
+  key: AdminStatKey,
+): AdminStatCell {
   return result.status === 'fulfilled' ? result.value : errCell(key)
 }
 
@@ -162,25 +168,17 @@ export async function getAdminStats(now = Date.now()): Promise<AdminStats> {
   const fromRpc = await tryAdminStatsRpc()
   if (fromRpc) return fromRpc
 
-  const [
-    users,
-    coaches,
-    clubs,
-    courses,
-    camps,
-    competitions,
-    newUsers7d,
-    activeInviteCodes,
-  ] = await Promise.allSettled([
-    countOrError('profiles', 'users'),
-    countOrError('coach_profiles', 'coaches'),
-    countOrError('clubs', 'clubs'),
-    countOrError('courses', 'courses'),
-    countOrError('camps', 'camps'),
-    countOrError('competitions', 'competitions'),
-    countNewUsers7d(now),
-    countActiveInviteCodes(now),
-  ])
+  const [users, coaches, clubs, courses, camps, competitions, newUsers7d, activeInviteCodes] =
+    await Promise.allSettled([
+      countOrError('profiles', 'users'),
+      countOrError('coach_profiles', 'coaches'),
+      countOrError('clubs', 'clubs'),
+      countOrError('courses', 'courses'),
+      countOrError('camps', 'camps'),
+      countOrError('competitions', 'competitions'),
+      countNewUsers7d(now),
+      countActiveInviteCodes(now),
+    ])
   return {
     users: fromSettled(users, 'users'),
     coaches: fromSettled(coaches, 'coaches'),
@@ -193,28 +191,12 @@ export async function getAdminStats(now = Date.now()): Promise<AdminStats> {
   }
 }
 
-/**
- * Lista de utilizatori a administratorului.
- *
- * Trece prin `admin_users()`, nu prin tabel: din migrarea 00036, `email` și
- * `enabled` nu mai sunt lizibile de rolul `authenticated`, fiindcă înainte
- * ORICE cont citea toate adresele de email din platformă. Funcția verifică ea
- * însăși rolul și ridică excepție dacă cel care întreabă nu e ADMIN — o listă
- * goală ar fi arătat exact ca „nu există utilizatori".
- *
- * Ordonarea a rămas în funcție, nu aici: multe conturi au aceeași zi de
- * înregistrare, iar fără o sortare totală rândurile sar sub cursor între
- * refetch-uri și coloana „Înregistrat" pare că minte.
- */
 export async function getAllUsers(): Promise<AdminUser[]> {
   const { data, error } = await supabase.rpc('admin_users')
   if (error) throw error
   return (data as AdminUser[] | null) ?? []
 }
 
-// Scrierile de admin cer randul inapoi cu `.select().single()`, ca in `club.ts`:
-// fara el, PostgREST raspunde 204 si pentru un id care nu exista sau nu poate fi
-// atins, iar ecranul anunta o schimbare care nu s-a facut.
 export async function setUserEnabled(id: string, enabled: boolean) {
   const { error } = await supabase
     .from('profiles')
@@ -225,7 +207,6 @@ export async function setUserEnabled(id: string, enabled: boolean) {
   if (error) throw error
 }
 
-// ===== Sports =====
 export async function createSport(code: string, name: string) {
   const { error } = await supabase.from('sports').insert({ code, name })
   if (error) throw error
@@ -241,7 +222,6 @@ export async function updateSport(id: string, code: string, name: string) {
   if (error) throw error
 }
 
-/** Upload or replace the admin default hero photo for a sport (all courses of that type). */
 export async function setSportDefaultPhoto(sportId: string, file: File): Promise<string> {
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
   const path = `${sportId}/default.${ext}`
@@ -278,7 +258,6 @@ export async function deleteSport(id: string) {
   if (error) throw error
 }
 
-// ===== Coach invitation codes =====
 export type InviteCode = Tables<'coach_invitation_codes'>
 
 export async function getCoachInviteCodes(): Promise<InviteCode[]> {
@@ -297,7 +276,19 @@ function randomCode(): string {
   return `COACH-${s}`
 }
 
-export async function generateCoachInviteCode(maxUses = 1): Promise<string> {
+export async function generateCoachInviteCode(
+  maxUses = 1,
+  expiresAt: string | null = null,
+): Promise<string> {
+  if (!Number.isInteger(maxUses) || maxUses < 1 || maxUses > 2147483647) {
+    throw new Error('Numărul maxim de utilizări trebuie să fie un întreg între 1 și 2147483647.')
+  }
+  if (
+    expiresAt !== null &&
+    (!Number.isFinite(Date.parse(expiresAt)) || Date.parse(expiresAt) <= Date.now())
+  ) {
+    throw new Error('Expirarea trebuie să fie în viitor.')
+  }
   const {
     data: { session },
   } = await supabase.auth.getSession()
@@ -308,6 +299,7 @@ export async function generateCoachInviteCode(maxUses = 1): Promise<string> {
     created_by_admin_id: session.user.id,
     max_uses: maxUses,
     current_uses: 0,
+    expires_at: expiresAt,
   })
   if (error) throw error
   return code
@@ -329,7 +321,6 @@ export interface CreatedCoach {
   tempPassword: string
 }
 
-/** Creates a standalone coach account (no club) via the create-managed-coach EF. */
 export async function createCoachAccount(input: {
   name: string
   email: string
@@ -344,10 +335,21 @@ export async function createCoachAccount(input: {
         const b = await ctx.json()
         if (b?.error) msg = b.error as string
       } catch {
-        /* ignore */
+        msg = 'Nu am putut crea antrenorul.'
       }
     }
     throw new Error(msg)
+  }
+  if (
+    !data ||
+    typeof data.userId !== 'string' ||
+    !data.userId ||
+    typeof data.email !== 'string' ||
+    !data.email ||
+    typeof data.tempPassword !== 'string' ||
+    !data.tempPassword
+  ) {
+    throw new Error('Răspunsul nu confirmă un cont de antrenor finalizat.')
   }
   return data as CreatedCoach
 }
@@ -363,9 +365,9 @@ export async function getAllClubs(): Promise<AdminClub[]> {
 export type AdminCourse = Tables<'courses'> & {
   sport: Pick<Tables<'sports'>, 'name'> | null
   coach: Pick<Tables<'profiles'>, 'name'> | null
-  /** Deosebeste cursurile omonime: doua cursuri pot avea acelasi nume si acelasi antrenor. */
+
   location: Pick<Tables<'locations'>, 'name'> | null
-  /** Lipseste la cursurile antrenorilor independenti; adminul e singurul rol care vede si unele, si altele. */
+
   club: Pick<Tables<'clubs'>, 'name'> | null
 }
 
@@ -376,10 +378,7 @@ export async function getAllCourses(): Promise<AdminCourse[]> {
       '*, sport:sports(name), coach:profiles(name), location:locations(name), club:clubs(name)',
     )
     .order('name')
-    // Doua cursuri pot purta acelasi nume; fara criterii suplimentare ordinea lor
-    // se schimba de la o incarcare la alta si randurile sar sub cursor dupa
-    // comutare. Pretul le desparte pe cele din lista de azi, dar nu e nici el unic:
-    // ultimul criteriu e `id`, ca sortarea sa fie totala pentru orice date.
+
     .order('price')
     .order('id')
   if (error) throw error
