@@ -167,7 +167,7 @@ test('generation rejects duplicates while pending and retains values on failure'
   fireEvent.click(pending)
   expect(mocks.generate).toHaveBeenCalledTimes(1)
   await act(async () => request.reject(new Error('Rejected')))
-  expect(await screen.findByText('Nu am putut genera codul. Încearcă din nou.')).toBeVisible()
+  expect(await screen.findByText('Nu am putut genera un cod nou. Încearcă din nou.')).toBeVisible()
   expect(screen.getByLabelText('Număr maxim de utilizări')).toHaveValue(4)
   expect(screen.getByRole('button', { name: 'Generează cod' })).toBeEnabled()
 })
@@ -181,7 +181,12 @@ test('clipboard failure keeps the newly created code visible without false copy 
     expect(mocks.error).toHaveBeenCalledWith(expect.stringContaining('Nu am putut copia')),
   )
   expect(mocks.success).toHaveBeenCalledWith('Cod generat.')
-  expect(mocks.success).not.toHaveBeenCalledWith('Cod generat copiat.')
+  expect(mocks.success).not.toHaveBeenCalledWith('Codul nou a fost copiat.')
+  expect(mocks.error).not.toHaveBeenCalledWith('Nu am putut genera un cod nou. Încearcă din nou.')
+  expect(
+    screen.queryByText('Nu am putut genera un cod nou. Încearcă din nou.'),
+  ).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Generează cod' })).toBeEnabled()
   expect(screen.getByRole('button', { name: 'Copiază codul nou' })).toBeEnabled()
 })
 
@@ -191,9 +196,55 @@ test('existing-code copy confirms only after the clipboard resolves', async () =
   renderPage()
   fireEvent.click(await screen.findByRole('button', { name: 'Copiază codul invitație 1' }))
   expect(mocks.copy).toHaveBeenCalledWith('SYNTHETIC-ONE')
-  expect(mocks.success).not.toHaveBeenCalledWith('Cod copiat.')
+  expect(mocks.success).not.toHaveBeenCalledWith('Codul existent a fost copiat.')
   await act(async () => request.resolve())
-  await waitFor(() => expect(mocks.success).toHaveBeenCalledWith('Cod copiat.'))
+  await waitFor(() => expect(mocks.success).toHaveBeenCalledWith('Codul existent a fost copiat.'))
+})
+
+test('copying an existing code after generation fails keeps the generation error visible', async () => {
+  mocks.generate.mockRejectedValue(new Error('Rejected'))
+  renderPage()
+  fireEvent.click(screen.getByRole('button', { name: 'Generează cod' }))
+  const generationError = await screen.findByText(
+    'Nu am putut genera un cod nou. Încearcă din nou.',
+  )
+  fireEvent.click(screen.getByRole('button', { name: 'Copiază codul invitație 1' }))
+  await waitFor(() => expect(mocks.success).toHaveBeenCalledWith('Codul existent a fost copiat.'))
+  expect(mocks.copy).toHaveBeenCalledWith('SYNTHETIC-ONE')
+  expect(generationError).toBeVisible()
+  expect(screen.queryByText('Cod nou:')).not.toBeInTheDocument()
+  expect(mocks.success).not.toHaveBeenCalledWith('Cod generat.')
+  expect(mocks.success).not.toHaveBeenCalledWith('Codul nou a fost copiat.')
+  expect(mocks.generate).toHaveBeenCalledTimes(1)
+})
+
+test('successful generation automatically copies the new code and supports a later explicit copy', async () => {
+  renderPage()
+  fireEvent.click(screen.getByRole('button', { name: 'Generează cod' }))
+  expect(await screen.findByText('SYNTHETIC-NEW')).toBeVisible()
+  await waitFor(() => expect(mocks.success).toHaveBeenCalledWith('Codul nou a fost copiat.'))
+  expect(mocks.copy).toHaveBeenCalledWith('SYNTHETIC-NEW')
+  mocks.copy.mockClear()
+  mocks.success.mockClear()
+  fireEvent.click(screen.getByRole('button', { name: 'Copiază codul nou' }))
+  await waitFor(() => expect(mocks.success).toHaveBeenCalledWith('Codul nou a fost copiat.'))
+  expect(mocks.copy).toHaveBeenCalledWith('SYNTHETIC-NEW')
+  expect(mocks.generate).toHaveBeenCalledTimes(1)
+})
+
+test('an unresolved clipboard operation does not keep generation pending or block another generation', async () => {
+  const clipboard = deferred<void>()
+  mocks.copy.mockReturnValueOnce(clipboard.promise)
+  mocks.generate.mockResolvedValueOnce('SYNTHETIC-NEW').mockResolvedValueOnce('SYNTHETIC-NEXT')
+  renderPage()
+  fireEvent.click(screen.getByRole('button', { name: 'Generează cod' }))
+  expect(await screen.findByText('SYNTHETIC-NEW')).toBeVisible()
+  await waitFor(() => expect(mocks.copy).toHaveBeenCalledWith('SYNTHETIC-NEW'))
+  expect(screen.getByRole('button', { name: 'Generează cod' })).toBeEnabled()
+  fireEvent.click(screen.getByRole('button', { name: 'Generează cod' }))
+  expect(await screen.findByText('SYNTHETIC-NEXT')).toBeVisible()
+  expect(mocks.generate).toHaveBeenCalledTimes(2)
+  await act(async () => clipboard.resolve())
 })
 
 test('deletion keeps its target and preserves the row on backend failure', async () => {

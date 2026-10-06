@@ -57,13 +57,12 @@ export default function InviteCodesSection() {
         Number(values.maxUses),
         values.expiresAt ? new Date(values.expiresAt).toISOString() : null,
       ),
-    onSuccess: async (code) => {
+    onSuccess: (code) => {
       setGenerated(code)
       void qc.invalidateQueries({ queryKey: ['invite-codes'] })
       toast.success('Cod generat.')
-      await copyInviteValue(code, 'Cod generat copiat.')
     },
-    onError: () => toast.error('Nu am putut genera codul. Încearcă din nou.'),
+    onError: () => toast.error('Nu am putut genera un cod nou. Încearcă din nou.'),
   })
   const del = useMutation({
     mutationFn: deleteInviteCode,
@@ -77,13 +76,15 @@ export default function InviteCodesSection() {
   const onGenerate = async (values: InviteValues) => {
     if (generationPending.current) return
     generationPending.current = true
+    let code: string
     try {
-      await gen.mutateAsync(values)
+      code = await gen.mutateAsync(values)
     } catch {
       return
     } finally {
       generationPending.current = false
     }
+    await copyInviteValue(code, 'Codul nou a fost copiat.')
   }
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     const expiryInput = event.currentTarget.elements.namedItem('expiresAt')
@@ -164,7 +165,7 @@ export default function InviteCodesSection() {
         </div>
         {gen.isError && (
           <p role="alert" className="text-destructive text-sm sm:col-span-2">
-            Nu am putut genera codul. Încearcă din nou.
+            Nu am putut genera un cod nou. Încearcă din nou.
           </p>
         )}
       </form>
@@ -180,7 +181,7 @@ export default function InviteCodesSection() {
           <CopyInviteValueButton
             value={generated}
             label="Copiază codul nou"
-            successMessage="Cod copiat."
+            successMessage="Codul nou a fost copiat."
           />
         </div>
       )}
@@ -244,7 +245,7 @@ export default function InviteCodesSection() {
                   <CopyInviteValueButton
                     value={code.code}
                     label={`Copiază codul invitație ${index + 1}`}
-                    successMessage="Cod copiat."
+                    successMessage="Codul existent a fost copiat."
                   />
                   <Button
                     type="button"
