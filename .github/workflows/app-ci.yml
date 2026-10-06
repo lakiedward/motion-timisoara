@@ -7,6 +7,8 @@ on:
       - 'motiontimisoaraApp/**'
       - '.github/workflows/app-ci.yml'
       - 'tests/native-location/**'
+      - 'supabase/migrations/00081_restrict_sport_deletion.sql'
+      - 'supabase/tests/sport-deletion/**'
       - 'supabase/migrations/00055_camp_announcement_audience.sql'
       - 'supabase/migrations/00056_parent_announcement_feed.sql'
       - 'supabase/tests/*parent-announcement*'
@@ -34,6 +36,8 @@ on:
       - 'motiontimisoaraApp/**'
       - '.github/workflows/app-ci.yml'
       - 'tests/native-location/**'
+      - 'supabase/migrations/00081_restrict_sport_deletion.sql'
+      - 'supabase/tests/sport-deletion/**'
       - 'supabase/migrations/00055_camp_announcement_audience.sql'
       - 'supabase/migrations/00056_parent_announcement_feed.sql'
       - 'supabase/tests/*parent-announcement*'
@@ -58,6 +62,13 @@ on:
       - 'supabase/tests/*camp-adult*'
 
 jobs:
+  sport-deletion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: pwsh -NoProfile -File supabase/tests/sport-deletion/run.ps1
+
   enrollment-payments:
     runs-on: ubuntu-latest
     timeout-minutes: 5

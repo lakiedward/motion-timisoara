@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -13,6 +13,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import NearbyLocations from './location-form/NearbyLocations'
+import {
+  locationPointKey,
+  type LocationChoice,
+  type NearbyLocation,
+} from './location-form/nearby-locations'
+import { useNearbyLocations } from './location-form/useNearbyLocations'
 
 const selectCls =
   'border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] lg:h-9'
@@ -23,8 +30,6 @@ const schema = z
     type: z.string().min(1, 'Alege un tip'),
     address: z.string().optional(),
     city: z.string().optional(),
-    // Coordonatele nu se mai tastează: vin din pinul de pe hartă, prin căutare
-    // sau prin apăsare, deci sunt numere sau lipsesc cu totul.
     lat: z.number().nullable(),
     lng: z.number().nullable(),
     description: z.string().optional(),
@@ -40,6 +45,9 @@ export default function ClubLocationFormPage() {
   const isEdit = !!id
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const [locationChoice, setLocationChoice] = useState<LocationChoice | null>(null)
+  const [pickerVersion, setPickerVersion] = useState(0)
+  const activePickerVersion = useRef(0)
   const { data: club } = useQuery({ queryKey: ['my-club'], queryFn: getMyClub })
   const clubId = club?.id ?? ''
   const {
@@ -58,6 +66,7 @@ export default function ClubLocationFormPage() {
     handleSubmit,
     reset,
     setValue,
+    getValues,
     trigger,
     control,
     formState: { errors, isSubmitting },
@@ -79,16 +88,43 @@ export default function ClubLocationFormPage() {
       })
     }
   }, [existing, reset])
-
-  // `useWatch`, nu `watch()`: al doilea întoarce o funcție pe care React
-  // Compiler nu o poate memoiza, așa că sare peste tot componentul.
   const lat = useWatch({ control, name: 'lat' })
   const lng = useWatch({ control, name: 'lng' })
   const punct = typeof lat === 'number' && typeof lng === 'number' ? { lat, lng } : null
+  const nearbyQuery = useNearbyLocations(punct, clubId, !isEdit)
+  const nearbyLocations = nearbyQuery.data ?? []
+  const currentChoice =
+    punct && locationChoice?.pointKey === locationPointKey(punct) ? locationChoice : null
+  const nearbyCheckRequired =
+    !isEdit &&
+    punct !== null &&
+    (nearbyQuery.isPending ||
+      nearbyQuery.isFetching ||
+      nearbyQuery.isError ||
+      (nearbyLocations.length > 0 && currentChoice === null))
+
+  const chooseNearbyLocation = (location: NearbyLocation) => {
+    if (location.club_id === clubId) return
+    setLocationChoice({ pointKey: locationPointKey(location), sourceId: location.id })
+    activePickerVersion.current += 1
+    setPickerVersion(activePickerVersion.current)
+    setValue('name', location.name, { shouldDirty: true })
+    setValue('type', location.type, { shouldDirty: true })
+    setValue('address', location.address ?? '', { shouldDirty: true })
+    setValue('city', location.city ?? '', { shouldDirty: true })
+    setValue('description', location.description ?? '', { shouldDirty: true })
+    setValue('lat', location.lat, { shouldDirty: true })
+    setValue('lng', location.lng, { shouldDirty: true })
+    void trigger()
+  }
 
   const onSubmit = async (v: Values) => {
     if (!club) {
       toast.error('Clubul nu a fost găsit.')
+      return
+    }
+    if (nearbyCheckRequired) {
+      toast.error('Verifică locațiile din apropiere și alege locul înainte de salvare.')
       return
     }
     const payload = {
@@ -104,16 +140,13 @@ export default function ClubLocationFormPage() {
       if (isEdit) await updateClubLocation(id as string, payload)
       else await createClubLocation(club.id, payload)
       qc.invalidateQueries({ queryKey: ['club-locations'] })
+      qc.invalidateQueries({ queryKey: ['club-nearby-locations'] })
       toast.success(isEdit ? 'Locație actualizată.' : 'Locație creată.')
       navigate('/club/locations')
     } catch {
       toast.error('Nu am putut salva locația.')
     }
   }
-
-  // O citire căzută nu e totuna cu o locație inexistentă. De când `getClubLocationById`
-  // aruncă în loc să întoarcă null, o pică de rețea ar fi ajuns pe ramura de mai
-  // jos și i-ar fi spus clubului că locația nu există — deși e acolo.
   if (isEdit && !!clubId && aEsuatCitirea) {
     return (
       <div className="mx-auto max-w-2xl">
@@ -132,11 +165,6 @@ export default function ClubLocationFormPage() {
       </div>
     )
   }
-
-  // Un id străin sau inexistent nu are voie să ajungă într-un formular
-  // precompletat: politica RLS lasă un utilizator CLUB să CITEASCĂ orice
-  // locație, dar îi refuză salvarea, așa că altfel clubul ar edita datele altui
-  // club și ar primi un fals „am salvat”.
   if (isEdit && !!clubId && !seIncarca && !existing) {
     return (
       <div className="mx-auto max-w-2xl">
@@ -202,20 +230,16 @@ export default function ClubLocationFormPage() {
         </div>
 
         <LocationPicker
+          key={pickerVersion}
           value={punct}
           invalid={!!errors.lat}
           errorId={errors.lat ? 'punct-error' : undefined}
           onChange={(p) => {
+            if (activePickerVersion.current !== pickerVersion) return
+            if (getValues('lat') !== p.lat || getValues('lng') !== p.lng) setLocationChoice(null)
             setValue('lat', p.lat)
             setValue('lng', p.lng)
-            // Verificarea „lipsește punctul” stă pe obiect, cu mesajul pus pe
-            // `lat`. Validarea la fiecare `setValue` ar rula-o cu `lng` încă gol
-            // și ar lăsa eroarea aprinsă după ce pinul e deja pe hartă, așa că
-            // se cere o singură dată, după ce ambele coordonate sunt puse.
             void trigger('lat')
-            // Adresa și orașul urmează pinul. Ce a scris utilizatorul cu mâna
-            // rămâne până la următoarea mutare de pin sau alegere din căutare;
-            // când locul nou nu are adresă cunoscută, nu ștergem ce era.
             if (p.address) setValue('address', p.address)
             if (p.city) setValue('city', p.city)
           }}
@@ -224,6 +248,21 @@ export default function ClubLocationFormPage() {
           <p id="punct-error" className="text-destructive text-xs">
             {errors.lat.message}
           </p>
+        )}
+        {!isEdit && punct && (
+          <NearbyLocations
+            locations={nearbyLocations}
+            clubId={clubId}
+            isPending={nearbyQuery.isPending || nearbyQuery.isFetching}
+            isError={nearbyQuery.isError}
+            isFetching={nearbyQuery.isFetching}
+            choice={currentChoice}
+            onRetry={() => void nearbyQuery.refetch()}
+            onChoose={chooseNearbyLocation}
+            onCreateNew={() =>
+              setLocationChoice({ pointKey: locationPointKey(punct), sourceId: null })
+            }
+          />
         )}
 
         <div className="space-y-1.5">
@@ -237,7 +276,11 @@ export default function ClubLocationFormPage() {
         </div>
 
         <div className="flex gap-2 pt-2">
-          <Button type="submit" className="h-11 lg:h-9" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            className="h-11 lg:h-9"
+            disabled={isSubmitting || nearbyCheckRequired}
+          >
             {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>
           <Button type="button" variant="outline" className="h-11 lg:h-9" asChild>
