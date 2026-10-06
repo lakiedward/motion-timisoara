@@ -5,19 +5,9 @@ import * as admin from './admin'
 import * as club from './club'
 import * as coach from './coach'
 
-/**
- * PostgREST răspunde 204 No Content la un UPDATE sau DELETE și atunci când RLS a
- * filtrat toate rândurile, deci fără `.select().single()` un refuz („nu aveam
- * voie”) sau un id inexistent arăta pe ecran exact ca o reușită. Fiecare scriere
- * de mai jos trebuie să ceară rândul înapoi și să arunce când nu-l primește.
- */
-
-/** Ce întoarce serverul la următoarea interogare, indiferent de tabel. */
 let raspuns: { data: unknown; error: unknown } = { data: null, error: null }
-/** Metodele înlănțuite pe builder, ca să vedem că rândul a fost cerut înapoi. */
 let lant: string[] = []
 
-/** Exact ce dă PostgREST pentru `.single()` peste zero rânduri. */
 const ZERO_RANDURI = {
   data: null,
   error: { code: 'PGRST116', message: 'JSON object requested, multiple (or no) rows returned' },
@@ -52,7 +42,7 @@ vi.mock('@/lib/supabase', () => ({
 }))
 
 beforeEach(() => {
-  raspuns = { data: { id: 'x' }, error: null }
+  raspuns = { data: { id: 'x', default_photo_storage_path: null }, error: null }
   lant = []
 })
 
@@ -81,7 +71,7 @@ const scrieri: [string, () => Promise<unknown>][] = [
   ['admin.setUserEnabled', () => admin.setUserEnabled('u', false)],
   ['admin.updateSport', () => admin.updateSport('s', 'COD', 'Nume')],
   ['admin.setSportDefaultPhoto', () => admin.setSportDefaultPhoto('s', poza())],
-  ['admin.clearSportDefaultPhoto', () => admin.clearSportDefaultPhoto('s', null)],
+  ['admin.clearSportDefaultPhoto', () => admin.clearSportDefaultPhoto('s')],
   ['admin.deleteSport', () => admin.deleteSport('s')],
   ['admin.deleteInviteCode', () => admin.deleteInviteCode('k')],
   ['admin.setCourseActiveAdmin', () => admin.setCourseActiveAdmin('x', false)],
