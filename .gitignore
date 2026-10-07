@@ -98,6 +98,9 @@ playwright-report/
 blob-report/
 playwright/.cache/
 playwright/.auth/
+.test-access/
+motion-test-accounts.local.json
+motion-test-accounts.lock
 .playwright-mcp/
 .test-evidence/
 

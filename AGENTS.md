@@ -427,8 +427,11 @@ to check saved-role metadata without decrypting or printing a password.
 
 When the requested scenario authorizes role-specific login and the saved account is
 ready, use its existing password without asking the owner to repeat it. The README's
-private child-process pattern loads credentials into CUA memory for the visible local
-login form. Never execute the credential exporter through a tool terminal, forward its
+private child-process pattern loads credentials into CUA memory for the visible login
+form. The helper permits local HTTP previews with `motion-local-ui-login`, and only
+`https://motiontimisoara-demo.netlify.app` with `motion-demo-ui-login`; both handshakes
+must name the actual login origin. Never broaden this allowlist for another site.
+Never execute the credential exporter through a tool terminal, forward its
 stdout/stderr to output or logs, or put secrets in command arguments or environment
 files. Clear temporary credential references after filling the form, then verify the
 authenticated user's live profile role and destination. A saved password does not prove
