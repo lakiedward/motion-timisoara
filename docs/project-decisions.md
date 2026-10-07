@@ -196,3 +196,4 @@ reorganizing this document; correct obsolete facts with current evidence.
   creation, role changes and business mutations retain their separate consent boundaries.
 
 - 2026-10-07 — Replace the byte-identical instruction mirror with AGENTS.md as the shared source and a CLAUDE.md @AGENTS.md import — follow the owner's new guide, reduce always-loaded context and keep occasional procedures in docs/agent-workflows.md. This supersedes the 2026-09-08 mirror contract; no byte-comparison mirror test is required. Existing product and human-gate rules remain in force.
+- 2026-10-07 — Location types share 24 Romanian choices across club/coach forms and list badges, grouped by pools/water, courts/tracks, halls and outdoor places — the owner requested many usable choices at the final form review; retain existing POOL/TRACK/GYM/OTHER values and enforce the expanded whitelist in PostgreSQL.

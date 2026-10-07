@@ -12,6 +12,7 @@ import LocationPicker from '@/components/LocationPicker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import LocationTypeOptions from '@/components/location-form/LocationTypeOptions'
 import { cityForCounty, countyForCity, normalizeCounty } from '@/lib/geography/romanian-places'
 import NearbyLocations from './location-form/NearbyLocations'
 import LocationAddressFields, {
@@ -221,10 +222,7 @@ export default function ClubLocationFormPage() {
           <div className="space-y-1.5">
             <Label htmlFor="type">Tip</Label>
             <select id="type" className={locationSelectClassName} {...register('type')}>
-              <option value="POOL">Bazin</option>
-              <option value="TRACK">Pistă</option>
-              <option value="GYM">Sală</option>
-              <option value="OTHER">Alt tip</option>
+              <LocationTypeOptions />
             </select>
           </div>
         </div>

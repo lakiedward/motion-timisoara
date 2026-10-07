@@ -30,3 +30,10 @@ Verification covers dropdown dependency, address synchronization, missing/failed
 geocoding, stale responses, exact nearby-source coordinates and save/edit persistence.
 Browser checks use 1440×900, 768×1024 and 375×812. Responsive rendering is not native
 device proof. Human final acceptance follows the verified preview.
+
+The owner's final review additionally requested many location types. Provide 24
+choices grouped into pools/water, courts/tracks, halls, outdoor places and other.
+Retain POOL/TRACK/GYM/OTHER compatibility. Share choices across club/coach forms and
+Romanian labels across their location lists. Expand only the database type check;
+keep role guards, RLS and all existing locations unchanged. Verify every allowed
+type, rejection of an unknown type and one visible save/edit using a new type.

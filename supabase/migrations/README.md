@@ -346,3 +346,4 @@ To confirm git and the remote still agree:
 npx supabase link --project-ref ehdzafadshbaaghzdzdo
 npx supabase migration list
 ```
+- `00083_expand_location_types.sql` — applied as remote `20261007132208` (`expand_location_types`) on 2026-10-07 for feature #418. The location type CHECK now accepts 24 grouped options, retaining POOL/TRACK/GYM/OTHER. A rollback-only live assertion accepted all 24, rejected an unknown type through locations_type_check and left zero temporary rows. Types were regenerated and compared unchanged; RLS, columns and existing data are unchanged.

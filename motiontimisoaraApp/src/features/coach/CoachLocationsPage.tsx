@@ -7,12 +7,14 @@ import { getMyLocations, setLocationActive } from '@/api/coach'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-
-const TYPE_LABEL: Record<string, string> = { POOL: 'Bazin', TRACK: 'Pistă', GYM: 'Sală', OTHER: 'Alt tip' }
+import { locationTypeLabel } from '@/lib/geography/location-types'
 
 export default function CoachLocationsPage() {
   const qc = useQueryClient()
-  const { data: locations = [], isLoading } = useQuery({ queryKey: ['my-locations'], queryFn: getMyLocations })
+  const { data: locations = [], isLoading } = useQuery({
+    queryKey: ['my-locations'],
+    queryFn: getMyLocations,
+  })
   const toggle = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) => setLocationActive(id, active),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['my-locations'] }),
@@ -44,8 +46,10 @@ export default function CoachLocationsPage() {
                 <div>
                   <h3 className="font-display text-lg font-bold">{l.name}</h3>
                   <div className="mt-1 flex flex-wrap gap-1.5">
-                    <Badge variant="outline">{TYPE_LABEL[l.type] ?? l.type}</Badge>
-                    <Badge variant={l.is_active ? 'success' : 'outline'}>{l.is_active ? 'Activă' : 'Inactivă'}</Badge>
+                    <Badge variant="outline">{locationTypeLabel(l.type)}</Badge>
+                    <Badge variant={l.is_active ? 'success' : 'outline'}>
+                      {l.is_active ? 'Activă' : 'Inactivă'}
+                    </Badge>
                   </div>
                 </div>
               </div>
@@ -59,7 +63,12 @@ export default function CoachLocationsPage() {
                     <Pencil /> Editează
                   </Link>
                 </Button>
-                <Button size="sm" variant="ghost" disabled={toggle.isPending} onClick={() => toggle.mutate({ id: l.id, active: !l.is_active })}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={toggle.isPending}
+                  onClick={() => toggle.mutate({ id: l.id, active: !l.is_active })}
+                >
                   {l.is_active ? 'Dezactivează' : 'Activează'}
                 </Button>
               </div>
