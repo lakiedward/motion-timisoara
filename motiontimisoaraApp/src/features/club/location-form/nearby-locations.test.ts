@@ -13,6 +13,7 @@ function location(id: string, overrides: Partial<LocationRow> = {}): LocationRow
     type: 'POOL',
     address: null,
     city: null,
+    county: null,
     lat: 0,
     lng: 0,
     capacity: null,

@@ -51,6 +51,7 @@ const locatie = {
   type: 'POOL',
   address: 'Str. Audit 1',
   city: 'Timișoara',
+  county: 'Timiș',
   lat: 45.75,
   lng: 21.22,
   description: null,
@@ -97,14 +98,14 @@ test('formularul nu mai are câmpuri de latitudine și longitudine', async () =>
   await screen.findByDisplayValue('Bazin Audit')
   expect(screen.queryByLabelText('Latitudine')).not.toBeInTheDocument()
   expect(screen.queryByLabelText('Longitudine')).not.toBeInTheDocument()
-  expect(screen.getByLabelText('Caută adresa')).toBeInTheDocument()
+  expect(screen.getByLabelText('Adresă')).toBeInTheDocument()
   expect(screen.getByTestId('harta')).toBeInTheDocument()
 })
 
 test('câmpurile păstrate rămân pe ecran, harta se adaugă lângă ele', async () => {
   renderForm()
   await screen.findByDisplayValue('Bazin Audit')
-  for (const eticheta of ['Nume', 'Tip', 'Oraș', 'Adresă', 'Descriere']) {
+  for (const eticheta of ['Nume', 'Tip', 'Județ', 'Oraș', 'Adresă']) {
     expect(screen.getByLabelText(eticheta)).toBeInTheDocument()
   }
   expect(screen.getByRole('heading', { name: 'Editează locație' })).toBeInTheDocument()
@@ -137,9 +138,9 @@ test('o sugestie aleasă umple adresa, orașul și deblochează salvarea', async
 
   renderForm()
   await screen.findByDisplayValue('Bazin Audit')
-  await user.type(screen.getByLabelText('Caută adresa'), 'take ionescu')
+  await user.type(screen.getByLabelText('Adresă'), 'take ionescu')
 
-  const sugestie = await screen.findByRole('option', { name: /Take Ionescu 46C/ })
+  const sugestie = await screen.findByRole('option', { name: /Take Ionescu 46C/ }, { timeout: 5000 })
   await user.click(sugestie)
 
   expect(screen.getByLabelText('Adresă')).toHaveValue('Bulevardul Take Ionescu 46C')
@@ -257,7 +258,7 @@ test('un reverse intors tarziu nu mai suprascrie o sugestie aleasa dupa el', asy
     apasaPeHarta?.({ latlng: { lat: 45.7, lng: 21.2 } })
   })
 
-  await user.type(screen.getByLabelText('Caută adresa'), 'take ionescu')
+  await user.type(screen.getByLabelText('Adresă'), 'take ionescu')
   await user.click(await screen.findByRole('option', { name: /Take Ionescu 46C/ }))
   expect(screen.getByLabelText('Adresă')).toHaveValue('Bulevardul Take Ionescu 46C')
 
@@ -332,7 +333,7 @@ test('copying another club location fills exact source data and saves for the cu
   expect(screen.getByLabelText('Tip')).toHaveValue(nearbySource.type)
   expect(screen.getByLabelText('Adresă')).toHaveValue(nearbySource.address)
   expect(screen.getByLabelText('Oraș')).toHaveValue(nearbySource.city)
-  expect(screen.getByLabelText('Descriere')).toHaveValue(nearbySource.description)
+  expect(screen.queryByLabelText('Descriere')).not.toBeInTheDocument()
 
   await user_salveaza()
   await waitFor(() =>
@@ -341,7 +342,7 @@ test('copying another club location fills exact source data and saves for the cu
       type: nearbySource.type,
       address: nearbySource.address,
       city: nearbySource.city,
-      description: nearbySource.description,
+      county: 'Timiș',
       lat: nearbySource.lat,
       lng: nearbySource.lng,
     }),

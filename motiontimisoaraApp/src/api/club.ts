@@ -267,7 +267,11 @@ export async function getClubLocationById(
   if (error) throw error
   return data
 }
-export async function createClubLocation(clubId: string, input: LocationFormInput) {
+export type ClubLocationFormInput = Omit<LocationFormInput, 'description'> & {
+  county: string | null
+}
+
+export async function createClubLocation(clubId: string, input: ClubLocationFormInput) {
   const owner = await uid()
   const { error } = await supabase
     .from('locations')
@@ -276,7 +280,7 @@ export async function createClubLocation(clubId: string, input: LocationFormInpu
 }
 export async function updateClubLocation(
   id: string,
-  input: LocationFormInput,
+  input: ClubLocationFormInput,
 ): Promise<Tables<'locations'>> {
   const { data, error } = await supabase
     .from('locations')

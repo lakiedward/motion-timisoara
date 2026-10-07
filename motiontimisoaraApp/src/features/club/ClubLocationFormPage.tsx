@@ -12,8 +12,11 @@ import LocationPicker from '@/components/LocationPicker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { cn } from '@/lib/utils'
+import { cityForCounty, countyForCity, normalizeCounty } from '@/lib/geography/romanian-places'
 import NearbyLocations from './location-form/NearbyLocations'
+import LocationAddressFields, {
+  locationSelectClassName,
+} from './location-form/LocationAddressFields'
 import {
   locationPointKey,
   type LocationChoice,
@@ -21,18 +24,15 @@ import {
 } from './location-form/nearby-locations'
 import { useNearbyLocations } from './location-form/useNearbyLocations'
 
-const selectCls =
-  'border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] lg:h-9'
-
 const schema = z
   .object({
     name: z.string().min(2, 'Minim 2 caractere'),
     type: z.string().min(1, 'Alege un tip'),
     address: z.string().optional(),
     city: z.string().optional(),
+    county: z.string().optional(),
     lat: z.number().nullable(),
     lng: z.number().nullable(),
-    description: z.string().optional(),
   })
   .refine((v) => v.lat !== null && v.lng !== null, {
     message: 'Pune punctul pe hartă',
@@ -47,6 +47,7 @@ export default function ClubLocationFormPage() {
   const qc = useQueryClient()
   const [locationChoice, setLocationChoice] = useState<LocationChoice | null>(null)
   const [pickerVersion, setPickerVersion] = useState(0)
+  const [isResolvingAddress, setIsResolvingAddress] = useState(false)
   const activePickerVersion = useRef(0)
   const { data: club } = useQuery({ queryKey: ['my-club'], queryFn: getMyClub })
   const clubId = club?.id ?? ''
@@ -82,14 +83,18 @@ export default function ClubLocationFormPage() {
         type: existing.type,
         address: existing.address ?? '',
         city: existing.city ?? '',
+        county:
+          normalizeCounty(existing.county) ?? countyForCity(existing.city) ?? existing.county ?? '',
         lat: existing.lat,
         lng: existing.lng,
-        description: existing.description ?? '',
       })
     }
   }, [existing, reset])
   const lat = useWatch({ control, name: 'lat' })
   const lng = useWatch({ control, name: 'lng' })
+  const address = useWatch({ control, name: 'address' }) ?? ''
+  const county = useWatch({ control, name: 'county' }) ?? ''
+  const city = useWatch({ control, name: 'city' }) ?? ''
   const punct = typeof lat === 'number' && typeof lng === 'number' ? { lat, lng } : null
   const nearbyQuery = useNearbyLocations(punct, clubId, !isEdit)
   const nearbyLocations = nearbyQuery.data ?? []
@@ -112,7 +117,11 @@ export default function ClubLocationFormPage() {
     setValue('type', location.type, { shouldDirty: true })
     setValue('address', location.address ?? '', { shouldDirty: true })
     setValue('city', location.city ?? '', { shouldDirty: true })
-    setValue('description', location.description ?? '', { shouldDirty: true })
+    setValue(
+      'county',
+      normalizeCounty(location.county) ?? countyForCity(location.city) ?? location.county ?? '',
+      { shouldDirty: true },
+    )
     setValue('lat', location.lat, { shouldDirty: true })
     setValue('lng', location.lng, { shouldDirty: true })
     void trigger()
@@ -132,9 +141,9 @@ export default function ClubLocationFormPage() {
       type: v.type,
       address: v.address || null,
       city: v.city || null,
+      county: v.county || null,
       lat: v.lat,
       lng: v.lng,
-      description: v.description || null,
     }
     try {
       if (isEdit) await updateClubLocation(id as string, payload)
@@ -208,40 +217,66 @@ export default function ClubLocationFormPage() {
           )}
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
           <div className="space-y-1.5">
             <Label htmlFor="type">Tip</Label>
-            <select id="type" className={cn(selectCls)} {...register('type')}>
+            <select id="type" className={locationSelectClassName} {...register('type')}>
               <option value="POOL">Bazin</option>
               <option value="TRACK">Pistă</option>
               <option value="GYM">Sală</option>
               <option value="OTHER">Alt tip</option>
             </select>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="city">Oraș</Label>
-            <Input id="city" className="h-11 lg:h-9" {...register('city')} />
-          </div>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="address">Adresă</Label>
-          <Input id="address" className="h-11 lg:h-9" {...register('address')} />
-        </div>
+        <LocationAddressFields
+          county={county}
+          city={city}
+          onCountyChange={(nextCounty) => {
+            activePickerVersion.current += 1
+            setPickerVersion(activePickerVersion.current)
+            setValue('county', nextCounty, { shouldDirty: true })
+            setValue('city', '', { shouldDirty: true })
+          }}
+          onCityChange={(nextCity) => {
+            activePickerVersion.current += 1
+            setPickerVersion(activePickerVersion.current)
+            setValue('city', nextCity, { shouldDirty: true })
+          }}
+        />
 
         <LocationPicker
           key={pickerVersion}
           value={punct}
+          address={address}
+          city={city}
+          county={county}
+          onResolvingChange={setIsResolvingAddress}
+          onAddressChange={(nextAddress) => setValue('address', nextAddress, { shouldDirty: true })}
           invalid={!!errors.lat}
           errorId={errors.lat ? 'punct-error' : undefined}
           onChange={(p) => {
             if (activePickerVersion.current !== pickerVersion) return
-            if (getValues('lat') !== p.lat || getValues('lng') !== p.lng) setLocationChoice(null)
+            if (getValues('lat') !== p.lat || getValues('lng') !== p.lng) {
+              setLocationChoice(null)
+              if (!p.resolved) {
+                setValue('address', '')
+                setValue('county', '')
+                setValue('city', '')
+              }
+            }
             setValue('lat', p.lat)
             setValue('lng', p.lng)
             void trigger('lat')
-            if (p.address) setValue('address', p.address)
-            if (p.city) setValue('city', p.city)
+            if (p.resolved) {
+              const nextCounty =
+                normalizeCounty(p.county) ?? countyForCity(p.city) ?? p.county ?? ''
+              setValue('county', nextCounty, { shouldDirty: true })
+              setValue('city', p.city ? cityForCounty(p.city, nextCounty) : '', {
+                shouldDirty: true,
+              })
+              setValue('address', p.address ?? '', { shouldDirty: true })
+            }
           }}
         />
         {errors.lat && (
@@ -265,21 +300,11 @@ export default function ClubLocationFormPage() {
           />
         )}
 
-        <div className="space-y-1.5">
-          <Label htmlFor="description">Descriere</Label>
-          <textarea
-            id="description"
-            rows={3}
-            {...register('description')}
-            className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
-          />
-        </div>
-
         <div className="flex gap-2 pt-2">
           <Button
             type="submit"
             className="h-11 lg:h-9"
-            disabled={isSubmitting || nearbyCheckRequired}
+            disabled={isSubmitting || nearbyCheckRequired || isResolvingAddress}
           >
             {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>

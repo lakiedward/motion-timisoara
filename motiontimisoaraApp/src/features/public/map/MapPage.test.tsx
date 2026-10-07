@@ -65,6 +65,7 @@ const place: LocationRow = {
   name: 'Bazin Test',
   type: 'POOL',
   city: 'Timișoara',
+  county: 'Timiș',
   lat: 45.75,
   lng: 21.23,
   address: 'Adresa Test',
