@@ -32,6 +32,8 @@ on the remote (verified by md5).
 | `00045_camp_live_location_access.sql` | `20260910122700` | `camp_live_location_access` |
 | `00046_camp_live_location_transaction.sql` | `20260910122706` | `camp_live_location_transaction` |
 | `00047_camp_live_location_discovery.sql` | `20260910122711` | `camp_live_location_discovery` |
+| `00080_admin_stats.sql` | `20261002115542` | `admin_stats` |
+| `00081_restrict_sport_deletion.sql` | `20261007101003` | `restrict_sport_deletion` |
 
 `00017` and `00018` are both kept on purpose: `00018` replaced `00017` in production
 62 seconds after it was applied, and the ledger records what actually ran.
@@ -305,21 +307,32 @@ private identity helper exposes only a boolean and grants no table access to
 deployed ACTIVE v1 with JWT verification; `register-coach` was updated to ACTIVE
 v7 and retains its anonymous entry point and optional Stripe setup.
 
-Admin dashboard stats, proposed 2026-10-02: `00080_admin_stats.sql` is in git as
-a proposal only. Do not apply it on local, preview or production until Laki
-approves. `created_at` is outside the 00036 GRANT on `profiles`, and PostgREST
+Admin dashboard stats, verified remotely 2026-10-07: `00080_admin_stats.sql`
+is already applied as version `20261002115542`, name `admin_stats`; it was not
+applied again during this verification. `created_at` is outside the 00036 GRANT
+on `profiles`, and PostgREST
 cannot compare `current_uses < max_uses` column-to-column, so exact 7-day user
 and active-unexpired invite counts need this SECURITY DEFINER `admin_stats()`
-RPC (`get_my_role() = 'ADMIN'`). Until it is applied, the client tries the RPC
-then falls back to `count: exact` / `admin_users()` / invite-code rows, capped
+RPC (`get_my_role() = 'ADMIN'`). The client tries the RPC and falls back to
+`count: exact` / `admin_users()` / invite-code rows when unavailable, capped
 at `max_rows=1000` (`supabase/config.toml`). A capped fallback shows a `+`
-suffix. This file is intentionally absent from the applied-version table.
+suffix.
 
-Admin sports #457, proposed 2026-10-06: `00081_restrict_sport_deletion.sql`
+Admin sports #457, applied and verified 2026-10-07: `00081_restrict_sport_deletion.sql`
 replaces cascading sport references in `coach_sports` and `club_sports` with
 `ON DELETE RESTRICT`. Existing course and activity references already block deletion.
-This migration has isolated SQL and concurrent-association tests; it has not been
-applied remotely. Remote application belongs to the separately authorized release.
+Remote version is `20261007101003`, name `restrict_sport_deletion`. Isolated SQL
+and concurrent-association tests passed. Live readback confirms RESTRICT on both
+associations; disposable coach-only and club-only fixtures each rejected deletion
+with the corresponding foreign-key constraint, retaining the sport.
+
+The merged `create-managed-coach` source was deployed ACTIVE v7 on 2026-10-07.
+All five deployed files match the source at `24d483b6c1acd7f56fc357c347c12fa6426a88d9`.
+Its existing `verify_jwt=false` configuration remains because the handler authenticates
+the bearer token and requires an enabled ADMIN or CLUB profile itself. Fifteen Deno
+contract tests and the entrypoint type check passed. A consented disposable account
+was created through the ADMIN UI and verified as confirmed, enabled COACH with a
+coach profile; login reached `/coach`. No human UI acceptance or shipping gate was set.
 
 To confirm git and the remote still agree:
 
