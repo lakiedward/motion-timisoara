@@ -1,4 +1,5 @@
 import { countyForCity, normalizeCounty } from '@/lib/geography/romanian-places'
+import { geocodingRequest } from './geocoding/request'
 
 const TIMISOARA = { lat: 45.7489, lng: 21.2087 }
 const BASE_URL = 'https://photon.komoot.io'
@@ -71,10 +72,12 @@ function toPlace(feature: PhotonFeature, index: number): GeoPlace | null {
   }
 }
 
-async function fetchFeatures(url: string, signal?: AbortSignal): Promise<GeoPlace[]> {
-  const response = await fetch(url, { signal })
-  if (!response.ok) throw new Error(`Geocoding ${response.status}`)
-  const json: { features?: PhotonFeature[] } = await response.json()
+async function fetchFeatures(
+  url: string,
+  signal?: AbortSignal,
+  timeoutMs = 5000,
+): Promise<GeoPlace[]> {
+  const json = await geocodingRequest<{ features?: PhotonFeature[] }>(url, timeoutMs, signal)
   return (json.features ?? []).map(toPlace).filter((place): place is GeoPlace => place !== null)
 }
 
@@ -102,8 +105,12 @@ export const geocoding = {
 
   async reverse(lat: number, lng: number, signal?: AbortSignal): Promise<GeoPlace | null> {
     const base = `${BASE_URL}/reverse?lat=${lat}&lon=${lng}&limit=1&lang=${LANG}`
-    const houses = await fetchFeatures(`${base}&layer=house&radius=1`, signal)
-    if (houses.length > 0) return houses[0]
+    try {
+      const houses = await fetchFeatures(`${base}&layer=house&radius=1`, signal, 3000)
+      if (houses.length > 0) return houses[0]
+    } catch {
+      signal?.throwIfAborted()
+    }
     return (await fetchFeatures(base, signal))[0] ?? null
   },
 }

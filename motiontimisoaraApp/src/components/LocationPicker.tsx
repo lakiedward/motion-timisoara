@@ -105,6 +105,7 @@ export default function LocationPicker({
     queryFn: ({ signal }) => geocoding.search(cautareAmanata, signal, { city, county }),
     enabled: listaDeschisa && cautareAmanata.trim().length >= 3,
     staleTime: 24 * 60 * 60 * 1000,
+    retry: false,
   })
   const sugestii = cautareAmanata === address ? searchResults : []
 
