@@ -412,7 +412,9 @@ test('pending creation disables collapse and successful credentials stay visible
   fireEvent.change(screen.getByLabelText('Nume'), { target: { value: 'Test Coach' } })
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'coach@example.test' } })
   fireEvent.click(screen.getByRole('button', { name: 'Creează antrenor' }))
-  expect(await screen.findByRole('button', { name: 'Închide formularul' })).toBeDisabled()
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: 'Închide formularul' })).toBeDisabled(),
+  )
   fireEvent.click(screen.getByRole('button', { name: 'Închide formularul' }))
   expect(screen.getByLabelText('Nume')).toBeVisible()
   await act(async () =>
@@ -435,7 +437,9 @@ test('pending generation disables collapse and its result stays visible after co
   mocks.generate.mockReturnValue(request.promise)
   renderPage()
   fireEvent.click(screen.getByRole('button', { name: 'Generează cod' }))
-  expect(await screen.findByRole('button', { name: 'Închide setările' })).toBeDisabled()
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: 'Închide setările' })).toBeDisabled(),
+  )
   await act(async () => request.resolve('SYNTHETIC-NEW'))
   expect(await screen.findByText('Codul nou a fost copiat.')).toBeVisible()
   fireEvent.click(screen.getByRole('button', { name: 'Închide setările' }))
