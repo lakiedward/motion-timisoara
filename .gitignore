@@ -123,6 +123,7 @@ supabase/.temp/
 # Claude Code (machine-local)
 # =====================
 .claude/settings.local.json
+CLAUDE.local.md
 
 # Local Netlify folder
 .netlify
