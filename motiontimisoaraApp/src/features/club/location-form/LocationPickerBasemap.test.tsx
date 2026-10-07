@@ -20,7 +20,7 @@ afterEach(() => vi.unstubAllEnvs())
 function renderPicker() {
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <LocationPicker value={null} onChange={vi.fn()} />
+      <LocationPicker value={null} onChange={vi.fn()} address="" onAddressChange={vi.fn()} />
     </QueryClientProvider>,
   )
 }

@@ -334,9 +334,16 @@ contract tests and the entrypoint type check passed. A consented disposable acco
 was created through the ADMIN UI and verified as confirmed, enabled COACH with a
 coach profile; login reached `/coach`. No human UI acceptance or shipping gate was set.
 
+Club location form feature #418, applied and verified 2026-10-07:
+`00082_location_county.sql` adds nullable `public.locations.county` without changing
+existing rows or RLS. Remote version is `20261007115343`, name `location_county`.
+Database types were regenerated from the remote schema, including the previously
+applied `admin_stats` RPC. The description column remains; club form writes omit it.
+
 To confirm git and the remote still agree:
 
 ```bash
 npx supabase link --project-ref ehdzafadshbaaghzdzdo
 npx supabase migration list
 ```
+- `00083_expand_location_types.sql` — applied as remote `20261007132208` (`expand_location_types`) on 2026-10-07 for feature #418. The location type CHECK now accepts 24 grouped options, retaining POOL/TRACK/GYM/OTHER. A rollback-only live assertion accepted all 24, rejected an unknown type through locations_type_check and left zero temporary rows. Types were regenerated and compared unchanged; RLS, columns and existing data are unchanged.

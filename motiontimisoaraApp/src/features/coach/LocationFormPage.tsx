@@ -11,6 +11,7 @@ import { createLocation, getLocationById, updateLocation } from '@/api/coach'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import LocationTypeOptions from '@/components/location-form/LocationTypeOptions'
 import { cn } from '@/lib/utils'
 
 const selectCls =
@@ -85,10 +86,15 @@ export default function LocationFormPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <Link to="/coach/locations" className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm">
+      <Link
+        to="/coach/locations"
+        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
+      >
         <ArrowLeft className="size-4" /> Înapoi
       </Link>
-      <h1 className="font-display mt-4 text-2xl font-bold">{isEdit ? 'Editează locație' : 'Locație nouă'}</h1>
+      <h1 className="font-display mt-4 text-2xl font-bold">
+        {isEdit ? 'Editează locație' : 'Locație nouă'}
+      </h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4" noValidate>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -100,10 +106,7 @@ export default function LocationFormPage() {
           <div className="space-y-1.5">
             <Label htmlFor="type">Tip</Label>
             <select id="type" className={cn(selectCls)} {...register('type')}>
-              <option value="POOL">Bazin</option>
-              <option value="TRACK">Pistă</option>
-              <option value="GYM">Sală</option>
-              <option value="OTHER">Alt tip</option>
+              <LocationTypeOptions />
             </select>
           </div>
           <div className="space-y-1.5">

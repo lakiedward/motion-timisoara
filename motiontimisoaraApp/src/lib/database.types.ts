@@ -2283,6 +2283,7 @@ export type Database = {
           capacity: number | null
           city: string | null
           club_id: string | null
+          county: string | null
           created_by_user_id: string | null
           description: string | null
           fts: unknown
@@ -2298,6 +2299,7 @@ export type Database = {
           capacity?: number | null
           city?: string | null
           club_id?: string | null
+          county?: string | null
           created_by_user_id?: string | null
           description?: string | null
           fts?: unknown
@@ -2313,6 +2315,7 @@ export type Database = {
           capacity?: number | null
           city?: string | null
           club_id?: string | null
+          county?: string | null
           created_by_user_id?: string | null
           description?: string | null
           fts?: unknown
@@ -2798,6 +2801,19 @@ export type Database = {
       activity_spots_remaining: {
         Args: { p_activity_id: string }
         Returns: number
+      }
+      admin_stats: {
+        Args: never
+        Returns: {
+          active_invite_codes: number
+          camps: number
+          clubs: number
+          coaches: number
+          competitions: number
+          courses: number
+          new_users_7d: number
+          users: number
+        }[]
       }
       admin_users: {
         Args: never

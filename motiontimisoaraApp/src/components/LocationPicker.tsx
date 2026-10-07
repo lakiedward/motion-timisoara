@@ -10,6 +10,7 @@ import { geocoding, type GeoPlace } from '@/api/geocoding'
 import { markerIcon } from '@/lib/map-marker'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
 import {
   basemapAttribution,
   cartoTileUrl,
@@ -26,11 +27,18 @@ export type PickedPoint = {
   lng: number
   address: string | null
   city: string | null
+  county?: string | null
+  resolved: boolean
 }
 
 type Props = {
   value: { lat: number; lng: number } | null
   onChange: (punct: PickedPoint) => void
+  address: string
+  onAddressChange: (address: string) => void
+  city?: string
+  county?: string
+  onResolvingChange?: (resolving: boolean) => void
   invalid?: boolean
   errorId?: string
 }
@@ -63,25 +71,42 @@ function AsculaApasarea({ onPick }: { onPick: (lat: number, lng: number) => void
   return null
 }
 
-export default function LocationPicker({ value, onChange, invalid, errorId }: Props) {
+export default function LocationPicker({
+  value,
+  onChange,
+  address,
+  onAddressChange,
+  city,
+  county,
+  onResolvingChange,
+  invalid,
+  errorId,
+}: Props) {
   const carto = cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY)
-  const [cautare, setCautare] = useState('')
   const [cautareAmanata, setCautareAmanata] = useState('')
   const [listaDeschisa, setListaDeschisa] = useState(false)
   const [indexActiv, setIndexActiv] = useState(-1)
   const [seRezolvaPunctul, setSeRezolvaPunctul] = useState(false)
+  const [pointError, setPointError] = useState(false)
+  const [missingAddress, setMissingAddress] = useState(false)
 
   useEffect(() => {
-    const t = window.setTimeout(() => setCautareAmanata(cautare), 300)
+    const t = window.setTimeout(() => setCautareAmanata(address), 300)
     return () => window.clearTimeout(t)
-  }, [cautare])
+  }, [address])
 
-  const { data: sugestii = [], isFetching } = useQuery({
-    queryKey: ['geocode', cautareAmanata],
-    queryFn: ({ signal }) => geocoding.search(cautareAmanata, signal),
-    enabled: cautareAmanata.trim().length >= 3,
+  const {
+    data: searchResults = [],
+    isFetching,
+    isError: searchError,
+    refetch: retrySearch,
+  } = useQuery({
+    queryKey: ['geocode', cautareAmanata, city, county],
+    queryFn: ({ signal }) => geocoding.search(cautareAmanata, signal, { city, county }),
+    enabled: listaDeschisa && cautareAmanata.trim().length >= 3,
     staleTime: 24 * 60 * 60 * 1000,
   })
+  const sugestii = cautareAmanata === address ? searchResults : []
 
   const numarPunct = useRef(0)
   const anulare = useRef<AbortController | null>(null)
@@ -92,31 +117,61 @@ export default function LocationPicker({ value, onChange, invalid, errorId }: Pr
     return ++numarPunct.current
   }
 
-  useEffect(() => () => anulare.current?.abort(), [])
+  useEffect(
+    () => () => {
+      anulare.current?.abort()
+      onResolvingChange?.(false)
+    },
+    [onResolvingChange],
+  )
+
+  const setResolving = (resolving: boolean) => {
+    setSeRezolvaPunctul(resolving)
+    onResolvingChange?.(resolving)
+  }
 
   const alegeSugestia = (loc: GeoPlace) => {
     incepePunctNou()
-    setSeRezolvaPunctul(false)
-    setCautare(loc.label)
+    setResolving(false)
+    setPointError(false)
+    setMissingAddress(!loc.address)
     setListaDeschisa(false)
     setIndexActiv(-1)
-    onChange({ lat: loc.lat, lng: loc.lng, address: loc.address, city: loc.city })
+    onChange({
+      lat: loc.lat,
+      lng: loc.lng,
+      address: loc.address,
+      city: loc.city,
+      county: loc.county,
+      resolved: true,
+    })
   }
 
   const punePunctul = async (lat: number, lng: number) => {
     const alMeu = incepePunctNou()
     const ctrl = new AbortController()
     anulare.current = ctrl
-    onChange({ lat, lng, address: null, city: null })
-    setSeRezolvaPunctul(true)
+    setListaDeschisa(false)
+    setPointError(false)
+    setMissingAddress(false)
+    onChange({ lat, lng, address: null, city: null, county: null, resolved: false })
+    setResolving(true)
     try {
       const loc = await geocoding.reverse(lat, lng, ctrl.signal)
-      if (alMeu !== numarPunct.current) return
-      if (loc) onChange({ lat, lng, address: loc.address, city: loc.city })
+      if (alMeu !== numarPunct.current || ctrl.signal.aborted) return
+      onChange({
+        lat,
+        lng,
+        address: loc?.address ?? null,
+        city: loc?.city ?? null,
+        county: loc?.county ?? null,
+        resolved: true,
+      })
+      setMissingAddress(!loc?.address)
     } catch {
-      return
+      if (alMeu === numarPunct.current && !ctrl.signal.aborted) setPointError(true)
     } finally {
-      if (alMeu === numarPunct.current) setSeRezolvaPunctul(false)
+      if (alMeu === numarPunct.current) setResolving(false)
     }
   }
 
@@ -139,19 +194,23 @@ export default function LocationPicker({ value, onChange, invalid, errorId }: Pr
 
   return (
     <div className="space-y-1.5">
-      <Label htmlFor="cautare-adresa">Caută adresa</Label>
+      <Label htmlFor="address">Adresă</Label>
 
       <div className="relative">
         <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
         <Input
-          id="cautare-adresa"
+          id="address"
           type="search"
           autoComplete="off"
           className="h-11 pl-9 lg:h-9"
           placeholder="Strada, numărul sau numele locului"
-          value={cautare}
+          value={address}
           onChange={(e) => {
-            setCautare(e.target.value)
+            incepePunctNou()
+            setResolving(false)
+            setPointError(false)
+            setMissingAddress(false)
+            onAddressChange(e.target.value)
             setListaDeschisa(true)
             setIndexActiv(-1)
           }}
@@ -161,6 +220,10 @@ export default function LocationPicker({ value, onChange, invalid, errorId }: Pr
           role="combobox"
           aria-expanded={listaDeschisa && sugestii.length > 0}
           aria-controls="sugestii-adresa"
+          aria-autocomplete="list"
+          aria-activedescendant={
+            listaDeschisa && indexActiv >= 0 ? `adresa-option-${indexActiv}` : undefined
+          }
           aria-invalid={invalid}
           aria-describedby={errorId}
         />
@@ -172,7 +235,7 @@ export default function LocationPicker({ value, onChange, invalid, errorId }: Pr
           <ul
             id="sugestii-adresa"
             role="listbox"
-            className="bg-popover text-popover-foreground absolute top-full right-0 left-0 z-[1100] mt-1 overflow-hidden rounded-md border shadow-md"
+            className="bg-popover text-popover-foreground absolute top-full right-0 left-0 z-50 mt-1 overflow-hidden rounded-md border shadow-md"
             onMouseDown={(e) => e.preventDefault()}
           >
             {sugestii.map((loc, i) => (
@@ -180,6 +243,7 @@ export default function LocationPicker({ value, onChange, invalid, errorId }: Pr
                 <button
                   type="button"
                   role="option"
+                  id={`adresa-option-${i}`}
                   aria-selected={i === indexActiv}
                   onClick={() => alegeSugestia(loc)}
                   onMouseEnter={() => setIndexActiv(i)}
@@ -204,8 +268,31 @@ export default function LocationPicker({ value, onChange, invalid, errorId }: Pr
       </div>
 
       <p className="text-muted-foreground text-xs">
-        Alege din listă sau apasă pe hartă. Pinul poate fi tras pentru ajustare fină.
+        Caută adresa sau pune punctul pe hartă. Județul, orașul și adresa se completează automat.
       </p>
+      {listaDeschisa &&
+        cautareAmanata.trim().length >= 3 &&
+        !isFetching &&
+        sugestii.length === 0 &&
+        !searchError && (
+          <p role="status" className="text-muted-foreground text-xs">
+            Nu am găsit adresa. Poți pune punctul pe hartă.
+          </p>
+        )}
+      {listaDeschisa && searchError && (
+        <div role="alert" className="space-y-2">
+          <p className="text-destructive text-xs">Nu am putut căuta adresa.</p>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => void retrySearch()}
+          >
+            Reîncearcă
+          </Button>
+        </div>
+      )}
 
       <div className="mt-location-picker h-64 w-full overflow-hidden rounded-md border sm:h-80">
         <MapContainer
@@ -237,6 +324,26 @@ export default function LocationPicker({ value, onChange, invalid, errorId }: Pr
       </div>
 
       {seRezolvaPunctul && <p className="text-muted-foreground text-xs">Caut adresa punctului…</p>}
+      {pointError && value && (
+        <div role="alert" className="space-y-2">
+          <p className="text-destructive text-xs">
+            Nu am putut afla adresa punctului. Reîncearcă sau completează câmpurile de mai sus.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11"
+            onClick={() => void punePunctul(value.lat, value.lng)}
+          >
+            Reîncearcă
+          </Button>
+        </div>
+      )}
+      {missingAddress && (
+        <p role="status" className="text-muted-foreground text-xs">
+          Punctul este ales. Nu am găsit strada; completează adresa mai sus.
+        </p>
+      )}
     </div>
   )
 }
