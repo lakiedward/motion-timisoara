@@ -2,19 +2,24 @@ import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { useQuery } from '@tanstack/react-query'
 import { UserPlus } from 'lucide-react'
 
-import { createCoachAccount, type CreatedCoach } from '@/api/admin'
+import { createCoachAccount, getAllClubs, type CreatedCoach } from '@/api/admin'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import CopyInviteValueButton from './CopyInviteValueButton'
 
+const selectClass =
+  'border-input focus-visible:border-ring focus-visible:ring-ring/50 min-h-11 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] disabled:opacity-50'
+
 const coachSchema = z.object({
   name: z.string().trim().min(2, 'Minim 2 caractere'),
   email: z.string().trim().email('Email invalid'),
   phone: z.string().optional(),
+  clubId: z.string().optional(),
 })
 type CoachValues = z.infer<typeof coachSchema>
 
@@ -22,7 +27,7 @@ export default function CreateCoachForm() {
   const pending = useRef(false)
   const toggleButton = useRef<HTMLButtonElement>(null)
   const [isCreating, setIsCreating] = useState(false)
-  const [created, setCreated] = useState<CreatedCoach | null>(null)
+  const [created, setCreated] = useState<(CreatedCoach & { clubName: string | null }) | null>(null)
   const [failure, setFailure] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
   const {
@@ -31,7 +36,8 @@ export default function CreateCoachForm() {
     reset,
     setFocus,
     formState: { errors },
-  } = useForm<CoachValues>({ resolver: zodResolver(coachSchema) })
+  } = useForm<CoachValues>({ resolver: zodResolver(coachSchema), defaultValues: { clubId: '' } })
+  const clubs = useQuery({ queryKey: ['admin-clubs'], queryFn: getAllClubs, retry: false })
 
   const onCreateCoach = async (values: CoachValues) => {
     if (pending.current) return
@@ -43,8 +49,10 @@ export default function CreateCoachForm() {
         name: values.name,
         email: values.email,
         phone: values.phone || undefined,
+        clubId: values.clubId || undefined,
       })
-      setCreated(result)
+      const club = clubs.data?.find((item) => item.id === result.clubId)
+      setCreated({ ...result, clubName: result.clubId ? (club?.name ?? 'clubul ales') : null })
       reset()
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Nu am putut crea antrenorul.'
@@ -69,8 +77,8 @@ export default function CreateCoachForm() {
             Adaugă antrenor direct
           </h2>
           <p className="text-muted-foreground text-sm">
-            Creezi un cont de antrenor independent (fără club). Vei primi o parolă temporară de
-            transmis antrenorului.
+            Creezi un cont de antrenor, independent sau direct într-un club. Vei primi o parolă
+            temporară de transmis antrenorului.
           </p>
           <div>
             <Button
@@ -95,6 +103,11 @@ export default function CreateCoachForm() {
               </p>
               <p className="break-all text-sm font-semibold">
                 Ultimul antrenor creat: {created.email}
+              </p>
+              <p className="text-sm">
+                {created.clubName
+                  ? `Adăugat în clubul ${created.clubName}.`
+                  : 'Antrenor independent, fără club.'}
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className="text-muted-foreground text-sm">Parolă temporară:</span>
@@ -159,7 +172,43 @@ export default function CreateCoachForm() {
                 disabled={isCreating}
               />
             </div>
-            <div className="flex items-end">
+            <div className="space-y-1.5">
+              <Label htmlFor="coach-club">Club (opțional)</Label>
+              <select
+                id="coach-club"
+                className={selectClass}
+                {...register('clubId')}
+                disabled={isCreating}
+                aria-describedby={clubs.isError ? 'coach-club-error' : undefined}
+              >
+                <option value="">Fără club — antrenor independent</option>
+                {(clubs.data ?? []).map((club) => (
+                  <option key={club.id} value={club.id}>
+                    {club.city ? `${club.name} (${club.city})` : club.name}
+                  </option>
+                ))}
+              </select>
+              {clubs.isPending && (
+                <p className="text-muted-foreground text-xs">Se încarcă cluburile…</p>
+              )}
+              {clubs.isError && (
+                <div id="coach-club-error" className="flex flex-wrap items-center gap-2">
+                  <p className="text-destructive text-xs">
+                    Lista cluburilor nu s-a încărcat. Poți crea un antrenor independent.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="min-h-11"
+                    disabled={clubs.isFetching}
+                    onClick={() => void clubs.refetch()}
+                  >
+                    {clubs.isFetching ? 'Se reîncearcă…' : 'Reîncearcă'}
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div className="sm:col-span-2">
               <Button type="submit" className="min-h-11" disabled={isCreating}>
                 <UserPlus /> {isCreating ? 'Se creează…' : 'Creează antrenor'}
               </Button>

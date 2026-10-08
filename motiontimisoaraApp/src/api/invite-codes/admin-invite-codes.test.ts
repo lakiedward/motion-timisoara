@@ -98,3 +98,41 @@ test.each([null, {}, { userId: 'synthetic', email: 'coach@example.test' }])(
     ).rejects.toThrow('nu confirmă')
   },
 )
+
+test('coach API sends the chosen club and returns the confirmed club', async () => {
+  const clubId = '00000000-0000-4000-8000-0000000000a1'
+  mocks.invoke.mockResolvedValue({
+    data: { userId: 'synthetic', email: 'coach@example.test', tempPassword: 'synthetic', clubId },
+    error: null,
+  })
+  await expect(
+    createCoachAccount({ name: 'Test Coach', email: 'coach@example.test', clubId }),
+  ).resolves.toEqual({
+    userId: 'synthetic',
+    email: 'coach@example.test',
+    tempPassword: 'synthetic',
+    clubId,
+  })
+  expect(mocks.invoke).toHaveBeenCalledWith('create-managed-coach', {
+    body: { name: 'Test Coach', email: 'coach@example.test', clubId },
+  })
+})
+
+test('coach API rejects a response that does not confirm the chosen club', async () => {
+  mocks.invoke.mockResolvedValue({
+    data: {
+      userId: 'synthetic',
+      email: 'coach@example.test',
+      tempPassword: 'synthetic',
+      clubId: null,
+    },
+    error: null,
+  })
+  await expect(
+    createCoachAccount({
+      name: 'Test Coach',
+      email: 'coach@example.test',
+      clubId: '00000000-0000-4000-8000-0000000000a1',
+    }),
+  ).rejects.toThrow('nu confirmă adăugarea antrenorului în club')
+})

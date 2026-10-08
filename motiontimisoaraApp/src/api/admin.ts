@@ -276,12 +276,14 @@ export interface CreatedCoach {
   userId: string
   email: string
   tempPassword: string
+  clubId: string | null
 }
 
 export async function createCoachAccount(input: {
   name: string
   email: string
   phone?: string
+  clubId?: string
 }): Promise<CreatedCoach> {
   const { data, error } = await supabase.functions.invoke('create-managed-coach', { body: input })
   if (error) {
@@ -308,7 +310,11 @@ export async function createCoachAccount(input: {
   ) {
     throw new Error('Răspunsul nu confirmă un cont de antrenor finalizat.')
   }
-  return data as CreatedCoach
+  const clubId = typeof data.clubId === 'string' ? data.clubId : null
+  if (input.clubId && clubId !== input.clubId) {
+    throw new Error('Răspunsul nu confirmă adăugarea antrenorului în club.')
+  }
+  return { userId: data.userId, email: data.email, tempPassword: data.tempPassword, clubId }
 }
 
 export type AdminClub = Pick<Tables<'clubs'>, 'id' | 'name' | 'city' | 'email'>

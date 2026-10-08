@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   generate: vi.fn(),
   deleteCode: vi.fn(),
   createCoach: vi.fn(),
+  getClubs: vi.fn(),
   copy: vi.fn(),
   success: vi.fn(),
   error: vi.fn(),
@@ -20,6 +21,7 @@ vi.mock('@/api/admin', async (original) => ({
   generateCoachInviteCode: mocks.generate,
   deleteInviteCode: mocks.deleteCode,
   createCoachAccount: mocks.createCoach,
+  getAllClubs: mocks.getClubs,
 }))
 vi.mock('sonner', () => ({ toast: { success: mocks.success, error: mocks.error } }))
 
@@ -70,6 +72,7 @@ beforeEach(() => {
   mocks.generate.mockResolvedValue('SYNTHETIC-NEW')
   mocks.copy.mockResolvedValue(undefined)
   mocks.deleteCode.mockResolvedValue(undefined)
+  mocks.getClubs.mockResolvedValue([])
   Object.defineProperty(navigator, 'clipboard', {
     configurable: true,
     value: { writeText: mocks.copy },
