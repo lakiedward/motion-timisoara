@@ -2,6 +2,14 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 
 import { geocoding } from './geocoding'
 
+vi.mock('./geocoding/fallback', () => ({
+  reverseFallback: vi.fn(async () => ({
+    city: 'Timișoara',
+    county: 'Timiș',
+    address: 'Pădurea Verde',
+  })),
+}))
+
 let raspunsuri: unknown[] = []
 
 let cereri: string[] = []
@@ -88,12 +96,60 @@ test('cererea cere lang=default, niciodată lang=ro', async () => {
   expect(cereri[0]).toContain('lang=default')
   expect(cereri[0]).not.toContain('lang=ro')
 })
-test('cererea limitează rezultatele la România și păstrează bias-ul Timișoara', async () => {
+test('cererea permite localități internaționale și păstrează bias-ul Timișoara', async () => {
   raspunsuri = [{ features: [] }]
   await geocoding.search('alba iulia')
-  expect(cereri[0]).toContain('countrycode=RO')
+  expect(cereri[0]).not.toContain('countrycode=')
   expect(cereri[0]).not.toContain('bbox=')
   expect(cereri[0]).toContain('lat=45.7489')
+})
+
+test.each(['Zell am See', 'Radstadt'])(
+  'international town %s preserves Salzburg and does not invent a street',
+  async (town) => {
+    raspunsuri = [
+      {
+        features: [
+          feature(
+            {
+              type: 'city',
+              name: town,
+              state: 'Salzburg',
+              country: 'Österreich',
+              countrycode: 'AT',
+            },
+            12.8,
+            47.3,
+          ),
+        ],
+      },
+    ]
+    const [place] = await geocoding.search(town)
+    expect(place).toMatchObject({ city: town, county: 'Salzburg', address: null })
+    expect(place.detail).toContain('Österreich')
+  },
+)
+
+test('changing town preserves the typed query instead of appending the previous town', async () => {
+  raspunsuri = [
+    {
+      features: [
+        feature(
+          { name: 'Radstadt', type: 'city', state: 'Salzburg', countrycode: 'AT' },
+          13.46,
+          47.38,
+        ),
+      ],
+    },
+  ]
+  const [place] = await geocoding.search('Radstadt', undefined, {
+    lat: 47.32396,
+    lng: 12.79632,
+  })
+  expect(cereri).toHaveLength(1)
+  expect(new URL(cereri[0]).searchParams.get('q')).toBe('Radstadt')
+  expect(new URL(cereri[0]).searchParams.get('lat')).toBe('47.32396')
+  expect(place.city).toBe('Radstadt')
 })
 
 test('sub trei litere nu se întreabă serverul deloc', async () => {
@@ -120,19 +176,17 @@ test('județul este separat de localitate și normalizat din state sau county', 
   expect(county.county).toBe('Timiș')
 })
 
-test('căutarea include localitatea și județul selectate fără limitarea Timișoara', async () => {
-  await geocoding.search('Strada Sportului', undefined, { city: 'Arad', county: 'Arad' })
-  expect(new URL(cereri[0]).searchParams.get('q')).toBe('Strada Sportului, Arad, Arad')
+test('căutarea preferă punctul ales fără să limiteze rezultatele la el', async () => {
+  await geocoding.search('Strada Sportului', undefined, { lat: 46.17, lng: 21.32 })
+  expect(new URL(cereri[0]).searchParams.get('q')).toBe('Strada Sportului')
+  expect(new URL(cereri[0]).searchParams.get('lat')).toBe('46.17')
   expect(cereri[0]).not.toContain('bbox=')
 })
-test('reverse încearcă întâi casa, apoi orice, când nu găsește casă', async () => {
-  raspunsuri = [
-    { features: [] },
-    { features: [feature({ name: 'Pădurea Verde', city: 'Timișoara' }, 21.27, 45.77)] },
-  ]
+test('reverse folosește sursa independentă când Photon nu găsește adresa', async () => {
+  raspunsuri = [{ features: [] }]
   const loc = await geocoding.reverse(45.77, 21.27)
-  expect(cereri[0]).toContain('layer=house')
-  expect(cereri[1]).not.toContain('layer=house')
+  expect(cereri).toHaveLength(1)
+  expect(cereri[0]).not.toContain('layer=house')
   expect(loc?.city).toBe('Timișoara')
 })
 

@@ -85,7 +85,7 @@ export default function ClubLocationFormPage() {
         address: existing.address ?? '',
         city: existing.city ?? '',
         county:
-          normalizeCounty(existing.county) ?? countyForCity(existing.city) ?? existing.county ?? '',
+          normalizeCounty(existing.county) ?? existing.county ?? countyForCity(existing.city) ?? '',
         lat: existing.lat,
         lng: existing.lng,
       })
@@ -120,7 +120,7 @@ export default function ClubLocationFormPage() {
     setValue('city', location.city ?? '', { shouldDirty: true })
     setValue(
       'county',
-      normalizeCounty(location.county) ?? countyForCity(location.city) ?? location.county ?? '',
+      normalizeCounty(location.county) ?? location.county ?? countyForCity(location.city) ?? '',
       { shouldDirty: true },
     )
     setValue('lat', location.lat, { shouldDirty: true })
@@ -247,8 +247,6 @@ export default function ClubLocationFormPage() {
           key={pickerVersion}
           value={punct}
           address={address}
-          city={city}
-          county={county}
           onResolvingChange={setIsResolvingAddress}
           onAddressChange={(nextAddress) => setValue('address', nextAddress, { shouldDirty: true })}
           invalid={!!errors.lat}
@@ -268,7 +266,7 @@ export default function ClubLocationFormPage() {
             void trigger('lat')
             if (p.resolved) {
               const nextCounty =
-                normalizeCounty(p.county) ?? countyForCity(p.city) ?? p.county ?? ''
+                normalizeCounty(p.county) ?? p.county ?? countyForCity(p.city) ?? ''
               setValue('county', nextCounty, { shouldDirty: true })
               setValue('city', p.city ? cityForCounty(p.city, nextCounty) : '', {
                 shouldDirty: true,
