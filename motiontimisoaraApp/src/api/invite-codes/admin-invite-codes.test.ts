@@ -134,5 +134,20 @@ test('coach API rejects a response that does not confirm the chosen club', async
       email: 'coach@example.test',
       clubId: '00000000-0000-4000-8000-0000000000a1',
     }),
-  ).rejects.toThrow('nu confirmă adăugarea antrenorului în club')
+  ).rejects.toThrow('nu confirmă clubul ales')
+})
+
+test('coach API rejects an unexpected club for an independent coach', async () => {
+  mocks.invoke.mockResolvedValue({
+    data: {
+      userId: 'synthetic',
+      email: 'coach@example.test',
+      tempPassword: 'synthetic',
+      clubId: '00000000-0000-4000-8000-0000000000a1',
+    },
+    error: null,
+  })
+  await expect(
+    createCoachAccount({ name: 'Test Coach', email: 'coach@example.test' }),
+  ).rejects.toThrow('nu confirmă clubul ales')
 })

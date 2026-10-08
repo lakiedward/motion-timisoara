@@ -311,8 +311,8 @@ export async function createCoachAccount(input: {
     throw new Error('Răspunsul nu confirmă un cont de antrenor finalizat.')
   }
   const clubId = typeof data.clubId === 'string' ? data.clubId : null
-  if (input.clubId && clubId !== input.clubId) {
-    throw new Error('Răspunsul nu confirmă adăugarea antrenorului în club.')
+  if (clubId !== (input.clubId ?? null)) {
+    throw new Error('Răspunsul nu confirmă clubul ales pentru antrenor.')
   }
   return { userId: data.userId, email: data.email, tempPassword: data.tempPassword, clubId }
 }
