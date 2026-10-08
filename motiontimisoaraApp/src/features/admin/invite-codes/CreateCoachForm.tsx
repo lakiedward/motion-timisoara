@@ -16,7 +16,8 @@ const selectClass =
   'border-input focus-visible:border-ring focus-visible:ring-ring/50 min-h-11 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] disabled:opacity-50'
 
 const coachSchema = z.object({
-  name: z.string().trim().min(2, 'Minim 2 caractere'),
+  firstName: z.string().trim().min(2, 'Minim 2 caractere'),
+  lastName: z.string().trim().min(2, 'Minim 2 caractere'),
   email: z.string().trim().email('Email invalid'),
   phone: z.string().optional(),
   clubId: z.string().optional(),
@@ -36,7 +37,10 @@ export default function CreateCoachForm() {
     reset,
     setFocus,
     formState: { errors },
-  } = useForm<CoachValues>({ resolver: zodResolver(coachSchema), defaultValues: { clubId: '' } })
+  } = useForm<CoachValues>({
+    resolver: zodResolver(coachSchema),
+    defaultValues: { firstName: '', lastName: '', email: '', phone: '', clubId: '' },
+  })
   const clubs = useQuery({ queryKey: ['admin-clubs'], queryFn: getAllClubs, retry: false })
 
   const onCreateCoach = async (values: CoachValues) => {
@@ -46,7 +50,7 @@ export default function CreateCoachForm() {
     setFailure(null)
     try {
       const result = await createCoachAccount({
-        name: values.name,
+        name: `${values.firstName} ${values.lastName}`,
         email: values.email,
         phone: values.phone || undefined,
         clubId: values.clubId || undefined,
@@ -65,7 +69,7 @@ export default function CreateCoachForm() {
   const onToggle = () => {
     if (pending.current) return
     setExpanded(!expanded)
-    if (!expanded) requestAnimationFrame(() => setFocus('name'))
+    if (!expanded) requestAnimationFrame(() => setFocus('firstName'))
     else toggleButton.current?.focus()
   }
 
@@ -131,18 +135,36 @@ export default function CreateCoachForm() {
             noValidate
           >
             <div className="space-y-1.5">
-              <Label htmlFor="coach-name">Nume</Label>
+              <Label htmlFor="coach-first-name">Prenume</Label>
               <Input
-                id="coach-name"
+                id="coach-first-name"
                 className="min-h-11"
-                {...register('name')}
+                autoComplete="off"
+                {...register('firstName')}
                 disabled={isCreating}
-                aria-invalid={!!errors.name}
-                aria-describedby={errors.name ? 'coach-name-error' : undefined}
+                aria-invalid={!!errors.firstName}
+                aria-describedby={errors.firstName ? 'coach-first-name-error' : undefined}
               />
-              {errors.name && (
-                <p id="coach-name-error" className="text-destructive text-xs">
-                  {errors.name.message}
+              {errors.firstName && (
+                <p id="coach-first-name-error" className="text-destructive text-xs">
+                  {errors.firstName.message}
+                </p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="coach-last-name">Nume</Label>
+              <Input
+                id="coach-last-name"
+                className="min-h-11"
+                autoComplete="off"
+                {...register('lastName')}
+                disabled={isCreating}
+                aria-invalid={!!errors.lastName}
+                aria-describedby={errors.lastName ? 'coach-last-name-error' : undefined}
+              />
+              {errors.lastName && (
+                <p id="coach-last-name-error" className="text-destructive text-xs">
+                  {errors.lastName.message}
                 </p>
               )}
             </div>

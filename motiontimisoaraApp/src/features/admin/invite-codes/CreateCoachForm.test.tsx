@@ -37,7 +37,8 @@ function renderForm() {
 }
 
 function fillCoach() {
-  fireEvent.change(screen.getByLabelText('Nume'), { target: { value: 'Antrenor Test' } })
+  fireEvent.change(screen.getByLabelText('Prenume'), { target: { value: 'Antrenor' } })
+  fireEvent.change(screen.getByLabelText('Nume'), { target: { value: 'Test' } })
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'coach@example.test' } })
 }
 
@@ -112,4 +113,49 @@ test('failed club list keeps independent creation available with a retry', async
   fireEvent.click(screen.getByRole('button', { name: 'Reîncearcă' }))
   expect(await screen.findByRole('option', { name: 'Alt Club' })).toBeVisible()
   await waitFor(() => expect(screen.queryByText(/Lista cluburilor nu s-a încărcat/)).toBeNull())
+})
+
+test('first and last name are validated separately and sent as one full name', async () => {
+  mocks.createCoach.mockResolvedValue({
+    userId: 'synthetic-user',
+    email: 'coach@example.test',
+    tempPassword: 'synthetic-only-value',
+    clubId: null,
+  })
+  renderForm()
+  fireEvent.change(screen.getByLabelText('Prenume'), { target: { value: 'A' } })
+  fireEvent.change(screen.getByLabelText('Nume'), { target: { value: 'Popescu' } })
+  fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'coach@example.test' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Creează antrenor' }))
+  expect(await screen.findByText('Minim 2 caractere')).toBeVisible()
+  expect(screen.getByLabelText('Prenume')).toHaveAttribute('aria-invalid', 'true')
+  expect(screen.getByLabelText('Nume')).toHaveAttribute('aria-invalid', 'false')
+  expect(mocks.createCoach).not.toHaveBeenCalled()
+  fireEvent.change(screen.getByLabelText('Prenume'), { target: { value: '  Ana Maria ' } })
+  fireEvent.change(screen.getByLabelText('Nume'), { target: { value: ' Popescu ' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Creează antrenor' }))
+  await screen.findByText('Antrenor independent, fără club.')
+  expect(mocks.createCoach.mock.calls[0][0].name).toBe('Ana Maria Popescu')
+})
+
+test('fields are cleared after success so the same surname can be entered again', async () => {
+  mocks.createCoach.mockImplementation(async (input: { email: string }) => ({
+    userId: 'synthetic-user',
+    email: input.email,
+    tempPassword: 'synthetic-only-value',
+    clubId: null,
+  }))
+  renderForm()
+  fillCoach()
+  fireEvent.click(screen.getByRole('button', { name: 'Creează antrenor' }))
+  await screen.findByText('Ultimul antrenor creat: coach@example.test')
+  expect(screen.getByLabelText('Prenume')).toHaveValue('')
+  expect(screen.getByLabelText('Nume')).toHaveValue('')
+  expect(screen.getByLabelText('Email')).toHaveValue('')
+  fireEvent.change(screen.getByLabelText('Prenume'), { target: { value: 'Ion' } })
+  fireEvent.change(screen.getByLabelText('Nume'), { target: { value: 'Test' } })
+  fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'second@example.test' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Creează antrenor' }))
+  await screen.findByText('Ultimul antrenor creat: second@example.test')
+  expect(mocks.createCoach.mock.calls[1][0].name).toBe('Ion Test')
 })
