@@ -7,6 +7,10 @@ on:
       - 'motiontimisoaraApp/**'
       - '.github/workflows/app-ci.yml'
       - 'tests/native-location/**'
+      - 'supabase/functions/location-reverse/**'
+      - 'supabase/migrations/00084_location_reverse_cache.sql'
+      - 'supabase/migrations/00085_location_reverse_provider.sql'
+      - 'supabase/tests/location-reverse/**'
       - 'supabase/migrations/00081_restrict_sport_deletion.sql'
       - 'supabase/tests/sport-deletion/**'
       - 'supabase/migrations/00055_camp_announcement_audience.sql'
@@ -36,6 +40,10 @@ on:
       - 'motiontimisoaraApp/**'
       - '.github/workflows/app-ci.yml'
       - 'tests/native-location/**'
+      - 'supabase/functions/location-reverse/**'
+      - 'supabase/migrations/00084_location_reverse_cache.sql'
+      - 'supabase/migrations/00085_location_reverse_provider.sql'
+      - 'supabase/tests/location-reverse/**'
       - 'supabase/migrations/00081_restrict_sport_deletion.sql'
       - 'supabase/tests/sport-deletion/**'
       - 'supabase/migrations/00055_camp_announcement_audience.sql'
@@ -62,6 +70,22 @@ on:
       - 'supabase/tests/*camp-adult*'
 
 jobs:
+  location-reverse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.6
+      - run: deno test --no-lock supabase/functions/location-reverse/contract.test.ts
+      - run: deno check --no-lock supabase/functions/location-reverse/index.ts
+      - shell: pwsh
+        run: ./supabase/tests/location-reverse/run.ps1
+
   sport-deletion:
     runs-on: ubuntu-latest
     timeout-minutes: 5

@@ -22,14 +22,14 @@ export default function LocationAddressFields({
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div className="space-y-1.5">
-        <Label htmlFor="county">Județ</Label>
+        <Label htmlFor="county">Județ / regiune</Label>
         <select
           id="county"
           className={locationSelectClassName}
           value={county}
           onChange={(event) => onCountyChange(event.target.value)}
         >
-          <option value="">Alege județul</option>
+          <option value="">Alege județul sau regiunea</option>
           {counties.map((name) => (
             <option key={name} value={name}>
               {name}

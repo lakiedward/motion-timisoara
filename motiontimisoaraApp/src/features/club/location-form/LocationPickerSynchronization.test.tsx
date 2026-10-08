@@ -38,8 +38,6 @@ function Picker() {
       <LocationPicker
         value={point}
         address={address}
-        city="Arad"
-        county="Arad"
         onAddressChange={setAddress}
         onChange={(next) => {
           setPoint(next)
@@ -115,10 +113,11 @@ test('reverse failure offers retry and recovers the same point', async () => {
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 })
 
-test('keyboard suggestion selection uses one address and sends city/county context', async () => {
+test('keyboard suggestion selection uses one address and searches around the selected point', async () => {
   const user = userEvent.setup()
   vi.mocked(geocoding.search).mockResolvedValue([place])
   renderPicker()
+  await act(async () => clickMap({ latlng: { lat: 46.17, lng: 21.32 } }))
   await user.clear(screen.getByLabelText('Adresă'))
   await user.type(screen.getByLabelText('Adresă'), 'Sportului')
   await screen.findByRole('option', { name: /Sala Sporturilor/ })
@@ -126,7 +125,11 @@ test('keyboard suggestion selection uses one address and sends city/county conte
   expect(screen.getByLabelText('Adresă')).toHaveValue(place.address)
   expect(screen.getByLabelText('Loc ales')).toHaveTextContent('46.17,21.32|Arad|Arad')
   expect(geocoding.search).toHaveBeenLastCalledWith('Sportului', expect.any(AbortSignal), {
-    city: 'Arad',
-    county: 'Arad',
+    lat: 46.17,
+    lng: 21.32,
+    address: place.address,
+    city: place.city,
+    county: place.county,
+    resolved: true,
   })
 })

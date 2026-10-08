@@ -2277,6 +2277,54 @@ export type Database = {
           },
         ]
       }
+      location_reverse_cache: {
+        Row: {
+          coordinate_key: string
+          created_at: string
+          expires_at: string
+          id: string
+          result: Json
+        }
+        Insert: {
+          coordinate_key: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          result: Json
+        }
+        Update: {
+          coordinate_key?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          result?: Json
+        }
+        Relationships: []
+      }
+      location_reverse_provider: {
+        Row: {
+          available_at: string
+          created_at: string
+          id: string
+          lease_token: string | null
+          provider: string
+        }
+        Insert: {
+          available_at?: string
+          created_at?: string
+          id?: string
+          lease_token?: string | null
+          provider: string
+        }
+        Update: {
+          available_at?: string
+          created_at?: string
+          id?: string
+          lease_token?: string | null
+          provider?: string
+        }
+        Relationships: []
+      }
       locations: {
         Row: {
           address: string | null
@@ -2868,6 +2916,7 @@ export type Database = {
         Returns: Json
       }
       cheama_purge_expired_media: { Args: never; Returns: undefined }
+      claim_location_reverse: { Args: { p_key: string }; Returns: Json }
       claim_push_deliveries: { Args: { p_limit?: number }; Returns: Json }
       club_coach_contacts: {
         Args: { p_club_id: string }
@@ -2928,6 +2977,10 @@ export type Database = {
       enrollment_camp_offer: {
         Args: { p_camp_id: string; p_child_id: string }
         Returns: Json
+      }
+      finish_location_reverse: {
+        Args: { p_key: string; p_result: Json; p_token: string }
+        Returns: undefined
       }
       finish_push_delivery: {
         Args: {

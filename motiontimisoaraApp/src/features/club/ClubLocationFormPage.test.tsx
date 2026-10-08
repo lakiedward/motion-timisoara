@@ -105,7 +105,7 @@ test('formularul nu mai are câmpuri de latitudine și longitudine', async () =>
 test('câmpurile păstrate rămân pe ecran, harta se adaugă lângă ele', async () => {
   renderForm()
   await screen.findByDisplayValue('Bazin Audit')
-  for (const eticheta of ['Nume', 'Tip', 'Județ', 'Oraș', 'Adresă']) {
+  for (const eticheta of ['Nume', 'Tip', 'Județ / regiune', 'Oraș', 'Adresă']) {
     expect(screen.getByLabelText(eticheta)).toBeInTheDocument()
   }
   expect(screen.getByRole('heading', { name: 'Editează locație' })).toBeInTheDocument()
@@ -140,7 +140,11 @@ test('o sugestie aleasă umple adresa, orașul și deblochează salvarea', async
   await screen.findByDisplayValue('Bazin Audit')
   await user.type(screen.getByLabelText('Adresă'), 'take ionescu')
 
-  const sugestie = await screen.findByRole('option', { name: /Take Ionescu 46C/ }, { timeout: 5000 })
+  const sugestie = await screen.findByRole(
+    'option',
+    { name: /Take Ionescu 46C/ },
+    { timeout: 5000 },
+  )
   await user.click(sugestie)
 
   expect(screen.getByLabelText('Adresă')).toHaveValue('Bulevardul Take Ionescu 46C')

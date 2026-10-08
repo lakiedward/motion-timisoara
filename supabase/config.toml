@@ -111,6 +111,9 @@ verify_jwt = true
 [functions.bnr-rate]
 verify_jwt = true
 
+[functions.location-reverse]
+verify_jwt = true
+
 [functions.stripe-connect]
 verify_jwt = true
 

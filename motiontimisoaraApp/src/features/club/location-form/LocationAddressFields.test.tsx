@@ -20,11 +20,28 @@ function Fields() {
   )
 }
 
+test.each(['Zell am See', 'Radstadt'])(
+  'foreign locality %s and its region remain selectable',
+  (city) => {
+    render(
+      <LocationAddressFields
+        county="Salzburg"
+        city={city}
+        onCountyChange={() => undefined}
+        onCityChange={() => undefined}
+      />,
+    )
+    expect(screen.getByRole('combobox', { name: 'Județ / regiune' })).toHaveValue('Salzburg')
+    expect(screen.getByRole('combobox', { name: 'Oraș' })).toHaveValue(city)
+    expect(screen.getByRole('option', { name: city })).toBeInTheDocument()
+  },
+)
+
 test('county change clears city and offers only the new county localities', async () => {
   const user = userEvent.setup()
   render(<Fields />)
   expect(screen.getByRole('combobox', { name: 'Oraș' })).toHaveValue('Timișoara')
-  await user.selectOptions(screen.getByRole('combobox', { name: 'Județ' }), 'Arad')
+  await user.selectOptions(screen.getByRole('combobox', { name: 'Județ / regiune' }), 'Arad')
   const city = screen.getByRole('combobox', { name: 'Oraș' })
   expect(city).toHaveValue('')
   expect(screen.queryByRole('option', { name: 'Timișoara' })).not.toBeInTheDocument()

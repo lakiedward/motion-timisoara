@@ -1,5 +1,5 @@
-export async function geocodingRequest<T>(
-  url: string,
+export async function withGeocodingDeadline<T>(
+  operation: (signal: AbortSignal) => Promise<T>,
   timeoutMs: number,
   signal?: AbortSignal,
 ): Promise<T> {
@@ -19,16 +19,25 @@ export async function geocodingRequest<T>(
     }, timeoutMs)
   })
   try {
-    return await Promise.race([
-      (async () => {
-        const response = await fetch(url, { signal: controller.signal })
-        if (!response.ok) throw new Error(`Geocoding ${response.status}`)
-        return (await response.json()) as T
-      })(),
-      interrupted,
-    ])
+    return await Promise.race([operation(controller.signal), interrupted])
   } finally {
     clearTimeout(timer)
     signal?.removeEventListener('abort', onAbort)
   }
+}
+
+export function geocodingRequest<T>(
+  url: string,
+  timeoutMs: number,
+  signal?: AbortSignal,
+): Promise<T> {
+  return withGeocodingDeadline(
+    async (requestSignal) => {
+      const response = await fetch(url, { signal: requestSignal })
+      if (!response.ok) throw new Error(`Geocoding ${response.status}`)
+      return (await response.json()) as T
+    },
+    timeoutMs,
+    signal,
+  )
 }

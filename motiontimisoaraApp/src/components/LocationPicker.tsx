@@ -36,8 +36,6 @@ type Props = {
   onChange: (punct: PickedPoint) => void
   address: string
   onAddressChange: (address: string) => void
-  city?: string
-  county?: string
   onResolvingChange?: (resolving: boolean) => void
   invalid?: boolean
   errorId?: string
@@ -76,8 +74,6 @@ export default function LocationPicker({
   onChange,
   address,
   onAddressChange,
-  city,
-  county,
   onResolvingChange,
   invalid,
   errorId,
@@ -101,8 +97,8 @@ export default function LocationPicker({
     isError: searchError,
     refetch: retrySearch,
   } = useQuery({
-    queryKey: ['geocode', cautareAmanata, city, county],
-    queryFn: ({ signal }) => geocoding.search(cautareAmanata, signal, { city, county }),
+    queryKey: ['geocode', cautareAmanata, value?.lat, value?.lng],
+    queryFn: ({ signal }) => geocoding.search(cautareAmanata, signal, value ?? undefined),
     enabled: listaDeschisa && cautareAmanata.trim().length >= 3,
     staleTime: 24 * 60 * 60 * 1000,
     retry: false,
@@ -269,7 +265,8 @@ export default function LocationPicker({
       </div>
 
       <p className="text-muted-foreground text-xs">
-        Caută adresa sau pune punctul pe hartă. Județul, orașul și adresa se completează automat.
+        Caută adresa sau pune punctul pe hartă. Județul/regiunea, orașul și adresa se completează
+        automat.
       </p>
       {listaDeschisa &&
         cautareAmanata.trim().length >= 3 &&
