@@ -5,6 +5,7 @@ import { ArrowLeft, Globe, Mail, MapPin, Phone } from 'lucide-react'
 import { getPublicClub, publicUrl } from '@/api/public'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import ClubLocationMap from './map/ClubLocationMap'
 
 export default function ClubDetailPage() {
   const { id = '' } = useParams()
@@ -85,8 +86,19 @@ export default function ClubDetailPage() {
           </div>
           <aside className="bg-card shadow-card h-fit space-y-3 rounded-3xl border p-6 text-sm">
             <h3 className="font-display font-bold">Contact</h3>
+            {(club.address || club.city) && (
+              <p className="flex items-start gap-2">
+                <MapPin className="mt-0.5 size-4 shrink-0" />
+                {[club.address, club.city].filter(Boolean).join(', ')}
+              </p>
+            )}
             {club.website && (
-              <a href={club.website} target="_blank" rel="noreferrer" className="text-primary flex items-center gap-2">
+              <a
+                href={club.website}
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary flex items-center gap-2"
+              >
                 <Globe className="size-4" /> Website
               </a>
             )}
@@ -99,6 +111,13 @@ export default function ClubDetailPage() {
               <a href={`tel:${club.phone}`} className="flex items-center gap-2">
                 <Phone className="size-4" /> {club.phone}
               </a>
+            )}
+            {club.lat != null && club.lng != null && (
+              <ClubLocationMap
+                lat={club.lat}
+                lng={club.lng}
+                label={[club.address, club.city].filter(Boolean).join(', ') || club.name}
+              />
             )}
           </aside>
         </div>
