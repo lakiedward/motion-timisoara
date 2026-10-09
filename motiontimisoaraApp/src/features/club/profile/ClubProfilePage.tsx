@@ -12,13 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import ClubImageField from './ClubImageField'
-import {
-  clubProfileSchema,
-  normalizeCui,
-  normalizeIban,
-  normalizeWebsite,
-  type ClubProfileValues,
-} from './clubProfileSchema'
+import { clubProfileSchema, normalizeWebsite, type ClubProfileValues } from './clubProfileSchema'
 
 const EMPTY: ClubProfileValues = {
   name: '',
@@ -29,10 +23,6 @@ const EMPTY: ClubProfileValues = {
   city: '',
   address: '',
   public_email_consent: false,
-  company_name: '',
-  company_cui: '',
-  bank_account: '',
-  bank_name: '',
 }
 
 function toValues(club: Club): ClubProfileValues {
@@ -45,10 +35,6 @@ function toValues(club: Club): ClubProfileValues {
     city: club.city ?? '',
     address: club.address ?? '',
     public_email_consent: club.public_email_consent,
-    company_name: club.company_name ?? '',
-    company_cui: club.company_cui ?? '',
-    bank_account: club.bank_account ?? '',
-    bank_name: club.bank_name ?? '',
   }
 }
 
@@ -96,8 +82,6 @@ export default function ClubProfilePage() {
 
   const onSubmit = async (v: ClubProfileValues) => {
     const website = normalizeWebsite(v.website)
-    const companyCui = normalizeCui(v.company_cui)
-    const bankAccount = normalizeIban(v.bank_account)
     try {
       await updateClub(club.id, {
         name: v.name.trim(),
@@ -108,12 +92,8 @@ export default function ClubProfilePage() {
         city: v.city || null,
         address: v.address || null,
         public_email_consent: v.public_email_consent,
-        company_name: v.company_name || null,
-        company_cui: companyCui || null,
-        bank_account: bankAccount || null,
-        bank_name: v.bank_name || null,
       })
-      reset({ ...v, website, company_cui: companyCui, bank_account: bankAccount })
+      reset({ ...v, website })
       void qc.invalidateQueries({ queryKey: ['my-club'] })
       toast.success('Profil actualizat.')
     } catch {
@@ -173,7 +153,7 @@ export default function ClubProfilePage() {
               Apare pe pagina publică a clubului.
             </p>
           </div>
-          {field('website', 'Website', 'url')}
+          {field('website', 'Website (opțional)', 'url')}
           <div className="grid gap-4 sm:grid-cols-2">
             <ClubImageField clubId={club.id} kind="logo" path={club.logo_storage_path} />
             <ClubImageField clubId={club.id} kind="hero" path={club.hero_photo_storage_path} />
@@ -194,23 +174,6 @@ export default function ClubProfilePage() {
             <input type="checkbox" {...register('public_email_consent')} className="size-4" />
             Afișează emailul public pe pagina clubului
           </label>
-        </section>
-
-        <section aria-labelledby="club-billing-heading" className={cardClass}>
-          <div className="space-y-1">
-            <h2 id="club-billing-heading" className={headingClass}>
-              Date facturare
-            </h2>
-            <p className="text-muted-foreground text-sm">
-              Folosite pentru facturare. Nu apar public.
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {field('company_name', 'Denumire firmă')}
-            {field('company_cui', 'CUI')}
-            {field('bank_name', 'Bancă')}
-            {field('bank_account', 'IBAN')}
-          </div>
         </section>
 
         <Button type="submit" className="min-h-11" disabled={isSubmitting}>

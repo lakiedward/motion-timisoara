@@ -78,39 +78,45 @@ test('a failed load shows an error with retry instead of "Niciun club asociat."'
   expect(await screen.findByLabelText('Nume club')).toHaveValue('Clubul Exemplu')
 })
 
-test('invalid website, IBAN and CUI are rejected under their fields and nothing is saved', async () => {
+test('invalid website and email are rejected under their fields and nothing is saved', async () => {
   renderPage()
   await screen.findByLabelText('Nume club')
-  fireEvent.change(screen.getByLabelText('Website'), { target: { value: 'exemplu' } })
-  fireEvent.change(screen.getByLabelText('IBAN'), { target: { value: '123' } })
-  fireEvent.change(screen.getByLabelText('CUI'), { target: { value: 'RO12A' } })
+  fireEvent.change(screen.getByLabelText('Website (opțional)'), { target: { value: 'exemplu' } })
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'nu-e-email' } })
   fireEvent.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() =>
-    expect(screen.getByLabelText('Website')).toHaveAttribute('aria-invalid', 'true'),
+    expect(screen.getByLabelText('Website (opțional)')).toHaveAttribute('aria-invalid', 'true'),
   )
-  for (const id of ['website', 'bank_account', 'company_cui', 'email'])
+  for (const id of ['website', 'email'])
     expect(document.getElementById(id)?.getAttribute('aria-describedby')).toBe(`${id}-error`)
   expect(mocks.updateClub).not.toHaveBeenCalled()
 })
 
-test('saving normalizes website, IBAN and CUI', async () => {
+test('saving normalizes the website and sends no billing fields', async () => {
   renderPage()
   await screen.findByLabelText('Nume club')
-  fireEvent.change(screen.getByLabelText('Website'), { target: { value: 'clubul-tau.ro' } })
-  fireEvent.change(screen.getByLabelText('IBAN'), {
-    target: { value: 'ro49 aaaa 1b31 0075 9384 0000' },
+  fireEvent.change(screen.getByLabelText('Website (opțional)'), {
+    target: { value: 'clubul-tau.ro' },
   })
-  fireEvent.change(screen.getByLabelText('CUI'), { target: { value: 'ro 12345678' } })
   fireEvent.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() => expect(mocks.updateClub).toHaveBeenCalled())
-  expect(mocks.updateClub.mock.calls[0][1]).toMatchObject({
-    website: 'https://clubul-tau.ro',
-    bank_account: 'RO49AAAA1B31007593840000',
-    company_cui: 'RO12345678',
-  })
-  await waitFor(() => expect(screen.getByLabelText('Website')).toHaveValue('https://clubul-tau.ro'))
-  expect(screen.getByLabelText('IBAN')).toHaveValue('RO49AAAA1B31007593840000')
+  expect(mocks.updateClub.mock.calls[0][1].website).toBe('https://clubul-tau.ro')
+  expect(mocks.updateClub.mock.calls[0][1]).not.toHaveProperty('bank_account')
+  await waitFor(() =>
+    expect(screen.getByLabelText('Website (opțional)')).toHaveValue('https://clubul-tau.ro'),
+  )
+  expect(screen.queryByText('Date facturare')).toBeNull()
+})
+
+test('website is optional and an empty one is saved as null', async () => {
+  mocks.getMyClub.mockResolvedValue({ ...club, website: 'https://vechi.ro' })
+  renderPage()
+  const website = await screen.findByLabelText('Website (opțional)')
+  fireEvent.change(website, { target: { value: '' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() => expect(mocks.updateClub).toHaveBeenCalled())
+  expect(mocks.updateClub.mock.calls[0][1].website).toBeNull()
+  expect(website).not.toHaveAttribute('aria-invalid', 'true')
 })
 
 test('a failed save keeps what was typed', async () => {
@@ -129,7 +135,6 @@ test('touch targets, hints, public link and consent row', async () => {
   expect(screen.getByLabelText('Nume club').className).toContain('min-h-11')
   expect(screen.getByRole('button', { name: 'Salvează' }).className).toContain('min-h-11')
   expect(screen.getByText('Apare pe pagina publică a clubului.')).toBeVisible()
-  expect(screen.getByText('Folosite pentru facturare. Nu apar public.')).toBeVisible()
   expect(screen.getByRole('link', { name: /Vezi pagina publică/ })).toHaveAttribute(
     'href',
     '/cluburi/club-1',

@@ -1,23 +1,21 @@
 # Club profile page
 
-UI sections #495 (Date publice) and #773 (Contact și facturare) on `/club/profile`. The owner approved criteria #2043–#2056 on 2026-10-09. Feature #437, a warning about unsaved changes, was deferred.
+UI sections #495 (Date publice) and #773 (Contact și facturare) on `/club/profile`. The owner approved criteria #2043–#2056 on 2026-10-09; on the same day the owner removed the billing card, so criteria #2055 and #2056 were deleted. Feature #437, a warning about unsaved changes, was deferred.
 
 The page moved to `features/club/profile/`.
 
 **Loading and errors.** A failed `my_club` request now shows an error with retry instead of «Niciun club asociat.», which stays reserved for an account without a club. Loading has a labelled skeleton.
 
-**Validation** lives in `clubProfileSchema.ts`:
-- Website: «https://» is added when missing, and the result must be an http(s) URL with a dotted host.
-- IBAN: must be a Romanian IBAN, checked with ISO 13616 mod-97, and is stored uppercase without spaces.
-- CUI: digits with an optional «RO» prefix, stored the same way.
-- Empty optional fields stay allowed.
+**Validation** lives in `clubProfileSchema.ts`. Website is optional and labelled so; when filled, «https://» is added if missing and the result must be an http(s) URL with a dotted host. An empty website is saved as null.
 
-After a successful save, the form shows the stored, normalised values. A failed save keeps what was typed. An image change refetches the club, but fields the user is editing are preserved (`keepDirtyValues`).
+**Billing card removed.** The company name, CUI, bank and IBAN fields were not used anywhere in the product: card payments go through Stripe Connect, where the club enters its company and bank details, and cash payments need none. The card and `ClubProfileInput`'s billing fields are gone, so the form no longer sends those columns and existing values stay untouched in the database. The columns themselves remain.
+
+After a successful save, the form shows the stored, normalised website. A failed save keeps what was typed. An image change refetches the club, but fields the user is editing are preserved (`keepDirtyValues`).
 
 **Form layout.**
 - Section headings use the club pages' heading style.
 - Fields and buttons have 44 px targets, and the consent row is a 44 px clickable label.
-- Hints say where the description appears and that billing data is private.
+- A hint says where the description appears.
 - A «Vezi pagina publică» link opens `/cluburi/:id`.
 
 **Logo and cover.** These existed on the public page with no way to set them. `ClubImageField` uploads them immediately, separate from the form's Save, through `api/club-images.ts`:

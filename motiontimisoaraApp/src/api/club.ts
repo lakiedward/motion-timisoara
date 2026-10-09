@@ -25,10 +25,6 @@ export interface ClubProfileInput {
   city: string | null
   address: string | null
   public_email_consent: boolean
-  company_name: string | null
-  company_cui: string | null
-  bank_account: string | null
-  bank_name: string | null
 }
 export async function updateClub(id: string, input: ClubProfileInput) {
   const { error } = await supabase.from('clubs').update(input).eq('id', id).select().single()
