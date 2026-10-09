@@ -4,7 +4,7 @@ import { formatZi, type TabaraDinLista } from '@/api/camps'
 import type { ActivityListItem, CourseListItem } from '@/api/public'
 import type { Loc } from '@/lib/locuri'
 import { plural } from '@/lib/plural'
-import { SPORT_COLOR, SPORT_COLOR_FALLBACK, SPORT_ICON } from '../sport-icons'
+import { SPORT_COLOR, SPORT_COLOR_FALLBACK, SPORT_ICON } from '@/components/sport/sport-icons'
 
 const dateFmt = new Intl.DateTimeFormat('ro-RO', { day: 'numeric', month: 'short' })
 

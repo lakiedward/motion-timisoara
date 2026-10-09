@@ -1,0 +1,9 @@
+# Sport illustration fallback
+
+Feature #434 and criterion #1861 of UI section #457, approved by the owner on 2026-10-09. A sport's standard photo stays optional, and admins can still remove it. Only ADMIN can create, change or delete sports or their photos (RLS on `sports` and the `sport-photos` bucket), and a sport used by courses, activities, coaches or clubs cannot be deleted.
+
+When a course or activity has no own photo and its sport has no standard photo, the interface shows `SportIllustration` (`src/components/sport/`). The component draws the sport's Lucide glyph in the foreground colour inside a circle, on a tint of the existing `SPORT_COLOR` mixed into `--card`, so it follows both themes without new palette values. Known sports (alergare, atletism, ciclism, gimnastică, înot, triatlon) have distinct glyphs; an unknown sport gets a generic glyph and the neutral fallback colour instead of an empty area.
+
+Course and activity cards show the glyph only, because their sport badge already names the sport. The course and activity detail pages show a banner with the glyph and sport name below the title when no photo exists. The admin sports list shows a compact glyph instead of the text «fără poză». Map popups and programme chips keep their emoji; they are labels, not photo fallbacks. The shared sport maps moved from `features/public/sport-icons.ts` to `components/sport/sport-icons.ts` so the admin page can use them.
+
+The owner also asked for standard photos for the five sports without one. They were generated in ChatGPT in the owner's browser, downloaded with the owner's approval, converted to 1600×900 WebP and uploaded to production through `/admin/sports` with the ADMIN audit account on 2026-10-09; every sport now has a standard photo, so the illustration appears only for future sports or removed photos.

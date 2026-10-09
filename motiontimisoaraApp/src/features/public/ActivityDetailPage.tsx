@@ -13,6 +13,7 @@ import { formatOfferPrice } from '@/lib/money'
 import { plural } from '@/lib/plural'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { SportIllustration } from '@/components/sport/SportIllustration'
 import { PublicHeroBand } from './PublicHeroBand'
 
 function ziActivitate(data: string): string {
@@ -127,6 +128,13 @@ export default function ActivityDetailPage() {
             <h1 className="font-display text-foreground mt-4 text-3xl font-extrabold md:text-4xl">
               {a.name}
             </h1>
+            {!a.photoUrl && (
+              <SportIllustration
+                code={a.sport?.code}
+                name={a.sport?.name}
+                className="mt-6 h-44 rounded-3xl border md:h-56"
+              />
+            )}
           </>
         )}
 

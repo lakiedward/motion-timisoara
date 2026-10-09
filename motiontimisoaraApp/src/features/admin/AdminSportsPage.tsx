@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { SportIllustration } from '@/components/sport/SportIllustration'
 
 export default function AdminSportsPage() {
   const qc = useQueryClient()
@@ -185,9 +186,7 @@ export default function AdminSportsPage() {
                   {thumb ? (
                     <img src={thumb} alt="" className="size-full object-cover" />
                   ) : (
-                    <div className="text-muted-foreground grid size-full place-items-center text-xs">
-                      fără poză
-                    </div>
+                    <SportIllustration code={sport.code} name={sport.name} compact />
                   )}
                 </div>
                 <div className="min-w-0 flex-1">

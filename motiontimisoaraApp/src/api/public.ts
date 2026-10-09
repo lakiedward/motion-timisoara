@@ -257,6 +257,7 @@ export type ActivitateDinLista = {
   currency: string
   locationName: string | null
   sportName: string | null
+  sportCode: string | null
   heroUrl: string | null
   organizator: string | null
   locuriRamase: number | null
@@ -306,6 +307,7 @@ export async function getActivitatiPublice(acum = new Date()): Promise<Activitat
     currency: activitate.currency,
     locationName: activitate.location?.name ?? null,
     sportName: activitate.sport?.name ?? null,
+    sportCode: activitate.sport?.code ?? null,
     heroUrl: activityHeroUrl(activitate),
     organizator: activitate.club?.name ?? activitate.coach?.name ?? null,
     locuriRamase: locuri[index] ?? null,
@@ -330,6 +332,8 @@ export type ActivitateDetaliu = {
   currency: string
   eur_ron_rate_micros: number | null
   bandUrl: string | null
+  photoUrl: string | null
+  sport: { code: string; name: string } | null
   location: { name: string; lat: number | null; lng: number | null } | null
   organizator: PersoanaActivitate | null
   antrenori: PersoanaActivitate[]
@@ -434,6 +438,8 @@ export async function getActivitateDetaliu(id: string): Promise<ActivitateDetali
     currency: rand.currency,
     eur_ron_rate_micros: rand.eur_ron_rate_micros,
     bandUrl: publicUrl('activity-photos', rand.hero_photo_storage_path),
+    photoUrl: poza,
+    sport: rand.sport ? { code: rand.sport.code, name: rand.sport.name } : null,
     location: rand.location,
     organizator,
     antrenori: rand.club && antrenor ? [antrenor] : [],
