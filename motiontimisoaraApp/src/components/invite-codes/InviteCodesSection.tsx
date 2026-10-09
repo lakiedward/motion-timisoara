@@ -5,12 +5,7 @@ import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus, Trash2 } from 'lucide-react'
 
-import {
-  deleteInviteCode,
-  generateCoachInviteCode,
-  getCoachInviteCodes,
-  inviteCodeStatus,
-} from '@/api/admin'
+import { inviteCodeStatus } from '@/api/admin'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -33,7 +28,31 @@ const inviteSchema = z.object({
 })
 type InviteValues = z.infer<typeof inviteSchema>
 
-export default function InviteCodesSection() {
+export type InviteCodeRow = {
+  id: string
+  code: string
+  current_uses: number
+  max_uses: number
+  expires_at: string | null
+}
+
+export type InviteCodesSource = {
+  queryKey: readonly unknown[]
+  enabled?: boolean
+  load: () => Promise<InviteCodeRow[]>
+  generate: (maxUses: number, expiresAt: string | null) => Promise<string>
+  remove: (id: string) => Promise<void>
+}
+
+export default function InviteCodesSection({
+  source,
+  title,
+  description,
+}: {
+  source: InviteCodesSource
+  title: string
+  description: string
+}) {
   const qc = useQueryClient()
   const generationPending = useRef(false)
   const deletionPending = useRef(false)
@@ -42,7 +61,11 @@ export default function InviteCodesSection() {
   const [generated, setGenerated] = useState<string | null>(null)
   const [deleted, setDeleted] = useState(false)
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-  const query = useQuery({ queryKey: ['invite-codes'], queryFn: getCoachInviteCodes })
+  const query = useQuery({
+    queryKey: source.queryKey,
+    queryFn: source.load,
+    enabled: source.enabled ?? true,
+  })
   const codes = query.data ?? []
   const {
     register,
@@ -56,20 +79,20 @@ export default function InviteCodesSection() {
   })
   const gen = useMutation({
     mutationFn: (values: InviteValues) =>
-      generateCoachInviteCode(
+      source.generate(
         Number(values.maxUses),
         values.expiresAt ? new Date(values.expiresAt).toISOString() : null,
       ),
     onSuccess: (code) => {
       setGenerated(code)
-      void qc.invalidateQueries({ queryKey: ['invite-codes'] })
+      void qc.invalidateQueries({ queryKey: source.queryKey })
     },
   })
   const del = useMutation({
-    mutationFn: deleteInviteCode,
+    mutationFn: source.remove,
     onSuccess: (_result, id) => {
       if (codes.find((code) => code.id === id)?.code === generated) setGenerated(null)
-      void qc.invalidateQueries({ queryKey: ['invite-codes'] })
+      void qc.invalidateQueries({ queryKey: source.queryKey })
       setDeleted(true)
     },
   })
@@ -120,11 +143,9 @@ export default function InviteCodesSection() {
       <Card>
         <CardHeader className="gap-3">
           <h2 id="invite-codes-heading" className="font-display text-xl font-bold text-foreground">
-            Coduri invitație
+            {title}
           </h2>
-          <p className="text-muted-foreground text-sm">
-            Trimite codul unui antrenor ca să își creeze singur contul.
-          </p>
+          <p className="text-muted-foreground text-sm">{description}</p>
           <div>
             <Button
               ref={toggleButton}
@@ -133,7 +154,7 @@ export default function InviteCodesSection() {
               className="min-h-11"
               aria-expanded={expanded}
               aria-controls="invite-code-form"
-              disabled={gen.isPending}
+              disabled={gen.isPending || source.enabled === false}
               onClick={onToggle}
             >
               <Plus /> {expanded ? 'Închide setările' : 'Cod nou'}

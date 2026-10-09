@@ -111,7 +111,14 @@ function randomCode(): string {
     Array.from({ length: 4 }, () => a[Math.floor(Math.random() * a.length)]).join('')
   return `${part()}-${part()}`
 }
-export async function generateClubCode(clubId: string, maxUses = 1): Promise<string> {
+export async function generateClubCode(
+  clubId: string,
+  maxUses = 1,
+  expiresAt: string | null = null,
+): Promise<string> {
+  if (!Number.isInteger(maxUses) || maxUses < 1 || maxUses > 2147483647) {
+    throw new Error('Numărul maxim de utilizări trebuie să fie un întreg între 1 și 2147483647.')
+  }
   const owner = await uid()
   const code = randomCode()
   const { error } = await supabase.from('club_invitation_codes').insert({
@@ -120,6 +127,7 @@ export async function generateClubCode(clubId: string, maxUses = 1): Promise<str
     created_by_user_id: owner,
     max_uses: maxUses,
     current_uses: 0,
+    expires_at: expiresAt,
   })
   if (error) throw error
   return code
