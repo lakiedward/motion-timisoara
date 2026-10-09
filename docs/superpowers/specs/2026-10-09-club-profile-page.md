@@ -12,6 +12,8 @@ The page moved to `features/club/profile/`.
 
 After a successful save, the form shows the stored, normalised website. A failed save keeps what was typed. An image change refetches the club, but fields the user is editing are preserved (`keepDirtyValues`).
 
+**Address with map.** At the owner's request, Oraș and Adresă became the location form's selector (`ClubAddressFields`): county and city dropdowns plus `LocationPicker`, where the club searches an address or places or drags a marker and the reverse lookup fills address, city and county. Criterion #2053 (free-text city and address) was replaced by #2066 and #2067. Migration `00086_club_location.sql` adds `clubs.county`, `lat` and `lng`; the point is saved with the profile and restores the marker, but coordinates are never shown, as the owner asked. The public club page (#650) now shows the address in the contact card and, when a point exists, a small non-draggable map with a pin (`ClubLocationMap`). The shared picker keeps the location form's 36 px desktop height for its selects and address input; the profile's own fields stay at 44 px.
+
 **Form layout.**
 - Section headings use the club pages' heading style.
 - Fields and buttons have 44 px targets, and the consent row is a 44 px clickable label.

@@ -1021,11 +1021,14 @@ export type Database = {
           company_cui: string | null
           company_name: string | null
           company_reg_number: string | null
+          county: string | null
           created_at: string
           description: string | null
           email: string | null
           hero_photo_storage_path: string | null
           id: string
+          lat: number | null
+          lng: number | null
           logo_storage_path: string | null
           name: string
           owner_user_id: string
@@ -1046,11 +1049,14 @@ export type Database = {
           company_cui?: string | null
           company_name?: string | null
           company_reg_number?: string | null
+          county?: string | null
           created_at?: string
           description?: string | null
           email?: string | null
           hero_photo_storage_path?: string | null
           id?: string
+          lat?: number | null
+          lng?: number | null
           logo_storage_path?: string | null
           name: string
           owner_user_id: string
@@ -1071,11 +1077,14 @@ export type Database = {
           company_cui?: string | null
           company_name?: string | null
           company_reg_number?: string | null
+          county?: string | null
           created_at?: string
           description?: string | null
           email?: string | null
           hero_photo_storage_path?: string | null
           id?: string
+          lat?: number | null
+          lng?: number | null
           logo_storage_path?: string | null
           name?: string
           owner_user_id?: string
@@ -3066,11 +3075,14 @@ export type Database = {
           company_cui: string | null
           company_name: string | null
           company_reg_number: string | null
+          county: string | null
           created_at: string
           description: string | null
           email: string | null
           hero_photo_storage_path: string | null
           id: string
+          lat: number | null
+          lng: number | null
           logo_storage_path: string | null
           name: string
           owner_user_id: string

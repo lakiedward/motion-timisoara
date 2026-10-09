@@ -136,7 +136,7 @@ export async function getPublicClubs(): Promise<ClubListItem[]> {
   const { data, error } = await supabase
     .from('clubs')
     .select(
-      'id, owner_user_id, name, description, logo_storage_path, hero_photo_storage_path, website, phone, email, public_email_consent, address, city, created_at, club_sports(sport:sports(id,code,name))',
+      'id, owner_user_id, name, description, logo_storage_path, hero_photo_storage_path, website, phone, email, public_email_consent, address, city, county, lat, lng, created_at, club_sports(sport:sports(id,code,name))',
     )
     .order('name')
   if (error) throw error
@@ -147,7 +147,7 @@ export async function getPublicClub(id: string): Promise<ClubListItem | null> {
   const { data, error } = await supabase
     .from('clubs')
     .select(
-      'id, owner_user_id, name, description, logo_storage_path, hero_photo_storage_path, website, phone, email, public_email_consent, address, city, created_at, club_sports(sport:sports(id,code,name))',
+      'id, owner_user_id, name, description, logo_storage_path, hero_photo_storage_path, website, phone, email, public_email_consent, address, city, county, lat, lng, created_at, club_sports(sport:sports(id,code,name))',
     )
     .eq('id', id)
     .single()

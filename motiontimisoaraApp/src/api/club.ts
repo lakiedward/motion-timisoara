@@ -22,8 +22,11 @@ export interface ClubProfileInput {
   website: string | null
   email: string | null
   phone: string | null
+  county: string | null
   city: string | null
   address: string | null
+  lat: number | null
+  lng: number | null
   public_email_consent: boolean
 }
 export async function updateClub(id: string, input: ClubProfileInput) {

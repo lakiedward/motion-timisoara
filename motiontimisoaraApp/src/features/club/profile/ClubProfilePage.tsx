@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { countyForCity, normalizeCounty } from '@/lib/geography/romanian-places'
+import ClubAddressFields from './ClubAddressFields'
 import ClubImageField from './ClubImageField'
 import { clubProfileSchema, normalizeWebsite, type ClubProfileValues } from './clubProfileSchema'
 
@@ -20,8 +22,11 @@ const EMPTY: ClubProfileValues = {
   website: '',
   email: '',
   phone: '',
+  county: '',
   city: '',
   address: '',
+  lat: null,
+  lng: null,
   public_email_consent: false,
 }
 
@@ -32,8 +37,11 @@ function toValues(club: Club): ClubProfileValues {
     website: club.website ?? '',
     email: club.email ?? '',
     phone: club.phone ?? '',
+    county: normalizeCounty(club.county) ?? club.county ?? countyForCity(club.city) ?? '',
     city: club.city ?? '',
     address: club.address ?? '',
+    lat: club.lat ?? null,
+    lng: club.lng ?? null,
     public_email_consent: club.public_email_consent,
   }
 }
@@ -50,6 +58,8 @@ export default function ClubProfilePage() {
     register,
     handleSubmit,
     reset,
+    control,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<ClubProfileValues>({ resolver: zodResolver(clubProfileSchema), defaultValues: EMPTY })
 
@@ -89,8 +99,11 @@ export default function ClubProfilePage() {
         website: website || null,
         email: v.email || null,
         phone: v.phone || null,
+        county: v.county || null,
         city: v.city || null,
         address: v.address || null,
+        lat: v.lat ?? null,
+        lng: v.lng ?? null,
         public_email_consent: v.public_email_consent,
       })
       reset({ ...v, website })
@@ -167,9 +180,8 @@ export default function ClubProfilePage() {
           <div className="grid gap-4 sm:grid-cols-2">
             {field('email', 'Email', 'email')}
             {field('phone', 'Telefon', 'tel')}
-            {field('city', 'Oraș')}
-            {field('address', 'Adresă')}
           </div>
+          <ClubAddressFields control={control} setValue={setValue} />
           <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
             <input type="checkbox" {...register('public_email_consent')} className="size-4" />
             Afișează emailul public pe pagina clubului

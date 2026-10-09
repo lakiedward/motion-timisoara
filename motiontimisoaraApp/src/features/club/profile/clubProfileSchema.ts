@@ -24,8 +24,11 @@ export const clubProfileSchema = z.object({
     .refine(isValidWebsite, 'Introdu un link valid, de exemplu https://clubul-tau.ro'),
   email: z.string().trim().email('Email invalid').or(z.literal('')),
   phone: z.string().optional(),
+  county: z.string().optional(),
   city: z.string().optional(),
   address: z.string().optional(),
+  lat: z.number().nullish(),
+  lng: z.number().nullish(),
   public_email_consent: z.boolean(),
 })
 

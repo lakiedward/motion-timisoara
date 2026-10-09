@@ -39,6 +39,9 @@ const club = {
   bank_name: null,
   company_address: null,
   company_reg_number: null,
+  county: null,
+  lat: null,
+  lng: null,
   logo_storage_path: 'club-1/logo/a.jpg',
   hero_photo_storage_path: null,
   created_at: '2026-01-01T00:00:00Z',
@@ -117,6 +120,44 @@ test('website is optional and an empty one is saved as null', async () => {
   await waitFor(() => expect(mocks.updateClub).toHaveBeenCalled())
   expect(mocks.updateClub.mock.calls[0][1].website).toBeNull()
   expect(website).not.toHaveAttribute('aria-invalid', 'true')
+})
+
+test('the address uses county, city and a map point that is saved but never shown', async () => {
+  mocks.getMyClub.mockResolvedValue({
+    ...club,
+    city: 'Timișoara',
+    address: 'Str. Exemplu 10',
+    lat: 45.75,
+    lng: 21.22,
+  })
+  renderPage()
+  await screen.findByLabelText('Nume club')
+  expect(screen.getByLabelText('Adresă')).toHaveValue('Str. Exemplu 10')
+  expect(screen.getByLabelText('Județ / regiune')).toHaveValue('Timiș')
+  expect(document.body.textContent).not.toContain('45.75')
+  expect(document.querySelector('input[name="lat"], input[name="lng"]')).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() => expect(mocks.updateClub).toHaveBeenCalled())
+  expect(mocks.updateClub.mock.calls[0][1]).toMatchObject({
+    county: 'Timiș',
+    city: 'Timișoara',
+    address: 'Str. Exemplu 10',
+    lat: 45.75,
+    lng: 21.22,
+  })
+})
+
+test('a club row without point columns still saves', async () => {
+  const legacy: Record<string, unknown> = { ...club }
+  delete legacy.lat
+  delete legacy.lng
+  delete legacy.county
+  mocks.getMyClub.mockResolvedValue(legacy)
+  renderPage()
+  await screen.findByLabelText('Nume club')
+  fireEvent.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() => expect(mocks.updateClub).toHaveBeenCalled())
+  expect(mocks.updateClub.mock.calls[0][1]).toMatchObject({ lat: null, lng: null })
 })
 
 test('a failed save keeps what was typed', async () => {
