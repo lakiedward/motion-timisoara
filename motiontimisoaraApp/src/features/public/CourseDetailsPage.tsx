@@ -14,7 +14,8 @@ import { useAuth } from '@/lib/auth-context'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StarRating } from '@/components/StarRating'
-import { SPORT_COLOR, SPORT_COLOR_FALLBACK } from './sport-icons'
+import { SPORT_COLOR, SPORT_COLOR_FALLBACK } from '@/components/sport/sport-icons'
+import { SportIllustration } from '@/components/sport/SportIllustration'
 
 const WEEKDAYS = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă']
 
@@ -153,6 +154,11 @@ export default function CourseDetailsPage() {
           <h1 className="font-display text-foreground mt-4 text-3xl font-extrabold md:text-4xl">
             {course.name}
           </h1>
+          <SportIllustration
+            code={course.sport?.code}
+            name={course.sport?.name}
+            className="mt-6 h-44 rounded-3xl border md:h-56"
+          />
         </div>
       )}
 

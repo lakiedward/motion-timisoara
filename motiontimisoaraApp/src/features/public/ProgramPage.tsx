@@ -7,7 +7,7 @@ import { fetchSports } from '@/api/sports'
 import { CourseCard } from './components/CourseCard'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-import { SPORT_COLOR, SPORT_COLOR_FALLBACK, SPORT_ICON } from './sport-icons'
+import { SPORT_COLOR, SPORT_COLOR_FALLBACK, SPORT_ICON } from '@/components/sport/sport-icons'
 
 function Chip({
   active,
@@ -29,7 +29,7 @@ function Chip({
         'rounded-full px-4 py-2 text-sm font-bold transition-all',
         active
           ? 'text-white shadow-[0_4px_14px_rgba(37,99,235,0.25)]'
-          : 'border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground border'
+          : 'border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground border',
       )}
     >
       {children}

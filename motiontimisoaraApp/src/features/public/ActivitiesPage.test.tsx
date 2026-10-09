@@ -24,6 +24,7 @@ const ACTIVITATE: ActivitateDinLista = {
   currency: 'EUR',
   locationName: 'DEMO — Parc de antrenament',
   sportName: 'Ciclism',
+  sportCode: 'ciclism',
   heroUrl: 'https://public/sport-photos/ciclism.jpg',
   organizator: 'DEMO — Club Sportiv Motion',
   locuriRamase: 11,

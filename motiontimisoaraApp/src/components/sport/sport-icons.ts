@@ -1,4 +1,14 @@
-/** Emoji icon per sport code, used as a fallback when no photo is available. */
+import {
+  Bike,
+  Dumbbell,
+  Footprints,
+  Medal,
+  PersonStanding,
+  Trophy,
+  Waves,
+  type LucideIcon,
+} from 'lucide-react'
+
 export const SPORT_ICON: Record<string, string> = {
   inot: '🏊',
   ciclism: '🚴',
@@ -8,7 +18,17 @@ export const SPORT_ICON: Record<string, string> = {
   gimnastica: '🤸',
 }
 
-/** Accent color per sport code, used for chips/tints (e.g. on the map popups). */
+export const SPORT_GLYPH: Record<string, LucideIcon> = {
+  inot: Waves,
+  ciclism: Bike,
+  alergare: Footprints,
+  triatlon: Trophy,
+  atletism: Medal,
+  gimnastica: PersonStanding,
+}
+
+export const SPORT_GLYPH_FALLBACK = Dumbbell
+
 export const SPORT_COLOR: Record<string, string> = {
   inot: '#0ea5e9',
   ciclism: '#f59e0b',

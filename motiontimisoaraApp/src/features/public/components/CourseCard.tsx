@@ -4,11 +4,10 @@ import { ArrowRight, MapPin } from 'lucide-react'
 import { formatMoney } from '@/lib/money'
 import { courseHeroUrl, type CourseListItem } from '@/api/public'
 import { Badge } from '@/components/ui/badge'
-import { SPORT_ICON } from '../sport-icons'
+import { SportIllustration } from '@/components/sport/SportIllustration'
 
 export function CourseCard({ course }: { course: CourseListItem }) {
   const img = courseHeroUrl(course)
-  const icon = SPORT_ICON[course.sport?.code ?? ''] ?? '🎽'
 
   return (
     <article className="group bg-card shadow-card hover:shadow-card-hover overflow-hidden rounded-3xl pt-0 transition-all duration-300 hover:-translate-y-2">
@@ -20,9 +19,7 @@ export function CourseCard({ course }: { course: CourseListItem }) {
             className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="from-primary/15 to-highlight/15 text-primary flex size-full items-center justify-center bg-gradient-to-br text-5xl">
-            {icon}
-          </div>
+          <SportIllustration code={course.sport?.code} />
         )}
         {course.sport && <Badge className="absolute top-4 left-4">{course.sport.name}</Badge>}
       </div>

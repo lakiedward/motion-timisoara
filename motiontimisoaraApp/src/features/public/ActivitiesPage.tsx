@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Activity, CalendarDays, Clock, MapPin, Users } from 'lucide-react'
+import { CalendarDays, Clock, MapPin, Users } from 'lucide-react'
 
 import { getActivitatiPublice, type ActivitateDinLista } from '@/api/public'
 import { formatOfferPrice } from '@/lib/money'
@@ -8,6 +8,7 @@ import { plural } from '@/lib/plural'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { SportIllustration } from '@/components/sport/SportIllustration'
 
 function ziActivitate(data: string): string {
   const [an, luna, zi] = data.split('-').map(Number)
@@ -86,9 +87,7 @@ function CardActivitate({ activitate }: { activitate: ActivitateDinLista }) {
         {activitate.heroUrl ? (
           <img src={activitate.heroUrl} alt="" className="size-full object-cover" />
         ) : (
-          <div className="from-primary/15 to-highlight/15 text-primary flex size-full items-center justify-center bg-gradient-to-br">
-            <Activity className="size-12" aria-hidden />
-          </div>
+          <SportIllustration code={activitate.sportCode} />
         )}
         {activitate.sportName && (
           <Badge className="absolute top-4 left-4">{activitate.sportName}</Badge>

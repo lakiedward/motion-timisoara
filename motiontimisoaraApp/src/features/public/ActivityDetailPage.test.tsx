@@ -35,6 +35,8 @@ const DETALIU: ActivitateDetaliu = {
   currency: 'EUR',
   eur_ron_rate_micros: 5_100_000,
   bandUrl: null,
+  photoUrl: 'https://public/sport-photos/ciclism.jpg',
+  sport: { code: 'ciclism', name: 'Ciclism' },
   location: { name: 'DEMO — Parc de antrenament', lat: 45.751, lng: 21.238 },
   organizator: {
     id: 'club-1',
@@ -318,4 +320,17 @@ test('fără alți antrenori, blocul lor nu apare', async () => {
   expect(await screen.findByRole('heading', { name: 'Organizată de' })).toBeInTheDocument()
   expect(screen.queryByRole('heading', { name: /^Antrenor$/ })).not.toBeInTheDocument()
   expect(screen.queryByRole('heading', { name: /^Antrenori$/ })).not.toBeInTheDocument()
+})
+
+test('fără poza activității și fără poza sportului apare ilustrația sportului', async () => {
+  mocked.mockResolvedValue({ ...DETALIU, photoUrl: null, galerieUrls: [] })
+  deseneaza()
+  expect(await screen.findByRole('img', { name: 'Ilustrație Ciclism' })).toBeVisible()
+  expect(screen.getByText('Ciclism')).toBeVisible()
+})
+
+test('când sportul are poză standard nu apare ilustrația', async () => {
+  deseneaza()
+  await screen.findByRole('heading', { level: 1, name: 'DEMO — Atelier de ciclism' })
+  expect(screen.queryByRole('img', { name: /Ilustrație/ })).not.toBeInTheDocument()
 })

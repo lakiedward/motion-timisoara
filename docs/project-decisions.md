@@ -163,6 +163,13 @@ reorganizing this document; correct obsolete facts with current evidence.
 - 2026-09-28 — Activity, camp, and competition public heroes use the course
   frame. The photo fills the band and the title sits on it in white. Sport
   and level chips stay on the course page.
+- 2026-10-09 — A sport's standard photo stays optional. When a course or
+  activity has neither its own photo nor its sport's photo, cards, detail
+  pages and the admin sports list show `SportIllustration`: the sport's Lucide
+  glyph on a tint of its existing `SPORT_COLOR`, with the sport name on detail
+  pages. Unknown sports get a generic glyph and colour. It replaces the emoji
+  fallback; map and programme chips keep their emoji. See feature #434 and
+  `docs/superpowers/specs/2026-10-09-sport-illustration-fallback.md`.
 
 - 2026-09-30 — Bug #1092 uses official `@capacitor/keyboard` pinned to 8.0.5 with
   Native resize. Bootstrap restores visible iOS accessory arrows and Done before
