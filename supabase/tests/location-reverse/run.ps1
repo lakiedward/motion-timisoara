@@ -11,7 +11,7 @@ try {
   Run-Docker @('run','--detach','--name',$containerName,'--network','none','--env','POSTGRES_PASSWORD=local-test-only','--env','POSTGRES_DB=location_reverse_test',$image,'postgres','-D','/var/lib/postgresql/data')
   $ready = $false
   for ($i = 0; $i -lt 60; $i++) {
-    & docker exec $containerName pg_isready -U postgres -d location_reverse_test *> $null
+    & docker exec $containerName pg_isready -h 127.0.0.1 -U postgres -d location_reverse_test *> $null
     if ($LASTEXITCODE -eq 0) { $ready = $true; break }
     Start-Sleep -Milliseconds 500
   }

@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   generate: vi.fn(),
   deleteCode: vi.fn(),
   createCoach: vi.fn(),
+  getClubs: vi.fn(),
   copy: vi.fn(),
   success: vi.fn(),
   error: vi.fn(),
@@ -20,6 +21,7 @@ vi.mock('@/api/admin', async (original) => ({
   generateCoachInviteCode: mocks.generate,
   deleteInviteCode: mocks.deleteCode,
   createCoachAccount: mocks.createCoach,
+  getAllClubs: mocks.getClubs,
 }))
 vi.mock('sonner', () => ({ toast: { success: mocks.success, error: mocks.error } }))
 
@@ -70,6 +72,7 @@ beforeEach(() => {
   mocks.generate.mockResolvedValue('SYNTHETIC-NEW')
   mocks.copy.mockResolvedValue(undefined)
   mocks.deleteCode.mockResolvedValue(undefined)
+  mocks.getClubs.mockResolvedValue([])
   Object.defineProperty(navigator, 'clipboard', {
     configurable: true,
     value: { writeText: mocks.copy },
@@ -273,8 +276,12 @@ test('deletion keeps its target and preserves the row on backend failure', async
 test('invalid coach values show linked errors without sending a request', async () => {
   renderPage()
   fireEvent.click(screen.getByRole('button', { name: 'Creează antrenor' }))
-  expect(await screen.findByText('Minim 2 caractere')).toBeVisible()
-  expect(screen.getByLabelText('Nume')).toHaveAttribute('aria-describedby', 'coach-name-error')
+  expect(await screen.findAllByText('Minim 2 caractere')).toHaveLength(2)
+  expect(screen.getByLabelText('Prenume')).toHaveAttribute(
+    'aria-describedby',
+    'coach-first-name-error',
+  )
+  expect(screen.getByLabelText('Nume')).toHaveAttribute('aria-describedby', 'coach-last-name-error')
   expect(screen.getByText('Email invalid')).toBeVisible()
   expect(mocks.createCoach).not.toHaveBeenCalled()
 })
@@ -283,7 +290,8 @@ test('coach partial-profile failure retains input, hides credentials and allows 
   const request = deferred<never>()
   mocks.createCoach.mockReturnValue(request.promise)
   renderPage()
-  fireEvent.change(screen.getByLabelText('Nume'), { target: { value: 'Test Coach' } })
+  fireEvent.change(screen.getByLabelText('Prenume'), { target: { value: 'Test' } })
+  fireEvent.change(screen.getByLabelText('Nume'), { target: { value: 'Coach' } })
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'coach@example.test' } })
   fireEvent.click(screen.getByRole('button', { name: 'Creează antrenor' }))
   fireEvent.click(await screen.findByRole('button', { name: 'Se creează…' }))
@@ -295,7 +303,8 @@ test('coach partial-profile failure retains input, hides credentials and allows 
   })
   await act(async () => request.reject(new Error('Profilul nu a putut fi creat.')))
   expect(await screen.findByText('Profilul nu a putut fi creat.')).toBeVisible()
-  expect(screen.getByLabelText('Nume')).toHaveValue('Test Coach')
+  expect(screen.getByLabelText('Prenume')).toHaveValue('Test')
+  expect(screen.getByLabelText('Nume')).toHaveValue('Coach')
   expect(screen.queryByText('Parolă temporară:')).not.toBeInTheDocument()
 })
 
@@ -306,7 +315,8 @@ test('successful coach result and temporary-password copying use the returned va
     tempPassword: 'synthetic-only-value',
   })
   renderPage()
-  fireEvent.change(screen.getByLabelText('Nume'), { target: { value: 'Test Coach' } })
+  fireEvent.change(screen.getByLabelText('Prenume'), { target: { value: 'Test' } })
+  fireEvent.change(screen.getByLabelText('Nume'), { target: { value: 'Coach' } })
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'coach@example.test' } })
   fireEvent.change(screen.getByLabelText('Telefon (opțional)'), {
     target: { value: '+40 arbitrary text' },
@@ -326,11 +336,13 @@ test('a later coach failure preserves credentials from the last successful creat
     })
     .mockRejectedValueOnce(new Error('Next creation rejected'))
   renderPage()
-  fireEvent.change(screen.getByLabelText('Nume'), { target: { value: 'First Coach' } })
+  fireEvent.change(screen.getByLabelText('Prenume'), { target: { value: 'First' } })
+  fireEvent.change(screen.getByLabelText('Nume'), { target: { value: 'Coach' } })
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'coach@example.test' } })
   fireEvent.click(screen.getByRole('button', { name: 'Creează antrenor' }))
   expect(await screen.findByText('Ultimul antrenor creat: coach@example.test')).toBeVisible()
-  fireEvent.change(screen.getByLabelText('Nume'), { target: { value: 'Next Coach' } })
+  fireEvent.change(screen.getByLabelText('Prenume'), { target: { value: 'Next' } })
+  fireEvent.change(screen.getByLabelText('Nume'), { target: { value: 'Coach' } })
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'next@example.test' } })
   fireEvent.click(screen.getByRole('button', { name: 'Creează antrenor' }))
   expect(await screen.findByText('Next creation rejected')).toBeVisible()
@@ -341,7 +353,8 @@ test('repeated submit events keep the coach operation visibly pending until comp
   const request = deferred<never>()
   mocks.createCoach.mockReturnValue(request.promise)
   renderPage()
-  fireEvent.change(screen.getByLabelText('Nume'), { target: { value: 'Test Coach' } })
+  fireEvent.change(screen.getByLabelText('Prenume'), { target: { value: 'Test' } })
+  fireEvent.change(screen.getByLabelText('Nume'), { target: { value: 'Coach' } })
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'coach@example.test' } })
   const form = screen.getByLabelText('Nume').closest('form')!
   fireEvent.submit(form)
@@ -369,7 +382,7 @@ test('initial view shows both workflows and invitation list with closed forms', 
 
 test('coach disclosure retains values and validation, and manages focus', async () => {
   renderPage(false)
-  const name = screen.getByLabelText('Nume')
+  const name = screen.getByLabelText('Prenume')
   fireEvent.click(screen.getByRole('button', { name: 'Adaugă antrenor' }))
   await waitFor(() => expect(name).toHaveFocus())
   fireEvent.change(name, { target: { value: 'Entered Coach' } })
@@ -381,7 +394,7 @@ test('coach disclosure retains values and validation, and manages focus', async 
   expect(name).not.toBeVisible()
   expect(name).toHaveValue('Entered Coach')
   fireEvent.click(toggle)
-  expect(name).toBe(screen.getByLabelText('Nume'))
+  expect(name).toBe(screen.getByLabelText('Prenume'))
   expect(screen.getByText('Email invalid')).toBeVisible()
   await waitFor(() => expect(name).toHaveFocus())
 })
@@ -409,7 +422,8 @@ test('pending creation disables collapse and successful credentials stay visible
   const request = deferred<{ userId: string; email: string; tempPassword: string }>()
   mocks.createCoach.mockReturnValue(request.promise)
   renderPage()
-  fireEvent.change(screen.getByLabelText('Nume'), { target: { value: 'Test Coach' } })
+  fireEvent.change(screen.getByLabelText('Prenume'), { target: { value: 'Test' } })
+  fireEvent.change(screen.getByLabelText('Nume'), { target: { value: 'Coach' } })
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'coach@example.test' } })
   fireEvent.click(screen.getByRole('button', { name: 'Creează antrenor' }))
   await waitFor(() =>
