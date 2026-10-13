@@ -66,6 +66,14 @@ on:
       - 'package-lock.json'
       - '.github/workflows/playwright.yml'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Verificările rulau înșiruite într-un singur job de ~12 minute. Sunt
+# independente (fiecare simulare își construiește și își pornește propria
+# previzualizare, fiecare test SQL își pornește propriul PostgreSQL), deci rulează
+# acum în joburi paralele; durata totală e dată de cel mai lung dintre ele.
 jobs:
   competition-sql:
     runs-on: ubuntu-latest
@@ -77,8 +85,8 @@ jobs:
       run: ./supabase/tests/run-competition-offers-and-coaches.ps1
 
   test:
-    # ~8 minute măsurate pentru chromium cu un singur worker. 20 lasă loc de
-    # instalări și de o rulare lentă, fără să țină o oră un job blocat.
+    # ~6 minute măsurate pentru suita principală pe chromium cu un singur
+    # worker. 20 lasă loc de instalări și de o rulare lentă.
     timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
@@ -86,6 +94,10 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: lts/*
+        cache: npm
+        cache-dependency-path: |
+          package-lock.json
+          motiontimisoaraApp/package-lock.json
     - name: Install dependencies
       run: npm ci
     # Suita își construiește și își pornește singură aplicația (webServer din
@@ -106,12 +118,54 @@ jobs:
         VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'placeholder' }}
         VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder' }}
         E2E_PLACEHOLDER_BACKEND: ${{ secrets.VITE_SUPABASE_URL && '0' || '1' }}
+    - uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 30
+
+  browser-simulations:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+        cache: npm
+        cache-dependency-path: |
+          package-lock.json
+          motiontimisoaraApp/package-lock.json
+    - name: Install dependencies
+      run: npm ci
+    # Suita își construiește și își pornește singură aplicația (webServer din
+    # playwright.config.ts), deci are nevoie și de dependențele ei.
+    - name: Install app dependencies
+      run: npm ci --prefix motiontimisoaraApp
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps chromium
     - name: Run isolated checkout pricing simulations
       run: npm run test:checkout-pricing
     - name: Run isolated coach location browser simulations
       run: npx playwright test --config playwright.location.config.ts
     - name: Run isolated competition browser simulations
       run: npm run test:competition
+    - uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: browser-simulations
+        path: |
+          test-results/checkout-pricing/
+          test-results/live-location/
+          test-results/competition/
+        retention-days: 30
+
+  function-contracts:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
     - uses: denoland/setup-deno@v2
       with:
         deno-version: v2.9.6
@@ -161,13 +215,3 @@ jobs:
     - name: Test isolated camp participation and live location
       shell: pwsh
       run: ./supabase/tests/run-camp-live-location.ps1
-    - uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
-      with:
-        name: playwright-report
-        path: |
-          playwright-report/
-          test-results/checkout-pricing/
-          test-results/live-location/
-          test-results/competition/
-        retention-days: 30

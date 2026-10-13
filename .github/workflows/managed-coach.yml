@@ -19,6 +19,10 @@ on:
       - 'supabase/tests/coach-invitation/**'
       - '.github/workflows/managed-coach.yml'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   managed-coach:
     runs-on: ubuntu-latest
