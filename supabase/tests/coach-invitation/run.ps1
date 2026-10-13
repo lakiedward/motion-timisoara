@@ -67,6 +67,12 @@ try {
     Complete-TestConnections
     Invoke-TestSql -Sql "SELECT public.test_assert((SELECT current_uses=1 FROM public.coach_invitation_codes WHERE code='SAME-USER') AND (SELECT count(*)=1 FROM public.coach_profiles WHERE user_id=public.test_uuid(32)) AND (SELECT name='Coach Test' FROM public.profiles WHERE id=public.test_uuid(32)),'same identity gets one profile, one use and original details');"
 
+    $jobs += Start-TestConnection -Name 'invitation-first' -Sql "BEGIN; SET LOCAL ROLE service_role; SELECT public.test_assert(public.test_try_redeem(33,'CLUB-ONE')='OK','first club claimant succeeds'); SELECT pg_sleep(3); COMMIT;"
+    Wait-ForLockedConnection
+    $jobs += Start-TestConnection -Name 'invitation-second' -Sql "SET ROLE service_role; SELECT public.test_assert(public.test_try_redeem(34,'CLUB-ONE')='INVITATION_EXHAUSTED','second concurrent club claimant denied');"
+    Complete-TestConnections
+    Invoke-TestSql -Sql "SELECT public.test_assert((SELECT current_uses=1 FROM public.club_invitation_codes WHERE code='CLUB-ONE') AND (SELECT count(*)=1 FROM public.coach_profiles WHERE user_id IN (public.test_uuid(33),public.test_uuid(34))) AND (SELECT role='PARENT' FROM public.profiles WHERE id=public.test_uuid(34)),'one-use club code admits exactly one concurrent coach');"
+
     Write-Output 'All isolated coach invitation SQL and concurrency tests passed.'
 } finally {
     foreach ($testJob in $jobs) { Stop-Job -Job $testJob -ErrorAction SilentlyContinue; Remove-Job -Job $testJob -Force -ErrorAction SilentlyContinue }

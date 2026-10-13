@@ -3058,6 +3058,7 @@ export type Database = {
           updated_at: string
         }[]
       }
+      join_club_by_invitation: { Args: { p_code: string }; Returns: Json }
       mark_parent_announcements_seen: {
         Args: { p_as_of: string; p_expected_user_id: string }
         Returns: undefined
