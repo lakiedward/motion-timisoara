@@ -74,6 +74,19 @@ The helper permits local HTTP previews with `motion-local-ui-login`, and only `h
 
 Reuse ready saved passwords for already-authorized login without asking the owner again. If unavailable/rejected, the owner can enter the current password using `Set-TestAccounts.ps1` and its masked local prompt. Password resets, account creation and role changes require their own authorization. A shared password was previously committed and removed: treat it as compromised and never recover it from history. Personal `CLAUDE.local.md` is ignored; it is not a password store.
 
+## QA accounts for cloud and Remote Control sessions
+
+| Role | Email | Expected destination |
+|---|---|---|
+| ADMIN | `laki.admin@motiontimisoara.test` | `/admin` |
+| CLUB | `uiaudit.club@gmail.com` | `/club` |
+| COACH | `laki.antrenor@motiontimisoara.test` | `/coach` |
+| PARENT | `spec.parent.mt@gmail.com` | `/account` |
+
+These are existing product accounts chosen by the owner (the CLUB one is also a DPAPI audit account above). Each account has its own email and password, kept only in the session environment: `MT_TEST_<ROLE>_EMAIL` and `MT_TEST_<ROLE>_PASSWORD` for each of ADMIN, CLUB, COACH and PARENT, set in the project's cloud environment variables or in the PC's ignored `.env.local`. The table lists the fallback emails used when `MT_TEST_<ROLE>_EMAIL` is absent. The app also needs `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, and the cloud network policy must allow the product Supabase host.
+
+From the repository root, after `npm ci`, start the app preview and run `node scripts/qa-login.mjs <admin|club|coach|parent>`. It fills the visible login form, waits for the role destination and saves the signed-in browser state to the ignored `.qa-auth/<role>.json`, which Playwright loads with `storageState`. `--check` reports which variables are present without printing values. The default origin is `http://127.0.0.1:3017`; live origins need `--allow-live` and only accept motiontimisoara.com and the demo site. `--provision` only signs the accounts up as PARENT; confirming them, raising roles and creating fixtures is a production write that needs its own approval. The same read-mostly rules apply: never sign out the shared accounts from the app, and do not use them for payments or messages.
+
 ## Browser troubleshooting
 
 - **Toasts:** `RootLayout.tsx` mounts the shared Toaster once. Sonner may render no toaster node when idle. Observe `[data-sonner-toast]` during its lifetime (for example a MutationObserver capturing text); a late one-shot query does not prove feedback is missing.
