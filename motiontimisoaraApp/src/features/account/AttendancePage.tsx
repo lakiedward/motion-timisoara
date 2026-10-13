@@ -155,7 +155,7 @@ export default function AttendancePage() {
                     <span
                       className={cn(
                         'font-medium',
-                        r.status === 'PRESENT' ? 'text-success' : 'text-destructive',
+                        r.status === 'PRESENT' ? 'text-success-ink' : 'text-destructive',
                       )}
                     >
                       {r.status === 'PRESENT' ? 'Prezent' : 'Absent'}

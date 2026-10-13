@@ -44,7 +44,7 @@ export default function AboutPage() {
           <h2 className="font-display text-2xl font-extrabold text-white md:text-3xl">
             Vrei să afli mai multe?
           </h2>
-          <Link to="/contact" className="btn-cta mt-6 bg-white font-bold text-primary hover:scale-105">
+          <Link to="/contact" className="btn-cta btn-cta--white mt-6">
             Contactează-ne
           </Link>
         </div>

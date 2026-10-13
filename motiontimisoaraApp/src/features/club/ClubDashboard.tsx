@@ -118,7 +118,7 @@ export default function ClubDashboard() {
           <div className="text-muted-foreground mt-2 flex items-center gap-2 text-sm">
             {club.stripe_onboarding_complete ? (
               <>
-                <CheckCircle2 className="text-success size-5" /> Configurat
+                <CheckCircle2 className="text-success-ink size-5" /> Configurat
               </>
             ) : (
               <>

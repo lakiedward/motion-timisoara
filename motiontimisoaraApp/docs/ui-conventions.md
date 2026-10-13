@@ -7,7 +7,7 @@
 Citește-l înainte de a scrie criteriile unei secțiuni noi: ce e mai jos se
 moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întrebare.
 
-6 convenții · 4 respectate · 1 în derivă · 1 fără canonic
+6 convenții · 5 respectate · 1 în derivă · 0 fără canonic
 
 ## Stare de eroare ≠ listă goală  [DERIVĂ 16/76]
 
@@ -18,12 +18,12 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
     canonic  src/features/camps/CampsListPage.tsx
     plafon   16 ecrane fără ramură de eroare, din 76 — poate doar scădea
 
-## Țintă tactilă  [FĂRĂ CANONIC]
+## Țintă tactilă  [RESPECTATĂ]
 
     Niciun control sub ținta comună; se urmează tokenul, nu numărul.
     Cât timp tokenul nu există, asta NU e o convenție — e un item de lucru.
 
-    canonic  — lipsește —
+    canonic  src/index.css --touch-target
     măsurat  232 valori scrise de mână, în 76 fișiere
     →        unde trăiește tokenul e o alegere, nu o măsurătoare. Deschis pe Focus.
 
@@ -52,8 +52,9 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
     canonic  src/index.css — perechile <token> / <token>-foreground
              --accent / --accent-foreground — 6.16:1
              --card / --card-foreground — 17.85:1
+             --destructive / --destructive-foreground — 4.83:1
              --highlight / --highlight-foreground — 8.31:1
-             --muted / --muted-foreground — 4.55:1
+             --muted / --muted-foreground — 7.24:1
              --popover / --popover-foreground — 17.85:1
              --primary / --primary-foreground — 5.17:1
              --secondary / --secondary-foreground — 16.30:1

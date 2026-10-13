@@ -3,11 +3,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ============================================================
-   Motion Timisoara design tokens — mirrors the original site's
-   UIGuidelines.md: Blue (#2563eb) -> Sky (#0ea5e9) gradient brand,
-   Amber (#f59e0b) accent, Manrope (display) + Inter (body).
-   ============================================================ */
 :root {
   --radius: 0.75rem;
 
@@ -27,31 +22,26 @@
   --secondary-foreground: #0f172a;
 
   --muted: #f8fafc;
-  --muted-foreground: #64748b;
+  --muted-foreground: #475569;
 
   --accent: #eff6ff;
   --accent-foreground: #1d4ed8;
 
-  /* Brand extras (from UIGuidelines core tokens) */
-  --sky: #0ea5e9;
-  /* Badge-urile COACH si ADMIN masurau 2,28:1 si 2,15:1 cu text alb pe verde si
-     pe portocaliu, sub pragul de 4,5:1. Reparatia urmeaza exact tema intunecata
-     de mai jos: culoarea de brand ramane vie, iar textul de pe ea devine cerneala
-     inchisa — 7,84:1 pe verde si 8,31:1 pe portocaliu.
-     Culorile in sine NU se inchid: sunt folosite si ca text pe fundaluri inchise,
-     de exemplu eticheta de deasupra titlului din hero-ul paginii de start, care
-     sta pe gradientul albastru. Cu portocaliul inchis la #b45309 ajungea la
-     1,03:1 acolo, adica invizibila. */
-  --highlight: #f59e0b;
+    --sky: #0ea5e9;
+    --highlight: #f59e0b;
   --highlight-foreground: #0f172a;
+  --highlight-ink: #b45309;
   --success: #22c55e;
   --success-foreground: #0f172a;
+  --success-ink: #15803d;
 
-  --destructive: #ef4444;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
 
   --border: rgba(15, 23, 42, 0.08);
-  --input: rgba(15, 23, 42, 0.12);
+  --input: #7b8799;
   --ring: #2563eb;
+  --touch-target: 44px;
 
   --gradient-primary: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
   --gradient-warm: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
@@ -94,12 +84,15 @@
   --sky: #38bdf8;
   --highlight: #fbbf24;
   --highlight-foreground: #0b1220;
+  --highlight-ink: #fbbf24;
   --success: #34d399;
   --success-foreground: #0b1220;
+  --success-ink: #34d399;
   --destructive: #f87171;
+  --destructive-foreground: #0b1220;
   --border: rgba(255, 255, 255, 0.1);
-  --input: rgba(255, 255, 255, 0.14);
-  --ring: #3b82f6;
+  --input: #5d6b82;
+  --ring: #60a5fa;
   --chart-1: #3b82f6;
   --chart-2: #38bdf8;
   --chart-3: #fbbf24;
@@ -140,9 +133,12 @@
   --color-sky: var(--sky);
   --color-highlight: var(--highlight);
   --color-highlight-foreground: var(--highlight-foreground);
+  --color-highlight-ink: var(--highlight-ink);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-success-ink: var(--success-ink);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -160,6 +156,8 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  --spacing-touch-target: var(--touch-target);
+
   --font-sans: var(--font-sans);
   --font-display: var(--font-display);
 
@@ -170,7 +168,11 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
   html {
     min-height: 100%;
@@ -227,12 +229,8 @@
 }
 
 @layer components {
-  /* Primary brand gradient pill CTA (UIGuidelines .btn-cta--primary) */
-  /* Same keyboard-focus ring as the Button component (outline-none +
-     focus-visible ring): the pills had none, so a Tab user lost their place on
-     a white pill over the brand gradient. Fixed on the class, for every pill. */
-  .btn-cta {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-7 py-3 text-base font-bold transition-all outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50;
+      .btn-cta {
+    @apply inline-flex items-center justify-center gap-2 min-h-touch-target rounded-full px-7 py-3 text-base font-bold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring;
   }
   .btn-cta--primary {
     background: var(--gradient-primary);
@@ -244,15 +242,32 @@
     box-shadow: 0 8px 30px rgba(37, 99, 235, 0.4);
   }
   .btn-cta--outline {
-    @apply border-2 bg-transparent text-foreground;
+    @apply border-input border-2 bg-transparent text-foreground;
   }
   .btn-cta--outline:hover {
     border-color: var(--primary);
     color: var(--primary);
   }
-  /* Eyebrow label (amber, uppercase) used above section titles */
+    .btn-cta--white {
+    @apply bg-white text-primary hover:scale-105 focus-visible:outline-white;
+  }
+  .btn-cta--on-brand {
+    @apply border-2 border-white/70 text-white hover:border-white hover:bg-white/10 focus-visible:outline-white;
+  }
   .eyebrow {
     @apply inline-block text-xs font-bold tracking-[0.15em] uppercase;
+    color: var(--highlight-ink);
+  }
+  .eyebrow--on-brand {
     color: var(--highlight);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .btn-cta {
+      transition: none;
+    }
+    .btn-cta:hover {
+      transform: none;
+      scale: none;
+    }
   }
 }
