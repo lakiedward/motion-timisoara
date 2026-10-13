@@ -12,10 +12,14 @@ import { registerCoachHandler } from "./contract.ts";
 
 serve(withCors(registerCoachHandler({
   preflight: async (invitationCode) => {
-    const { data, error } = await supabaseAdmin.from("coach_invitation_codes")
-      .select("expires_at,current_uses,max_uses").eq("code", invitationCode)
-      .maybeSingle();
-    return error ? "SERVER_ERROR" : invitationAvailability(data);
+    for (const table of ["coach_invitation_codes", "club_invitation_codes"]) {
+      const { data, error } = await supabaseAdmin.from(table)
+        .select("expires_at,current_uses,max_uses").eq("code", invitationCode)
+        .maybeSingle();
+      if (error) return "SERVER_ERROR";
+      if (data) return invitationAvailability(data);
+    }
+    return invitationAvailability(null);
   },
   createUser: async (payload) => {
     const { data, error } = await supabaseAdmin.auth.admin.createUser({

@@ -34,6 +34,7 @@ ALTER TABLE public.coach_sports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coach_invitation_codes ENABLE ROW LEVEL SECURITY;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
 \i /tmp/migrations/00079_atomic_coach_invitation.sql
+\i /tmp/migrations/00087_club_invitation_redemption.sql
 
 CREATE FUNCTION public.test_uuid(v INTEGER) RETURNS UUID LANGUAGE sql IMMUTABLE AS $$
     SELECT ('00000000-0000-0000-0000-' || lpad(v::TEXT,12,'0'))::UUID
@@ -106,6 +107,15 @@ INSERT INTO public.coach_invitation_codes(code,created_by_admin_id,max_uses,curr
         ('EXHAUSTED',public.test_uuid(1),1,1,NULL),('ZERO',public.test_uuid(1),0,0,NULL),
         ('FAIL-WRITE',public.test_uuid(1),1,0,NULL),('ONE-USE',public.test_uuid(1),1,0,NULL),
         ('SAME-USER',public.test_uuid(1),1,0,NULL);
+INSERT INTO public.clubs(id,owner_user_id,name) VALUES(public.test_uuid(300),public.test_uuid(8),'Club Test');
+INSERT INTO public.club_invitation_codes(code,club_id,created_by_user_id,max_uses,current_uses,expires_at)
+    VALUES('CLUB-OK',public.test_uuid(300),public.test_uuid(8),5,0,NULL),
+        ('CLUB-EXP',public.test_uuid(300),public.test_uuid(8),5,0,now()-interval '1 day'),
+        ('CLUB-FULL',public.test_uuid(300),public.test_uuid(8),1,1,NULL),
+        ('CLUB-ONE',public.test_uuid(300),public.test_uuid(8),1,0,NULL);
+INSERT INTO public.clubs(id,owner_user_id,name) VALUES(public.test_uuid(301),public.test_uuid(7),'Al doilea club');
+INSERT INTO public.club_invitation_codes(code,club_id,created_by_user_id,max_uses,current_uses,expires_at)
+    VALUES('CLUB-TWO',public.test_uuid(301),public.test_uuid(7),5,0,NULL);
 CREATE TABLE public.test_snapshots(kind TEXT PRIMARY KEY,value JSONB);
 INSERT INTO public.test_snapshots VALUES
     ('parent',(SELECT to_jsonb(p) - ARRAY['role','name'] FROM public.profiles p WHERE id=public.test_uuid(2))),
@@ -186,5 +196,50 @@ UPDATE public.profiles SET enabled=false WHERE id=public.test_uuid(9);
 SELECT public.test_assert(public.test_try_redeem(9)='PROFILE_DISABLED','disabled coach cannot reuse idempotent success');
 SELECT public.test_assert(public.test_try_redeem(21,'VALID','Coach Phone',' New phone ')='OK','explicit new phone accepted');
 SELECT public.test_assert((SELECT phone='New phone' FROM public.profiles WHERE id=public.test_uuid(21)),'phone trimmed');
+SELECT public.test_assert(public.test_try_redeem(23,'CLUB-EXP')='INVITATION_EXPIRED','expired club code denied');
+SELECT public.test_assert(public.test_try_redeem(24,'CLUB-FULL')='INVITATION_EXHAUSTED','exhausted club code denied');
+SELECT public.test_assert((SELECT bool_and(role='PARENT') FROM public.profiles WHERE id IN (public.test_uuid(23),public.test_uuid(24)))
+    AND NOT EXISTS(SELECT FROM public.coach_profiles WHERE user_id IN (public.test_uuid(23),public.test_uuid(24))),'club code denials keep parent role and create no coach');
+SELECT public.test_assert(public.redeem_coach_invitation(public.test_uuid(22),' CLUB-OK ','Club Coach') ->> 'clubId'=public.test_uuid(300)::TEXT,'club code alone promotes parent and names the club');
+SELECT public.test_assert((SELECT role='COACH' FROM public.profiles WHERE id=public.test_uuid(22))
+    AND EXISTS(SELECT FROM public.club_coaches cc JOIN public.coach_profiles cp ON cp.id=cc.coach_profile_id
+        WHERE cp.user_id=public.test_uuid(22) AND cc.club_id=public.test_uuid(300))
+    AND (SELECT current_uses=1 FROM public.club_invitation_codes WHERE code='CLUB-OK'),'club redemption links coach and consumes one use');
+SELECT public.test_assert(public.redeem_coach_invitation(public.test_uuid(22),'CLUB-OK','Club Coach') ->> 'alreadyCoach'='true','repeat club redemption by member succeeds');
+SELECT public.test_assert((SELECT current_uses=1 FROM public.club_invitation_codes WHERE code='CLUB-OK'),'repeat club redemption by member consumes nothing');
+SELECT public.test_assert(public.redeem_coach_invitation(public.test_uuid(21),'CLUB-OK','Other') ->> 'clubId'=public.test_uuid(300)::TEXT,'existing coach redeeming a club code joins the club');
+SELECT public.test_assert((SELECT current_uses=2 FROM public.club_invitation_codes WHERE code='CLUB-OK'),'existing coach club redemption consumes one use');
+SELECT public.test_assert(NOT has_function_privilege('anon','public.join_club_by_invitation(text)','EXECUTE'),'anon cannot join a club');
+SELECT public.test_assert(has_function_privilege('authenticated','public.join_club_by_invitation(text)','EXECUTE'),'authenticated can join a club');
+SELECT public.test_assert(NOT has_function_privilege('authenticated','private.claim_club_invitation(uuid,text)','EXECUTE')
+    AND NOT has_function_privilege('anon','private.claim_club_invitation(uuid,text)','EXECUTE'),'private club claim unavailable to clients');
+RESET ROLE;
+INSERT INTO auth.users(id,email,email_confirmed_at) VALUES(public.test_uuid(41),'coach-41@local.test',now());
+INSERT INTO public.coach_profiles(id,user_id) VALUES(public.test_uuid(141),public.test_uuid(41));
+UPDATE public.profiles SET role='COACH' WHERE id=public.test_uuid(41);
+CREATE FUNCTION public.test_try_join(v_user INTEGER,v_code TEXT) RETURNS TEXT LANGUAGE plpgsql AS $$
+BEGIN
+    PERFORM set_config('request.jwt.claim.sub',public.test_uuid(v_user)::TEXT,true);
+    RETURN public.join_club_by_invitation(v_code)::TEXT;
+EXCEPTION WHEN OTHERS THEN RETURN SQLERRM;
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.test_try_join(INTEGER,TEXT) TO authenticated;
+SET LOCAL ROLE authenticated;
+SELECT public.test_assert(public.test_try_join(25,'CLUB-OK')='ROLE_NOT_ELIGIBLE','parent cannot join through profile');
+SELECT public.test_assert(public.test_try_join(41,'NOPE-CODE')='INVALID_INVITATION','unknown club code denied');
+SELECT public.test_assert(public.test_try_join(41,'CLUB-EXP')='INVITATION_EXPIRED','expired club code denied in profile');
+SELECT public.test_assert(public.test_try_join(41,'VALID')='INVALID_INVITATION','admin code cannot join a club');
+SELECT public.test_assert((public.test_try_join(41,' CLUB-OK ')::JSONB ->> 'alreadyMember')='false','coach joins club from profile');
+SELECT public.test_assert((public.test_try_join(41,'CLUB-OK')::JSONB ->> 'alreadyMember')='true','repeat join is idempotent');
+SELECT public.test_assert((SELECT public.join_club_by_invitation('CLUB-OK') ->> 'alreadyMember')='true','caller identity comes from the session');
+SELECT public.test_assert((public.test_try_join(41,'CLUB-TWO')::JSONB ->> 'clubId')=public.test_uuid(301)::TEXT,'coach already in one club joins a second club');
+SELECT set_config('request.jwt.claim.sub','',true);
+RESET ROLE;
+SELECT public.test_assert((SELECT current_uses=3 FROM public.club_invitation_codes WHERE code='CLUB-OK')
+    AND (SELECT count(*)=3 FROM public.club_coaches WHERE club_id=public.test_uuid(300)),'profile join consumed exactly one use');
+SELECT public.test_assert((SELECT array_agg(club_id ORDER BY club_id) FROM public.club_coaches WHERE coach_profile_id=public.test_uuid(141))
+    =ARRAY[public.test_uuid(300),public.test_uuid(301)],'coach belongs to both clubs');
+SELECT public.test_assert((SELECT current_uses=1 FROM public.club_invitation_codes WHERE code='CLUB-TWO'),'second club code consumed one use');
 COMMIT;
 \o

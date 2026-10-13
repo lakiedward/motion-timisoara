@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import CoachClubsSection from './profile/CoachClubsSection'
 
 const schema = z.object({
   name: z.string().min(2, 'Minim 2 caractere'),
@@ -22,7 +23,10 @@ type Values = z.infer<typeof schema>
 export default function CoachOwnProfilePage() {
   const qc = useQueryClient()
   const { refresh } = useAuth()
-  const { data, isLoading } = useQuery({ queryKey: ['my-coach-profile'], queryFn: getMyCoachProfile })
+  const { data, isLoading } = useQuery({
+    queryKey: ['my-coach-profile'],
+    queryFn: getMyCoachProfile,
+  })
 
   const {
     register,
@@ -60,8 +64,8 @@ export default function CoachOwnProfilePage() {
   }
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="font-display mb-6 text-2xl font-bold text-foreground">Profil antrenor</h1>
+    <div className="max-w-2xl space-y-6">
+      <h1 className="font-display text-2xl font-bold text-foreground">Profil antrenor</h1>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
         <section className="bg-card shadow-card space-y-4 rounded-3xl border p-6">
           <div className="space-y-1.5">
@@ -87,6 +91,7 @@ export default function CoachOwnProfilePage() {
           {isSubmitting ? 'Se salvează…' : 'Salvează'}
         </Button>
       </form>
+      <CoachClubsSection />
     </div>
   )
 }

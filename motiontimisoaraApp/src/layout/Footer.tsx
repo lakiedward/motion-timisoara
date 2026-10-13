@@ -32,7 +32,6 @@ const GROUPS = [
     links: [
       { to: '/termeni', label: 'Termeni' },
       { to: '/confidentialitate', label: 'Confidențialitate' },
-      { to: '/gdpr', label: 'GDPR' },
     ],
   },
 ]
