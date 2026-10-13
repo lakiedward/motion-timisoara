@@ -4,10 +4,10 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROLES = {
-  admin: { email: 'qa.admin@motiontimisoara.test', home: '/admin', name: 'QA Admin' },
-  club: { email: 'qa.club@motiontimisoara.test', home: '/club', name: 'QA Club' },
-  coach: { email: 'qa.coach@motiontimisoara.test', home: '/coach', name: 'QA Antrenor' },
-  parent: { email: 'qa.parent@motiontimisoara.test', home: '/account', name: 'QA Părinte' },
+  admin: { email: 'laki.admin@motiontimisoara.test', home: '/admin', name: 'QA Admin' },
+  club: { email: 'uiaudit.club@gmail.com', home: '/club', name: 'QA Club' },
+  coach: { email: 'laki.antrenor@motiontimisoara.test', home: '/coach', name: 'QA Antrenor' },
+  parent: { email: 'spec.parent.mt@gmail.com', home: '/account', name: 'QA Părinte' },
 }
 
 const LIVE_ORIGINS = new Set([
