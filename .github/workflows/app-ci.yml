@@ -69,7 +69,36 @@ on:
       - 'supabase/tests/*atomic-enrollment-creation*'
       - 'supabase/tests/*camp-adult*'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  native-changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      native: ${{ steps.filter.outputs.native }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            native:
+              - 'motiontimisoaraApp/android/**'
+              - 'motiontimisoaraApp/ios/**'
+              - 'motiontimisoaraApp/capacitor.config.ts'
+              - 'motiontimisoaraApp/package.json'
+              - 'motiontimisoaraApp/package-lock.json'
+              - 'motiontimisoaraApp/patches/**'
+              - 'motiontimisoaraApp/scripts/normalize-capacitor-paths.mjs'
+              - 'tests/native-location/**'
+              - '.github/workflows/app-ci.yml'
+
   location-reverse:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -161,6 +190,8 @@ jobs:
           VITE_STRIPE_PUBLISHABLE_KEY: pk_test_placeholder
 
   android-build:
+    needs: native-changes
+    if: needs.native-changes.outputs.native == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:
@@ -177,6 +208,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+          cache: gradle
       - run: npm ci
       - run: npm run build
         env:
@@ -186,9 +218,11 @@ jobs:
       - run: npx cap sync android
       - name: Test push lifecycle and compile native app and instrumentation
         working-directory: motiontimisoaraApp/android
-        run: bash ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest
+        run: bash ./gradlew --no-daemon --stacktrace -Dorg.gradle.jvmargs=-Xmx4g :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest
 
   ios-build:
+    needs: native-changes
+    if: needs.native-changes.outputs.native == 'true'
     runs-on: macos-latest
     timeout-minutes: 25
     defaults:
