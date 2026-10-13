@@ -113,6 +113,9 @@ INSERT INTO public.club_invitation_codes(code,club_id,created_by_user_id,max_use
         ('CLUB-EXP',public.test_uuid(300),public.test_uuid(8),5,0,now()-interval '1 day'),
         ('CLUB-FULL',public.test_uuid(300),public.test_uuid(8),1,1,NULL),
         ('CLUB-ONE',public.test_uuid(300),public.test_uuid(8),1,0,NULL);
+INSERT INTO public.clubs(id,owner_user_id,name) VALUES(public.test_uuid(301),public.test_uuid(7),'Al doilea club');
+INSERT INTO public.club_invitation_codes(code,club_id,created_by_user_id,max_uses,current_uses,expires_at)
+    VALUES('CLUB-TWO',public.test_uuid(301),public.test_uuid(7),5,0,NULL);
 CREATE TABLE public.test_snapshots(kind TEXT PRIMARY KEY,value JSONB);
 INSERT INTO public.test_snapshots VALUES
     ('parent',(SELECT to_jsonb(p) - ARRAY['role','name'] FROM public.profiles p WHERE id=public.test_uuid(2))),
@@ -230,9 +233,13 @@ SELECT public.test_assert(public.test_try_join(41,'VALID')='INVALID_INVITATION',
 SELECT public.test_assert((public.test_try_join(41,' CLUB-OK ')::JSONB ->> 'alreadyMember')='false','coach joins club from profile');
 SELECT public.test_assert((public.test_try_join(41,'CLUB-OK')::JSONB ->> 'alreadyMember')='true','repeat join is idempotent');
 SELECT public.test_assert((SELECT public.join_club_by_invitation('CLUB-OK') ->> 'alreadyMember')='true','caller identity comes from the session');
+SELECT public.test_assert((public.test_try_join(41,'CLUB-TWO')::JSONB ->> 'clubId')=public.test_uuid(301)::TEXT,'coach already in one club joins a second club');
 SELECT set_config('request.jwt.claim.sub','',true);
 RESET ROLE;
 SELECT public.test_assert((SELECT current_uses=3 FROM public.club_invitation_codes WHERE code='CLUB-OK')
     AND (SELECT count(*)=3 FROM public.club_coaches WHERE club_id=public.test_uuid(300)),'profile join consumed exactly one use');
+SELECT public.test_assert((SELECT array_agg(club_id ORDER BY club_id) FROM public.club_coaches WHERE coach_profile_id=public.test_uuid(141))
+    =ARRAY[public.test_uuid(300),public.test_uuid(301)],'coach belongs to both clubs');
+SELECT public.test_assert((SELECT current_uses=1 FROM public.club_invitation_codes WHERE code='CLUB-TWO'),'second club code consumed one use');
 COMMIT;
 \o
