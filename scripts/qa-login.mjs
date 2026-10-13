@@ -34,7 +34,7 @@ function usage(message) {
 function credentials(role) {
   const key = role.toUpperCase()
   const email = process.env[`MT_TEST_${key}_EMAIL`] || ROLES[role].email
-  const password = process.env[`MT_TEST_${key}_PASSWORD`] || process.env.MT_TEST_PASSWORD || ''
+  const password = process.env[`MT_TEST_${key}_PASSWORD`] || ''
   return { email, password }
 }
 
@@ -61,7 +61,8 @@ function check() {
   for (const role of Object.keys(ROLES)) {
     const { email, password } = credentials(role)
     if (!password) ready = false
-    console.log(`${role.padEnd(6)} ${email}  parolă: ${password ? 'prezentă' : 'LIPSĂ'}`)
+    const custom = Boolean(process.env[`MT_TEST_${role.toUpperCase()}_EMAIL`])
+    console.log(`${role.padEnd(6)} ${email}${custom ? '' : ' (implicit)'}  parolă: ${password ? 'prezentă' : 'LIPSĂ'}`)
   }
   process.exit(ready ? 0 : 1)
 }
@@ -103,7 +104,7 @@ function assertAllowedOrigin(baseUrl, allowLive) {
 async function login(role, opts) {
   const origin = assertAllowedOrigin(opts.baseUrl, opts.allowLive)
   const { email, password } = credentials(role)
-  if (!password) usage(`Lipsește MT_TEST_${role.toUpperCase()}_PASSWORD sau MT_TEST_PASSWORD.`)
+  if (!password) usage(`Lipsește MT_TEST_${role.toUpperCase()}_PASSWORD.`)
   const { chromium } = await import('@playwright/test')
   const browser = await chromium.launch()
   try {
