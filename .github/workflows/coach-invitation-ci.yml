@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'supabase/migrations/00079_atomic_coach_invitation.sql'
+      - 'supabase/migrations/00087_club_invitation_redemption.sql'
       - 'supabase/functions/redeem-coach-invitation/**'
       - 'supabase/functions/register-coach/**'
       - 'supabase/functions/_shared/coach-invitation.ts'
@@ -14,6 +15,7 @@ on:
     branches: [master]
     paths:
       - 'supabase/migrations/00079_atomic_coach_invitation.sql'
+      - 'supabase/migrations/00087_club_invitation_redemption.sql'
       - 'supabase/functions/redeem-coach-invitation/**'
       - 'supabase/functions/register-coach/**'
       - 'supabase/functions/_shared/coach-invitation.ts'

@@ -15,6 +15,11 @@ vi.mock('@/lib/auth-context', () => ({
   }),
 }))
 
+vi.mock('@/api/coach-registration/club-membership', () => ({
+  getMyCoachClubs: vi.fn().mockResolvedValue([]),
+  joinClubByInvitation: vi.fn(),
+}))
+
 vi.mock('@/api/coach', () => ({
   getMyCoachProfile: vi.fn(),
   updateMyCoachProfile: vi.fn(),

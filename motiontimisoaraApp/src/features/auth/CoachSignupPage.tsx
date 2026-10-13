@@ -238,9 +238,18 @@ export default function CoachSignupPage() {
               id="invitationCode"
               {...register('invitationCode')}
               aria-invalid={!!errors.invitationCode}
+              aria-describedby={
+                errors.invitationCode ? 'invitationCode-error' : 'invitationCode-hint'
+              }
             />
-            {errors.invitationCode && (
-              <p className="text-destructive text-xs">{errors.invitationCode.message}</p>
+            {errors.invitationCode ? (
+              <p id="invitationCode-error" className="text-destructive text-xs">
+                {errors.invitationCode.message}
+              </p>
+            ) : (
+              <p id="invitationCode-hint" className="text-muted-foreground text-xs">
+                Folosește codul primit de la clubul tău sau de la administrator.
+              </p>
             )}
           </div>
         )}
