@@ -143,6 +143,28 @@ export async function getPublicClubs(): Promise<ClubListItem[]> {
   return (data ?? []) as unknown as ClubListItem[]
 }
 
+export type ClubHeadquarters = {
+  id: string
+  name: string
+  address: string | null
+  city: string | null
+  lat: number
+  lng: number
+}
+
+export async function getClubHeadquarters(): Promise<ClubHeadquarters[]> {
+  const { data, error } = await supabase
+    .from('clubs')
+    .select('id, name, address, city, lat, lng')
+    .not('lat', 'is', null)
+    .not('lng', 'is', null)
+    .order('name')
+  if (error) throw error
+  return (data ?? []).flatMap((club) =>
+    club.lat != null && club.lng != null ? [{ ...club, lat: club.lat, lng: club.lng }] : [],
+  )
+}
+
 export async function getPublicClub(id: string): Promise<ClubListItem | null> {
   const { data, error } = await supabase
     .from('clubs')
