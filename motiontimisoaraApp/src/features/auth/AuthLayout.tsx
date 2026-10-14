@@ -30,15 +30,16 @@ export function AuthLayout({
           className="absolute inset-0 size-full object-cover"
         />
         <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(135deg, rgba(37,99,235,0.92) 0%, rgba(14,165,233,0.78) 100%)',
-          }}
+          className="absolute inset-0 opacity-90"
+          style={{ background: 'var(--gradient-primary)' }}
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-1/2"
+          style={{ background: 'linear-gradient(to top, var(--overlay-scrim), transparent)' }}
         />
         <div className="relative z-10 flex h-full flex-col justify-between p-10 text-white">
-          <Link to="/" className="font-display text-xl font-extrabold">
-            Motion Timișoara
+          <Link to="/" className="self-start rounded-xl focus-visible:outline-white">
+            <Logo tone="on-brand" />
           </Link>
           <div>
             <h2 className="font-display text-4xl leading-tight font-extrabold">
