@@ -4,6 +4,7 @@ import { ArrowLeft, CalendarDays } from 'lucide-react'
 
 import { formatZi, getTabaraDetaliu, sAIncheiat } from '@/api/camps'
 import { plural } from '@/lib/plural'
+import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
 import PhotoGallery from '@/components/PhotoGallery'
 import { Badge } from '@/components/ui/badge'
@@ -76,6 +77,7 @@ export default function CampDetailsPage() {
         title={tabara.title}
         backTo="/tabere"
         backLabel="Înapoi la tabere"
+        width="max-w-4xl"
       />
 
       <div className="mx-auto max-w-4xl px-6 py-8">
@@ -88,29 +90,28 @@ export default function CampDetailsPage() {
           </Link>
         )}
 
-        {(!heroUrl || incheiata || plina) && (
-          <div
-            className={
-              heroUrl
-                ? 'flex flex-wrap items-center gap-3'
-                : 'mt-4 flex flex-wrap items-center gap-3'
-            }
-          >
-            {!heroUrl && (
-              <h1 className="font-display text-3xl font-extrabold text-foreground md:text-4xl">
-                {tabara.title}
-              </h1>
-            )}
-            {incheiata && <Badge variant="secondary">Încheiată</Badge>}
-            {!incheiata && plina && <Badge variant="destructive">Locuri epuizate</Badge>}
-          </div>
+        {!heroUrl && (
+          <h1 className="font-display text-foreground mt-4 text-3xl font-extrabold md:text-4xl">
+            {tabara.title}
+          </h1>
         )}
 
-        <div className="text-muted-foreground mt-4 flex flex-wrap gap-5 text-sm">
+        <div
+          className={cn(
+            'text-muted-foreground flex flex-wrap items-center gap-x-5 gap-y-2 text-sm',
+            !heroUrl && 'mt-4',
+          )}
+        >
           <span className="flex items-center gap-1.5">
-            <CalendarDays className="size-4" />
+            <CalendarDays aria-hidden="true" className="size-4" />
             {formatZi(tabara.period_start)} – {formatZi(tabara.period_end)}
+            {incheiata && (
+              <Badge variant="secondary" className="ml-1">
+                Încheiată
+              </Badge>
+            )}
           </span>
+          {!incheiata && plina && <Badge variant="destructive">Locuri epuizate</Badge>}
           <CampLocation location={data.location} details={tabara.location_text} />
           {!incheiata && locuriRamase !== null && locuriRamase > 0 && (
             <span>{plural(locuriRamase, 'loc rămas', 'locuri rămase')}</span>
