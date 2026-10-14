@@ -44,7 +44,7 @@ export default function CoachClubsSection() {
   }
 
   return (
-    <Card role="region" aria-labelledby="coach-clubs-heading" className="shadow-none">
+    <Card role="region" aria-labelledby="coach-clubs-heading">
       <CardContent className="space-y-4">
         <h2 id="coach-clubs-heading" className="font-display text-lg font-bold text-foreground">
           Cluburile mele
