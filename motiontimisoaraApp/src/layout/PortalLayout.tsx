@@ -23,7 +23,7 @@ export type { PortalNavItem } from '@/layout/navigation'
 const navItemClass = ({ isActive }: { isActive: boolean }) =>
   cn(
     'flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors',
-    'focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-primary',
+    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
     isActive
       ? 'bg-primary/10 text-primary'
       : 'text-muted-foreground hover:bg-secondary hover:text-foreground [&:hover]:bg-secondary [&:hover]:text-foreground',
@@ -32,13 +32,13 @@ const navItemClass = ({ isActive }: { isActive: boolean }) =>
 const logoutClassName = cn(
   'text-destructive flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-xl px-3 text-sm font-medium',
   'hover:bg-secondary [&:hover]:bg-secondary',
-  'focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-primary',
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
   'disabled:cursor-wait disabled:opacity-60',
 )
 
 const logoLinkClassName = cn(
   'inline-flex min-h-11 min-w-11 items-center rounded-md',
-  'focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-primary',
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
 )
 
 function firstNameOf(name: string | undefined) {
@@ -121,7 +121,7 @@ function ProfileNameLink({
       className={cn(
         'text-primary flex min-h-11 cursor-pointer items-center gap-2 rounded-xl px-3 text-sm font-medium underline-offset-4',
         'hover:bg-secondary hover:underline [&:hover]:bg-secondary [&:hover]:underline',
-        'outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px]',
+        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
         className,
       )}
     >

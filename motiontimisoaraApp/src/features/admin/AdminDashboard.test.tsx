@@ -212,8 +212,9 @@ test('grila e 1 / 2 / 4 coloane, cardurile au înălțime stabilă și inel de f
     expect(card.className).toMatch(/min-h-\[11\.5rem\]/)
     expect(card.className).toMatch(/h-full/)
     expect(card.className).toMatch(/cursor-pointer/)
-    expect(card.className).toMatch(/focus-visible:ring-\[3px\]/)
-    expect(card.className).toMatch(/focus-visible:ring-ring\/50/)
+    expect(card.className).toMatch(/focus-visible:outline-2/)
+    expect(card.className).toMatch(/focus-visible:outline-ring/)
+    expect(card.className).not.toMatch(/ring-ring\/50/)
     expect(card.className).not.toMatch(/outline-primary/)
     expect(card.className).toMatch(/hover:-translate-y-1/)
   }

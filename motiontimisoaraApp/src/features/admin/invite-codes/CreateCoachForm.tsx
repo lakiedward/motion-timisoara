@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label'
 import CopyInviteValueButton from '@/components/invite-codes/CopyInviteValueButton'
 
 const selectClass =
-  'border-input focus-visible:border-ring focus-visible:ring-ring/50 min-h-11 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] disabled:opacity-50'
+  'border-input min-h-11 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-50'
 
 const coachSchema = z.object({
   firstName: z.string().trim().min(2, 'Minim 2 caractere'),

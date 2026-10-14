@@ -60,7 +60,7 @@ test('prenumele din dreapta e link către profil, nu un item de navigare', () =>
     expect(link).toHaveAttribute('href', '/admin/profile')
     expect(link.className).toMatch(/text-primary/)
     expect(link.className).toMatch(/hover:underline/)
-    expect(link.className).toMatch(/focus-visible:ring-\[3px\]/)
+    expect(link.className).toMatch(/focus-visible:outline-2/)
     expect(link.querySelector('svg')).toBeTruthy()
   }
   const nav = screen.getByRole('navigation')

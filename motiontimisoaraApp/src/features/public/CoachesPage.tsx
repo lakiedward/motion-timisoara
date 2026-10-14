@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 
-import { getCoaches, publicUrl } from '@/api/public'
+import { getCoaches, publicUrl, type CoachListItem } from '@/api/public'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
 
 export default function CoachesPage() {
   const [nameSearch, setNameSearch] = useState('')
@@ -49,7 +51,7 @@ export default function CoachesPage() {
         aria-label="Listă antrenori"
         className="mx-auto max-w-7xl px-6 py-10"
       >
-        <div className="mb-7 grid gap-4 sm:grid-cols-2">
+        <div className="mb-8 grid gap-4 sm:grid-cols-2">
           <div className="min-w-0 space-y-2">
             <Label htmlFor="coach-name-search">Caută după nume</Label>
             <Input
@@ -57,7 +59,6 @@ export default function CoachesPage() {
               type="search"
               value={nameSearch}
               onChange={(event) => setNameSearch(event.target.value)}
-              className="h-11 lg:h-9"
             />
           </div>
           <div className="min-w-0 space-y-2">
@@ -66,7 +67,7 @@ export default function CoachesPage() {
               id="coach-sport-filter"
               value={sportId}
               onChange={(event) => setSportId(event.target.value)}
-              className="border-input bg-background focus-visible:ring-ring h-11 w-full min-w-0 rounded-md border px-3 text-sm outline-none focus-visible:ring-2 lg:h-9"
+              className="border-input bg-background hover:border-muted-foreground focus-visible:outline-ring h-touch-target w-full min-w-0 rounded-md border px-3 text-base shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 md:text-sm"
             >
               <option value="">Toate sporturile</option>
               {sports.map((sport) => (
@@ -81,79 +82,117 @@ export default function CoachesPage() {
           <div
             role="status"
             aria-label="Se încarcă antrenorii"
-            className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3"
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
           >
             {[0, 1, 2].map((i) => (
-              <Skeleton key={i} className="h-56 rounded-3xl" />
+              <Skeleton key={i} className="h-24 rounded-xl sm:h-56" />
             ))}
           </div>
         ) : coachesQuery.isError ? (
-          <div className="space-y-4 rounded-3xl border p-6">
-            <p role="alert">Nu am putut încărca antrenorii.</p>
-            <Button variant="outline" onClick={() => void coachesQuery.refetch()}>
-              Reîncearcă
-            </Button>
-          </div>
+          <StatusView
+            state="error"
+            title="Nu am putut încărca antrenorii."
+            text="Verifică conexiunea și încearcă din nou."
+            onRetry={() => void coachesQuery.refetch()}
+          />
         ) : !coaches.length ? (
-          <div className="text-muted-foreground rounded-3xl border border-dashed py-20 text-center">
-            Niciun antrenor disponibil momentan.
-          </div>
+          <StatusView
+            state="empty"
+            title="Niciun antrenor disponibil momentan."
+            text="Revino curând. Până atunci, poți descoperi cursurile și cluburile din Timișoara."
+            action={
+              <div className="mt-3 flex flex-wrap justify-center gap-3">
+                <Button asChild>
+                  <Link to="/cursuri">Vezi cursurile</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link to="/cluburi">Vezi cluburile</Link>
+                </Button>
+              </div>
+            }
+          />
         ) : filteredCoaches.length ? (
-          <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredCoaches.map((c) => {
-              const photo = publicUrl('coach-photos', c.photo_storage_path)
-              const name = c.profile?.name ?? 'Antrenor'
-              return (
-                <Link
-                  key={c.id}
-                  to={`/antrenori/${c.user_id}`}
-                  className="bg-card shadow-card hover:shadow-card-hover focus-visible:ring-ring min-w-0 rounded-3xl p-8 text-center outline-none transition-all duration-300 hover:-translate-y-2 focus-visible:ring-2 wrap-anywhere"
-                >
-                  <div className="mx-auto mb-4 size-28 overflow-hidden rounded-full border-4 border-muted">
-                    {photo ? (
-                      <img src={photo} alt={name} className="size-full object-cover" />
-                    ) : (
-                      <div className="bg-primary text-primary-foreground grid size-full place-items-center text-2xl font-bold">
-                        {name.charAt(0)}
-                      </div>
-                    )}
-                  </div>
-                  <h3 className="font-display text-xl font-bold text-foreground">{name}</h3>
-                  <div className="mt-3 flex flex-wrap justify-center gap-1.5">
-                    {c.coach_sports
-                      ?.map((cs) => cs.sport)
-                      .filter(Boolean)
-                      .map((s) => (
-                        <Badge
-                          key={s!.id}
-                          variant="outline"
-                          className="max-w-full whitespace-normal wrap-anywhere"
-                        >
-                          {s!.name}
-                        </Badge>
-                      ))}
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredCoaches.map((coach) => (
+              <li key={coach.id} className="min-w-0">
+                <CoachCard coach={coach} />
+              </li>
+            ))}
+          </ul>
         ) : (
-          <div className="space-y-4 rounded-3xl border border-dashed px-6 py-20 text-center">
-            <p role="status" className="text-muted-foreground">
-              Niciun antrenor nu corespunde căutării și filtrelor.
-            </p>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setNameSearch('')
-                setSportId('')
-              }}
-            >
-              Resetează filtrele
-            </Button>
-          </div>
+          <StatusView
+            state="empty"
+            title="Niciun antrenor nu corespunde căutării și filtrelor."
+            text="Încearcă alt nume sau alt sport."
+            action={
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-3"
+                onClick={() => {
+                  setNameSearch('')
+                  setSportId('')
+                }}
+              >
+                Resetează filtrele
+              </Button>
+            }
+          />
         )}
       </section>
     </div>
+  )
+}
+
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toLocaleUpperCase('ro'))
+    .join('')
+}
+
+function CoachCard({ coach }: { coach: CoachListItem }) {
+  const [photoFailed, setPhotoFailed] = useState(false)
+  const photo = publicUrl('coach-photos', coach.photo_storage_path)
+  const name = coach.profile?.name ?? 'Antrenor'
+  const sports = coach.coach_sports.flatMap(({ sport }) => (sport ? [sport] : []))
+  return (
+    <Link
+      to={`/antrenori/${coach.user_id}`}
+      className="bg-card text-card-foreground hover:border-foreground/20 hover:shadow-card flex h-full min-w-0 items-center gap-4 rounded-xl border p-5 transition-[box-shadow,border-color] duration-200 motion-reduce:transition-none wrap-anywhere sm:flex-col sm:gap-0 sm:p-6 sm:text-center"
+    >
+      <Avatar className="size-16 sm:mb-4 sm:size-24">
+        {photo && !photoFailed ? (
+          <img
+            src={photo}
+            alt={name}
+            onError={() => setPhotoFailed(true)}
+            className="size-full object-cover"
+          />
+        ) : (
+          <AvatarFallback aria-hidden="true" className="text-xl sm:text-3xl">
+            {initials(name)}
+          </AvatarFallback>
+        )}
+      </Avatar>
+      <div className="min-w-0">
+        <h3 className="font-display text-foreground text-lg font-bold">{name}</h3>
+        {sports.length ? (
+          <div className="mt-2 flex flex-wrap gap-1.5 sm:justify-center">
+            {sports.map((sport) => (
+              <Badge
+                key={sport.id}
+                variant="outline"
+                className="max-w-full whitespace-normal wrap-anywhere"
+              >
+                {sport.name}
+              </Badge>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </Link>
   )
 }

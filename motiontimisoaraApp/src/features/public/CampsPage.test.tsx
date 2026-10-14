@@ -166,3 +166,11 @@ test('a location without coordinates remains readable without a broken map link'
   expect(await screen.findByText('Bazin Olimpic')).toBeInTheDocument()
   expect(screen.queryByRole('link', { name: /vezi pe hartă/ })).not.toBeInTheDocument()
 })
+
+test('a camp with places left says registrations are open, a full one does not', async () => {
+  mocked.mockResolvedValue([TABARA, { ...TABARA, id: 'c', slug: 'mtb', locuriRamase: 0 }])
+  deseneaza()
+  expect(await screen.findByText('Înscrieri deschise')).toBeInTheDocument()
+  expect(screen.getAllByText('Înscrieri deschise')).toHaveLength(1)
+  expect(screen.getByText('Locuri epuizate')).toBeInTheDocument()
+})

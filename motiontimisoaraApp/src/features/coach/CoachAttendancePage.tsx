@@ -209,8 +209,8 @@ export default function CoachAttendancePage() {
           }}
           aria-current={active ? 'true' : undefined}
           className={cn(
-            'shadow-card w-full rounded-3xl border-2 p-4 text-left text-sm outline-none transition-colors',
-            'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
+            'shadow-card w-full rounded-3xl border-2 p-4 text-left text-sm transition-colors',
+            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
             active ? 'border-primary bg-primary/10' : 'border-border bg-card hover:bg-accent',
           )}
         >
