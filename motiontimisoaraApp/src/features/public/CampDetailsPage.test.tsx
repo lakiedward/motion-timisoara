@@ -143,7 +143,13 @@ test('necesarul taberei se afișează ca listă pentru părinte', async () => {
     detaliu({
       necesar: [
         { name: 'Haine', items: [{ name: 'Chiloți', quantity: 7 }] },
-        { name: 'Ski', items: [{ name: 'Schiuri', quantity: 1 }, { name: 'Clăpari', quantity: 1 }] },
+        {
+          name: 'Ski',
+          items: [
+            { name: 'Schiuri', quantity: 1 },
+            { name: 'Clăpari', quantity: 1 },
+          ],
+        },
       ],
     }) as never,
   )
@@ -151,9 +157,25 @@ test('necesarul taberei se afișează ca listă pentru părinte', async () => {
   expect(await screen.findByRole('heading', { name: 'Necesar pentru tabără' })).toBeInTheDocument()
   expect(screen.getByRole('heading', { name: 'Haine' })).toBeInTheDocument()
   expect(screen.getByRole('heading', { name: 'Ski' })).toBeInTheDocument()
-  expect(screen.getByText('Chiloți — 7')).toBeInTheDocument()
-  expect(screen.getByText('Schiuri — 1')).toBeInTheDocument()
-  expect(screen.getByText('Clăpari — 1')).toBeInTheDocument()
+  expect(screen.getAllByRole('listitem')[0].textContent).toBe('7\u00a0×\u00a0Chiloți')
+  expect(screen.getByText('Schiuri')).toBeInTheDocument()
+  expect(screen.getByText('Clăpari')).toBeInTheDocument()
+})
+test('categoria care repetă titlul necesarului nu se mai afișează a doua oară', async () => {
+  mocked.mockResolvedValue(
+    detaliu({
+      necesar: [
+        { name: 'Necesar pentru tabără', items: [{ name: 'Bicicletă', quantity: 1 }] },
+        { name: 'Haine', items: [{ name: 'Tricou', quantity: 3 }] },
+      ],
+    }) as never,
+  )
+  renderPage()
+  await screen.findByRole('heading', { level: 2, name: 'Necesar pentru tabără' })
+  expect(screen.getAllByRole('heading', { name: 'Necesar pentru tabără' })).toHaveLength(1)
+  expect(screen.getByRole('heading', { level: 3, name: 'Haine' })).toBeInTheDocument()
+  expect(screen.getByText('Bicicletă')).toBeInTheDocument()
+  expect(screen.getAllByRole('listitem')[1].textContent).toBe('3\u00a0×\u00a0Tricou')
 })
 test('regulamentul taberei apare ca text cu rânduri păstrate', async () => {
   mocked.mockResolvedValue(
@@ -185,6 +207,8 @@ test('fișierul regulamentului se deschide cu nume, tip și mărime', async () =
   renderPage()
   const link = await screen.findByRole('link', { name: /regulament.pdf/ })
   expect(link).toHaveAttribute('href', 'https://public/camp-rules/camp-1/uuid.pdf')
+  expect(link).toHaveTextContent('Deschide regulamentul')
+  expect(link).not.toHaveTextContent('regulament.pdf')
   expect(link).toHaveTextContent('PDF')
   expect(link).toHaveTextContent('2 KB')
   expect(screen.getByText('Fără telefoane.')).toBeInTheDocument()
@@ -204,6 +228,28 @@ test('doar fișierul arată totuși secțiunea Regulament', async () => {
   expect(await screen.findByRole('heading', { name: 'Regulament' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: /regulament.docx/ })).toHaveTextContent('Word')
 })
+test('un regulament lung se arată scurtat și se poate desfășura', async () => {
+  const user = userEvent.setup()
+  const reguli = Array.from({ length: 12 }, (_, i) => `${i + 1}. Regula ${i + 1}.`).join('\n')
+  mocked.mockResolvedValue(detaliu({ tabara: { rules: reguli } }) as never)
+  renderPage()
+  const sectiune = (await screen.findByRole('heading', { name: 'Regulament' })).closest('section')
+  expect(sectiune?.querySelector('p')).toHaveClass('line-clamp-8')
+  const buton = screen.getByRole('button', { name: 'Arată tot regulamentul' })
+  expect(buton).toHaveAttribute('aria-expanded', 'false')
+  await user.click(buton)
+  expect(sectiune?.querySelector('p')).not.toHaveClass('line-clamp-8')
+  expect(screen.getByRole('button', { name: 'Arată mai puțin' })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  )
+})
+test('un regulament scurt nu are buton de desfășurare', async () => {
+  mocked.mockResolvedValue(detaliu({ tabara: { rules: 'Fără telefoane.' } }) as never)
+  renderPage()
+  await screen.findByRole('heading', { name: 'Regulament' })
+  expect(screen.queryByRole('button', { name: 'Arată tot regulamentul' })).not.toBeInTheDocument()
+})
 test('o tabără fără necesar nu arată o secțiune goală', async () => {
   renderPage()
   await screen.findByRole('button', { name: 'Înscrie-te' })
@@ -211,7 +257,7 @@ test('o tabără fără necesar nu arată o secțiune goală', async () => {
 })
 test('un antrenor fără poză primește inițiala numelui', async () => {
   mocked.mockResolvedValue(
-    detaliu({ antrenori: [{ id: 'a1', nume: 'Maria Pop', pozaUrl: null }] }) as never,
+    detaliu({ antrenori: [{ id: 'a1', nume: 'Maria Pop', pozaUrl: null, link: null }] }) as never,
   )
   renderPage()
   await screen.findByText('Maria Pop')
@@ -305,10 +351,10 @@ test('o desfășurare corectă nu afișează nicio notă', async () => {
 })
 test('clubul organizator se vede, ca link către pagina lui', async () => {
   renderPage()
-  const link = await screen.findByRole('link', { name: 'Club Audit Motion' })
+  const link = await screen.findByRole('link', { name: /Club Audit Motion/ })
   expect(link).toHaveAttribute('href', '/cluburi/club-1')
   expect(screen.getByText('Organizată de')).toBeInTheDocument()
-  expect(screen.getByText('Club')).toBeInTheDocument()
+  expect(link).toHaveTextContent('Club · Vezi pagina clubului')
 })
 
 test('un antrenor organizator duce la pagina lui de antrenor', async () => {
@@ -318,9 +364,9 @@ test('un antrenor organizator duce la pagina lui de antrenor', async () => {
     }) as never,
   )
   renderPage()
-  const link = await screen.findByRole('link', { name: 'Audit Antrenor' })
+  const link = await screen.findByRole('link', { name: /Audit Antrenor/ })
   expect(link).toHaveAttribute('href', '/antrenori/user-1')
-  expect(screen.getByText('Antrenor')).toBeInTheDocument()
+  expect(link).toHaveTextContent('Antrenor · Vezi profilul antrenorului')
 })
 test('o tabără fără proprietar nu arată o secțiune goală', async () => {
   mocked.mockResolvedValue(detaliu({ organizator: null }) as never)
@@ -332,20 +378,41 @@ test('antrenorii care însoțesc se văd, cu nume', async () => {
   mocked.mockResolvedValue(
     detaliu({
       antrenori: [
-        { id: 'a1', nume: 'Audit Antrenor', pozaUrl: 'https://public/coach-photos/a.jpg' },
-        { id: 'a2', nume: 'Maria Pop', pozaUrl: null },
+        {
+          id: 'a1',
+          nume: 'Audit Antrenor',
+          pozaUrl: 'https://public/coach-photos/a.jpg',
+          link: '/antrenori/user-a1',
+        },
+        { id: 'a2', nume: 'Maria Pop', pozaUrl: null, link: null },
       ],
     }) as never,
   )
   renderPage()
   expect(await screen.findByText('Antrenorii care însoțesc')).toBeInTheDocument()
-  expect(screen.getByText('Audit Antrenor')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /Audit Antrenor/ })).toHaveAttribute(
+    'href',
+    '/antrenori/user-a1',
+  )
   expect(screen.getByText('Maria Pop')).toBeInTheDocument()
+  expect(screen.queryByRole('link', { name: /Maria Pop/ })).not.toBeInTheDocument()
+})
+
+test('o tabără fără organizator și fără antrenori nu arată secțiunea', async () => {
+  mocked.mockResolvedValue(detaliu({ organizator: null, antrenori: [] }) as never)
+  const { container } = renderPage()
+  await screen.findByRole('button', { name: 'Înscrie-te' })
+  expect(
+    container.querySelector('[data-section$="section:organizator-si-antrenori"]'),
+  ).not.toBeInTheDocument()
+  expect(screen.queryByText(/însoțe/)).not.toBeInTheDocument()
 })
 
 test('un singur antrenor se scrie la singular', async () => {
   mocked.mockResolvedValue(
-    detaliu({ antrenori: [{ id: 'a1', nume: 'Audit Antrenor', pozaUrl: null }] }) as never,
+    detaliu({
+      antrenori: [{ id: 'a1', nume: 'Audit Antrenor', pozaUrl: null, link: null }],
+    }) as never,
   )
   renderPage()
   expect(await screen.findByText('Antrenorul care însoțește')).toBeInTheDocument()

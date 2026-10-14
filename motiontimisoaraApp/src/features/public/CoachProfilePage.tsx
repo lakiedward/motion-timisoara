@@ -112,7 +112,7 @@ export default function CoachProfilePage() {
       {courses.length > 0 && (
         <div className="mt-10">
           <h2 className="font-display mb-5 text-2xl font-bold">Cursuri predate</h2>
-          <div className="grid gap-7 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-3">
             {courses.map((c) => (
               <CourseCard key={c.id} course={c} />
             ))}

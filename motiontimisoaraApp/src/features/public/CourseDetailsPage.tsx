@@ -1,22 +1,16 @@
-import { OfferExchangeNote } from '@/components/OfferExchangeNote'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, CalendarDays, MapPin, Users } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { COURSE_RULES_FILE_BUCKET, rulesFileAfisabil } from '@/api/camp-rules-file'
 import { courseHeroUrl, getCourse, getCourseSpotsRemaining } from '@/api/public'
-import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
 import { getCourseRatingSummary, getMyCourseRating, submitCourseRating } from '@/api/ratings'
 import { formatLevel } from '@/lib/level'
-import { formatMoney } from '@/lib/money'
 import { useAuth } from '@/lib/auth-context'
-import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
-import { StarRating } from '@/components/StarRating'
+import { CourseDetailsInfo } from '@/features/public/courses/CourseDetailsInfo'
 import { CourseHero } from '@/features/public/courses/CourseHero'
-
-const WEEKDAYS = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă']
+import { CourseEnrollCard } from '@/features/public/courses/CourseEnrollCard'
 
 export default function CourseDetailsPage() {
   const { id = '' } = useParams()
@@ -81,15 +75,13 @@ export default function CourseDetailsPage() {
   }
 
   const levelLabel = formatLevel(course.level)
-  const sessions = [...(course.occurrences ?? [])].sort(
-    (a, b) => +new Date(a.starts_at) - +new Date(b.starts_at),
-  )
   const capacity = course.capacity
   const remaining = capacity == null ? null : (spotsRemaining ?? capacity)
   const isFull = remaining != null && remaining <= 0
+  const canEnroll = !user || user.role === 'PARENT'
 
   const onEnroll = () => {
-    if (isFull) return
+    if (isFull || !canEnroll) return
     if (!user) {
       navigate(`/login?returnUrl=${encodeURIComponent(`/cursuri/${course.id}`)}`)
       return
@@ -108,166 +100,19 @@ export default function CourseDetailsPage() {
 
       <div className="mx-auto max-w-6xl px-6 py-10">
         <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
-          <div>
-            <div className="bg-card shadow-card divide-border grid grid-cols-3 divide-x overflow-hidden rounded-2xl border">
-              {course.age_from != null ? (
-                <InfoTile
-                  icon={<Users className="size-3.5 sm:size-4" />}
-                  label="Vârstă"
-                  value={`${course.age_from}–${course.age_to} ani`}
-                />
-              ) : (
-                <InfoTile
-                  icon={<Users className="size-3.5 sm:size-4" />}
-                  label="Vârstă"
-                  value="—"
-                />
-              )}
-              <InfoTile
-                icon={<MapPin className="size-3.5 sm:size-4" />}
-                label="Locație"
-                value={course.location?.name ?? '—'}
-                to={course.location_id ? `/harta?location=${course.location_id}` : undefined}
-              />
-              {capacity != null ? (
-                <InfoTile
-                  icon={<Users className="size-3.5 sm:size-4" />}
-                  label="Capacitate"
-                  value={`${remaining ?? '—'} locuri rămase`}
-                  hint={`din ${capacity}`}
-                />
-              ) : (
-                <InfoTile
-                  icon={<Users className="size-3.5 sm:size-4" />}
-                  label="Capacitate"
-                  value="—"
-                />
-              )}
-            </div>
-
-            {course.description && (
-              <section className="from-primary/[0.04] to-background mt-8 rounded-3xl border bg-gradient-to-br p-5 sm:p-6">
-                <h2 className="font-display text-xl font-bold">Despre curs</h2>
-                <p className="text-muted-foreground mt-3 leading-relaxed">{course.description}</p>
-              </section>
-            )}
-
-            <CampRulesDisplay
-              rules={null}
-              fisier={rulesFileAfisabil(COURSE_RULES_FILE_BUCKET, course)}
-            />
-
-            {sessions.length > 0 && (
-              <section className="mt-8">
-                <h2 className="font-display text-xl font-bold">Program</h2>
-                <ul className="mt-4 space-y-3">
-                  {sessions.slice(0, 8).map((s) => {
-                    const d = new Date(s.starts_at)
-                    return (
-                      <li
-                        key={s.id}
-                        className="from-card to-primary/[0.03] flex items-center gap-3 rounded-2xl border bg-gradient-to-r p-3.5 shadow-sm"
-                      >
-                        <span className="bg-primary/10 text-primary grid size-10 shrink-0 place-items-center rounded-xl">
-                          <CalendarDays className="size-4" />
-                        </span>
-                        <div className="min-w-0">
-                          <div className="font-semibold">{WEEKDAYS[d.getDay()]}</div>
-                          <div className="text-muted-foreground text-sm">
-                            {d.toLocaleDateString('ro-RO')} ·{' '}
-                            {d.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                        </div>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </section>
-            )}
-
-            {course.coach && (
-              <section className="mt-8">
-                <h2 className="font-display text-xl font-bold">Antrenor</h2>
-                <Link
-                  to={`/antrenori/${course.coach.id}`}
-                  className="from-card hover:border-primary/30 mt-4 flex items-center gap-4 rounded-3xl border bg-gradient-to-r to-sky/5 p-4 shadow-sm transition-colors"
-                >
-                  {course.coach.avatar_url ? (
-                    <img
-                      src={course.coach.avatar_url}
-                      alt=""
-                      className="size-14 rounded-full object-cover ring-2 ring-white"
-                    />
-                  ) : (
-                    <span className="from-primary to-sky grid size-14 place-items-center rounded-full bg-gradient-to-br text-lg font-bold text-white shadow-sm">
-                      {course.coach.name.charAt(0)}
-                    </span>
-                  )}
-                  <span className="min-w-0">
-                    <span className="block font-semibold">{course.coach.name}</span>
-                    <span className="text-muted-foreground text-sm">
-                      Vezi profilul antrenorului
-                    </span>
-                  </span>
-                </Link>
-              </section>
-            )}
-          </div>
+          <CourseDetailsInfo course={course} remaining={remaining} />
 
           <aside className="lg:sticky lg:top-24 lg:self-start">
-            <div className="bg-card shadow-card overflow-hidden rounded-3xl border">
-              <div className="h-1.5" style={{ background: 'var(--gradient-primary)' }} />
-              <div className="flex flex-col items-center p-6 text-center">
-                <div className="font-display text-3xl font-extrabold">
-                  {formatMoney(course.price, course.currency)}
-                  <span className="text-muted-foreground text-base font-normal"> / lună</span>
-                </div>
-                <OfferExchangeNote offer={course} />
-                {course.price_per_session > 0 && (
-                  <p className="text-muted-foreground mt-1 text-sm">
-                    {formatMoney(course.price_per_session, course.currency)} / ședință
-                  </p>
-                )}
-                <button
-                  type="button"
-                  onClick={onEnroll}
-                  disabled={isFull}
-                  className={cn(
-                    'btn-cta btn-cta--primary mt-5 w-full',
-                    isFull && 'pointer-events-none opacity-50',
-                  )}
-                >
-                  {isFull ? 'Locuri epuizate' : 'Înscrie-te'}
-                </button>
-                {isFull ? (
-                  <p className="text-destructive mt-3 text-center text-xs font-medium">
-                    Locuri epuizate
-                  </p>
-                ) : (
-                  <p className="text-muted-foreground mt-3 text-center text-xs">
-                    Plată online sau cash, gestionată din contul tău.
-                  </p>
-                )}
-
-                {rating && rating.count > 0 && (
-                  <div className="mt-5 flex w-full flex-col items-center gap-2 border-t pt-4">
-                    <StarRating value={rating.avg} size={18} />
-                    <span className="text-muted-foreground text-sm">
-                      {rating.avg.toFixed(1)} · {rating.count}{' '}
-                      {rating.count === 1 ? 'evaluare' : 'evaluări'}
-                    </span>
-                  </div>
-                )}
-                {user?.role === 'PARENT' && (
-                  <div className="mt-4 w-full border-t pt-4">
-                    <p className="text-muted-foreground mb-1.5 text-sm font-medium">Nota ta</p>
-                    <div className="flex justify-center">
-                      <StarRating value={myRating ?? 0} onChange={(r) => rate.mutate(r)} />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <CourseEnrollCard
+              course={course}
+              isFull={isFull}
+              canEnroll={canEnroll}
+              onEnroll={onEnroll}
+              rating={rating}
+              showMyRating={user?.role === 'PARENT'}
+              myRating={myRating ?? 0}
+              onRate={(r) => rate.mutate(r)}
+            />
           </aside>
         </div>
       </div>
@@ -275,54 +120,3 @@ export default function CourseDetailsPage() {
   )
 }
 
-function InfoTile({
-  icon,
-  label,
-  value,
-  hint,
-  to,
-}: {
-  icon: React.ReactNode
-  label: string
-  value: string
-  hint?: string
-  to?: string
-}) {
-  const body = (
-    <>
-      <span className="text-primary shrink-0">{icon}</span>
-      <div className="min-w-0">
-        <div className="text-muted-foreground text-[10px] leading-tight sm:text-xs">{label}</div>
-        {to ? (
-          <span className="text-primary block text-[11px] leading-snug font-bold break-words hyphens-auto underline-offset-2 group-hover:underline sm:text-sm">
-            {value}
-          </span>
-        ) : (
-          <div className="text-[11px] leading-snug font-bold break-words text-foreground sm:text-sm">
-            {value}
-          </div>
-        )}
-        {hint && (
-          <div className="text-muted-foreground text-[10px] leading-snug sm:text-xs">{hint}</div>
-        )}
-      </div>
-    </>
-  )
-
-  if (to) {
-    return (
-      <Link
-        to={to}
-        className="group flex min-w-0 flex-1 items-start gap-1.5 p-2 sm:items-center sm:gap-2.5 sm:p-4"
-      >
-        {body}
-      </Link>
-    )
-  }
-
-  return (
-    <div className="flex min-w-0 flex-1 items-start gap-1.5 p-2 sm:items-center sm:gap-2.5 sm:p-4">
-      {body}
-    </div>
-  )
-}

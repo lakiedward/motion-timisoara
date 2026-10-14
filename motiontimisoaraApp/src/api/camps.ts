@@ -27,6 +27,7 @@ export type AntrenorTabara = {
   id: string
   nume: string
   pozaUrl: string | null
+  link: string | null
 }
 
 export type OrganizatorTabara = {
@@ -174,7 +175,7 @@ export async function getTabaraDetaliu(slug: string): Promise<TabaraDetaliu | nu
       .order('display_order'),
     supabase
       .from('camp_coaches')
-      .select('coach_profile:coach_profiles(id, photo_storage_path, profile:profiles(name))')
+      .select('coach_profile:coach_profiles(id, user_id, photo_storage_path, profile:profiles(name))')
       .eq('camp_id', tabara.id)
       .eq('status', 'accepted'),
     supabase
@@ -195,6 +196,7 @@ export async function getTabaraDetaliu(slug: string): Promise<TabaraDetaliu | nu
   type RandAntrenor = {
     coach_profile: {
       id: string
+      user_id: string | null
       photo_storage_path: string | null
       profile: { name: string } | null
     } | null
@@ -218,6 +220,7 @@ export async function getTabaraDetaliu(slug: string): Promise<TabaraDetaliu | nu
         id: r.coach_profile!.id,
         nume: r.coach_profile!.profile?.name ?? 'Antrenor',
         pozaUrl: publicUrl('coach-photos', r.coach_profile!.photo_storage_path),
+        link: r.coach_profile!.user_id ? `/antrenori/${r.coach_profile!.user_id}` : null,
       })),
     heroUrl: publicUrl(BUCKET, tabara.hero_photo_storage_path),
     galerieUrls,
