@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import CampPricingCard from './camp-pricing/CampPricingCard'
 import CampLocation from '@/components/camps/CampLocation'
 import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
+import CampRequirementsDisplay from '@/components/camps/CampRequirementsDisplay'
 import { PublicHeroBand } from './PublicHeroBand'
 import { CampOrganizerCoaches } from './camp-detail/CampOrganizerCoaches'
 
@@ -125,25 +126,7 @@ export default function CampDetailsPage() {
 
         <CampRulesDisplay rules={tabara.rules} fisier={data.regulamentFisier} />
 
-        {necesar.length > 0 && (
-          <div className="mt-8">
-            <h2 className="font-display mb-3 text-lg font-bold">Necesar pentru tabără</h2>
-            <div className="space-y-5">
-              {necesar.map((categorie) => (
-                <section key={categorie.name}>
-                  <h3 className="font-medium">{categorie.name}</h3>
-                  <ul className="text-muted-foreground mt-2 list-disc space-y-2 pl-5">
-                    {categorie.items.map((articol) => (
-                      <li key={articol.name}>
-                        {articol.name} — {articol.quantity}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              ))}
-            </div>
-          </div>
-        )}
+        <CampRequirementsDisplay necesar={necesar} />
 
         {galerieUrls.length > 0 && (
           <div className="mt-8">

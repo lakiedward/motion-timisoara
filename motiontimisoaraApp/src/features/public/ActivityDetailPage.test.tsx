@@ -149,6 +149,16 @@ test('poza activității umple banda, iar poza sportului rămâne în galerie', 
   expect(screen.queryByText('Ciclism')).not.toBeInTheDocument()
 })
 
+test('titlul de pe bandă pornește din aceeași coloană ca restul paginii', async () => {
+  mocked.mockResolvedValue({
+    ...DETALIU,
+    bandUrl: 'https://public/activity-photos/a/hero.jpg',
+  })
+  deseneaza()
+  const titlu = await screen.findByRole('heading', { level: 1, name: 'DEMO — Atelier de ciclism' })
+  expect(titlu.parentElement?.className).toContain('max-w-4xl')
+  expect(titlu.parentElement?.className).not.toContain('max-w-6xl')
+})
 test('organizatorul stă sub titlu, antrenorul e separat, iar numele locului nu e link', async () => {
   deseneaza()
   const titlu = await screen.findByRole('heading', { level: 1, name: 'DEMO — Atelier de ciclism' })
@@ -333,4 +343,13 @@ test('când sportul are poză standard nu apare ilustrația', async () => {
   deseneaza()
   await screen.findByRole('heading', { level: 1, name: 'DEMO — Atelier de ciclism' })
   expect(screen.queryByRole('img', { name: /Ilustrație/ })).not.toBeInTheDocument()
+})
+
+test('cardul de preț e plat, ca restul cardurilor din design system', async () => {
+  deseneaza()
+  const buton = await screen.findByRole('button', { name: 'Înscrie-te' })
+  const card = buton.parentElement as HTMLElement
+  expect(card).toHaveClass('rounded-xl', 'border')
+  expect(card).not.toHaveClass('shadow-card')
+  expect(card).not.toHaveClass('rounded-3xl')
 })

@@ -1,4 +1,4 @@
-import { campRulesForDisplay, campRulesForSave, campRulesFileContentType, formatCampRulesFileSize, respingeRegulamentFisier } from './camp-rules'
+import { campRulesForDisplay, campRulesIsLong, campRulesForSave, campRulesFileContentType, formatCampRulesFileSize, respingeRegulamentFisier } from './camp-rules'
 
 test('blank camp rules are stored as null', () => {
   expect(campRulesForSave('')).toBeNull()
@@ -40,4 +40,10 @@ test('type and size rejections are named for the organizer', () => {
 test('file size uses the Romanian decimal comma', () => {
   expect(formatCampRulesFileSize(1200)).toBe('1,2 KB')
   expect(formatCampRulesFileSize(10 * 1024 * 1024)).toBe('10 MB')
+})
+
+test('rules longer than eight lines or 900 characters count as long', () => {
+  expect(campRulesIsLong('1. Casca.\n2. Apa.')).toBe(false)
+  expect(campRulesIsLong(Array.from({ length: 9 }, (_, i) => `${i + 1}. Regula`).join('\n'))).toBe(true)
+  expect(campRulesIsLong('a'.repeat(901))).toBe(true)
 })
