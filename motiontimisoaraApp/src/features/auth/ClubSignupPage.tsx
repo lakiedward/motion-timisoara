@@ -4,13 +4,13 @@ import { useForm, type FieldErrors } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
+import { CircleAlert } from 'lucide-react'
 
 import { AuthLayout } from './AuthLayout'
-import { StepDots, SportPicker } from './wizard-bits'
+import { StepDots, SportsField } from './wizard-bits'
 import { useReturnUrl, withReturnUrl } from './return-url'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Field } from '@/components/ui/field'
 import { fetchSports } from '@/api/sports'
 import { registerClub, roleHome } from '@/api/auth'
 import { useAuth } from '@/lib/auth-context'
@@ -34,12 +34,8 @@ type Values = z.infer<typeof schema>
 
 const STEP_FIELDS: (keyof Values)[][] = [
   ['name', 'email', 'phone', 'password'],
-  // clubEmail e optional dar validat: lasat pe dinafara, o adresa gresita trecea
-  // de pasul lui si pica abia la validarea intregii scheme, pe confirmare, unde
-  // mesajul ei nu se randeaza nicaieri.
   ['clubName', 'clubEmail'],
 ]
-/** The confirmation step — the only one allowed to register anything. */
 const CONFIRM_STEP = 2
 
 export default function ClubSignupPage() {
@@ -49,7 +45,7 @@ export default function ClubSignupPage() {
   const [step, setStep] = useState(0)
   const [sportIds, setSportIds] = useState<string[]>([])
   const [serverError, setServerError] = useState<string | null>(null)
-  const { data: sports = [] } = useQuery({ queryKey: ['sports'], queryFn: fetchSports })
+  const sportsQuery = useQuery({ queryKey: ['sports'], queryFn: fetchSports })
 
   const {
     register,
@@ -60,7 +56,7 @@ export default function ClubSignupPage() {
   } = useForm<Values>({ resolver: zodResolver(schema), mode: 'onTouched' })
 
   const next = async () => {
-    if (await trigger(STEP_FIELDS[step])) setStep((s) => s + 1)
+    if (await trigger(STEP_FIELDS[step], { shouldFocus: true })) setStep((s) => s + 1)
   }
 
   const onSubmit = async (v: Values) => {
@@ -83,17 +79,9 @@ export default function ClubSignupPage() {
       return
     }
     await refresh()
-    // This page only ever creates club owners, so their panel is the
-    // destination unless the visitor was already on their way somewhere.
     navigate(returnUrl || roleHome('CLUB'))
   }
 
-  /**
-   * The confirmation step renders no field, so it renders no field error
-   * either. A value that slipped past its own step would make Finalizează do
-   * nothing at all, in silence — so whatever is invalid, send the visitor back
-   * to the step that can actually show it.
-   */
   const onInvalid = (invalide: FieldErrors<Values>) => {
     const primul = Object.keys(invalide)[0] as keyof Values | undefined
     if (!primul) return
@@ -101,8 +89,6 @@ export default function ClubSignupPage() {
     if (pas >= 0) setStep(pas)
   }
 
-  // Enter inside a field submits the form. On the first two steps that has to
-  // move the wizard along, never register the club.
   const onFormSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (step < CONFIRM_STEP) void next()
@@ -117,8 +103,6 @@ export default function ClubSignupPage() {
     )
   }
 
-  // Someone already signed in cannot create a second account from here; send
-  // them where they were headed, or to the panel their role belongs to.
   if (user) return <Navigate to={returnUrl || roleHome(user.role)} replace />
 
   return (
@@ -126,64 +110,91 @@ export default function ClubSignupPage() {
       title="Înregistrare club"
       subtitle="Creează contul administratorului și clubul"
       footer={
-        <Link to={withReturnUrl('/signup', returnUrl)} className="text-primary font-semibold">
-          Înapoi
-        </Link>
+        step === 0 ? (
+          <Link to={withReturnUrl('/signup', returnUrl)} className="text-primary font-semibold">
+            Înapoi
+          </Link>
+        ) : undefined
       }
     >
       <StepDots count={3} current={step} />
       {serverError && (
-        <p className="bg-destructive/10 text-destructive mb-4 rounded-md px-3 py-2 text-sm">
+        <p
+          className="bg-destructive/10 text-destructive mb-4 flex items-start gap-2 rounded-md px-3 py-2 text-sm"
+          role="alert"
+        >
+          <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           {serverError}
         </p>
       )}
       <form onSubmit={onFormSubmit} className="space-y-4" noValidate>
         {step === 0 && (
           <>
-            <div className="space-y-1.5">
-              <Label htmlFor="name">Nume administrator</Label>
-              <Input id="name" {...register('name')} aria-invalid={!!errors.name} />
-              {errors.name && <p className="text-destructive text-xs">{errors.name.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" {...register('email')} aria-invalid={!!errors.email} />
-              {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="phone">Telefon (opțional)</Label>
-              <Input id="phone" type="tel" placeholder="+40..." {...register('phone')} aria-invalid={!!errors.phone} />
-              {errors.phone && <p className="text-destructive text-xs">{errors.phone.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password">Parolă</Label>
-              <Input id="password" type="password" {...register('password')} aria-invalid={!!errors.password} />
-              {errors.password && <p className="text-destructive text-xs">{errors.password.message}</p>}
-            </div>
+            <Field
+              id="name"
+              label="Nume administrator"
+              autoComplete="name"
+              error={errors.name?.message}
+              {...register('name')}
+            />
+            <Field
+              id="email"
+              label="Email"
+              type="email"
+              autoComplete="email"
+              error={errors.email?.message}
+              {...register('email')}
+            />
+            <Field
+              id="phone"
+              label="Telefon (opțional)"
+              type="tel"
+              autoComplete="tel"
+              placeholder="+40..."
+              error={errors.phone?.message}
+              {...register('phone')}
+            />
+            <Field
+              id="password"
+              label="Parolă"
+              type="password"
+              autoComplete="new-password"
+              error={errors.password?.message}
+              {...register('password')}
+            />
           </>
         )}
 
         {step === 1 && (
           <>
-            <div className="space-y-1.5">
-              <Label htmlFor="clubName">Nume club</Label>
-              <Input id="clubName" {...register('clubName')} aria-invalid={!!errors.clubName} />
-              {errors.clubName && <p className="text-destructive text-xs">{errors.clubName.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="clubCity">Oraș (opțional)</Label>
-              <Input id="clubCity" {...register('clubCity')} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="clubEmail">Email club (opțional)</Label>
-              <Input id="clubEmail" type="email" {...register('clubEmail')} aria-invalid={!!errors.clubEmail} />
-              {errors.clubEmail && <p className="text-destructive text-xs">{errors.clubEmail.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label>Sporturi</Label>
-              <SportPicker sports={sports} value={sportIds} onChange={setSportIds} />
-            </div>
-
+            <Field
+              id="clubName"
+              label="Nume club"
+              autoComplete="organization"
+              error={errors.clubName?.message}
+              {...register('clubName')}
+            />
+            <Field
+              id="clubCity"
+              label="Oraș (opțional)"
+              autoComplete="address-level2"
+              {...register('clubCity')}
+            />
+            <Field
+              id="clubEmail"
+              label="Email club (opțional)"
+              type="email"
+              error={errors.clubEmail?.message}
+              {...register('clubEmail')}
+            />
+            <SportsField
+              sports={sportsQuery.data ?? []}
+              loading={sportsQuery.isPending}
+              failed={sportsQuery.isError}
+              onRetry={() => void sportsQuery.refetch()}
+              value={sportIds}
+              onChange={setSportIds}
+            />
           </>
         )}
 
@@ -218,11 +229,6 @@ export default function ClubSignupPage() {
               Continuă
             </Button>
           ) : (
-            // Both buttons render in the same slot, so React hands the new one
-            // the DOM node the previous click landed on. A type="submit" here
-            // would inherit that click and register the club the moment the
-            // confirmation step appeared, so registering stays an explicit
-            // onClick that only a second, deliberate press can reach.
             <Button
               type="button"
               className="flex-1"
