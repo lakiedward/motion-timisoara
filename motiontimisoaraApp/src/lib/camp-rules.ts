@@ -75,6 +75,15 @@ export function campRulesForDisplay(value: string | null | undefined): string | 
   return campRulesForSave(value ?? '')
 }
 
+export const CAMP_RULES_COLLAPSE_LINES = 8
+export const CAMP_RULES_COLLAPSE_CHARS = 900
+
+export function campRulesIsLong(text: string): boolean {
+  return (
+    text.split('\n').length > CAMP_RULES_COLLAPSE_LINES || text.length > CAMP_RULES_COLLAPSE_CHARS
+  )
+}
+
 export function campRulesFileExtensie(nume: string): string {
   const baza = nume.replaceAll('\\', '/').split('/').pop() ?? ''
   const punct = baza.lastIndexOf('.')
