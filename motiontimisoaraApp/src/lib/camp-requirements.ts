@@ -8,6 +8,12 @@ export type CampRequirementCategory = {
   items: CampRequirementItem[]
 }
 
+export const CAMP_REQUIREMENTS_TITLE = 'Necesar pentru tabără'
+
+export function campRequirementLabel({ name, quantity }: CampRequirementItem): string {
+  return quantity > 1 ? `${quantity}\u00a0×\u00a0${name}` : name
+}
+
 type CampRequirementFormCategory = {
   name: string
   items: { name: string; quantity: string }[]
@@ -29,7 +35,7 @@ export function readCampRequirements(value: unknown): CampRequirementCategory[] 
     .map((item) => text(item))
     .filter((item): item is string => item !== null)
     .map((name) => ({ name, quantity: 1 }))
-  if (legacyItems.length > 0) return [{ name: 'Necesar pentru tabără', items: legacyItems }]
+  if (legacyItems.length > 0) return [{ name: CAMP_REQUIREMENTS_TITLE, items: legacyItems }]
 
   return value
     .map((category) => {
