@@ -52,7 +52,7 @@ export default function HomePage() {
           />
           <div className="relative z-10 mx-auto w-full max-w-7xl px-6">
             <div className="max-w-md md:max-w-xl">
-              <span className="eyebrow mb-4">Triatlon pentru copii · Timișoara</span>
+              <span className="eyebrow eyebrow--on-brand mb-4">Triatlon pentru copii · Timișoara</span>
               <h1 className="font-display text-5xl leading-[1.02] font-extrabold text-white sm:text-6xl md:text-7xl lg:text-8xl">
                 Creștem <span className="italic">campionii</span> de mâine
               </h1>
@@ -61,12 +61,12 @@ export default function HomePage() {
                 și alergare, alături de antrenori dedicați.
               </p>
               <div className="mt-8 flex flex-wrap gap-4">
-                <Link to="/signup" className="btn-cta bg-white font-bold text-primary hover:scale-105">
+                <Link to="/signup" className="btn-cta btn-cta--white">
                   Înscrie-te <ArrowRight className="size-5" />
                 </Link>
                 <Link
                   to="/cursuri"
-                  className="btn-cta border-2 border-white/70 text-white transition-colors hover:border-white hover:bg-white/10"
+                  className="btn-cta btn-cta--on-brand"
                 >
                   Vezi programele
                 </Link>
@@ -136,7 +136,7 @@ export default function HomePage() {
           <div className="relative mx-auto max-w-7xl px-6 py-24">
             <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
               <div>
-                <span className="eyebrow mb-2">Programe</span>
+                <span className="eyebrow eyebrow--on-brand mb-2">Programe</span>
                 <h2 className="font-display text-3xl font-extrabold text-white md:text-5xl">
                   Programe populare
                 </h2>
@@ -222,7 +222,7 @@ export default function HomePage() {
             </p>
             <Link
               to="/signup"
-              className="btn-cta text-primary mt-8 bg-white font-bold hover:scale-105"
+              className="btn-cta btn-cta--white mt-8"
             >
               Creează cont
             </Link>

@@ -63,7 +63,7 @@ export default function ContactPage() {
 
         <div className="bg-card shadow-card rounded-3xl border p-6">
           {sent ? (
-            <p className="bg-success/10 text-success rounded-md px-3 py-4 text-sm">
+            <p className="bg-success/10 text-success-ink rounded-md px-3 py-4 text-sm">
               Mulțumim! Mesajul tău a fost trimis — revenim în cel mai scurt timp.
             </p>
           ) : (

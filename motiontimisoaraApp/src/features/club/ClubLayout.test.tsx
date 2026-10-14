@@ -85,6 +85,6 @@ test('menu, logout and close meet the 44px tap class; CLUB label is in chrome', 
   expect(screen.getByRole('button', { name: 'Deconectare' }).className).toMatch(/outline-primary/)
   await user.click(screen.getByRole('button', { name: 'Meniu' }))
   const close = await screen.findByRole('button', { name: 'Închide' })
-  expect(close.className).toMatch(/size-11/)
+  expect(close.className).toMatch(/size-touch-target/)
   expect(screen.getAllByText('Club').length).toBeGreaterThanOrEqual(2)
 })

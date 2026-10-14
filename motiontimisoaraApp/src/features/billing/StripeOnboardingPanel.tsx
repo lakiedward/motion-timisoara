@@ -192,7 +192,7 @@ export function StripeOnboardingPanel({ scope }: { scope: StripeScope }) {
           <div className="mt-2 flex items-center gap-2 text-sm">
             {complete ? (
               <>
-                <CheckCircle2 className="text-success size-5" /> Configurat
+                <CheckCircle2 className="text-success-ink size-5" /> Configurat
               </>
             ) : (
               <>
