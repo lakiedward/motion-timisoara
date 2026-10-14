@@ -184,7 +184,7 @@ export default function ClubProfilePage() {
           <div className="space-y-1">
             <h3 className="text-foreground font-semibold">Sediu (opțional)</h3>
             <p className="text-muted-foreground text-xs">
-              Dacă alegi punctul pe hartă, sediul apare cu marker pe harta publică.
+              Scrie adresa sau pune punctul pe hartă; sediul apare cu marker pe harta publică.
             </p>
           </div>
           <ClubAddressFields control={control} setValue={setValue} />
