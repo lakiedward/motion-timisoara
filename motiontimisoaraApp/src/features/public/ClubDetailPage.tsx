@@ -102,9 +102,9 @@ export default function ClubDetailPage() {
                 <Globe className="size-4" /> Website
               </a>
             )}
-            {club.public_email_consent && club.email && (
-              <a href={`mailto:${club.email}`} className="flex items-center gap-2">
-                <Mail className="size-4" /> {club.email}
+            {club.public_email && (
+              <a href={`mailto:${club.public_email}`} className="flex items-center gap-2">
+                <Mail className="size-4" /> {club.public_email}
               </a>
             )}
             {club.phone && (

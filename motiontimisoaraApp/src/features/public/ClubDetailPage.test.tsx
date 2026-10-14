@@ -28,8 +28,7 @@ const club = {
   hero_photo_storage_path: null,
   website: null,
   phone: null,
-  email: null,
-  public_email_consent: false,
+  public_email: null,
   address: 'Str. Exemplu 10',
   city: 'Timișoara',
   county: 'Timiș',
@@ -68,4 +67,20 @@ test('without a point there is no map', async () => {
   renderPage()
   await screen.findByText('Str. Exemplu 10, Timișoara')
   expect(screen.queryByRole('img', { name: /Hartă cu sediul/ })).toBeNull()
+})
+
+test('the public email comes only from the consented public_email column', async () => {
+  mocks.getPublicClub.mockResolvedValue({ ...club, public_email: 'contact@club.ro' })
+  renderPage()
+  expect(await screen.findByRole('link', { name: /contact@club\.ro/ })).toHaveAttribute(
+    'href',
+    'mailto:contact@club.ro',
+  )
+})
+
+test('without public_email no email is shown', async () => {
+  mocks.getPublicClub.mockResolvedValue(club)
+  renderPage()
+  await screen.findByText('Str. Exemplu 10, Timișoara')
+  expect(screen.queryByRole('link', { name: /@/ })).toBeNull()
 })

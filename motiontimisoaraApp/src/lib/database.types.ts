@@ -1033,6 +1033,7 @@ export type Database = {
           name: string
           owner_user_id: string
           phone: string | null
+          public_email: string | null
           public_email_consent: boolean
           stripe_account_id: string | null
           stripe_charges_enabled: boolean
@@ -1061,6 +1062,7 @@ export type Database = {
           name: string
           owner_user_id: string
           phone?: string | null
+          public_email?: string | null
           public_email_consent?: boolean
           stripe_account_id?: string | null
           stripe_charges_enabled?: boolean
@@ -1089,6 +1091,7 @@ export type Database = {
           name?: string
           owner_user_id?: string
           phone?: string | null
+          public_email?: string | null
           public_email_consent?: boolean
           stripe_account_id?: string | null
           stripe_charges_enabled?: boolean
