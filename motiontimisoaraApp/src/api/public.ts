@@ -49,6 +49,27 @@ export async function getCourse(id: string): Promise<CourseListItem | null> {
   return data as unknown as CourseListItem
 }
 
+export type CourseCatalogItem = CourseListItem & {
+  club: { id: string; name: string } | null
+  spotsRemaining: number | null
+}
+
+export async function getCourseCatalog(): Promise<CourseCatalogItem[]> {
+  const { data, error } = await supabase
+    .from('courses')
+    .select(
+      '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), club:clubs(id,name), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order)',
+    )
+    .eq('active', true)
+    .order('name')
+  if (error) throw error
+  const rows = (data ?? []) as unknown as Omit<CourseCatalogItem, 'spotsRemaining'>[]
+  const spots = await Promise.all(
+    rows.map((course) => (course.capacity == null ? null : getCourseSpotsRemaining(course.id))),
+  )
+  return rows.map((course, index) => ({ ...course, spotsRemaining: spots[index] ?? null }))
+}
+
 /** Remaining seats for a public course (SECURITY DEFINER RPC). Null = unlimited / unknown. */
 export async function getCourseSpotsRemaining(courseId: string): Promise<number | null> {
   const { data, error } = await supabase.rpc('course_spots_remaining', {

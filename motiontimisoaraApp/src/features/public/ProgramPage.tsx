@@ -1,114 +1,145 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { SearchX } from 'lucide-react'
 
-import { getCourses } from '@/api/public'
-import { fetchSports } from '@/api/sports'
-import { CourseCard } from './components/CourseCard'
+import { getCourseCatalog } from '@/api/public'
+import {
+  COURSE_PAGE_SIZE,
+  EMPTY_COURSE_FILTERS,
+  courseLocationOptions,
+  courseMatchesFilters,
+  courseSportOptions,
+  type CourseCatalogFilters,
+} from '@/lib/course-catalog'
+import { plural } from '@/lib/plural'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { cn } from '@/lib/utils'
-import { SPORT_COLOR, SPORT_COLOR_FALLBACK, SPORT_ICON } from '@/components/sport/sport-icons'
-
-function Chip({
-  active,
-  onClick,
-  color,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  color?: string
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={active ? { backgroundColor: color ?? 'var(--primary)' } : undefined}
-      className={cn(
-        'rounded-full px-4 py-2 text-sm font-bold transition-all',
-        active
-          ? 'text-white shadow-[0_4px_14px_rgba(37,99,235,0.25)]'
-          : 'border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground border',
-      )}
-    >
-      {children}
-    </button>
-  )
-}
+import { StatusView } from '@/components/ui/status-view'
+import { CourseCatalogCard } from './courses/CourseCatalogCard'
+import { CourseFilters } from './courses/CourseFilters'
 
 export default function ProgramPage() {
-  const [sport, setSport] = useState<string | undefined>(undefined)
-  const { data: sports = [] } = useQuery({ queryKey: ['sports'], queryFn: fetchSports })
-  const { data: courses = [], isLoading } = useQuery({
-    queryKey: ['courses', sport ?? 'all'],
-    queryFn: () => getCourses({ sportCode: sport }),
-  })
+  const [filters, setFilters] = useState<CourseCatalogFilters>(EMPTY_COURSE_FILTERS)
+  const [visible, setVisible] = useState(COURSE_PAGE_SIZE)
+  const coursesQuery = useQuery({ queryKey: ['course-catalog'], queryFn: getCourseCatalog })
+  const courses = coursesQuery.data ?? []
+  const filtered = courses.filter((course) => courseMatchesFilters(course, filters))
+  const sportOptions = courseSportOptions(courses)
+  const listLoading = coursesQuery.isPending || (coursesQuery.isError && coursesQuery.isFetching)
+
+  const applyFilters = (next: CourseCatalogFilters) => {
+    setFilters(next)
+    setVisible(COURSE_PAGE_SIZE)
+  }
 
   return (
     <div>
-      {/* HEADER — same diagonal brand band as the homepage "Programe populare" section */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-foreground dark:bg-card" />
-        <div
-          className="absolute inset-0"
-          style={{
-            background: 'var(--gradient-primary)',
-            clipPath: 'polygon(0 0, 100% 0, 100% 82%, 0 100%)',
-          }}
-        />
-        <div className="relative mx-auto max-w-7xl px-6 py-16 md:py-20">
+      <section
+        aria-labelledby="courses-page-title"
+        data-section="motion-react:page:/cursuri:section:toata-pagina"
+        className="from-primary/8 to-transparent border-b bg-gradient-to-b"
+      >
+        <div className="mx-auto max-w-7xl px-6 py-14">
           <span className="eyebrow mb-3">Programe</span>
-          <h1 className="font-display text-5xl font-extrabold text-white md:text-6xl">Cursuri</h1>
-          <p className="mt-3 max-w-md text-lg text-white/85">
-            Găsește cursul potrivit pentru copilul tău.
-          </p>
+          <h1
+            id="courses-page-title"
+            className="font-display text-foreground text-4xl font-extrabold lg:text-5xl"
+          >
+            Cursuri
+          </h1>
+          <p className="text-muted-foreground mt-2">Găsește cursul potrivit pentru copilul tău.</p>
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-6 py-12">
-        <div className="mb-10 flex flex-wrap gap-2.5">
-          <Chip active={!sport} onClick={() => setSport(undefined)}>
-            Toate
-          </Chip>
-          {sports.map((s) => (
-            <Chip
-              key={s.id}
-              active={sport === s.code}
-              onClick={() => setSport(s.code)}
-              color={SPORT_COLOR[s.code] ?? SPORT_COLOR_FALLBACK}
-            >
-              {SPORT_ICON[s.code] ? `${SPORT_ICON[s.code]} ` : ''}
-              {s.name}
-            </Chip>
-          ))}
-        </div>
+      <section aria-label="Listă cursuri" className="mx-auto max-w-7xl px-6 py-10">
+        <CourseFilters
+          filters={filters}
+          sportOptions={sportOptions}
+          locationOptions={courseLocationOptions(courses)}
+          loading={coursesQuery.isPending}
+          onChange={applyFilters}
+        />
 
-        {isLoading ? (
-          <div className="grid gap-7 md:grid-cols-3">
+        {listLoading ? (
+          <div
+            role="status"
+            aria-label="Se încarcă cursurile"
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          >
             {[0, 1, 2].map((i) => (
-              <div key={i} className="space-y-3">
-                <Skeleton className="aspect-video w-full rounded-3xl" />
-                <Skeleton className="h-5 w-2/3" />
-                <Skeleton className="h-4 w-1/2" />
-              </div>
+              <Skeleton key={i} className="h-96 rounded-xl" />
             ))}
           </div>
-        ) : courses.length ? (
-          <div className="grid gap-7 md:grid-cols-3">
-            {courses.map((c) => (
-              <CourseCard key={c.id} course={c} />
-            ))}
-          </div>
-        ) : (
-          <div className="border-border flex flex-col items-center gap-3 rounded-3xl border border-dashed py-24 text-center">
-            <SearchX className="text-muted-foreground/50 size-10" />
-            <p className="text-muted-foreground text-lg font-medium">
-              Nu am găsit cursuri pentru filtrul selectat.
+        ) : coursesQuery.isError ? (
+          <StatusView
+            state="error"
+            title="Nu am putut încărca cursurile."
+            text="Verifică conexiunea și încearcă din nou."
+            onRetry={() => void coursesQuery.refetch()}
+          />
+        ) : !courses.length ? (
+          <StatusView
+            state="empty"
+            title="Niciun curs disponibil momentan."
+            text="Cursurile noi apar aici când un club sau un antrenor le publică."
+          />
+        ) : filtered.length ? (
+          <>
+            <p className="text-muted-foreground mb-4 text-sm" aria-live="polite">
+              {plural(filtered.length, 'curs găsit', 'cursuri găsite')}
             </p>
-          </div>
+            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.slice(0, visible).map((course) => (
+                <li key={course.id} className="min-w-0">
+                  <CourseCatalogCard course={course} />
+                </li>
+              ))}
+            </ul>
+            {filtered.length > visible && (
+              <div className="mt-8 flex justify-center">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setVisible((count) => count + COURSE_PAGE_SIZE)}
+                >
+                  Încarcă mai multe
+                </Button>
+              </div>
+            )}
+          </>
+        ) : (
+          <StatusView
+            state="empty"
+            title="Niciun curs nu corespunde filtrelor."
+            text="Încearcă altă zi, alt preț sau altă locație."
+            action={
+              <div className="mt-3 flex flex-col items-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => applyFilters(EMPTY_COURSE_FILTERS)}
+                >
+                  Resetează filtrele
+                </Button>
+                {sportOptions.length ? (
+                  <div className="flex flex-wrap items-center justify-center gap-x-1">
+                    <span className="text-muted-foreground text-sm">Au cursuri acum:</span>
+                    {sportOptions.map((sport) => (
+                      <Button
+                        key={sport.value}
+                        type="button"
+                        variant="link"
+                        onClick={() => applyFilters({ ...EMPTY_COURSE_FILTERS, sport: sport.value })}
+                      >
+                        {sport.label}
+                      </Button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            }
+          />
         )}
-      </div>
+      </section>
     </div>
   )
 }
