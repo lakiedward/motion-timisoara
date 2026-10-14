@@ -211,16 +211,17 @@ export function publicUrl(bucket: string, path: string | null | undefined): stri
   return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl
 }
 
-/** Course hero: own upload → admin sport default → null (caller shows gradient). */
 export function courseHeroUrl(course: {
+  hero_photo_storage_path?: string | null
   course_photos?: { storage_path: string; display_order: number }[] | null
   sport?: { default_photo_storage_path?: string | null } | null
 }): string | null {
-  const hero = [...(course.course_photos ?? [])].sort(
+  const firstGalleryPhoto = [...(course.course_photos ?? [])].sort(
     (a, b) => a.display_order - b.display_order,
   )[0]
   return (
-    publicUrl('course-photos', hero?.storage_path ?? null) ??
+    publicUrl('course-photos', course.hero_photo_storage_path ?? null) ??
+    publicUrl('course-photos', firstGalleryPhoto?.storage_path ?? null) ??
     publicUrl('sport-photos', course.sport?.default_photo_storage_path ?? null)
   )
 }
