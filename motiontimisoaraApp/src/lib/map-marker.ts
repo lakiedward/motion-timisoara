@@ -2,6 +2,7 @@ import L from 'leaflet'
 import campMarkerSvg from './map-icons/camp-marker.svg?raw'
 import courseMarkerSvg from './map-icons/course-marker.svg?raw'
 import activityMarkerSvg from './map-icons/activity-marker.svg?raw'
+import clubMarkerSvg from './map-icons/club-marker.svg?raw'
 import iconUrl from 'leaflet/dist/images/marker-icon.png'
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
@@ -46,3 +47,11 @@ export function getOfferMarkerIcon(offers: OfferTypes) {
   offerMarkerCache.set(key, icon)
   return icon
 }
+
+export const clubMarkerIcon = L.divIcon({
+  className: 'mt-club-marker',
+  html: `<span class="mt-offer-symbol mt-offer-clubs">${clubMarkerSvg}</span>`,
+  iconSize: [40, 44],
+  iconAnchor: [20, 44],
+  popupAnchor: [0, -40],
+})
