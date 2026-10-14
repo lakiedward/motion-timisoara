@@ -78,6 +78,7 @@ function club(overrides: Partial<Club> = {}): Club {
     hero_photo_storage_path: null,
     logo_storage_path: null,
     phone: null,
+    public_email: null,
     public_email_consent: false,
     stripe_account_id: null,
     stripe_charges_enabled: false,
