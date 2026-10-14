@@ -71,7 +71,7 @@ test('the public directory preserves the header and single-link photo/name/sport
   expect(card.querySelector('a, button')).toBeNull()
   expect(screen.getAllByRole('link')).toHaveLength(4)
   const initialCard = screen.getByRole('link', { name: /Mihai Petrescu/ })
-  expect(within(initialCard).getByText('M')).toBeInTheDocument()
+  expect(within(initialCard).getByText('MP')).toBeInTheDocument()
   expect(within(initialCard).queryByRole('img')).not.toBeInTheDocument()
   expect(screen.getByLabelText('Caută după nume')).toHaveValue('')
   expect(screen.getByLabelText('Sport')).toHaveValue('')
