@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { CourseCatalogCard } from './courses/CourseCatalogCard'
+import { CourseCatalogCardSkeleton } from './courses/CourseCatalogCardSkeleton'
 import { CourseFilters } from './courses/CourseFilters'
 
 export default function ProgramPage() {
@@ -73,14 +74,15 @@ export default function ProgramPage() {
         />
 
         {listLoading ? (
-          <div
-            role="status"
-            aria-label="Se încarcă cursurile"
-            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-          >
-            {[0, 1, 2].map((i) => (
-              <Skeleton key={i} className="h-96 rounded-xl" />
-            ))}
+          <div role="status" aria-label="Se încarcă cursurile">
+            <Skeleton className="mb-4 h-5 w-32" />
+            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[0, 1, 2].map((i) => (
+                <li key={i} className="min-w-0">
+                  <CourseCatalogCardSkeleton />
+                </li>
+              ))}
+            </ul>
           </div>
         ) : coursesQuery.isError ? (
           <StatusView

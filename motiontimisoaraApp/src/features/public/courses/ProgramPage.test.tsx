@@ -204,3 +204,17 @@ test('opening a link with a sport selects that sport', async () => {
   expect(screen.getByRole('button', { name: 'Toate' })).toHaveAttribute('aria-pressed', 'false')
   expect(screen.getAllByRole('article')).toHaveLength(1)
 })
+
+test('while loading, the list shows card-shaped placeholders in the same grid as the cards', () => {
+  catalogRequest.mockReturnValue(new Promise(() => {}))
+  renderPage()
+
+  const loading = screen.getByRole('status', { name: 'Se încarcă cursurile' })
+  expect(within(loading).getByRole('list').className).toContain('lg:grid-cols-3')
+  const placeholders = within(loading).getAllByRole('listitem')
+  expect(placeholders).toHaveLength(3)
+  for (const placeholder of placeholders) {
+    expect(placeholder.querySelector('.aspect-video')).not.toBeNull()
+    expect(placeholder.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(5)
+  }
+})
