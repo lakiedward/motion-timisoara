@@ -151,9 +151,25 @@ test('necesarul taberei se afișează ca listă pentru părinte', async () => {
   expect(await screen.findByRole('heading', { name: 'Necesar pentru tabără' })).toBeInTheDocument()
   expect(screen.getByRole('heading', { name: 'Haine' })).toBeInTheDocument()
   expect(screen.getByRole('heading', { name: 'Ski' })).toBeInTheDocument()
-  expect(screen.getByText('Chiloți — 7')).toBeInTheDocument()
-  expect(screen.getByText('Schiuri — 1')).toBeInTheDocument()
-  expect(screen.getByText('Clăpari — 1')).toBeInTheDocument()
+  expect(screen.getAllByRole('listitem')[0].textContent).toBe('7\u00a0×\u00a0Chiloți')
+  expect(screen.getByText('Schiuri')).toBeInTheDocument()
+  expect(screen.getByText('Clăpari')).toBeInTheDocument()
+})
+test('categoria care repetă titlul necesarului nu se mai afișează a doua oară', async () => {
+  mocked.mockResolvedValue(
+    detaliu({
+      necesar: [
+        { name: 'Necesar pentru tabără', items: [{ name: 'Bicicletă', quantity: 1 }] },
+        { name: 'Haine', items: [{ name: 'Tricou', quantity: 3 }] },
+      ],
+    }) as never,
+  )
+  renderPage()
+  await screen.findByRole('heading', { level: 2, name: 'Necesar pentru tabără' })
+  expect(screen.getAllByRole('heading', { name: 'Necesar pentru tabără' })).toHaveLength(1)
+  expect(screen.getByRole('heading', { level: 3, name: 'Haine' })).toBeInTheDocument()
+  expect(screen.getByText('Bicicletă')).toBeInTheDocument()
+  expect(screen.getAllByRole('listitem')[1].textContent).toBe('3\u00a0×\u00a0Tricou')
 })
 test('regulamentul taberei apare ca text cu rânduri păstrate', async () => {
   mocked.mockResolvedValue(
