@@ -213,6 +213,9 @@ jobs:
     - name: Test club assets storage ownership
       shell: pwsh
       run: ./supabase/tests/run-club-assets-storage.ps1
+    - name: Test course and activity photos storage ownership
+      shell: pwsh
+      run: ./supabase/tests/run-course-activity-photos-storage.ps1
     - name: Test isolated camp adult enrollment
       shell: pwsh
       run: ./supabase/tests/run-camp-adult-enrollment.ps1
