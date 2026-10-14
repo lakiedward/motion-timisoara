@@ -1,6 +1,6 @@
 import { useEffect, useRef, type RefObject } from 'react'
 import { useMap } from 'react-leaflet'
-import type L from 'leaflet'
+import L from 'leaflet'
 import { loculRandului, type Loc } from '@/lib/locuri'
 
 export default function FocusLocation({
@@ -14,6 +14,17 @@ export default function FocusLocation({
 }) {
   const map = useMap()
   const focusedId = useRef<string | null>(null)
+  const fitted = useRef(false)
+
+  useEffect(() => {
+    if (fitted.current || locationId || locations.length < 2) return
+    fitted.current = true
+    map.fitBounds(L.latLngBounds(locations.map((location) => [location.lat, location.lng])), {
+      padding: [48, 48],
+      maxZoom: 15,
+      animate: false,
+    })
+  }, [locationId, locations, map])
 
   useEffect(() => {
     if (!locationId) {

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import 'leaflet/dist/leaflet.css'
 import './map-popup.css'
-import { getActivities, getCourses, getLocations } from '@/api/public'
+import { getActivities, getClubHeadquarters, getCourses, getLocations } from '@/api/public'
 import { getTaberePublice } from '@/api/camps'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -17,6 +17,7 @@ export default function MapPage() {
   const coursesQuery = useQuery({ queryKey: ['courses'], queryFn: () => getCourses() })
   const activitiesQuery = useQuery({ queryKey: ['activities'], queryFn: getActivities })
   const campsQuery = useQuery({ queryKey: ['tabere-publice'], queryFn: () => getTaberePublice() })
+  const clubsQuery = useQuery({ queryKey: ['club-headquarters'], queryFn: getClubHeadquarters })
   const locations = useMemo(() => {
     const counts = new Map<string, number>()
     for (const course of coursesQuery.data ?? []) {
@@ -25,9 +26,8 @@ export default function MapPage() {
     }
     return grupeazaInLocuri(locationsQuery.data ?? [], counts)
   }, [locationsQuery.data, coursesQuery.data])
-  const queries = [locationsQuery, coursesQuery, activitiesQuery, campsQuery]
-  const isError =
-    locationsQuery.isError || coursesQuery.isError || activitiesQuery.isError || campsQuery.isError
+  const queries = [locationsQuery, coursesQuery, activitiesQuery, campsQuery, clubsQuery]
+  const isError = queries.some((query) => query.isError)
   const isLoading = queries.some((query) => query.isPending)
   async function retry() {
     setIsRetrying(true)
@@ -73,7 +73,7 @@ export default function MapPage() {
             <p className="text-muted-foreground text-sm">Se încarcă locațiile și ofertele…</p>
             <Skeleton className="h-96 w-full" />
           </div>
-        ) : locations.length === 0 ? (
+        ) : locations.length === 0 && !clubsQuery.data?.length ? (
           <p role="status" className="text-muted-foreground px-6 py-16 text-center">
             Momentan nu există locații disponibile pe hartă.
           </p>
@@ -83,6 +83,7 @@ export default function MapPage() {
             courses={coursesQuery.data ?? []}
             activities={activitiesQuery.data ?? []}
             camps={campsQuery.data ?? []}
+            clubs={clubsQuery.data ?? []}
             focusId={params.get('location')}
           />
         )}

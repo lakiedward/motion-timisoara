@@ -181,6 +181,12 @@ export default function ClubProfilePage() {
             {field('email', 'Email', 'email')}
             {field('phone', 'Telefon', 'tel')}
           </div>
+          <div className="space-y-1">
+            <h3 className="text-foreground font-semibold">Sediu (opțional)</h3>
+            <p className="text-muted-foreground text-xs">
+              Scrie adresa sau pune punctul pe hartă; sediul apare cu marker pe harta publică.
+            </p>
+          </div>
           <ClubAddressFields control={control} setValue={setValue} />
           <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
             <input type="checkbox" {...register('public_email_consent')} className="size-4" />

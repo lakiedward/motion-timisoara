@@ -430,7 +430,7 @@ export async function updateMyCoachProfile(input: {
     .from('profiles')
     .update({ name: input.name, phone: input.phone })
     .eq('id', coachId)
-    .select()
+    .select('id')
     .single()
   if (profileError) throw profileError
 

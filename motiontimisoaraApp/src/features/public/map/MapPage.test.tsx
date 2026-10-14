@@ -5,12 +5,19 @@ import { MemoryRouter } from 'react-router-dom'
 import { useImperativeHandle, type ReactNode, type Ref } from 'react'
 import { vi } from 'vitest'
 import MapPage from '../MapPage'
-import { getActivities, getCourses, getLocations, type LocationRow } from '@/api/public'
+import {
+  getActivities,
+  getClubHeadquarters,
+  getCourses,
+  getLocations,
+  type LocationRow,
+} from '@/api/public'
 import { getTaberePublice, type TabaraDinLista } from '@/api/camps'
 import { cartoTileUrl } from './basemap'
 
 const map = vi.hoisted(() => ({
   setView: vi.fn(),
+  fitBounds: vi.fn(),
   getContainer: vi.fn(() => document.createElement('div')),
   on: vi.fn(),
   off: vi.fn(),
@@ -23,6 +30,7 @@ const map = vi.hoisted(() => ({
 
 vi.mock('@/api/public', () => ({
   getActivities: vi.fn(),
+  getClubHeadquarters: vi.fn(),
   getCourses: vi.fn(),
   getLocations: vi.fn(),
 }))
@@ -113,6 +121,7 @@ beforeEach(() => {
   vi.mocked(getCourses).mockResolvedValue([])
   vi.mocked(getActivities).mockResolvedValue([])
   vi.mocked(getTaberePublice).mockResolvedValue([])
+  vi.mocked(getClubHeadquarters).mockResolvedValue([])
 })
 
 afterEach(() => vi.unstubAllEnvs())
@@ -133,7 +142,7 @@ test('shows pending data before resolving into real locations', async () => {
   expect(await screen.findByText('Bazin Test')).toBeInTheDocument()
 })
 
-test.each([getLocations, getCourses, getActivities, getTaberePublice])(
+test.each([getLocations, getCourses, getActivities, getTaberePublice, getClubHeadquarters])(
   'does not turn a rejected query into empty locations or offers',
   async (query) => {
     vi.mocked(query).mockRejectedValueOnce(new Error('Unavailable'))
@@ -308,6 +317,22 @@ test('missing basemap configuration preserves locations without requesting unaut
   expect(screen.queryByText('Simulate tiles finished')).not.toBeInTheDocument()
 })
 
+test('frames every place on first load so nearby markers do not stack, except for deep links', async () => {
+  const secondPlace = { ...place, id: 'place-2', name: 'Stadion Test', lat: 45.76, lng: 21.24 }
+  vi.mocked(getLocations).mockResolvedValue([place, secondPlace])
+  const { unmount } = renderMap()
+  await waitFor(() => expect(map.fitBounds).toHaveBeenCalledOnce())
+  const [bounds, options] = map.fitBounds.mock.calls[0]!
+  expect(bounds.contains([place.lat, place.lng])).toBe(true)
+  expect(bounds.contains([secondPlace.lat, secondPlace.lng])).toBe(true)
+  expect(options).toMatchObject({ maxZoom: 15 })
+  unmount()
+  map.fitBounds.mockClear()
+  renderMap('/harta?location=place-2')
+  await waitFor(() => expect(map.openPopup).toHaveBeenCalled())
+  expect(map.fitBounds).not.toHaveBeenCalled()
+})
+
 test('waits for the popup binding before opening a deep-linked location', async () => {
   map.getPopup.mockReturnValueOnce(undefined as never)
   renderMap('/harta?location=place-1')
@@ -363,4 +388,45 @@ test('tile URLs require a nonempty key and encode it as a single query value', (
   expect(cartoTileUrl(undefined)).toBeNull()
   expect(cartoTileUrl('  ')).toBeNull()
   expect(cartoTileUrl(' test&key=other ')).toMatch(/\?key=test%26key%3Dother$/)
+})
+
+const headquarters = {
+  id: 'club-9',
+  name: 'Club Sediu Test',
+  address: 'Strada Sediului 1',
+  city: 'Timișoara',
+  lat: 45.76,
+  lng: 21.22,
+}
+
+test('shows club headquarters as their own marker linking to the club page', async () => {
+  vi.mocked(getClubHeadquarters).mockResolvedValue([headquarters])
+  renderMap()
+  expect(await screen.findByLabelText('Sediu Club Sediu Test')).toBeInTheDocument()
+  expect(screen.getByText('Strada Sediului 1, Timișoara')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /Vezi pagina clubului/ })).toHaveAttribute(
+    'href',
+    '/cluburi/club-9',
+  )
+  await userEvent.click(screen.getByRole('button', { name: 'Sedii cluburi' }))
+  expect(screen.getByLabelText('Sediu Club Sediu Test')).toBeInTheDocument()
+  expect(screen.queryByText('Bazin Test')).not.toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Cursuri' }))
+  expect(screen.queryByLabelText('Sediu Club Sediu Test')).not.toBeInTheDocument()
+})
+
+test('plots headquarters even when no program location exists', async () => {
+  vi.mocked(getLocations).mockResolvedValue([])
+  vi.mocked(getClubHeadquarters).mockResolvedValue([headquarters])
+  renderMap()
+  expect(await screen.findByLabelText('Sediu Club Sediu Test')).toBeInTheDocument()
+  expect(
+    screen.queryByText('Momentan nu există locații disponibile pe hartă.'),
+  ).not.toBeInTheDocument()
+})
+
+test('explains when no club has set a headquarters', async () => {
+  renderMap()
+  await userEvent.click(await screen.findByRole('button', { name: 'Sedii cluburi' }))
+  expect(screen.getByText('Momentan niciun club nu și-a pus sediul pe hartă.')).toBeInTheDocument()
 })

@@ -59,7 +59,8 @@
   background: var(--muted);
 }
 
-.mt-public-map .mt-offer-marker {
+.mt-public-map .mt-offer-marker,
+.mt-public-map .mt-club-marker {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -86,7 +87,18 @@
   background: var(--highlight);
 }
 
-.mt-offer-marker svg {
+.mt-public-map .mt-club-marker {
+  border-color: var(--card);
+  background: var(--foreground);
+}
+
+.mt-offer-clubs {
+  color: var(--background);
+  background: var(--foreground);
+}
+
+.mt-offer-marker svg,
+.mt-club-marker svg {
   width: calc(var(--spacing) * 4);
   height: calc(var(--spacing) * 4);
 }

@@ -2,11 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
 import type L from 'leaflet'
 import { Button } from '@/components/ui/button'
-import type { ActivityListItem, CourseListItem } from '@/api/public'
+import type { ActivityListItem, ClubHeadquarters, CourseListItem } from '@/api/public'
 import type { TabaraDinLista } from '@/api/camps'
-import { CalendarRange, GraduationCap, MapPin, Tent } from 'lucide-react'
+import { Building2, CalendarRange, GraduationCap, MapPin, Tent } from 'lucide-react'
 import type { Loc } from '@/lib/locuri'
-import { getOfferMarkerIcon } from '@/lib/map-marker'
+import { clubMarkerIcon, getOfferMarkerIcon } from '@/lib/map-marker'
+import ClubHqPopup from './ClubHqPopup'
 import FocusLocation from './FocusLocation'
 import LocationPopup from './LocationPopup'
 import { basemapAttribution, cartoTileUrl } from './basemap'
@@ -16,12 +17,21 @@ const offerFilters = [
   { value: 'courses', label: 'Cursuri', icon: GraduationCap },
   { value: 'activities', label: 'Activități', icon: CalendarRange },
   { value: 'camps', label: 'Tabere', icon: Tent },
+  { value: 'clubs', label: 'Sedii cluburi', icon: Building2 },
 ] as const
+
+const legendTone = {
+  courses: 'bg-primary text-primary-foreground',
+  activities: 'bg-primary text-primary-foreground',
+  camps: 'bg-highlight text-highlight-foreground',
+  clubs: 'bg-foreground text-background',
+}
 
 const emptyOffers = {
   courses: 'Momentan nu există cursuri cu locație pe hartă.',
   activities: 'Momentan nu există activități cu locație pe hartă.',
   camps: 'Momentan nu există tabere cu locație pe hartă.',
+  clubs: 'Momentan niciun club nu și-a pus sediul pe hartă.',
 }
 
 export default function LocationMap({
@@ -29,12 +39,14 @@ export default function LocationMap({
   courses,
   activities,
   camps,
+  clubs,
   focusId,
 }: {
   locations: Loc[]
   courses: CourseListItem[]
   activities: ActivityListItem[]
   camps: TabaraDinLista[]
+  clubs: ClubHeadquarters[]
   focusId: string | null
 }) {
   const tileUrl = cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY)
@@ -61,9 +73,13 @@ export default function LocationMap({
     [locations, courses, activities, camps],
   )
   const visiblePlaces = useMemo(
-    () => places.filter((place) => offerType === 'all' || place[offerType].length > 0),
+    () =>
+      offerType === 'clubs'
+        ? []
+        : places.filter((place) => offerType === 'all' || place[offerType].length > 0),
     [places, offerType],
   )
+  const visibleClubs = offerType === 'all' || offerType === 'clubs' ? clubs : []
   const visibleLocations = useMemo(
     () => visiblePlaces.map((place) => place.location),
     [visiblePlaces],
@@ -142,13 +158,13 @@ export default function LocationMap({
                 <li key={filter.value} className="flex items-center gap-2">
                   <filter.icon
                     aria-hidden="true"
-                    className={`size-6 shrink-0 rounded-md p-1 ${filter.value === 'camps' ? 'bg-highlight text-highlight-foreground' : 'bg-primary text-primary-foreground'}`}
+                    className={`size-6 shrink-0 rounded-md p-1 ${legendTone[filter.value]}`}
                   />
                   {filter.label}
                 </li>
               ))}
           </ul>
-          {offerType !== 'all' && visiblePlaces.length === 0 && (
+          {offerType !== 'all' && visiblePlaces.length === 0 && visibleClubs.length === 0 && (
             <p role="status" className="text-muted-foreground text-sm">
               {emptyOffers[offerType]}
             </p>
@@ -185,6 +201,7 @@ export default function LocationMap({
                     })}
                     alt={location.nume}
                     title={location.nume}
+                    riseOnHover
                     ref={(marker) => {
                       if (marker) markers.current.set(location.cheie, marker)
                       else markers.current.delete(location.cheie)
@@ -208,6 +225,25 @@ export default function LocationMap({
                 )
               },
             )}
+            {visibleClubs.map((club) => (
+              <Marker
+                key={`club-${club.id}`}
+                position={[club.lat, club.lng]}
+                icon={clubMarkerIcon}
+                alt={`Sediu ${club.name}`}
+                title={`Sediu ${club.name}`}
+              >
+                <Popup
+                  className="mt-popup"
+                  minWidth={264}
+                  maxWidth={280}
+                  autoPanPaddingTopLeft={[64, 16]}
+                  autoPanPaddingBottomRight={[16, 16]}
+                >
+                  <ClubHqPopup club={club} />
+                </Popup>
+              </Marker>
+            ))}
           </MapContainer>
         </div>
       </div>

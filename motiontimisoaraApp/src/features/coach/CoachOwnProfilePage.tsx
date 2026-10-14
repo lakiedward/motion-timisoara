@@ -88,7 +88,7 @@ export default function CoachOwnProfilePage() {
     <div className="max-w-2xl space-y-6">
       <h1 className="font-display text-2xl font-bold text-foreground">Profil antrenor</h1>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
-        <Card className="shadow-none">
+        <Card>
           <CardContent className="space-y-4">
             <Field id="name" label="Nume" autoComplete="name" error={errors.name?.message} {...register('name')} />
             <Field id="phone" label="Telefon" type="tel" autoComplete="tel" {...register('phone')} />
