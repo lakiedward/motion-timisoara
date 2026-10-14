@@ -49,7 +49,7 @@ export function CourseEnrollCard({
           {formatMoney(course.price_per_session, course.currency)} / ședință
         </p>
       )}
-      <OfferExchangeNote offer={course} />
+      <OfferExchangeNote offer={course} className="text-xs" />
 
       {canEnroll ? (
         <>
