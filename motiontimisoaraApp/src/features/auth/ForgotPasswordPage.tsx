@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { CircleAlert } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 import { AuthLayout } from './AuthLayout'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Field } from '@/components/ui/field'
 import { requestPasswordReset } from '@/api/auth'
 import { isNative } from '@/lib/platform'
 
@@ -58,7 +58,7 @@ export default function ForgotPasswordPage() {
       }
     >
       {sent ? (
-        <p className="bg-primary/10 text-primary rounded-md px-3 py-3 text-sm">
+        <p className="bg-primary/10 text-primary rounded-md px-3 py-3 text-sm" role="status">
           Dacă există un cont cu acest email, vei primi în scurt timp un link de resetare.
           {isNative() &&
             ' Deschide emailul pe acest telefon în următoarele 5 minute. Linkul funcționează în aplicația din care l-ai solicitat.'}
@@ -66,21 +66,22 @@ export default function ForgotPasswordPage() {
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           {serverError && (
-            <p className="bg-destructive/10 text-destructive rounded-md px-3 py-2 text-sm">
+            <p
+              className="bg-destructive/10 text-destructive flex items-start gap-2 rounded-md px-3 py-2 text-sm"
+              role="alert"
+            >
+              <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
               {serverError}
             </p>
           )}
-          <div className="space-y-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              {...register('email')}
-              aria-invalid={!!errors.email}
-            />
-            {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
-          </div>
+          <Field
+            id="email"
+            label="Email"
+            type="email"
+            autoComplete="email"
+            error={errors.email?.message}
+            {...register('email')}
+          />
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? 'Se trimite…' : 'Trimite link'}
           </Button>

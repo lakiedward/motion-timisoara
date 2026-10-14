@@ -33,6 +33,7 @@ test('empty email asks for a required address and does not call recover', async 
 
   expect(await screen.findByText('Emailul e obligatoriu')).toBeInTheDocument()
   expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'true')
+  expect(screen.getByLabelText('Email')).toHaveAttribute('aria-describedby', 'email-error')
   expect(mockedReset).not.toHaveBeenCalled()
 })
 
@@ -75,13 +76,24 @@ test('a failed request keeps the form and does not pretend success', async () =>
   await user.type(screen.getByLabelText('Email'), 'nimeni@example.test')
   await user.click(screen.getByRole('button', { name: 'Trimite link' }))
 
-  expect(
-    await screen.findByText('Nu am putut trimite linkul. Verifică conexiunea și încearcă din nou.'),
-  ).toBeInTheDocument()
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Nu am putut trimite linkul. Verifică conexiunea și încearcă din nou.',
+  )
   expect(screen.getByLabelText('Email')).toBeInTheDocument()
   expect(
     screen.queryByText(/Dacă există un cont cu acest email/),
   ).not.toBeInTheDocument()
+})
+
+test('a thrown network error keeps the form for a retry', async () => {
+  const user = userEvent.setup()
+  mockedReset.mockRejectedValue(new TypeError('Failed to fetch'))
+  renderPage()
+  await user.type(screen.getByLabelText('Email'), 'nimeni@example.test')
+  await user.click(screen.getByRole('button', { name: 'Trimite link' }))
+
+  expect(await screen.findByRole('alert')).toHaveTextContent(/Verifică conexiunea/)
+  expect(screen.getByRole('button', { name: 'Trimite link' })).toBeEnabled()
 })
 
 test('the submit button stays disabled for the whole request', async () => {
