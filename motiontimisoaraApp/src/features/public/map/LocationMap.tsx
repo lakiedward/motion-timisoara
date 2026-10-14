@@ -201,6 +201,7 @@ export default function LocationMap({
                     })}
                     alt={location.nume}
                     title={location.nume}
+                    riseOnHover
                     ref={(marker) => {
                       if (marker) markers.current.set(location.cheie, marker)
                       else markers.current.delete(location.cheie)

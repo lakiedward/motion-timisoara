@@ -17,6 +17,7 @@ import { cartoTileUrl } from './basemap'
 
 const map = vi.hoisted(() => ({
   setView: vi.fn(),
+  fitBounds: vi.fn(),
   getContainer: vi.fn(() => document.createElement('div')),
   on: vi.fn(),
   off: vi.fn(),
@@ -314,6 +315,22 @@ test('missing basemap configuration preserves locations without requesting unaut
   expect(screen.getByRole('alert')).toHaveTextContent('Fundalul hărții nu este disponibil.')
   expect(screen.getByRole('button', { name: 'Reîncarcă pagina' })).toBeInTheDocument()
   expect(screen.queryByText('Simulate tiles finished')).not.toBeInTheDocument()
+})
+
+test('frames every place on first load so nearby markers do not stack, except for deep links', async () => {
+  const secondPlace = { ...place, id: 'place-2', name: 'Stadion Test', lat: 45.76, lng: 21.24 }
+  vi.mocked(getLocations).mockResolvedValue([place, secondPlace])
+  const { unmount } = renderMap()
+  await waitFor(() => expect(map.fitBounds).toHaveBeenCalledOnce())
+  const [bounds, options] = map.fitBounds.mock.calls[0]!
+  expect(bounds.contains([place.lat, place.lng])).toBe(true)
+  expect(bounds.contains([secondPlace.lat, secondPlace.lng])).toBe(true)
+  expect(options).toMatchObject({ maxZoom: 15 })
+  unmount()
+  map.fitBounds.mockClear()
+  renderMap('/harta?location=place-2')
+  await waitFor(() => expect(map.openPopup).toHaveBeenCalled())
+  expect(map.fitBounds).not.toHaveBeenCalled()
 })
 
 test('waits for the popup binding before opening a deep-linked location', async () => {
