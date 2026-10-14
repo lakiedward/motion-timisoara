@@ -2862,6 +2862,15 @@ export type Database = {
         Args: { p_activity_id: string }
         Returns: number
       }
+      admin_clubs: {
+        Args: never
+        Returns: {
+          city: string
+          email: string
+          id: string
+          name: string
+        }[]
+      }
       admin_stats: {
         Args: never
         Returns: {
