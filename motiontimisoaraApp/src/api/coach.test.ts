@@ -4,6 +4,7 @@ import { updateMyCoachProfile } from './coach'
 
 const getSession = vi.fn()
 const profilesEq = vi.fn()
+const profilesSelect = vi.fn()
 const coachUpdateSelect = vi.fn()
 const coachInsert = vi.fn()
 
@@ -14,10 +15,14 @@ vi.mock('@/lib/supabase', () => ({
     },
     from: (table: string) => {
       if (table === 'profiles') {
-        // Scrierea cere acum rândul înapoi, deci lanțul se termină în `.single()`.
         return {
           update: () => ({
-            eq: () => ({ select: () => ({ single: (...args: unknown[]) => profilesEq(...args) }) }),
+            eq: () => ({
+              select: (...columns: unknown[]) => {
+                profilesSelect(...columns)
+                return { single: (...args: unknown[]) => profilesEq(...args) }
+              },
+            }),
           }),
         }
       }
@@ -34,6 +39,7 @@ vi.mock('@/lib/supabase', () => ({
 beforeEach(() => {
   getSession.mockReset()
   profilesEq.mockReset()
+  profilesSelect.mockReset()
   coachUpdateSelect.mockReset()
   coachInsert.mockReset()
   getSession.mockResolvedValue({ data: { session: { user: { id: 'coach-1' } } } })
@@ -55,4 +61,12 @@ test('updateMyCoachProfile inserts coach_profiles when update matches zero rows'
   await updateMyCoachProfile({ name: 'Audit Antrenor', phone: null, bio: 'Bio nou' })
 
   expect(coachInsert).toHaveBeenCalledWith({ user_id: 'coach-1', bio: 'Bio nou' })
+})
+
+test('updateMyCoachProfile reads back only the id, the one profiles column every user may select', async () => {
+  coachUpdateSelect.mockResolvedValue({ data: [{ id: 'cp-1' }], error: null })
+
+  await updateMyCoachProfile({ name: 'Audit Antrenor', phone: null, bio: 'Bio nou' })
+
+  expect(profilesSelect).toHaveBeenCalledWith('id')
 })
