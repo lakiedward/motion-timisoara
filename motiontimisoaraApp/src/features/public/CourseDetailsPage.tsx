@@ -5,7 +5,7 @@ import { ArrowLeft, CalendarDays, MapPin, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { COURSE_RULES_FILE_BUCKET, rulesFileAfisabil } from '@/api/camp-rules-file'
-import { getCourse, getCourseSpotsRemaining, publicUrl } from '@/api/public'
+import { courseHeroUrl, getCourse, getCourseSpotsRemaining } from '@/api/public'
 import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
 import { getCourseRatingSummary, getMyCourseRating, submitCourseRating } from '@/api/ratings'
 import { formatLevel } from '@/lib/level'
@@ -14,8 +14,7 @@ import { useAuth } from '@/lib/auth-context'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StarRating } from '@/components/StarRating'
-import { SPORT_COLOR, SPORT_COLOR_FALLBACK } from '@/components/sport/sport-icons'
-import { SportIllustration } from '@/components/sport/SportIllustration'
+import { CourseHero } from '@/features/public/courses/CourseHero'
 
 const WEEKDAYS = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă']
 
@@ -81,8 +80,6 @@ export default function CourseDetailsPage() {
     )
   }
 
-  const img = publicUrl('course-photos', course.hero_photo_storage_path)
-  const sportColor = SPORT_COLOR[course.sport?.code ?? ''] ?? SPORT_COLOR_FALLBACK
   const levelLabel = formatLevel(course.level)
   const sessions = [...(course.occurrences ?? [])].sort(
     (a, b) => +new Date(a.starts_at) - +new Date(b.starts_at),
@@ -102,65 +99,12 @@ export default function CourseDetailsPage() {
 
   return (
     <div>
-      {img ? (
-        <section className="relative h-[46vh] min-h-[320px] overflow-hidden md:h-[52vh]">
-          <img src={img} alt={course.name} className="absolute inset-0 size-full object-cover" />
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                'linear-gradient(to top, rgba(15,23,42,0.88) 0%, rgba(15,23,42,0.25) 48%, transparent 72%)',
-            }}
-          />
-
-          <Link
-            to="/cursuri"
-            className="absolute top-6 left-6 inline-flex items-center gap-1.5 rounded-full bg-black/30 px-3.5 py-2 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-black/45"
-          >
-            <ArrowLeft className="size-4" /> Înapoi la cursuri
-          </Link>
-
-          <div className="absolute inset-x-0 bottom-0">
-            <div className="mx-auto max-w-6xl px-6 pb-7">
-              <div className="flex flex-wrap items-center gap-2.5">
-                {course.sport && (
-                  <span
-                    className="rounded-full px-4 py-1.5 text-sm font-bold text-white shadow-sm md:text-base"
-                    style={{ backgroundColor: sportColor }}
-                  >
-                    {course.sport.name}
-                  </span>
-                )}
-                {levelLabel && (
-                  <span className="rounded-full border-2 border-white/50 bg-black/25 px-4 py-1.5 text-sm font-bold text-white backdrop-blur-sm md:text-base">
-                    {levelLabel}
-                  </span>
-                )}
-              </div>
-              <h1 className="font-display mt-3 text-4xl font-extrabold text-white md:text-5xl">
-                {course.name}
-              </h1>
-            </div>
-          </div>
-        </section>
-      ) : (
-        <div className="mx-auto max-w-6xl px-6 pt-8">
-          <Link
-            to="/cursuri"
-            className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
-          >
-            <ArrowLeft className="size-4" /> Înapoi la cursuri
-          </Link>
-          <h1 className="font-display text-foreground mt-4 text-3xl font-extrabold md:text-4xl">
-            {course.name}
-          </h1>
-          <SportIllustration
-            code={course.sport?.code}
-            name={course.sport?.name}
-            className="mt-6 h-44 rounded-3xl border md:h-56"
-          />
-        </div>
-      )}
+      <CourseHero
+        name={course.name}
+        photoUrl={courseHeroUrl(course)}
+        sport={course.sport}
+        levelLabel={levelLabel}
+      />
 
       <div className="mx-auto max-w-6xl px-6 py-10">
         <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
