@@ -8,9 +8,12 @@ import { toast } from 'sonner'
 import { getMyCoachProfile, updateMyCoachProfile } from '@/api/coach'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
+import { Textarea } from '@/components/ui/textarea'
 import CoachClubsSection from './profile/CoachClubsSection'
 
 const schema = z.object({
@@ -23,7 +26,7 @@ type Values = z.infer<typeof schema>
 export default function CoachOwnProfilePage() {
   const qc = useQueryClient()
   const { refresh } = useAuth()
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['my-coach-profile'],
     queryFn: getMyCoachProfile,
   })
@@ -45,8 +48,26 @@ export default function CoachOwnProfilePage() {
     }
   }, [data, reset])
 
-  if (isLoading) return <Skeleton className="h-96 rounded-3xl" />
-  if (!data) return <p className="text-muted-foreground">Nu am găsit profilul de antrenor.</p>
+  if (isLoading) {
+    return (
+      <div role="status" aria-label="Se încarcă profilul" className="max-w-2xl space-y-6">
+        <Skeleton className="h-8 w-56" />
+        <Skeleton className="h-84 rounded-xl" />
+        <Skeleton className="h-60 rounded-xl" />
+      </div>
+    )
+  }
+  if (isError || !data) {
+    return (
+      <StatusView
+        state="error"
+        title="Nu am putut încărca profilul."
+        text="Verifică conexiunea și încearcă din nou."
+        onRetry={() => void refetch()}
+        className="max-w-2xl"
+      />
+    )
+  }
 
   const onSubmit = async (v: Values) => {
     try {
@@ -67,26 +88,19 @@ export default function CoachOwnProfilePage() {
     <div className="max-w-2xl space-y-6">
       <h1 className="font-display text-2xl font-bold text-foreground">Profil antrenor</h1>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
-        <section className="bg-card shadow-card space-y-4 rounded-3xl border p-6">
-          <div className="space-y-1.5">
-            <Label htmlFor="name">Nume</Label>
-            <Input id="name" {...register('name')} aria-invalid={!!errors.name} />
-            {errors.name && <p className="text-destructive text-xs">{errors.name.message}</p>}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="phone">Telefon</Label>
-            <Input id="phone" type="tel" {...register('phone')} />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="bio">Bio</Label>
-            <textarea
-              id="bio"
-              rows={4}
-              {...register('bio')}
-              className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
-            />
-          </div>
-        </section>
+        <Card className="shadow-none">
+          <CardContent className="space-y-4">
+            <Field id="name" label="Nume" error={errors.name?.message}>
+              {(control) => <Input {...control} autoComplete="name" {...register('name')} />}
+            </Field>
+            <Field id="phone" label="Telefon">
+              {(control) => <Input {...control} type="tel" autoComplete="tel" {...register('phone')} />}
+            </Field>
+            <Field id="bio" label="Bio">
+              {(control) => <Textarea {...control} rows={4} {...register('bio')} />}
+            </Field>
+          </CardContent>
+        </Card>
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Se salvează…' : 'Salvează'}
         </Button>
