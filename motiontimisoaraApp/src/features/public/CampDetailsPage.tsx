@@ -14,6 +14,7 @@ import CampPricingCard from './camp-pricing/CampPricingCard'
 import CampLocation from '@/components/camps/CampLocation'
 import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
 import { PublicHeroBand } from './PublicHeroBand'
+import { CampOrganizerCoaches } from './camp-detail/CampOrganizerCoaches'
 
 export default function CampDetailsPage() {
   const { slug = '' } = useParams()
@@ -151,42 +152,7 @@ export default function CampDetailsPage() {
           </div>
         )}
 
-        {organizator && (
-          <div className="mt-8">
-            <h2 className="font-display mb-2 text-lg font-bold">Organizată de</h2>
-            <div className="flex flex-wrap items-center gap-2">
-              <Link
-                to={organizator.link}
-                className="text-primary inline-flex h-11 items-center font-semibold"
-              >
-                {organizator.nume}
-              </Link>
-              <Badge variant="outline">{organizator.fel === 'club' ? 'Club' : 'Antrenor'}</Badge>
-            </div>
-          </div>
-        )}
-
-        {antrenori.length > 0 && (
-          <div className="mt-8">
-            <h2 className="font-display mb-3 text-lg font-bold">
-              {antrenori.length === 1 ? 'Antrenorul care însoțește' : 'Antrenorii care însoțesc'}
-            </h2>
-            <ul className="flex flex-wrap gap-4">
-              {antrenori.map((a) => (
-                <li key={a.id} className="flex items-center gap-3">
-                  {a.pozaUrl ? (
-                    <img src={a.pozaUrl} alt="" className="size-12 rounded-full object-cover" />
-                  ) : (
-                    <div className="bg-muted flex size-12 items-center justify-center rounded-full text-sm font-semibold">
-                      {a.nume.slice(0, 1)}
-                    </div>
-                  )}
-                  <span className="font-medium">{a.nume}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <CampOrganizerCoaches organizator={organizator} antrenori={antrenori} />
 
         <CampPricingCard data={data} ended={incheiata} full={plina} onEnroll={onEnroll} />
       </div>

@@ -143,7 +143,13 @@ test('necesarul taberei se afișează ca listă pentru părinte', async () => {
     detaliu({
       necesar: [
         { name: 'Haine', items: [{ name: 'Chiloți', quantity: 7 }] },
-        { name: 'Ski', items: [{ name: 'Schiuri', quantity: 1 }, { name: 'Clăpari', quantity: 1 }] },
+        {
+          name: 'Ski',
+          items: [
+            { name: 'Schiuri', quantity: 1 },
+            { name: 'Clăpari', quantity: 1 },
+          ],
+        },
       ],
     }) as never,
   )
@@ -211,7 +217,7 @@ test('o tabără fără necesar nu arată o secțiune goală', async () => {
 })
 test('un antrenor fără poză primește inițiala numelui', async () => {
   mocked.mockResolvedValue(
-    detaliu({ antrenori: [{ id: 'a1', nume: 'Maria Pop', pozaUrl: null }] }) as never,
+    detaliu({ antrenori: [{ id: 'a1', nume: 'Maria Pop', pozaUrl: null, link: null }] }) as never,
   )
   renderPage()
   await screen.findByText('Maria Pop')
@@ -305,10 +311,10 @@ test('o desfășurare corectă nu afișează nicio notă', async () => {
 })
 test('clubul organizator se vede, ca link către pagina lui', async () => {
   renderPage()
-  const link = await screen.findByRole('link', { name: 'Club Audit Motion' })
+  const link = await screen.findByRole('link', { name: /Club Audit Motion/ })
   expect(link).toHaveAttribute('href', '/cluburi/club-1')
   expect(screen.getByText('Organizată de')).toBeInTheDocument()
-  expect(screen.getByText('Club')).toBeInTheDocument()
+  expect(link).toHaveTextContent('Club · Vezi pagina clubului')
 })
 
 test('un antrenor organizator duce la pagina lui de antrenor', async () => {
@@ -318,9 +324,9 @@ test('un antrenor organizator duce la pagina lui de antrenor', async () => {
     }) as never,
   )
   renderPage()
-  const link = await screen.findByRole('link', { name: 'Audit Antrenor' })
+  const link = await screen.findByRole('link', { name: /Audit Antrenor/ })
   expect(link).toHaveAttribute('href', '/antrenori/user-1')
-  expect(screen.getByText('Antrenor')).toBeInTheDocument()
+  expect(link).toHaveTextContent('Antrenor · Vezi profilul antrenorului')
 })
 test('o tabără fără proprietar nu arată o secțiune goală', async () => {
   mocked.mockResolvedValue(detaliu({ organizator: null }) as never)
@@ -332,20 +338,41 @@ test('antrenorii care însoțesc se văd, cu nume', async () => {
   mocked.mockResolvedValue(
     detaliu({
       antrenori: [
-        { id: 'a1', nume: 'Audit Antrenor', pozaUrl: 'https://public/coach-photos/a.jpg' },
-        { id: 'a2', nume: 'Maria Pop', pozaUrl: null },
+        {
+          id: 'a1',
+          nume: 'Audit Antrenor',
+          pozaUrl: 'https://public/coach-photos/a.jpg',
+          link: '/antrenori/user-a1',
+        },
+        { id: 'a2', nume: 'Maria Pop', pozaUrl: null, link: null },
       ],
     }) as never,
   )
   renderPage()
   expect(await screen.findByText('Antrenorii care însoțesc')).toBeInTheDocument()
-  expect(screen.getByText('Audit Antrenor')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /Audit Antrenor/ })).toHaveAttribute(
+    'href',
+    '/antrenori/user-a1',
+  )
   expect(screen.getByText('Maria Pop')).toBeInTheDocument()
+  expect(screen.queryByRole('link', { name: /Maria Pop/ })).not.toBeInTheDocument()
+})
+
+test('o tabără fără organizator și fără antrenori nu arată secțiunea', async () => {
+  mocked.mockResolvedValue(detaliu({ organizator: null, antrenori: [] }) as never)
+  const { container } = renderPage()
+  await screen.findByRole('button', { name: 'Înscrie-te' })
+  expect(
+    container.querySelector('[data-section$="section:organizator-si-antrenori"]'),
+  ).not.toBeInTheDocument()
+  expect(screen.queryByText(/însoțe/)).not.toBeInTheDocument()
 })
 
 test('un singur antrenor se scrie la singular', async () => {
   mocked.mockResolvedValue(
-    detaliu({ antrenori: [{ id: 'a1', nume: 'Audit Antrenor', pozaUrl: null }] }) as never,
+    detaliu({
+      antrenori: [{ id: 'a1', nume: 'Audit Antrenor', pozaUrl: null, link: null }],
+    }) as never,
   )
   renderPage()
   expect(await screen.findByText('Antrenorul care însoțește')).toBeInTheDocument()
