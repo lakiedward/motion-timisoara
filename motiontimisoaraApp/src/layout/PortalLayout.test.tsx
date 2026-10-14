@@ -87,7 +87,7 @@ test('menu button, logout and close control meet the 44px tap class', async () =
   renderLayout()
   expect(screen.getByRole('button', { name: 'Meniu' }).className).toMatch(/size-11/)
   expect(screen.getByRole('button', { name: 'Deconectare' }).className).toMatch(/min-h-11/)
-  expect(screen.getByRole('button', { name: 'Deconectare' }).className).toMatch(/outline-primary/)
+  expect(screen.getByRole('button', { name: 'Deconectare' }).className).toMatch(/focus-visible:outline-ring/)
   await user.click(screen.getByRole('button', { name: 'Meniu' }))
   const close = await screen.findByRole('button', { name: 'Închide' })
   expect(close.className).toMatch(/size-touch-target/)

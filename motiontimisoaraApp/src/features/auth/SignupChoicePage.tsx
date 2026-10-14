@@ -62,7 +62,7 @@ export default function SignupChoicePage() {
           <Link
             key={c.to}
             to={withReturnUrl(c.to, returnUrl)}
-            className="hover:border-primary/40 hover:bg-accent focus-visible:border-ring focus-visible:ring-ring/50 flex h-full items-center gap-4 rounded-2xl border p-4 outline-none transition-colors focus-visible:ring-[3px]"
+            className="hover:border-primary/40 hover:bg-accent flex h-full items-center gap-4 rounded-2xl border p-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             <span className="bg-primary/10 text-primary grid size-11 shrink-0 place-items-center rounded-xl">
               <c.icon className="size-5" />

@@ -116,7 +116,7 @@ export default function PhotoGallery({ urls, alt }: { urls: string[]; alt: strin
           <li key={u}>
             <button
               type="button"
-              className="focus-visible:ring-ring/50 block w-full overflow-hidden rounded-2xl outline-none focus-visible:ring-[3px]"
+              className="block w-full overflow-hidden rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               onClick={() => deschide(i)}
               aria-label={`Deschide poza ${i + 1} din ${urls.length}`}
             >
