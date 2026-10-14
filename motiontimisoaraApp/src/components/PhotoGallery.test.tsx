@@ -329,3 +329,13 @@ test('poza mărită se deschide în portalul dialogurilor, deasupra meniului', a
   expect(container).not.toContainElement(dialog)
   expect(dialog.className).toContain('z-50')
 })
+
+test('o poză care nu se încarcă lasă pătratul gol, fără să strice grila', () => {
+  render(<PhotoGallery urls={POZE} alt="Tabără" />)
+  const buton = screen.getByRole('button', { name: 'Deschide poza 2 din 3' })
+  fireEvent.error(buton.querySelector('img')!)
+  expect(buton.querySelector('img')).toBeNull()
+  expect(buton.className).toContain('aspect-square')
+  expect(buton.className).toContain('bg-muted')
+  expect(screen.getAllByRole('listitem')).toHaveLength(3)
+})
