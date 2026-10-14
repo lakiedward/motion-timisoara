@@ -1,4 +1,3 @@
-import { OfferExchangeNote } from '@/components/OfferExchangeNote'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, CalendarDays, MapPin, Users } from 'lucide-react'
@@ -9,12 +8,10 @@ import { courseHeroUrl, getCourse, getCourseSpotsRemaining } from '@/api/public'
 import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
 import { getCourseRatingSummary, getMyCourseRating, submitCourseRating } from '@/api/ratings'
 import { formatLevel } from '@/lib/level'
-import { formatMoney } from '@/lib/money'
 import { useAuth } from '@/lib/auth-context'
-import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
-import { StarRating } from '@/components/StarRating'
 import { CourseHero } from '@/features/public/courses/CourseHero'
+import { CourseEnrollCard } from '@/features/public/courses/CourseEnrollCard'
 
 const WEEKDAYS = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă']
 
@@ -87,9 +84,10 @@ export default function CourseDetailsPage() {
   const capacity = course.capacity
   const remaining = capacity == null ? null : (spotsRemaining ?? capacity)
   const isFull = remaining != null && remaining <= 0
+  const canEnroll = !user || user.role === 'PARENT'
 
   const onEnroll = () => {
-    if (isFull) return
+    if (isFull || !canEnroll) return
     if (!user) {
       navigate(`/login?returnUrl=${encodeURIComponent(`/cursuri/${course.id}`)}`)
       return
@@ -215,59 +213,16 @@ export default function CourseDetailsPage() {
           </div>
 
           <aside className="lg:sticky lg:top-24 lg:self-start">
-            <div className="bg-card shadow-card overflow-hidden rounded-3xl border">
-              <div className="h-1.5" style={{ background: 'var(--gradient-primary)' }} />
-              <div className="flex flex-col items-center p-6 text-center">
-                <div className="font-display text-3xl font-extrabold">
-                  {formatMoney(course.price, course.currency)}
-                  <span className="text-muted-foreground text-base font-normal"> / lună</span>
-                </div>
-                <OfferExchangeNote offer={course} />
-                {course.price_per_session > 0 && (
-                  <p className="text-muted-foreground mt-1 text-sm">
-                    {formatMoney(course.price_per_session, course.currency)} / ședință
-                  </p>
-                )}
-                <button
-                  type="button"
-                  onClick={onEnroll}
-                  disabled={isFull}
-                  className={cn(
-                    'btn-cta btn-cta--primary mt-5 w-full',
-                    isFull && 'pointer-events-none opacity-50',
-                  )}
-                >
-                  {isFull ? 'Locuri epuizate' : 'Înscrie-te'}
-                </button>
-                {isFull ? (
-                  <p className="text-destructive mt-3 text-center text-xs font-medium">
-                    Locuri epuizate
-                  </p>
-                ) : (
-                  <p className="text-muted-foreground mt-3 text-center text-xs">
-                    Plată online sau cash, gestionată din contul tău.
-                  </p>
-                )}
-
-                {rating && rating.count > 0 && (
-                  <div className="mt-5 flex w-full flex-col items-center gap-2 border-t pt-4">
-                    <StarRating value={rating.avg} size={18} />
-                    <span className="text-muted-foreground text-sm">
-                      {rating.avg.toFixed(1)} · {rating.count}{' '}
-                      {rating.count === 1 ? 'evaluare' : 'evaluări'}
-                    </span>
-                  </div>
-                )}
-                {user?.role === 'PARENT' && (
-                  <div className="mt-4 w-full border-t pt-4">
-                    <p className="text-muted-foreground mb-1.5 text-sm font-medium">Nota ta</p>
-                    <div className="flex justify-center">
-                      <StarRating value={myRating ?? 0} onChange={(r) => rate.mutate(r)} />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <CourseEnrollCard
+              course={course}
+              isFull={isFull}
+              canEnroll={canEnroll}
+              onEnroll={onEnroll}
+              rating={rating}
+              showMyRating={user?.role === 'PARENT'}
+              myRating={myRating ?? 0}
+              onRate={(r) => rate.mutate(r)}
+            />
           </aside>
         </div>
       </div>
