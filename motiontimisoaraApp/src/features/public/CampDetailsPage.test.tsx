@@ -117,6 +117,14 @@ test('o tabără încheiată nu mai oferă înscriere și spune de ce', async ()
   expect(screen.getByRole('heading', { level: 1, name: 'Tabără de înot' })).toBeInTheDocument()
   expect(screen.getByText('900,00 lei')).toBeInTheDocument()
 })
+test('insigna Încheiată stă pe rândul perioadei', async () => {
+  mocked.mockResolvedValue(
+    detaliu({ heroUrl: 'https://x.test/hero.jpg', tabara: { period_end: '2020-08-21' } }) as never,
+  )
+  renderPage()
+  const insigna = await screen.findByText('Încheiată')
+  expect(insigna.parentElement).toHaveTextContent('13.09.2026 – 21.08.2020')
+})
 test('perioada și locul se văd lângă titlu', async () => {
   renderPage()
   await screen.findByRole('heading', { level: 1, name: 'Tabără de înot' })

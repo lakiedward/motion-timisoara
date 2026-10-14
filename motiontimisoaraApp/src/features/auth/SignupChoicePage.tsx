@@ -23,7 +23,7 @@ const CHOICES = [
     to: '/register-club',
     icon: Building2,
     title: 'Club',
-    desc: 'Administrează antrenori, cursuri și încasări.',
+    desc: 'Antrenori și cursuri. Necesită aprobarea unui administrator.',
   },
 ]
 
@@ -31,8 +31,6 @@ export default function SignupChoicePage() {
   const { user, loading } = useAuth()
   const returnUrl = useReturnUrl()
 
-  // Someone already signed in has nothing to choose here; send them to their own
-  // dashboard rather than showing "create an account".
   if (loading) {
     return (
       <div className="grid min-h-dvh place-items-center">
@@ -46,6 +44,7 @@ export default function SignupChoicePage() {
     <AuthLayout
       title="Creează un cont"
       subtitle="Alege tipul de cont"
+      topOnMobile
       footer={
         <>
           Ai deja cont?{' '}
@@ -58,8 +57,6 @@ export default function SignupChoicePage() {
         </>
       }
     >
-      {/* auto-rows-fr keeps the three cards the same height even when one
-          description wraps onto an extra line, which it does on narrow phones. */}
       <div className="grid auto-rows-fr gap-3">
         {CHOICES.map((c) => (
           <Link
