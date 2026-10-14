@@ -10,7 +10,7 @@ import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Field } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { Textarea } from '@/components/ui/textarea'
@@ -90,15 +90,12 @@ export default function CoachOwnProfilePage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
         <Card className="shadow-none">
           <CardContent className="space-y-4">
-            <Field id="name" label="Nume" error={errors.name?.message}>
-              {(control) => <Input {...control} autoComplete="name" {...register('name')} />}
-            </Field>
-            <Field id="phone" label="Telefon">
-              {(control) => <Input {...control} type="tel" autoComplete="tel" {...register('phone')} />}
-            </Field>
-            <Field id="bio" label="Bio">
-              {(control) => <Textarea {...control} rows={4} {...register('bio')} />}
-            </Field>
+            <Field id="name" label="Nume" autoComplete="name" error={errors.name?.message} {...register('name')} />
+            <Field id="phone" label="Telefon" type="tel" autoComplete="tel" {...register('phone')} />
+            <div className="space-y-1.5">
+              <Label htmlFor="bio">Bio</Label>
+              <Textarea id="bio" rows={4} {...register('bio')} />
+            </div>
           </CardContent>
         </Card>
         <Button type="submit" disabled={isSubmitting}>

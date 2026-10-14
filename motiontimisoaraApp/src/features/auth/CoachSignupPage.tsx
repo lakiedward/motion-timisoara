@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
+import { CircleAlert } from 'lucide-react'
 
 import { AuthLayout } from './AuthLayout'
 import { GoogleSignInButton } from './GoogleSignInButton'
@@ -16,7 +17,7 @@ import {
   saveCoachInvitationDraft,
 } from './coach/invitation-draft'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Field, FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Label } from '@/components/ui/label'
 import { fetchSports } from '@/api/sports'
 import { registerCoach, roleHome } from '@/api/auth'
@@ -216,42 +217,32 @@ export default function CoachSignupPage() {
       title="Înregistrare antrenor"
       subtitle="Necesită un cod de invitație"
       footer={
-        <Link to={withReturnUrl('/signup', returnUrl)} className="text-primary font-semibold">
-          Înapoi
-        </Link>
+        step === 0 ? (
+          <Link to={withReturnUrl('/signup', returnUrl)} className="text-primary font-semibold">
+            Înapoi
+          </Link>
+        ) : undefined
       }
     >
       <StepDots count={3} current={step} />
       {serverError && (
         <p
-          className="bg-destructive/10 text-destructive mb-4 rounded-md px-3 py-2 text-sm"
+          className="bg-destructive/10 text-destructive mb-4 flex items-start gap-2 rounded-md px-3 py-2 text-sm"
           role="alert"
         >
+          <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           {serverError}
         </p>
       )}
       <form onSubmit={onFormSubmit} className="space-y-4" noValidate>
         {step === 0 && (
-          <div className="space-y-1.5">
-            <Label htmlFor="invitationCode">Cod de invitație</Label>
-            <Input
-              id="invitationCode"
-              {...register('invitationCode')}
-              aria-invalid={!!errors.invitationCode}
-              aria-describedby={
-                errors.invitationCode ? 'invitationCode-error' : 'invitationCode-hint'
-              }
-            />
-            {errors.invitationCode ? (
-              <p id="invitationCode-error" className="text-destructive text-xs">
-                {errors.invitationCode.message}
-              </p>
-            ) : (
-              <p id="invitationCode-hint" className="text-muted-foreground text-xs">
-                Folosește codul primit de la clubul tău sau de la administrator.
-              </p>
-            )}
-          </div>
+          <Field
+            id="invitationCode"
+            label="Cod de invitație"
+            hint="Folosește codul primit de la clubul tău sau de la administrator."
+            error={errors.invitationCode?.message}
+            {...register('invitationCode')}
+          />
         )}
 
         {step === 1 && (
@@ -288,59 +279,54 @@ export default function CoachSignupPage() {
                 Cont conectat: <span className="font-semibold">{user.email}</span>
               </p>
             )}
-            <div className="space-y-1.5">
-              <Label htmlFor="name">Nume complet</Label>
-              <Input
-                id="name"
-                autoComplete="name"
-                {...register('name')}
-                aria-invalid={!!errors.name}
-              />
-              {errors.name && <p className="text-destructive text-xs">{errors.name.message}</p>}
-            </div>
+            <Field
+              id="name"
+              label="Nume complet"
+              autoComplete="name"
+              error={errors.name?.message}
+              {...register('name')}
+            />
             {!user && (
-              <div className="space-y-1.5">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  {...register('email')}
-                  aria-invalid={!!errors.email}
-                />
-                {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
-              </div>
+              <Field
+                id="email"
+                label="Email"
+                type="email"
+                autoComplete="email"
+                error={errors.email?.message}
+                {...register('email')}
+              />
             )}
-            <div className="space-y-1.5">
-              <Label htmlFor="phone">Telefon (opțional)</Label>
-              <Input
-                id="phone"
-                type="tel"
-                autoComplete="tel"
-                placeholder="+40..."
-                {...register('phone')}
-                aria-invalid={!!errors.phone}
-              />
-              {errors.phone && <p className="text-destructive text-xs">{errors.phone.message}</p>}
-            </div>
+            <Field
+              id="phone"
+              label="Telefon (opțional)"
+              type="tel"
+              autoComplete="tel"
+              placeholder="+40..."
+              error={errors.phone?.message}
+              {...register('phone')}
+            />
             {!user && (
-              <div className="space-y-1.5">
-                <Label htmlFor="password">Parolă</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  autoComplete="new-password"
-                  {...register('password')}
-                  aria-invalid={!!errors.password}
-                />
-                {errors.password && (
-                  <p className="text-destructive text-xs">{errors.password.message}</p>
-                )}
-              </div>
+              <Field
+                id="password"
+                label="Parolă"
+                type="password"
+                autoComplete="new-password"
+                error={errors.password?.message}
+                {...register('password')}
+              />
             )}
             <div className="space-y-1.5">
               <Label htmlFor="bio">Despre tine (opțional)</Label>
-              <Input id="bio" {...register('bio')} />
+              <textarea
+                id="bio"
+                rows={2}
+                maxLength={4000}
+                aria-invalid={!!errors.bio}
+                aria-describedby={fieldDescription('bio', undefined, errors.bio?.message)}
+                className="border-input placeholder:text-muted-foreground hover:border-muted-foreground focus-visible:outline-ring aria-invalid:border-destructive max-h-64 min-h-touch-target w-full rounded-md border bg-transparent px-3 py-2.5 text-base shadow-xs transition-[color,box-shadow] [field-sizing:content] focus-visible:outline-2 focus-visible:outline-offset-2 aria-invalid:border-2 md:text-sm"
+                {...register('bio')}
+              />
+              <FieldMessage id="bio" error={errors.bio?.message} />
             </div>
             <div className="space-y-1.5">
               <Label>Sporturi</Label>

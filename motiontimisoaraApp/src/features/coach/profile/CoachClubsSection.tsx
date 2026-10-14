@@ -5,9 +5,12 @@ import { toast } from 'sonner'
 import { getMyCoachClubs, joinClubByInvitation } from '@/api/coach-registration/club-membership'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Field } from '@/components/ui/field'
+import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+
+const CODE_HINT = 'Codul îl generează clubul din pagina Antrenori.'
 
 export default function CoachClubsSection() {
   const qc = useQueryClient()
@@ -69,27 +72,24 @@ export default function CoachClubsSection() {
           </p>
         )}
         <form onSubmit={onSubmit} noValidate>
-          <Field
-            id="club-code"
-            label="Cod de club"
-            hint="Codul îl generează clubul din pagina Antrenori."
-            error={error}
-          >
-            {(control) => (
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Input
-                  {...control}
-                  value={code}
-                  onChange={(event) => setCode(event.target.value)}
-                  autoComplete="off"
-                  autoCapitalize="characters"
-                />
-                <Button type="submit" variant="outline" disabled={submitting}>
-                  {submitting ? 'Se verifică…' : 'Alătură-te clubului'}
-                </Button>
-              </div>
-            )}
-          </Field>
+          <div className="space-y-1.5">
+            <Label htmlFor="club-code">Cod de club</Label>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input
+                id="club-code"
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                autoComplete="off"
+                autoCapitalize="characters"
+                aria-invalid={!!error}
+                aria-describedby={fieldDescription('club-code', CODE_HINT, error ?? undefined)}
+              />
+              <Button type="submit" variant="outline" disabled={submitting}>
+                {submitting ? 'Se verifică…' : 'Alătură-te clubului'}
+              </Button>
+            </div>
+            <FieldMessage id="club-code" hint={CODE_HINT} error={error ?? undefined} />
+          </div>
         </form>
       </CardContent>
     </Card>

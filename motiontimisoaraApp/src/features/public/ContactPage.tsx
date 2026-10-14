@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Mail, MapPin, Phone } from 'lucide-react'
+import { AlertCircle, Mail, MapPin, Phone } from 'lucide-react'
 
 import { submitContactForm } from '@/api/public'
 import { Button } from '@/components/ui/button'
@@ -19,6 +19,7 @@ type Values = z.infer<typeof schema>
 
 export default function ContactPage() {
   const [sent, setSent] = useState(false)
+  const [failed, setFailed] = useState(false)
   const {
     register,
     handleSubmit,
@@ -26,8 +27,13 @@ export default function ContactPage() {
   } = useForm<Values>({ resolver: zodResolver(schema) })
 
   const onSubmit = async (v: Values) => {
-    await submitContactForm(v)
-    setSent(true)
+    setFailed(false)
+    try {
+      await submitContactForm(v)
+      setSent(true)
+    } catch {
+      setFailed(true)
+    }
   }
 
   return (
@@ -92,8 +98,21 @@ export default function ContactPage() {
                 />
                 {errors.message && <p className="text-destructive text-xs">{errors.message.message}</p>}
               </div>
+              {failed && (
+                <div role="alert" className="flex items-start gap-3 rounded-xl border p-4 text-sm">
+                  <span className="bg-destructive/15 text-destructive grid size-10 shrink-0 place-items-center rounded-full">
+                    <AlertCircle className="size-5" />
+                  </span>
+                  <div>
+                    <p className="text-foreground font-semibold">Nu am putut trimite mesajul.</p>
+                    <p className="text-muted-foreground mt-1">
+                      Mesajul tău a rămas în formular. Reîncearcă sau scrie-ne la contact@motiontimisoara.com.
+                    </p>
+                  </div>
+                </div>
+              )}
               <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? 'Se trimite…' : 'Trimite mesajul'}
+                {isSubmitting ? 'Se trimite…' : failed ? 'Reîncearcă' : 'Trimite mesajul'}
               </Button>
             </form>
           )}
