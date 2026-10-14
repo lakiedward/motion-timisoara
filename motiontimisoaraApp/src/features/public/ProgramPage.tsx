@@ -49,7 +49,7 @@ export default function ProgramPage() {
     <div>
       {/* HEADER — same diagonal brand band as the homepage "Programe populare" section */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-foreground" />
+        <div className="absolute inset-0 bg-foreground dark:bg-card" />
         <div
           className="absolute inset-0"
           style={{
