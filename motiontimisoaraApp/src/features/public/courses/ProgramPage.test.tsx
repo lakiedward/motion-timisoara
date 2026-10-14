@@ -103,17 +103,45 @@ test('filters narrow the list and the empty result offers a reset', async () => 
   renderPage()
   await screen.findByRole('link', { name: 'Înot începători' })
 
-  fireEvent.change(screen.getByLabelText('Preț'), { target: { value: '20000' } })
+  fireEvent.change(screen.getByLabelText('Buget pe lună'), { target: { value: '20000' } })
   expect(screen.queryByRole('link', { name: 'Înot începători' })).toBeNull()
   expect(screen.getByRole('link', { name: 'Alergare' })).toBeInTheDocument()
 
-  fireEvent.change(screen.getByLabelText('Ziua'), { target: { value: '1' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Luni' }))
+  expect(screen.getByRole('button', { name: 'Luni' })).toHaveAttribute('aria-pressed', 'true')
   expect(screen.getByText('Niciun curs nu corespunde filtrelor.')).toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Resetează filtrele' }))
   expect(screen.getAllByRole('article')).toHaveLength(2)
 
-  fireEvent.change(screen.getByLabelText('Locație'), { target: { value: 'Parc' } })
+  fireEvent.change(screen.getByLabelText('Unde?'), { target: { value: 'Parc' } })
   expect(screen.getAllByRole('article')).toHaveLength(1)
+})
+
+test('sport chips toggle and each active filter can be removed on its own', async () => {
+  catalogRequest.mockResolvedValue([
+    course({}),
+    course({
+      id: 'run',
+      name: 'Alergare',
+      sport: { id: 's3', code: 'alergare', name: 'Alergare', default_photo_storage_path: null },
+    }),
+  ])
+  renderPage()
+  await screen.findByRole('link', { name: 'Înot începători' })
+
+  const swim = screen.getByRole('button', { name: 'Înot' })
+  fireEvent.click(swim)
+  expect(swim).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getAllByRole('article')).toHaveLength(1)
+  fireEvent.change(screen.getByLabelText('Buget pe lună'), { target: { value: '60000' } })
+
+  fireEvent.click(screen.getByRole('button', { name: 'Scoate filtrul Înot' }))
+  expect(screen.getAllByRole('article')).toHaveLength(2)
+  expect(screen.getByRole('button', { name: /Scoate filtrul Până la 600 lei/ })).toBeInTheDocument()
+
+  fireEvent.click(screen.getByRole('button', { name: 'Șterge tot' }))
+  expect(screen.queryByText('Filtre active:')).toBeNull()
+  expect(screen.getByRole('button', { name: 'Toate' })).toHaveAttribute('aria-pressed', 'true')
 })
 
 test('a failed request shows an error with retry, not the empty state', async () => {

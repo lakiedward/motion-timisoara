@@ -55,6 +55,7 @@ export default function ProgramPage() {
           filters={filters}
           sportOptions={sportOptions}
           locationOptions={courseLocationOptions(courses)}
+          loading={coursesQuery.isPending}
           onChange={applyFilters}
         />
 
