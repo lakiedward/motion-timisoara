@@ -101,7 +101,10 @@ export default function OAuthCallbackPage() {
       <AuthLayout
         title="Autentificare eșuată"
         footer={
-          <Link to={withReturnUrl('/login', returnUrl)} className="text-primary font-semibold">
+          <Link
+            to={withReturnUrl('/login', returnUrl)}
+            className="text-primary min-h-touch-target inline-flex items-center font-semibold"
+          >
             Înapoi la autentificare
           </Link>
         }

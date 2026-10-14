@@ -19,6 +19,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Field, FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { fetchSports } from '@/api/sports'
 import { registerCoach, roleHome } from '@/api/auth'
 import { redeemCoachInvitation } from '@/api/coach-registration'
@@ -218,7 +219,10 @@ export default function CoachSignupPage() {
       subtitle="Necesită un cod de invitație"
       footer={
         step === 0 ? (
-          <Link to={withReturnUrl('/signup', returnUrl)} className="text-primary font-semibold">
+          <Link
+            to={withReturnUrl('/signup', returnUrl)}
+            className="text-primary min-h-touch-target inline-flex items-center font-semibold"
+          >
             Înapoi
           </Link>
         ) : undefined
@@ -258,7 +262,7 @@ export default function CoachSignupPage() {
                   Ai deja cont?{' '}
                   <Link
                     to={withReturnUrl('/login', coachContinuation(returnUrl))}
-                    className="text-primary font-semibold"
+                    className="text-primary min-h-touch-target inline-flex items-center font-semibold"
                     onClick={(event) => {
                       event.preventDefault()
                       void persistInvitation().then((saved) => {
@@ -317,13 +321,13 @@ export default function CoachSignupPage() {
             )}
             <div className="space-y-1.5">
               <Label htmlFor="bio">Despre tine (opțional)</Label>
-              <textarea
+              <Textarea
                 id="bio"
                 rows={2}
                 maxLength={4000}
                 aria-invalid={!!errors.bio}
                 aria-describedby={fieldDescription('bio', undefined, errors.bio?.message)}
-                className="border-input placeholder:text-muted-foreground hover:border-muted-foreground focus-visible:outline-ring aria-invalid:border-destructive max-h-64 min-h-touch-target w-full rounded-md border bg-transparent px-3 py-2.5 text-base shadow-xs transition-[color,box-shadow] [field-sizing:content] focus-visible:outline-2 focus-visible:outline-offset-2 aria-invalid:border-2 md:text-sm"
+                className="max-h-64 [field-sizing:content]"
                 {...register('bio')}
               />
               <FieldMessage id="bio" error={errors.bio?.message} />

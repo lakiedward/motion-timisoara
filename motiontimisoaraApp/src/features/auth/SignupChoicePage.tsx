@@ -49,7 +49,10 @@ export default function SignupChoicePage() {
       footer={
         <>
           Ai deja cont?{' '}
-          <Link to={withReturnUrl('/login', returnUrl)} className="text-primary font-semibold">
+          <Link
+            to={withReturnUrl('/login', returnUrl)}
+            className="text-primary min-h-touch-target inline-flex items-center font-semibold"
+          >
             Autentifică-te
           </Link>
         </>

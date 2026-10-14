@@ -82,7 +82,7 @@ export default function ResetPasswordPage() {
       footer={
         <Link
           to={invalidLink ? '/forgot-password' : '/login'}
-          className="text-primary font-semibold"
+          className="text-primary min-h-touch-target inline-flex items-center font-semibold"
         >
           {invalidLink ? 'Resetează parola' : 'Înapoi la autentificare'}
         </Link>
