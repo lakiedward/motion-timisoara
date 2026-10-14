@@ -89,7 +89,7 @@ async function gotoSettled(page: Page, route: string): Promise<void> {
 
   if (route === '/cursuri') {
     const cards = page.getByRole('article')
-    const emptyState = page.getByText('Nu am găsit cursuri', { exact: false })
+    const emptyState = page.getByText('Niciun curs', { exact: false })
     await expect(cards.first().or(emptyState)).toBeVisible({ timeout: DATA_TIMEOUT })
   }
 }
@@ -185,7 +185,7 @@ test.describe('Production readiness — critical user flows', () => {
 
     // Either the grid resolved with cards, or the page states there is nothing to show.
     const cards = page.getByRole('article')
-    const emptyState = page.getByText('Nu am găsit cursuri', { exact: false })
+    const emptyState = page.getByText('Niciun curs', { exact: false })
     await expect(cards.first().or(emptyState)).toBeVisible({ timeout: DATA_TIMEOUT })
   })
 
@@ -196,7 +196,7 @@ test.describe('Production readiness — critical user flows', () => {
     test.skip(!isLocalPreview(baseURL), 'React listing is asserted on the local preview only')
 
     const firstCard = page.getByRole('article').first()
-    const emptyState = page.getByText('Nu am găsit cursuri', { exact: false })
+    const emptyState = page.getByText('Niciun curs', { exact: false })
     await expect(firstCard.or(emptyState)).toBeVisible({ timeout: DATA_TIMEOUT })
     test.skip(await emptyState.isVisible(), 'No published course to open')
 
