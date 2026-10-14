@@ -167,19 +167,21 @@ export function Header() {
             )}
             <nav className="flex flex-col gap-1 px-2">
               {publicNavigation.map((item) => (
-                <SheetClose asChild key={item.to}>
-                  <NavLink
-                    to={item.to}
-                    className={({ isActive }) =>
-                      cn(
-                        'hover:bg-accent rounded-md px-3 py-2.5 text-sm font-medium',
-                        isActive ? 'text-primary' : 'text-foreground',
-                      )
-                    }
-                  >
-                    {item.label}
-                  </NavLink>
-                </SheetClose>
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  onClick={() => setOpen(false)}
+                  className={({ isActive }) =>
+                    cn(
+                      'min-h-touch-target flex items-center rounded-md px-3 text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-foreground hover:bg-accent hover:text-accent-foreground',
+                    )
+                  }
+                >
+                  {item.label}
+                </NavLink>
               ))}
             </nav>
             <div className="mt-auto flex flex-col gap-2 p-4">
@@ -204,11 +206,7 @@ export function Header() {
                     </Button>
                   </SheetClose>
                   <SheetClose asChild>
-                    <Link
-                      to="/signup"
-                      className="inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-bold text-white shadow-[0_4px_15px_rgba(37,99,235,0.3)]"
-                      style={{ background: 'var(--gradient-primary)' }}
-                    >
+                    <Link to="/signup" className="btn-cta btn-cta--primary w-full">
                       Înregistrare
                     </Link>
                   </SheetClose>

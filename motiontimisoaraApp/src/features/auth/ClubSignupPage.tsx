@@ -111,7 +111,10 @@ export default function ClubSignupPage() {
       subtitle="Creează contul administratorului și clubul"
       footer={
         step === 0 ? (
-          <Link to={withReturnUrl('/signup', returnUrl)} className="text-primary font-semibold">
+          <Link
+            to={withReturnUrl('/signup', returnUrl)}
+            className="text-primary min-h-touch-target inline-flex items-center font-semibold"
+          >
             Înapoi
           </Link>
         ) : undefined

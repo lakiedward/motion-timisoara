@@ -56,7 +56,10 @@ export default function LoginPage() {
       footer={
         <>
           Nu ai cont?{' '}
-          <Link to={withReturnUrl('/signup', returnUrl)} className="text-primary font-semibold">
+          <Link
+            to={withReturnUrl('/signup', returnUrl)}
+            className="text-primary min-h-touch-target inline-flex items-center font-semibold"
+          >
             Înregistrează-te
           </Link>
         </>
@@ -88,7 +91,10 @@ export default function LoginPage() {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Parolă</Label>
-                <Link to="/forgot-password" className="text-primary text-xs">
+                <Link
+                  to="/forgot-password"
+                  className="text-primary min-h-touch-target -my-3 inline-flex items-center text-sm font-medium"
+                >
                   Ai uitat parola?
                 </Link>
               </div>
