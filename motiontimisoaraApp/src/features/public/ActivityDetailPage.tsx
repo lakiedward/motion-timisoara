@@ -115,6 +115,7 @@ export default function ActivityDetailPage() {
         title={a.name}
         backTo="/activitati"
         backLabel="Înapoi la activități"
+        width="max-w-4xl"
       />
       <div className="mx-auto max-w-4xl px-6 py-10">
         {!a.bandUrl && (
@@ -132,7 +133,7 @@ export default function ActivityDetailPage() {
               <SportIllustration
                 code={a.sport?.code}
                 name={a.sport?.name}
-                className="mt-6 h-44 rounded-3xl border md:h-56"
+                className="mt-6 h-44 rounded-xl border md:h-56"
               />
             )}
           </>
