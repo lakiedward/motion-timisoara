@@ -52,8 +52,7 @@ export default function CampPricingCard({
   const breakdownTotal = sumaCategoriilor(categorii)
 
   return (
-    <div className="bg-card shadow-card mt-8 rounded-3xl border p-6">
-      <OfferExchangeNote offer={tabara} />
+    <div className="bg-card mt-8 rounded-xl border p-6">
       {byAge && (
         <div>
           <h2 className="font-display mb-1 text-lg font-bold">Preț pe categorii de vârstă</h2>
@@ -69,7 +68,7 @@ export default function CampPricingCard({
                   <li
                     key={price.id}
                     className={cn(
-                      'rounded-xl border p-3',
+                      'rounded-lg border p-3',
                       matching.length > 0 && 'border-primary bg-primary/5',
                     )}
                   >
@@ -154,7 +153,7 @@ export default function CampPricingCard({
       )}
 
       {adultPrice && (
-        <div className="mt-4 rounded-xl border p-3" aria-label="Tarif adult">
+        <div className="mt-4 rounded-lg border p-3" aria-label="Tarif adult">
           <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
             <span className="font-medium">Adult</span>
             <span className="font-semibold tabular-nums">
@@ -222,7 +221,7 @@ export default function CampPricingCard({
           (byAge || categorii.length > 0 || adultPrice) && 'border-border mt-4 border-t pt-4',
         )}
       >
-        <div>
+        <div className="min-w-0 flex-1">
           {byAge ? (
             <p className="text-muted-foreground text-sm">
               Prețul fiecărui participant se confirmă la înscriere.
@@ -233,10 +232,11 @@ export default function CampPricingCard({
             </div>
           )}
           {!tabara.allow_cash && canEnroll && (
-            <p className="text-muted-foreground mt-1 flex items-center gap-1.5 text-xs">
-              <Wallet className="size-3.5" /> Doar plată cu cardul.
+            <p className="text-muted-foreground mt-1 flex items-center gap-1.5 text-sm">
+              <Wallet aria-hidden="true" className="size-4" /> Doar plată cu cardul.
             </p>
           )}
+          <OfferExchangeNote offer={tabara} className="text-xs" />
         </div>
         {canEnroll ? (
           <Button className="h-11 min-h-11 px-6" onClick={onEnroll}>

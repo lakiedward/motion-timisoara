@@ -254,3 +254,35 @@ test.each([
     ),
   ).toBeInTheDocument()
 })
+
+test('the enrollment footer states the card-only payment next to the button', () => {
+  user = null
+  const data = {
+    tabara: {
+      price: 90000,
+      pricing_mode: 'single',
+      period_start: '2026-09-13',
+      allow_cash: false,
+      currency: 'RON',
+      eur_ron_rate_micros: null,
+    },
+    categorii: [],
+    agePrices: [],
+    adultPrice: null,
+  } as unknown as TabaraDetaliu
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <CampPricingCard data={data} ended={false} full={false} onEnroll={enroll} />
+    </QueryClientProvider>,
+  )
+  expect(screen.getByText('Doar plată cu cardul.')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Înscrie-te' })).toBeEnabled()
+})
+
+test('the EUR exchange note follows the price instead of opening the card', () => {
+  user = null
+  view({ currency: 'EUR' })
+  const note = screen.getByText(/1 EUR = 5,123456 lei/)
+  const heading = screen.getByRole('heading', { name: 'Preț pe categorii de vârstă' })
+  expect(heading.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+})
