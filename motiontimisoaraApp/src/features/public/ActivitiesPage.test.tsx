@@ -96,6 +96,8 @@ test('lista goală reușită rămâne separată de eroare', async () => {
   )
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Reîncearcă' })).not.toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Vezi cursurile' })).toHaveAttribute('href', '/cursuri')
+  expect(screen.getByRole('link', { name: 'Vezi taberele' })).toHaveAttribute('href', '/tabere')
 })
 
 test('cât se încarcă, stau trei forme în grila de trei coloane', async () => {
@@ -114,8 +116,8 @@ test('cardul arată poza, sportul pe poză, data, orele, locul, prețul, locuril
   deseneaza()
   const card = await screen.findByRole('link', { name: /DEMO — Atelier de ciclism/ })
   expect(card).toHaveAttribute('href', '/activitati/viitoare')
-  expect(card.className).toContain('hover:-translate-y-2')
-  expect(card.className).toContain('focus-visible:ring-[3px]')
+  expect(card).toHaveClass('rounded-xl', 'border', 'shadow-card', 'hover:shadow-card-hover')
+  expect(card.className).not.toMatch(/outline-none|ring-\[3px\]|translate-y/)
   expect(card.querySelector('img')).toHaveAttribute(
     'src',
     'https://public/sport-photos/ciclism.jpg',
