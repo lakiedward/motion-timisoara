@@ -37,16 +37,20 @@ export async function getCourses(filters: CourseFilters = {}): Promise<CourseLis
   return rows
 }
 
-export async function getCourse(id: string): Promise<CourseListItem | null> {
+export type CourseDetail = CourseListItem & {
+  club: { id: string; name: string } | null
+}
+
+export async function getCourse(id: string): Promise<CourseDetail | null> {
   const { data, error } = await supabase
     .from('courses')
     .select(
-      '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order)',
+      '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), club:clubs(id,name), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order)',
     )
     .eq('id', id)
     .single()
   if (error) return null
-  return data as unknown as CourseListItem
+  return data as unknown as CourseDetail
 }
 
 export type CourseCatalogItem = CourseListItem & {
