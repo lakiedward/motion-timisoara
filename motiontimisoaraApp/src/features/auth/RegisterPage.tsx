@@ -1,18 +1,18 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { MailCheck } from 'lucide-react'
+import { CircleAlert, MailCheck } from 'lucide-react'
 
 import { AuthLayout } from './AuthLayout'
 import { AuthFields } from './AuthFields'
 import { GoogleSignInButton } from './GoogleSignInButton'
 import { useReturnUrl, withReturnUrl } from './return-url'
+import { signupErrorMessage } from './signup-error'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { signUpParent } from '@/api/auth'
+import { Field } from '@/components/ui/field'
+import { roleHome, signUpParent } from '@/api/auth'
 import { useAuth } from '@/lib/auth-context'
 import { isNative } from '@/lib/platform'
 
@@ -26,7 +26,7 @@ type Values = z.infer<typeof schema>
 
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const { refresh } = useAuth()
+  const { user, loading, refresh } = useAuth()
   const [serverError, setServerError] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
   const returnUrl = useReturnUrl()
@@ -39,23 +39,31 @@ export default function RegisterPage() {
 
   const onSubmit = async (v: Values) => {
     setServerError(null)
-    const { data, error } = await signUpParent(v).catch(() => ({
-      data: { session: null },
-      error: { message: 'Nu am putut crea contul. Verifică conexiunea și încearcă din nou.' },
-    }))
-    if (error) {
-      setServerError(
-        error.message.toLowerCase().includes('already')
-          ? 'Există deja un cont cu acest email.'
-          : 'Nu am putut crea contul. Încearcă din nou sau contactează echipa Motion.',
-      )
+    const result = await signUpParent(v).then(
+      (r) => r,
+      (thrown: unknown) => ({ data: { session: null }, error: thrown }),
+    )
+    if (result.error) {
+      setServerError(signupErrorMessage(result.error))
       return
     }
+    const { data } = result
     if (data.session) {
       await refresh()
       navigate(returnUrl || '/account')
     } else {
       setSent(true)
+    }
+  }
+
+  if (!isSubmitting && !sent) {
+    if (user) return <Navigate to={returnUrl || roleHome(user.role)} replace />
+    if (loading) {
+      return (
+        <div role="status" aria-label="Se încarcă" className="grid min-h-dvh place-items-center">
+          <div className="border-primary size-8 animate-spin rounded-full border-2 border-t-transparent" />
+        </div>
+      )
     }
   }
 
@@ -108,57 +116,47 @@ export default function RegisterPage() {
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           {serverError && (
-            <p className="bg-destructive/10 text-destructive rounded-md px-3 py-2 text-sm">
+            <p
+              className="bg-destructive/10 text-destructive flex items-start gap-2 rounded-md px-3 py-2 text-sm"
+              role="alert"
+            >
+              <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
               {serverError}
             </p>
           )}
           <AuthFields columns={4}>
-            <div className="space-y-1.5">
-              <Label htmlFor="name">Nume complet</Label>
-              <Input
-                id="name"
-                autoComplete="name"
-                {...register('name')}
-                aria-invalid={!!errors.name}
-              />
-              {errors.name && <p className="text-destructive text-xs">{errors.name.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                {...register('email')}
-                aria-invalid={!!errors.email}
-              />
-              {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="phone">Telefon</Label>
-              <Input
-                id="phone"
-                type="tel"
-                autoComplete="tel"
-                placeholder="+40..."
-                {...register('phone')}
-                aria-invalid={!!errors.phone}
-              />
-              {errors.phone && <p className="text-destructive text-xs">{errors.phone.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password">Parolă</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="new-password"
-                {...register('password')}
-                aria-invalid={!!errors.password}
-              />
-              {errors.password && (
-                <p className="text-destructive text-xs">{errors.password.message}</p>
-              )}
-            </div>
+            <Field
+              id="name"
+              label="Nume complet"
+              autoComplete="name"
+              error={errors.name?.message}
+              {...register('name')}
+            />
+            <Field
+              id="email"
+              label="Email"
+              type="email"
+              autoComplete="email"
+              error={errors.email?.message}
+              {...register('email')}
+            />
+            <Field
+              id="phone"
+              label="Telefon"
+              type="tel"
+              autoComplete="tel"
+              placeholder="+40..."
+              error={errors.phone?.message}
+              {...register('phone')}
+            />
+            <Field
+              id="password"
+              label="Parolă"
+              type="password"
+              autoComplete="new-password"
+              error={errors.password?.message}
+              {...register('password')}
+            />
           </AuthFields>
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? 'Se creează…' : 'Creează cont'}
