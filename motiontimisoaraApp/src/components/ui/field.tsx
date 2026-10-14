@@ -1,44 +1,54 @@
 import * as React from 'react'
 import { CircleAlert } from 'lucide-react'
 
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 
-export interface FieldControlProps {
+interface FieldProps extends React.ComponentProps<'input'> {
   id: string
-  'aria-invalid': boolean
-  'aria-describedby': string | undefined
+  label: string
+  hint?: string
+  error?: string
 }
 
-interface FieldProps {
-  id: string
-  label: React.ReactNode
-  hint?: React.ReactNode
-  error?: React.ReactNode
-  className?: string
-  children: (control: FieldControlProps) => React.ReactNode
+function FieldMessage({ id, hint, error }: { id: string; hint?: string; error?: string }) {
+  if (error) {
+    return (
+      <p id={`${id}-error`} className="text-destructive flex items-center gap-1.5 text-xs font-medium">
+        <CircleAlert className="size-3.5 shrink-0" aria-hidden="true" />
+        {error}
+      </p>
+    )
+  }
+  if (hint) {
+    return (
+      <p id={`${id}-hint`} className="text-muted-foreground text-xs">
+        {hint}
+      </p>
+    )
+  }
+  return null
 }
 
-function Field({ id, label, hint, error, className, children }: FieldProps) {
-  const hintId = `${id}-hint`
-  const errorId = `${id}-error`
-  const describedBy = error ? errorId : hint ? hintId : undefined
+function fieldDescription(id: string, hint?: string, error?: string) {
+  if (error) return `${id}-error`
+  return hint ? `${id}-hint` : undefined
+}
+
+function Field({ id, label, hint, error, className, ...props }: FieldProps) {
   return (
-    <div data-slot="field" className={cn('grid gap-2', className)}>
+    <div className={cn('space-y-1.5', className)}>
       <Label htmlFor={id}>{label}</Label>
-      {children({ id, 'aria-invalid': !!error, 'aria-describedby': describedBy })}
-      {error ? (
-        <p id={errorId} className="text-destructive flex items-center gap-1.5 text-xs font-medium">
-          <CircleAlert aria-hidden="true" className="size-3.5 shrink-0" />
-          {error}
-        </p>
-      ) : hint ? (
-        <p id={hintId} className="text-muted-foreground text-xs">
-          {hint}
-        </p>
-      ) : null}
+      <Input
+        id={id}
+        aria-invalid={!!error}
+        aria-describedby={fieldDescription(id, hint, error)}
+        {...props}
+      />
+      <FieldMessage id={id} hint={hint} error={error} />
     </div>
   )
 }
 
-export { Field }
+export { Field, FieldMessage, fieldDescription }

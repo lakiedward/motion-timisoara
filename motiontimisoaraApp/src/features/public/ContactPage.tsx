@@ -6,8 +6,8 @@ import { AlertCircle, Mail, MapPin, Phone } from 'lucide-react'
 
 import { submitContactForm } from '@/api/public'
 import { Button } from '@/components/ui/button'
-import { Field } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
+import { Field, FieldMessage, fieldDescription } from '@/components/ui/field'
+import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
 const schema = z.object({
@@ -75,18 +75,36 @@ export default function ContactPage() {
             </p>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-              <Field id="name" label="Nume" error={errors.name?.message}>
-                {(control) => <Input {...control} aria-required autoComplete="name" {...register('name')} />}
-              </Field>
-              <Field id="email" label="Email" error={errors.email?.message}>
-                {(control) => <Input {...control} aria-required type="email" autoComplete="email" {...register('email')} />}
-              </Field>
-              <Field id="subject" label="Subiect (opțional)">
-                {(control) => <Input {...control} {...register('subject')} />}
-              </Field>
-              <Field id="message" label="Mesaj" error={errors.message?.message}>
-                {(control) => <Textarea {...control} aria-required rows={4} {...register('message')} />}
-              </Field>
+              <Field
+                id="name"
+                label="Nume"
+                aria-required
+                autoComplete="name"
+                error={errors.name?.message}
+                {...register('name')}
+              />
+              <Field
+                id="email"
+                label="Email"
+                type="email"
+                aria-required
+                autoComplete="email"
+                error={errors.email?.message}
+                {...register('email')}
+              />
+              <Field id="subject" label="Subiect (opțional)" {...register('subject')} />
+              <div className="space-y-1.5">
+                <Label htmlFor="message">Mesaj</Label>
+                <Textarea
+                  id="message"
+                  rows={4}
+                  aria-required
+                  aria-invalid={!!errors.message}
+                  aria-describedby={fieldDescription('message', undefined, errors.message?.message)}
+                  {...register('message')}
+                />
+                <FieldMessage id="message" error={errors.message?.message} />
+              </div>
               {failed && (
                 <div role="alert" className="flex items-start gap-3 rounded-xl border p-4 text-sm">
                   <span className="bg-destructive/15 text-destructive grid size-10 shrink-0 place-items-center rounded-full">

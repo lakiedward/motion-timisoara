@@ -6,7 +6,7 @@ Read this document only for the workflow being performed. Shared rules are in [A
 
 The app uses `motiontimisoaraApp/.env`. Preserve an existing file. The required client variables are `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`; `VITE_STRIPE_PUBLISHABLE_KEY` is optional. `VITE_CARTO_BASEMAP_API_KEY` is an optional basemap credential: missing configuration falls back to OpenStreetMap. Never print environment-file contents to inspect configuration; inspect variable names/presence instead.
 
-Edge Functions receive `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` through Supabase. Payment configuration uses `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_CONNECT_WEBHOOK_SECRET` and `FRONTEND_URL`. These are server configuration, not client environment values. Deployment/function status does not prove that the secrets are configured or correct.
+Edge Functions receive `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` through Supabase. Payment configuration uses `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_CONNECT_WEBHOOK_SECRET` and optional `FRONTEND_URL` (Stripe Connect returns to the calling origin when it is motiontimisoara.com, a Netlify deploy preview or localhost; otherwise to `FRONTEND_URL`, defaulting to https://motiontimisoara.com). These are server configuration, not client environment values. Deployment/function status does not prove that the secrets are configured or correct.
 
 For authorized product backend work:
 

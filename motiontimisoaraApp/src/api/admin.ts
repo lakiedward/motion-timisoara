@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 
-type CountableTable = 'profiles' | 'coach_profiles' | 'clubs' | 'courses' | 'camps' | 'competitions'
+type CountableTable = 'profiles' | 'clubs' | 'courses' | 'camps' | 'competitions'
 
 export const NEW_USERS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
 export const POSTGREST_MAX_ROWS = 1000
@@ -57,6 +57,15 @@ async function countRows(table: CountableTable): Promise<number> {
   const { count, error } = await supabase.from(table).select('id', { count: 'exact', head: true })
   if (error) throw error
   return count ?? 0
+}
+
+async function countCoaches(): Promise<AdminStatCell> {
+  const { count, error } = await supabase
+    .from('profiles')
+    .select('id', { count: 'exact', head: true })
+    .eq('role', 'COACH')
+  if (error) return errCell('coaches')
+  return okCell(count ?? 0)
 }
 
 async function countOrError(table: CountableTable, key: AdminStatKey): Promise<AdminStatCell> {
@@ -171,7 +180,7 @@ export async function getAdminStats(now = Date.now()): Promise<AdminStats> {
   const [users, coaches, clubs, courses, camps, competitions, newUsers7d, activeInviteCodes] =
     await Promise.allSettled([
       countOrError('profiles', 'users'),
-      countOrError('coach_profiles', 'coaches'),
+      countCoaches(),
       countOrError('clubs', 'clubs'),
       countOrError('courses', 'courses'),
       countOrError('camps', 'camps'),

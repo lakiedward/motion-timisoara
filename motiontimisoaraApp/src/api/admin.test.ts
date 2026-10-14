@@ -24,6 +24,7 @@ function tabela(nume: string) {
       return (...args: unknown[]) => {
         ;(cereri[nume] ??= []).push(`${prop}(${args.map(String).join(',')})`)
         if (prop === 'gte' && String(args[0]) === 'created_at') key = `${nume}_since`
+        if (prop === 'eq' && String(args[0]) === 'role') key = `${nume}_${String(args[1])}`
         return proxy
       }
     },
@@ -47,7 +48,7 @@ beforeEach(() => {
 function tabeleDeBaza() {
   return {
     profiles: { data: null, error: null, count: 11 },
-    coach_profiles: { data: null, error: null, count: 4 },
+    profiles_COACH: { data: null, error: null, count: 4 },
     clubs: { data: null, error: null, count: 3 },
     courses: { data: null, error: null, count: 7 },
     camps: { data: null, error: null, count: 2 },
@@ -178,6 +179,8 @@ test('getAdminStats cade pe admin_users când filtrul created_at e refuzat', asy
     activeInviteCodes: { value: 1, error: null, capped: false },
   })
   expect(cereri.profiles.some((c) => c.startsWith('select('))).toBe(true)
+  expect(cereri.profiles).toContain('eq(role,COACH)')
+  expect(cereri.coach_profiles).toBeUndefined()
   expect(cereri.camps.some((c) => c.startsWith('select('))).toBe(true)
 })
 

@@ -7,8 +7,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { supabaseAdmin, getUser, getUserRole } from "../_shared/supabase.ts";
 import { withCors } from "../_shared/cors.ts";
 import { getStripe } from "../_shared/stripe.ts";
-
-const FRONTEND_URL = Deno.env.get("FRONTEND_URL") ?? "http://localhost:3017";
+import { stripeReturnBase } from "../_shared/stripe-return-url.ts";
 
 /** Machine-readable marker the web client matches on. Keep in sync with
  *  motiontimisoaraApp/src/api/stripe-connect.ts. */
@@ -27,6 +26,7 @@ serve(
     const role = await getUserRole(user.id);
     const body = await req.json();
     const { action } = body;
+    const returnBase = stripeReturnBase(req.headers.get("origin"), Deno.env.get("FRONTEND_URL"));
 
     // Without STRIPE_SECRET_KEY every action below throws, and withCors would
     // flatten that into an opaque 500. The clients need to tell "the platform
@@ -71,9 +71,9 @@ serve(
 
       case "onboarding-link": {
         if (role === "COACH") {
-          return await getCoachOnboardingLink(stripe, user.id);
+          return await getCoachOnboardingLink(stripe, user.id, returnBase);
         } else if (role === "CLUB") {
-          return await getClubOnboardingLink(stripe, user.id);
+          return await getClubOnboardingLink(stripe, user.id, returnBase);
         }
         return jsonResponse({ error: "Not authorized" }, 403);
       }
@@ -194,7 +194,7 @@ async function createClubAccount(
   return jsonResponse({ accountId: account.id });
 }
 
-async function getCoachOnboardingLink(stripe: any, userId: string) {
+async function getCoachOnboardingLink(stripe: any, userId: string, returnBase: string) {
   const { data: profile } = await supabaseAdmin
     .from("coach_profiles")
     .select("stripe_account_id")
@@ -206,14 +206,14 @@ async function getCoachOnboardingLink(stripe: any, userId: string) {
 
   const link = await stripe.accountLinks.create({
     account: profile.stripe_account_id,
-    refresh_url: `${FRONTEND_URL}/stripe/onboarding/refresh`,
-    return_url: `${FRONTEND_URL}/stripe/onboarding/complete`,
+    refresh_url: `${returnBase}/stripe/onboarding/refresh`,
+    return_url: `${returnBase}/stripe/onboarding/complete`,
     type: "account_onboarding",
   });
   return jsonResponse({ url: link.url });
 }
 
-async function getClubOnboardingLink(stripe: any, userId: string) {
+async function getClubOnboardingLink(stripe: any, userId: string, returnBase: string) {
   const { data: club } = await supabaseAdmin
     .from("clubs")
     .select("stripe_account_id")
@@ -225,8 +225,8 @@ async function getClubOnboardingLink(stripe: any, userId: string) {
 
   const link = await stripe.accountLinks.create({
     account: club.stripe_account_id,
-    refresh_url: `${FRONTEND_URL}/club/stripe/onboarding/refresh`,
-    return_url: `${FRONTEND_URL}/club/stripe/onboarding/complete`,
+    refresh_url: `${returnBase}/club/stripe/onboarding/refresh`,
+    return_url: `${returnBase}/club/stripe/onboarding/complete`,
     type: "account_onboarding",
   });
   return jsonResponse({ url: link.url });

@@ -50,13 +50,13 @@ export function Footer() {
         </div>
         {GROUPS.map((group) => (
           <div key={group.title} className="space-y-3">
-            <h3 className="text-sm font-semibold">{group.title}</h3>
-            <ul className="space-y-2">
+            <h2 className="text-sm font-semibold">{group.title}</h2>
+            <ul className="md:space-y-2">
               {group.links.map((link) => (
                 <li key={link.to}>
                   <Link
                     to={link.to}
-                    className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                    className="text-muted-foreground hover:text-foreground min-h-touch-target flex items-center text-sm transition-colors md:min-h-0 md:inline"
                   >
                     {link.label}
                   </Link>
