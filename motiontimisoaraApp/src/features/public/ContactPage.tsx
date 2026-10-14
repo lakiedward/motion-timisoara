@@ -6,14 +6,15 @@ import { AlertCircle, Mail, MapPin, Phone } from 'lucide-react'
 
 import { submitContactForm } from '@/api/public'
 import { Button } from '@/components/ui/button'
+import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 
 const schema = z.object({
-  name: z.string().min(2, 'Minim 2 caractere'),
-  email: z.string().email('Email invalid'),
+  name: z.string().trim().min(2, 'Introdu numele tău, minim 2 caractere'),
+  email: z.string().email('Introdu o adresă de email validă, ex. nume@exemplu.ro'),
   subject: z.string().optional(),
-  message: z.string().min(10, 'Minim 10 caractere'),
+  message: z.string().trim().min(10, 'Scrie un mesaj de cel puțin 10 caractere'),
 })
 type Values = z.infer<typeof schema>
 
@@ -67,37 +68,25 @@ export default function ContactPage() {
           </div>
         </div>
 
-        <div className="bg-card shadow-card rounded-3xl border p-6">
+        <div className="bg-card rounded-xl border p-6">
           {sent ? (
             <p className="bg-success/10 text-success-ink rounded-md px-3 py-4 text-sm">
               Mulțumim! Mesajul tău a fost trimis — revenim în cel mai scurt timp.
             </p>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-              <div className="space-y-1.5">
-                <Label htmlFor="name">Nume</Label>
-                <Input id="name" {...register('name')} aria-invalid={!!errors.name} />
-                {errors.name && <p className="text-destructive text-xs">{errors.name.message}</p>}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" {...register('email')} aria-invalid={!!errors.email} />
-                {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="subject">Subiect (opțional)</Label>
-                <Input id="subject" {...register('subject')} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="message">Mesaj</Label>
-                <textarea
-                  id="message"
-                  rows={4}
-                  {...register('message')}
-                  className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
-                />
-                {errors.message && <p className="text-destructive text-xs">{errors.message.message}</p>}
-              </div>
+              <Field id="name" label="Nume" required error={errors.name?.message}>
+                {(control) => <Input {...control} autoComplete="name" {...register('name')} />}
+              </Field>
+              <Field id="email" label="Email" required error={errors.email?.message}>
+                {(control) => <Input {...control} type="email" autoComplete="email" {...register('email')} />}
+              </Field>
+              <Field id="subject" label="Subiect (opțional)">
+                {(control) => <Input {...control} {...register('subject')} />}
+              </Field>
+              <Field id="message" label="Mesaj" required error={errors.message?.message}>
+                {(control) => <Textarea {...control} rows={4} {...register('message')} />}
+              </Field>
               {failed && (
                 <div role="alert" className="flex items-start gap-3 rounded-xl border p-4 text-sm">
                   <span className="bg-destructive/15 text-destructive grid size-10 shrink-0 place-items-center rounded-full">

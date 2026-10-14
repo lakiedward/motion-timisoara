@@ -48,3 +48,30 @@ test('după o eroare, reîncercarea reușită arată confirmarea', async () => {
     message: 'Vreau detalii despre cursul de înot.',
   })
 })
+
+test('erorile de câmp sunt legate de input și focusul merge pe primul câmp invalid', async () => {
+  const user = userEvent.setup()
+  render(<ContactPage />)
+  await user.click(screen.getByRole('button', { name: 'Trimite mesajul' }))
+
+  const nume = screen.getByLabelText('Nume')
+  const mesaj = screen.getByLabelText('Mesaj')
+  expect(nume).toHaveFocus()
+  expect(nume).toHaveAttribute('aria-invalid', 'true')
+  expect(nume).toHaveAccessibleDescription('Introdu numele tău, minim 2 caractere')
+  expect(screen.getByLabelText('Email')).toHaveAccessibleDescription(
+    'Introdu o adresă de email validă, ex. nume@exemplu.ro'
+  )
+  expect(mesaj.tagName).toBe('TEXTAREA')
+  expect(mesaj).toHaveAttribute('aria-invalid', 'true')
+  expect(mesaj).toHaveAccessibleDescription('Scrie un mesaj de cel puțin 10 caractere')
+  expect(mocked).not.toHaveBeenCalled()
+})
+
+test('câmpurile obligatorii sunt marcate, subiectul nu', () => {
+  render(<ContactPage />)
+  for (const label of ['Nume', 'Email', 'Mesaj']) {
+    expect(screen.getByLabelText(label)).toBeRequired()
+  }
+  expect(screen.getByLabelText('Subiect (opțional)')).not.toBeRequired()
+})
