@@ -8,6 +8,7 @@ import { plural } from '@/lib/plural'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
 import { SportIllustration } from '@/components/sport/SportIllustration'
 
 function ziActivitate(data: string): string {
@@ -47,28 +48,40 @@ export default function ActivitiesPage() {
 
       <div className="mx-auto max-w-7xl px-6 py-10">
         {isError ? (
-          <div className="rounded-3xl border border-dashed py-20 text-center" role="alert">
-            <p className="text-foreground font-medium">Nu am putut încărca activitățile.</p>
-            <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => void refetch()}>
-              Reîncearcă
-            </Button>
-          </div>
+          <StatusView
+            state="error"
+            title="Nu am putut încărca activitățile."
+            text="Verifică conexiunea și încearcă din nou."
+            onRetry={() => void refetch()}
+          />
         ) : isLoading ? (
-          <div className="grid gap-7 md:grid-cols-3">
+          <div role="status" aria-label="Se încarcă activitățile" className="grid gap-4 md:grid-cols-3">
             {[0, 1, 2].map((i) => (
-              <Skeleton key={i} className="h-72 rounded-3xl" />
+              <Skeleton key={i} className="h-72 rounded-xl" />
             ))}
           </div>
         ) : activities.length ? (
-          <div className="grid gap-7 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-3">
             {activities.map((activitate) => (
               <CardActivitate key={activitate.id} activitate={activitate} />
             ))}
           </div>
         ) : (
-          <div className="text-muted-foreground rounded-3xl border border-dashed py-20 text-center">
-            Nicio activitate programată momentan.
-          </div>
+          <StatusView
+            state="empty"
+            title="Nicio activitate programată momentan."
+            text="Activitățile noi apar aici când un club sau un antrenor le anunță. Până atunci, copilul tău se poate înscrie la un curs sau la o tabără."
+            action={
+              <div className="mt-3 flex flex-wrap justify-center gap-3">
+                <Button asChild>
+                  <Link to="/cursuri">Vezi cursurile</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link to="/tabere">Vezi taberele</Link>
+                </Button>
+              </div>
+            }
+          />
         )}
       </div>
     </div>
@@ -81,7 +94,7 @@ function CardActivitate({ activitate }: { activitate: ActivitateDinLista }) {
   return (
     <Link
       to={`/activitati/${activitate.id}`}
-      className="group bg-card shadow-card hover:shadow-card-hover focus-visible:ring-ring/50 flex h-full flex-col overflow-hidden rounded-3xl outline-none transition-all duration-300 hover:-translate-y-2 focus-visible:ring-[3px]"
+      className="group bg-card shadow-card hover:shadow-card-hover hover:border-primary/40 flex h-full flex-col overflow-hidden rounded-xl border transition-[box-shadow,border-color] duration-300 motion-reduce:transition-none"
     >
       <div className="relative h-32 shrink-0 overflow-hidden">
         {activitate.heroUrl ? (
