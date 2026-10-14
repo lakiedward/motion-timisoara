@@ -107,9 +107,13 @@ test.describe('Production readiness — critical user flows', () => {
     // Brand wordmark in the header links home.
     await expect(page.getByRole('link', { name: 'Acasă' })).toBeVisible()
     await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Vezi programele' })).toHaveAttribute(
+    await expect(page.getByRole('link', { name: 'Înscrie-te', exact: true })).toHaveAttribute(
       'href',
       '/cursuri'
+    )
+    await expect(page.getByRole('link', { name: 'Vezi cluburile' })).toHaveAttribute(
+      'href',
+      '/cluburi'
     )
   })
 
