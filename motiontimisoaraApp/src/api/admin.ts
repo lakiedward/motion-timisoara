@@ -329,9 +329,9 @@ export async function createCoachAccount(input: {
 export type AdminClub = Pick<Tables<'clubs'>, 'id' | 'name' | 'city' | 'email'>
 
 export async function getAllClubs(): Promise<AdminClub[]> {
-  const { data, error } = await supabase.from('clubs').select('id, name, city, email').order('name')
+  const { data, error } = await supabase.rpc('admin_clubs')
   if (error) throw error
-  return data ?? []
+  return (data as AdminClub[] | null) ?? []
 }
 
 export type AdminCourse = Tables<'courses'> & {
