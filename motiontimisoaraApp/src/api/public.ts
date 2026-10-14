@@ -460,5 +460,6 @@ export async function submitContactForm(input: {
   subject?: string
   message: string
 }) {
-  return supabase.functions.invoke('contact-form', { body: input })
+  const { error } = await supabase.functions.invoke('contact-form', { body: input })
+  if (error) throw error
 }
