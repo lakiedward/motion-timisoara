@@ -6,6 +6,7 @@ import { vi } from 'vitest'
 
 import ClubSignupPage from './ClubSignupPage'
 import { registerClub } from '@/api/auth'
+import { fetchSports } from '@/api/sports'
 import { useAuth } from '@/lib/auth-context'
 
 vi.mock('@/api/sports', () => ({ fetchSports: vi.fn().mockResolvedValue([]) }))
@@ -16,6 +17,7 @@ vi.mock('@/api/auth', async (importOriginal) => ({
 vi.mock('@/lib/auth-context', () => ({ useAuth: vi.fn() }))
 
 const mockedRegisterClub = vi.mocked(registerClub)
+const mockedFetchSports = vi.mocked(fetchSports)
 const mockedUseAuth = vi.mocked(useAuth)
 
 const semnat = (role: 'PARENT' | 'COACH') => ({
@@ -178,4 +180,57 @@ test('a new club owner lands in the club panel, not the parent one', async () =>
 test('the admin step is shown without waiting for a request', () => {
   renderPage()
   expect(screen.getByLabelText('Nume administrator')).toBeInTheDocument()
+})
+
+test('field errors carry an icon and are linked to their input', async () => {
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+
+  const name = screen.getByLabelText('Nume administrator')
+  expect(name).toHaveAttribute('aria-invalid', 'true')
+  expect(name).toHaveAttribute('aria-describedby', 'name-error')
+  expect(document.getElementById('name-error')).toHaveTextContent('Minim 3 caractere')
+  expect(document.querySelector('#name-error svg')).not.toBeNull()
+  expect(name).toHaveFocus()
+})
+
+test('the server error is announced and carries an icon', async () => {
+  mockedRegisterClub.mockResolvedValue({ error: { message: 'Există deja un cont cu acest email.' } })
+  const user = userEvent.setup()
+  renderPage()
+
+  await fillUntilConfirmation(user)
+  await user.click(screen.getByRole('button', { name: 'Finalizează' }))
+
+  const alert = await screen.findByRole('alert')
+  expect(alert).toHaveTextContent('Există deja un cont cu acest email.')
+  expect(alert.querySelector('svg')).not.toBeNull()
+})
+
+test('a failed sports request offers a retry instead of loading forever', async () => {
+  mockedFetchSports.mockRejectedValueOnce(new Error('offline'))
+  mockedFetchSports.mockResolvedValueOnce([{ id: 's1', name: 'Înot' } as never])
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.type(screen.getByLabelText('Nume administrator'), 'Ana Spec')
+  await user.type(screen.getByLabelText('Email'), 'ana@example.test')
+  await user.type(screen.getByLabelText('Parolă'), 'parola123')
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+
+  expect(await screen.findByText('Nu am putut încărca sporturile.')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Reîncearcă sporturile' }))
+  expect(await screen.findByRole('button', { name: 'Înot', pressed: false })).toBeInTheDocument()
+})
+
+test('steps after the first show a single Înapoi', async () => {
+  const user = userEvent.setup()
+  renderPage()
+
+  expect(screen.getAllByText('Înapoi')).toHaveLength(1)
+  await fillUntilConfirmation(user)
+  expect(screen.getAllByText('Înapoi')).toHaveLength(1)
+  expect(screen.getByRole('button', { name: 'Înapoi' })).toBeInTheDocument()
 })

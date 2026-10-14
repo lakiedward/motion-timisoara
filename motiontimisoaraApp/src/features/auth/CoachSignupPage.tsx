@@ -8,7 +8,7 @@ import { CircleAlert } from 'lucide-react'
 
 import { AuthLayout } from './AuthLayout'
 import { GoogleSignInButton } from './GoogleSignInButton'
-import { StepDots, SportPicker } from './wizard-bits'
+import { StepDots, SportsField } from './wizard-bits'
 import { useReturnUrl, withReturnUrl } from './return-url'
 import { coachContinuation, coachReturnPath } from './coach/continuation'
 import {
@@ -328,33 +328,14 @@ export default function CoachSignupPage() {
               />
               <FieldMessage id="bio" error={errors.bio?.message} />
             </div>
-            <div className="space-y-1.5">
-              <Label>Sporturi</Label>
-              {sportsQuery.isPending ? (
-                <p className="text-muted-foreground text-sm" role="status">
-                  Se încarcă sporturile…
-                </p>
-              ) : sportsQuery.isError ? (
-                <div className="space-y-2">
-                  <p className="text-destructive text-sm" role="alert">
-                    Nu am putut încărca sporturile.
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => void sportsQuery.refetch()}
-                  >
-                    Reîncearcă sporturile
-                  </Button>
-                </div>
-              ) : sports.length ? (
-                <SportPicker sports={sports} value={sportIds} onChange={setSportIds} />
-              ) : (
-                <p className="text-muted-foreground text-sm">
-                  Nu sunt sporturi disponibile momentan.
-                </p>
-              )}
-            </div>
+            <SportsField
+              sports={sportsQuery.data ?? []}
+              loading={sportsQuery.isPending}
+              failed={sportsQuery.isError}
+              onRetry={() => void sportsQuery.refetch()}
+              value={sportIds}
+              onChange={setSportIds}
+            />
           </>
         )}
 

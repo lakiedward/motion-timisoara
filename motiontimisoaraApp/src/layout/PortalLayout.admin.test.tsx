@@ -191,7 +191,7 @@ describe.each(['returned error', 'rejected promise'])('logout %s', (failure) => 
     const retry = within(dialog).getByRole('button', { name: 'Deconectare' })
     expect(retry).not.toBeDisabled()
     await user.click(retry)
-    expect(screen.getByText('Pagina publică')).toBeInTheDocument()
+    expect(await screen.findByText('Pagina publică')).toBeInTheDocument()
     expect(mocks.signOut).toHaveBeenCalledTimes(2)
   })
 })
