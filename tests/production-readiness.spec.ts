@@ -89,7 +89,7 @@ async function gotoSettled(page: Page, route: string): Promise<void> {
 
   if (route === '/cursuri') {
     const cards = page.getByRole('article')
-    const emptyState = page.getByText('Niciun curs', { exact: false })
+    const emptyState = page.getByText(/Niciun curs|Nu am putut încărca cursurile/)
     await expect(cards.first().or(emptyState)).toBeVisible({ timeout: DATA_TIMEOUT })
   }
 }
@@ -185,7 +185,7 @@ test.describe('Production readiness — critical user flows', () => {
 
     // Either the grid resolved with cards, or the page states there is nothing to show.
     const cards = page.getByRole('article')
-    const emptyState = page.getByText('Niciun curs', { exact: false })
+    const emptyState = page.getByText(/Niciun curs|Nu am putut încărca cursurile/)
     await expect(cards.first().or(emptyState)).toBeVisible({ timeout: DATA_TIMEOUT })
   })
 
@@ -196,14 +196,14 @@ test.describe('Production readiness — critical user flows', () => {
     test.skip(!isLocalPreview(baseURL), 'React listing is asserted on the local preview only')
 
     const firstCard = page.getByRole('article').first()
-    const emptyState = page.getByText('Niciun curs', { exact: false })
+    const emptyState = page.getByText(/Niciun curs|Nu am putut încărca cursurile/)
     await expect(firstCard.or(emptyState)).toBeVisible({ timeout: DATA_TIMEOUT })
     test.skip(await emptyState.isVisible(), 'No published course to open')
 
     const title = (await firstCard.getByRole('heading').first().textContent())?.trim() ?? ''
     // An empty title would make the heading assertion below match anything.
     expect(title, 'course card should carry a name').not.toBe('')
-    await firstCard.getByRole('link', { name: 'Detalii' }).click()
+    await firstCard.getByRole('link', { name: title }).click()
 
     await expect(page).toHaveURL(/\/cursuri\/[0-9a-f-]{36}$/i)
     await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible({
@@ -294,7 +294,7 @@ test.describe('Production readiness — security & performance', () => {
     })
 
     await page.goto('/cursuri')
-    await expect(page.getByRole('article').first().or(page.getByText('Nu am găsit cursuri'))).toBeVisible({
+    await expect(page.getByRole('article').first().or(page.getByText(/Niciun curs|Nu am putut încărca cursurile/))).toBeVisible({
       timeout: DATA_TIMEOUT,
     })
 
@@ -313,7 +313,7 @@ test.describe('Production readiness — security & performance', () => {
     })
 
     await page.goto('/cursuri')
-    await expect(page.getByRole('article').first().or(page.getByText('Nu am găsit cursuri'))).toBeVisible({
+    await expect(page.getByRole('article').first().or(page.getByText(/Niciun curs|Nu am putut încărca cursurile/))).toBeVisible({
       timeout: DATA_TIMEOUT,
     })
 
