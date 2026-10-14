@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import PhotoGallery from './PhotoGallery'
@@ -23,15 +23,11 @@ test('apăsarea deschide dialogul, cu eticheta care spune a câta e', async () =
   expect(screen.getByRole('dialog', { name: 'Tabără de înot — poza 2 din 3' })).toBeInTheDocument()
 })
 
-// Era modal doar cu numele: Tab plimba focusul pe butoanele paginii de dedesubt,
-// invizibile sub fundalul negru.
 test('focusul intră în dialog la deschidere', async () => {
   const user = userEvent.setup()
   render(<PhotoGallery urls={POZE} alt="Tabără" />)
   await user.click(screen.getByRole('button', { name: 'Deschide poza 1 din 3' }))
-  await waitFor(() =>
-    expect(screen.getByRole('button', { name: 'Închide poza' })).toHaveFocus(),
-  )
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Închide poza' })).toHaveFocus())
 })
 
 test('Tab nu scapă din dialog și trece prin toate butoanele lui', async () => {
@@ -42,8 +38,6 @@ test('Tab nu scapă din dialog și trece prin toate butoanele lui', async () => 
   const inchide = screen.getByRole('button', { name: 'Închide poza' })
   await waitFor(() => expect(inchide).toHaveFocus())
 
-  // Trei butoane înăuntru: închide, înapoi, înainte. La al patrulea Tab ciclul
-  // se închide — și la fiecare pas focusul rămâne în dialog.
   const vazute: (string | null)[] = []
   for (let i = 0; i < 4; i += 1) {
     await user.tab()
@@ -80,8 +74,6 @@ test('Escape închide dialogul', async () => {
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
 
-// `(i - 1) % n` ar da -1 pe prima poză, iar `urls[-1]` e undefined — adică
-// `<img src={undefined}>`, care cere pagina curenta de la server.
 test('săgeata stânga pe prima poză sare la ultima, nu în gol', async () => {
   const user = userEvent.setup()
   render(<PhotoGallery urls={POZE} alt="Tabără" />)
@@ -98,7 +90,6 @@ test('săgeata dreapta pe ultima poză sare la prima', async () => {
   expect(screen.getByRole('dialog', { name: 'Tabără — poza 1 din 3' })).toBeInTheDocument()
 })
 
-// Lista se poate scurta cat timp o poza e deschisa (refetch, stergere).
 test('dacă lista se scurtează sub poza deschisă, dialogul se închide', async () => {
   const user = userEvent.setup()
   const { rerender } = render(<PhotoGallery urls={POZE} alt="Tabără" />)
@@ -122,13 +113,13 @@ test('apăsarea pe fundal închide, apăsarea pe poză nu', async () => {
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
 
-// jsdom n-are layout, deci pragul de atingere se verifică pe clasă: `size-11` e
-// 2.75rem, adică 44px. Înălțimile reale s-au măsurat în browser.
 test('butonul de închidere poartă tiparul de atingere al casei', async () => {
   const user = userEvent.setup()
   render(<PhotoGallery urls={POZE} alt="Tabără" />)
   await user.click(screen.getByRole('button', { name: 'Deschide poza 1 din 3' }))
-  expect(screen.getByRole('button', { name: 'Închide poza' }).className).toContain('size-11')
+  expect(screen.getByRole('button', { name: 'Închide poza' }).className).toContain(
+    'size-touch-target',
+  )
 })
 
 test('săgețile de pe ecran umblă prin poze, în ambele sensuri', async () => {
@@ -143,7 +134,6 @@ test('săgețile de pe ecran umblă prin poze, în ambele sensuri', async () => 
   expect(screen.getByRole('dialog', { name: 'Tabără — poza 1 din 3' })).toBeInTheDocument()
 })
 
-// Săgețile stau peste fundalul care închide dialogul la clic.
 test('apăsarea unei săgeți nu închide dialogul', async () => {
   const user = userEvent.setup()
   render(<PhotoGallery urls={POZE} alt="Tabără" />)
@@ -152,8 +142,6 @@ test('apăsarea unei săgeți nu închide dialogul', async () => {
   expect(screen.getByRole('dialog')).toBeInTheDocument()
 })
 
-// Efectul care duce focusul pe „Închide" era legat de indice, deci la fiecare
-// pas smulgea focusul de pe săgeata tocmai apăsată.
 test('focusul rămâne pe săgeată după ce umbli cu ea', async () => {
   const user = userEvent.setup()
   render(<PhotoGallery urls={POZE} alt="Tabără" />)
@@ -191,8 +179,12 @@ test('săgețile poartă tiparul de atingere al casei', async () => {
   const user = userEvent.setup()
   render(<PhotoGallery urls={POZE} alt="Tabără" />)
   await user.click(screen.getByRole('button', { name: 'Deschide poza 1 din 3' }))
-  expect(screen.getByRole('button', { name: 'Poza următoare' }).className).toContain('size-11')
-  expect(screen.getByRole('button', { name: 'Poza anterioară' }).className).toContain('size-11')
+  expect(screen.getByRole('button', { name: 'Poza următoare' }).className).toContain(
+    'size-touch-target',
+  )
+  expect(screen.getByRole('button', { name: 'Poza anterioară' }).className).toContain(
+    'size-touch-target',
+  )
 })
 
 const MULTE = Array.from({ length: 11 }, (_, i) => `https://p/m${i + 1}.jpg`)
@@ -202,11 +194,22 @@ test('sub prag nu apare niciun buton de „vezi mai mult”', () => {
   expect(screen.queryByRole('button', { name: /Vezi/ })).not.toBeInTheDocument()
 })
 
-// Opt e chiar pragul: se arată toate, fără buton.
-test('exact opt poze se arată întregi, fără buton', () => {
+test('șapte sau opt poze se văd întregi de la tabletă, butonul apare doar pe telefon', () => {
   render(<PhotoGallery urls={MULTE.slice(0, 8)} alt="Tabără" />)
-  expect(screen.getAllByRole('button', { name: /Deschide poza/ })).toHaveLength(8)
+  const miniaturi = screen.getAllByRole('listitem')
+  expect(miniaturi).toHaveLength(8)
+  expect(miniaturi.filter((li) => li.className.includes('max-sm:hidden'))).toHaveLength(2)
+  expect(screen.getByRole('button', { name: 'Vezi toate cele 8 poze' }).className).toContain(
+    'sm:hidden',
+  )
+})
+
+test('până la șase poze nu apare butonul nici pe telefon', () => {
+  render(<PhotoGallery urls={MULTE.slice(0, 6)} alt="Tabără" />)
   expect(screen.queryByRole('button', { name: /Vezi/ })).not.toBeInTheDocument()
+  expect(screen.getAllByRole('listitem').some((li) => li.className.includes('max-sm:hidden'))).toBe(
+    false,
+  )
 })
 
 test('peste prag arată opt miniaturi și un buton care spune câte sunt', () => {
@@ -228,8 +231,6 @@ test('butonul desface grila și o strânge la loc', async () => {
   expect(screen.getAllByRole('button', { name: /Deschide poza/ })).toHaveLength(8)
 })
 
-// Miniaturile se taie, dar lightbox-ul nu: numărătoarea și săgețile merg pe
-// lista întreagă, altfel „poza 8 din 8" ar minți când sunt 11.
 test('numărătoarea miniaturilor spune totalul, nu cât se vede', () => {
   render(<PhotoGallery urls={MULTE} alt="Tabără" />)
   expect(screen.getByRole('button', { name: 'Deschide poza 8 din 11' })).toBeInTheDocument()
@@ -246,11 +247,85 @@ test('cu grila strânsă, săgeata trece și prin pozele neafișate', async () =
 
 test('butonul de „vezi mai mult” poartă tiparul de atingere al casei', () => {
   render(<PhotoGallery urls={MULTE} alt="Tabără" />)
-  expect(screen.getByRole('button', { name: 'Vezi toate cele 11 poze' }).className).toContain('h-11')
+  expect(screen.getByRole('button', { name: 'Vezi toate cele 11 poze' }).className).toContain(
+    'h-11',
+  )
 })
 
 test('fiecare miniatură arată poza ei, în ordinea primită', () => {
   render(<PhotoGallery urls={POZE} alt="Tabără" />)
-  const surse = screen.getAllByRole('button').map((b) => b.querySelector('img')?.getAttribute('src'))
+  const surse = screen
+    .getAllByRole('button')
+    .map((b) => b.querySelector('img')?.getAttribute('src'))
   expect(surse).toEqual(POZE)
+})
+
+test('desfăcută, grila arată toate pozele și pe telefon', async () => {
+  const user = userEvent.setup()
+  render(<PhotoGallery urls={MULTE} alt="Tabără" />)
+  await user.click(screen.getByRole('button', { name: 'Vezi toate cele 11 poze' }))
+  expect(screen.getAllByRole('listitem').some((li) => li.className.includes('max-sm:hidden'))).toBe(
+    false,
+  )
+})
+
+test('în poza mărită se vede poziția din total', async () => {
+  const user = userEvent.setup()
+  render(<PhotoGallery urls={POZE} alt="Tabără" />)
+  await user.click(screen.getByRole('button', { name: 'Deschide poza 2 din 3' }))
+  expect(screen.getByRole('dialog')).toHaveTextContent('2 / 3')
+  await user.click(screen.getByRole('button', { name: 'Poza următoare' }))
+  expect(screen.getByRole('dialog')).toHaveTextContent('3 / 3')
+})
+
+test('glisarea spre stânga trece la poza următoare, spre dreapta la cea anterioară', async () => {
+  const user = userEvent.setup()
+  render(<PhotoGallery urls={POZE} alt="Tabără" />)
+  await user.click(screen.getByRole('button', { name: 'Deschide poza 1 din 3' }))
+  const dialog = screen.getByRole('dialog')
+
+  fireEvent.touchStart(dialog, {
+    touches: [{ clientX: 300, clientY: 0 }],
+    changedTouches: [{ clientX: 300, clientY: 0 }],
+  })
+  fireEvent.touchEnd(dialog, {
+    touches: [{ clientX: 100, clientY: 0 }],
+    changedTouches: [{ clientX: 100, clientY: 0 }],
+  })
+  expect(screen.getByRole('dialog', { name: 'Tabără — poza 2 din 3' })).toBeInTheDocument()
+
+  fireEvent.touchStart(dialog, {
+    touches: [{ clientX: 100, clientY: 0 }],
+    changedTouches: [{ clientX: 100, clientY: 0 }],
+  })
+  fireEvent.touchEnd(dialog, {
+    touches: [{ clientX: 300, clientY: 0 }],
+    changedTouches: [{ clientX: 300, clientY: 0 }],
+  })
+  expect(screen.getByRole('dialog', { name: 'Tabără — poza 1 din 3' })).toBeInTheDocument()
+})
+
+test('o atingere scurtă nu schimbă poza', async () => {
+  const user = userEvent.setup()
+  render(<PhotoGallery urls={POZE} alt="Tabără" />)
+  await user.click(screen.getByRole('button', { name: 'Deschide poza 1 din 3' }))
+  const dialog = screen.getByRole('dialog')
+  fireEvent.touchStart(dialog, {
+    touches: [{ clientX: 200, clientY: 0 }],
+    changedTouches: [{ clientX: 200, clientY: 0 }],
+  })
+  fireEvent.touchEnd(dialog, {
+    touches: [{ clientX: 180, clientY: 0 }],
+    changedTouches: [{ clientX: 180, clientY: 0 }],
+  })
+  expect(screen.getByRole('dialog', { name: 'Tabără — poza 1 din 3' })).toBeInTheDocument()
+})
+
+test('poza mărită se deschide în portalul dialogurilor, deasupra meniului', async () => {
+  const user = userEvent.setup()
+  const { container } = render(<PhotoGallery urls={POZE} alt="Tabără" />)
+  await user.click(screen.getByRole('button', { name: 'Deschide poza 1 din 3' }))
+  const dialog = screen.getByRole('dialog')
+  expect(container).not.toContainElement(dialog)
+  expect(dialog.className).toContain('z-50')
 })
