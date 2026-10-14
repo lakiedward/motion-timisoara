@@ -14,7 +14,7 @@ export default function NotFoundPage() {
         Linkul este greșit sau pagina a fost mutată. Pornește de la pagina principală sau caută un
         curs pentru copilul tău.
       </p>
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+      <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
         <Button asChild size="lg" className="h-11">
           <Link to="/">Mergi la pagina principală</Link>
         </Button>
