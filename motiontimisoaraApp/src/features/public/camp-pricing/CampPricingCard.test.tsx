@@ -2,6 +2,7 @@ import { beforeEach, expect, test, vi } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router-dom'
 import { getMyChildren } from '@/api/account'
 import type { TabaraDetaliu } from '@/api/camps'
 import CampPricingCard from './CampPricingCard'
@@ -60,9 +61,11 @@ function view({
   } as unknown as TabaraDetaliu
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const rendered = render(
-    <QueryClientProvider client={client}>
-      <CampPricingCard data={data} ended={ended} full={full} onEnroll={enroll} />
-    </QueryClientProvider>,
+    <MemoryRouter>
+      <QueryClientProvider client={client}>
+        <CampPricingCard data={data} ended={ended} full={full} onEnroll={enroll} />
+      </QueryClientProvider>
+    </MemoryRouter>,
   )
   return { ...rendered, client }
 }
@@ -271,9 +274,11 @@ test('the enrollment footer states the card-only payment next to the button', ()
     adultPrice: null,
   } as unknown as TabaraDetaliu
   render(
-    <QueryClientProvider client={new QueryClient()}>
-      <CampPricingCard data={data} ended={false} full={false} onEnroll={enroll} />
-    </QueryClientProvider>,
+    <MemoryRouter>
+      <QueryClientProvider client={new QueryClient()}>
+        <CampPricingCard data={data} ended={false} full={false} onEnroll={enroll} />
+      </QueryClientProvider>
+    </MemoryRouter>,
   )
   expect(screen.getByText('Doar plată cu cardul.')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Înscrie-te' })).toBeEnabled()
@@ -285,4 +290,17 @@ test('the EUR exchange note follows the price instead of opening the card', () =
   const note = screen.getByText(/1 EUR = 5,123456 lei/)
   const heading = screen.getByRole('heading', { name: 'Preț pe categorii de vârstă' })
   expect(heading.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+})
+
+test('closed enrollment points to the other camps', () => {
+  user = null
+  view({ ended: true })
+  expect(screen.getByRole('link', { name: 'Vezi alte tabere' })).toHaveAttribute('href', '/tabere')
+})
+
+test('an account that is not a parent sees a note instead of the button', () => {
+  user = { id: 'coach', role: 'COACH' }
+  view()
+  expect(screen.queryByRole('button', { name: 'Înscrie-te' })).not.toBeInTheDocument()
+  expect(screen.getByText('Înscrierile se fac dintr-un cont de părinte.')).toBeInTheDocument()
 })

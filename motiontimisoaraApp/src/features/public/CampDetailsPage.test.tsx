@@ -19,7 +19,7 @@ vi.mock('@/api/camps', async () => {
   return { ...real, getTabaraDetaliu: vi.fn() }
 })
 
-let utilizator: { id: string } | null = { id: 'parinte-1' }
+let utilizator: { id: string; role: string } | null = { id: 'parinte-1', role: 'PARENT' }
 vi.mock('@/lib/auth-context', () => ({ useAuth: () => ({ user: utilizator }) }))
 
 const mocked = vi.mocked(getTabaraDetaliu)
@@ -70,7 +70,7 @@ function renderPage() {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  utilizator = { id: 'parinte-1' }
+  utilizator = { id: 'parinte-1', role: 'PARENT' }
   mocked.mockResolvedValue(detaliu() as never)
 })
 

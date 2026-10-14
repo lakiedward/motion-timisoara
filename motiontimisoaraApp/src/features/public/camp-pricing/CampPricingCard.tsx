@@ -1,5 +1,6 @@
 import { OfferExchangeNote } from '@/components/OfferExchangeNote'
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { Wallet } from 'lucide-react'
 import { getMyChildren } from '@/api/account'
 import { formatZi, sumaCategoriilor, type TabaraDetaliu } from '@/api/camps'
@@ -49,6 +50,7 @@ export default function CampPricingCard({
     (agePrices.length > 0 &&
       agePrices.every((price) => Number.isSafeInteger(price.amount) && price.amount >= 0))
   const canEnroll = !ended && !full && priceAvailable
+  const parentAccount = !user || user.role === 'PARENT'
   const breakdownTotal = sumaCategoriilor(categorii)
 
   return (
@@ -217,17 +219,17 @@ export default function CampPricingCard({
 
       <div
         className={cn(
-          'flex flex-wrap items-center justify-between gap-4',
+          'flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between',
           (byAge || categorii.length > 0 || adultPrice) && 'border-border mt-4 border-t pt-4',
         )}
       >
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 sm:flex-1">
           {byAge ? (
             <p className="text-muted-foreground text-sm">
               Prețul fiecărui participant se confirmă la înscriere.
             </p>
           ) : (
-            <div className="font-display text-2xl font-extrabold">
+            <div className="font-display text-foreground text-3xl font-extrabold whitespace-nowrap">
               {formatOfferPrice(tabara.price, tabara.currency)}
             </div>
           )}
@@ -238,16 +240,28 @@ export default function CampPricingCard({
           )}
           <OfferExchangeNote offer={tabara} className="text-xs" />
         </div>
-        {canEnroll ? (
-          <Button className="h-11 min-h-11 px-6" onClick={onEnroll}>
-            Înscrie-te
-          </Button>
-        ) : ended || full ? (
-          <p className="text-muted-foreground text-sm font-medium">
-            {ended
-              ? 'Tabăra s-a încheiat, înscrierile sunt închise.'
-              : 'Toate locurile sunt ocupate.'}
+        {canEnroll && !parentAccount ? (
+          <p className="text-muted-foreground bg-muted w-full rounded-lg px-4 py-3 text-sm sm:w-auto">
+            Înscrierile se fac dintr-un cont de părinte.
           </p>
+        ) : canEnroll ? (
+          <button type="button" className="btn-cta btn-cta--primary w-full shrink-0 sm:w-auto" onClick={onEnroll}>
+            Înscrie-te
+          </button>
+        ) : ended || full ? (
+          <div className="flex flex-col items-start gap-1 sm:items-end">
+            <p className="text-muted-foreground text-sm font-medium">
+              {ended
+                ? 'Tabăra s-a încheiat, înscrierile sunt închise.'
+                : 'Toate locurile sunt ocupate.'}
+            </p>
+            <Link
+              to="/tabere"
+              className="text-primary min-h-touch-target focus-visible:outline-ring inline-flex items-center rounded-sm text-sm font-semibold underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              Vezi alte tabere
+            </Link>
+          </div>
         ) : null}
       </div>
     </div>
