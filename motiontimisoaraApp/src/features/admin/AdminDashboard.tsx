@@ -26,9 +26,9 @@ import { usesNativeNavigation } from '@/layout/native/native-runtime'
 import { cn } from '@/lib/utils'
 
 const statCardClass = cn(
-  'bg-card shadow-card flex h-full min-h-[11.5rem] min-w-0 cursor-pointer flex-col rounded-3xl p-6 transition-all outline-none',
+  'bg-card shadow-card flex h-full min-h-[11.5rem] min-w-0 cursor-pointer flex-col rounded-3xl p-6 transition-all',
   'hover:-translate-y-1 hover:shadow-card-hover [&:hover]:-translate-y-1 [&:hover]:shadow-card-hover',
-  'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
 )
 
 const STATS: {
@@ -141,7 +141,7 @@ export default function AdminDashboard() {
         {native ? (
           <Link
             to="/admin/profile"
-            className="text-primary mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-medium underline-offset-4 outline-none hover:underline focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+            className="text-primary mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             <UserRound className="size-4" aria-hidden="true" />
             Profil administrator

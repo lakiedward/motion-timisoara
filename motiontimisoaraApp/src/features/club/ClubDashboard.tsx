@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 const statCardClass = cn(
   'bg-card shadow-card flex h-full min-h-[11.5rem] cursor-pointer flex-col rounded-3xl p-6 transition-all',
   'hover:-translate-y-1 hover:shadow-card-hover [&:hover]:-translate-y-1 [&:hover]:shadow-card-hover',
-  'focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-primary',
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
 )
 
 export default function ClubDashboard() {

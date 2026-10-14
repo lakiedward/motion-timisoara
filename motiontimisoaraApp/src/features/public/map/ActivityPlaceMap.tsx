@@ -75,7 +75,7 @@ export default function ActivityPlaceMap({
       target={link.target}
       rel={link.rel}
       aria-label={`Deschide ${name} în hărți`}
-      className="focus-visible:ring-ring/50 relative mt-8 block h-64 w-full cursor-pointer overflow-hidden rounded-3xl outline-none focus-visible:ring-[3px]"
+      className="relative mt-8 block h-64 w-full cursor-pointer overflow-hidden rounded-3xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
     >
       <span className="absolute inset-0" aria-hidden="true">
         {dale.map((dala) => (
