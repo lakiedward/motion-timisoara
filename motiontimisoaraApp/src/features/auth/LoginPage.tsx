@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { CircleAlert } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -7,22 +8,22 @@ import { z } from 'zod'
 import { AuthLayout } from './AuthLayout'
 import { AuthFields } from './AuthFields'
 import { GoogleSignInButton } from './GoogleSignInButton'
+import { loginErrorMessage } from './login-error'
 import { useReturnUrl, withReturnUrl } from './return-url'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Field } from '@/components/ui/field'
 import { loadAppUser, roleHome, signInWithPassword } from '@/api/auth'
 import { useAuth } from '@/lib/auth-context'
 
 const schema = z.object({
-  email: z.string().email('Email invalid'),
-  password: z.string().min(6, 'Minim 6 caractere'),
+  email: z.string().min(1, 'Emailul e obligatoriu').email('Email invalid'),
+  password: z.string().min(1, 'Parola e obligatorie').min(6, 'Minim 6 caractere'),
 })
 type Values = z.infer<typeof schema>
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { refresh } = useAuth()
+  const { user, loading, refresh } = useAuth()
   const [serverError, setServerError] = useState<string | null>(null)
   const returnUrl = useReturnUrl()
 
@@ -34,9 +35,12 @@ export default function LoginPage() {
 
   const onSubmit = async (v: Values) => {
     setServerError(null)
-    const { error } = await signInWithPassword(v.email, v.password)
+    const error = await signInWithPassword(v.email, v.password).then(
+      (result) => result.error,
+      (thrown: unknown) => thrown,
+    )
     if (error) {
-      setServerError('Email sau parola sunt greșite.')
+      setServerError(loginErrorMessage(error))
       return
     }
     await refresh()
@@ -46,6 +50,17 @@ export default function LoginPage() {
     }
     const u = await loadAppUser()
     navigate(u ? roleHome(u.role) : '/account')
+  }
+
+  if (!isSubmitting) {
+    if (user) return <Navigate to={returnUrl || roleHome(user.role)} replace />
+    if (loading) {
+      return (
+        <div role="status" aria-label="Se încarcă" className="grid min-h-dvh place-items-center">
+          <div className="border-primary size-8 animate-spin rounded-full border-2 border-t-transparent" />
+        </div>
+      )
+    }
   }
 
   return (
@@ -72,42 +87,40 @@ export default function LoginPage() {
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           {serverError && (
-            <p className="bg-destructive/10 text-destructive rounded-md px-3 py-2 text-sm">
+            <p
+              className="bg-destructive/10 text-destructive flex items-start gap-2 rounded-md px-3 py-2 text-sm"
+              role="alert"
+            >
+              <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
               {serverError}
             </p>
           )}
           <AuthFields columns={2}>
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                {...register('email')}
-                aria-invalid={!!errors.email}
+            <Field
+              id="email"
+              label="Email"
+              type="email"
+              autoComplete="email"
+              error={errors.email?.message}
+              {...register('email')}
+            />
+            <div className="space-y-1">
+              <Field
+                id="password"
+                label="Parolă"
+                type="password"
+                autoComplete="current-password"
+                error={errors.password?.message}
+                {...register('password')}
               />
-              {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Parolă</Label>
+              <div className="flex justify-end">
                 <Link
                   to="/forgot-password"
-                  className="text-primary min-h-touch-target -my-3 inline-flex items-center text-sm font-medium"
+                  className="text-primary min-h-touch-target inline-flex items-center text-sm font-medium"
                 >
                   Ai uitat parola?
                 </Link>
               </div>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                {...register('password')}
-                aria-invalid={!!errors.password}
-              />
-              {errors.password && (
-                <p className="text-destructive text-xs">{errors.password.message}</p>
-              )}
             </div>
           </AuthFields>
           <Button type="submit" className="w-full" disabled={isSubmitting}>
