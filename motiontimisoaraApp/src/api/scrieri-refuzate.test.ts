@@ -3,10 +3,12 @@ import { beforeEach, expect, test, vi } from 'vitest'
 import * as account from './account'
 import * as admin from './admin'
 import * as club from './club'
+import * as clubImages from './club-images'
 import * as coach from './coach'
 
 let raspuns: { data: unknown; error: unknown } = { data: null, error: null }
 let lant: string[] = []
+let coloaneCitite: unknown[][] = []
 
 const ZERO_RANDURI = {
   data: null,
@@ -19,8 +21,9 @@ function builder() {
       if (prop === 'then') {
         return (resolve: (v: unknown) => unknown) => Promise.resolve(resolve(raspuns))
       }
-      return () => {
+      return (...args: unknown[]) => {
         lant.push(prop)
+        if (prop === 'select') coloaneCitite.push(args)
         return proxy
       }
     },
@@ -44,6 +47,7 @@ vi.mock('@/lib/supabase', () => ({
 beforeEach(() => {
   raspuns = { data: { id: 'x', default_photo_storage_path: null }, error: null }
   lant = []
+  coloaneCitite = []
 })
 
 const poza = () => new File(['x'], 'poza.jpg', { type: 'image/jpeg' })
@@ -99,3 +103,20 @@ test('account.deleteChild aruncă și pentru o eroare obișnuită a bazei', asyn
   raspuns = { data: null, error: { code: '42501', message: 'permission denied' } }
   await expect(account.deleteChild('ch')).rejects.toMatchObject({ code: '42501' })
 })
+
+const scrieriPeColoaneRestranse: [string, () => Promise<unknown>][] = [
+  ['admin.setUserEnabled', () => admin.setUserEnabled('u', false)],
+  ['club.updateClub', () => club.updateClub('c1', {} as Parameters<typeof club.updateClub>[1])],
+  ['clubImages.setClubImage', () => clubImages.setClubImage('c1', 'logo', poza())],
+  ['clubImages.clearClubImage', () => clubImages.clearClubImage('c1', 'logo')],
+]
+
+test.each(scrieriPeColoaneRestranse)(
+  '%s citește înapoi doar id-ul, nu tot rândul cu coloane fără grant',
+  async (_nume, scrie) => {
+    await scrie()
+    expect(coloaneCitite.length).toBeGreaterThan(0)
+    expect(coloaneCitite.at(-1)).toEqual(['id'])
+    expect(coloaneCitite.every((args) => args.length === 1 && args[0] !== '*')).toBe(true)
+  },
+)
