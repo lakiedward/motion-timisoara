@@ -3,14 +3,24 @@ import { cn } from '@/lib/utils'
 interface LogoProps {
   className?: string
   showText?: boolean
+  tone?: 'default' | 'on-brand'
 }
 
-/** Brand mark: an azure tile with a dynamic "motion" peaks line + wordmark. */
-export function Logo({ className, showText = true }: LogoProps) {
+export function Logo({ className, showText = true, tone = 'default' }: LogoProps) {
+  const onBrand = tone === 'on-brand'
   return (
-    <span className={cn('inline-flex items-center gap-2 font-display font-bold', className)}>
+    <span
+      className={cn(
+        'inline-flex items-center gap-2 font-display font-bold',
+        onBrand && 'text-white',
+        className,
+      )}
+    >
       <span
-        className="grid size-9 shrink-0 place-items-center rounded-xl text-white shadow-sm"
+        className={cn(
+          'grid size-9 shrink-0 place-items-center rounded-xl text-white',
+          onBrand ? 'ring-2 ring-white/70' : 'shadow-sm',
+        )}
         style={{ background: 'var(--gradient-primary)' }}
       >
         <svg
@@ -28,7 +38,7 @@ export function Logo({ className, showText = true }: LogoProps) {
       </span>
       {showText && (
         <span className="text-lg leading-none tracking-tight">
-          Motion <span className="text-primary">Timișoara</span>
+          Motion <span className={onBrand ? undefined : 'text-primary'}>Timișoara</span>
         </span>
       )}
     </span>

@@ -88,3 +88,14 @@ test('wider landscape forms opt in only inside native navigation', () => {
   )
   expect(view.container.querySelector('.native-landscape-form')).not.toBeInTheDocument()
 })
+
+test('photo panel overlay uses the gradient-primary token and the Logo mark', () => {
+  const { container } = renderLayout()
+  const photoPanel = container.querySelector('img[src="/ui/20230516_184053.webp"]')?.parentElement
+  const overlay = photoPanel?.querySelector('img + div') as HTMLElement | null
+  expect(overlay?.style.background).toBe('var(--gradient-primary)')
+  expect(photoPanel?.innerHTML).not.toMatch(/rgba\(/)
+  const panelLink = photoPanel?.querySelector('a[href="/"]')
+  expect(panelLink?.querySelector('svg')).toBeTruthy()
+  expect(panelLink?.querySelector('.text-primary')).toBeNull()
+})
