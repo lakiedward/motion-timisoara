@@ -185,6 +185,8 @@ test('fișierul regulamentului se deschide cu nume, tip și mărime', async () =
   renderPage()
   const link = await screen.findByRole('link', { name: /regulament.pdf/ })
   expect(link).toHaveAttribute('href', 'https://public/camp-rules/camp-1/uuid.pdf')
+  expect(link).toHaveTextContent('Deschide regulamentul')
+  expect(link).not.toHaveTextContent('regulament.pdf')
   expect(link).toHaveTextContent('PDF')
   expect(link).toHaveTextContent('2 KB')
   expect(screen.getByText('Fără telefoane.')).toBeInTheDocument()
@@ -203,6 +205,28 @@ test('doar fișierul arată totuși secțiunea Regulament', async () => {
   renderPage()
   expect(await screen.findByRole('heading', { name: 'Regulament' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: /regulament.docx/ })).toHaveTextContent('Word')
+})
+test('un regulament lung se arată scurtat și se poate desfășura', async () => {
+  const user = userEvent.setup()
+  const reguli = Array.from({ length: 12 }, (_, i) => `${i + 1}. Regula ${i + 1}.`).join('\n')
+  mocked.mockResolvedValue(detaliu({ tabara: { rules: reguli } }) as never)
+  renderPage()
+  const sectiune = (await screen.findByRole('heading', { name: 'Regulament' })).closest('section')
+  expect(sectiune?.querySelector('p')).toHaveClass('line-clamp-8')
+  const buton = screen.getByRole('button', { name: 'Arată tot regulamentul' })
+  expect(buton).toHaveAttribute('aria-expanded', 'false')
+  await user.click(buton)
+  expect(sectiune?.querySelector('p')).not.toHaveClass('line-clamp-8')
+  expect(screen.getByRole('button', { name: 'Arată mai puțin' })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  )
+})
+test('un regulament scurt nu are buton de desfășurare', async () => {
+  mocked.mockResolvedValue(detaliu({ tabara: { rules: 'Fără telefoane.' } }) as never)
+  renderPage()
+  await screen.findByRole('heading', { name: 'Regulament' })
+  expect(screen.queryByRole('button', { name: 'Arată tot regulamentul' })).not.toBeInTheDocument()
 })
 test('o tabără fără necesar nu arată o secțiune goală', async () => {
   renderPage()
