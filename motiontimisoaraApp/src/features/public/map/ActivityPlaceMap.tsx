@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin } from 'lucide-react'
+import { ExternalLink, MapPin } from 'lucide-react'
 
 import { cartoTileUrl, openStreetMapTileUrl } from '@/features/public/map/basemap'
 import { linkHartaLoc } from '@/features/public/map/map-link'
@@ -36,10 +36,12 @@ export default function ActivityPlaceMap({
   lat,
   lng,
   name,
+  address,
 }: {
   lat: number
   lng: number
   name: string
+  address?: string | null
 }) {
   const ref = useRef<HTMLAnchorElement>(null)
   const [size, setSize] = useState({ w: 768, h: TILE })
@@ -69,31 +71,52 @@ export default function ActivityPlaceMap({
   }
 
   return (
-    <a
-      ref={ref}
-      href={link.href}
-      target={link.target}
-      rel={link.rel}
-      aria-label={`Deschide ${name} în hărți`}
-      className="relative mt-8 block h-64 w-full cursor-pointer overflow-hidden rounded-3xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-    >
-      <span className="absolute inset-0" aria-hidden="true">
-        {dale.map((dala) => (
-          <img
-            key={`${dala.x}-${dala.y}`}
-            src={adresaDalei(dala.x, dala.y)}
-            alt=""
-            width={TILE}
-            height={TILE}
-            className="absolute max-w-none"
-            style={{ left: dala.left, top: dala.top }}
-          />
-        ))}
-        <MapPin className="text-primary absolute top-1/2 left-1/2 size-8 -translate-x-1/2 -translate-y-full" />
-      </span>
-      <span className="bg-card/90 text-muted-foreground absolute right-2 bottom-2 rounded-md px-2 py-1 text-xs">
-        {carto ? '© OpenStreetMap © CARTO' : '© OpenStreetMap'}
-      </span>
-    </a>
+    <section className="mt-8">
+      <h2 className="font-display mb-3 text-lg font-bold">Locație</h2>
+      <p className="text-foreground font-medium">{name}</p>
+      {address?.trim() && <p className="text-muted-foreground text-sm">{address.trim()}</p>}
+      <a
+        ref={ref}
+        href={link.href}
+        target={link.target}
+        rel={link.rel}
+        tabIndex={-1}
+        aria-hidden="true"
+        className="bg-muted relative mt-3 block h-64 w-full cursor-pointer overflow-hidden rounded-2xl border"
+      >
+        <span className="absolute inset-0">
+          {dale.map((dala) => (
+            <img
+              key={`${dala.x}-${dala.y}`}
+              src={adresaDalei(dala.x, dala.y)}
+              alt=""
+              width={TILE}
+              height={TILE}
+              className="absolute max-w-none"
+              style={{ left: dala.left, top: dala.top }}
+              onError={(e) => {
+                e.currentTarget.hidden = true
+              }}
+            />
+          ))}
+          <MapPin className="text-primary absolute top-1/2 left-1/2 size-8 -translate-x-1/2 -translate-y-full" />
+        </span>
+        <span className="bg-card/90 text-muted-foreground absolute right-2 bottom-2 rounded-md px-2 py-1 text-xs">
+          {carto ? '© OpenStreetMap © CARTO' : '© OpenStreetMap'}
+        </span>
+      </a>
+      <a
+        href={link.href}
+        target={link.target}
+        rel={link.rel}
+        aria-label={`Deschide ${name} în hărți`}
+        className="group text-primary focus-visible:outline-ring mt-3 inline-flex min-h-11 items-center gap-2 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2"
+      >
+        <ExternalLink className="size-4 shrink-0" aria-hidden="true" />
+        <span className="font-semibold underline-offset-4 group-hover:underline">
+          Deschide în hărți
+        </span>
+      </a>
+    </section>
   )
 }

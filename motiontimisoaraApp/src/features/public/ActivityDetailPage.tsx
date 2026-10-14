@@ -220,7 +220,12 @@ export default function ActivityDetailPage() {
         />
 
         {a.location?.lat != null && a.location.lng != null && (
-          <ActivityPlaceMap lat={a.location.lat} lng={a.location.lng} name={a.location.name} />
+          <ActivityPlaceMap
+            lat={a.location.lat}
+            lng={a.location.lng}
+            name={a.location.name}
+            address={a.location.address}
+          />
         )}
 
         <div className="bg-card shadow-card mt-8 flex flex-col items-start gap-4 rounded-3xl border p-6 sm:flex-row sm:items-center sm:justify-between">

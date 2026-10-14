@@ -1,5 +1,5 @@
 import { vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
@@ -37,7 +37,12 @@ const DETALIU: ActivitateDetaliu = {
   bandUrl: null,
   photoUrl: 'https://public/sport-photos/ciclism.jpg',
   sport: { code: 'ciclism', name: 'Ciclism' },
-  location: { name: 'DEMO — Parc de antrenament', lat: 45.751, lng: 21.238 },
+  location: {
+    name: 'DEMO — Parc de antrenament',
+    address: 'Str. Exemplu 1',
+    lat: 45.751,
+    lng: 21.238,
+  },
   organizator: {
     id: 'club-1',
     nume: 'DEMO — Club Sportiv Motion',
@@ -189,7 +194,9 @@ test('organizatorul stă sub titlu, antrenorul e separat, iar numele locului nu 
   expect(ore.parentElement).toHaveTextContent('10:00–12:00')
   expect(locEticheta.parentElement).toHaveTextContent('DEMO — Parc de antrenament')
   expect(locEticheta.closest('a')).toBeNull()
-  expect(screen.getByText('DEMO — Parc de antrenament').closest('a')).toBeNull()
+  for (const nume of screen.getAllByText('DEMO — Parc de antrenament')) {
+    expect(nume.closest('a')).toBeNull()
+  }
   expect(locuri.parentElement).toHaveTextContent('11 locuri rămase')
   expect(dataEticheta.compareDocumentPosition(ore) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   expect(ore.compareDocumentPosition(locEticheta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
@@ -265,11 +272,31 @@ test('galerie, regulament, hartă și nota de curs stau în ordinea aleasă', as
 test('fără coordonate harta lipsește, iar numele rămâne pe rând', async () => {
   mocked.mockResolvedValue({
     ...DETALIU,
-    location: { name: 'DEMO — Parc de antrenament', lat: null, lng: null },
+    location: { name: 'DEMO — Parc de antrenament', address: null, lat: null, lng: null },
   })
   deseneaza()
   expect(await screen.findByText('DEMO — Parc de antrenament')).toBeInTheDocument()
   expect(screen.queryByRole('link', { name: /în hărți/ })).not.toBeInTheDocument()
+})
+
+test('locația are titlu, adresă, link vizibil și ascunde dalele care nu se încarcă', async () => {
+  deseneaza()
+  const titlu = await screen.findByRole('heading', { name: 'Locație' })
+  const sectiune = titlu.closest('section') as HTMLElement
+  expect(within(sectiune).getByText('Str. Exemplu 1')).toBeInTheDocument()
+  const link = within(sectiune).getByRole('link', {
+    name: 'Deschide DEMO — Parc de antrenament în hărți',
+  })
+  expect(link).toHaveTextContent('Deschide în hărți')
+  expect(link.className).toContain('min-h-11')
+  const harta = sectiune.querySelector('a[aria-hidden="true"]') as HTMLAnchorElement
+  expect(harta).toHaveAttribute('tabindex', '-1')
+  expect(harta).toHaveAttribute('href', link.getAttribute('href'))
+  expect(harta.className).toContain('rounded-2xl')
+  expect(harta.className).toContain('border')
+  const dala = harta.querySelector('img') as HTMLImageElement
+  fireEvent.error(dala)
+  expect(dala.hidden).toBe(true)
 })
 
 test('prețul în lei nu are notă, zero e Gratuit, iar înscrierea cere login', async () => {
