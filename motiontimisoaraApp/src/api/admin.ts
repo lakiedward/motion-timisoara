@@ -211,7 +211,7 @@ export async function setUserEnabled(id: string, enabled: boolean) {
     .from('profiles')
     .update({ enabled })
     .eq('id', id)
-    .select()
+    .select('id')
     .single()
   if (error) throw error
 }

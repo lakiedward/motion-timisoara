@@ -30,7 +30,7 @@ export interface ClubProfileInput {
   public_email_consent: boolean
 }
 export async function updateClub(id: string, input: ClubProfileInput) {
-  const { error } = await supabase.from('clubs').update(input).eq('id', id).select().single()
+  const { error } = await supabase.from('clubs').update(input).eq('id', id).select('id').single()
   if (error) throw error
 }
 export type ClubCoach = {

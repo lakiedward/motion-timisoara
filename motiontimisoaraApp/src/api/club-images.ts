@@ -46,7 +46,7 @@ export async function setClubImage(
     .from('clubs')
     .update(patch(kind, path))
     .eq('id', clubId)
-    .select()
+    .select('id')
     .single()
   if (error) {
     await removeQuietly(path)
@@ -62,7 +62,7 @@ export async function clearClubImage(clubId: string, kind: ClubImageKind): Promi
     .from('clubs')
     .update(patch(kind, null))
     .eq('id', clubId)
-    .select()
+    .select('id')
     .single()
   if (error) throw error
   await removeQuietly(before)
