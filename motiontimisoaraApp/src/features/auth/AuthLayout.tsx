@@ -11,6 +11,7 @@ interface AuthLayoutProps {
   children: React.ReactNode
   footer?: React.ReactNode
   nativeLandscapeFields?: boolean
+  topOnMobile?: boolean
 }
 
 export function AuthLayout({
@@ -19,6 +20,7 @@ export function AuthLayout({
   children,
   footer,
   nativeLandscapeFields = false,
+  topOnMobile = false,
 }: AuthLayoutProps) {
   const native = usesNativeNavigation()
   return (
@@ -53,7 +55,12 @@ export function AuthLayout({
         </div>
       </div>
 
-      <div className="flex items-center justify-center p-6">
+      <div
+        className={cn(
+          'flex justify-center p-6',
+          topOnMobile ? 'items-start lg:items-center' : 'items-center',
+        )}
+      >
         <div
           className={cn(
             'w-full max-w-sm',
