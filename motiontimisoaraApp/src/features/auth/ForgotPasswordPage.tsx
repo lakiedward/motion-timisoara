@@ -49,7 +49,10 @@ export default function ForgotPasswordPage() {
       title="Resetează parola"
       subtitle="Îți trimitem un link de resetare pe email"
       footer={
-        <Link to="/login" className="text-primary font-semibold">
+        <Link
+          to="/login"
+          className="text-primary min-h-touch-target inline-flex items-center font-semibold"
+        >
           Înapoi la autentificare
         </Link>
       }

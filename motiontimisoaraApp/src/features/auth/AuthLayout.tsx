@@ -61,7 +61,7 @@ export function AuthLayout({
           )}
         >
           <div className={cn('mb-8 lg:hidden', native && 'hidden')}>
-            <Link to="/" className="inline-flex items-center">
+            <Link to="/" className="min-h-touch-target inline-flex items-center">
               <Logo />
             </Link>
           </div>
