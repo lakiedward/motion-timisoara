@@ -109,3 +109,44 @@ it('does not report success when the grant expires or the update rejects', async
   expect(mocks.success).not.toHaveBeenCalled()
   expect(mocks.refresh).not.toHaveBeenCalled()
 })
+
+it('links each password error to its field and keeps mismatch on the confirmation only', async () => {
+  mocks.ready.mockResolvedValue(true)
+  const user = userEvent.setup()
+  mount()
+  await user.click(await screen.findByRole('button', { name: 'Salvează parola' }))
+  expect(await screen.findByText('Parola e obligatorie')).toBeInTheDocument()
+  expect(screen.getByLabelText('Parolă nouă')).toHaveAttribute('aria-describedby', 'password-error')
+  expect(screen.getByLabelText('Confirmă parola')).toHaveAttribute(
+    'aria-describedby',
+    'confirm-error',
+  )
+
+  await user.type(screen.getByLabelText('Parolă nouă'), 'parola123')
+  await user.type(screen.getByLabelText('Confirmă parola'), 'parola124')
+  await user.click(screen.getByRole('button', { name: 'Salvează parola' }))
+  expect(await screen.findByText('Parolele nu coincid')).toBeInTheDocument()
+  expect(screen.getByLabelText('Parolă nouă')).toHaveAttribute('aria-invalid', 'false')
+  expect(screen.getByLabelText('Confirmă parola')).toHaveAttribute('aria-invalid', 'true')
+})
+
+it('toggles password visibility and announces the expired link with a link to request a new one', async () => {
+  mocks.ready.mockResolvedValue(true)
+  mocks.update.mockResolvedValue({ error: { message: 'expired' } })
+  const user = userEvent.setup()
+  mount()
+  const password = await screen.findByLabelText('Parolă nouă')
+  const [toggle] = screen.getAllByRole('button', { name: 'Arată parola' })
+  await user.click(toggle)
+  expect(password).toHaveAttribute('type', 'text')
+  expect(toggle).toHaveAttribute('aria-pressed', 'true')
+  await user.type(password, 'parola123')
+  await user.type(screen.getByLabelText('Confirmă parola'), 'parola123')
+  await user.click(screen.getByRole('button', { name: 'Salvează parola' }))
+  const alert = await screen.findByRole('alert')
+  expect(alert).toHaveTextContent('Link-ul de resetare este invalid sau a expirat.')
+  expect(screen.getByRole('link', { name: 'Solicită unul nou.' })).toHaveAttribute(
+    'href',
+    '/forgot-password',
+  )
+})

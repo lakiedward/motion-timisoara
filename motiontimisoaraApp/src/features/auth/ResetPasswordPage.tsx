@@ -1,15 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ComponentProps, type ReactNode } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Eye, EyeOff } from 'lucide-react'
+import { CircleAlert, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { AuthLayout } from './AuthLayout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { isPasswordRecoveryReady, updatePassword } from '@/api/auth'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
@@ -27,6 +28,56 @@ type Values = z.infer<typeof schema>
 
 type LinkState = 'checking' | 'ready' | 'invalid'
 
+interface PasswordFieldProps extends Omit<ComponentProps<'input'>, 'type'> {
+  id: string
+  label: string
+  error?: string
+}
+
+function PasswordField({ id, label, error, ...props }: PasswordFieldProps) {
+  const [visible, setVisible] = useState(false)
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="relative">
+        <Input
+          id={id}
+          type={visible ? 'text' : 'password'}
+          autoComplete="new-password"
+          className="pr-10"
+          aria-invalid={!!error}
+          aria-describedby={fieldDescription(id, undefined, error)}
+          {...props}
+        />
+        <button
+          type="button"
+          tabIndex={-1}
+          onClick={() => setVisible((s) => !s)}
+          aria-label={visible ? 'Ascunde parola' : 'Arată parola'}
+          aria-pressed={visible}
+          aria-controls={id}
+          className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex items-center px-3"
+        >
+          {visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+        </button>
+      </div>
+      <FieldMessage id={id} error={error} />
+    </div>
+  )
+}
+
+function ErrorBanner({ children }: { children: ReactNode }) {
+  return (
+    <p
+      className="bg-destructive/10 text-destructive flex items-start gap-2 rounded-md px-3 py-2 text-sm"
+      role="alert"
+    >
+      <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+      <span>{children}</span>
+    </p>
+  )
+}
+
 export default function ResetPasswordPage() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
@@ -34,8 +85,6 @@ export default function ResetPasswordPage() {
   const { refresh } = useAuth()
   const [linkState, setLinkState] = useState<LinkState>('checking')
   const [serverError, setServerError] = useState<string | null>(null)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirm, setShowConfirm] = useState(false)
   const {
     register,
     handleSubmit,
@@ -89,16 +138,18 @@ export default function ResetPasswordPage() {
       }
     >
       {linkState === 'checking' && (
-        <p className="text-muted-foreground text-sm">Se verifică linkul de resetare…</p>
+        <p role="status" className="text-muted-foreground text-sm">
+          Se verifică linkul de resetare…
+        </p>
       )}
 
       {linkState === 'invalid' && (
         <div className="space-y-4">
-          <p className="bg-destructive/10 text-destructive rounded-md px-3 py-3 text-sm">
+          <ErrorBanner>
             {invalidLink
               ? 'Acest link este invalid, a expirat sau a fost deja folosit.'
               : 'Link-ul de resetare este invalid sau a expirat.'}
-          </p>
+          </ErrorBanner>
           <Button asChild className="w-full">
             <Link to={invalidLink ? '/login' : '/forgot-password'}>
               {invalidLink ? 'Mergi la autentificare' : 'Solicită un link nou'}
@@ -110,61 +161,25 @@ export default function ResetPasswordPage() {
       {linkState === 'ready' && (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           {serverError && (
-            <p className="bg-destructive/10 text-destructive rounded-md px-3 py-2 text-sm">
+            <ErrorBanner>
               {serverError}{' '}
               <Link to="/forgot-password" className="font-semibold underline">
                 Solicită unul nou.
               </Link>
-            </p>
+            </ErrorBanner>
           )}
-          <div className="space-y-1.5">
-            <Label htmlFor="password">Parolă nouă</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="new-password"
-                className="pr-10"
-                {...register('password')}
-                aria-invalid={!!errors.password}
-              />
-              <button
-                type="button"
-                tabIndex={-1}
-                onClick={() => setShowPassword((s) => !s)}
-                aria-label={showPassword ? 'Ascunde parola' : 'Arată parola'}
-                className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex items-center px-3"
-              >
-                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="text-destructive text-xs">{errors.password.message}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="confirm">Confirmă parola</Label>
-            <div className="relative">
-              <Input
-                id="confirm"
-                type={showConfirm ? 'text' : 'password'}
-                autoComplete="new-password"
-                className="pr-10"
-                {...register('confirm')}
-                aria-invalid={!!errors.confirm}
-              />
-              <button
-                type="button"
-                tabIndex={-1}
-                onClick={() => setShowConfirm((s) => !s)}
-                aria-label={showConfirm ? 'Ascunde parola' : 'Arată parola'}
-                className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex items-center px-3"
-              >
-                {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-              </button>
-            </div>
-            {errors.confirm && <p className="text-destructive text-xs">{errors.confirm.message}</p>}
-          </div>
+          <PasswordField
+            id="password"
+            label="Parolă nouă"
+            error={errors.password?.message}
+            {...register('password')}
+          />
+          <PasswordField
+            id="confirm"
+            label="Confirmă parola"
+            error={errors.confirm?.message}
+            {...register('confirm')}
+          />
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? 'Se salvează…' : 'Salvează parola'}
           </Button>
