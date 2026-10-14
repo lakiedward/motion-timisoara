@@ -235,6 +235,7 @@ test('clubul e organizatorul, antrenorul stă separat, iar galeria ia poza sport
   raspuns.coach_profiles = { data: { photo_storage_path: 'demo.jpg' }, error: null }
   const detaliu = await getActivitateDetaliu('viitoare')
   expect(detaliu?.organizator).toEqual({
+    fel: 'club',
     id: 'club-1',
     nume: 'DEMO — Club Sportiv Motion',
     link: '/cluburi/club-1',
@@ -261,6 +262,7 @@ test('fără club, antrenorul e organizatorul și nu mai apare la ceilalți', as
   const detaliu = await getActivitateDetaliu('viitoare')
   expect(detaliu?.organizator?.nume).toBe('Antrenor Demo')
   expect(detaliu?.organizator?.link).toBe('/antrenori/coach-1')
+  expect(detaliu?.organizator?.fel).toBe('antrenor')
   expect(detaliu?.antrenori).toEqual([])
 })
 

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, CalendarDays, Clock, MapPin, Users, type LucideIcon } from 'lucide-react'
 
 import { ACTIVITY_RULES_FILE_BUCKET, rulesFileAfisabil } from '@/api/camp-rules-file'
-import { activitateSAincheiat, getActivitateDetaliu, type PersoanaActivitate } from '@/api/public'
+import { activitateSAincheiat, getActivitateDetaliu } from '@/api/public'
 import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
 import { OfferExchangeNote } from '@/components/OfferExchangeNote'
 import PhotoGallery from '@/components/PhotoGallery'
@@ -14,6 +14,7 @@ import { plural } from '@/lib/plural'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SportIllustration } from '@/components/sport/SportIllustration'
+import { OrganizerCoaches } from './components/OrganizerCoaches'
 import { PublicHeroBand } from './PublicHeroBand'
 
 function ziActivitate(data: string): string {
@@ -43,17 +44,6 @@ function Fapt({
       <Icon className="size-4 shrink-0" aria-hidden />
       <span className="text-foreground font-medium">{eticheta}</span>
       <span>{children}</span>
-    </div>
-  )
-}
-
-function Portret({ persoana }: { persoana: PersoanaActivitate }) {
-  if (persoana.pozaUrl) {
-    return <img src={persoana.pozaUrl} alt="" className="size-12 rounded-full object-cover" />
-  }
-  return (
-    <div className="bg-muted flex size-12 items-center justify-center rounded-full text-sm font-semibold">
-      {persoana.nume.slice(0, 1)}
     </div>
   )
 }
@@ -138,41 +128,13 @@ export default function ActivityDetailPage() {
           </>
         )}
 
-        {a.organizator && (
-          <div className="mt-6">
-            <h2 className="font-display mb-3 text-lg font-bold">Organizată de</h2>
-            <div className="flex items-center gap-3">
-              <Portret persoana={a.organizator} />
-              <Link
-                to={a.organizator.link}
-                className="text-primary inline-flex h-11 items-center font-semibold"
-              >
-                {a.organizator.nume}
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {a.antrenori.length > 0 && (
-          <div className="mt-6">
-            <h2 className="font-display mb-3 text-lg font-bold">
-              {a.antrenori.length === 1 ? 'Antrenor' : 'Antrenori'}
-            </h2>
-            <ul className="flex flex-wrap gap-4">
-              {a.antrenori.map((antrenor) => (
-                <li key={antrenor.id} className="flex items-center gap-3">
-                  <Portret persoana={antrenor} />
-                  <Link
-                    to={antrenor.link}
-                    className="text-primary inline-flex h-11 items-center font-semibold"
-                  >
-                    {antrenor.nume}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <OrganizerCoaches
+          sectionKey="manual:section:organizator-si-antrenori:71654660-6441-4081-9c30-6fbbc6d679f4"
+          className="mt-6"
+          organizator={a.organizator}
+          antrenori={a.antrenori}
+          coachesTitle={() => 'Antrenor'}
+        />
 
         <div className="text-muted-foreground mt-5 flex flex-col gap-2 text-sm">
           <Fapt icon={CalendarDays} eticheta="Data">

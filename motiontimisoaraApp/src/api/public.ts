@@ -369,6 +369,8 @@ export type PersoanaActivitate = {
   pozaUrl: string | null
 }
 
+export type OrganizatorActivitate = PersoanaActivitate & { fel: 'club' | 'antrenor' }
+
 export type ActivitateDetaliu = {
   id: string
   name: string
@@ -383,7 +385,7 @@ export type ActivitateDetaliu = {
   photoUrl: string | null
   sport: { code: string; name: string } | null
   location: { name: string; lat: number | null; lng: number | null } | null
-  organizator: PersoanaActivitate | null
+  organizator: OrganizatorActivitate | null
   antrenori: PersoanaActivitate[]
   galerieUrls: string[]
   locuriRamase: number | null
@@ -465,14 +467,15 @@ export async function getActivitateDetaliu(id: string): Promise<ActivitateDetali
   if (eLocuri) throw eLocuri
 
   const antrenor = rand.coach ? persoanaAntrenor(rand.coach, calePoza) : null
-  const organizator: PersoanaActivitate | null = rand.club
+  const organizator: OrganizatorActivitate | null = rand.club
     ? {
+        fel: 'club',
         id: rand.club.id,
         nume: rand.club.name,
         link: `/cluburi/${rand.club.id}`,
         pozaUrl: publicUrl('club-assets', rand.club.logo_storage_path),
       }
-    : antrenor
+    : antrenor && { fel: 'antrenor', ...antrenor }
   const poza = activityHeroUrl(rand)
 
   return {
