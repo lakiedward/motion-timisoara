@@ -47,13 +47,13 @@ export default function ContactPage() {
             Ai întrebări despre cursuri sau înscrieri? Scrie-ne și revenim cât mai repede.
           </p>
           <div className="mt-8 space-y-4 text-sm">
-            <a href="tel:+40750420455" className="flex items-center gap-3">
+            <a href="tel:+40750420455" className="hover:text-primary min-h-touch-target flex w-fit items-center gap-3 rounded-xl underline-offset-4 transition-colors hover:underline">
               <span className="bg-primary/10 text-primary grid size-10 place-items-center rounded-xl">
                 <Phone className="size-4" />
               </span>
               +40 750 420 455
             </a>
-            <a href="mailto:contact@motiontimisoara.com" className="flex items-center gap-3">
+            <a href="mailto:contact@motiontimisoara.com" className="hover:text-primary min-h-touch-target flex w-fit items-center gap-3 rounded-xl underline-offset-4 transition-colors hover:underline">
               <span className="bg-primary/10 text-primary grid size-10 place-items-center rounded-xl">
                 <Mail className="size-4" />
               </span>
