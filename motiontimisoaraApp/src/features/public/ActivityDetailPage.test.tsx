@@ -344,3 +344,12 @@ test('când sportul are poză standard nu apare ilustrația', async () => {
   await screen.findByRole('heading', { level: 1, name: 'DEMO — Atelier de ciclism' })
   expect(screen.queryByRole('img', { name: /Ilustrație/ })).not.toBeInTheDocument()
 })
+
+test('cardul de preț e plat, ca restul cardurilor din design system', async () => {
+  deseneaza()
+  const buton = await screen.findByRole('button', { name: 'Înscrie-te' })
+  const card = buton.parentElement as HTMLElement
+  expect(card).toHaveClass('rounded-xl', 'border')
+  expect(card).not.toHaveClass('shadow-card')
+  expect(card).not.toHaveClass('rounded-3xl')
+})

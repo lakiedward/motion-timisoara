@@ -76,7 +76,7 @@ export default function ActivityDetailPage() {
   if (isLoading) {
     return (
       <div className="mx-auto max-w-4xl px-6 py-12">
-        <Skeleton className="h-64 w-full rounded-3xl" />
+        <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     )
   }
@@ -223,7 +223,7 @@ export default function ActivityDetailPage() {
           <ActivityPlaceMap lat={a.location.lat} lng={a.location.lng} name={a.location.name} />
         )}
 
-        <div className="bg-card shadow-card mt-8 flex flex-col items-start gap-4 rounded-3xl border p-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="bg-card mt-8 flex flex-col items-start gap-4 rounded-xl border p-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <div className="font-display whitespace-nowrap text-2xl font-extrabold">
               {formatOfferPrice(a.price, a.currency)}
