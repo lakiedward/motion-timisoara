@@ -153,6 +153,7 @@ test('detaliul adună categoriile, antrenorii, pozele și locurile rămase', asy
         {
           coach_profile: {
             id: 'cp1',
+            user_id: 'user-cp1',
             photo_storage_path: 'antrenor.jpg',
             profile: { name: 'Audit Antrenor' },
           },
@@ -170,7 +171,12 @@ test('detaliul adună categoriile, antrenorii, pozele și locurile rămase', asy
   const d = await getTabaraDetaliu('tabara-inot')
   expect(d!.categorii).toHaveLength(1)
   expect(d!.antrenori).toEqual([
-    { id: 'cp1', nume: 'Audit Antrenor', pozaUrl: 'https://public/coach-photos/antrenor.jpg' },
+    {
+      id: 'cp1',
+      nume: 'Audit Antrenor',
+      pozaUrl: 'https://public/coach-photos/antrenor.jpg',
+      link: '/antrenori/user-cp1',
+    },
   ])
   expect(d!.galerieUrls).toEqual(['https://public/camp-photos/camp-1/gallery/a.jpg'])
   expect(d!.locuriRamase).toBe(12)
@@ -233,7 +239,7 @@ test('un antrenor fără nume nu lasă cardul gol', async () => {
     },
   }
   const d = await getTabaraDetaliu('tabara-inot')
-  expect(d!.antrenori[0]).toEqual({ id: 'cp1', nume: 'Antrenor', pozaUrl: null })
+  expect(d!.antrenori[0]).toEqual({ id: 'cp1', nume: 'Antrenor', pozaUrl: null, link: null })
 })
 test('pagina publică cere doar antrenorii care au acceptat', async () => {
   raspuns = { camps: { data: TABARA, error: null } }
