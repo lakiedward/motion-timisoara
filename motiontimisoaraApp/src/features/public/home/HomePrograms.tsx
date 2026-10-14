@@ -35,11 +35,11 @@ export function HomePrograms() {
           </Link>
         </div>
         {coursesQuery.isPending ? (
-          <div role="status" aria-label="Se încarcă programele" className="grid gap-7 md:grid-cols-3">
+          <div role="status" aria-label="Se încarcă programele" className="grid gap-4 md:grid-cols-3">
             {Array.from({ length: MAX_COURSES }, (_, index) => (
-              <div key={index} className="bg-card overflow-hidden rounded-3xl border">
+              <div key={index} className="bg-card overflow-hidden rounded-xl border">
                 <Skeleton className="aspect-video rounded-none" />
-                <div className="space-y-3 p-6">
+                <div className="space-y-3 p-5">
                   <Skeleton className="h-6 w-3/4" />
                   <Skeleton className="h-4 w-1/2" />
                   <Skeleton className="h-6 w-1/3" />
@@ -56,7 +56,7 @@ export function HomePrograms() {
             className="bg-card border"
           />
         ) : courses.length ? (
-          <ul className="grid gap-7 md:grid-cols-3">
+          <ul className="grid gap-4 md:grid-cols-3">
             {courses.map((course) => (
               <li key={course.id} className="min-w-0">
                 <CourseCard course={course} />
