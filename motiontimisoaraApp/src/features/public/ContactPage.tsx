@@ -75,17 +75,17 @@ export default function ContactPage() {
             </p>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-              <Field id="name" label="Nume" required error={errors.name?.message}>
-                {(control) => <Input {...control} autoComplete="name" {...register('name')} />}
+              <Field id="name" label="Nume" error={errors.name?.message}>
+                {(control) => <Input {...control} aria-required autoComplete="name" {...register('name')} />}
               </Field>
-              <Field id="email" label="Email" required error={errors.email?.message}>
-                {(control) => <Input {...control} type="email" autoComplete="email" {...register('email')} />}
+              <Field id="email" label="Email" error={errors.email?.message}>
+                {(control) => <Input {...control} aria-required type="email" autoComplete="email" {...register('email')} />}
               </Field>
               <Field id="subject" label="Subiect (opțional)">
                 {(control) => <Input {...control} {...register('subject')} />}
               </Field>
-              <Field id="message" label="Mesaj" required error={errors.message?.message}>
-                {(control) => <Textarea {...control} rows={4} {...register('message')} />}
+              <Field id="message" label="Mesaj" error={errors.message?.message}>
+                {(control) => <Textarea {...control} aria-required rows={4} {...register('message')} />}
               </Field>
               {failed && (
                 <div role="alert" className="flex items-start gap-3 rounded-xl border p-4 text-sm">

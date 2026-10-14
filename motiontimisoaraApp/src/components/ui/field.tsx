@@ -1,45 +1,39 @@
 import * as React from 'react'
-import { AlertCircle } from 'lucide-react'
+import { CircleAlert } from 'lucide-react'
 
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 
-type FieldControlProps = {
+export interface FieldControlProps {
   id: string
-  'aria-invalid'?: true
-  'aria-describedby'?: string
-  'aria-required'?: true
+  'aria-invalid': boolean
+  'aria-describedby': string | undefined
 }
 
-type FieldProps = {
+interface FieldProps {
   id: string
-  label: string
-  hint?: string
-  error?: string
-  required?: boolean
+  label: React.ReactNode
+  hint?: React.ReactNode
+  error?: React.ReactNode
   className?: string
   children: (control: FieldControlProps) => React.ReactNode
 }
 
-function Field({ id, label, hint, error, required, className, children }: FieldProps) {
-  const messageId = `${id}-message`
-  const hasMessage = Boolean(error || hint)
+function Field({ id, label, hint, error, className, children }: FieldProps) {
+  const hintId = `${id}-hint`
+  const errorId = `${id}-error`
+  const describedBy = error ? errorId : hint ? hintId : undefined
   return (
     <div data-slot="field" className={cn('grid gap-2', className)}>
       <Label htmlFor={id}>{label}</Label>
-      {children({
-        id,
-        'aria-invalid': error ? true : undefined,
-        'aria-describedby': hasMessage ? messageId : undefined,
-        'aria-required': required ? true : undefined,
-      })}
+      {children({ id, 'aria-invalid': !!error, 'aria-describedby': describedBy })}
       {error ? (
-        <p id={messageId} className="text-destructive flex items-center gap-1.5 text-xs font-medium">
-          <AlertCircle aria-hidden className="size-3.5 shrink-0" />
+        <p id={errorId} className="text-destructive flex items-center gap-1.5 text-xs font-medium">
+          <CircleAlert aria-hidden="true" className="size-3.5 shrink-0" />
           {error}
         </p>
       ) : hint ? (
-        <p id={messageId} className="text-muted-foreground text-xs">
+        <p id={hintId} className="text-muted-foreground text-xs">
           {hint}
         </p>
       ) : null}
@@ -47,4 +41,4 @@ function Field({ id, label, hint, error, required, className, children }: FieldP
   )
 }
 
-export { Field, type FieldControlProps }
+export { Field }
