@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { vi } from 'vitest'
 
 import { getCourseCatalog, type CourseCatalogItem } from '@/api/public'
@@ -35,12 +35,17 @@ function course(overrides: Partial<CourseCatalogItem>): CourseCatalogItem {
   } as CourseCatalogItem
 }
 
-function renderPage() {
+function CurrentSearch() {
+  return <output data-testid="search">{useLocation().search}</output>
+}
+
+function renderPage(url = '/cursuri') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
   render(
     <QueryClientProvider client={client}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[url]}>
         <ProgramPage />
+        <CurrentSearch />
       </MemoryRouter>
     </QueryClientProvider>,
   )
@@ -162,4 +167,40 @@ test('long lists show twelve courses and load more on request', async () => {
   expect(screen.getAllByRole('article')).toHaveLength(12)
   fireEvent.click(screen.getByRole('button', { name: 'Încarcă mai multe' }))
   expect(screen.getAllByRole('article')).toHaveLength(24)
+})
+
+test('the chosen sport is kept in the address and restored from it', async () => {
+  catalogRequest.mockResolvedValue([
+    course({}),
+    course({
+      id: 'run',
+      name: 'Alergare',
+      sport: { id: 's3', code: 'alergare', name: 'Alergare', default_photo_storage_path: null },
+    }),
+  ])
+  renderPage()
+  await screen.findByRole('link', { name: 'Înot începători' })
+
+  fireEvent.click(screen.getByRole('button', { name: 'Alergare' }))
+  expect(screen.getByTestId('search')).toHaveTextContent('?sport=alergare')
+  fireEvent.change(screen.getByLabelText('Buget pe lună'), { target: { value: '60000' } })
+  expect(screen.getByTestId('search')).toHaveTextContent('?sport=alergare')
+  fireEvent.click(screen.getByRole('button', { name: 'Toate' }))
+  expect(screen.getByTestId('search')).toBeEmptyDOMElement()
+})
+
+test('opening a link with a sport selects that sport', async () => {
+  catalogRequest.mockResolvedValue([
+    course({}),
+    course({
+      id: 'run',
+      name: 'Alergare',
+      sport: { id: 's3', code: 'alergare', name: 'Alergare', default_photo_storage_path: null },
+    }),
+  ])
+  renderPage('/cursuri?sport=inot')
+  await screen.findByRole('link', { name: 'Înot începători' })
+  expect(screen.getByRole('button', { name: 'Înot' })).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getByRole('button', { name: 'Toate' })).toHaveAttribute('aria-pressed', 'false')
+  expect(screen.getAllByRole('article')).toHaveLength(1)
 })

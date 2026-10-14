@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 
 import { getCourseCatalog } from '@/api/public'
 import {
@@ -18,7 +19,9 @@ import { CourseCatalogCard } from './courses/CourseCatalogCard'
 import { CourseFilters } from './courses/CourseFilters'
 
 export default function ProgramPage() {
-  const [filters, setFilters] = useState<CourseCatalogFilters>(EMPTY_COURSE_FILTERS)
+  const [params, setParams] = useSearchParams()
+  const [otherFilters, setOtherFilters] = useState<CourseCatalogFilters>(EMPTY_COURSE_FILTERS)
+  const filters: CourseCatalogFilters = { ...otherFilters, sport: params.get('sport') ?? '' }
   const [visible, setVisible] = useState(COURSE_PAGE_SIZE)
   const coursesQuery = useQuery({ queryKey: ['course-catalog'], queryFn: getCourseCatalog })
   const courses = coursesQuery.data ?? []
@@ -27,7 +30,17 @@ export default function ProgramPage() {
   const listLoading = coursesQuery.isPending || (coursesQuery.isError && coursesQuery.isFetching)
 
   const applyFilters = (next: CourseCatalogFilters) => {
-    setFilters(next)
+    setOtherFilters({ ...next, sport: '' })
+    if (next.sport !== filters.sport)
+      setParams(
+        (prev) => {
+          const updated = new URLSearchParams(prev)
+          if (next.sport) updated.set('sport', next.sport)
+          else updated.delete('sport')
+          return updated
+        },
+        { replace: true },
+      )
     setVisible(COURSE_PAGE_SIZE)
   }
 
