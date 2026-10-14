@@ -434,8 +434,8 @@ test.describe('Production readiness — data integrity', () => {
 
     await page.getByRole('button', { name: 'Autentificare' }).click()
 
-    await expect(page.getByText('Email invalid')).toBeVisible()
-    await expect(page.getByText('Minim 6 caractere')).toBeVisible()
+    await expect(page.getByText('Emailul e obligatoriu')).toBeVisible()
+    await expect(page.getByText('Parola e obligatorie')).toBeVisible()
     // A rejected submit must not leave the page or hit the auth endpoint.
     await expect(page).toHaveURL(/\/login$/)
   })
