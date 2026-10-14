@@ -76,7 +76,7 @@ export default function HomePage() {
         </div>
 
         {/* Stats ticker */}
-        <div className="bg-foreground">
+        <div className="bg-foreground dark:bg-card">
           <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-10 gap-y-3 px-6 py-5">
             {STATS.map((s, i) => (
               <div key={s.label} className="flex items-center gap-4">
@@ -125,7 +125,7 @@ export default function HomePage() {
       {/* PROGRAMS (real data) — diagonal brand band behind the course cards */}
       {topCourses.length > 0 && (
         <section className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-foreground" />
+          <div className="absolute inset-0 bg-foreground dark:bg-card" />
           <div
             className="absolute inset-0"
             style={{
