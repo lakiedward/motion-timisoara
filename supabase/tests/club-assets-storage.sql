@@ -86,7 +86,7 @@ CREATE POLICY "club_assets_owner_update" ON storage.objects
 CREATE POLICY "club_assets_owner_delete" ON storage.objects
     FOR DELETE USING (bucket_id = 'club-assets' AND public.get_my_role() IN ('CLUB', 'ADMIN'));
 
-\i /tmp/migrations/00088_club_assets_owner_policies.sql
+\i /tmp/migrations/00089_club_assets_owner_policies.sql
 
 INSERT INTO public.clubs(id, owner_user_id) VALUES
     ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '00000000-0000-0000-0000-00000000000a'),
