@@ -318,6 +318,14 @@ RPC (`get_my_role() = 'ADMIN'`). The client tries the RPC and falls back to
 at `max_rows=1000` (`supabase/config.toml`). A capped fallback shows a `+`
 suffix.
 
+Admin coach count bug #1095, proposed 2026-10-14 and NOT applied yet:
+`00088_admin_stats_coach_role.sql` replaces `admin_stats()` so `coaches` counts
+`profiles.role = 'COACH'`, the same set `/admin/users?role=COACH` lists. Before it
+the RPC counted `coach_profiles`, which also holds the admin account's coach profile
+(live 2026-10-14: 16 coach profiles, 15 COACH users). The live body matched 00080
+(md5 `b5db31b8916396d86f1b119e2a2ce018`) before the replacement; only the `coaches`
+line changes. The client fallback counts the same set.
+
 Admin sports #457, applied and verified 2026-10-07: `00081_restrict_sport_deletion.sql`
 replaces cascading sport references in `coach_sports` and `club_sports` with
 `ON DELETE RESTRICT`. Existing course and activity references already block deletion.
