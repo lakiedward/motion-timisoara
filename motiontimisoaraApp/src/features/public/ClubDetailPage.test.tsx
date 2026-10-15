@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, expect, test, vi } from 'vitest'
@@ -83,4 +83,42 @@ test('without public_email no email is shown', async () => {
   renderPage()
   await screen.findByText('Str. Exemplu 10, Timișoara')
   expect(screen.queryByRole('link', { name: /@/ })).toBeNull()
+})
+
+test('without a cover the hero has the back link, the initial and the name, with no photo band', async () => {
+  mocks.getPublicClub.mockResolvedValue(club)
+  const { container } = renderPage()
+  expect(await screen.findByRole('heading', { level: 1, name: 'Clubul Exemplu' })).toBeVisible()
+  expect(screen.getByRole('link', { name: /Înapoi la cluburi/ })).toHaveAttribute('href', '/cluburi')
+  expect(screen.getByText('C')).toHaveAttribute('aria-hidden', 'true')
+  expect(container.querySelector('img')).toBeNull()
+})
+
+test('with a cover the hero uses the shared photo band with the logo next to the name', async () => {
+  mocks.getPublicClub.mockResolvedValue({
+    ...club,
+    logo_storage_path: '/ui/logo.webp',
+    hero_photo_storage_path: '/ui/cover.webp',
+  })
+  const { container } = renderPage()
+  expect(await screen.findByRole('heading', { level: 1, name: 'Clubul Exemplu' })).toBeVisible()
+  expect(container.querySelector('img[src="/ui/cover.webp"]')).not.toBeNull()
+  expect(screen.getByRole('img', { name: 'Logo Clubul Exemplu' })).toHaveAttribute('src', '/ui/logo.webp')
+  expect(screen.getByRole('link', { name: /Înapoi la cluburi/ })).toHaveAttribute('href', '/cluburi')
+})
+
+test('a load error shows a retry, not "not found"', async () => {
+  mocks.getPublicClub.mockRejectedValueOnce(new Error('network')).mockResolvedValueOnce(club)
+  renderPage()
+  expect(await screen.findByText('Nu am putut încărca clubul.')).toBeVisible()
+  expect(screen.queryByText('Clubul nu a fost găsit.')).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Reîncearcă' }))
+  expect(await screen.findByRole('heading', { level: 1, name: 'Clubul Exemplu' })).toBeVisible()
+})
+
+test('a missing club says it was not found and links back to the list', async () => {
+  mocks.getPublicClub.mockResolvedValue(null)
+  renderPage()
+  expect(await screen.findByText('Clubul nu a fost găsit.')).toBeVisible()
+  expect(screen.getByRole('link', { name: /Înapoi la cluburi/ })).toHaveAttribute('href', '/cluburi')
 })
