@@ -269,17 +269,17 @@ test('fără club, antrenorul e organizatorul și nu mai apare la ceilalți', as
   expect(detaliu?.antrenori).toEqual([])
 })
 
-test('poza activității intră în galerie înaintea pozei sportului', async () => {
+test('poza din bandă nu se repetă în galerie', async () => {
   raspuns.activities = {
     data: randDetaliu({ hero_photo_storage_path: 'a/hero.jpg' }),
     error: null,
   }
   const detaliu = await getActivitateDetaliu('viitoare')
-  expect(detaliu?.galerieUrls).toEqual(['https://public/activity-photos/a/hero.jpg'])
   expect(detaliu?.bandUrl).toBe('https://public/activity-photos/a/hero.jpg')
+  expect(detaliu?.galerieUrls).toEqual([])
 })
 
-test('activitatea din preview primește descrierea lungă și cel puțin șase poze', async () => {
+test('activitatea din preview fără bandă primește descrierea lungă, poza sportului și poza de ciclism', async () => {
   raspuns.activities = {
     data: randDetaliu({
       id: '74a9d327-fb4e-450f-866f-f24575edc204',
@@ -298,9 +298,7 @@ test('activitatea din preview primește descrierea lungă și cel puțin șase p
   expect(paragrafe.length).toBeGreaterThanOrEqual(3)
   expect(paragrafe[0]).toBe('Siguranță și îndemânare pe bicicletă.')
   expect(detaliu?.bandUrl).toBeNull()
-  expect(detaliu?.galerieUrls[0]).toBe('/ui/20221013_183129.webp')
-  expect(detaliu?.galerieUrls.length).toBeGreaterThanOrEqual(6)
-  expect(new Set(detaliu?.galerieUrls).size).toBe(detaliu?.galerieUrls.length)
+  expect(detaliu?.galerieUrls).toEqual(['/ui/20221013_183129.webp', '/ui/20210405_152345.webp'])
 })
 
 test('locurile rămase pot fi zero sau necunoscute, fără să fie inventate', async () => {
@@ -311,4 +309,17 @@ test('locurile rămase pot fi zero sau necunoscute, fără să fie inventate', a
   expect((await getActivitateDetaliu('viitoare'))?.locuriRamase).toBeNull()
   rpcPentru = () => ({ data: null, error: { message: 'rpc' } })
   await expect(getActivitateDetaliu('viitoare')).rejects.toEqual({ message: 'rpc' })
+})
+
+test('activitatea din preview cu bandă arată doar poza de ciclism, fără dublura benzii', async () => {
+  raspuns.activities = {
+    data: randDetaliu({
+      id: '74a9d327-fb4e-450f-866f-f24575edc204',
+      hero_photo_storage_path: 'demo/hero.jpg',
+    }),
+    error: null,
+  }
+  const detaliu = await getActivitateDetaliu('74a9d327-fb4e-450f-866f-f24575edc204')
+  expect(detaliu?.bandUrl).toBe('https://public/activity-photos/demo/hero.jpg')
+  expect(detaliu?.galerieUrls).toEqual(['/ui/20210405_152345.webp'])
 })

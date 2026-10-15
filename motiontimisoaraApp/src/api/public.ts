@@ -474,6 +474,7 @@ export async function getActivitateDetaliu(id: string): Promise<ActivitateDetali
       }
     : antrenor
   const poza = activityHeroUrl(rand)
+  const bandUrl = publicUrl('activity-photos', rand.hero_photo_storage_path)
 
   return {
     id: rand.id,
@@ -485,13 +486,13 @@ export async function getActivitateDetaliu(id: string): Promise<ActivitateDetali
     price: rand.price,
     currency: rand.currency,
     eur_ron_rate_micros: rand.eur_ron_rate_micros,
-    bandUrl: publicUrl('activity-photos', rand.hero_photo_storage_path),
+    bandUrl,
     photoUrl: poza,
     sport: rand.sport ? { code: rand.sport.code, name: rand.sport.name } : null,
     location: rand.location,
     organizator,
     antrenori: rand.club && antrenor ? [antrenor] : [],
-    galerieUrls: pozeActivitatePreview(rand.id, poza ? [poza] : []),
+    galerieUrls: pozeActivitatePreview(rand.id, !bandUrl && poza ? [poza] : []),
     locuriRamase: typeof ramase === 'number' ? ramase : null,
     regulament: {
       rules_file_storage_path: rand.rules_file_storage_path,
