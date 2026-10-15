@@ -1,4 +1,5 @@
 import { descriereActivitatePreview, pozeActivitatePreview } from '@/api/preview-activity'
+import { isUuid } from '@/api/notifications/types'
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 
@@ -142,15 +143,16 @@ export async function getCoaches(): Promise<CoachListItem[]> {
 }
 
 export async function getCoachByUserId(userId: string): Promise<CoachListItem | null> {
+  if (!isUuid(userId)) return null
   const { data, error } = await supabase
     .from('coach_profiles')
     .select(
       'id, user_id, bio, avatar_url, photo_storage_path, profile:profiles(id,name,avatar_url), coach_sports(sport:sports(id,code,name))',
     )
     .eq('user_id', userId)
-    .single()
-  if (error) return null
-  return data as unknown as CoachListItem
+    .maybeSingle()
+  if (error) throw error
+  return data as unknown as CoachListItem | null
 }
 
 export type ClubListItem = Tables<'clubs'> & {
@@ -385,7 +387,7 @@ export type ActivitateDetaliu = {
   bandUrl: string | null
   photoUrl: string | null
   sport: { code: string; name: string } | null
-  location: { name: string; lat: number | null; lng: number | null } | null
+  location: { name: string; address: string | null; lat: number | null; lng: number | null } | null
   organizator: PersoanaActivitate | null
   antrenori: PersoanaActivitate[]
   galerieUrls: string[]
@@ -414,7 +416,7 @@ type ActivitateDetaliuBruta = {
   rules_file_content_type: string | null
   rules_file_size_bytes: number | null
   sport: SportRow | null
-  location: { name: string; lat: number | null; lng: number | null } | null
+  location: { name: string; address: string | null; lat: number | null; lng: number | null } | null
   club: { id: string; name: string; logo_storage_path: string | null } | null
   coach: { id: string; name: string; avatar_url: string | null } | null
 }
@@ -442,7 +444,7 @@ export async function getActivitateDetaliu(id: string): Promise<ActivitateDetali
   const { data, error } = await supabase
     .from('activities')
     .select(
-      'id, name, description, activity_date, start_time, end_time, price, currency, eur_ron_rate_micros, hero_photo_storage_path, rules_file_storage_path, rules_file_name, rules_file_content_type, rules_file_size_bytes, sport:sports(id, code, name, default_photo_storage_path), location:locations(name, lat, lng), club:clubs(id, name, logo_storage_path), coach:profiles(id, name, avatar_url)',
+      'id, name, description, activity_date, start_time, end_time, price, currency, eur_ron_rate_micros, hero_photo_storage_path, rules_file_storage_path, rules_file_name, rules_file_content_type, rules_file_size_bytes, sport:sports(id, code, name, default_photo_storage_path), location:locations(name, address, lat, lng), club:clubs(id, name, logo_storage_path), coach:profiles(id, name, avatar_url)',
     )
     .eq('id', id)
     .maybeSingle()
@@ -477,6 +479,7 @@ export async function getActivitateDetaliu(id: string): Promise<ActivitateDetali
       }
     : antrenor
   const poza = activityHeroUrl(rand)
+  const bandUrl = publicUrl('activity-photos', rand.hero_photo_storage_path)
 
   return {
     id: rand.id,
@@ -488,13 +491,13 @@ export async function getActivitateDetaliu(id: string): Promise<ActivitateDetali
     price: rand.price,
     currency: rand.currency,
     eur_ron_rate_micros: rand.eur_ron_rate_micros,
-    bandUrl: publicUrl('activity-photos', rand.hero_photo_storage_path),
+    bandUrl,
     photoUrl: poza,
     sport: rand.sport ? { code: rand.sport.code, name: rand.sport.name } : null,
     location: rand.location,
     organizator,
     antrenori: rand.club && antrenor ? [antrenor] : [],
-    galerieUrls: pozeActivitatePreview(rand.id, poza ? [poza] : []),
+    galerieUrls: pozeActivitatePreview(rand.id, !bandUrl && poza ? [poza] : []),
     locuriRamase: typeof ramase === 'number' ? ramase : null,
     regulament: {
       rules_file_storage_path: rand.rules_file_storage_path,
