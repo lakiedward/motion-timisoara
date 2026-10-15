@@ -215,7 +215,12 @@ function randDetaliu(
       name: 'Ciclism',
       default_photo_storage_path: 'ciclism.jpg',
     },
-    location: { name: 'DEMO — Parc de antrenament', lat: 45.751, lng: 21.238 },
+    location: {
+      name: 'DEMO — Parc de antrenament',
+      address: 'Str. Exemplu 1',
+      lat: 45.751,
+      lng: 21.238,
+    },
     club,
     coach: { id: 'coach-1', name: 'Antrenor Demo', avatar_url: null },
     ...peste,
