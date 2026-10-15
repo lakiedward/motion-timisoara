@@ -44,6 +44,7 @@ const DETALIU: ActivitateDetaliu = {
     lng: 21.238,
   },
   organizator: {
+    fel: 'club',
     id: 'club-1',
     nume: 'DEMO — Club Sportiv Motion',
     link: '/cluburi/club-1',
@@ -175,17 +176,14 @@ test('organizatorul stă sub titlu, antrenorul e separat, iar numele locului nu 
     organizator.compareDocumentPosition(antrenor) & Node.DOCUMENT_POSITION_FOLLOWING,
   ).toBeTruthy()
   expect(antrenor.compareDocumentPosition(data) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-  const club = screen.getByRole('link', { name: 'DEMO — Club Sportiv Motion' })
+  const club = screen.getByRole('link', { name: /DEMO — Club Sportiv Motion/ })
   expect(club).toHaveAttribute('href', '/cluburi/club-1')
+  expect(club).toHaveTextContent('Club · Vezi pagina clubului')
   expect(club.querySelector('img')).toBeNull()
-  expect(club.parentElement?.querySelector('.rounded-full')?.textContent).toBe('D')
-  const coach = screen.getByRole('link', { name: 'Antrenor Demo' })
+  expect(club.querySelector('svg')).not.toBeNull()
+  const coach = screen.getByRole('link', { name: /Antrenor Demo/ })
   expect(coach).toHaveAttribute('href', '/antrenori/coach-1')
-  expect(coach.querySelector('img')).toBeNull()
-  expect(coach.parentElement?.querySelector('img')).toHaveAttribute(
-    'src',
-    'https://public/coach-photos/demo.jpg',
-  )
+  expect(coach).toHaveTextContent('Vezi profilul antrenorului')
   const dataEticheta = screen.getByText('Data')
   const ore = screen.getByText('Ore')
   const locEticheta = screen.getByText('Loc')
@@ -349,6 +347,32 @@ test('fără locuri, înscrierea dispare; fără număr, rămâne', async () => 
   expect(await screen.findByRole('button', { name: 'Înscrie-te' })).toBeInTheDocument()
   expect(screen.queryByText(/locuri rămase/)).not.toBeInTheDocument()
   expect(screen.queryByText('Toate locurile sunt ocupate.')).not.toBeInTheDocument()
+})
+
+test('când organizatorul e antrenorul, apare un singur card, cu profilul lui', async () => {
+  mocked.mockResolvedValue({
+    ...DETALIU,
+    organizator: {
+      fel: 'antrenor',
+      id: 'coach-1',
+      nume: 'Antrenor Demo',
+      link: '/antrenori/coach-1',
+      pozaUrl: null,
+    },
+    antrenori: [],
+  })
+  deseneaza()
+  const card = await screen.findByRole('link', { name: /Antrenor Demo/ })
+  expect(card).toHaveAttribute('href', '/antrenori/coach-1')
+  expect(card).toHaveTextContent('Antrenor · Vezi profilul antrenorului')
+  expect(screen.queryByRole('heading', { name: /^Antrenor$/ })).not.toBeInTheDocument()
+})
+
+test('fără organizator și fără antrenor, blocul nu apare', async () => {
+  mocked.mockResolvedValue({ ...DETALIU, organizator: null, antrenori: [] })
+  deseneaza()
+  await screen.findByRole('heading', { level: 1, name: 'DEMO — Atelier de ciclism' })
+  expect(screen.queryByRole('heading', { name: 'Organizată de' })).not.toBeInTheDocument()
 })
 
 test('fără alți antrenori, blocul lor nu apare', async () => {

@@ -2,26 +2,43 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Building2 } from 'lucide-react'
 
-import type { AntrenorTabara, OrganizatorTabara } from '@/api/camps'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
-const SECTION_KEY = 'motion-react:page:/tabere/:slug:section:organizator-si-antrenori'
+export type OrganizerCard = {
+  fel: 'club' | 'antrenor'
+  nume: string
+  link: string
+  pozaUrl?: string | null
+}
+
+export type CoachCard = {
+  id: string
+  nume: string
+  pozaUrl: string | null
+  link: string | null
+}
 
 const CARD = 'bg-card flex min-h-touch-target items-center gap-4 rounded-xl border p-4'
 
 const LINK_CARD = `${CARD} shadow-card hover:shadow-card-hover hover:border-foreground/20 transition-[box-shadow,border-color] duration-200 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring`
 
-export function CampOrganizerCoaches({
+export function OrganizerCoaches({
+  sectionKey,
   organizator,
   antrenori,
+  coachesTitle,
+  className = 'mt-8',
 }: {
-  organizator: OrganizatorTabara | null
-  antrenori: AntrenorTabara[]
+  sectionKey: string
+  organizator: OrganizerCard | null
+  antrenori: CoachCard[]
+  coachesTitle: (count: number) => string
+  className?: string
 }) {
   if (!organizator && antrenori.length === 0) return null
 
   return (
-    <div data-section={SECTION_KEY} className="mt-8 space-y-8">
+    <div data-section={sectionKey} className={`${className} space-y-8`}>
       {organizator && (
         <section>
           <h2 className="font-display mb-3 text-lg font-bold">Organizată de</h2>
@@ -31,7 +48,7 @@ export function CampOrganizerCoaches({
                 <Building2 aria-hidden="true" className="size-6" />
               </span>
             ) : (
-              <PersonAvatar name={organizator.nume} src={null} />
+              <PersonAvatar name={organizator.nume} src={organizator.pozaUrl ?? null} />
             )}
             <CardText
               title={organizator.nume}
@@ -47,9 +64,7 @@ export function CampOrganizerCoaches({
 
       {antrenori.length > 0 && (
         <section>
-          <h2 className="font-display mb-3 text-lg font-bold">
-            {antrenori.length === 1 ? 'Antrenorul care însoțește' : 'Antrenorii care însoțesc'}
-          </h2>
+          <h2 className="font-display mb-3 text-lg font-bold">{coachesTitle(antrenori.length)}</h2>
           <ul className="grid gap-3 sm:grid-cols-2">
             {antrenori.map((antrenor) => {
               const body = (
