@@ -14,6 +14,7 @@ const LIVE_ORIGINS = new Set([
   'https://motiontimisoara.com',
   'https://www.motiontimisoara.com',
   'https://motiontimisoara-demo.netlify.app',
+  'https://master--motiontimisoara.netlify.app',
 ])
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')

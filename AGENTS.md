@@ -89,6 +89,7 @@ Use `npm run typecheck`, not bare `tsc --noEmit`: the root TypeScript configurat
 - Review the final diff using the installed plugin's `skills/references/code-review-before-merge.md`; available review or current-session review suffices. Fix confirmed findings and rerun affected checks; no named bot is mandatory.
 - Before opening an implementation PR, run `npm run typecheck`, `npm run lint`, `npm test`, `npm run build` in order; stop on failure, fix and rerun. For documentation-only work, validate commands, references and the final diff proportionately; record actual checks and omissions.
 - A completed UI change includes browser evidence and applicable human acceptance. Native, schema, auth and payment changes also need their relevant contracts/integration evidence; fixtures do not prove live or native behavior.
+- Netlify publishes branch `production` to motiontimisoara.com and branch `master` to https://master--motiontimisoara.netlify.app (same product Supabase). PRs target `master`; verify there after merge. Publishing is a fast-forward of `production` to a verified `master` SHA, only after the owner approves that publish.
 - Merged code, a successful build and ACTIVE functions do not prove publication. Verify the relevant deployment, public assets/SHA and provider/device behavior before claiming release.
 - Final reports state what changed, checks/results and material unfinished work. Keep proposed, verified, accepted, merged and published states distinct.
 
