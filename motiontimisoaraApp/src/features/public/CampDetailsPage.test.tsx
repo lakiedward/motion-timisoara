@@ -19,7 +19,7 @@ vi.mock('@/api/camps', async () => {
   return { ...real, getTabaraDetaliu: vi.fn() }
 })
 
-let utilizator: { id: string } | null = { id: 'parinte-1' }
+let utilizator: { id: string; role: string } | null = { id: 'parinte-1', role: 'PARENT' }
 vi.mock('@/lib/auth-context', () => ({ useAuth: () => ({ user: utilizator }) }))
 
 const mocked = vi.mocked(getTabaraDetaliu)
@@ -70,7 +70,7 @@ function renderPage() {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  utilizator = { id: 'parinte-1' }
+  utilizator = { id: 'parinte-1', role: 'PARENT' }
   mocked.mockResolvedValue(detaliu() as never)
 })
 
@@ -157,9 +157,25 @@ test('necesarul taberei se afișează ca listă pentru părinte', async () => {
   expect(await screen.findByRole('heading', { name: 'Necesar pentru tabără' })).toBeInTheDocument()
   expect(screen.getByRole('heading', { name: 'Haine' })).toBeInTheDocument()
   expect(screen.getByRole('heading', { name: 'Ski' })).toBeInTheDocument()
-  expect(screen.getByText('Chiloți — 7')).toBeInTheDocument()
-  expect(screen.getByText('Schiuri — 1')).toBeInTheDocument()
-  expect(screen.getByText('Clăpari — 1')).toBeInTheDocument()
+  expect(screen.getAllByRole('listitem')[0].textContent).toBe('7\u00a0×\u00a0Chiloți')
+  expect(screen.getByText('Schiuri')).toBeInTheDocument()
+  expect(screen.getByText('Clăpari')).toBeInTheDocument()
+})
+test('categoria care repetă titlul necesarului nu se mai afișează a doua oară', async () => {
+  mocked.mockResolvedValue(
+    detaliu({
+      necesar: [
+        { name: 'Necesar pentru tabără', items: [{ name: 'Bicicletă', quantity: 1 }] },
+        { name: 'Haine', items: [{ name: 'Tricou', quantity: 3 }] },
+      ],
+    }) as never,
+  )
+  renderPage()
+  await screen.findByRole('heading', { level: 2, name: 'Necesar pentru tabără' })
+  expect(screen.getAllByRole('heading', { name: 'Necesar pentru tabără' })).toHaveLength(1)
+  expect(screen.getByRole('heading', { level: 3, name: 'Haine' })).toBeInTheDocument()
+  expect(screen.getByText('Bicicletă')).toBeInTheDocument()
+  expect(screen.getAllByRole('listitem')[1].textContent).toBe('3\u00a0×\u00a0Tricou')
 })
 test('regulamentul taberei apare ca text cu rânduri păstrate', async () => {
   mocked.mockResolvedValue(
@@ -191,6 +207,8 @@ test('fișierul regulamentului se deschide cu nume, tip și mărime', async () =
   renderPage()
   const link = await screen.findByRole('link', { name: /regulament.pdf/ })
   expect(link).toHaveAttribute('href', 'https://public/camp-rules/camp-1/uuid.pdf')
+  expect(link).toHaveTextContent('Deschide regulamentul')
+  expect(link).not.toHaveTextContent('regulament.pdf')
   expect(link).toHaveTextContent('PDF')
   expect(link).toHaveTextContent('2 KB')
   expect(screen.getByText('Fără telefoane.')).toBeInTheDocument()
@@ -209,6 +227,28 @@ test('doar fișierul arată totuși secțiunea Regulament', async () => {
   renderPage()
   expect(await screen.findByRole('heading', { name: 'Regulament' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: /regulament.docx/ })).toHaveTextContent('Word')
+})
+test('un regulament lung se arată scurtat și se poate desfășura', async () => {
+  const user = userEvent.setup()
+  const reguli = Array.from({ length: 12 }, (_, i) => `${i + 1}. Regula ${i + 1}.`).join('\n')
+  mocked.mockResolvedValue(detaliu({ tabara: { rules: reguli } }) as never)
+  renderPage()
+  const sectiune = (await screen.findByRole('heading', { name: 'Regulament' })).closest('section')
+  expect(sectiune?.querySelector('p')).toHaveClass('line-clamp-8')
+  const buton = screen.getByRole('button', { name: 'Arată tot regulamentul' })
+  expect(buton).toHaveAttribute('aria-expanded', 'false')
+  await user.click(buton)
+  expect(sectiune?.querySelector('p')).not.toHaveClass('line-clamp-8')
+  expect(screen.getByRole('button', { name: 'Arată mai puțin' })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  )
+})
+test('un regulament scurt nu are buton de desfășurare', async () => {
+  mocked.mockResolvedValue(detaliu({ tabara: { rules: 'Fără telefoane.' } }) as never)
+  renderPage()
+  await screen.findByRole('heading', { name: 'Regulament' })
+  expect(screen.queryByRole('button', { name: 'Arată tot regulamentul' })).not.toBeInTheDocument()
 })
 test('o tabără fără necesar nu arată o secțiune goală', async () => {
   renderPage()
