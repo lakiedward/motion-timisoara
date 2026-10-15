@@ -3,12 +3,9 @@ import { Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface StarRatingProps {
-  /** 0..5, supports decimals for display. */
   value: number
-  /** When provided, the control is interactive (whole-star selection). */
   onChange?: (value: number) => void
   readOnly?: boolean
-  /** Star size in px. */
   size?: number
   className?: string
 }
@@ -62,7 +59,7 @@ export function StarRating({
           aria-label={`${i} stele`}
           aria-checked={i === active}
           onClick={() => onChange?.(i)}
-          className="text-muted-foreground/35 hover:text-highlight cursor-pointer transition-colors"
+          className="text-muted-foreground/35 hover:text-highlight focus-visible:outline-ring grid size-11 cursor-pointer place-items-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <Star
             style={{ width: size, height: size }}
