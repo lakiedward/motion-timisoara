@@ -59,20 +59,36 @@ export type CourseCatalogItem = CourseListItem & {
   spotsRemaining: number | null
 }
 
-export async function getCourseCatalog(): Promise<CourseCatalogItem[]> {
-  const { data, error } = await supabase
-    .from('courses')
-    .select(
-      '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), club:clubs(id,name), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order)',
-    )
-    .eq('active', true)
-    .order('name')
-  if (error) throw error
-  const rows = (data ?? []) as unknown as Omit<CourseCatalogItem, 'spotsRemaining'>[]
+const COURSE_CATALOG_SELECT =
+  '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), club:clubs(id,name), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order)'
+
+async function withSpotsRemaining(data: unknown): Promise<CourseCatalogItem[]> {
+  const rows = (data ?? []) as Omit<CourseCatalogItem, 'spotsRemaining'>[]
   const spots = await Promise.all(
     rows.map((course) => (course.capacity == null ? null : getCourseSpotsRemaining(course.id))),
   )
   return rows.map((course, index) => ({ ...course, spotsRemaining: spots[index] ?? null }))
+}
+
+export async function getCourseCatalog(): Promise<CourseCatalogItem[]> {
+  const { data, error } = await supabase
+    .from('courses')
+    .select(COURSE_CATALOG_SELECT)
+    .eq('active', true)
+    .order('name')
+  if (error) throw error
+  return withSpotsRemaining(data)
+}
+
+export async function getCoachCourses(coachId: string): Promise<CourseCatalogItem[]> {
+  const { data, error } = await supabase
+    .from('courses')
+    .select(COURSE_CATALOG_SELECT)
+    .eq('active', true)
+    .eq('coach_id', coachId)
+    .order('name')
+  if (error) throw error
+  return withSpotsRemaining(data)
 }
 
 /** Remaining seats for a public course (SECURITY DEFINER RPC). Null = unlimited / unknown. */
@@ -374,6 +390,8 @@ export type PersoanaActivitate = {
   pozaUrl: string | null
 }
 
+export type OrganizatorActivitate = PersoanaActivitate & { fel: 'club' | 'antrenor' }
+
 export type ActivitateDetaliu = {
   id: string
   name: string
@@ -388,7 +406,7 @@ export type ActivitateDetaliu = {
   photoUrl: string | null
   sport: { code: string; name: string } | null
   location: { name: string; address: string | null; lat: number | null; lng: number | null } | null
-  organizator: PersoanaActivitate | null
+  organizator: OrganizatorActivitate | null
   antrenori: PersoanaActivitate[]
   galerieUrls: string[]
   locuriRamase: number | null
@@ -470,14 +488,15 @@ export async function getActivitateDetaliu(id: string): Promise<ActivitateDetali
   if (eLocuri) throw eLocuri
 
   const antrenor = rand.coach ? persoanaAntrenor(rand.coach, calePoza) : null
-  const organizator: PersoanaActivitate | null = rand.club
+  const organizator: OrganizatorActivitate | null = rand.club
     ? {
+        fel: 'club',
         id: rand.club.id,
         nume: rand.club.name,
         link: `/cluburi/${rand.club.id}`,
         pozaUrl: publicUrl('club-assets', rand.club.logo_storage_path),
       }
-    : antrenor
+    : antrenor && { fel: 'antrenor', ...antrenor }
   const poza = activityHeroUrl(rand)
   const bandUrl = publicUrl('activity-photos', rand.hero_photo_storage_path)
 

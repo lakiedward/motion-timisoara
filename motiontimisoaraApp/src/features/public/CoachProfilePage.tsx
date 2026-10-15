@@ -2,12 +2,12 @@ import { useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { getCoachByUserId, getCourses, publicUrl } from '@/api/public'
+import { getCoachByUserId, publicUrl } from '@/api/public'
 import { getCoachRatingSummary, getMyCoachRating, submitCoachRating } from '@/api/ratings'
 import { useAuth } from '@/lib/auth-context'
 import { StatusView } from '@/components/ui/status-view'
 import { StarRating } from '@/components/StarRating'
-import { CourseCard } from './components/CourseCard'
+import { CoachCourses } from './coaches/CoachCourses'
 import { CoachBackLink, CoachHero, CoachHeroSkeleton } from './coaches/CoachHero'
 
 export default function CoachProfilePage() {
@@ -24,8 +24,6 @@ export default function CoachProfilePage() {
     queryFn: () => getCoachByUserId(id),
     retry: false,
   })
-  const { data: allCourses = [] } = useQuery({ queryKey: ['courses', 'all'], queryFn: () => getCourses() })
-  const courses = allCourses.filter((c) => c.coach?.id === id)
   const { data: rating } = useQuery({
     queryKey: ['coach-rating', id],
     queryFn: () => getCoachRatingSummary(id),
@@ -97,16 +95,7 @@ export default function CoachProfilePage() {
         }
       />
 
-      {courses.length > 0 && (
-        <div className="mt-10">
-          <h2 className="font-display mb-5 text-2xl font-bold">Cursuri predate</h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            {courses.map((c) => (
-              <CourseCard key={c.id} course={c} />
-            ))}
-          </div>
-        </div>
-      )}
+      <CoachCourses coachId={id} />
     </div>
   )
 }

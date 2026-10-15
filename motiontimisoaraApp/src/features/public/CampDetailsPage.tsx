@@ -15,7 +15,7 @@ import CampLocation from '@/components/camps/CampLocation'
 import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
 import CampRequirementsDisplay from '@/components/camps/CampRequirementsDisplay'
 import { PublicHeroBand } from './PublicHeroBand'
-import { CampOrganizerCoaches } from './camp-detail/CampOrganizerCoaches'
+import { OrganizerCoaches } from './components/OrganizerCoaches'
 
 export default function CampDetailsPage() {
   const { slug = '' } = useParams()
@@ -135,7 +135,12 @@ export default function CampDetailsPage() {
           </div>
         )}
 
-        <CampOrganizerCoaches organizator={organizator} antrenori={antrenori} />
+        <OrganizerCoaches
+          sectionKey="motion-react:page:/tabere/:slug:section:organizator-si-antrenori"
+          organizator={organizator}
+          antrenori={antrenori}
+          coachesTitle={(n) => (n === 1 ? 'Antrenorul care însoțește' : 'Antrenorii care însoțesc')}
+        />
 
         <CampPricingCard data={data} ended={incheiata} full={plina} onEnroll={onEnroll} />
       </div>
