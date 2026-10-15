@@ -1,4 +1,5 @@
 import { descriereActivitatePreview, pozeActivitatePreview } from '@/api/preview-activity'
+import { isUuid } from '@/api/notifications/types'
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 
@@ -142,15 +143,16 @@ export async function getCoaches(): Promise<CoachListItem[]> {
 }
 
 export async function getCoachByUserId(userId: string): Promise<CoachListItem | null> {
+  if (!isUuid(userId)) return null
   const { data, error } = await supabase
     .from('coach_profiles')
     .select(
       'id, user_id, bio, avatar_url, photo_storage_path, profile:profiles(id,name,avatar_url), coach_sports(sport:sports(id,code,name))',
     )
     .eq('user_id', userId)
-    .single()
-  if (error) return null
-  return data as unknown as CoachListItem
+    .maybeSingle()
+  if (error) throw error
+  return data as unknown as CoachListItem | null
 }
 
 export type ClubListItem = Tables<'clubs'> & {
