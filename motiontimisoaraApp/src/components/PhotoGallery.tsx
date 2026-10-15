@@ -1,204 +1,181 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+  type TouchEvent,
+} from 'react'
+import * as Dialog from '@radix-ui/react-dialog'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
-/**
- * Câte miniaturi se arată până la „vezi toate".
- *
- * Opt fiindcă umple exact două rânduri pe ecran lat, unde grila are patru
- * coloane. Sub prag butonul nu apare deloc: o galerie de opt poze arată azi
- * la fel ca înainte.
- */
-const LIMITA = 8
+const PHONE_LIMIT = 6
+const WIDE_LIMIT = 8
+const SWIPE_THRESHOLD = 50
 
-/**
- * O galerie de poze publice, cu vizualizare mărită.
- *
- * Deliberat separată de `AnnouncementMedia`: acolo pozele sunt private, vin cu
- * linkuri semnate, stau lângă o filmare cu termen și un buton de descărcare.
- * Aici sunt poze publice de prezentare. Formele diferă prea mult ca să merite
- * o singură componentă cu opțiuni.
- */
+const roundButton = 'size-touch-target rounded-full'
+
 export default function PhotoGallery({ urls, alt }: { urls: string[]; alt: string }) {
-  const [deschisa, setDeschisa] = useState<number | null>(null)
-  const [toate, setToate] = useState(false)
-  const dialogRef = useRef<HTMLDivElement>(null)
-  const inchideRef = useRef<HTMLButtonElement>(null)
-  /** De unde s-a deschis, ca focusul să se întoarcă acolo la închidere. */
-  const dinRef = useRef<HTMLElement | null>(null)
+  const [openIndex, setOpenIndex] = useState<number | null>(null)
+  const [expanded, setExpanded] = useState(false)
+  const [failed, setFailed] = useState<ReadonlySet<string>>(() => new Set())
+  const touchStartX = useRef<number | null>(null)
+  const openerRef = useRef<HTMLElement | null>(null)
 
-  const inchide = useCallback(() => {
-    setDeschisa(null)
-    dinRef.current?.focus()
-    dinRef.current = null
-  }, [])
+  const index = openIndex !== null && openIndex < urls.length ? openIndex : null
+  const openUrl = index !== null ? urls[index] : null
 
-  const deschide = (i: number) => {
-    dinRef.current = document.activeElement as HTMLElement | null
-    setDeschisa(i)
-  }
-
-  /** Un pas înainte sau înapoi, cu ocolul listei la capete. */
-  const muta = useCallback(
-    (pas: number) => {
-      setDeschisa((i) => (i === null ? null : (i + pas + urls.length) % urls.length))
+  const step = useCallback(
+    (delta: number) => {
+      setOpenIndex((i) => (i === null ? null : (i + delta + urls.length) % urls.length))
     },
     [urls.length],
   )
 
-  // Dacă lista se scurtează cât timp o poză e deschisă, indicele poate rămâne în
-  // afara ei. Se rezolvă la randare, nu dintr-un efect care schimbă starea:
-  // `urls[deschisa]` ar fi undefined, iar `<img src={undefined}>` cere pagina
-  // curentă de la server.
-  const indice = deschisa !== null && deschisa < urls.length ? deschisa : null
-  const pozaDeschisa = indice !== null ? urls[indice] : null
-
-  // Focusul intră în dialog o singură dată, LA DESCHIDERE. Legat de `indice`, ar
-  // fi rulat la fiecare pas prin galerie și ar fi smuls focusul de pe săgeata
-  // tocmai apăsată — adică exact butonul pe care omul voia să-l apese din nou.
-  const eraDeschis = useRef(false)
-  useEffect(() => {
-    const deschisAcum = indice !== null
-    // Fără asta, dialogul era modal doar cu numele: Tab plimba focusul pe
-    // butoanele paginii de dedesubt, invizibile sub fundalul negru, iar cine
-    // navighează din tastatură rămânea rătăcit.
-    if (deschisAcum && !eraDeschis.current) inchideRef.current?.focus()
-    eraDeschis.current = deschisAcum
-  }, [indice])
-
-  useEffect(() => {
-    if (indice === null) return
-
-    const laTasta = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        inchide()
-        return
-      }
-      if (e.key === 'ArrowRight') {
-        muta(1)
-        return
-      }
-      if (e.key === 'ArrowLeft') {
-        muta(-1)
-        return
-      }
-      if (e.key === 'Tab') {
-        // Capcana se plimbă acum printre butoanele chiar existente: cu o
-        // singură poză sunt una, cu mai multe sunt trei. O listă fixă ar fi
-        // sărit peste săgeți sau ar fi trimis focusul într-un buton absent.
-        const butoane = [...(dialogRef.current?.querySelectorAll<HTMLElement>('button') ?? [])]
-        if (!butoane.length) return
-        e.preventDefault()
-        const pas = e.shiftKey ? -1 : 1
-        const acum = butoane.indexOf(document.activeElement as HTMLElement)
-        const urmator =
-          acum === -1 ? (pas === 1 ? 0 : butoane.length - 1) : (acum + pas + butoane.length) % butoane.length
-        butoane[urmator]?.focus()
-      }
-    }
-    document.addEventListener('keydown', laTasta)
-    return () => document.removeEventListener('keydown', laTasta)
-  }, [indice, inchide, muta])
-
   if (!urls.length) return null
 
-  // Indicii rămân cei din lista întreagă, fiindcă `slice` păstrează ordinea de
-  // la zero. Așa lightbox-ul umblă prin TOATE pozele, chiar și prin cele
-  // deocamdată neafișate — deschizi a opta, mergi cu săgeata, le vezi și pe
-  // celelalte fără să mai desfaci grila.
-  const vizibile = toate ? urls : urls.slice(0, LIMITA)
+  const visible = expanded ? urls : urls.slice(0, WIDE_LIMIT)
+  const hasMore = urls.length > PHONE_LIMIT
+  const moreOnlyOnPhone = urls.length <= WIDE_LIMIT
+
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (urls.length < 2) return
+    if (e.key === 'ArrowRight') step(1)
+    if (e.key === 'ArrowLeft') step(-1)
+  }
+
+  const onBackdropClick = (e: MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) setOpenIndex(null)
+  }
+
+  const onTouchStart = (e: TouchEvent) => {
+    touchStartX.current = e.touches[0]?.clientX ?? null
+  }
+
+  const onTouchEnd = (e: TouchEvent) => {
+    const start = touchStartX.current
+    touchStartX.current = null
+    const end = e.changedTouches[0]?.clientX
+    if (start === null || end === undefined || urls.length < 2) return
+    const dx = end - start
+    if (Math.abs(dx) < SWIPE_THRESHOLD) return
+    step(dx < 0 ? 1 : -1)
+  }
 
   return (
     <>
       <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-        {vizibile.map((u, i) => (
-          <li key={u}>
+        {visible.map((u, i) => (
+          <li key={u} className={cn(!expanded && i >= PHONE_LIMIT && 'max-sm:hidden')}>
             <button
               type="button"
-              className="block w-full overflow-hidden rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-              onClick={() => deschide(i)}
+              className="bg-muted block aspect-square w-full overflow-hidden rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              onClick={(e) => {
+                openerRef.current = e.currentTarget
+                setOpenIndex(i)
+              }}
               aria-label={`Deschide poza ${i + 1} din ${urls.length}`}
             >
-              <img
-                src={u}
-                alt=""
-                loading="lazy"
-                className="aspect-square w-full object-cover transition-transform hover:scale-105"
-              />
+              {!failed.has(u) && (
+                <img
+                  src={u}
+                  alt=""
+                  loading="lazy"
+                  onError={() => setFailed((prev) => new Set(prev).add(u))}
+                  className="size-full object-cover transition-transform hover:scale-105"
+                />
+              )}
             </button>
           </li>
         ))}
       </ul>
 
-      {urls.length > LIMITA && (
+      {hasMore && (
         <Button
           type="button"
           variant="outline"
-          className="mt-3 h-11 min-h-11"
-          onClick={() => setToate((d) => !d)}
-          aria-expanded={toate}
+          className={cn('mt-3 h-11 min-h-11', moreOnlyOnPhone && 'sm:hidden')}
+          onClick={() => setExpanded((d) => !d)}
+          aria-expanded={expanded}
         >
-          {toate ? 'Vezi mai puține' : `Vezi toate cele ${urls.length} poze`}
+          {expanded ? 'Vezi mai puține' : `Vezi toate cele ${urls.length} poze`}
         </Button>
       )}
 
-      {pozaDeschisa && (
-        <div
-          ref={dialogRef}
-          role="dialog"
-          aria-modal="true"
-          aria-label={`${alt} — poza ${(indice ?? 0) + 1} din ${urls.length}`}
-          className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/85 p-4"
-          onClick={inchide}
-        >
-          <img
-            src={pozaDeschisa}
-            alt=""
-            className="max-h-full max-w-full rounded-lg object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
-          <button
-            ref={inchideRef}
-            type="button"
-            className="absolute top-4 right-4 flex size-11 items-center justify-center rounded-full bg-white/90 text-black"
-            onClick={inchide}
-            aria-label="Închide poza"
+      <Dialog.Root open={openUrl !== null} onOpenChange={(open) => !open && setOpenIndex(null)}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-(--overlay-scrim)" />
+          <Dialog.Content
+            aria-describedby={undefined}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 outline-none"
+            onClick={onBackdropClick}
+            onKeyDown={onKeyDown}
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
+            onCloseAutoFocus={(e) => {
+              e.preventDefault()
+              openerRef.current?.focus()
+              openerRef.current = null
+            }}
           >
-            <X className="size-5" />
-          </button>
+            <Dialog.Title className="sr-only">
+              {`${alt} — poza ${(index ?? 0) + 1} din ${urls.length}`}
+            </Dialog.Title>
+            {openUrl && (
+              <img
+                src={openUrl}
+                alt=""
+                className="max-h-full max-w-full rounded-2xl object-contain"
+              />
+            )}
+            <Dialog.Close asChild>
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon"
+                className={cn(roundButton, 'absolute top-4 right-4')}
+                aria-label="Închide poza"
+              >
+                <X className="size-5" aria-hidden="true" />
+              </Button>
+            </Dialog.Close>
 
-          {/* Cu o singură poză n-ai unde să te duci, deci săgețile lipsesc cu
-              totul — nu stau acolo dezactivate. `stopPropagation` fiindcă
-              fundalul de dedesubt închide dialogul la clic. */}
-          {urls.length > 1 && (
-            <>
-              <button
-                type="button"
-                className="absolute top-1/2 left-4 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-black"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  muta(-1)
-                }}
-                aria-label="Poza anterioară"
-              >
-                <ChevronLeft className="size-5" />
-              </button>
-              <button
-                type="button"
-                className="absolute top-1/2 right-4 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-black"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  muta(1)
-                }}
-                aria-label="Poza următoare"
-              >
-                <ChevronRight className="size-5" />
-              </button>
-            </>
-          )}
-        </div>
-      )}
+            {urls.length > 1 && (
+              <>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="icon"
+                  className={cn(roundButton, 'absolute top-1/2 left-4 -translate-y-1/2')}
+                  onClick={() => step(-1)}
+                  aria-label="Poza anterioară"
+                >
+                  <ChevronLeft className="size-5" aria-hidden="true" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="icon"
+                  className={cn(roundButton, 'absolute top-1/2 right-4 -translate-y-1/2')}
+                  onClick={() => step(1)}
+                  aria-label="Poza următoare"
+                >
+                  <ChevronRight className="size-5" aria-hidden="true" />
+                </Button>
+                <p
+                  aria-hidden="true"
+                  className="bg-secondary text-secondary-foreground absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 text-sm font-medium tabular-nums"
+                >
+                  {(index ?? 0) + 1} / {urls.length}
+                </p>
+              </>
+            )}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </>
   )
 }
