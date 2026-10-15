@@ -91,9 +91,9 @@ From the repository root, after `npm ci`, start the app preview and run `node sc
 
 Netlify builds two branches of site `motiontimisoara`: `master` as the branch deploy https://master--motiontimisoara.netlify.app and `production` as motiontimisoara.com. Both use the product Supabase, so data written on the branch deploy is real. Branch deploys and deploy previews are not metered; each production deploy costs credits, so several merged changes go out together.
 
-1. Merge the PR into `master` after CI is green, then verify the change on the `master` branch deploy at the merged SHA.
+1. Merge the PR into `master` after CI is green, then verify the change on the `master` branch deploy at the merged SHA. Team Tracker delivery evidence, AI test plans, "Marchează livrat" and Fixed/Gata are recorded there on that SHA; they do not wait for a publish.
 2. When the owner approves a publish, fast-forward `production` to a verified `master` SHA: `git fetch origin master production`, `git merge-base --is-ancestor origin/production <sha>`, then `git push origin <sha>:refs/heads/production`. Never commit directly to `production` or force-push it.
-3. Confirm the Netlify production deploy for that SHA is live, then verify on motiontimisoara.com. Ship evidence and tracker shipped states use the published SHA.
+3. Confirm the Netlify production deploy for that SHA is live, then verify on motiontimisoara.com.
 
 Stripe Connect return URLs accept motiontimisoara.com and deploy previews; on the `master` branch deploy they fall back to `FRONTEND_URL`.
 

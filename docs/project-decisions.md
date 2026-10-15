@@ -207,3 +207,6 @@ reorganizing this document; correct obsolete facts with current evidence.
 - 2026-10-15 — Netlify production follows branch `production`; `master` becomes a free
   branch deploy and is published by fast-forwarding `production` on the owner's approval —
   every production deploy costs 15 credits and per-merge publishing ran out the monthly quota.
+- 2026-10-15 — Team Tracker delivery (evidence, test plan, shipped, Fixed/Gata) is recorded on
+  the `master` branch deploy at the merged SHA, not after publishing to motiontimisoara.com —
+  owner's rule, so tracker work is not held back by grouped publishes.
