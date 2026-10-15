@@ -85,7 +85,17 @@ Reuse ready saved passwords for already-authorized login without asking the owne
 
 These are existing product accounts chosen by the owner (the CLUB one is also a DPAPI audit account above). Each account has its own email and password, kept only in the session environment: `MT_TEST_<ROLE>_EMAIL` and `MT_TEST_<ROLE>_PASSWORD` for each of ADMIN, CLUB, COACH and PARENT, set in the project's cloud environment variables or in the PC's ignored `.env.local`. The table lists the fallback emails used when `MT_TEST_<ROLE>_EMAIL` is absent. The app also needs `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, and the cloud network policy must allow the product Supabase host.
 
-From the repository root, after `npm ci`, start the app preview and run `node scripts/qa-login.mjs <admin|club|coach|parent>`. It fills the visible login form, waits for the role destination and saves the signed-in browser state to the ignored `.qa-auth/<role>.json`, which Playwright loads with `storageState`. `--check` reports which variables are present without printing values. The default origin is `http://127.0.0.1:3017`; live origins need `--allow-live` and only accept motiontimisoara.com and the demo site. `--provision` only signs the accounts up as PARENT; confirming them, raising roles and creating fixtures is a production write that needs its own approval. The same read-mostly rules apply: never sign out the shared accounts from the app, and do not use them for payments or messages.
+From the repository root, after `npm ci`, start the app preview and run `node scripts/qa-login.mjs <admin|club|coach|parent>`. It fills the visible login form, waits for the role destination and saves the signed-in browser state to the ignored `.qa-auth/<role>.json`, which Playwright loads with `storageState`. `--check` reports which variables are present without printing values. The default origin is `http://127.0.0.1:3017`; live origins need `--allow-live` and only accept motiontimisoara.com, the `master` branch deploy and the demo site. `--provision` only signs the accounts up as PARENT; confirming them, raising roles and creating fixtures is a production write that needs its own approval. The same read-mostly rules apply: never sign out the shared accounts from the app, and do not use them for payments or messages.
+
+## Publishing to production
+
+Netlify builds two branches of site `motiontimisoara`: `master` as the branch deploy https://master--motiontimisoara.netlify.app and `production` as motiontimisoara.com. Both use the product Supabase, so data written on the branch deploy is real. Branch deploys and deploy previews are not metered; each production deploy costs credits, so several merged changes go out together.
+
+1. Merge the PR into `master` after CI is green, then verify the change on the `master` branch deploy at the merged SHA.
+2. When the owner approves a publish, fast-forward `production` to a verified `master` SHA: `git fetch origin master production`, `git merge-base --is-ancestor origin/production <sha>`, then `git push origin <sha>:refs/heads/production`. Never commit directly to `production` or force-push it.
+3. Confirm the Netlify production deploy for that SHA is live, then verify on motiontimisoara.com. Ship evidence and tracker shipped states use the published SHA.
+
+Stripe Connect return URLs accept motiontimisoara.com and deploy previews; on the `master` branch deploy they fall back to `FRONTEND_URL`.
 
 ## Browser troubleshooting
 
