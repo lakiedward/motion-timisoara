@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 
@@ -9,14 +10,21 @@ export function PublicHeroBand({
   backTo,
   backLabel,
   width = 'max-w-6xl',
+  media,
+  children,
 }: {
   url: string | null
   title: string
   backTo: string
   backLabel: string
-  width?: 'max-w-4xl' | 'max-w-6xl'
+  width?: 'max-w-4xl' | 'max-w-5xl' | 'max-w-6xl'
+  media?: ReactNode
+  children?: ReactNode
 }) {
   if (!url) return null
+  const heading = (
+    <h1 className="font-display text-4xl font-extrabold text-white md:text-5xl">{title}</h1>
+  )
   return (
     <section className="relative h-[46vh] min-h-[320px] overflow-hidden md:h-[52vh]">
       <img src={url} alt="" className="absolute inset-0 size-full object-cover" />
@@ -35,7 +43,17 @@ export function PublicHeroBand({
       </Link>
       <div className="absolute inset-x-0 bottom-0">
         <div className={cn('mx-auto px-6 pb-7', width)}>
-          <h1 className="font-display text-4xl font-extrabold text-white md:text-5xl">{title}</h1>
+          {media || children ? (
+            <div className="flex min-w-0 items-end gap-4">
+              {media}
+              <div className="min-w-0">
+                {heading}
+                {children}
+              </div>
+            </div>
+          ) : (
+            heading
+          )}
         </div>
       </div>
     </section>

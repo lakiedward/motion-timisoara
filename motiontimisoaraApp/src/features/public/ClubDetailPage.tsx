@@ -1,17 +1,20 @@
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Globe, Mail, MapPin, Phone } from 'lucide-react'
+import { Globe, Mail, MapPin, Phone } from 'lucide-react'
 
-import { getPublicClub, publicUrl } from '@/api/public'
+import { getPublicClub } from '@/api/public'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ClubHero } from './club-detail/ClubHero'
 import ClubLocationMap from './map/ClubLocationMap'
 
 export default function ClubDetailPage() {
   const { id = '' } = useParams()
-  const { data: club, isLoading } = useQuery({
+  const { data: club, isLoading, isError, refetch } = useQuery({
     queryKey: ['club', id],
     queryFn: () => getPublicClub(id),
+    retry: false,
   })
 
   if (isLoading) {
@@ -21,52 +24,34 @@ export default function ClubDetailPage() {
       </div>
     )
   }
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-5xl px-6 py-20 text-center" role="alert">
+        <p className="text-foreground font-medium">Nu am putut încărca clubul.</p>
+        <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetch()}>
+          Reîncearcă
+        </Button>
+      </div>
+    )
+  }
   if (!club) {
     return (
       <div className="mx-auto max-w-5xl px-6 py-20 text-center">
         <p className="text-muted-foreground">Clubul nu a fost găsit.</p>
-        <Link to="/cluburi" className="text-primary mt-4 inline-block font-semibold">
+        <Link
+          to="/cluburi"
+          className="text-primary mt-4 inline-flex h-11 items-center font-semibold"
+        >
           ← Înapoi la cluburi
         </Link>
       </div>
     )
   }
 
-  const logo = publicUrl('club-assets', club.logo_storage_path)
-  const cover = publicUrl('club-assets', club.hero_photo_storage_path)
-
   return (
     <div>
-      <div className="from-primary to-sky relative h-48 bg-gradient-to-br md:h-60">
-        {cover && <img src={cover} alt="" className="size-full object-cover opacity-60" />}
-      </div>
+      <ClubHero club={club} />
       <div className="mx-auto max-w-5xl px-6">
-        <Link
-          to="/cluburi"
-          className="text-muted-foreground hover:text-foreground mt-4 inline-flex items-center gap-1 text-sm"
-        >
-          <ArrowLeft className="size-4" /> Înapoi la cluburi
-        </Link>
-        <div className="-mt-16 flex flex-col items-start gap-4 sm:flex-row sm:items-end">
-          <div className="bg-card size-28 shrink-0 overflow-hidden rounded-3xl border-4 border-background shadow-md">
-            {logo ? (
-              <img src={logo} alt={club.name} className="size-full object-cover" />
-            ) : (
-              <div className="bg-primary/10 text-primary grid size-full place-items-center text-3xl font-bold">
-                {club.name.charAt(0)}
-              </div>
-            )}
-          </div>
-          <div className="pb-2">
-            <h1 className="font-display text-3xl font-extrabold text-foreground">{club.name}</h1>
-            {club.city && (
-              <div className="text-muted-foreground flex items-center gap-1 text-sm">
-                <MapPin className="size-4" /> {club.city}
-              </div>
-            )}
-          </div>
-        </div>
-
         <div className="mt-8 grid gap-8 pb-16 lg:grid-cols-[1.6fr_1fr]">
           <div>
             {club.description && (

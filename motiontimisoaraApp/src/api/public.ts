@@ -215,9 +215,12 @@ export async function getPublicClub(id: string): Promise<ClubListItem | null> {
       'id, owner_user_id, name, description, logo_storage_path, hero_photo_storage_path, website, phone, public_email, address, city, county, lat, lng, created_at, club_sports(sport:sports(id,code,name))',
     )
     .eq('id', id)
-    .single()
-  if (error) return null
-  return data as unknown as ClubListItem
+    .maybeSingle()
+  if (error) {
+    if (error.code === '22P02') return null
+    throw error
+  }
+  return data as unknown as ClubListItem | null
 }
 
 export async function getLocations(): Promise<LocationRow[]> {
