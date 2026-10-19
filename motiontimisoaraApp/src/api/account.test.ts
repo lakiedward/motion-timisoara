@@ -16,7 +16,7 @@ vi.mock('@/lib/supabase', () => ({
       const current = name
       const api: Record<string, unknown> = {}
       const chain = () => api
-      for (const method of ['select', 'order', 'in', 'eq']) api[method] = chain
+      for (const method of ['select', 'order', 'in', 'eq', 'gte']) api[method] = chain
       api.or = (filter: string) => {
         filters.push(filter)
         return api
@@ -54,7 +54,7 @@ test('an empty enrollment list does not look up offer titles', async () => {
   expect(filters).toEqual(['adult_profile_id.eq.parent-1,child_id.in.(child-1)'])
 })
 
-test('camp, course and activity titles lead from the matching offer', async () => {
+test('camp, course and activity titles and links come from the matching offer', async () => {
   responses.set('enrollments', {
     data: [
       enrollment('CAMP', 'camp-1', 'e-camp'),
@@ -65,10 +65,17 @@ test('camp, course and activity titles lead from the matching offer', async () =
     error: null,
   })
   responses.set('camps', {
-    data: [{ id: 'camp-1', title: '  Tabără audit 152  ' }],
+    data: [{ id: 'camp-1', title: '  Tabără audit 152  ', slug: 'tabara-audit-152' }],
     error: null,
   })
   responses.set('courses', { data: [{ id: 'course-1', name: 'Curs de înot' }], error: null })
+  responses.set('course_occurrences', {
+    data: [
+      { course_id: 'course-1', starts_at: '2026-10-22T14:00:00Z' },
+      { course_id: 'course-1', starts_at: '2026-10-29T14:00:00Z' },
+    ],
+    error: null,
+  })
   responses.set('activities', {
     data: [{ id: 'activity-1', name: 'Activitate de ciclism' }],
     error: null,
@@ -80,7 +87,21 @@ test('camp, course and activity titles lead from the matching offer', async () =
     'Activitate de ciclism',
     null,
   ])
-  expect(tables).toEqual(['children', 'enrollments', 'camps', 'courses', 'activities'])
+  expect(rows.map((row) => row.offerPath)).toEqual([
+    '/tabere/tabara-audit-152',
+    '/cursuri/course-1',
+    '/activitati/activity-1',
+    null,
+  ])
+  expect(rows[1]?.offer?.schedule).toEqual({ type: 'session', startsAt: '2026-10-22T14:00:00Z' })
+  expect(tables).toEqual([
+    'children',
+    'enrollments',
+    'camps',
+    'courses',
+    'course_occurrences',
+    'activities',
+  ])
 })
 
 test('a participant without children only requests their own adult enrollments', async () => {

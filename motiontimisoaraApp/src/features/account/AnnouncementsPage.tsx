@@ -8,7 +8,7 @@ import {
   type FeedPage,
 } from '@/api/announcements/parent'
 import { useAuth } from '@/lib/auth-context'
-import { ActiveLocationAnnouncements } from '@/features/live-location/camps/ActiveLocationAnnouncements'
+import { LiveLocationBanner } from '@/features/live-location/parent/LiveLocationBanner'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -230,7 +230,9 @@ export default function AnnouncementsPage() {
   return (
     <div className="max-w-3xl">
       <h1 className="font-display mb-6 text-2xl font-bold">Anunțuri</h1>
-      <ActiveLocationAnnouncements />
+      <div className="mb-6">
+        <LiveLocationBanner always />
+      </div>
       {user && <AnnouncementVisit key={user.id} userId={user.id} />}
     </div>
   )
