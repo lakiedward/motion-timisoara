@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query'
 import {
   getParentAnnouncementCourses,
@@ -10,10 +10,13 @@ import {
 import { useAuth } from '@/lib/auth-context'
 import { LiveLocationBanner } from '@/features/live-location/parent/LiveLocationBanner'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
-import { AnnouncementRows } from './announcements/AnnouncementRows'
+import { plural } from '@/lib/plural'
+import { AnnouncementFeed, type FeedLayout } from './announcements/AnnouncementFeed'
+import { CoursePills, CourseSelect } from './announcements/CourseFilter'
+
+const LAYOUT: FeedLayout = 'months'
 
 function FeedSkeleton() {
   return <StatusView state="loading" title="Se încarcă anunțurile" rows={2} rowHeight={140} />
@@ -30,21 +33,21 @@ function FeedError({ onRetry }: { onRetry: () => void }) {
   )
 }
 
+type CourseFilterState = { courseId: string; revision: number }
+
 function ParentAnnouncementList({
   initialPage,
   userId,
   visitId,
+  filter,
+  changeCourse,
 }: {
   initialPage: FeedPage
   userId: string
   visitId: string
+  filter: CourseFilterState
+  changeCourse: (courseId: string) => void
 }) {
-  const [filter, setFilter] = useState({ courseId: '', revision: 0 })
-  const courses = useQuery({
-    queryKey: ['parent-announcement-courses', userId],
-    queryFn: getParentAnnouncementCourses,
-    retry: false,
-  })
   const feed = useInfiniteQuery({
     queryKey: ['parent-announcement-feed', userId, visitId, filter.courseId, filter.revision],
     initialPageParam: null as AnnouncementCursor | null,
@@ -71,55 +74,13 @@ function ParentAnnouncementList({
     saveVisit(initialPage.asOf)
   }, [initialPage.asOf, saveVisit])
 
-  const changeCourse = (courseId: string) =>
-    setFilter((previous) => ({
-      courseId,
-      revision: previous.revision + 1,
-    }))
   const pages = feed.data?.pages ?? []
-  const count = pages.reduce((total, page) => total + page.items.length, 0)
+  const items = pages.flatMap((page) => page.items)
+  const count = items.length
   const feedChanged = feed.error != null && 'code' in feed.error && feed.error.code === 'PT409'
 
   return (
     <div className="space-y-4">
-      {courses.isPending ? (
-        <Skeleton
-          className="h-11 w-full max-w-sm rounded-md"
-          aria-label="Se încarcă lista cursurilor"
-        />
-      ) : courses.isError ? (
-        <div role="alert" className="bg-card rounded-xl border p-4">
-          <p className="text-sm">Nu am putut încărca lista cursurilor.</p>
-          <Button
-            variant="outline"
-            className="mt-2 min-h-11"
-            onClick={() => void courses.refetch()}
-            disabled={courses.isFetching}
-          >
-            Reîncearcă lista cursurilor
-          </Button>
-        </div>
-      ) : (
-        !!courses.data?.length && (
-          <div className="space-y-1.5">
-            <Label htmlFor="announcement-course">Filtrează după curs</Label>
-            <select
-              id="announcement-course"
-              value={filter.courseId}
-              onChange={(event) => changeCourse(event.target.value)}
-              className="border-input bg-background focus-visible:ring-ring h-11 w-full max-w-sm rounded-md border px-3 text-sm outline-none focus-visible:ring-2"
-            >
-              <option value="">Toate anunțurile</option>
-              {courses.data.map((course) => (
-                <option key={course.id} value={course.id}>
-                  {course.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )
-      )}
-
       {visitError && (
         <div role="alert" className="bg-card rounded-xl border p-4">
           <p className="text-sm">
@@ -127,7 +88,7 @@ function ParentAnnouncementList({
           </p>
           <Button
             variant="outline"
-            className="mt-2 min-h-11"
+            className="mt-2"
             onClick={() => saveVisit(initialPage.asOf)}
             disabled={savingVisit}
           >
@@ -142,16 +103,12 @@ function ParentAnnouncementList({
         <FeedError onRetry={() => void feed.refetch()} />
       ) : count ? (
         <>
-          <ul className="space-y-4" aria-label="Anunțuri">
-            {pages.map((page, index) => (
-              <AnnouncementRows
-                key={index}
-                items={page.items}
-                userId={userId}
-                previousSeenAt={initialPage.previousSeenAt}
-              />
-            ))}
-          </ul>
+          <AnnouncementFeed
+            items={items}
+            userId={userId}
+            previousSeenAt={initialPage.previousSeenAt}
+            layout={LAYOUT}
+          />
           {feed.isError && (
             <div role="alert" className="bg-card rounded-xl border p-4">
               <p className="text-sm">
@@ -160,7 +117,7 @@ function ParentAnnouncementList({
                   : 'Nu am putut încărca restul anunțurilor. Mesajele afișate sunt păstrate.'}
               </p>
               <Button
-                className="mt-2 min-h-11"
+                className="mt-2"
                 variant="outline"
                 onClick={() => {
                   if (feedChanged) changeCourse(filter.courseId)
@@ -172,19 +129,21 @@ function ParentAnnouncementList({
               </Button>
             </div>
           )}
-          {feed.hasNextPage && !feed.isError && (
-            <Button
-              variant="outline"
-              className="min-h-11 w-full sm:w-auto"
-              onClick={() => void feed.fetchNextPage()}
-              disabled={feed.isFetching}
-            >
-              {feed.isFetchingNextPage ? 'Se încarcă…' : 'Încarcă mai multe'}
-            </Button>
-          )}
-          <p className="text-muted-foreground text-sm" role="status">
-            {count} {count === 1 ? 'anunț afișat' : 'anunțuri afișate'}
-          </p>
+          <div className="flex flex-col items-center gap-3 pt-2">
+            {feed.hasNextPage && !feed.isError && (
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={() => void feed.fetchNextPage()}
+                disabled={feed.isFetching}
+              >
+                {feed.isFetchingNextPage ? 'Se încarcă…' : 'Încarcă mai multe'}
+              </Button>
+            )}
+            <p className="text-muted-foreground text-sm" role="status">
+              {plural(count, 'anunț afișat', 'anunțuri afișate')}
+            </p>
+          </div>
         </>
       ) : (
         <StatusView
@@ -210,30 +169,79 @@ function ParentAnnouncementList({
 
 function AnnouncementVisit({ userId }: { userId: string }) {
   const [visitId] = useState(() => crypto.randomUUID())
+  const [filter, setFilter] = useState<CourseFilterState>({ courseId: '', revision: 0 })
+  const [firstPageLoaded, setFirstPageLoaded] = useState(false)
+  const courses = useQuery({
+    queryKey: ['parent-announcement-courses', userId],
+    queryFn: getParentAnnouncementCourses,
+    enabled: firstPageLoaded,
+    retry: false,
+  })
   const firstPage = useQuery({
     queryKey: ['parent-announcement-visit', userId, visitId],
-    queryFn: () => getParentAnnouncementFeed(),
+    queryFn: async () => {
+      const page = await getParentAnnouncementFeed()
+      setFirstPageLoaded(true)
+      return page
+    },
     staleTime: Infinity,
     retry: false,
   })
-  return firstPage.isPending ? (
-    <FeedSkeleton />
-  ) : firstPage.isError ? (
-    <FeedError onRetry={() => void firstPage.refetch()} />
-  ) : (
-    <ParentAnnouncementList initialPage={firstPage.data} userId={userId} visitId={visitId} />
+  const changeCourse = (courseId: string) =>
+    setFilter((previous) => ({ courseId, revision: previous.revision + 1 }))
+  const Filter = LAYOUT === 'grid' ? CoursePills : CourseSelect
+  const filterControl = !firstPageLoaded ? null : courses.isPending ? (
+    <Skeleton className="h-11 w-full rounded-md sm:w-56" aria-label="Se încarcă lista cursurilor" />
+  ) : courses.isError ? (
+    <div role="alert" className="bg-card rounded-xl border p-4">
+      <p className="text-sm">Nu am putut încărca lista cursurilor.</p>
+      <Button
+        variant="outline"
+        className="mt-2"
+        onClick={() => void courses.refetch()}
+        disabled={courses.isFetching}
+      >
+        Reîncearcă lista cursurilor
+      </Button>
+    </div>
+  ) : courses.data?.length ? (
+    <Filter courses={courses.data} value={filter.courseId} onChange={changeCourse} />
+  ) : null
+
+  return (
+    <>
+      <PageHeader filter={LAYOUT === 'grid' ? null : filterControl} />
+      <div className="mb-6">
+        <LiveLocationBanner always />
+      </div>
+      {LAYOUT === 'grid' && filterControl && <div className="mb-6">{filterControl}</div>}
+      {firstPage.isPending ? (
+        <FeedSkeleton />
+      ) : firstPage.isError ? (
+        <FeedError onRetry={() => void firstPage.refetch()} />
+      ) : (
+        <ParentAnnouncementList
+          initialPage={firstPage.data}
+          userId={userId}
+          visitId={visitId}
+          filter={filter}
+          changeCourse={changeCourse}
+        />
+      )}
+    </>
+  )
+}
+
+function PageHeader({ filter }: { filter?: ReactNode }) {
+  return (
+    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <h1 className="font-display text-2xl font-bold">Anunțuri</h1>
+      {filter}
+    </div>
   )
 }
 
 export default function AnnouncementsPage() {
   const { user } = useAuth()
-  return (
-    <div className="max-w-3xl">
-      <h1 className="font-display mb-6 text-2xl font-bold">Anunțuri</h1>
-      <div className="mb-6">
-        <LiveLocationBanner always />
-      </div>
-      {user && <AnnouncementVisit key={user.id} userId={user.id} />}
-    </div>
-  )
+  return <div>{user ? <AnnouncementVisit key={user.id} userId={user.id} /> : <PageHeader />}</div>
 }
