@@ -255,7 +255,7 @@ for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 
     const simulation = await simulate(page, 'CLUB');
     await page.goto('/club/courses');
     const sessions = page.getByRole('region', { name: 'Ședințe cu locație în timp real' });
-    await sessions.getByRole('button', { name: /Triatlon simulat #320 ·/ }).click();
+    await sessions.getByRole('button', { name: /Triatlon simulat #320/ }).click();
     await expect(page.getByLabel('Harta locației antrenorului')).toBeVisible();
     await expect(page.getByTitle('Poziția antrenorului', { exact: true })).toBeVisible();
     await expect(sessions.getByRole('button', { name: 'Accept și văd locația' })).toHaveCount(0);
