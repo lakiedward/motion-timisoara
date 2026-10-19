@@ -11,7 +11,7 @@ import { createChild, getChild, updateChild } from '@/api/account'
 import { toIso } from '@/lib/camp-period'
 import { formatLevel, toLevelSlug } from '@/lib/level'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -165,23 +165,29 @@ export default function ChildFormPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <InapoiLaCopii />
-      <h1 className="font-display text-foreground mt-4 text-2xl font-bold">
-        {isEdit ? 'Editează copil' : 'Adaugă copil'}
-      </h1>
-      {isEdit && (
-        <Button asChild variant="outline" className="mt-3">
-          <Link to={`/account/child/${id}/qr`}>
-            <QrCode className="size-4" aria-hidden="true" /> Cod QR
-          </Link>
-        </Button>
-      )}
-      <p className="text-muted-foreground mt-4 text-xs">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-foreground text-2xl font-bold">
+          {isEdit ? 'Editează copil' : 'Adaugă copil'}
+        </h1>
+        {isEdit && (
+          <Button asChild variant="outline">
+            <Link to={`/account/child/${id}/qr`}>
+              <QrCode className="size-4" aria-hidden="true" /> Cod QR
+            </Link>
+          </Button>
+        )}
+      </div>
+      <p className="text-muted-foreground mt-2 text-sm">
         Câmpurile marcate cu <span className="text-destructive">*</span> sunt obligatorii.
       </p>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-2 space-y-6" noValidate>
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-6" noValidate>
         <Card>
-          <CardContent className="space-y-4">
+          <CardHeader>
+            <CardTitle className="font-display text-lg">Despre copil</CardTitle>
+            <CardDescription>Datele de bază, folosite la înscrieri și la tricou.</CardDescription>
+          </CardHeader>
+          <CardContent>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="min-w-0 space-y-1.5">
                 <Label htmlFor="name">
@@ -226,12 +232,39 @@ export default function ChildFormPage() {
                 </select>
               </div>
             </div>
+          </CardContent>
+        </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-display text-lg">Sănătate</CardTitle>
+            <CardDescription>Ce trebuie să știe antrenorul înainte de antrenament.</CardDescription>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-1.5">
               <Label htmlFor="allergies">Alergii / observații</Label>
-              <Textarea id="allergies" rows={4} className="max-h-64 [field-sizing:content]" {...register('allergies')} />
+              <Textarea
+                id="allergies"
+                rows={4}
+                className="max-h-64 [field-sizing:content]"
+                aria-describedby="allergies-hint"
+                {...register('allergies')}
+              />
+              <FieldMessage
+                id="allergies"
+                hint="Medicație, alergii sau ce trebuie să știe antrenorul."
+              />
             </div>
+          </CardContent>
+        </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-display text-lg">Persoane de contact</CardTitle>
+            <CardDescription>Pe cine sună antrenorul dacă se întâmplă ceva.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <h3 className="font-sans text-sm font-semibold tracking-normal">Urgență</h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="min-w-0 space-y-1.5">
                 <Label htmlFor="emergency_contact_name">
@@ -240,6 +273,7 @@ export default function ChildFormPage() {
                 <Input
                   id="emergency_contact_name"
                   required
+                  autoComplete="name"
                   {...register('emergency_contact_name')}
                   {...camp('emergency_contact_name')}
                 />
@@ -256,17 +290,20 @@ export default function ChildFormPage() {
                   id="emergency_phone"
                   type="tel"
                   required
+                  autoComplete="tel"
                   {...register('emergency_phone')}
                   {...camp('emergency_phone')}
                 />
                 <FieldMessage id="emergency_phone" error={errors.emergency_phone?.message} />
               </div>
+            </div>
+            <h3 className="border-t pt-4 font-sans text-sm font-semibold tracking-normal">
+              Secundar (opțional)
+            </h3>
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="min-w-0 space-y-1.5">
                 <Label htmlFor="secondary_contact_name">Contact secundar</Label>
-                <Input
-                  id="secondary_contact_name"
-                  {...register('secondary_contact_name')}
-                />
+                <Input id="secondary_contact_name" {...register('secondary_contact_name')} />
               </div>
               <div className="min-w-0 space-y-1.5">
                 <Label htmlFor="secondary_phone">Telefon secundar</Label>
@@ -282,12 +319,12 @@ export default function ChildFormPage() {
           </CardContent>
         </Card>
 
-        <div className="flex gap-2">
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Se salvează…' : 'Salvează'}
-          </Button>
-          <Button type="button" variant="outline" asChild>
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <Button type="button" variant="ghost" asChild>
             <Link to="/account/children">Anulează</Link>
+          </Button>
+          <Button type="submit" disabled={isSubmitting} className="sm:min-w-40">
+            {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>
         </div>
       </form>

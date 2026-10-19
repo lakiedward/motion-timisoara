@@ -241,3 +241,13 @@ test('cât se încarcă copilul nu apare un formular gol', async () => {
   expect(screen.queryByLabelText(/Nume/)).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Salvează' })).not.toBeInTheDocument()
 })
+
+test('formularul e împărțit în grupuri cu titlu', async () => {
+  renderForm('/account/child/new')
+  await screen.findByLabelText(/Nume/)
+  for (const titlu of ['Despre copil', 'Sănătate', 'Persoane de contact']) {
+    expect(screen.getByText(titlu)).toBeInTheDocument()
+  }
+  expect(screen.getByRole('heading', { name: 'Urgență' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Secundar (opțional)' })).toBeInTheDocument()
+})
