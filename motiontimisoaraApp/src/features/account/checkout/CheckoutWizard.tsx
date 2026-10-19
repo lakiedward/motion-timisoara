@@ -320,7 +320,7 @@ export default function CheckoutWizard({
 
   const body = (
     <>
-      {step === 0 && offering.perSession && (
+      {step <= 1 && offering.perSession && (
         <CheckoutPackagePicker
           packages={offering.packages}
           value={packageSize}
@@ -396,9 +396,6 @@ export default function CheckoutWizard({
       {step === 1 && (
         <section className="space-y-5">
           <div className="rounded-xl border p-4">
-            {offering.perSession && (
-              <p className="text-muted-foreground mb-2 text-sm">Pachet: {packageSize} ședințe</p>
-            )}
             {selected.map((cid) => {
               const child = children.find((c) => c.id === cid)
               return (
