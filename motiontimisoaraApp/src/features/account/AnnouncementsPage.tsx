@@ -12,14 +12,21 @@ import { ActiveLocationAnnouncements } from '@/features/live-location/camps/Acti
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
 import { AnnouncementRows } from './announcements/AnnouncementRows'
 
 function FeedSkeleton() {
+  return <StatusView state="loading" title="Se încarcă anunțurile" rows={2} rowHeight={140} />
+}
+
+function FeedError({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className="space-y-3" role="status" aria-label="Se încarcă anunțurile">
-      <Skeleton className="h-28 rounded-3xl" />
-      <Skeleton className="h-28 rounded-3xl" />
-    </div>
+    <StatusView
+      state="error"
+      title="Nu am putut încărca anunțurile."
+      text="Verifică conexiunea și încearcă din nou."
+      onRetry={onRetry}
+    />
   )
 }
 
@@ -81,7 +88,7 @@ function ParentAnnouncementList({
           aria-label="Se încarcă lista cursurilor"
         />
       ) : courses.isError ? (
-        <div role="alert" className="bg-card rounded-2xl border p-4">
+        <div role="alert" className="bg-card rounded-xl border p-4">
           <p className="text-sm">Nu am putut încărca lista cursurilor.</p>
           <Button
             variant="outline"
@@ -114,7 +121,7 @@ function ParentAnnouncementList({
       )}
 
       {visitError && (
-        <div role="alert" className="bg-card rounded-2xl border p-4">
+        <div role="alert" className="bg-card rounded-xl border p-4">
           <p className="text-sm">
             Nu am putut salva ultima vizită. Marcajele „Nou” pot reapărea data viitoare.
           </p>
@@ -132,16 +139,7 @@ function ParentAnnouncementList({
       {feed.isPending ? (
         <FeedSkeleton />
       ) : feed.isError && !pages.length ? (
-        <div role="alert" className="rounded-3xl border border-dashed p-8 text-center">
-          <p className="font-medium">Nu am putut încărca anunțurile.</p>
-          <Button
-            className="mt-4 min-h-11"
-            onClick={() => void feed.refetch()}
-            disabled={feed.isFetching}
-          >
-            Reîncearcă
-          </Button>
-        </div>
+        <FeedError onRetry={() => void feed.refetch()} />
       ) : count ? (
         <>
           <ul className="space-y-4" aria-label="Anunțuri">
@@ -155,7 +153,7 @@ function ParentAnnouncementList({
             ))}
           </ul>
           {feed.isError && (
-            <div role="alert" className="bg-card rounded-2xl border p-4">
+            <div role="alert" className="bg-card rounded-xl border p-4">
               <p className="text-sm">
                 {feedChanged
                   ? 'Lista anunțurilor s-a schimbat. Reîncarcă lista pentru a vedea ordinea actuală.'
@@ -189,21 +187,22 @@ function ParentAnnouncementList({
           </p>
         </>
       ) : (
-        <div className="text-muted-foreground rounded-3xl border border-dashed p-8 text-center">
-          {filter.courseId ? (
-            <>
-              <p>Niciun anunț pentru cursul ales.</p>
-              <Button variant="outline" className="mt-4 min-h-11" onClick={() => changeCourse('')}>
+        <StatusView
+          state="empty"
+          title={filter.courseId ? 'Niciun anunț pentru cursul ales.' : 'Niciun anunț încă.'}
+          text={
+            filter.courseId
+              ? 'Alege alt curs sau vezi toate anunțurile.'
+              : 'Anunțurile de la cursurile copiilor tăi și de la cluburile la care sunt înscriși vor apărea aici.'
+          }
+          action={
+            filter.courseId ? (
+              <Button variant="outline" className="mt-3" onClick={() => changeCourse('')}>
                 Arată toate anunțurile
               </Button>
-            </>
-          ) : (
-            <p>
-              Niciun mesaj încă. Aici apar anunțurile de la cursurile copiilor tăi și cele de la
-              cluburile la care sunt înscriși.
-            </p>
-          )}
-        </div>
+            ) : undefined
+          }
+        />
       )}
     </div>
   )
@@ -220,16 +219,7 @@ function AnnouncementVisit({ userId }: { userId: string }) {
   return firstPage.isPending ? (
     <FeedSkeleton />
   ) : firstPage.isError ? (
-    <div role="alert" className="rounded-3xl border border-dashed p-8 text-center">
-      <p className="font-medium">Nu am putut încărca anunțurile.</p>
-      <Button
-        className="mt-4 min-h-11"
-        onClick={() => void firstPage.refetch()}
-        disabled={firstPage.isFetching}
-      >
-        Reîncearcă
-      </Button>
-    </div>
+    <FeedError onRetry={() => void firstPage.refetch()} />
   ) : (
     <ParentAnnouncementList initialPage={firstPage.data} userId={userId} visitId={visitId} />
   )

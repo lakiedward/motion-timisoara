@@ -35,10 +35,7 @@ export function AnnouncementRows({
   return (
     <Fragment>
       {items.map((item) => (
-        <li
-          key={`${item.source}-${item.id}`}
-          className="bg-card shadow-card min-w-0 rounded-3xl border p-5"
-        >
+        <li key={`${item.source}-${item.id}`} className="bg-card min-w-0 rounded-xl border p-6">
           <div className="mb-2 flex flex-wrap items-center gap-2">
             {(!previousSeenAt || Date.parse(item.publishedAt) > Date.parse(previousSeenAt)) && (
               <Badge variant="default">Nou</Badge>
@@ -73,10 +70,9 @@ export function AnnouncementRows({
             <p className="text-muted-foreground mb-2 text-sm wrap-anywhere">
               {item.audienceKind === 'CAMP' ? 'Tabără: ' : ''}
               {item.audienceKind === 'ACTIVITY' ? 'Activitate: ' : ''}
-              {item.audienceName ??
-                (item.audienceKind === 'CLUB'
-                  ? 'Toți părinții clubului'
-                  : 'Destinație indisponibilă')}
+              {item.audienceKind === 'CLUB'
+                ? 'Pentru toți părinții clubului'
+                : (item.audienceName ?? 'Destinație indisponibilă')}
             </p>
           )}
           {item.title && <h2 className="mb-1 font-semibold wrap-anywhere">{item.title}</h2>}
@@ -92,7 +88,7 @@ export function AnnouncementRows({
         </li>
       )}
       {media.isError && (
-        <li className="bg-card rounded-2xl border p-4" role="alert">
+        <li className="bg-card rounded-xl border p-4" role="alert">
           <p className="text-sm">Nu am putut încărca atașamentele acestor anunțuri.</p>
           <Button
             variant="outline"

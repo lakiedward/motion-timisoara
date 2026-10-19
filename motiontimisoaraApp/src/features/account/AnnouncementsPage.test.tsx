@@ -166,7 +166,7 @@ test('waits for a successful first page before recording the visit and preserves
   visitRequest.mockReturnValue(marking.promise)
   renderPage()
   expect(screen.getByRole('status', { name: 'Se încarcă anunțurile' })).toBeInTheDocument()
-  expect(screen.queryByText(/Niciun mesaj încă/)).not.toBeInTheDocument()
+  expect(screen.queryByText(/Niciun anunț încă/)).not.toBeInTheDocument()
   expect(visitRequest).not.toHaveBeenCalled()
   expect(coursesRequest).not.toHaveBeenCalled()
 
@@ -185,7 +185,7 @@ test('a failed first page does not record a visit or appear empty and can be ret
   renderPage()
   const retry = await screen.findByRole('button', { name: 'Reîncearcă' })
   expect(screen.getByText('Nu am putut încărca anunțurile.')).toBeInTheDocument()
-  expect(screen.queryByText(/Niciun mesaj încă/)).not.toBeInTheDocument()
+  expect(screen.queryByText(/Niciun anunț încă/)).not.toBeInTheDocument()
   expect(visitRequest).not.toHaveBeenCalled()
   await userEvent.click(retry)
   expect(await screen.findByText('Mesaj 1')).toBeInTheDocument()
@@ -253,7 +253,7 @@ test('retains the first page after a next-page error and retries from the same c
   const retry = await screen.findByRole('button', { name: 'Reîncearcă încărcarea' })
   expect(screen.getByText('20 anunțuri afișate')).toBeInTheDocument()
   expect(screen.getByText('Mesaj 1')).toBeInTheDocument()
-  expect(screen.queryByText(/Niciun mesaj încă/)).not.toBeInTheDocument()
+  expect(screen.queryByText(/Niciun anunț încă/)).not.toBeInTheDocument()
   await userEvent.click(retry)
   expect(await screen.findByText('21 anunțuri afișate')).toBeInTheDocument()
   expect(feedRequest.mock.calls[1]).toEqual(feedRequest.mock.calls[2])
@@ -268,7 +268,7 @@ test('changing course resets pagination and an empty filtered result can return 
   await userEvent.selectOptions(screen.getByLabelText('Filtrează după curs'), 'course-2')
   expect(await screen.findByText('Niciun anunț pentru cursul ales.')).toBeInTheDocument()
   expect(screen.queryByText('Mesaj 1')).not.toBeInTheDocument()
-  expect(screen.queryByText(/Niciun mesaj încă/)).not.toBeInTheDocument()
+  expect(screen.queryByText(/Niciun anunț încă/)).not.toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Arată toate anunțurile' }))
   expect(await screen.findByText('Mesaj 1')).toBeInTheDocument()
   expect(screen.getByLabelText('Filtrează după curs')).toHaveValue('')
@@ -292,7 +292,8 @@ test('a filtered request error keeps the selected course and retries that filter
 test('a successful empty feed names both announcement sources', async () => {
   feedRequest.mockResolvedValue(page([]))
   renderPage()
-  const empty = await screen.findByText(/Niciun mesaj încă/)
+  await screen.findByText('Niciun anunț încă.')
+  const empty = screen.getByText(/vor apărea aici/)
   expect(empty).toHaveTextContent('cursurile copiilor tăi')
   expect(empty).toHaveTextContent('cluburile la care sunt înscriși')
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
@@ -488,4 +489,24 @@ test('an order conflict reloads the complete list without mixing old pages or cl
   expect(feedRequest.mock.calls[4][0]?.cursor).toEqual(reordered.nextCursor)
   expect(screen.getAllByText('Nou')).toHaveLength(40)
   expect(visitRequest).toHaveBeenCalledTimes(1)
+})
+
+test('a club-wide announcement names its audience instead of repeating the club name', async () => {
+  feedRequest.mockResolvedValue(
+    page([
+      announcement(1, {
+        source: 'club',
+        content: 'Mesaj club',
+        authorName: 'Club Audit Motion',
+        courseId: null,
+        courseName: null,
+        audienceKind: 'CLUB',
+        audienceName: 'Club Audit Motion',
+      }),
+    ]),
+  )
+  renderPage()
+  const card = within((await screen.findByText('Mesaj club')).closest('li')!)
+  expect(card.getByText('Pentru toți părinții clubului')).toBeInTheDocument()
+  expect(card.getAllByText('Club Audit Motion')).toHaveLength(1)
 })
