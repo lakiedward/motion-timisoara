@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import { Users } from 'lucide-react'
 
 import { getChildAttendance, getChildrenAttendance, getMyChildren } from '@/api/account'
 import { Button } from '@/components/ui/button'
@@ -70,30 +71,10 @@ export default function AttendancePage() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <h1 className="font-display text-2xl font-bold">Prezență</h1>
-        <div className="grid grid-cols-2 gap-3 sm:flex sm:items-end">
-          {children.length > 1 && (
-            <div className="min-w-0 space-y-1.5 sm:w-48">
-              <Label htmlFor="filtru-copil">Copil</Label>
-              <select
-                id="filtru-copil"
-                value={ales}
-                onChange={(e) => setSelected(e.target.value)}
-                className={selectCls}
-              >
-                <option value={TOTI}>Toți copiii</option>
-                {children.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          <div
-            className={cn('min-w-0 space-y-1.5 sm:w-44', children.length > 1 ? '' : 'col-span-2')}
-          >
+      <div className="mb-6 space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <h1 className="font-display text-2xl font-bold">Prezență</h1>
+          <div className="min-w-0 space-y-1.5 sm:w-44">
             <Label htmlFor="filtru-perioada">Perioadă</Label>
             <select
               id="filtru-perioada"
@@ -109,6 +90,44 @@ export default function AttendancePage() {
             </select>
           </div>
         </div>
+        {children.length > 1 && (
+          <div role="group" aria-label="Copil" className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              className="shrink-0 rounded-full"
+              variant={totiCopiii ? 'default' : 'outline'}
+              aria-pressed={totiCopiii}
+              onClick={() => setSelected(TOTI)}
+            >
+              <Users aria-hidden="true" />
+              Toți copiii
+            </Button>
+            {children.map((c) => {
+              const activ = ales === c.id
+              return (
+                <Button
+                  key={c.id}
+                  type="button"
+                  className="shrink-0 rounded-full pl-1.5"
+                  variant={activ ? 'default' : 'outline'}
+                  aria-pressed={activ}
+                  onClick={() => setSelected(c.id)}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'grid size-8 place-items-center rounded-full text-sm font-bold',
+                      activ ? 'bg-primary-foreground/20' : 'bg-primary/10 text-primary',
+                    )}
+                  >
+                    {c.name.charAt(0)}
+                  </span>
+                  {c.name}
+                </Button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       <CurrentLocationSessions />

@@ -190,7 +190,7 @@ test('un copil șters între timp nu mai rămâne selectat', async () => {
   // găsește un selector care încă nu există.
   await screen.findAllByRole('listitem')
 
-  await user.selectOptions(screen.getByLabelText('Copil'), COPIL_B)
+  await user.click(screen.getByRole('button', { name: 'Bogdan' }))
   await waitFor(() => expect(mockedPrezenta).toHaveBeenCalledWith(COPIL_B))
 
   mockedPrezenta.mockClear()
@@ -201,16 +201,16 @@ test('un copil șters între timp nu mai rămâne selectat', async () => {
   expect(mockedPrezenta).not.toHaveBeenCalledWith(COPIL_B)
   // Cu un singur copil rămas, selectorul dispare cu totul — nu mai are între ce
   // să comute. Ce contează e că cererea a plecat pe copilul real, nu pe id-ul mort.
-  expect(screen.queryByLabelText('Copil')).not.toBeInTheDocument()
+  expect(screen.queryByRole('group', { name: 'Copil' })).not.toBeInTheDocument()
 })
 
-// Criteriul 13: pagina e o privire de ansamblu, iar implicitul de dinainte — primul
-// copil în ordine alfabetică — era arbitrar.
-test('pagina pornește pe „Toți copiii", prima opțiune din listă', async () => {
+test('pagina pornește pe „Toți copiii", primul buton din filtru', async () => {
   renderPage()
-  const selector = (await screen.findByLabelText('Copil')) as HTMLSelectElement
-  expect(selector.options[0].textContent).toBe('Toți copiii')
-  expect(selector.value).toBe('toti')
+  const filtru = await screen.findByRole('group', { name: 'Copil' })
+  const butoane = within(filtru).getAllByRole('button')
+  expect(butoane.map((b) => b.textContent)).toEqual(['Toți copiii', 'AAna', 'BBogdan'])
+  expect(butoane[0]).toHaveAttribute('aria-pressed', 'true')
+  expect(butoane[1]).toHaveAttribute('aria-pressed', 'false')
   await waitFor(() => expect(mockedPrezentaToti).toHaveBeenCalledWith([COPIL_A, COPIL_B]))
   expect(mockedPrezenta).not.toHaveBeenCalled()
 })
@@ -232,7 +232,7 @@ test('numele copilului apare pe rânduri doar în vederea combinată', async () 
   expect(randuri[0]).toHaveTextContent('Ana')
   expect(randuri[1]).toHaveTextContent('Bogdan')
 
-  await user.selectOptions(screen.getByLabelText('Copil'), COPIL_A)
+  await user.click(screen.getByRole('button', { name: 'Ana' }))
   await waitFor(() => expect(mockedPrezenta).toHaveBeenCalledWith(COPIL_A))
   const dupaFiltrare = await screen.findAllByRole('listitem')
   expect(dupaFiltrare[0]).not.toHaveTextContent('Ana')
@@ -262,20 +262,24 @@ test('cu un singur copil nu există selector, iar numele nu se repetă pe rându
   renderPage()
 
   const randuri = await screen.findAllByRole('listitem')
-  expect(screen.queryByLabelText('Copil')).not.toBeInTheDocument()
+  expect(screen.queryByRole('group', { name: 'Copil' })).not.toBeInTheDocument()
   expect(randuri[0]).not.toHaveTextContent('Ana')
   expect(randuri[0]).toHaveTextContent('Înot')
 })
 
-// Criteriul 4: eticheta era doar `aria-label`, deci cine se uită la ecran vedea
-// numai valoarea aleasă. Regula casei vine de la filtrul de anunțuri club.
-test('selectorul de copil are etichetă vizibilă, legată de el', async () => {
+test('filtrul pe copil e un grup de butoane cu nume întreg, iar alegerea se vede', async () => {
+  const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
   renderPage()
   await screen.findAllByRole('listitem')
-  const eticheta = screen.getByText('Copil', { selector: 'label' })
-  expect(eticheta).toBeInTheDocument()
-  expect(eticheta).toHaveAttribute('for', 'filtru-copil')
-  expect(screen.getByLabelText('Copil')).toHaveAttribute('id', 'filtru-copil')
+  const ana = screen.getByRole('button', { name: 'Ana' })
+  expect(ana).toHaveAttribute('aria-pressed', 'false')
+  await user.click(ana)
+  expect(ana).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getByRole('button', { name: 'Toți copiii' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
+  await waitFor(() => expect(mockedPrezenta).toHaveBeenCalledWith(COPIL_A))
 })
 
 // Criteriul 3: un copil ales fără pontări cădea pe mesajul general, fără nicio
@@ -287,11 +291,16 @@ test('un copil ales fără pontări e numit în mesaj și se poate reveni la to�
   renderPage()
   await screen.findAllByRole('listitem')
 
-  await user.selectOptions(screen.getByLabelText('Copil'), COPIL_B)
+  await user.click(screen.getByRole('button', { name: 'Bogdan' }))
 
   expect(await screen.findByText('Bogdan nu are nicio prezență înregistrată.')).toBeInTheDocument()
   expect(screen.queryByText('Nicio prezență înregistrată încă.')).not.toBeInTheDocument()
 
   await user.click(screen.getByRole('button', { name: 'Vezi toți copiii' }))
-  await waitFor(() => expect(screen.getByLabelText('Copil')).toHaveValue('toti'))
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: 'Toți copiii' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    ),
+  )
 })
