@@ -15,6 +15,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
 import { Textarea } from '@/components/ui/textarea'
 
 const selectCls =
@@ -117,12 +119,13 @@ export default function ChildFormPage() {
     return (
       <div className="mx-auto max-w-2xl">
         <InapoiLaCopii />
-        <div role="alert" className="mt-6 rounded-3xl border border-dashed py-16 text-center">
-          <p className="text-foreground font-medium">Nu am putut încărca copilul.</p>
-          <Button className="mt-4" type="button" onClick={() => refetch()}>
-            Reîncearcă
-          </Button>
-        </div>
+        <StatusView
+          state="error"
+          title="Nu am putut încărca copilul."
+          text="Verifică conexiunea și încearcă din nou."
+          onRetry={() => void refetch()}
+          className="mt-4"
+        />
       </div>
     )
   }
@@ -131,7 +134,25 @@ export default function ChildFormPage() {
     return (
       <div className="mx-auto max-w-2xl">
         <InapoiLaCopii />
-        <p className="text-muted-foreground mt-6">Copilul nu a fost găsit.</p>
+        <StatusView
+          state="empty"
+          title="Copilul nu a fost găsit."
+          text="Poate a fost șters sau linkul nu mai este valabil."
+          className="mt-4"
+        />
+      </div>
+    )
+  }
+
+  if (isEdit && seIncarca) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <InapoiLaCopii />
+        <div role="status" aria-label="Se încarcă copilul" className="mt-4 space-y-4">
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-touch-target w-32" />
+          <Skeleton className="h-96 rounded-xl" />
+        </div>
       </div>
     )
   }
@@ -147,18 +168,18 @@ export default function ChildFormPage() {
       <h1 className="font-display text-foreground mt-4 text-2xl font-bold">
         {isEdit ? 'Editează copil' : 'Adaugă copil'}
       </h1>
-      <p className="text-muted-foreground mt-1 text-xs">
-        Câmpurile marcate cu <span className="text-destructive">*</span> sunt obligatorii.
-      </p>
       {isEdit && (
         <Button asChild variant="outline" className="mt-3">
           <Link to={`/account/child/${id}/qr`}>
-            <QrCode className="size-4" /> Codul QR al copilului
+            <QrCode className="size-4" aria-hidden="true" /> Cod QR
           </Link>
         </Button>
       )}
+      <p className="text-muted-foreground mt-4 text-xs">
+        Câmpurile marcate cu <span className="text-destructive">*</span> sunt obligatorii.
+      </p>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-6" noValidate>
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-2 space-y-6" noValidate>
         <Card>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">

@@ -209,3 +209,35 @@ test('data de azi e acceptată și după miezul nopții ora României', async ()
     process.env.TZ = tz
   }
 })
+
+test('la editare, linkul Cod QR duce la codul aceluiași copil', async () => {
+  renderForm()
+  const link = await screen.findByRole('link', { name: 'Cod QR' })
+  expect(link).toHaveAttribute('href', `/account/child/${COPIL_ID}/qr`)
+})
+
+test('linkul Cod QR lipsește pe copil nou, pe copil negăsit și pe eroare', async () => {
+  const { unmount } = renderForm('/account/child/new')
+  await screen.findByLabelText(/Nume/)
+  expect(screen.queryByRole('link', { name: 'Cod QR' })).not.toBeInTheDocument()
+  unmount()
+
+  mockedGet.mockResolvedValueOnce(null)
+  const negasit = renderForm()
+  await screen.findByText('Copilul nu a fost găsit.')
+  expect(screen.queryByRole('link', { name: 'Cod QR' })).not.toBeInTheDocument()
+  negasit.unmount()
+
+  mockedGet.mockRejectedValueOnce(new Error('network'))
+  renderForm()
+  await screen.findByText('Nu am putut încărca copilul.')
+  expect(screen.queryByRole('link', { name: 'Cod QR' })).not.toBeInTheDocument()
+})
+
+test('cât se încarcă copilul nu apare un formular gol', async () => {
+  mockedGet.mockReturnValue(new Promise(() => {}))
+  renderForm()
+  expect(await screen.findByRole('status', { name: 'Se încarcă copilul' })).toBeInTheDocument()
+  expect(screen.queryByLabelText(/Nume/)).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Salvează' })).not.toBeInTheDocument()
+})
