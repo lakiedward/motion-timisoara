@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { enrollmentOffers, type EnrollmentOffer } from '@/api/enrollment-offers'
 import type { Tables, TablesInsert } from '@/lib/database.types'
 
 export type Child = Tables<'children'>
@@ -73,51 +74,11 @@ export type EnrollmentRow = Tables<'enrollments'> & {
   >[]
   offerTitle: string | null
   offerPath: string | null
+  offer: EnrollmentOffer | null
   competition_registration?: {
     category_name_snapshot: string
     route_name_snapshot: string
   } | null
-}
-
-type Offer = { title: string; path: string }
-
-async function offersById(
-  kind: 'CAMP' | 'COURSE' | 'ACTIVITY' | 'COMPETITION',
-  ids: string[],
-): Promise<Map<string, Offer>> {
-  const offers = new Map<string, Offer>()
-  if (!ids.length) return offers
-  const rows: { id: string; title: string; path: string }[] = []
-  if (kind === 'COMPETITION') {
-    const { data, error } = await supabase.from('competitions').select('id, title, slug').in('id', ids)
-    if (error) throw error
-    for (const row of data ?? []) rows.push({ id: row.id, title: row.title, path: `/concursuri/${row.slug}` })
-  } else if (kind === 'CAMP') {
-    const { data, error } = await supabase.from('camps').select('id, title, slug').in('id', ids)
-    if (error) throw error
-    for (const row of data ?? []) rows.push({ id: row.id, title: row.title, path: `/tabere/${row.slug}` })
-  } else if (kind === 'COURSE') {
-    const { data, error } = await supabase.from('courses').select('id, name').in('id', ids)
-    if (error) throw error
-    for (const row of data ?? []) rows.push({ id: row.id, title: row.name, path: `/cursuri/${row.id}` })
-  } else {
-    const { data, error } = await supabase.from('activities').select('id, name').in('id', ids)
-    if (error) throw error
-    for (const row of data ?? []) rows.push({ id: row.id, title: row.name, path: `/activitati/${row.id}` })
-  }
-  for (const row of rows) offers.set(row.id, { title: row.title.trim(), path: row.path })
-  return offers
-}
-
-async function offerDetails(rows: { kind: string; entity_id: string }[]) {
-  const idsFor = (kind: string) => [
-    ...new Set(rows.filter((row) => row.kind === kind).map((row) => row.entity_id)),
-  ]
-  const kinds = ['CAMP', 'COURSE', 'ACTIVITY', 'COMPETITION'] as const
-  const maps = await Promise.all(kinds.map((kind) => offersById(kind, idsFor(kind))))
-  return new Map<string, Offer>(
-    maps.flatMap((map, index) => [...map].map(([id, offer]) => [`${kinds[index]}:${id}`, offer] as const)),
-  )
 }
 
 export async function getMyEnrollments(): Promise<EnrollmentRow[]> {
@@ -142,12 +103,12 @@ export async function getMyEnrollments(): Promise<EnrollmentRow[]> {
     .or(participantFilter)
     .order('created_at', { ascending: false })
   if (error) throw error
-  const rows = (data ?? []) as unknown as Omit<EnrollmentRow, 'offerTitle' | 'offerPath'>[]
+  const rows = (data ?? []) as unknown as Omit<EnrollmentRow, 'offerTitle' | 'offerPath' | 'offer'>[]
   if (!rows.length) return []
-  const offers = await offerDetails(rows)
+  const offers = await enrollmentOffers(rows)
   return rows.map((row) => {
-    const offer = offers.get(`${row.kind}:${row.entity_id}`)
-    return { ...row, offerTitle: offer?.title || null, offerPath: offer?.path ?? null }
+    const offer = offers.get(`${row.kind}:${row.entity_id}`) ?? null
+    return { ...row, offerTitle: offer?.title || null, offerPath: offer?.path ?? null, offer }
   })
 }
 

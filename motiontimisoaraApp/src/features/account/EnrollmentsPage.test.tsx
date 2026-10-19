@@ -41,6 +41,7 @@ function row(partial: Partial<EnrollmentRow> & Pick<EnrollmentRow, 'id' | 'kind'
     ],
     offerTitle: null,
     offerPath: null,
+    offer: null,
     ...partial,
   }
 }
@@ -241,4 +242,42 @@ test('a card without a creation date still renders, without a date line', async 
 
   const card = await screen.findByRole('article', { name: 'Tabără' })
   expect(within(card).queryByText(/Înscriere din/)).not.toBeInTheDocument()
+})
+
+test('a payment to finish comes first and the card shows when the offer happens', async () => {
+  load.mockResolvedValue([
+    row({ id: 'paid', kind: 'CAMP', offerTitle: 'Tabăra plătită' }),
+    row({
+      id: 'due',
+      kind: 'ACTIVITY',
+      status: 'PENDING',
+      offerTitle: 'Tura de duminică',
+      offer: {
+        title: 'Tura de duminică',
+        path: '/activitati/a-1',
+        imageUrl: null,
+        sportCode: 'ciclism',
+        sportName: 'Ciclism',
+        schedule: { type: 'day', date: '2026-10-25', startTime: '10:00:00', endTime: '12:30:00' },
+      },
+      payments: [
+        {
+          amount: 9000,
+          currency: 'RON',
+          pricing_snapshot: null,
+          status: 'FAILED',
+          method: 'CARD',
+          paid_at: null,
+        },
+      ],
+    }),
+  ])
+  renderPage()
+
+  await screen.findByRole('article', { name: 'Tura de duminică' })
+  const cards = screen.getAllByRole('article')
+  expect(within(cards[0]!).getByRole('heading').textContent).toBe('Tura de duminică')
+  expect(within(cards[0]!).getByText('Duminică, 25 octombrie, 10:00–12:30')).toBeInTheDocument()
+  expect(within(cards[0]!).getByRole('img', { name: /Ilustrație/ })).toBeInTheDocument()
+  expect(within(cards[0]!).getByRole('button', { name: 'Finalizează plata' })).toBeInTheDocument()
 })
