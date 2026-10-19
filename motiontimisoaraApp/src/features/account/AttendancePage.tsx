@@ -91,11 +91,7 @@ export default function AttendancePage() {
           </div>
         </div>
         {children.length > 1 && (
-          <div
-            role="group"
-            aria-label="Copil"
-            className="-mx-4 flex gap-2 overflow-x-auto px-4 py-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
-          >
+          <div role="group" aria-label="Copil" className="flex flex-wrap gap-2">
             <Button
               type="button"
               className="shrink-0 rounded-full"
