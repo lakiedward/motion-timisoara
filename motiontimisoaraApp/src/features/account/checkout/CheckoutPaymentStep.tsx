@@ -5,6 +5,9 @@ import { formatRonOffer } from '@/lib/money'
 import { stripeConfigured } from '@/lib/stripe'
 import type { PaymentMethod } from '@/api/checkout'
 
+const RADIO =
+  'accent-primary focus-visible:outline-ring size-4 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2'
+
 export function CheckoutPaymentStep({
   title,
   kindLabel,
@@ -32,7 +35,7 @@ export function CheckoutPaymentStep({
 }) {
   return (
     <section className="space-y-6">
-      <div className="bg-card shadow-card rounded-3xl p-5">
+      <div className="bg-card rounded-xl border p-5">
         <h2 className="mb-3 font-semibold">Sumar comandă</h2>
         {snapshots.map((snapshot, index) => (
           <AcceptedPriceDetails key={index} snapshot={snapshot} />
@@ -54,9 +57,10 @@ export function CheckoutPaymentStep({
 
       <div className="space-y-2">
         <Label>Metodă de plată</Label>
-        <label className="flex items-center gap-3 text-sm">
+        <label className="min-h-touch-target flex items-center gap-3 text-sm">
           <input
             type="radio"
+            className={RADIO}
             checked={method === 'CARD'}
             disabled={!stripeConfigured}
             onChange={() => switchMethod('CARD')}
@@ -64,9 +68,10 @@ export function CheckoutPaymentStep({
           <span>Card bancar {!stripeConfigured && '(indisponibil — Stripe neconfigurat)'}</span>
         </label>
         {allowCash && (
-          <label className="flex items-center gap-3 text-sm">
+          <label className="min-h-touch-target flex items-center gap-3 text-sm">
             <input
               type="radio"
+            className={RADIO}
               checked={method === 'CASH'}
               disabled={cashBlocked}
               onChange={() => switchMethod('CASH')}
@@ -87,7 +92,7 @@ export function CheckoutPaymentStep({
       {method === 'CARD' ? (
         <PaymentEntry childCount={childCount} />
       ) : (
-        <p className="bg-muted text-muted-foreground rounded-3xl p-5 text-sm">
+        <p className="bg-muted text-muted-foreground rounded-xl p-5 text-sm">
           Înscrierea rămâne în așteptare până când antrenorul confirmă încasarea sumei de{' '}
           <strong>{total !== undefined ? formatRonOffer(total) : 'Preț indisponibil'}</strong>.
         </p>

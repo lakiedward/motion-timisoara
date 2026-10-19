@@ -34,3 +34,20 @@ export function quoteIsPriced(
     Boolean(verdict.priceVersion)
   )
 }
+
+export function advanceHint(step: string, participantCount: number, accepted: boolean) {
+  if (step === 'Copii' || step === 'Participanți') {
+    return participantCount === 0 ? 'Alege cel puțin un participant ca să continui.' : null
+  }
+  if (step === 'Detalii') return accepted ? null : 'Bifează confirmarea sumei ca să continui.'
+  if (step === 'Facturare') return 'Completează toate datele de facturare ca să continui.'
+  return null
+}
+
+export const STEP_COPY: Record<string, { title: string; text: string }> = {
+  Copii: { title: 'Cine participă?', text: 'Alege pachetul și copiii pe care îi înscrii.' },
+  Participanți: { title: 'Cine participă?', text: 'Alege cine merge în tabără.' },
+  Detalii: { title: 'Verifică suma', text: 'Confirmă prețul înainte de plată.' },
+  Facturare: { title: 'Date de facturare', text: 'Le folosim pentru chitanța plății cu cardul.' },
+  Plată: { title: 'Cum plătești?', text: 'Alege metoda de plată și finalizează înscrierea.' },
+}

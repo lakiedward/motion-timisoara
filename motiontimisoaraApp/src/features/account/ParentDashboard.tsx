@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { CalendarCheck, Plus, UserRound } from 'lucide-react'
+import { CalendarCheck, Plus, Search, UserRound } from 'lucide-react'
 
 import { useAuth } from '@/lib/auth-context'
 import { childAge, getMyChildren, getMyEnrollments } from '@/api/account'
@@ -68,10 +68,10 @@ export default function ParentDashboard() {
         />
         <Link
           to="/cursuri"
-          className="bg-primary text-primary-foreground flex items-center justify-between rounded-3xl p-6 transition-transform hover:-translate-y-1"
+          className="bg-primary text-primary-foreground flex items-center justify-between rounded-xl p-6 transition-transform hover:-translate-y-1"
         >
           <span className="font-display font-bold">Caută cursuri</span>
-          <Plus className="size-5" />
+          <Search className="size-5" />
         </Link>
       </div>
 
@@ -190,9 +190,9 @@ function Stat({
   onRetry: () => void
 }) {
   return (
-    <div
+    <Card
       className={cn(
-        'bg-card shadow-card flex items-center gap-4 rounded-3xl p-6',
+        'flex-row items-center gap-4 p-6',
         error && 'sm:flex-col sm:items-start md:flex-row md:items-center',
       )}
       role="group"
@@ -215,6 +215,6 @@ function Stat({
           <LoadFailure label={label} retrying={retrying} onRetry={onRetry} className="mt-2" />
         )}
       </div>
-    </div>
+    </Card>
   )
 }
