@@ -20,6 +20,7 @@ import { stripeConfigured } from '@/lib/stripe'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { CheckoutPaymentStep } from './CheckoutPaymentStep'
+import { CheckoutOrderSummary, type SummaryLine } from './CheckoutOrderSummary'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { CheckoutSteps } from './CheckoutSteps'
@@ -267,6 +268,26 @@ export default function CheckoutWizard({
     onError: (e: Error) => toast.error(e.message),
   })
 
+  const summaryLines: SummaryLine[] = [
+    ...selected.map((cid) => ({
+      id: cid,
+      name: children.find((c) => c.id === cid)?.name ?? '',
+      amount: priceFor(cid),
+      snapshot: verdictFor(cid)?.pricingSnapshot,
+    })),
+    ...(selfSelected && adult
+      ? [
+          {
+            id: adult.adultProfileId,
+            name: adult.name,
+            adult: true,
+            amount: adult.amount,
+            snapshot: adult.pricingSnapshot,
+          },
+        ]
+      : []),
+  ]
+
   const goNext = () => setStep((s) => Math.min(s + 1, lastStep))
   const goBack = () => setStep((s) => Math.max(s - 1, 0))
 
@@ -455,14 +476,16 @@ export default function CheckoutWizard({
       )}
       {steps[step] === 'Plată' && (
         <CheckoutPaymentStep
-          title={offering.title}
-          kindLabel={KIND_LABEL[kind]}
+          summary={
+            <CheckoutOrderSummary
+              title={offering.title}
+              kindLabel={KIND_LABEL[kind]}
+              packageSize={offering.perSession ? packageSize : undefined}
+              lines={summaryLines}
+              total={pricesReady ? total : undefined}
+            />
+          }
           childCount={participantCount}
-          packageSize={offering.perSession ? packageSize : undefined}
-          snapshots={[
-            ...selected.map((cid) => verdictFor(cid)?.pricingSnapshot),
-            ...(selfSelected ? [adult?.pricingSnapshot] : []),
-          ]}
           total={pricesReady ? total : undefined}
           method={method}
           allowCash={allowCash}

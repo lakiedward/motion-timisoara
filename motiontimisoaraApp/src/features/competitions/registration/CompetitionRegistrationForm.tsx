@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CheckoutBillingFields } from '@/features/account/checkout/CheckoutBillingFields'
 import { CheckoutPaymentStep } from '@/features/account/checkout/CheckoutPaymentStep'
+import { CheckoutOrderSummary } from '@/features/account/checkout/CheckoutOrderSummary'
 import { usePaymentAdapter } from '@/features/account/checkout/usePaymentAdapter'
 import { useCompetitionClock } from '../useCompetitionClock'
 
@@ -464,10 +465,25 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
                         <CheckoutBillingFields billing={billing} setBilling={setBilling} />
                       )}
                       <CheckoutPaymentStep
-                        title={competition.title}
-                        kindLabel="Concurs"
+                        summary={
+                          <CheckoutOrderSummary
+                            title={competition.title}
+                            kindLabel="Concurs"
+                            lines={selections.map((selection) => ({
+                              id: participantKey(selection),
+                              name:
+                                ('childId' in selection
+                                  ? children.data?.find((child) => child.id === selection.childId)
+                                      ?.name
+                                  : user.name) ?? '',
+                              adult: !('childId' in selection),
+                              amount: verdictFor(participantKey(selection))?.amount,
+                              snapshot: verdictFor(participantKey(selection))?.pricingSnapshot,
+                            }))}
+                            total={pricesReady ? total : undefined}
+                          />
+                        }
                         childCount={selections.length}
-                        snapshots={verdicts.map((verdict) => verdict.pricingSnapshot)}
                         total={pricesReady ? total : undefined}
                         method={method}
                         allowCash={allowCash}

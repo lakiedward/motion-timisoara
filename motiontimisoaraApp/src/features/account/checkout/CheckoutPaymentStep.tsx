@@ -1,5 +1,5 @@
 import { PaymentEntry } from './PaymentEntry'
-import { AcceptedPriceDetails } from '@/components/AcceptedPriceDetails'
+import type { ReactNode } from 'react'
 import { Label } from '@/components/ui/label'
 import { formatRonOffer } from '@/lib/money'
 import { stripeConfigured } from '@/lib/stripe'
@@ -9,11 +9,8 @@ const RADIO =
   'accent-primary focus-visible:outline-ring size-4 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2'
 
 export function CheckoutPaymentStep({
-  title,
-  kindLabel,
+  summary,
   childCount,
-  packageSize,
-  snapshots,
   total,
   method,
   allowCash,
@@ -21,11 +18,8 @@ export function CheckoutPaymentStep({
   paymentAvailable,
   switchMethod,
 }: {
-  title: string
-  kindLabel: string
+  summary: ReactNode
   childCount: number
-  packageSize?: number
-  snapshots: unknown[]
   total?: number
   method: PaymentMethod
   allowCash: boolean
@@ -35,25 +29,7 @@ export function CheckoutPaymentStep({
 }) {
   return (
     <section className="space-y-6">
-      <div className="bg-card rounded-xl border p-5">
-        <h2 className="mb-3 font-semibold">Sumar comandă</h2>
-        {snapshots.map((snapshot, index) => (
-          <AcceptedPriceDetails key={index} snapshot={snapshot} />
-        ))}
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">{title}</span>
-          <span>{kindLabel}</span>
-        </div>
-        <div className="mt-1 flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">
-            {childCount} {childCount === 1 ? 'participant' : 'participanți'}
-            {packageSize !== undefined && ` × ${packageSize} ședințe`}
-          </span>
-          <span className="font-semibold">
-            {total !== undefined ? formatRonOffer(total) : 'Preț indisponibil'}
-          </span>
-        </div>
-      </div>
+      {summary}
 
       <div className="space-y-2">
         <Label>Metodă de plată</Label>
@@ -71,7 +47,7 @@ export function CheckoutPaymentStep({
           <label className="min-h-touch-target flex items-center gap-3 text-sm">
             <input
               type="radio"
-            className={RADIO}
+              className={RADIO}
               checked={method === 'CASH'}
               disabled={cashBlocked}
               onChange={() => switchMethod('CASH')}
