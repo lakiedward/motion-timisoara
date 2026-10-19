@@ -21,7 +21,7 @@ export function useActiveCoachSessions() {
     queryKey: ['active-location-sessions', actorId],
     queryFn: () => getActiveLocationSessions(actorId),
     enabled: !!actorId && parent && visible,
-    refetchInterval: 15_000,
+    refetchInterval: 5_000,
     staleTime: 0,
     retry: false,
   })

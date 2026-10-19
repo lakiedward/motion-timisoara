@@ -1,7 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 import { campState, simulateCamp, captureCamp, campProof, ids, coachName, campTitle } from './camp-location-fixture';
 
-const activeHeading = `${coachName} partajează locația`;
+const coaches = (page: Page) => page.getByRole('list', { name: 'Antrenori care partajează locația' });
+const live = (page: Page) => coaches(page).getByText(coachName, { exact: true });
 const map = (page: Page) => page.getByLabel('Harta locației antrenorului');
 const coachPanel = (page: Page) => page.getByRole('region', { name: 'Partajarea locației antrenorului' });
 const activeBanner = (page: Page) => page.getByRole('complementary', { name: 'Partajare locație activă' });
@@ -32,12 +33,14 @@ for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 
     try {
       await coach.goto(`/coach/camps/${ids.camp}/enrolled`);
       await parent.goto('/account/announcements');
+      await parent.getByRole('link', { name: 'Unde e antrenorul' }).click();
+      await expect(parent).toHaveURL(/\/account\/locatie$/);
       await expect(coach.getByRole('heading', { name: 'Cine s-a înscris' })).toBeVisible();
       await expect(coach.getByRole('heading', { name: 'Prezență în tabără' })).toHaveCount(0);
       const copil = coach.getByRole('listitem').filter({ hasText: 'Copil Simulat Ana' });
       await expect(copil.getByRole('button', { name: 'Confirmă sosirea', exact: true })).toBeVisible();
       await expect.poll(() => parentActions('list').length).toBeGreaterThan(0);
-      await expect(parent.getByText(activeHeading, { exact: true })).toHaveCount(0);
+      await expect(live(parent)).toHaveCount(0);
       await expect(coachPanel(coach).getByRole('button', { name: 'Pornește partajarea' })).toBeDisabled();
       expect(await watches(coach)).toBe(0);
       await captureCamp(coach, info, 'before-arrival');
@@ -49,19 +52,18 @@ for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 
       expect(coachActions('start')).toHaveLength(0);
       expect(coachActions('update')).toHaveLength(0);
       expect(await watches(coach)).toBe(0);
-      await expect(parent.getByText(activeHeading, { exact: true })).toHaveCount(0);
+      await expect(live(parent)).toHaveCount(0);
       await captureCamp(coach, info, 'arrived-no-sharing');
 
       await startSharing(coach);
       expect(coachActions('start')).toHaveLength(1);
       expect(coachActions('start')[0]).toMatchObject({ campId: ids.camp, consent: true });
       expect(coachActions('start')[0].occurrenceId).toBeUndefined();
-      await expect(parent.getByText(activeHeading, { exact: true })).toBeVisible({ timeout: 10000 });
-      await expect(parent.getByText(campTitle, { exact: true })).toBeVisible();
+      await expect(live(parent)).toBeVisible({ timeout: 10000 });
+      await expect(coaches(parent).getByText(new RegExp(campTitle))).toBeVisible();
       expect(parentActions('read')).toHaveLength(0);
       await expect(map(parent)).toHaveCount(0);
       await captureCamp(parent, info, 'active-announcement');
-      await parent.getByRole('button', { name: 'Vezi locația', exact: true }).click();
       await expect(parent.getByRole('button', { name: 'Accept și văd locația' })).toBeVisible();
       expect(parentActions('read')).toHaveLength(0);
       await expect(map(parent)).toHaveCount(0);
@@ -81,7 +83,7 @@ for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 
 
       await activeBanner(coach).getByRole('button', { name: 'Oprește locația' }).click();
       await expect(activeBanner(coach)).toHaveCount(0);
-      await expect(parent.getByText(activeHeading, { exact: true })).toHaveCount(0, { timeout: 10000 });
+      await expect(live(parent)).toHaveCount(0, { timeout: 10000 });
       await expect(map(parent)).toHaveCount(0);
       expect(await watches(coach)).toBe(0);
       await captureCamp(parent, info, 'announcement-removed-after-stop');
@@ -90,8 +92,7 @@ for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 
       expect(coachActions('arrive')).toHaveLength(1);
       expect(state.arrivedAt).toBe(arrivedAt);
       expect(coachActions('start')).toHaveLength(2);
-      await expect(parent.getByText(activeHeading, { exact: true })).toBeVisible({ timeout: 10000 });
-      await parent.getByRole('button', { name: 'Vezi locația', exact: true }).click();
+      await expect(live(parent)).toBeVisible({ timeout: 10000 });
       await expect(parent.getByRole('button', { name: 'Accept și văd locația' })).toBeVisible();
       await expect(map(parent)).toHaveCount(0);
       await parent.getByRole('button', { name: 'Accept și văd locația' }).click();
@@ -105,7 +106,7 @@ for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 
       await expect.poll(() => coachActions('depart').length).toBe(1);
       await expect(coach.getByRole('button', { name: 'Confirmă sosirea', exact: true })).toHaveCount(0);
       await expect(coach.getByRole('button', { name: 'Confirmă plecarea', exact: true })).toHaveCount(0);
-      await expect(parent.getByText(activeHeading, { exact: true })).toHaveCount(0, { timeout: 10000 });
+      await expect(live(parent)).toHaveCount(0, { timeout: 10000 });
       await expect(map(parent)).toHaveCount(0);
       await captureCamp(coach, info, 'departed-final');
       await captureCamp(parent, info, 'access-removed-after-departure');
@@ -129,18 +130,19 @@ test('SIMULATED camp announcement network failure clears stale map and retry rec
   state.point = { latitude: 45.75, longitude: 21.23, accuracy: 5, capturedAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   const simulation = await simulateCamp(page, 'PARENT', state);
   await page.goto('/account/announcements');
-  await expect(page.getByText(activeHeading, { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Vezi locația', exact: true }).click();
+  await page.getByRole('link', { name: /Unde e antrenorul/ }).click();
+  await expect(page).toHaveURL(/\/account\/locatie$/);
+  await expect(live(page)).toBeVisible();
   await page.getByRole('button', { name: 'Accept și văd locația' }).click();
   await expect(map(page)).toBeVisible();
   state.listUnavailable = true;
   await expect(page.getByRole('alert').filter({ hasText: /locați|partaj|Rețeaua/ })).toBeVisible({ timeout: 10000 });
-  await expect(page.getByText(activeHeading, { exact: true })).toHaveCount(0);
+  await expect(live(page)).toHaveCount(0);
   await expect(map(page)).toHaveCount(0);
   await captureCamp(page, info, 'list-error-hides-stale-session');
   state.listUnavailable = false;
-  await page.getByRole('button', { name: 'Reîncearcă locațiile', exact: true }).click();
-  await expect(page.getByText(activeHeading, { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Reîncearcă', exact: true }).click();
+  await expect(live(page)).toBeVisible();
   await captureCamp(page, info, 'list-retry-recovered');
   await campProof(info, [simulation]);
 });

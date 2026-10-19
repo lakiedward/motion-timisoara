@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { CircleAlert, Clock, LocateFixed } from 'lucide-react'
 import type { ActiveLocationSession } from '@/api/live-location/discovery'
 import type { LocationPoint } from '@/api/live-location'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { StatusView } from '@/components/ui/status-view'
-import { LocationViewer } from '../LocationViewer'
 import { useCoachLocation } from '../use-coach-location'
 import { CoachesMap, type CoachPoint } from './CoachesMap'
 import { sessionTarget, useActiveCoachSessions } from './active-sessions'
@@ -69,10 +67,15 @@ function CoachRow({
             {current.error}
           </p>
         ) : point ? (
-          <p className="flex items-center gap-1.5 font-medium sm:justify-end">
-            <Clock aria-hidden="true" className="text-muted-foreground size-4" />
-            Actualizată la {new Date(point.capturedAt).toLocaleTimeString('ro-RO')}
-          </p>
+          <>
+            <p className="flex items-center gap-1.5 font-medium sm:justify-end">
+              <Clock aria-hidden="true" className="text-muted-foreground size-4" />
+              Actualizată la {new Date(point.capturedAt).toLocaleTimeString('ro-RO')}
+            </p>
+            <p className="text-muted-foreground">
+              Precizie aproximativă {Math.round(point.accuracy)} m
+            </p>
+          </>
         ) : granted ? (
           <p
             role="status"
@@ -128,26 +131,8 @@ function SharedMapLayout({ sessions }: { sessions: ActiveLocationSession[] }) {
   )
 }
 
-function CardsLayout({ sessions }: { sessions: ActiveLocationSession[] }) {
-  return (
-    <ul className="space-y-4" aria-label="Antrenori care partajează locația">
-      {sessions.map((session) => (
-        <li key={session.sessionId} className="bg-card overflow-hidden rounded-xl border">
-          <div className="flex items-center gap-3 border-b px-4 py-4 sm:px-6">
-            <CoachIdentity session={session} />
-            <Badge variant="success">Live</Badge>
-          </div>
-          <LocationViewer occurrenceId={sessionTarget(session)} className="p-4 sm:p-6" />
-        </li>
-      ))}
-    </ul>
-  )
-}
-
 export default function CoachLocationPage() {
   const { query, sessions } = useActiveCoachSessions()
-  const [params] = useSearchParams()
-  const cards = params.get('v') === 'b'
   return (
     <div className="space-y-6">
       <div>
@@ -180,8 +165,6 @@ export default function CoachLocationPage() {
             </Button>
           }
         />
-      ) : cards ? (
-        <CardsLayout sessions={sessions} />
       ) : (
         <SharedMapLayout sessions={sessions} />
       )}

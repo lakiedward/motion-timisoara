@@ -6,10 +6,10 @@ type LocationAction = { action: string; occurrenceId?: string; sessionId?: strin
 const backend = 'http://127.0.0.1:54329';
 const fixedTime = new Date().toISOString();
 const ids = {
-  coach: '00000000-0000-0000-0000-000000000001', parent: '00000000-0000-0000-0000-000000000002',
+  coach: '00000000-0000-4000-8000-000000000001', parent: '00000000-0000-0000-0000-000000000002',
   clubOwner: '00000000-0000-0000-0000-000000000006', course: '00000000-0000-0000-0000-000000000011',
-  club: '00000000-0000-0000-0000-000000000021', occurrence: '00000000-0000-0000-0000-000000000101',
-  child: '00000000-0000-0000-0000-000000000201', session: '00000000-0000-0000-0000-000000000301',
+  club: '00000000-0000-0000-0000-000000000021', occurrence: '00000000-0000-4000-8000-000000000101',
+  child: '00000000-0000-0000-0000-000000000201', session: '00000000-0000-4000-8000-000000000301',
 };
 const child = { id: ids.child, parent_id: ids.parent, name: 'Copil Simulat Ana', birth_date: '2018-09-01' };
 const course = {
@@ -124,6 +124,10 @@ async function simulate(page: Page, role: Role) {
         active = true;
         return respond(meta());
       }
+      if (body.action === 'list') {
+        return respond({ success: true, sessions: active ? [{ sessionId: ids.session, campId: null, occurrenceId: ids.occurrence,
+          coachId: ids.coach, coachName: 'Antrenor Simulat', title: course.name, expiresAt }] : [] });
+      }
       if (body.action === 'stop') {
         active = false;
         return respond({ success: true, sessionId: ids.session });
@@ -214,8 +218,10 @@ for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 
     await page.setViewportSize(viewport);
     const simulation = await simulate(page, 'PARENT');
     await page.goto('/account/attendance');
-    const sessions = page.getByRole('region', { name: 'Ședințe cu locație în timp real' });
-    await sessions.getByRole('button', { name: /A început la/ }).click();
+    await page.getByRole('link', { name: /Unde e antrenorul/ }).click();
+    await expect(page).toHaveURL(/\/account\/locatie$/);
+    const sessions = page.getByRole('list', { name: 'Antrenori care partajează locația' });
+    await expect(sessions.getByText('Antrenor Simulat')).toBeVisible();
     await expect(sessions.getByRole('button', { name: 'Accept și văd locația' })).toBeVisible();
     await expect(page.getByLabel('Harta locației antrenorului')).toHaveCount(0);
     expect(simulation.evidence.actions.filter((entry) => entry.action === 'read')).toHaveLength(0);

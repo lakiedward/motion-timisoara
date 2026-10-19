@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, ChevronRight, MapPin } from 'lucide-react'
-import { getMyEnrollments } from '@/api/account'
 import { getCurrentLocationOccurrences } from '@/api/live-location'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
@@ -18,42 +17,26 @@ export function CurrentLocationSessions({
   courseNames,
   courseSource,
 }: {
-  courseIds?: string[]
-  courseNames?: Record<string, string>
-  courseSource?: { isLoading: boolean; isError: boolean; retry: () => void }
+  courseIds: string[]
+  courseNames: Record<string, string>
+  courseSource: { isLoading: boolean; isError: boolean; retry: () => void }
 }) {
   const { user } = useAuth()
-  const parent = user?.role === 'PARENT'
   const [selection, setSelection] = useState<{ actor: string; occurrence: string } | null>(null)
-  const enrollmentQuery = useQuery({
-    queryKey: ['live-location-enrollments', user?.id],
-    queryFn: getMyEnrollments,
-    enabled: parent,
-    retry: false,
-  })
-  const activeCourses =
-    enrollmentQuery.data?.filter((entry) => entry.kind === 'COURSE' && entry.status === 'ACTIVE') ??
-    []
-  const ids = [...new Set(courseIds ?? activeCourses.map((entry) => entry.entity_id))].sort()
-  const names =
-    courseNames ??
-    Object.fromEntries(
-      activeCourses.flatMap((entry) =>
-        entry.offerTitle ? [[entry.entity_id, entry.offerTitle]] : [],
-      ),
-    )
+  const ids = [...new Set(courseIds)].sort()
+  const names = courseNames
   const occurrences = useQuery({
     queryKey: ['live-location-occurrences', user?.id, ids],
     queryFn: () => getCurrentLocationOccurrences(ids),
-    enabled: !!user && ids.length > 0 && !courseSource?.isLoading && !courseSource?.isError,
+    enabled:
+      user?.role === 'CLUB' && ids.length > 0 && !courseSource.isLoading && !courseSource.isError,
     retry: false,
     refetchInterval: 30_000,
   })
-  if (!user || !['PARENT', 'CLUB'].includes(user.role)) return null
+  if (user?.role !== 'CLUB') return null
   const selected = selection?.actor === user.id ? selection.occurrence : null
-  const loading =
-    courseSource?.isLoading || (parent && enrollmentQuery.isLoading) || occurrences.isLoading
-  const error = courseSource?.isError || (parent && enrollmentQuery.isError) || occurrences.isError
+  const loading = courseSource.isLoading || occurrences.isLoading
+  const error = courseSource.isError || occurrences.isError
   const list = occurrences.data ?? []
   const live = list.length > 0
   return (
@@ -98,8 +81,7 @@ export function CurrentLocationSessions({
           retryLabel="Reîncearcă ședințele"
           className="border-t py-8"
           onRetry={() => {
-            if (courseSource?.isError) courseSource.retry()
-            else if (parent && enrollmentQuery.isError) void enrollmentQuery.refetch()
+            if (courseSource.isError) courseSource.retry()
             else void occurrences.refetch()
           }}
         />
