@@ -215,7 +215,7 @@ for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 
     const simulation = await simulate(page, 'PARENT');
     await page.goto('/account/attendance');
     const sessions = page.getByRole('region', { name: 'Ședințe cu locație în timp real' });
-    await sessions.getByRole('button', { name: /Ședință ·/ }).click();
+    await sessions.getByRole('button', { name: /A început la/ }).click();
     await expect(sessions.getByRole('button', { name: 'Accept și văd locația' })).toBeVisible();
     await expect(page.getByLabel('Harta locației antrenorului')).toHaveCount(0);
     expect(simulation.evidence.actions.filter((entry) => entry.action === 'read')).toHaveLength(0);
@@ -233,7 +233,7 @@ for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 
     await expect(page.getByLabel('Harta locației antrenorului')).toHaveCount(0);
     await expect.poll(() => simulation.evidence.actions.filter((entry) => entry.action === 'read').length, { timeout: 2000 }).toBeGreaterThan(reads);
     simulation.releaseUpdatedRead();
-    await expect(sessions.getByText(/precizie aproximativă 17 m/)).toBeVisible();
+    await expect(sessions.getByText(/precizie aproximativă 17 m/i)).toBeVisible();
     await capture(page, info, 'parent-realtime-updated');
     await sessions.getByRole('button', { name: 'Retrage acordul' }).click();
     await expect(page.getByLabel('Harta locației antrenorului')).toHaveCount(0);

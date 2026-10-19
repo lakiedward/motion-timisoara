@@ -41,7 +41,7 @@ beforeEach(() => {
 
 test('selection survives disappearance from occurrence candidates so revocation stays reachable', async () => {
   const client = mount()
-  await userEvent.click(await screen.findByRole('button', { name: /Ședință ·/ }))
+  await userEvent.click(await screen.findByRole('button', { name: /Ședință/ }))
   await screen.findByText('Vizualizare occurrence-1')
   act(() =>
     client.setQueryData(
@@ -63,7 +63,7 @@ test('new parent discovery includes only active course enrollments', async () =>
     { kind: 'CAMP', entity_id: 'active-camp', status: 'ACTIVE' },
   ] as Awaited<ReturnType<typeof getMyEnrollments>>)
   mount()
-  await screen.findByRole('button', { name: /Ședință ·/ })
+  await screen.findByRole('button', { name: /Ședință/ })
   expect(getCurrentLocationOccurrences).toHaveBeenCalledWith(['course-1'])
 })
 
@@ -81,4 +81,23 @@ test('failure is distinct from a genuinely empty current schedule', async () => 
   mount()
   await screen.findByText('Nu am putut încărca ședințele pentru locație.')
   expect(screen.queryByText('Nicio ședință în desfășurare.')).not.toBeInTheDocument()
+})
+
+test('parent sessions show the course title and an empty schedule does not ask to choose', async () => {
+  vi.mocked(getMyEnrollments).mockResolvedValue([
+    { kind: 'COURSE', entity_id: 'course-1', status: 'ACTIVE', offerTitle: 'Înot începători' },
+  ] as Awaited<ReturnType<typeof getMyEnrollments>>)
+  mount()
+  const row = await screen.findByRole('button', { name: /Înot începători/ })
+  expect(row).toHaveAttribute('aria-expanded', 'false')
+  await userEvent.click(row)
+  expect(row).toHaveAttribute('aria-expanded', 'true')
+  await screen.findByText('Vizualizare occurrence-1')
+})
+
+test('no live session shows the empty explanation without the choose prompt', async () => {
+  vi.mocked(getCurrentLocationOccurrences).mockResolvedValue([])
+  mount()
+  await screen.findByText('Nicio ședință în desfășurare.')
+  expect(screen.queryByText(/Alege ședința/)).not.toBeInTheDocument()
 })
