@@ -13,10 +13,8 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { plural } from '@/lib/plural'
-import { AnnouncementFeed, type FeedLayout } from './announcements/AnnouncementFeed'
-import { CoursePills, CourseSelect } from './announcements/CourseFilter'
-
-const LAYOUT: FeedLayout = 'months'
+import { AnnouncementFeed } from './announcements/AnnouncementFeed'
+import { CourseSelect } from './announcements/CourseFilter'
 
 function FeedSkeleton() {
   return <StatusView state="loading" title="Se încarcă anunțurile" rows={2} rowHeight={140} />
@@ -107,7 +105,6 @@ function ParentAnnouncementList({
             items={items}
             userId={userId}
             previousSeenAt={initialPage.previousSeenAt}
-            layout={LAYOUT}
           />
           {feed.isError && (
             <div role="alert" className="bg-card rounded-xl border p-4">
@@ -189,7 +186,6 @@ function AnnouncementVisit({ userId }: { userId: string }) {
   })
   const changeCourse = (courseId: string) =>
     setFilter((previous) => ({ courseId, revision: previous.revision + 1 }))
-  const Filter = LAYOUT === 'grid' ? CoursePills : CourseSelect
   const filterControl = !firstPageLoaded ? null : courses.isPending ? (
     <Skeleton className="h-11 w-full rounded-md sm:w-56" aria-label="Se încarcă lista cursurilor" />
   ) : courses.isError ? (
@@ -205,16 +201,15 @@ function AnnouncementVisit({ userId }: { userId: string }) {
       </Button>
     </div>
   ) : courses.data?.length ? (
-    <Filter courses={courses.data} value={filter.courseId} onChange={changeCourse} />
+    <CourseSelect courses={courses.data} value={filter.courseId} onChange={changeCourse} />
   ) : null
 
   return (
     <>
-      <PageHeader filter={LAYOUT === 'grid' ? null : filterControl} />
+      <PageHeader filter={filterControl} />
       <div className="mb-6">
         <LiveLocationBanner always />
       </div>
-      {LAYOUT === 'grid' && filterControl && <div className="mb-6">{filterControl}</div>}
       {firstPage.isPending ? (
         <FeedSkeleton />
       ) : firstPage.isError ? (

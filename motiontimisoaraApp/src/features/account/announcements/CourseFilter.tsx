@@ -1,5 +1,4 @@
 import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
 
 type Course = { id: string; name: string }
 type Props = { courses: Course[]; value: string; onChange: (courseId: string) => void }
@@ -24,26 +23,6 @@ export function CourseSelect({ courses, value, onChange }: Props) {
           </option>
         ))}
       </select>
-    </div>
-  )
-}
-
-export function CoursePills({ courses, value, onChange }: Props) {
-  const options = [{ id: '', name: 'Toate' }, ...courses]
-  return (
-    <div role="group" aria-label="Filtrează după curs" className="flex flex-wrap gap-2">
-      {options.map((course) => (
-        <Button
-          key={course.id || 'all'}
-          type="button"
-          className="shrink-0 rounded-full"
-          variant={value === course.id ? 'default' : 'outline'}
-          aria-pressed={value === course.id}
-          onClick={() => onChange(course.id)}
-        >
-          {course.name}
-        </Button>
-      ))}
     </div>
   )
 }

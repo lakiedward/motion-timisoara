@@ -42,7 +42,7 @@ function Body({ item, attachments }: { item: AnnouncementRow; attachments: Atasa
   )
 }
 
-export function AnnouncementListCard({ item, attachments, fresh }: CardProps) {
+export function AnnouncementCard({ item, attachments, fresh }: CardProps) {
   return (
     <article
       className={cn(
@@ -77,46 +77,6 @@ export function AnnouncementListCard({ item, attachments, fresh }: CardProps) {
         </span>
       </div>
       <Body item={item} attachments={attachments} />
-    </article>
-  )
-}
-
-export function AnnouncementGridCard({ item, attachments, fresh }: CardProps) {
-  return (
-    <article
-      className={cn('bg-card flex min-w-0 flex-col rounded-xl border', fresh && 'border-primary')}
-    >
-      <div className="flex items-start gap-3 border-b p-5">
-        <span
-          aria-hidden="true"
-          className="bg-primary/10 text-primary grid size-11 shrink-0 place-items-center rounded-full font-bold"
-        >
-          {item.authorName.trim().charAt(0).toLocaleUpperCase('ro-RO')}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="font-semibold wrap-anywhere">{item.authorName}</p>
-          <p className="text-muted-foreground text-xs">
-            <span>{sourceLabel(item)}</span> ·{' '}
-            <time dateTime={item.publishedAt}>{publishedDate(item)}</time>
-          </p>
-        </div>
-      </div>
-      <div className="flex flex-1 flex-col gap-2 p-5">
-        <div className="flex items-start justify-between gap-3">
-          {item.courseId ? (
-            <Link
-              to={`/cursuri/${item.courseId}`}
-              className={cn(LINK, 'w-fit text-sm font-medium underline')}
-            >
-              {courseLabel(item)}
-            </Link>
-          ) : (
-            <p className="text-muted-foreground text-sm wrap-anywhere">{audienceText(item)}</p>
-          )}
-          <Badges item={item} fresh={fresh} />
-        </div>
-        <Body item={item} attachments={attachments} />
-      </div>
     </article>
   )
 }
