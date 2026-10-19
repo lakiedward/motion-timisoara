@@ -47,7 +47,7 @@ export function CheckoutPackagePicker({
             id="custom-package"
             type="number"
             min={1}
-            className="h-9 min-w-0 flex-1 rounded-full border-0 px-2 text-right shadow-none"
+            className="h-9 min-w-0 flex-1 rounded-full border-0 bg-transparent px-2 text-right shadow-none dark:bg-transparent"
             value={value}
             onChange={(e) => onChange(Math.max(1, Number(e.target.value) || 1))}
           />
