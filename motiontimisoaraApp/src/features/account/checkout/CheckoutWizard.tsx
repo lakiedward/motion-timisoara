@@ -2,7 +2,7 @@ import { AcceptedPriceDetails } from '@/components/AcceptedPriceDetails'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -17,15 +17,13 @@ import { createChild, getMyChildren } from '@/api/account'
 import { useAuth } from '@/lib/auth-context'
 import { formatRonOffer } from '@/lib/money'
 import { stripeConfigured } from '@/lib/stripe'
-import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { CheckoutPaymentStep } from './CheckoutPaymentStep'
-import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
-import { CheckoutSteps } from './CheckoutSteps'
+import { CheckoutProgress, CheckoutStepList, CheckoutSteps } from './CheckoutSteps'
+import { CheckoutPackagePicker } from './CheckoutPackagePicker'
 
 import type { Offering } from '../CheckoutPage'
 import { AddChildInline, CheckoutAdultRow, CheckoutChildRow } from './CheckoutFormFields'
@@ -35,6 +33,7 @@ import { processEnrollmentPayments, paymentResultMessage } from '@/api/payments/
 import {
   checkoutIsFree,
   checkoutParticipantCount,
+  STEP_COPY,
   advanceHint,
   checkoutStepLabels,
   enrollmentNeedsCardPayment,
@@ -283,67 +282,60 @@ export default function CheckoutWizard({
 
   const busy = finalize.isPending
 
-  return (
+  const hint =
+    step < lastStep && !canAdvance ? advanceHint(steps[step], participantCount, hasAccepted) : null
+  const copy = STEP_COPY[steps[step]]
+  const variant =
+    new URLSearchParams(window.location.search).get('varianta') === 'b' ? 'b' : 'a'
+
+  const backLink = (
+    <Link
+      to={-1 as unknown as string}
+      onClick={(e) => {
+        e.preventDefault()
+        navigate(-1)
+      }}
+      className="text-muted-foreground hover:text-foreground focus-visible:outline-ring inline-flex min-h-touch-target items-center gap-1 rounded-md text-sm focus-visible:outline-2 focus-visible:outline-offset-2"
+    >
+      <ArrowLeft className="size-4" /> Înapoi
+    </Link>
+  )
+
+  const heading = (
     <div>
-      <Link
-        to={-1 as unknown as string}
-        onClick={(e) => {
-          e.preventDefault()
-          navigate(-1)
-        }}
-        className="text-muted-foreground hover:text-foreground focus-visible:outline-ring mb-2 inline-flex min-h-touch-target items-center gap-1 rounded-md text-sm focus-visible:outline-2 focus-visible:outline-offset-2"
-      >
-        <ArrowLeft className="size-4" /> Înapoi
-      </Link>
-
       <h1 className="font-display text-2xl font-bold">Finalizează înscrierea</h1>
-      <p className="text-muted-foreground mt-1 text-sm">
-        <Badge variant="outline">{KIND_LABEL[kind]}</Badge>{' '}
-        <span className="ml-2">{offering.title}</span>
+      <p className="text-muted-foreground mt-2 flex flex-wrap items-center gap-2 text-sm">
+        <Badge variant="outline">{KIND_LABEL[kind]}</Badge>
+        <span>{offering.title}</span>
       </p>
+    </div>
+  )
 
-      <CheckoutSteps steps={steps} current={step} />
-      {offering.perSession && step <= 1 && (
-        <div className="mb-6">
-          <Label className="mb-2 block">Pachet de ședințe</Label>
-          <div className="flex flex-wrap gap-2">
-            {offering.packages.map((size) => (
-              <button
-                key={size}
-                type="button"
-                aria-pressed={packageSize === size}
-                onClick={() => setPackageSize(size)}
-                className={cn(
-                  'focus-visible:outline-ring min-h-touch-target rounded-full border px-4 text-sm focus-visible:outline-2 focus-visible:outline-offset-2',
-                  packageSize === size
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-card',
-                )}
-              >
-                {size} ședințe
-              </button>
-            ))}
-            <div className="flex items-center gap-2">
-              <Label htmlFor="custom-package" className="text-muted-foreground text-sm">
-                Altul
-              </Label>
-              <Input
-                id="custom-package"
-                type="number"
-                min={1}
-                className="w-24"
-                value={packageSize}
-                onChange={(e) => setPackageSize(Math.max(1, Number(e.target.value) || 1))}
-              />
-            </div>
-          </div>
-        </div>
+  const stepHeader = (
+    <div>
+      <h2 className="font-display text-lg font-semibold">{copy?.title ?? steps[step]}</h2>
+      {copy && <p className="text-muted-foreground mt-1 text-sm">{copy.text}</p>}
+    </div>
+  )
+
+  const body = (
+    <>
+      {step === 0 && offering.perSession && (
+        <CheckoutPackagePicker
+          packages={offering.packages}
+          value={packageSize}
+          onChange={setPackageSize}
+        />
       )}
-
       {step === 0 && (
-        <section className="space-y-4">
+        <section aria-labelledby="checkout-participants" className="space-y-3">
+          {offering.perSession && (
+            <h3 id="checkout-participants" className="text-sm font-semibold">
+              {kind === 'CAMP' ? 'Participanți' : 'Copii'}
+            </h3>
+          )}
           {childrenLoading ? (
-            <Skeleton className="h-24 rounded-xl" />
+            <Skeleton className="h-20 rounded-xl" />
           ) : childrenFailed ? (
             <StatusView
               state="error"
@@ -402,8 +394,11 @@ export default function CheckoutWizard({
         </section>
       )}
       {step === 1 && (
-        <section className="space-y-6">
-          <div className="bg-card rounded-xl border p-5">
+        <section className="space-y-5">
+          <div className="rounded-xl border p-4">
+            {offering.perSession && (
+              <p className="text-muted-foreground mb-2 text-sm">Pachet: {packageSize} ședințe</p>
+            )}
             {selected.map((cid) => {
               const child = children.find((c) => c.id === cid)
               return (
@@ -441,7 +436,7 @@ export default function CheckoutWizard({
             </div>
           </div>
 
-          <label className="flex items-start gap-3 text-sm">
+          <label className="flex cursor-pointer items-start gap-3 text-sm">
             <input
               type="checkbox"
               className="accent-primary focus-visible:outline-ring mt-0.5 size-4 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2"
@@ -485,7 +480,7 @@ export default function CheckoutWizard({
       {!validationFetching &&
         participantCount > 0 &&
         (!pricesReady || (accepted && !hasAccepted)) && (
-          <div role="alert" className="text-destructive mt-4 space-y-2 text-sm">
+          <div role="alert" className="text-destructive space-y-2 text-sm">
             <p>
               {pricesReady
                 ? 'Prețurile s-au schimbat. Revino la Detalii și confirmă suma.'
@@ -503,44 +498,125 @@ export default function CheckoutWizard({
             </Button>
           </div>
         )}
-      {step < lastStep && !canAdvance && advanceHint(steps[step], participantCount, hasAccepted) && (
-        <p id="checkout-advance-hint" className="text-muted-foreground mt-6 text-sm">
-          {advanceHint(steps[step], participantCount, hasAccepted)}
-        </p>
-      )}
-      <div className="mt-4 flex items-center gap-3">
-        {step > 0 && (
-          <Button variant="outline" onClick={goBack} disabled={busy}>
-            Înapoi
-          </Button>
-        )}
-        {step < lastStep ? (
-          <Button
-            className="flex-1 sm:flex-none"
-            onClick={goNext}
-            disabled={!canAdvance}
-            aria-describedby={!canAdvance ? 'checkout-advance-hint' : undefined}
-          >
-            Continuă
-          </Button>
-        ) : (
-          <Button
-            className="flex-1 sm:flex-none"
-            onClick={() => finalize.mutate()}
-            disabled={
-              busy ||
-              participantCount === 0 ||
-              !canPayWithoutStripe ||
-              (!isFree && method === 'CARD' && !payment.ready) ||
-              !validationReady ||
-              !pricesReady ||
-              !hasAccepted
-            }
-          >
-            {busy && <Loader2 className="mr-2 size-4 animate-spin" />}
-            {busy ? (progress ?? 'Se procesează…') : 'Finalizează'}
-          </Button>
-        )}
+    </>
+  )
+
+  const hintLine = hint ? (
+    <p id="checkout-advance-hint" className="text-muted-foreground text-sm">
+      {hint}
+    </p>
+  ) : null
+
+  const primary =
+    step < lastStep ? (
+      <Button
+        className="w-full sm:w-auto"
+        size="lg"
+        onClick={goNext}
+        disabled={!canAdvance}
+        aria-describedby={hint ? 'checkout-advance-hint' : undefined}
+      >
+        Continuă
+        <ArrowRight aria-hidden="true" />
+      </Button>
+    ) : (
+      <Button
+        className="w-full sm:w-auto"
+        size="lg"
+        onClick={() => finalize.mutate()}
+        disabled={
+          busy ||
+          participantCount === 0 ||
+          !canPayWithoutStripe ||
+          (!isFree && method === 'CARD' && !payment.ready) ||
+          !validationReady ||
+          !pricesReady ||
+          !hasAccepted
+        }
+      >
+        {busy && <Loader2 className="size-4 animate-spin" />}
+        {busy ? (progress ?? 'Se procesează…') : 'Finalizează'}
+      </Button>
+    )
+
+  const back =
+    step > 0 ? (
+      <Button variant="ghost" size="lg" onClick={goBack} disabled={busy}>
+        Înapoi
+      </Button>
+    ) : null
+
+  if (variant === 'b') {
+    return (
+      <div className="pb-20 lg:pb-0">
+        {backLink}
+        <div className="mt-2 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8">
+          <div className="space-y-6">
+            {heading}
+            <div className="lg:hidden">
+              <CheckoutProgress steps={steps} current={step} />
+            </div>
+            <div className="bg-card space-y-6 rounded-xl border p-5 sm:p-6">
+              {stepHeader}
+              {body}
+            </div>
+          </div>
+          <aside className="bg-card space-y-5 rounded-xl border p-5 lg:sticky lg:top-24">
+            <div className="hidden lg:block">
+              <CheckoutStepList steps={steps} current={step} />
+            </div>
+            <div className="space-y-1 text-sm lg:border-t lg:pt-5">
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">Participanți</span>
+                <span className="font-medium">{participantCount}</span>
+              </div>
+              {offering.perSession && (
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">Pachet</span>
+                  <span className="font-medium">{packageSize} ședințe</span>
+                </div>
+              )}
+              <div className="flex justify-between gap-3 pt-2 text-base font-semibold">
+                <span>Total</span>
+                <span className="tabular-nums">
+                  {participantCount === 0
+                    ? '0,00 lei'
+                    : pricesReady
+                      ? formatRonOffer(total)
+                      : 'Se calculează…'}
+                </span>
+              </div>
+            </div>
+            {hintLine}
+            <div className="flex flex-col-reverse gap-2 [&>button]:w-full">
+              {back}
+              {primary}
+            </div>
+          </aside>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl pb-20 lg:pb-0">
+      {backLink}
+      <div className="mt-2 space-y-6">
+        {heading}
+        <CheckoutSteps steps={steps} current={step} />
+        <div className="bg-card rounded-xl border">
+          <div className="space-y-6 p-5 sm:p-6">
+            {stepHeader}
+            {body}
+          </div>
+          <div className="space-y-3 border-t p-5 sm:px-6">
+            {hintLine}
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+              {back ?? <span className="hidden sm:block" />}
+              {primary}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
