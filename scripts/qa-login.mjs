@@ -16,6 +16,7 @@ const LIVE_ORIGINS = new Set([
   'https://motiontimisoara-demo.netlify.app',
   'https://master--motiontimisoara.netlify.app',
 ])
+const DEPLOY_PREVIEW_ORIGIN = /^https:\/\/deploy-preview-[0-9]+--motiontimisoara\.netlify\.app$/
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -98,8 +99,10 @@ async function provision(roles) {
 function assertAllowedOrigin(baseUrl, allowLive) {
   const origin = new URL(baseUrl).origin
   if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return origin
-  if (allowLive && LIVE_ORIGINS.has(origin)) return origin
-  usage(`Origine refuzată: ${origin}. Local merge direct; live doar cu --allow-live pe ${[...LIVE_ORIGINS].join(', ')}.`)
+  if (allowLive && (LIVE_ORIGINS.has(origin) || DEPLOY_PREVIEW_ORIGIN.test(origin))) return origin
+  usage(
+    `Origine refuzată: ${origin}. Local merge direct; live doar cu --allow-live pe ${[...LIVE_ORIGINS].join(', ')} sau https://deploy-preview-<N>--motiontimisoara.netlify.app.`,
+  )
 }
 
 async function login(role, opts) {

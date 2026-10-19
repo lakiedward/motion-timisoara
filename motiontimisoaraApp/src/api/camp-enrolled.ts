@@ -18,7 +18,14 @@ export interface CopilInscris {
   telefonUrgenta: string | null
   contactSecundar: string | null
   telefonSecundar: string | null
+  acordFoto: boolean | null
+  cineRidica: string | null
+  inot: NivelInot | null
+  afectiuni: string | null
+  restrictiiAlimentare: string | null
 }
+
+export type NivelInot = 'no' | 'basic' | 'yes'
 
 interface RandCopil {
   id: string
@@ -30,6 +37,11 @@ interface RandCopil {
   emergency_phone: string | null
   secondary_contact_name: string | null
   secondary_phone: string | null
+  photo_consent: boolean | null
+  pickup_persons: string | null
+  swim_level: string | null
+  medical_notes: string | null
+  dietary_restrictions: string | null
 }
 
 interface RandAdult {
@@ -41,7 +53,7 @@ export async function getInscrisiiTaberei(campId: string): Promise<CopilInscris[
   const { data, error } = await supabase
     .from('enrollments')
     .select(
-      'id, status, created_at, child_id, adult_profile_id, child:children(id, name, birth_date, tshirt_size, allergies, emergency_contact_name, emergency_phone, secondary_contact_name, secondary_phone), adult:profiles!enrollments_adult_profile_id_fkey(id, name)',
+      'id, status, created_at, child_id, adult_profile_id, child:children(id, name, birth_date, tshirt_size, allergies, emergency_contact_name, emergency_phone, secondary_contact_name, secondary_phone, photo_consent, pickup_persons, swim_level, medical_notes, dietary_restrictions), adult:profiles!enrollments_adult_profile_id_fkey(id, name)',
     )
     .eq('kind', 'CAMP')
     .eq('entity_id', campId)
@@ -66,6 +78,11 @@ export async function getInscrisiiTaberei(campId: string): Promise<CopilInscris[
         telefonUrgenta: null,
         contactSecundar: null,
         telefonSecundar: null,
+        acordFoto: null,
+        cineRidica: null,
+        inot: null,
+        afectiuni: null,
+        restrictiiAlimentare: null,
       }
     }
     const c = r.child as RandCopil | null
@@ -83,8 +100,17 @@ export async function getInscrisiiTaberei(campId: string): Promise<CopilInscris[
       telefonUrgenta: c?.emergency_phone ?? null,
       contactSecundar: c?.secondary_contact_name ?? null,
       telefonSecundar: c?.secondary_phone ?? null,
+      acordFoto: c?.photo_consent ?? null,
+      cineRidica: c?.pickup_persons?.trim() || null,
+      inot: esteNivelInot(c?.swim_level) ? c.swim_level : null,
+      afectiuni: c?.medical_notes?.trim() || null,
+      restrictiiAlimentare: c?.dietary_restrictions?.trim() || null,
     }
   })
+}
+
+function esteNivelInot(s: string | null | undefined): s is NivelInot {
+  return s === 'no' || s === 'basic' || s === 'yes'
 }
 
 export function varstaLa(dataNasterii: string | null, ziuaTaberei: string): number | null {

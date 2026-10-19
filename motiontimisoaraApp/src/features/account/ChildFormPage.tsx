@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { type ComponentProps, useEffect } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -8,44 +8,58 @@ import { ArrowLeft, QrCode } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { createChild, getChild, updateChild } from '@/api/account'
+import { toIso } from '@/lib/camp-period'
 import { formatLevel, toLevelSlug } from '@/lib/level'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
+import { Textarea } from '@/components/ui/textarea'
 
 const selectCls =
-  'border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] lg:h-9'
+  'border-input dark:bg-input/30 flex h-touch-target w-full min-w-0 rounded-md border bg-transparent px-3 text-base shadow-xs transition-[color,box-shadow] outline-none hover:border-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:text-sm'
 
-/** Același tipar ca la înregistrare (`RegisterPage`), ca să nu avem două reguli de telefon. */
 const TELEFON = /^\+?[0-9]{8,15}$/
-/** „0722 123 456” e un număr scris de om, nu unul invalid. */
 const doarNumarul = (s: string) => s.replace(/[\s().-]/g, '')
 const eTelefonValid = (s: string) => TELEFON.test(doarNumarul(s))
+const azi = () => toIso(new Date())
+const PICKUP_HINT = 'Nume și relație, câte unul pe rând. De exemplu: Maria Pop, bunica.'
+
+const obligatoriu = (minim: number) =>
+  z.string().trim().min(1, 'Obligatoriu').min(minim, `Minim ${minim} caractere`)
 
 const schema = z.object({
-  name: z.string().min(2, 'Minim 2 caractere'),
+  name: obligatoriu(2),
   birth_date: z
     .string()
     .min(1, 'Obligatoriu')
-    // O dată din viitor trecea, iar copilul apărea în listă cu vârstă negativă.
-    .refine((s) => s <= new Date().toISOString().slice(0, 10), 'Data nu poate fi în viitor'),
+    .refine((s) => s <= azi(), 'Data nu poate fi în viitor'),
   level: z.string().optional(),
   allergies: z.string().optional(),
-  emergency_contact_name: z.string().min(2, 'Minim 2 caractere'),
-  emergency_phone: z.string().min(1, 'Obligatoriu').refine(eTelefonValid, 'Număr de telefon invalid'),
+  medical_notes: z.string().max(1000, 'Maxim 1000 de caractere').optional(),
+  dietary_restrictions: z.string().max(500, 'Maxim 500 de caractere').optional(),
+  emergency_contact_name: obligatoriu(2),
+  emergency_phone: z
+    .string()
+    .min(1, 'Obligatoriu')
+    .refine(eTelefonValid, 'Număr de telefon invalid'),
   secondary_contact_name: z.string().optional(),
   secondary_phone: z
     .string()
     .optional()
-    // Secundarul rămâne opțional, dar dacă e scris trebuie să fie un număr real:
-    // un contact de rezervă la care nu poți suna nu e un contact de rezervă.
     .refine((s) => !s || eTelefonValid(s), 'Număr de telefon invalid'),
   tshirt_size: z.string().optional(),
+  swim_level: z.string().optional(),
+  pickup_persons: z.string().max(500, 'Maxim 500 de caractere').optional(),
+  photo_consent: z
+    .string({ message: 'Alege una dintre variante' })
+    .refine((s) => ['da', 'nu'].includes(s), 'Alege una dintre variante'),
 })
 type Values = z.infer<typeof schema>
 
-/** Steluța de lângă eticheta unui câmp obligatoriu. */
 function Obligatoriu() {
   return (
     <span className="text-destructive" aria-hidden="true">
@@ -54,14 +68,11 @@ function Obligatoriu() {
   )
 }
 
-/** Forma unui id de copil. Orice altceva nu poate potrivi niciun rând. */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export default function ChildFormPage() {
   const { id } = useParams()
   const isEdit = !!id
-  // Un id malformat nu ajunge la server: cererea ar pica oricum cu 400 și ar lăsa
-  // o eroare în consolă pentru un caz pe care îl știm dinainte.
   const idArataAUuid = !isEdit || UUID.test(id)
   const navigate = useNavigate()
   const qc = useQueryClient()
@@ -83,11 +94,6 @@ export default function ChildFormPage() {
     formState: { errors, isSubmitting },
   } = useForm<Values>({ resolver: zodResolver(schema) })
 
-  /**
-   * Nivelul salvat, adus la forma din listă. Când nu-l recunoaștem îl păstrăm ca
-   * atare și îi facem loc în listă mai jos — altfel selectul ar rămâne fără nicio
-   * opțiune aleasă, iar prima salvare ar șterge un nivel pe care nimeni nu l-a atins.
-   */
   const nivelSalvat = existing?.level ?? ''
   const nivelCunoscut = toLevelSlug(nivelSalvat)
   const nivelStrain = nivelSalvat && !nivelCunoscut ? nivelSalvat : ''
@@ -99,19 +105,40 @@ export default function ChildFormPage() {
         birth_date: existing.birth_date,
         level: toLevelSlug(existing.level) || existing.level || '',
         allergies: existing.allergies ?? '',
+        medical_notes: existing.medical_notes ?? '',
+        dietary_restrictions: existing.dietary_restrictions ?? '',
         emergency_contact_name: existing.emergency_contact_name ?? '',
         emergency_phone: existing.emergency_phone ?? '',
         secondary_contact_name: existing.secondary_contact_name ?? '',
         secondary_phone: existing.secondary_phone ?? '',
         tshirt_size: existing.tshirt_size ?? '',
+        swim_level: existing.swim_level ?? '',
+        pickup_persons: existing.pickup_persons ?? '',
+        photo_consent:
+          existing.photo_consent === true ? 'da' : existing.photo_consent === false ? 'nu' : '',
       })
     }
   }, [existing, reset])
 
-  const onSubmit = async (v: Values) => {
+  const onSubmit = async ({
+    photo_consent,
+    swim_level,
+    pickup_persons,
+    medical_notes,
+    dietary_restrictions,
+    ...v
+  }: Values) => {
+    const date = {
+      ...v,
+      medical_notes: medical_notes?.trim() || null,
+      dietary_restrictions: dietary_restrictions?.trim() || null,
+      swim_level: swim_level || null,
+      pickup_persons: pickup_persons?.trim() || null,
+      photo_consent: photo_consent === 'da',
+    }
     try {
-      if (isEdit) await updateChild(id as string, v)
-      else await createChild(v)
+      if (isEdit) await updateChild(id as string, date)
+      else await createChild(date)
       qc.invalidateQueries({ queryKey: ['children'] })
       toast.success(isEdit ? 'Copil actualizat.' : 'Copil adăugat.')
       navigate('/account/children')
@@ -120,201 +147,313 @@ export default function ChildFormPage() {
     }
   }
 
-  // O citire căzută nu e totuna cu un copil inexistent: prima se reîncearcă, a
-  // doua nu are ce reîncerca.
   if (isEdit && aEsuatCitirea) {
     return (
       <div className="mx-auto max-w-2xl">
         <InapoiLaCopii />
-        <div role="alert" className="mt-6 rounded-3xl border border-dashed py-16 text-center">
-          <p className="text-foreground font-medium">Nu am putut încărca copilul.</p>
-          <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetch()}>
-            Reîncearcă
-          </Button>
-        </div>
+        <StatusView
+          state="error"
+          title="Nu am putut încărca copilul."
+          text="Verifică conexiunea și încearcă din nou."
+          onRetry={() => void refetch()}
+          className="mt-4"
+        />
       </div>
     )
   }
 
-  // Un id care nu duce nicăieri nu are voie să deschidă un formular gol, editabil,
-  // cu buton de salvare: părintele ar completa date pentru un copil inexistent.
-  // `seIncarca` nu se termină niciodată când interogarea e oprită, deci id-ul
-  // malformat se tratează separat, înaintea lui.
   if (isEdit && (!idArataAUuid || (!seIncarca && !existing))) {
     return (
       <div className="mx-auto max-w-2xl">
         <InapoiLaCopii />
-        <p className="text-muted-foreground mt-6">Copilul nu a fost găsit.</p>
+        <StatusView
+          state="empty"
+          title="Copilul nu a fost găsit."
+          text="Poate a fost șters sau linkul nu mai este valabil."
+          className="mt-4"
+        />
       </div>
     )
   }
 
+  if (isEdit && seIncarca) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <InapoiLaCopii />
+        <div role="status" aria-label="Se încarcă copilul" className="mt-4 space-y-4">
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-touch-target w-32" />
+          <Skeleton className="h-96 rounded-xl" />
+        </div>
+      </div>
+    )
+  }
+
+  const camp = (nume: keyof Values) => ({
+    'aria-invalid': !!errors[nume],
+    'aria-describedby': fieldDescription(nume, undefined, errors[nume]?.message),
+  })
+
   return (
     <div className="mx-auto max-w-2xl">
       <InapoiLaCopii />
-      <h1 className="font-display mt-4 text-2xl font-bold">
-        {isEdit ? 'Editează copil' : 'Adaugă copil'}
-      </h1>
-      <p className="text-muted-foreground mt-1 text-xs">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-foreground text-2xl font-bold">
+          {isEdit ? 'Editează copil' : 'Adaugă copil'}
+        </h1>
+        {isEdit && (
+          <Button asChild variant="outline">
+            <Link to={`/account/child/${id}/qr`}>
+              <QrCode className="size-4" aria-hidden="true" /> Cod QR
+            </Link>
+          </Button>
+        )}
+      </div>
+      <p className="text-muted-foreground mt-2 text-sm">
         Câmpurile marcate cu <span className="text-destructive">*</span> sunt obligatorii.
       </p>
-      {isEdit && (
-        <Button asChild variant="outline" className="mt-3 h-11 min-h-11">
-          <Link to={`/account/child/${id}/qr`}>
-            <QrCode className="size-4" /> Codul QR al copilului
-          </Link>
-        </Button>
-      )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4" noValidate>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="name">
-              Nume <Obligatoriu />
-            </Label>
-            <Input
-              id="name"
-              className="h-11 lg:h-9"
-              required
-              {...register('name')}
-              aria-invalid={!!errors.name}
-              aria-describedby={errors.name ? 'name-error' : undefined}
-            />
-            {errors.name && (
-              <p id="name-error" className="text-destructive text-xs">
-                {errors.name.message}
-              </p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="birth_date">
-              Data nașterii <Obligatoriu />
-            </Label>
-            <Input
-              id="birth_date"
-              type="date"
-              className="h-11 lg:h-9"
-              required
-              {...register('birth_date')}
-              aria-invalid={!!errors.birth_date}
-              aria-describedby={errors.birth_date ? 'birth_date-error' : undefined}
-            />
-            {errors.birth_date && (
-              <p id="birth_date-error" className="text-destructive text-xs">
-                {errors.birth_date.message}
-              </p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="level">Nivel</Label>
-            <select id="level" className={cn(selectCls)} {...register('level')}>
-              <option value="">—</option>
-              <option value="incepator">Începător</option>
-              <option value="intermediar">Intermediar</option>
-              <option value="avansat">Avansat</option>
-              {nivelStrain && <option value={nivelStrain}>{formatLevel(nivelStrain)}</option>}
-            </select>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="tshirt_size">Mărime tricou</Label>
-            <select id="tshirt_size" className={cn(selectCls)} {...register('tshirt_size')}>
-              <option value="">—</option>
-              {['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL'].map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-6" noValidate>
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-display text-lg">Despre copil</CardTitle>
+            <CardDescription>Datele de bază, folosite la înscrieri și la tricou.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor="name">
+                  Nume <Obligatoriu />
+                </Label>
+                <Input id="name" required {...register('name')} {...camp('name')} />
+                <FieldMessage id="name" error={errors.name?.message} />
+              </div>
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor="birth_date">
+                  Data nașterii <Obligatoriu />
+                </Label>
+                <Input
+                  id="birth_date"
+                  type="date"
+                  max={azi()}
+                  required
+                  {...register('birth_date')}
+                  {...camp('birth_date')}
+                />
+                <FieldMessage id="birth_date" error={errors.birth_date?.message} />
+              </div>
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor="level">Nivel</Label>
+                <select id="level" className={selectCls} {...register('level')}>
+                  <option value="">—</option>
+                  <option value="incepator">Începător</option>
+                  <option value="intermediar">Intermediar</option>
+                  <option value="avansat">Avansat</option>
+                  {nivelStrain && <option value={nivelStrain}>{formatLevel(nivelStrain)}</option>}
+                </select>
+              </div>
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor="tshirt_size">Mărime tricou</Label>
+                <select id="tshirt_size" className={selectCls} {...register('tshirt_size')}>
+                  <option value="">—</option>
+                  {['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL'].map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="allergies">Alergii / observații</Label>
-          {/* Casetă pe mai multe rânduri: aici se scrie medicație și ce trebuie
-              evitat, iar părintele trebuie să vadă tot ce a scris dintr-o privire. */}
-          <textarea
-            id="allergies"
-            rows={3}
-            {...register('allergies')}
-            className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
-          />
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-display text-lg">Sănătate</CardTitle>
+            <CardDescription>Ce trebuie să știe antrenorul înainte de antrenament.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="allergies">Alergii / observații</Label>
+              <Textarea
+                id="allergies"
+                rows={4}
+                className="max-h-64 [field-sizing:content]"
+                aria-describedby="allergies-hint"
+                {...register('allergies')}
+              />
+              <FieldMessage id="allergies" hint="Alergii și alte observații pentru antrenor." />
+            </div>
+            <TextLiber
+              id="medical_notes"
+              label="Afecțiuni și medicație"
+              hint="De exemplu: astm, cu inhalatorul în rucsac."
+              error={errors.medical_notes?.message}
+              {...register('medical_notes')}
+            />
+            <TextLiber
+              id="dietary_restrictions"
+              label="Restricții alimentare"
+              hint="De exemplu: vegetarian, fără lactoză."
+              error={errors.dietary_restrictions?.message}
+              {...register('dietary_restrictions')}
+            />
+            <div className="space-y-1.5 sm:max-w-[calc(50%-0.5rem)]">
+              <Label htmlFor="swim_level">Știe să înoate?</Label>
+              <select id="swim_level" className={selectCls} {...register('swim_level')}>
+                <option value="">—</option>
+                <option value="no">Nu</option>
+                <option value="basic">Puțin</option>
+                <option value="yes">Da</option>
+              </select>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="emergency_contact_name">
-              Contact urgență <Obligatoriu />
-            </Label>
-            <Input
-              id="emergency_contact_name"
-              className="h-11 lg:h-9"
-              required
-              {...register('emergency_contact_name')}
-              aria-invalid={!!errors.emergency_contact_name}
-              aria-describedby={
-                errors.emergency_contact_name ? 'emergency_contact_name-error' : undefined
-              }
-            />
-            {errors.emergency_contact_name && (
-              <p id="emergency_contact_name-error" className="text-destructive text-xs">
-                {errors.emergency_contact_name.message}
-              </p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="emergency_phone">
-              Telefon urgență <Obligatoriu />
-            </Label>
-            <Input
-              id="emergency_phone"
-              type="tel"
-              className="h-11 lg:h-9"
-              required
-              {...register('emergency_phone')}
-              aria-invalid={!!errors.emergency_phone}
-              aria-describedby={errors.emergency_phone ? 'emergency_phone-error' : undefined}
-            />
-            {errors.emergency_phone && (
-              <p id="emergency_phone-error" className="text-destructive text-xs">
-                {errors.emergency_phone.message}
-              </p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="secondary_contact_name">Contact secundar</Label>
-            <Input
-              id="secondary_contact_name"
-              className="h-11 lg:h-9"
-              {...register('secondary_contact_name')}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="secondary_phone">Telefon secundar</Label>
-            <Input
-              id="secondary_phone"
-              type="tel"
-              className="h-11 lg:h-9"
-              {...register('secondary_phone')}
-              aria-invalid={!!errors.secondary_phone}
-              aria-describedby={errors.secondary_phone ? 'secondary_phone-error' : undefined}
-            />
-            {errors.secondary_phone && (
-              <p id="secondary_phone-error" className="text-destructive text-xs">
-                {errors.secondary_phone.message}
-              </p>
-            )}
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-display text-lg">Persoane de contact</CardTitle>
+            <CardDescription>Pe cine sună antrenorul dacă se întâmplă ceva.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <h3 className="font-sans text-sm font-semibold tracking-normal">Urgență</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor="emergency_contact_name">
+                  Contact urgență <Obligatoriu />
+                </Label>
+                <Input
+                  id="emergency_contact_name"
+                  required
+                  autoComplete="name"
+                  {...register('emergency_contact_name')}
+                  {...camp('emergency_contact_name')}
+                />
+                <FieldMessage
+                  id="emergency_contact_name"
+                  error={errors.emergency_contact_name?.message}
+                />
+              </div>
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor="emergency_phone">
+                  Telefon urgență <Obligatoriu />
+                </Label>
+                <Input
+                  id="emergency_phone"
+                  type="tel"
+                  required
+                  autoComplete="tel"
+                  {...register('emergency_phone')}
+                  {...camp('emergency_phone')}
+                />
+                <FieldMessage id="emergency_phone" error={errors.emergency_phone?.message} />
+              </div>
+            </div>
+            <h3 className="border-t pt-4 font-sans text-sm font-semibold tracking-normal">
+              Secundar (opțional)
+            </h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor="secondary_contact_name">Contact secundar</Label>
+                <Input id="secondary_contact_name" {...register('secondary_contact_name')} />
+              </div>
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor="secondary_phone">Telefon secundar</Label>
+                <Input
+                  id="secondary_phone"
+                  type="tel"
+                  {...register('secondary_phone')}
+                  {...camp('secondary_phone')}
+                />
+                <FieldMessage id="secondary_phone" error={errors.secondary_phone?.message} />
+              </div>
+            </div>
+            <div className="border-t pt-4">
+              <TextLiber
+                id="pickup_persons"
+                label="Cine poate ridica copilul"
+                hint={PICKUP_HINT}
+                error={errors.pickup_persons?.message}
+                {...register('pickup_persons')}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="flex gap-2 pt-2">
-          <Button type="submit" className="h-11 lg:h-9" disabled={isSubmitting}>
-            {isSubmitting ? 'Se salvează…' : 'Salvează'}
-          </Button>
-          <Button type="button" variant="outline" className="h-11 lg:h-9" asChild>
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-display text-lg">Acord foto și video</CardTitle>
+            <CardDescription>
+              Cluburile și antrenorii pot publica poze de la antrenamente și tabere.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <fieldset
+              aria-invalid={!!errors.photo_consent}
+              aria-describedby={fieldDescription(
+                'photo_consent',
+                undefined,
+                errors.photo_consent?.message,
+              )}
+            >
+              <legend className="mb-2 text-sm font-medium">
+                Copilul poate apărea în poze și video? <Obligatoriu />
+              </legend>
+              <div className="space-y-1">
+                {(
+                  [
+                    ['da', 'Da, poate apărea'],
+                    ['nu', 'Nu, fără poze și video cu copilul'],
+                  ] as const
+                ).map(([valoare, eticheta]) => (
+                  <label key={valoare} className="flex min-h-11 items-center gap-3 text-sm">
+                    <input
+                      type="radio"
+                      value={valoare}
+                      className="accent-primary size-4"
+                      {...register('photo_consent')}
+                    />
+                    {eticheta}
+                  </label>
+                ))}
+              </div>
+              <FieldMessage id="photo_consent" error={errors.photo_consent?.message} />
+            </fieldset>
+          </CardContent>
+        </Card>
+
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <Button type="button" variant="ghost" asChild>
             <Link to="/account/children">Anulează</Link>
+          </Button>
+          <Button type="submit" disabled={isSubmitting} className="sm:min-w-40">
+            {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>
         </div>
       </form>
+    </div>
+  )
+}
+
+function TextLiber({
+  id,
+  label,
+  hint,
+  error,
+  ...props
+}: ComponentProps<'textarea'> & { id: string; label: string; hint: string; error?: string }) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <Textarea
+        id={id}
+        rows={2}
+        className="max-h-64 [field-sizing:content]"
+        aria-invalid={!!error}
+        aria-describedby={fieldDescription(id, hint, error)}
+        {...props}
+      />
+      <FieldMessage id={id} hint={hint} error={error} />
     </div>
   )
 }
@@ -323,7 +462,7 @@ function InapoiLaCopii() {
   return (
     <Link
       to="/account/children"
-      className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
+      className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
     >
       <ArrowLeft className="size-4" /> Înapoi
     </Link>
