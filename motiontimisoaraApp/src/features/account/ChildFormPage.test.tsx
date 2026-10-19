@@ -32,6 +32,9 @@ const copil = {
   secondary_contact_name: null,
   secondary_phone: null,
   tshirt_size: null,
+  photo_consent: true,
+  pickup_persons: null,
+  swim_level: null,
 }
 
 function renderForm(ruta = `/account/child/${COPIL_ID}`) {
@@ -140,6 +143,7 @@ test('un telefon scris cu spații e acceptat', async () => {
   await user.type(screen.getByLabelText(/Data nașterii/), '2016-05-10')
   await user.type(screen.getByLabelText(/Contact urgență/), 'Ion Popescu')
   await user.type(screen.getByLabelText(/Telefon urgență/), '0722 123 456')
+  await user.click(screen.getByLabelText('Da, poate apărea'))
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
 
   await waitFor(() =>
@@ -199,6 +203,7 @@ test('data de azi e acceptată și după miezul nopții ora României', async ()
     await user.type(screen.getByLabelText(/Data nașterii/), '2026-10-19')
     await user.type(screen.getByLabelText(/Contact urgență/), 'Ion Popescu')
     await user.type(screen.getByLabelText(/Telefon urgență/), '0722123456')
+    await user.click(screen.getByLabelText('Da, poate apărea'))
     await user.click(screen.getByRole('button', { name: 'Salvează' }))
 
     await waitFor(() =>
@@ -245,9 +250,55 @@ test('cât se încarcă copilul nu apare un formular gol', async () => {
 test('formularul e împărțit în grupuri cu titlu', async () => {
   renderForm('/account/child/new')
   await screen.findByLabelText(/Nume/)
-  for (const titlu of ['Despre copil', 'Sănătate', 'Persoane de contact']) {
+  for (const titlu of ['Despre copil', 'Sănătate', 'Persoane de contact', 'Acord foto și video']) {
     expect(screen.getByText(titlu)).toBeInTheDocument()
   }
   expect(screen.getByRole('heading', { name: 'Urgență' })).toBeInTheDocument()
   expect(screen.getByRole('heading', { name: 'Secundar (opțional)' })).toBeInTheDocument()
+})
+
+test('acordul foto e obligatoriu, iar un copil vechi fără răspuns trebuie să aleagă', async () => {
+  const user = userEvent.setup()
+  mockedGet.mockResolvedValue({ ...copil, photo_consent: null } as never)
+  renderForm()
+  await screen.findByDisplayValue('Andrei Popescu')
+  expect(screen.getByLabelText('Da, poate apărea')).not.toBeChecked()
+  expect(screen.getByLabelText('Nu, fără poze și video cu copilul')).not.toBeChecked()
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  expect(await screen.findByText('Alege una dintre variante')).toBeInTheDocument()
+  expect(mockedUpdate).not.toHaveBeenCalled()
+})
+
+test('acordul, înotul și cine ridică se salvează în forma din baza de date', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  await screen.findByDisplayValue('Andrei Popescu')
+  expect(screen.getByLabelText('Da, poate apărea')).toBeChecked()
+  await user.click(screen.getByLabelText('Nu, fără poze și video cu copilul'))
+  await user.selectOptions(screen.getByLabelText('Știe să înoate?'), 'Puțin')
+  await user.type(screen.getByLabelText('Cine poate ridica copilul'), '  Maria Pop, bunica  ')
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() =>
+    expect(mockedUpdate).toHaveBeenCalledWith(
+      COPIL_ID,
+      expect.objectContaining({
+        photo_consent: false,
+        swim_level: 'basic',
+        pickup_persons: 'Maria Pop, bunica',
+      }),
+    ),
+  )
+})
+
+test('înotul și cine ridică lăsate goale se salvează ca lipsă, nu ca text gol', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  await screen.findByDisplayValue('Andrei Popescu')
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() =>
+    expect(mockedUpdate).toHaveBeenCalledWith(
+      COPIL_ID,
+      expect.objectContaining({ photo_consent: true, swim_level: null, pickup_persons: null }),
+    ),
+  )
 })

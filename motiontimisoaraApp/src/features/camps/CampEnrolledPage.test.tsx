@@ -47,6 +47,9 @@ function person(
     telefonUrgenta: null,
     contactSecundar: null,
     telefonSecundar: null,
+    acordFoto: null,
+    cineRidica: null,
+    inot: null,
     ...partial,
   }
 }
@@ -148,4 +151,54 @@ test('departure confirmation stays on the same child card', async () => {
   expect(cardFor('Copil Audit 152').textContent).not.toContain('a părăsit tabăra')
   fireEvent.click(within(child).getByRole('button', { name: 'Da, a plecat' }))
   await waitFor(() => expect(record).toHaveBeenCalledWith('depart', 'camp-1', 'e-spec', 'club-1'))
+})
+
+function cardDinLista(name: string) {
+  const card = screen
+    .getAllByText(name)
+    .map((e) => e.closest('li'))
+    .find(Boolean)
+  if (!card) throw new Error(`Lipsește cardul pentru ${name}`)
+  return card
+}
+
+test('cardul copilului arată acordul foto, înotul și cine îl poate ridica', async () => {
+  enrolled.mockResolvedValue([
+    person({
+      enrollmentId: 'e-spec',
+      nume: 'Copil Spec 520',
+      fel: 'child',
+      copilId: 'c-spec',
+      acordFoto: false,
+      inot: 'no',
+      cineRidica: 'Maria Pop, bunica',
+    }),
+    person({
+      enrollmentId: 'e-audit',
+      nume: 'Copil Audit 152',
+      fel: 'child',
+      copilId: 'c-audit',
+      acordFoto: true,
+      inot: 'yes',
+    }),
+    person({ enrollmentId: 'e-adult', nume: 'Parinte Spec 520', fel: 'adult' }),
+  ])
+  renderPage()
+  await screen.findByText('3 participanți înscriși din 3 locuri.')
+
+  expect(screen.getByText('1 copil fără acord foto:')).toBeInTheDocument()
+  expect(screen.getByText('1 copil nu știe să înoate:')).toBeInTheDocument()
+
+  const fara = cardDinLista('Copil Spec 520')
+  expect(within(fara).getByText('Fără poze sau video cu acest copil')).toBeInTheDocument()
+  expect(within(fara).getByText('Nu știe să înoate')).toBeInTheDocument()
+  expect(within(fara).getByText('Poate fi ridicat de: Maria Pop, bunica')).toBeInTheDocument()
+
+  const cu = cardFor('Copil Audit 152')
+  expect(within(cu).getByText('Acord pentru poze și video')).toBeInTheDocument()
+  expect(within(cu).getByText('Știe să înoate')).toBeInTheDocument()
+  expect(within(cu).queryByText(/Poate fi ridicat de/)).not.toBeInTheDocument()
+
+  const adult = cardFor('Parinte Spec 520')
+  expect(within(adult).queryByText(/Acord/)).not.toBeInTheDocument()
 })

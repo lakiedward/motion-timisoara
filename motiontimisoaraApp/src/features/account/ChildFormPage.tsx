@@ -26,6 +26,7 @@ const TELEFON = /^\+?[0-9]{8,15}$/
 const doarNumarul = (s: string) => s.replace(/[\s().-]/g, '')
 const eTelefonValid = (s: string) => TELEFON.test(doarNumarul(s))
 const azi = () => toIso(new Date())
+const PICKUP_HINT = 'Nume și relație, câte unul pe rând. De exemplu: Maria Pop, bunica.'
 
 const obligatoriu = (minim: number) =>
   z.string().trim().min(1, 'Obligatoriu').min(minim, `Minim ${minim} caractere`)
@@ -46,6 +47,11 @@ const schema = z.object({
     .optional()
     .refine((s) => !s || eTelefonValid(s), 'Număr de telefon invalid'),
   tshirt_size: z.string().optional(),
+  swim_level: z.string().optional(),
+  pickup_persons: z.string().max(500, 'Maxim 500 de caractere').optional(),
+  photo_consent: z
+    .string({ message: 'Alege una dintre variante' })
+    .refine((s) => ['da', 'nu'].includes(s), 'Alege una dintre variante'),
 })
 type Values = z.infer<typeof schema>
 
@@ -99,14 +105,24 @@ export default function ChildFormPage() {
         secondary_contact_name: existing.secondary_contact_name ?? '',
         secondary_phone: existing.secondary_phone ?? '',
         tshirt_size: existing.tshirt_size ?? '',
+        swim_level: existing.swim_level ?? '',
+        pickup_persons: existing.pickup_persons ?? '',
+        photo_consent:
+          existing.photo_consent === true ? 'da' : existing.photo_consent === false ? 'nu' : '',
       })
     }
   }, [existing, reset])
 
-  const onSubmit = async (v: Values) => {
+  const onSubmit = async ({ photo_consent, swim_level, pickup_persons, ...v }: Values) => {
+    const date = {
+      ...v,
+      swim_level: swim_level || null,
+      pickup_persons: pickup_persons?.trim() || null,
+      photo_consent: photo_consent === 'da',
+    }
     try {
-      if (isEdit) await updateChild(id as string, v)
-      else await createChild(v)
+      if (isEdit) await updateChild(id as string, date)
+      else await createChild(date)
       qc.invalidateQueries({ queryKey: ['children'] })
       toast.success(isEdit ? 'Copil actualizat.' : 'Copil adăugat.')
       navigate('/account/children')
@@ -240,7 +256,7 @@ export default function ChildFormPage() {
             <CardTitle className="font-display text-lg">Sănătate</CardTitle>
             <CardDescription>Ce trebuie să știe antrenorul înainte de antrenament.</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="allergies">Alergii / observații</Label>
               <Textarea
@@ -254,6 +270,15 @@ export default function ChildFormPage() {
                 id="allergies"
                 hint="Medicație, alergii sau ce trebuie să știe antrenorul."
               />
+            </div>
+            <div className="space-y-1.5 sm:max-w-[calc(50%-0.5rem)]">
+              <Label htmlFor="swim_level">Știe să înoate?</Label>
+              <select id="swim_level" className={selectCls} {...register('swim_level')}>
+                <option value="">—</option>
+                <option value="no">Nu</option>
+                <option value="basic">Puțin</option>
+                <option value="yes">Da</option>
+              </select>
             </div>
           </CardContent>
         </Card>
@@ -316,6 +341,68 @@ export default function ChildFormPage() {
                 <FieldMessage id="secondary_phone" error={errors.secondary_phone?.message} />
               </div>
             </div>
+            <div className="space-y-1.5 border-t pt-4">
+              <Label htmlFor="pickup_persons">Cine poate ridica copilul</Label>
+              <Textarea
+                id="pickup_persons"
+                rows={2}
+                className="max-h-40 [field-sizing:content]"
+                aria-invalid={!!errors.pickup_persons}
+                aria-describedby={fieldDescription(
+                  'pickup_persons',
+                  PICKUP_HINT,
+                  errors.pickup_persons?.message,
+                )}
+                {...register('pickup_persons')}
+              />
+              <FieldMessage
+                id="pickup_persons"
+                hint={PICKUP_HINT}
+                error={errors.pickup_persons?.message}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-display text-lg">Acord foto și video</CardTitle>
+            <CardDescription>
+              Cluburile și antrenorii pot publica poze de la antrenamente și tabere.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <fieldset
+              aria-invalid={!!errors.photo_consent}
+              aria-describedby={fieldDescription(
+                'photo_consent',
+                undefined,
+                errors.photo_consent?.message,
+              )}
+            >
+              <legend className="mb-2 text-sm font-medium">
+                Copilul poate apărea în poze și video? <Obligatoriu />
+              </legend>
+              <div className="space-y-1">
+                {(
+                  [
+                    ['da', 'Da, poate apărea'],
+                    ['nu', 'Nu, fără poze și video cu copilul'],
+                  ] as const
+                ).map(([valoare, eticheta]) => (
+                  <label key={valoare} className="flex min-h-11 items-center gap-3 text-sm">
+                    <input
+                      type="radio"
+                      value={valoare}
+                      className="accent-primary size-4"
+                      {...register('photo_consent')}
+                    />
+                    {eticheta}
+                  </label>
+                ))}
+              </div>
+              <FieldMessage id="photo_consent" error={errors.photo_consent?.message} />
+            </fieldset>
           </CardContent>
         </Card>
 

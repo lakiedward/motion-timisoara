@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, ArrowLeft, Phone, QrCode } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Camera, CameraOff, Phone, QrCode, UserCheck, Waves } from 'lucide-react'
 
 import { getInscrisiiTaberei, varstaLa, type CopilInscris } from '@/api/camp-enrolled'
 import { campRulesFileAfisabil } from '@/api/camp-rules-file'
@@ -38,6 +38,8 @@ export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
   })
 
   const cuAlergii = inscrisi.filter((c) => c.alergii?.trim())
+  const faraPoze = inscrisi.filter((c) => c.acordFoto === false)
+  const nuInoata = inscrisi.filter((c) => c.inot === 'no')
   const sosire = useCampStaffParticipation(campId)
   const participanti = sosire.participants.data
   const poateConfirma = (participanti?.participants.length ?? 0) > 0
@@ -133,6 +135,33 @@ export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
             </div>
           )}
 
+          {(faraPoze.length > 0 || nuInoata.length > 0) && (
+            <div className="mt-4 space-y-2 rounded-2xl border p-4 text-sm">
+              {faraPoze.length > 0 && (
+                <p>
+                  <span className="inline-flex items-center gap-2 font-medium">
+                    <CameraOff className="size-4" aria-hidden="true" />
+                    {plural(faraPoze.length, 'copil fără acord foto', 'copii fără acord foto')}:
+                  </span>{' '}
+                  <span className="text-muted-foreground">
+                    {faraPoze.map((c) => c.nume).join(', ')}
+                  </span>
+                </p>
+              )}
+              {nuInoata.length > 0 && (
+                <p>
+                  <span className="inline-flex items-center gap-2 font-medium">
+                    <Waves className="size-4" aria-hidden="true" />
+                    {plural(nuInoata.length, 'copil nu știe', 'copii nu știu')} să înoate:
+                  </span>{' '}
+                  <span className="text-muted-foreground">
+                    {nuInoata.map((c) => c.nume).join(', ')}
+                  </span>
+                </p>
+              )}
+            </div>
+          )}
+
           <ul className="mt-4 space-y-3">
             {inscrisi.map((c) => (
               <li key={c.enrollmentId}>
@@ -224,6 +253,8 @@ function CardCopil({
         </p>
       )}
 
+      {!eAdult && <DetaliiCopil copil={copil} />}
+
       {(copil.telefonUrgenta || copil.telefonSecundar) && (
         <ul className="text-muted-foreground mt-3 space-y-1 text-sm">
           {copil.telefonUrgenta && (
@@ -246,5 +277,47 @@ function CardCopil({
       )}
       {sosire}
     </div>
+  )
+}
+
+const INOT: Record<NonNullable<CopilInscris['inot']>, string> = {
+  no: 'Nu știe să înoate',
+  basic: 'Înoată puțin',
+  yes: 'Știe să înoate',
+}
+
+function DetaliiCopil({ copil }: { copil: CopilInscris }) {
+  return (
+    <ul className="text-muted-foreground mt-3 space-y-1 text-sm">
+      <li className="flex items-start gap-2">
+        {copil.acordFoto === false ? (
+          <>
+            <CameraOff className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <span className="text-foreground font-medium">Fără poze sau video cu acest copil</span>
+          </>
+        ) : (
+          <>
+            <Camera className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <span>
+              {copil.acordFoto ? 'Acord pentru poze și video' : 'Acord foto necompletat'}
+            </span>
+          </>
+        )}
+      </li>
+      {copil.inot && (
+        <li className="flex items-start gap-2">
+          <Waves className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <span className={copil.inot === 'no' ? 'text-foreground font-medium' : undefined}>
+            {INOT[copil.inot]}
+          </span>
+        </li>
+      )}
+      {copil.cineRidica && (
+        <li className="flex items-start gap-2">
+          <UserCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <span className="whitespace-pre-line">Poate fi ridicat de: {copil.cineRidica}</span>
+        </li>
+      )}
+    </ul>
   )
 }

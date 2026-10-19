@@ -789,10 +789,13 @@ export type Database = {
           level: string | null
           name: string
           parent_id: string
+          photo_consent: boolean | null
           photo_storage_path: string | null
+          pickup_persons: string | null
           qr_token: string
           secondary_contact_name: string | null
           secondary_phone: string | null
+          swim_level: string | null
           tshirt_size: string | null
         }
         Insert: {
@@ -805,10 +808,13 @@ export type Database = {
           level?: string | null
           name: string
           parent_id: string
+          photo_consent?: boolean | null
           photo_storage_path?: string | null
+          pickup_persons?: string | null
           qr_token?: string
           secondary_contact_name?: string | null
           secondary_phone?: string | null
+          swim_level?: string | null
           tshirt_size?: string | null
         }
         Update: {
@@ -821,10 +827,13 @@ export type Database = {
           level?: string | null
           name?: string
           parent_id?: string
+          photo_consent?: boolean | null
           photo_storage_path?: string | null
+          pickup_persons?: string | null
           qr_token?: string
           secondary_contact_name?: string | null
           secondary_phone?: string | null
+          swim_level?: string | null
           tshirt_size?: string | null
         }
         Relationships: [
