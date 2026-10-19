@@ -98,7 +98,7 @@ test('o citire căzută arată eroare cu reîncercare, nu mesajul de istoric gol
   renderPage()
   expect(await screen.findByText('Nu am putut încărca prezența.')).toBeInTheDocument()
   expect(screen.queryByText('Nicio prezență înregistrată încă.')).not.toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Încearcă din nou' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Reîncearcă' })).toBeInTheDocument()
 })
 
 test('rândurile apar de la cea mai recentă ședință la cea mai veche', async () => {
