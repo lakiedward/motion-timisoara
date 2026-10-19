@@ -1,4 +1,10 @@
-import { checkoutIsFree, checkoutParticipantCount, checkoutStepLabels, enrollmentNeedsCardPayment } from './checkout-flow'
+import {
+  advanceHint,
+  checkoutIsFree,
+  checkoutParticipantCount,
+  checkoutStepLabels,
+  enrollmentNeedsCardPayment,
+} from './checkout-flow'
 
 test('free checkout stops after confirming the zero total', () => {
   expect(checkoutStepLabels(true, 'CARD')).toEqual(['Copii', 'Detalii'])
@@ -29,4 +35,14 @@ test('adult-only selection counts as one participant', () => {
   expect(checkoutParticipantCount([], true)).toBe(1)
   expect(checkoutParticipantCount(['a', 'b'], true)).toBe(3)
   expect(checkoutParticipantCount(['a'], false)).toBe(1)
+})
+
+test('advanceHint spune ce lipsește când Continuă e dezactivat', () => {
+  expect(advanceHint('Copii', 0, false)).toBe('Alege cel puțin un participant ca să continui.')
+  expect(advanceHint('Participanți', 1, false)).toBeNull()
+  expect(advanceHint('Detalii', 1, false)).toBe('Bifează confirmarea sumei ca să continui.')
+  expect(advanceHint('Detalii', 1, true)).toBeNull()
+  expect(advanceHint('Facturare', 1, true)).toBe(
+    'Completează toate datele de facturare ca să continui.',
+  )
 })

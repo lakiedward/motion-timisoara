@@ -6,6 +6,7 @@ import { getActivity, getCourse } from '@/api/public'
 import { stripePromise } from '@/lib/stripe'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
 import CheckoutWizard from './checkout/CheckoutWizard'
 
 const DEFAULT_PACKAGES = [5, 10, 20]
@@ -83,19 +84,20 @@ export default function CheckoutPage() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-10 w-64 rounded-2xl" />
-        <Skeleton className="h-64 rounded-3xl" />
+        <Skeleton className="h-10 w-64 rounded-md" />
+        <Skeleton className="h-64 rounded-xl" />
       </div>
     )
   }
   if (isError) {
     return (
-      <div role="alert" className="mx-auto max-w-lg space-y-4 py-10 text-center">
-        <p>Nu am putut încărca oferta. Încearcă din nou.</p>
-        <Button variant="outline" onClick={() => void refetch()}>
-          Reîncearcă
-        </Button>
-      </div>
+      <StatusView
+        state="error"
+        title="Nu am putut încărca oferta."
+        text="Verifică conexiunea și încearcă din nou."
+        onRetry={() => void refetch()}
+        className="mx-auto max-w-lg"
+      />
     )
   }
   if (!offering) {
