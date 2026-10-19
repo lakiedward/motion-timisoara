@@ -26,6 +26,7 @@ vi.mock('@/api/announcements/parent', () => ({
 }))
 vi.mock('@/api/attachments', () => ({ getAtasamente: vi.fn() }))
 vi.mock('@/features/live-location/parent/LiveLocationBanner', () => ({
+  COACH_LOCATION_PATH: '/account/locatie',
   LiveLocationBanner: () => null,
 }))
 

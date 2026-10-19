@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { plural } from '@/lib/plural'
 import { AnnouncementFeed } from './announcements/AnnouncementFeed'
+import { LiveLocationAnnouncements } from './announcements/LiveLocationAnnouncements'
 import { CourseSelect } from './announcements/CourseFilter'
 
 function FeedSkeleton() {
@@ -210,6 +211,7 @@ function AnnouncementVisit({ userId }: { userId: string }) {
       <div className="mb-6">
         <LiveLocationBanner always />
       </div>
+      <LiveLocationAnnouncements />
       {firstPage.isPending ? (
         <FeedSkeleton />
       ) : firstPage.isError ? (
