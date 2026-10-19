@@ -6,6 +6,9 @@ import { vi } from 'vitest'
 import { getMyChildren, getMyEnrollments, type Child, type EnrollmentRow } from '@/api/account'
 import ParentDashboard from './ParentDashboard'
 
+vi.mock('@/features/live-location/parent/LiveLocationBanner', () => ({
+  LiveLocationBanner: () => null,
+}))
 vi.mock('@/lib/auth-context', () => ({
   useAuth: () => ({ user: { id: 'parent-520', name: '  Ana   Popescu ' } }),
 }))

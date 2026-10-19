@@ -25,8 +25,8 @@ vi.mock('@/api/announcements/parent', () => ({
   markParentAnnouncementsSeen: vi.fn(),
 }))
 vi.mock('@/api/attachments', () => ({ getAtasamente: vi.fn() }))
-vi.mock('@/features/live-location/camps/ActiveLocationAnnouncements', () => ({
-  ActiveLocationAnnouncements: () => null,
+vi.mock('@/features/live-location/parent/LiveLocationBanner', () => ({
+  LiveLocationBanner: () => null,
 }))
 
 const feedRequest = vi.mocked(getParentAnnouncementFeed)
