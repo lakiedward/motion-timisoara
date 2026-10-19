@@ -130,9 +130,7 @@ export default function AttendancePage() {
         )}
       </div>
 
-      <div className="mb-6">
-        <LiveLocationBanner always />
-      </div>
+      <LiveLocationBanner className="mb-6" />
       {seIncarcaCopiii ? (
         <StatusView state="loading" title="Se încarcă prezența" rowHeight={64} />
       ) : !children.length ? (

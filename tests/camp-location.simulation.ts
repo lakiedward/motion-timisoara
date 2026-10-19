@@ -33,8 +33,8 @@ for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 
     try {
       await coach.goto(`/coach/camps/${ids.camp}/enrolled`);
       await parent.goto('/account/announcements');
-      await parent.getByRole('link', { name: 'Unde e antrenorul' }).click();
-      await expect(parent).toHaveURL(/\/account\/locatie$/);
+      await expect(parent.getByRole('link', { name: /Unde e antrenorul|Vezi pe hartă/ })).toHaveCount(0);
+      await parent.goto('/account/locatie');
       await expect(coach.getByRole('heading', { name: 'Cine s-a înscris' })).toBeVisible();
       await expect(coach.getByRole('heading', { name: 'Prezență în tabără' })).toHaveCount(0);
       const copil = coach.getByRole('listitem').filter({ hasText: 'Copil Simulat Ana' });
@@ -130,7 +130,7 @@ test('SIMULATED camp announcement network failure clears stale map and retry rec
   state.point = { latitude: 45.75, longitude: 21.23, accuracy: 5, capturedAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   const simulation = await simulateCamp(page, 'PARENT', state);
   await page.goto('/account/announcements');
-  await page.getByRole('link', { name: /Unde e antrenorul/ }).click();
+  await page.getByRole('link', { name: 'Vezi pe hartă' }).click();
   await expect(page).toHaveURL(/\/account\/locatie$/);
   await expect(live(page)).toBeVisible();
   await page.getByRole('button', { name: 'Accept și văd locația' }).click();
