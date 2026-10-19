@@ -19,7 +19,7 @@ export const LINKED =
 export function CardTitle({ e, id, className }: { e: EnrollmentRow; id: string; className?: string }) {
   const title = enrollmentTitle(e)
   return (
-    <h3 id={id} className={cn('font-display text-lg font-bold', className)}>
+    <h2 id={id} className={cn('font-display text-lg font-bold', className)}>
       {e.offerPath ? (
         <Link
           to={e.offerPath}
@@ -31,7 +31,7 @@ export function CardTitle({ e, id, className }: { e: EnrollmentRow; id: string; 
       ) : (
         title
       )}
-    </h3>
+    </h2>
   )
 }
 
