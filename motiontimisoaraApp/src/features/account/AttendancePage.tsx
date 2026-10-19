@@ -9,6 +9,7 @@ import { StatusView } from '@/components/ui/status-view'
 import { inceputPerioada, type Perioada } from '@/lib/perioada'
 import { plural } from '@/lib/plural'
 import { cn } from '@/lib/utils'
+import { AttendanceMonths } from '@/features/account/attendance/AttendanceMonths'
 import { CurrentLocationSessions } from '@/features/live-location/CurrentLocationSessions'
 
 const selectCls =
@@ -23,13 +24,6 @@ const PERIOADE: { value: Perioada; label: string }[] = [
   { value: 'trei-luni', label: 'Ultimele 3 luni' },
   { value: 'luna', label: 'Luna curentă' },
 ]
-
-function formatCand(startsAt: string): string {
-  const d = new Date(startsAt)
-  const data = d.toLocaleDateString('ro-RO')
-  const ora = d.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })
-  return `${data} · ${ora}`
-}
 
 export default function AttendancePage() {
   const { data: children = [], isPending: seIncarcaCopiii } = useQuery({
@@ -153,37 +147,11 @@ export default function AttendancePage() {
           </div>
 
           {randuri.length ? (
-            <ul className="space-y-2">
-              {randuri.map((r) => (
-                <li key={r.id} className="bg-card rounded-xl border px-4 py-3 text-sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-medium">
-                        {totiCopiii && children.length > 1 && (
-                          <span>{numeDupaId.get(r.child_id) ?? 'Copil'} · </span>
-                        )}
-                        {r.occurrence?.course?.name ?? 'Ședință'}
-                      </p>
-                      {r.occurrence?.starts_at && (
-                        <p className="text-muted-foreground mt-0.5">
-                          {formatCand(r.occurrence.starts_at)}
-                        </p>
-                      )}
-                    </div>
-                    <span
-                      className={cn(
-                        'shrink-0 font-medium',
-                        r.status === 'PRESENT' ? 'text-success-ink' : 'text-destructive',
-                      )}
-                    >
-                      {r.status === 'PRESENT' ? 'Prezent' : 'Absent'}
-                    </span>
-                  </div>
-
-                  {r.note && <p className="text-muted-foreground mt-1.5 text-xs">{r.note}</p>}
-                </li>
-              ))}
-            </ul>
+            <AttendanceMonths
+              randuri={randuri}
+              numeDupaId={numeDupaId}
+              cuNume={totiCopiii && children.length > 1}
+            />
           ) : filtrulAscundeTot ? (
             <StatusView
               state="empty"

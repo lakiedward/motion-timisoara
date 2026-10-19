@@ -111,6 +111,13 @@ test('rândurile apar de la cea mai recentă ședință la cea mai veche', async
   ])
 })
 
+test('ședințele sunt grupate pe lună, cea mai recentă lună prima', async () => {
+  renderPage()
+  const luni = await screen.findAllByRole('heading', { level: 2 })
+  expect(luni.map((h) => h.textContent)).toEqual(['August 2026', 'Iulie 2026'])
+  expect(screen.getByText('1 prezență din 2')).toBeInTheDocument()
+})
+
 // Criteriul 218 al secțiunii vecine: data singură nu deosebește două ședințe din
 // aceeași zi.
 test('fiecare rând arată și ora ședinței', async () => {
