@@ -232,3 +232,13 @@ test('the empty state leads to the course list with a primary button', async () 
   expect(await screen.findByText('Nicio înscriere încă.')).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Caută cursuri' })).toHaveAttribute('data-slot', 'button')
 })
+
+test('a card without a creation date still renders, without a date line', async () => {
+  load.mockResolvedValue([
+    row({ id: 'undated', kind: 'CAMP', offerTitle: 'Tabără', created_at: undefined as never }),
+  ])
+  renderPage()
+
+  const card = await screen.findByRole('article', { name: 'Tabără' })
+  expect(within(card).queryByText(/Înscriere din/)).not.toBeInTheDocument()
+})

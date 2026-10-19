@@ -44,6 +44,11 @@ const CARD =
 const LINKED_CARD =
   'hover:shadow-card-hover hover:border-foreground/20 has-[a[data-card-link]:focus-visible]:outline-2 has-[a[data-card-link]:focus-visible]:outline-offset-2 has-[a[data-card-link]:focus-visible]:outline-ring'
 
+function enrollmentDate(createdAt: string | null | undefined) {
+  const date = createdAt ? new Date(createdAt) : null
+  return date && !Number.isNaN(date.getTime()) ? enrolledOn.format(date) : null
+}
+
 function sessionsLine(e: { status: string; purchased_sessions: number; remaining_sessions: number }) {
   if (e.purchased_sessions > 0)
     return `Ședințe: ${e.remaining_sessions} rămase din ${e.purchased_sessions}`
@@ -86,6 +91,7 @@ export default function EnrollmentsPage() {
             const persoana = e.child?.name ?? (e.adult_profile_id ? 'Tu' : '')
             const titluId = `inscriere-${e.id}`
             const sedinte = e.kind === 'COURSE' ? sessionsLine(e) : null
+            const data = enrollmentDate(e.created_at)
             return (
               <article
                 key={e.id}
@@ -108,9 +114,9 @@ export default function EnrollmentsPage() {
                       )}
                     </h2>
                     {persoana ? <p className="mt-1 font-medium">{persoana}</p> : null}
-                    <p className="text-muted-foreground mt-1 text-sm">
-                      Înscriere din {enrolledOn.format(new Date(e.created_at))}
-                    </p>
+                    {data && (
+                      <p className="text-muted-foreground mt-1 text-sm">Înscriere din {data}</p>
+                    )}
                     {e.competition_registration && (
                       <p className="text-muted-foreground mt-1 text-sm">
                         {e.competition_registration.category_name_snapshot} ·{' '}
