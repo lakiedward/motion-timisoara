@@ -6,8 +6,8 @@ import { useQuery } from '@tanstack/react-query'
 import { getMyEnrollments } from '@/api/account'
 import { formatMoney } from '@/lib/money'
 import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
+import { StatusView } from '@/components/ui/status-view'
 import { useAuth } from '@/lib/auth-context'
 import { enrollmentPayable } from '@/api/payments/enrollments'
 import { EnrollmentPaymentPanel } from './checkout/EnrollmentPaymentPanel'
@@ -33,6 +33,22 @@ const PAY: Record<string, string> = {
   REFUNDED: 'Returnat',
   PARTIAL: 'Plată parțială',
 }
+const UNKNOWN_PAYMENT = 'Stare plată necunoscută'
+const enrolledOn = new Intl.DateTimeFormat('ro-RO', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+})
+const CARD =
+  'bg-card relative rounded-xl border p-6 shadow-card transition-[box-shadow,border-color] duration-200 motion-reduce:transition-none'
+const LINKED_CARD =
+  'hover:shadow-card-hover hover:border-foreground/20 has-[a[data-card-link]:focus-visible]:outline-2 has-[a[data-card-link]:focus-visible]:outline-offset-2 has-[a[data-card-link]:focus-visible]:outline-ring'
+
+function sessionsLine(e: { status: string; purchased_sessions: number; remaining_sessions: number }) {
+  if (e.purchased_sessions > 0)
+    return `Ședințe: ${e.remaining_sessions} rămase din ${e.purchased_sessions}`
+  return e.status === 'PENDING' ? 'Începe după confirmarea plății' : null
+}
 
 export default function EnrollmentsPage() {
   const { user } = useAuth()
@@ -52,19 +68,15 @@ export default function EnrollmentsPage() {
   return (
     <div>
       <h1 className="font-display mb-6 text-2xl font-bold">Înscrieri și plăți</h1>
-      {isLoading ? (
-        <div className="space-y-4">
-          {[0, 1].map((i) => (
-            <Skeleton key={i} className="h-24 rounded-3xl" />
-          ))}
-        </div>
-      ) : isError ? (
-        <div role="alert" className="space-y-3">
-          <p>Nu am putut încărca înscrierile și plățile.</p>
-          <Button variant="outline" onClick={() => void refetch()}>
-            Reîncearcă
-          </Button>
-        </div>
+      {isError ? (
+        <StatusView
+          state="error"
+          title="Nu am putut încărca înscrierile."
+          text="Verifică conexiunea și încearcă din nou."
+          onRetry={() => void refetch()}
+        />
+      ) : isLoading ? (
+        <StatusView state="loading" title="Se încarcă înscrierile" rows={2} rowHeight={140} />
       ) : enrollments.length ? (
         <div className="space-y-4">
           {enrollments.map((e) => {
@@ -73,18 +85,32 @@ export default function EnrollmentsPage() {
             const titlu = e.offerTitle?.trim() || KIND_LABEL[e.kind] || e.kind
             const persoana = e.child?.name ?? (e.adult_profile_id ? 'Tu' : '')
             const titluId = `inscriere-${e.id}`
+            const sedinte = e.kind === 'COURSE' ? sessionsLine(e) : null
             return (
               <article
                 key={e.id}
                 aria-labelledby={titluId}
-                className="bg-card shadow-card rounded-3xl p-5"
+                className={e.offerPath ? `${CARD} ${LINKED_CARD}` : CARD}
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <h2 id={titluId} className="font-display text-lg font-bold">
-                      {titlu}
+                      {e.offerPath ? (
+                        <Link
+                          to={e.offerPath}
+                          data-card-link
+                          className="after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none"
+                        >
+                          {titlu}
+                        </Link>
+                      ) : (
+                        titlu
+                      )}
                     </h2>
                     {persoana ? <p className="mt-1 font-medium">{persoana}</p> : null}
+                    <p className="text-muted-foreground mt-1 text-sm">
+                      Înscriere din {enrolledOn.format(new Date(e.created_at))}
+                    </p>
                     {e.competition_registration && (
                       <p className="text-muted-foreground mt-1 text-sm">
                         {e.competition_registration.category_name_snapshot} ·{' '}
@@ -97,15 +123,11 @@ export default function EnrollmentsPage() {
                     <Badge variant={status.variant}>{status.label}</Badge>
                   </div>
                 </div>
-                {e.kind === 'COURSE' && (
-                  <p className="text-muted-foreground mt-3 text-sm">
-                    Ședințe: {e.remaining_sessions} rămase din {e.purchased_sessions}
-                  </p>
-                )}
+                {sedinte && <p className="text-muted-foreground mt-3 text-sm">{sedinte}</p>}
                 {payment && (
                   <div className="mt-2 flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">
-                      {PAY[payment.status] ?? payment.status}
+                      {PAY[payment.status] ?? UNKNOWN_PAYMENT}
                     </span>
                     <div className="text-right">
                       <span className="font-semibold">
@@ -116,10 +138,16 @@ export default function EnrollmentsPage() {
                   </div>
                 )}
                 {paymentId === e.id ? (
-                  <EnrollmentPaymentPanel enrollmentId={e.id} onClose={() => setPaymentId(null)} />
+                  <div className="relative">
+                    <EnrollmentPaymentPanel enrollmentId={e.id} onClose={() => setPaymentId(null)} />
+                  </div>
                 ) : enrollmentPayable(e) ? (
-                  <Button className="mt-4" variant="outline" onClick={() => setPaymentId(e.id)}>
-                    Reia plata
+                  <Button
+                    className="relative mt-4"
+                    variant="outline"
+                    onClick={() => setPaymentId(e.id)}
+                  >
+                    Finalizează plata
                   </Button>
                 ) : null}
               </article>
@@ -127,12 +155,16 @@ export default function EnrollmentsPage() {
           })}
         </div>
       ) : (
-        <div className="text-muted-foreground rounded-3xl border border-dashed py-16 text-center">
-          Nicio înscriere încă.{' '}
-          <Link to="/cursuri" className="text-primary font-semibold">
-            Caută cursuri
-          </Link>
-        </div>
+        <StatusView
+          state="empty"
+          title="Nicio înscriere încă."
+          text="Înscrierile și plățile apar aici după ce alegi un curs, o tabără sau o activitate."
+          action={
+            <Button asChild className="mt-3">
+              <Link to="/cursuri">Caută cursuri</Link>
+            </Button>
+          }
+        />
       )}
     </div>
   )

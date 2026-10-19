@@ -54,7 +54,7 @@ test('an empty enrollment list does not look up offer titles', async () => {
   expect(filters).toEqual(['adult_profile_id.eq.parent-1,child_id.in.(child-1)'])
 })
 
-test('camp, course and activity titles lead from the matching offer', async () => {
+test('camp, course and activity titles and links come from the matching offer', async () => {
   responses.set('enrollments', {
     data: [
       enrollment('CAMP', 'camp-1', 'e-camp'),
@@ -65,7 +65,7 @@ test('camp, course and activity titles lead from the matching offer', async () =
     error: null,
   })
   responses.set('camps', {
-    data: [{ id: 'camp-1', title: '  Tabără audit 152  ' }],
+    data: [{ id: 'camp-1', title: '  Tabără audit 152  ', slug: 'tabara-audit-152' }],
     error: null,
   })
   responses.set('courses', { data: [{ id: 'course-1', name: 'Curs de înot' }], error: null })
@@ -78,6 +78,12 @@ test('camp, course and activity titles lead from the matching offer', async () =
     'Tabără audit 152',
     'Curs de înot',
     'Activitate de ciclism',
+    null,
+  ])
+  expect(rows.map((row) => row.offerPath)).toEqual([
+    '/tabere/tabara-audit-152',
+    '/cursuri/course-1',
+    '/activitati/activity-1',
     null,
   ])
   expect(tables).toEqual(['children', 'enrollments', 'camps', 'courses', 'activities'])

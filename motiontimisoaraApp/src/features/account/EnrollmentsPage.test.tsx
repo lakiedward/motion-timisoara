@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, expect, test, vi } from 'vitest'
@@ -39,6 +40,7 @@ function row(partial: Partial<EnrollmentRow> & Pick<EnrollmentRow, 'id' | 'kind'
       },
     ],
     offerTitle: null,
+    offerPath: null,
     ...partial,
   }
 }
@@ -136,4 +138,97 @@ test('the offer name leads the card and keeps the person and amount', async () =
   const activity = screen.getByRole('article', { name: 'Activitate de ciclism' })
   expect(within(activity).getByText('Copil Audit 152')).toBeInTheDocument()
   expect(within(activity).getByText('Activitate')).toBeInTheDocument()
+})
+
+test('the card links to its offer and shows when the enrollment was made', async () => {
+  load.mockResolvedValue([
+    row({
+      id: 'camp',
+      kind: 'CAMP',
+      child: { id: 'c1', name: 'Ana' },
+      offerTitle: 'Tabăra de vară',
+      offerPath: '/tabere/tabara-de-vara',
+      created_at: '2026-10-12T09:00:00Z',
+    }),
+  ])
+  renderPage()
+
+  const card = await screen.findByRole('article', { name: 'Tabăra de vară' })
+  expect(within(card).getByRole('link', { name: 'Tabăra de vară' })).toHaveAttribute(
+    'href',
+    '/tabere/tabara-de-vara',
+  )
+  expect(within(card).getByText('Înscriere din 12 octombrie 2026')).toBeInTheDocument()
+})
+
+test('a pending card payment offers to finish the payment instead of an empty session count', async () => {
+  load.mockResolvedValue([
+    row({
+      id: 'pending',
+      kind: 'COURSE',
+      status: 'PENDING',
+      offerTitle: 'Înot',
+      offerPath: '/cursuri/c-1',
+      payments: [
+        {
+          amount: 48000,
+          currency: 'RON',
+          pricing_snapshot: null,
+          status: 'PENDING',
+          method: 'CARD',
+          paid_at: null,
+        },
+      ],
+    }),
+  ])
+  renderPage()
+
+  const card = await screen.findByRole('article', { name: 'Înot' })
+  expect(within(card).getByText('Începe după confirmarea plății')).toBeInTheDocument()
+  expect(within(card).queryByText(/rămase din 0/)).not.toBeInTheDocument()
+  expect(within(card).getByRole('button', { name: 'Finalizează plata' })).toBeInTheDocument()
+})
+
+test('an unknown payment status is not shown as a raw code', async () => {
+  load.mockResolvedValue([
+    row({
+      id: 'odd',
+      kind: 'ACTIVITY',
+      offerTitle: 'Tură',
+      payments: [
+        {
+          amount: 9000,
+          currency: 'RON',
+          pricing_snapshot: null,
+          status: 'CHARGEBACK' as never,
+          method: 'CARD',
+          paid_at: null,
+        },
+      ],
+    }),
+  ])
+  renderPage()
+
+  const card = await screen.findByRole('article', { name: 'Tură' })
+  expect(within(card).getByText('Stare plată necunoscută')).toBeInTheDocument()
+  expect(within(card).queryByText('CHARGEBACK')).not.toBeInTheDocument()
+})
+
+test('a failed request shows an error with retry, not the empty state', async () => {
+  load.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce([])
+  renderPage()
+
+  const alert = await screen.findByRole('alert')
+  expect(within(alert).getByText('Nu am putut încărca înscrierile.')).toBeInTheDocument()
+  expect(screen.queryByText('Nicio înscriere încă.')).not.toBeInTheDocument()
+  await userEvent.click(within(alert).getByRole('button', { name: 'Reîncearcă' }))
+  expect(await screen.findByText('Nicio înscriere încă.')).toBeInTheDocument()
+})
+
+test('the empty state leads to the course list with a primary button', async () => {
+  load.mockResolvedValue([])
+  renderPage()
+
+  expect(await screen.findByText('Nicio înscriere încă.')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Caută cursuri' })).toHaveAttribute('data-slot', 'button')
 })
