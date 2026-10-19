@@ -2,7 +2,7 @@ import { AcceptedPriceDetails } from '@/components/AcceptedPriceDetails'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Check, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -24,6 +24,8 @@ import { Input } from '@/components/ui/input'
 import { CheckoutPaymentStep } from './CheckoutPaymentStep'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
+import { CheckoutSteps } from './CheckoutSteps'
 
 import type { Offering } from '../CheckoutPage'
 import { AddChildInline, CheckoutAdultRow, CheckoutChildRow } from './CheckoutFormFields'
@@ -33,6 +35,7 @@ import { processEnrollmentPayments, paymentResultMessage } from '@/api/payments/
 import {
   checkoutIsFree,
   checkoutParticipantCount,
+  advanceHint,
   checkoutStepLabels,
   enrollmentNeedsCardPayment,
   quoteIsPriced,
@@ -288,7 +291,7 @@ export default function CheckoutWizard({
           e.preventDefault()
           navigate(-1)
         }}
-        className="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-1 text-sm"
+        className="text-muted-foreground hover:text-foreground focus-visible:outline-ring mb-2 inline-flex min-h-touch-target items-center gap-1 rounded-md text-sm focus-visible:outline-2 focus-visible:outline-offset-2"
       >
         <ArrowLeft className="size-4" /> Înapoi
       </Link>
@@ -299,24 +302,7 @@ export default function CheckoutWizard({
         <span className="ml-2">{offering.title}</span>
       </p>
 
-      <ol className="mt-6 mb-8 flex flex-wrap gap-2">
-        {steps.map((label, i) => (
-          <li
-            key={label}
-            className={cn(
-              'flex items-center gap-2 rounded-full px-3 py-1.5 text-sm',
-              i === step
-                ? 'bg-primary text-primary-foreground font-semibold'
-                : 'bg-muted text-muted-foreground',
-            )}
-          >
-            <span className="grid size-5 place-items-center rounded-full border text-xs">
-              {i < step ? <Check className="size-3" /> : i + 1}
-            </span>
-            {label}
-          </li>
-        ))}
-      </ol>
+      <CheckoutSteps steps={steps} current={step} />
       {offering.perSession && step <= 1 && (
         <div className="mb-6">
           <Label className="mb-2 block">Pachet de ședințe</Label>
@@ -325,9 +311,10 @@ export default function CheckoutWizard({
               <button
                 key={size}
                 type="button"
+                aria-pressed={packageSize === size}
                 onClick={() => setPackageSize(size)}
                 className={cn(
-                  'rounded-full border px-4 py-2 text-sm',
+                  'focus-visible:outline-ring min-h-touch-target rounded-full border px-4 text-sm focus-visible:outline-2 focus-visible:outline-offset-2',
                   packageSize === size
                     ? 'bg-primary text-primary-foreground border-primary'
                     : 'bg-card',
@@ -356,18 +343,15 @@ export default function CheckoutWizard({
       {step === 0 && (
         <section className="space-y-4">
           {childrenLoading ? (
-            <Skeleton className="h-24 rounded-3xl" />
+            <Skeleton className="h-24 rounded-xl" />
           ) : childrenFailed ? (
-            <div role="alert" className="space-y-2 text-sm">
-              <p>Nu am putut încărca lista de copii.</p>
-              <Button variant="outline" onClick={() => void refetchChildren()}>
-                Reîncearcă
-              </Button>
-            </div>
+            <StatusView
+              state="error"
+              title="Nu am putut încărca lista de copii."
+              onRetry={() => void refetchChildren()}
+            />
           ) : children.length === 0 && !adult ? (
-            <p className="text-muted-foreground rounded-3xl border border-dashed py-10 text-center">
-              Nu ai copii înregistrați. Adaugă unul mai jos.
-            </p>
+            <StatusView state="empty" title="Nu ai copii înregistrați. Adaugă unul mai jos." />
           ) : (
             <>
               {adult && (
@@ -419,7 +403,7 @@ export default function CheckoutWizard({
       )}
       {step === 1 && (
         <section className="space-y-6">
-          <div className="bg-card shadow-card rounded-3xl p-5">
+          <div className="bg-card rounded-xl border p-5">
             {selected.map((cid) => {
               const child = children.find((c) => c.id === cid)
               return (
@@ -460,7 +444,7 @@ export default function CheckoutWizard({
           <label className="flex items-start gap-3 text-sm">
             <input
               type="checkbox"
-              className="mt-0.5 size-4"
+              className="accent-primary focus-visible:outline-ring mt-0.5 size-4 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2"
               checked={hasAccepted}
               onChange={(e) => {
                 setAccepted(e.target.checked)
@@ -519,18 +503,29 @@ export default function CheckoutWizard({
             </Button>
           </div>
         )}
-      <div className="mt-8 flex items-center gap-3">
+      {step < lastStep && !canAdvance && advanceHint(steps[step], participantCount, hasAccepted) && (
+        <p id="checkout-advance-hint" className="text-muted-foreground mt-6 text-sm">
+          {advanceHint(steps[step], participantCount, hasAccepted)}
+        </p>
+      )}
+      <div className="mt-4 flex items-center gap-3">
         {step > 0 && (
           <Button variant="outline" onClick={goBack} disabled={busy}>
             Înapoi
           </Button>
         )}
         {step < lastStep ? (
-          <Button onClick={goNext} disabled={!canAdvance}>
+          <Button
+            className="flex-1 sm:flex-none"
+            onClick={goNext}
+            disabled={!canAdvance}
+            aria-describedby={!canAdvance ? 'checkout-advance-hint' : undefined}
+          >
             Continuă
           </Button>
         ) : (
           <Button
+            className="flex-1 sm:flex-none"
             onClick={() => finalize.mutate()}
             disabled={
               busy ||

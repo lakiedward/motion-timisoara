@@ -8,6 +8,9 @@ import { cn } from '@/lib/utils'
 import type { AdultValidation, ChildValidation } from '@/api/checkout'
 import { childAge, type Child } from '@/api/account'
 
+const CHECKBOX =
+  'accent-primary focus-visible:outline-ring mt-1 size-4 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2'
+
 export function Field({
   label,
   value,
@@ -47,7 +50,7 @@ export function AddChildInline({
   }
 
   return (
-    <div className="bg-card shadow-card space-y-3 rounded-3xl p-5">
+    <div className="bg-card space-y-3 rounded-xl border p-5">
       <Field label="Nume" value={name} onChange={setName} />
       <div>
         <Label className="mb-1.5 block">Data nașterii</Label>
@@ -87,13 +90,14 @@ export function CheckoutAdultRow({
   return (
     <label
       className={cn(
-        'bg-card shadow-card flex cursor-pointer items-start gap-3 rounded-3xl p-5',
+        'bg-card hover:border-primary/60 flex cursor-pointer items-start gap-3 rounded-xl border p-5 transition-colors',
+        includeSelf && !blocked && 'border-primary',
         blocked && 'cursor-not-allowed opacity-60',
       )}
     >
       <input
         type="checkbox"
-        className="mt-1 size-4"
+        className={CHECKBOX}
         checked={includeSelf && !blocked}
         disabled={blocked}
         onChange={(e) => onToggle(e.target.checked)}
@@ -133,13 +137,14 @@ export function CheckoutChildRow({
   return (
     <label
       className={cn(
-        'bg-card shadow-card flex cursor-pointer items-start gap-3 rounded-3xl p-5',
+        'bg-card hover:border-primary/60 flex cursor-pointer items-start gap-3 rounded-xl border p-5 transition-colors',
+        checked && 'border-primary',
         blocked && 'cursor-not-allowed opacity-60',
       )}
     >
       <input
         type="checkbox"
-        className="mt-1 size-4"
+        className={CHECKBOX}
         checked={checked}
         disabled={blocked}
         onChange={(e) => onToggle(e.target.checked)}

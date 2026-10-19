@@ -34,3 +34,12 @@ export function quoteIsPriced(
     Boolean(verdict.priceVersion)
   )
 }
+
+export function advanceHint(step: string, participantCount: number, accepted: boolean) {
+  if (step === 'Copii' || step === 'Participanți') {
+    return participantCount === 0 ? 'Alege cel puțin un participant ca să continui.' : null
+  }
+  if (step === 'Detalii') return accepted ? null : 'Bifează confirmarea sumei ca să continui.'
+  if (step === 'Facturare') return 'Completează toate datele de facturare ca să continui.'
+  return null
+}
