@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Elements } from '@stripe/react-stripe-js'
 import { getCheckoutCamp, type EnrollmentKind, type PaymentMethod } from '@/api/checkout'
 import { getActivity, getCourse } from '@/api/public'
-import { stripePromise } from '@/lib/stripe'
+import { stripeElementsOptions, stripePromise } from '@/lib/stripe'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
@@ -110,7 +110,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <Elements stripe={stripePromise}>
+    <Elements stripe={stripePromise} options={stripeElementsOptions}>
       <CheckoutWizard
         key={`${kind}:${offering.id}`}
         kind={kind}

@@ -95,7 +95,7 @@ export function PayButton({
 
 export function PayPanel({ e, onClose }: { e: EnrollmentRow; onClose: () => void }) {
   return (
-    <div className="relative mt-4">
+    <div className="bg-muted relative -mx-5 mt-4 -mb-5 p-5 sm:-mx-6 sm:-mb-6 sm:p-6">
       <EnrollmentPaymentPanel enrollmentId={e.id} onClose={onClose} />
     </div>
   )

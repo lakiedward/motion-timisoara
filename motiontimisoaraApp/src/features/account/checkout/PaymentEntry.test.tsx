@@ -80,4 +80,16 @@ describe('Android payment entry', () => {
     expect(screen.getByText('Card web simulat')).toBeInTheDocument()
     expect(screen.queryByText(/Google Pay/)).not.toBeInTheDocument()
   })
+
+  it('shows an unframed card field with the missing-card message tied to it', () => {
+    state.android = false
+    render(<PaymentEntry framed={false} cardError="Completează datele cardului." />)
+    expect(screen.getByRole('heading', { level: 3, name: 'Date card' })).toBeInTheDocument()
+    const message = screen.getByRole('alert')
+    expect(message).toHaveTextContent('Completează datele cardului.')
+    expect(screen.getByText('Card web simulat').parentElement).toHaveAttribute(
+      'aria-describedby',
+      message.id,
+    )
+  })
 })

@@ -4,7 +4,7 @@ import { Elements } from '@stripe/react-stripe-js'
 
 import { getConcursPublic } from '@/api/competition/competitions'
 import { getCompetitionCategories } from '@/api/competition/competition-offers'
-import { stripePromise } from '@/lib/stripe'
+import { stripeElementsOptions, stripePromise } from '@/lib/stripe'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CompetitionRegistrationForm } from './CompetitionRegistrationForm'
@@ -52,7 +52,7 @@ export default function CompetitionRegistrationPage() {
   }
 
   return (
-    <Elements stripe={stripePromise}>
+    <Elements stripe={stripePromise} options={stripeElementsOptions}>
       <CompetitionRegistrationForm
         competition={competition.data}
         categories={categories.data ?? []}
