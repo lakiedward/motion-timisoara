@@ -47,6 +47,11 @@ function person(
     telefonUrgenta: null,
     contactSecundar: null,
     telefonSecundar: null,
+    acordFoto: null,
+    cineRidica: null,
+    inot: null,
+    afectiuni: null,
+    restrictiiAlimentare: null,
     ...partial,
   }
 }
@@ -148,4 +153,72 @@ test('departure confirmation stays on the same child card', async () => {
   expect(cardFor('Copil Audit 152').textContent).not.toContain('a părăsit tabăra')
   fireEvent.click(within(child).getByRole('button', { name: 'Da, a plecat' }))
   await waitFor(() => expect(record).toHaveBeenCalledWith('depart', 'camp-1', 'e-spec', 'club-1'))
+})
+
+test('cardul copilului arată sănătatea, mâncarea, acordul foto, înotul și cine îl poate ridica', async () => {
+  enrolled.mockResolvedValue([
+    person({
+      enrollmentId: 'e-spec',
+      nume: 'Copil Spec 520',
+      fel: 'child',
+      copilId: 'c-spec',
+      acordFoto: false,
+      inot: 'no',
+      cineRidica: 'Maria Pop, bunica',
+      afectiuni: 'Astm, inhalator în rucsac',
+      restrictiiAlimentare: 'Fără lactoză',
+    }),
+    person({
+      enrollmentId: 'e-audit',
+      nume: 'Copil Audit 152',
+      fel: 'child',
+      copilId: 'c-audit',
+      acordFoto: true,
+      inot: 'yes',
+    }),
+    person({ enrollmentId: 'e-adult', nume: 'Parinte Spec 520', fel: 'adult' }),
+  ])
+  renderPage()
+  await screen.findByText('3 participanți înscriși din 3 locuri.')
+
+  const deStiut = screen.getByRole('region', { name: 'De știut' })
+  expect(within(deStiut).getByRole('button', { name: /Medicație · 1/ })).toBeInTheDocument()
+  expect(within(deStiut).getByRole('button', { name: /Dietă · 1/ })).toBeInTheDocument()
+  expect(within(deStiut).getByRole('button', { name: /Fără poze · 1/ })).toBeInTheDocument()
+  expect(within(deStiut).getByRole('button', { name: /Nu înoată · 1/ })).toBeInTheDocument()
+  expect(within(deStiut).queryByRole('button', { name: /Alergii/ })).not.toBeInTheDocument()
+
+  const fara = cardFor('Copil Spec 520')
+  expect(within(fara).getByText('Astm, inhalator în rucsac')).toBeInTheDocument()
+  expect(within(fara).getByText('Fără lactoză')).toBeInTheDocument()
+  expect(within(fara).getByText('Fără poze')).toBeInTheDocument()
+  expect(within(fara).getByText('Nu înoată')).toBeInTheDocument()
+  expect(within(fara).getByText('Ridică: Maria Pop, bunica')).toBeInTheDocument()
+
+  const cu = cardFor('Copil Audit 152')
+  expect(within(cu).queryByRole('list', { name: 'De știut despre copil' })).not.toBeInTheDocument()
+  expect(within(cu).queryByText(/Ridică/)).not.toBeInTheDocument()
+
+  const adult = cardFor('Parinte Spec 520')
+  expect(
+    within(adult).queryByRole('list', { name: 'De știut despre copil' }),
+  ).not.toBeInTheDocument()
+
+  fireEvent.click(within(deStiut).getByRole('button', { name: /Nu înoată · 1/ }))
+  expect(within(deStiut).getByRole('button', { name: /Nu înoată · 1/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  expect(screen.getByText('Copil Spec 520')).toBeInTheDocument()
+  expect(screen.queryByText('Copil Audit 152')).not.toBeInTheDocument()
+  expect(screen.queryByText('Parinte Spec 520')).not.toBeInTheDocument()
+
+  fireEvent.click(within(deStiut).getByRole('button', { name: /Toți · 3/ }))
+  expect(screen.getByText('Copil Audit 152')).toBeInTheDocument()
+})
+
+test('fără nicio alertă nu apare cardul De știut', async () => {
+  renderPage()
+  await screen.findByText('3 participanți înscriși din 3 locuri.')
+  expect(screen.queryByRole('region', { name: 'De știut' })).not.toBeInTheDocument()
 })
