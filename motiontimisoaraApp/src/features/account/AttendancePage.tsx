@@ -10,7 +10,7 @@ import { inceputPerioada, type Perioada } from '@/lib/perioada'
 import { plural } from '@/lib/plural'
 import { cn } from '@/lib/utils'
 import { AttendanceMonths } from '@/features/account/attendance/AttendanceMonths'
-import { CurrentLocationSessions } from '@/features/live-location/CurrentLocationSessions'
+import { LiveLocationBanner } from '@/features/live-location/parent/LiveLocationBanner'
 
 const selectCls =
   'border-input bg-background hover:border-muted-foreground focus-visible:outline-ring h-touch-target w-full min-w-0 rounded-md border px-3 text-base shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 md:text-sm'
@@ -111,7 +111,9 @@ export default function AttendancePage() {
         </div>
       </div>
 
-      <CurrentLocationSessions />
+      <div className="mb-6">
+        <LiveLocationBanner always />
+      </div>
       {seIncarcaCopiii ? (
         <StatusView state="loading" title="Se încarcă prezența" rowHeight={64} />
       ) : !children.length ? (

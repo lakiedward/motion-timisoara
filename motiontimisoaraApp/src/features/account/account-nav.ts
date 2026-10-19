@@ -14,6 +14,7 @@ const SECTION_PREFIXES: [string, string][] = [
   ['/account/competitions/', '/account/enrollments'],
   ['/account/attendance', '/account/attendance'],
   ['/account/announcements', '/account/announcements'],
+  ['/account/locatie', '/account'],
 ]
 
 export function activeAccountTab(pathname: string): string | null {

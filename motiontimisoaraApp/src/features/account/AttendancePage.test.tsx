@@ -5,8 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 
 import AttendancePage from './AttendancePage'
-vi.mock('@/features/live-location/CurrentLocationSessions', () => ({
-  CurrentLocationSessions: () => null,
+vi.mock('@/features/live-location/parent/LiveLocationBanner', () => ({
+  LiveLocationBanner: () => null,
 }))
 import { getChildAttendance, getChildrenAttendance, getMyChildren } from '@/api/account'
 
