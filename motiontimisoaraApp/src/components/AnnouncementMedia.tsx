@@ -42,19 +42,18 @@ function AnnouncementImage({
   return (
     <Dialog.Root>
       <Dialog.Trigger asChild>
-        <Button
+        <button
           type="button"
-          variant="ghost"
-          className="block h-auto w-full overflow-hidden rounded-xl p-0"
+          className="focus-visible:outline-ring block w-full overflow-hidden rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2"
           aria-label={`Deschide poza ${position} din ${total}`}
         >
           <img
             src={attachment.link}
             alt=""
             loading="lazy"
-            className="aspect-square w-full object-cover transition-transform hover:scale-105"
+            className="aspect-square w-full object-cover transition-transform hover:scale-105 motion-reduce:transition-none"
           />
-        </Button>
+        </button>
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="bg-background/90 fixed inset-0 z-50 backdrop-blur-sm" />

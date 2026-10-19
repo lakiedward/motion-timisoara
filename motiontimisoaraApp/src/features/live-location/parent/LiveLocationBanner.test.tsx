@@ -20,12 +20,12 @@ const live = {
   expiresAt: new Date(Date.now() + 600_000).toISOString(),
 }
 
-function mount(always = false) {
+function mount() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter>
-        <LiveLocationBanner always={always} />
+        <LiveLocationBanner />
       </MemoryRouter>
     </QueryClientProvider>,
   )
@@ -49,7 +49,7 @@ test('expired sessions do not count as live', async () => {
   vi.mocked(getActiveLocationSessions).mockResolvedValue([
     { ...live, expiresAt: new Date(Date.now() - 1_000).toISOString() },
   ])
-  mount(true)
-  const link = await screen.findByRole('link', { name: 'Unde e antrenorul' })
-  expect(link).toHaveAttribute('href', '/account/locatie')
+  const { container } = mount()
+  await waitFor(() => expect(getActiveLocationSessions).toHaveBeenCalled())
+  expect(container).toBeEmptyDOMElement()
 })
