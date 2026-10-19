@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { PushSettingsCard } from '@/features/notifications/PushSettingsCard'
+import { LiveLocationBanner } from '@/features/live-location/parent/LiveLocationBanner'
 
 export default function ParentDashboard() {
   const { user } = useAuth()
@@ -29,6 +30,8 @@ export default function ParentDashboard() {
         </h1>
         <p className="text-muted-foreground mt-1">Gestionează copiii și înscrierile lor.</p>
       </div>
+
+      <LiveLocationBanner />
 
       {user?.needsProfileCompletion && (
         <Card>

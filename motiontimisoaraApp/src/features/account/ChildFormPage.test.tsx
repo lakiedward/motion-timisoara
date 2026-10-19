@@ -32,6 +32,11 @@ const copil = {
   secondary_contact_name: null,
   secondary_phone: null,
   tshirt_size: null,
+  photo_consent: true,
+  pickup_persons: null,
+  swim_level: null,
+  medical_notes: null,
+  dietary_restrictions: null,
 }
 
 function renderForm(ruta = `/account/child/${COPIL_ID}`) {
@@ -56,13 +61,8 @@ beforeEach(() => {
   mockedCreate.mockResolvedValue(copil as never)
 })
 
-// Regresie (secțiunea UI #447): valoarea cu diacritice din baza de date nu se
-// potrivea cu nicio opțiune, selectul rămânea fără selecție și prima salvare
-// ștergea nivelul.
 test('nivelul scris cu diacritice apare ales în listă', async () => {
   renderForm()
-  // Întâi datele: selectul există de la prima randare, gol, iar `reset` îl umple abia
-  // după ce ajunge copilul — o citire prea devreme ar trece și pe codul stricat.
   await screen.findByDisplayValue('Andrei Popescu')
   const nivel = screen.getByLabelText('Nivel') as HTMLSelectElement
   expect(nivel.value).toBe('incepator')
@@ -75,13 +75,13 @@ test('salvarea scrie forma canonică a nivelului, nu cea cu diacritice', async (
   await screen.findByDisplayValue('Andrei Popescu')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() =>
-    expect(mockedUpdate).toHaveBeenCalledWith(COPIL_ID, expect.objectContaining({ level: 'incepator' })),
+    expect(mockedUpdate).toHaveBeenCalledWith(
+      COPIL_ID,
+      expect.objectContaining({ level: 'incepator' }),
+    ),
   )
 })
 
-// Un nivel pe care nu-l recunoaștem nu are voie să dispară din listă: altfel
-// selectul ar cădea pe „—” și salvarea l-ar șterge. Același tipar ca la locația
-// dezactivată păstrată în lista de cursuri a clubului.
 test('un nivel necunoscut rămâne în listă și nu se pierde la salvare', async () => {
   const user = userEvent.setup()
   mockedGet.mockResolvedValue({ ...copil, level: 'expert' } as never)
@@ -91,12 +91,13 @@ test('un nivel necunoscut rămâne în listă și nu se pierde la salvare', asyn
   expect(nivel.value).toBe('expert')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() =>
-    expect(mockedUpdate).toHaveBeenCalledWith(COPIL_ID, expect.objectContaining({ level: 'expert' })),
+    expect(mockedUpdate).toHaveBeenCalledWith(
+      COPIL_ID,
+      expect.objectContaining({ level: 'expert' }),
+    ),
   )
 })
 
-// Regresie (findings #62 și #129): un id inexistent randa „Editează copil” cu un
-// formular gol și buton Salvează, deci părintele completa date degeaba.
 test('un copil inexistent arată mesaj, nu un formular gol', async () => {
   mockedGet.mockResolvedValue(null)
   renderForm()
@@ -105,8 +106,6 @@ test('un copil inexistent arată mesaj, nu un formular gol', async () => {
   expect(screen.queryByRole('button', { name: 'Salvează' })).not.toBeInTheDocument()
 })
 
-// Un id care nu e nici măcar un uuid nu are ce potrivi, deci nici nu se cere
-// serverului: cererea ar pica cu 400 și ar lăsa o eroare în consolă degeaba.
 test('un id malformat nu ajunge la server', async () => {
   renderForm('/account/child/id-inexistent-123')
   expect(await screen.findByText('Copilul nu a fost găsit.')).toBeInTheDocument()
@@ -121,8 +120,6 @@ test('o citire căzută arată eroare cu Reîncearcă, nu „nu a fost găsit”
   expect(screen.getByRole('button', { name: 'Reîncearcă' })).toBeInTheDocument()
 })
 
-// Criteriul #196 al secțiunii #548 era aprobat din 11 august, dar nu fusese
-// construit niciodată: se salva un copil fără niciun contact de urgență.
 test('fără contact de urgență salvarea e oprită', async () => {
   const user = userEvent.setup()
   renderForm('/account/child/new')
@@ -130,7 +127,7 @@ test('fără contact de urgență salvarea e oprită', async () => {
   await user.type(screen.getByLabelText(/Data nașterii/), '2016-05-10')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
 
-  expect(await screen.findByText('Obligatoriu')).toBeInTheDocument()
+  expect(await screen.findAllByText('Obligatoriu')).toHaveLength(2)
   expect(mockedCreate).not.toHaveBeenCalled()
 })
 
@@ -147,7 +144,6 @@ test('un telefon de urgență care nu e număr e refuzat', async () => {
   expect(mockedCreate).not.toHaveBeenCalled()
 })
 
-// „0722 123 456” e un număr scris de om, nu unul invalid.
 test('un telefon scris cu spații e acceptat', async () => {
   const user = userEvent.setup()
   renderForm('/account/child/new')
@@ -155,6 +151,7 @@ test('un telefon scris cu spații e acceptat', async () => {
   await user.type(screen.getByLabelText(/Data nașterii/), '2016-05-10')
   await user.type(screen.getByLabelText(/Contact urgență/), 'Ion Popescu')
   await user.type(screen.getByLabelText(/Telefon urgență/), '0722 123 456')
+  await user.click(screen.getByLabelText('Da, poate apărea'))
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
 
   await waitFor(() =>
@@ -164,8 +161,6 @@ test('un telefon scris cu spații e acceptat', async () => {
   )
 })
 
-// Criteriul #195, la fel: se salva o dată din viitor, iar copilul apărea în listă
-// cu vârstă negativă.
 test('o dată de naștere din viitor e refuzată', async () => {
   const user = userEvent.setup()
   renderForm('/account/child/new')
@@ -179,8 +174,6 @@ test('o dată de naștere din viitor e refuzată', async () => {
   expect(mockedCreate).not.toHaveBeenCalled()
 })
 
-// Criteriile #197 și #198, tot neconstruite: aici se scrie medicație, iar
-// părintele trebuie să vadă dintr-o privire tot ce a scris.
 test('alergiile se scriu într-o casetă pe mai multe rânduri', async () => {
   renderForm()
   const alergii = await screen.findByLabelText('Alergii / observații')
@@ -194,4 +187,138 @@ test('câmpurile obligatorii se văd ca atare înainte de salvare', async () => 
   for (const eticheta of ['Nume', 'Data nașterii', 'Contact urgență', 'Telefon urgență']) {
     expect(screen.getByText(eticheta).textContent).toContain('*')
   }
+})
+
+test('un câmp obligatoriu gol spune „Obligatoriu”, nu „Minim 2 caractere”', async () => {
+  const user = userEvent.setup()
+  renderForm('/account/child/new')
+  await user.click(await screen.findByRole('button', { name: 'Salvează' }))
+
+  expect(await screen.findAllByText('Obligatoriu')).toHaveLength(4)
+  expect(screen.queryByText('Minim 2 caractere')).not.toBeInTheDocument()
+  expect(screen.getByLabelText(/Nume/)).toHaveAttribute('aria-describedby', 'name-error')
+})
+
+test('data de azi e acceptată și după miezul nopții ora României', async () => {
+  const tz = process.env.TZ
+  process.env.TZ = 'Europe/Bucharest'
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-10-18T21:30:00Z'))
+  try {
+    const user = userEvent.setup()
+    renderForm('/account/child/new')
+    await user.type(await screen.findByLabelText(/Nume/), 'Copil Nou')
+    await user.type(screen.getByLabelText(/Data nașterii/), '2026-10-19')
+    await user.type(screen.getByLabelText(/Contact urgență/), 'Ion Popescu')
+    await user.type(screen.getByLabelText(/Telefon urgență/), '0722123456')
+    await user.click(screen.getByLabelText('Da, poate apărea'))
+    await user.click(screen.getByRole('button', { name: 'Salvează' }))
+
+    await waitFor(() =>
+      expect(mockedCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ birth_date: '2026-10-19' }),
+      ),
+    )
+  } finally {
+    vi.useRealTimers()
+    process.env.TZ = tz
+  }
+})
+
+test('la editare, linkul Cod QR duce la codul aceluiași copil', async () => {
+  renderForm()
+  const link = await screen.findByRole('link', { name: 'Cod QR' })
+  expect(link).toHaveAttribute('href', `/account/child/${COPIL_ID}/qr`)
+})
+
+test('linkul Cod QR lipsește pe copil nou, pe copil negăsit și pe eroare', async () => {
+  const { unmount } = renderForm('/account/child/new')
+  await screen.findByLabelText(/Nume/)
+  expect(screen.queryByRole('link', { name: 'Cod QR' })).not.toBeInTheDocument()
+  unmount()
+
+  mockedGet.mockResolvedValueOnce(null)
+  const negasit = renderForm()
+  await screen.findByText('Copilul nu a fost găsit.')
+  expect(screen.queryByRole('link', { name: 'Cod QR' })).not.toBeInTheDocument()
+  negasit.unmount()
+
+  mockedGet.mockRejectedValueOnce(new Error('network'))
+  renderForm()
+  await screen.findByText('Nu am putut încărca copilul.')
+  expect(screen.queryByRole('link', { name: 'Cod QR' })).not.toBeInTheDocument()
+})
+
+test('cât se încarcă copilul nu apare un formular gol', async () => {
+  mockedGet.mockReturnValue(new Promise(() => {}))
+  renderForm()
+  expect(await screen.findByRole('status', { name: 'Se încarcă copilul' })).toBeInTheDocument()
+  expect(screen.queryByLabelText(/Nume/)).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Salvează' })).not.toBeInTheDocument()
+})
+
+test('formularul e împărțit în grupuri cu titlu', async () => {
+  renderForm('/account/child/new')
+  await screen.findByLabelText(/Nume/)
+  for (const titlu of ['Despre copil', 'Sănătate', 'Persoane de contact', 'Acord foto și video']) {
+    expect(screen.getByText(titlu)).toBeInTheDocument()
+  }
+  expect(screen.getByRole('heading', { name: 'Urgență' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Secundar (opțional)' })).toBeInTheDocument()
+})
+
+test('acordul foto e obligatoriu, iar un copil vechi fără răspuns trebuie să aleagă', async () => {
+  const user = userEvent.setup()
+  mockedGet.mockResolvedValue({ ...copil, photo_consent: null } as never)
+  renderForm()
+  await screen.findByDisplayValue('Andrei Popescu')
+  expect(screen.getByLabelText('Da, poate apărea')).not.toBeChecked()
+  expect(screen.getByLabelText('Nu, fără poze și video cu copilul')).not.toBeChecked()
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  expect(await screen.findByText('Alege una dintre variante')).toBeInTheDocument()
+  expect(mockedUpdate).not.toHaveBeenCalled()
+})
+
+test('acordul, înotul, cine ridică, sănătatea și mâncarea se salvează în forma din baza de date', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  await screen.findByDisplayValue('Andrei Popescu')
+  expect(screen.getByLabelText('Da, poate apărea')).toBeChecked()
+  await user.click(screen.getByLabelText('Nu, fără poze și video cu copilul'))
+  await user.selectOptions(screen.getByLabelText('Știe să înoate?'), 'Puțin')
+  await user.type(screen.getByLabelText('Cine poate ridica copilul'), '  Maria Pop, bunica  ')
+  await user.type(screen.getByLabelText('Afecțiuni și medicație'), ' Astm, inhalator ')
+  await user.type(screen.getByLabelText('Restricții alimentare'), 'Fără lactoză ')
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() =>
+    expect(mockedUpdate).toHaveBeenCalledWith(
+      COPIL_ID,
+      expect.objectContaining({
+        photo_consent: false,
+        swim_level: 'basic',
+        pickup_persons: 'Maria Pop, bunica',
+        medical_notes: 'Astm, inhalator',
+        dietary_restrictions: 'Fără lactoză',
+      }),
+    ),
+  )
+})
+
+test('câmpurile opționale lăsate goale se salvează ca lipsă, nu ca text gol', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  await screen.findByDisplayValue('Andrei Popescu')
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() =>
+    expect(mockedUpdate).toHaveBeenCalledWith(
+      COPIL_ID,
+      expect.objectContaining({
+        photo_consent: true,
+        swim_level: null,
+        pickup_persons: null,
+        medical_notes: null,
+        dietary_restrictions: null,
+      }),
+    ),
+  )
 })

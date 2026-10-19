@@ -72,6 +72,7 @@ import ChildFormPage from '@/features/account/ChildFormPage'
 import EnrollmentsPage from '@/features/account/EnrollmentsPage'
 import AttendancePage from '@/features/account/AttendancePage'
 import AnnouncementsPage from '@/features/account/AnnouncementsPage'
+import CoachLocationPage from '@/features/live-location/parent/CoachLocationPage'
 import CheckoutPage from '@/features/account/CheckoutPage'
 import ChildQrPage from '@/features/children/ChildQrPage'
 import PrivacyPage from '@/features/public/PrivacyPage'
@@ -134,6 +135,7 @@ export const router = createBrowserRouter([
                   { path: '/account/enrollments', element: <EnrollmentsPage /> },
                   { path: '/account/attendance', element: <AttendancePage /> },
                   { path: '/account/announcements', element: <AnnouncementsPage /> },
+                  { path: '/account/locatie', element: <CoachLocationPage /> },
                   { path: '/account/checkout', element: <CheckoutPage /> },
                   {
                     path: '/account/competitions/:slug/register',
