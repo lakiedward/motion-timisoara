@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
@@ -280,4 +280,29 @@ test('a payment to finish comes first and the card shows when the offer happens'
   expect(within(cards[0]!).getByText('Duminică, 25 octombrie, 10:00–12:30')).toBeInTheDocument()
   expect(within(cards[0]!).getByRole('img', { name: /Ilustrație/ })).toBeInTheDocument()
   expect(within(cards[0]!).getByRole('button', { name: 'Finalizează plata' })).toBeInTheDocument()
+})
+
+test('a photo that fails to load falls back to the sport illustration', async () => {
+  load.mockResolvedValue([
+    row({
+      id: 'broken',
+      kind: 'COURSE',
+      offerTitle: 'Curs cu poză lipsă',
+      offer: {
+        title: 'Curs cu poză lipsă',
+        path: '/cursuri/c-9',
+        imageUrl: 'https://example.invalid/lipsa.jpg',
+        sportCode: 'inot',
+        sportName: 'Înot',
+        schedule: null,
+      },
+    }),
+  ])
+  renderPage()
+
+  const card = await screen.findByRole('article', { name: 'Curs cu poză lipsă' })
+  const photo = card.querySelector('img')!
+  fireEvent.error(photo)
+  expect(await within(card).findByRole('img', { name: /Ilustrație/ })).toBeInTheDocument()
+  expect(card.querySelector('img')).toBeNull()
 })

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { UserRound } from 'lucide-react'
 
 import type { EnrollmentRow } from '@/api/account'
@@ -17,6 +18,20 @@ import {
   StatusBadge,
   WhenLine,
 } from './EnrollmentParts'
+
+function OfferPhoto({ src, sportCode }: { src: string | null; sportCode: string | null }) {
+  const [failed, setFailed] = useState(false)
+  if (!src || failed) return <SportIllustration code={sportCode} compact />
+  return (
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className="size-full object-cover"
+    />
+  )
+}
 
 type Props = {
   enrollments: EnrollmentRow[]
@@ -42,11 +57,7 @@ export function EnrollmentPhotoCards({ enrollments, paymentId, setPaymentId }: P
             )}
           >
             <div className="relative h-32 shrink-0 overflow-hidden">
-              {e.offer?.imageUrl ? (
-                <img src={e.offer.imageUrl} alt="" className="size-full object-cover" />
-              ) : (
-                <SportIllustration code={e.offer?.sportCode} compact />
-              )}
+              <OfferPhoto src={e.offer?.imageUrl ?? null} sportCode={e.offer?.sportCode ?? null} />
               <Badge className="absolute top-3 left-3">{KIND_LABEL[e.kind] ?? e.kind}</Badge>
             </div>
             <div className="flex flex-1 flex-col gap-2 p-5 sm:p-6">
