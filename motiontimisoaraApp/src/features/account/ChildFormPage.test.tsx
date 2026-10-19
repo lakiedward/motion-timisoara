@@ -35,6 +35,8 @@ const copil = {
   photo_consent: true,
   pickup_persons: null,
   swim_level: null,
+  medical_notes: null,
+  dietary_restrictions: null,
 }
 
 function renderForm(ruta = `/account/child/${COPIL_ID}`) {
@@ -73,7 +75,10 @@ test('salvarea scrie forma canonică a nivelului, nu cea cu diacritice', async (
   await screen.findByDisplayValue('Andrei Popescu')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() =>
-    expect(mockedUpdate).toHaveBeenCalledWith(COPIL_ID, expect.objectContaining({ level: 'incepator' })),
+    expect(mockedUpdate).toHaveBeenCalledWith(
+      COPIL_ID,
+      expect.objectContaining({ level: 'incepator' }),
+    ),
   )
 })
 
@@ -86,7 +91,10 @@ test('un nivel necunoscut rămâne în listă și nu se pierde la salvare', asyn
   expect(nivel.value).toBe('expert')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() =>
-    expect(mockedUpdate).toHaveBeenCalledWith(COPIL_ID, expect.objectContaining({ level: 'expert' })),
+    expect(mockedUpdate).toHaveBeenCalledWith(
+      COPIL_ID,
+      expect.objectContaining({ level: 'expert' }),
+    ),
   )
 })
 
@@ -207,7 +215,9 @@ test('data de azi e acceptată și după miezul nopții ora României', async ()
     await user.click(screen.getByRole('button', { name: 'Salvează' }))
 
     await waitFor(() =>
-      expect(mockedCreate).toHaveBeenCalledWith(expect.objectContaining({ birth_date: '2026-10-19' })),
+      expect(mockedCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ birth_date: '2026-10-19' }),
+      ),
     )
   } finally {
     vi.useRealTimers()
@@ -269,7 +279,7 @@ test('acordul foto e obligatoriu, iar un copil vechi fără răspuns trebuie să
   expect(mockedUpdate).not.toHaveBeenCalled()
 })
 
-test('acordul, înotul și cine ridică se salvează în forma din baza de date', async () => {
+test('acordul, înotul, cine ridică, sănătatea și mâncarea se salvează în forma din baza de date', async () => {
   const user = userEvent.setup()
   renderForm()
   await screen.findByDisplayValue('Andrei Popescu')
@@ -277,6 +287,8 @@ test('acordul, înotul și cine ridică se salvează în forma din baza de date'
   await user.click(screen.getByLabelText('Nu, fără poze și video cu copilul'))
   await user.selectOptions(screen.getByLabelText('Știe să înoate?'), 'Puțin')
   await user.type(screen.getByLabelText('Cine poate ridica copilul'), '  Maria Pop, bunica  ')
+  await user.type(screen.getByLabelText('Afecțiuni și medicație'), ' Astm, inhalator ')
+  await user.type(screen.getByLabelText('Restricții alimentare'), 'Fără lactoză ')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() =>
     expect(mockedUpdate).toHaveBeenCalledWith(
@@ -285,12 +297,14 @@ test('acordul, înotul și cine ridică se salvează în forma din baza de date'
         photo_consent: false,
         swim_level: 'basic',
         pickup_persons: 'Maria Pop, bunica',
+        medical_notes: 'Astm, inhalator',
+        dietary_restrictions: 'Fără lactoză',
       }),
     ),
   )
 })
 
-test('înotul și cine ridică lăsate goale se salvează ca lipsă, nu ca text gol', async () => {
+test('câmpurile opționale lăsate goale se salvează ca lipsă, nu ca text gol', async () => {
   const user = userEvent.setup()
   renderForm()
   await screen.findByDisplayValue('Andrei Popescu')
@@ -298,7 +312,13 @@ test('înotul și cine ridică lăsate goale se salvează ca lipsă, nu ca text 
   await waitFor(() =>
     expect(mockedUpdate).toHaveBeenCalledWith(
       COPIL_ID,
-      expect.objectContaining({ photo_consent: true, swim_level: null, pickup_persons: null }),
+      expect.objectContaining({
+        photo_consent: true,
+        swim_level: null,
+        pickup_persons: null,
+        medical_notes: null,
+        dietary_restrictions: null,
+      }),
     ),
   )
 })

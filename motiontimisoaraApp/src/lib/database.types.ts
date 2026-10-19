@@ -782,11 +782,13 @@ export type Database = {
         Row: {
           allergies: string | null
           birth_date: string
+          dietary_restrictions: string | null
           emergency_contact_name: string | null
           emergency_phone: string | null
           gdpr_consent_at: string | null
           id: string
           level: string | null
+          medical_notes: string | null
           name: string
           parent_id: string
           photo_consent: boolean | null
@@ -801,11 +803,13 @@ export type Database = {
         Insert: {
           allergies?: string | null
           birth_date: string
+          dietary_restrictions?: string | null
           emergency_contact_name?: string | null
           emergency_phone?: string | null
           gdpr_consent_at?: string | null
           id?: string
           level?: string | null
+          medical_notes?: string | null
           name: string
           parent_id: string
           photo_consent?: boolean | null
@@ -820,11 +824,13 @@ export type Database = {
         Update: {
           allergies?: string | null
           birth_date?: string
+          dietary_restrictions?: string | null
           emergency_contact_name?: string | null
           emergency_phone?: string | null
           gdpr_consent_at?: string | null
           id?: string
           level?: string | null
+          medical_notes?: string | null
           name?: string
           parent_id?: string
           photo_consent?: boolean | null
@@ -3109,6 +3115,7 @@ export type Database = {
           name: string
           owner_user_id: string
           phone: string | null
+          public_email: string | null
           public_email_consent: boolean
           stripe_account_id: string | null
           stripe_charges_enabled: boolean

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { type ComponentProps, useEffect } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -39,8 +39,13 @@ const schema = z.object({
     .refine((s) => s <= azi(), 'Data nu poate fi în viitor'),
   level: z.string().optional(),
   allergies: z.string().optional(),
+  medical_notes: z.string().max(1000, 'Maxim 1000 de caractere').optional(),
+  dietary_restrictions: z.string().max(500, 'Maxim 500 de caractere').optional(),
   emergency_contact_name: obligatoriu(2),
-  emergency_phone: z.string().min(1, 'Obligatoriu').refine(eTelefonValid, 'Număr de telefon invalid'),
+  emergency_phone: z
+    .string()
+    .min(1, 'Obligatoriu')
+    .refine(eTelefonValid, 'Număr de telefon invalid'),
   secondary_contact_name: z.string().optional(),
   secondary_phone: z
     .string()
@@ -100,6 +105,8 @@ export default function ChildFormPage() {
         birth_date: existing.birth_date,
         level: toLevelSlug(existing.level) || existing.level || '',
         allergies: existing.allergies ?? '',
+        medical_notes: existing.medical_notes ?? '',
+        dietary_restrictions: existing.dietary_restrictions ?? '',
         emergency_contact_name: existing.emergency_contact_name ?? '',
         emergency_phone: existing.emergency_phone ?? '',
         secondary_contact_name: existing.secondary_contact_name ?? '',
@@ -113,9 +120,18 @@ export default function ChildFormPage() {
     }
   }, [existing, reset])
 
-  const onSubmit = async ({ photo_consent, swim_level, pickup_persons, ...v }: Values) => {
+  const onSubmit = async ({
+    photo_consent,
+    swim_level,
+    pickup_persons,
+    medical_notes,
+    dietary_restrictions,
+    ...v
+  }: Values) => {
     const date = {
       ...v,
+      medical_notes: medical_notes?.trim() || null,
+      dietary_restrictions: dietary_restrictions?.trim() || null,
       swim_level: swim_level || null,
       pickup_persons: pickup_persons?.trim() || null,
       photo_consent: photo_consent === 'da',
@@ -266,11 +282,22 @@ export default function ChildFormPage() {
                 aria-describedby="allergies-hint"
                 {...register('allergies')}
               />
-              <FieldMessage
-                id="allergies"
-                hint="Medicație, alergii sau ce trebuie să știe antrenorul."
-              />
+              <FieldMessage id="allergies" hint="Alergii și alte observații pentru antrenor." />
             </div>
+            <TextLiber
+              id="medical_notes"
+              label="Afecțiuni și medicație"
+              hint="De exemplu: astm, cu inhalatorul în rucsac."
+              error={errors.medical_notes?.message}
+              {...register('medical_notes')}
+            />
+            <TextLiber
+              id="dietary_restrictions"
+              label="Restricții alimentare"
+              hint="De exemplu: vegetarian, fără lactoză."
+              error={errors.dietary_restrictions?.message}
+              {...register('dietary_restrictions')}
+            />
             <div className="space-y-1.5 sm:max-w-[calc(50%-0.5rem)]">
               <Label htmlFor="swim_level">Știe să înoate?</Label>
               <select id="swim_level" className={selectCls} {...register('swim_level')}>
@@ -341,24 +368,13 @@ export default function ChildFormPage() {
                 <FieldMessage id="secondary_phone" error={errors.secondary_phone?.message} />
               </div>
             </div>
-            <div className="space-y-1.5 border-t pt-4">
-              <Label htmlFor="pickup_persons">Cine poate ridica copilul</Label>
-              <Textarea
+            <div className="border-t pt-4">
+              <TextLiber
                 id="pickup_persons"
-                rows={2}
-                className="max-h-40 [field-sizing:content]"
-                aria-invalid={!!errors.pickup_persons}
-                aria-describedby={fieldDescription(
-                  'pickup_persons',
-                  PICKUP_HINT,
-                  errors.pickup_persons?.message,
-                )}
-                {...register('pickup_persons')}
-              />
-              <FieldMessage
-                id="pickup_persons"
+                label="Cine poate ridica copilul"
                 hint={PICKUP_HINT}
                 error={errors.pickup_persons?.message}
+                {...register('pickup_persons')}
               />
             </div>
           </CardContent>
@@ -415,6 +431,29 @@ export default function ChildFormPage() {
           </Button>
         </div>
       </form>
+    </div>
+  )
+}
+
+function TextLiber({
+  id,
+  label,
+  hint,
+  error,
+  ...props
+}: ComponentProps<'textarea'> & { id: string; label: string; hint: string; error?: string }) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <Textarea
+        id={id}
+        rows={2}
+        className="max-h-64 [field-sizing:content]"
+        aria-invalid={!!error}
+        aria-describedby={fieldDescription(id, hint, error)}
+        {...props}
+      />
+      <FieldMessage id={id} hint={hint} error={error} />
     </div>
   )
 }
