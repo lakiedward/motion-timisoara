@@ -51,6 +51,7 @@ export default function PaymentReturnPage() {
     content = (
       <StatusView
         state="empty"
+        className="border-0"
         title="Nu găsim plata."
         text="Vezi starea plăților în Înscrieri."
         action={
@@ -112,6 +113,7 @@ export default function PaymentReturnPage() {
     content = (
       <StatusView
         state="empty"
+        className="border-0"
         title="Plata e în curs de confirmare"
         text="Stripe a primit plata, iar confirmarea poate dura câteva minute. Starea se actualizează în Înscrieri."
         action={
