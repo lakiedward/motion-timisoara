@@ -7,7 +7,7 @@ function toLocal(value: string): Date {
   return new Date(y, m - 1, d)
 }
 
-function toIso(date: Date): string {
+export function toIso(date: Date): string {
   const y = String(date.getFullYear())
   const m = String(date.getMonth() + 1).padStart(2, '0')
   const d = String(date.getDate()).padStart(2, '0')
