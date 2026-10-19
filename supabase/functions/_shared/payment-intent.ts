@@ -58,12 +58,40 @@ async function cardOnlyIntent(
   return updated;
 }
 
+async function releaseCheckoutSession(
+  db: SupabaseClient,
+  stripe: Pick<Stripe, "checkout">,
+  payment: IntentPayment,
+): Promise<IntentPayment> {
+  let session: Stripe.Checkout.Session;
+  try {
+    session = await stripe.checkout.sessions.retrieve(payment.gateway_txn_id!);
+    if (session.status === "open") session = await stripe.checkout.sessions.expire(session.id);
+  } catch {
+    throw enrollmentJson({ error: "Nu am putut verifica plata existentă. Încearcă din nou." }, 503);
+  }
+  if (session.status === "complete") {
+    throw enrollmentJson({ error: "Plata este deja în curs de confirmare. Verifică în Înscrieri." }, 409);
+  }
+  const cleared = await db.from("payments").update({ gateway_txn_id: null })
+    .eq("id", payment.id).eq("status", payment.status).eq("gateway_txn_id", session.id)
+    .select("id").single();
+  if (cleared.error || !cleared.data) {
+    throw enrollmentJson({ error: "Plata s-a schimbat între timp. Reîncearcă din Înscrieri." }, 409);
+  }
+  return { ...payment, gateway_txn_id: null };
+}
+
 export async function preparePaymentIntent(
   db: SupabaseClient,
-  stripe: Pick<Stripe, "paymentIntents">,
+  stripe: Pick<Stripe, "paymentIntents"> & Partial<Pick<Stripe, "checkout">>,
   payment: IntentPayment,
   params: Stripe.PaymentIntentCreateParams,
 ) {
+  if (payment.gateway_txn_id?.startsWith("cs_")) {
+    if (!stripe.checkout) throw enrollmentJson({ error: "Plata existentă nu poate fi verificată." }, 503);
+    payment = await releaseCheckoutSession(db, { checkout: stripe.checkout }, payment);
+  }
   if (payment.gateway_txn_id) {
     let intent: Stripe.PaymentIntent;
     try {

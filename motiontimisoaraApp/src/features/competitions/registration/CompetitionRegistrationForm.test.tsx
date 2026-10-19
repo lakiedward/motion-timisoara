@@ -33,7 +33,6 @@ vi.mock('@/lib/auth-context', () => ({
 vi.mock('@/features/account/checkout/usePaymentAdapter', () => ({
   usePaymentAdapter: () => ({ adapter: { confirm: vi.fn() }, ready: false }),
 }))
-vi.mock('@stripe/react-stripe-js', () => ({ CardElement: () => <div /> }))
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), message: vi.fn() } }))
 
 const competition: PublicCompetition = {

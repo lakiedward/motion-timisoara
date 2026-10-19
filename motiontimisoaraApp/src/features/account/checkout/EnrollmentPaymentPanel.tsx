@@ -1,10 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
-import { CardElement, Elements, useElements } from '@stripe/react-stripe-js'
-import type { StripeCardElementChangeEvent } from '@stripe/stripe-js'
+import { useEffect, useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CircleCheck, Loader2, Lock } from 'lucide-react'
 import { toast } from 'sonner'
-import { stripeElementsOptions, stripePromise } from '@/lib/stripe'
 import { useAuth } from '@/lib/auth-context'
 import { formatOfferPrice } from '@/lib/money'
 import { Button } from '@/components/ui/button'
@@ -14,35 +11,22 @@ import {
   enrollmentPayable,
   getEnrollmentPayments,
 } from '@/api/payments/enrollments'
+import { startStripeCheckout } from '@/api/payments/checkout-session'
 import { paymentResultMessage, processEnrollmentPayments } from '@/api/payments/process'
 import { PaymentEntry } from './PaymentEntry'
 import { usePaymentAdapter } from './usePaymentAdapter'
 
-type CardState = { complete: boolean; empty: boolean; message: string | null }
-
-const EMPTY_CARD: CardState = { complete: false, empty: true, message: null }
-
-export function EnrollmentPaymentPanel(props: { enrollmentId: string; onClose: () => void }) {
-  return (
-    <Elements stripe={stripePromise} options={stripeElementsOptions}>
-      <SavedPayment {...props} />
-    </Elements>
-  )
-}
-
-function missingCardMessage(card: CardState) {
-  if (card.message) return card.message
-  return card.empty ? 'Completează datele cardului.' : 'Datele cardului sunt incomplete.'
-}
-
-function SavedPayment({ enrollmentId, onClose }: { enrollmentId: string; onClose: () => void }) {
+export function EnrollmentPaymentPanel({
+  enrollmentId,
+  onClose,
+}: {
+  enrollmentId: string
+  onClose: () => void
+}) {
   const { user } = useAuth()
   const qc = useQueryClient()
   const payment = usePaymentAdapter()
-  const elements = useElements()
   const attempt = useRef<AbortController | null>(null)
-  const [card, setCard] = useState<CardState>(EMPTY_CARD)
-  const [cardError, setCardError] = useState<string | null>(null)
   useEffect(() => () => attempt.current?.abort(), [user?.id])
   const state = useQuery({
     queryKey: ['enrollment-payment', user?.id, enrollmentId],
@@ -54,6 +38,10 @@ function SavedPayment({ enrollmentId, onClose }: { enrollmentId: string; onClose
     mutationFn: async () => {
       if (!payment.ready) throw new Error('Plata nu este pregătită. Reîncearcă.')
       attempt.current = new AbortController()
+      if (!payment.android) {
+        const started = await startStripeCheckout([enrollmentId])
+        return started === 'paid' ? { outcome: 'ready' as const, completed: 1, total: 1 } : null
+      }
       return processEnrollmentPayments(
         [enrollmentId],
         payment.adapter,
@@ -62,38 +50,22 @@ function SavedPayment({ enrollmentId, onClose }: { enrollmentId: string; onClose
       )
     },
     onSuccess: (result) => {
-      if (attempt.current?.signal.aborted) return
+      if (!result || attempt.current?.signal.aborted) return
       if (result.outcome === 'ready') toast.success(paymentResultMessage(result))
-    },
-    onSettled: () => {
       void qc.invalidateQueries({ queryKey: ['enrollments'] })
-      if (attempt.current?.signal.aborted) return
       void state.refetch()
     },
+    onError: () => {
+      void qc.invalidateQueries({ queryKey: ['enrollments'] })
+      if (!attempt.current?.signal.aborted) void state.refetch()
+    },
   })
-  const onCardChange = (event: StripeCardElementChangeEvent) => {
-    const next = {
-      complete: event.complete,
-      empty: event.empty,
-      message: event.error?.message ?? null,
-    }
-    setCard(next)
-    if (cardError) setCardError(next.complete ? null : missingCardMessage(next))
-  }
-  const submit = () => {
-    if (!payment.android && !card.complete) {
-      setCardError(missingCardMessage(card))
-      elements?.getElement(CardElement)?.focus()
-      return
-    }
-    setCardError(null)
-    pay.mutate()
-  }
   const enrollment = state.data?.[0]
   const saved = enrollment?.payments[0]
   const canPay = enrollment && enrollmentPayable(enrollment)
   const paid = enrollment ? enrollmentPaid(enrollment) : false
   const showPay = Boolean(enrollment && saved && !paid && canPay)
+  const redirecting = pay.isPending || (pay.isSuccess && pay.data === null)
   const failure = pay.error
     ? pay.error.message
     : pay.data && pay.data.outcome !== 'ready'
@@ -117,7 +89,6 @@ function SavedPayment({ enrollmentId, onClose }: { enrollmentId: string; onClose
       {state.isPending ? (
         <div role="status" aria-label="Verificăm plata" className="space-y-3">
           <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-touch-target w-full" />
           <div className="flex gap-3">
             <Skeleton className="h-12 w-24" />
             <Skeleton className="h-12 flex-1" />
@@ -137,7 +108,7 @@ function SavedPayment({ enrollmentId, onClose }: { enrollmentId: string; onClose
             Plata este confirmată. Nu mai trebuie să plătești.
           </p>
         ) : canPay ? (
-          <PaymentEntry framed={false} onCardChange={onCardChange} cardError={cardError} />
+          <PaymentEntry framed={false} />
         ) : (
           <p role="status" className="text-muted-foreground text-sm">
             Această înscriere nu mai poate fi plătită. Verifică starea sau contactează clubul.
@@ -154,7 +125,7 @@ function SavedPayment({ enrollmentId, onClose }: { enrollmentId: string; onClose
           variant="ghost"
           size="lg"
           className="px-4 text-sm sm:px-6 sm:text-base"
-          disabled={pay.isPending}
+          disabled={redirecting}
           onClick={onClose}
         >
           Închide
@@ -163,19 +134,19 @@ function SavedPayment({ enrollmentId, onClose }: { enrollmentId: string; onClose
           <Button
             size="lg"
             className="h-auto min-h-12 min-w-0 flex-1 px-4 py-2 text-sm leading-tight whitespace-normal sm:px-6 sm:text-base"
-            disabled={pay.isPending || state.isFetching || !payment.ready}
-            onClick={submit}
+            disabled={redirecting || state.isFetching || !payment.ready}
+            onClick={() => pay.mutate()}
           >
-            {pay.isPending ? (
+            {redirecting ? (
               <>
                 <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-                <span>Verificăm și confirmăm plata…</span>
+                <span>{payment.android ? 'Verificăm și confirmăm plata…' : 'Te ducem la Stripe…'}</span>
               </>
             ) : (
-              <>
-                <Lock aria-hidden="true" className="hidden size-4 sm:block" />
-                <span>Plătește {formatOfferPrice(saved.amount, saved.currency)}</span>
-              </>
+              <span>
+                Plătește {formatOfferPrice(saved.amount, saved.currency)}
+                {payment.android ? '' : ' pe Stripe'}
+              </span>
             )}
           </Button>
         )}

@@ -3,6 +3,7 @@ const PRODUCTION_ORIGIN = "https://motiontimisoara.com";
 const ALLOWED_ORIGINS = [
   /^https:\/\/(www\.)?motiontimisoara\.com$/,
   /^https:\/\/deploy-preview-\d+--motiontimisoara\.netlify\.app$/,
+  /^https:\/\/master--motiontimisoara\.netlify\.app$/,
   /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/,
 ];
 

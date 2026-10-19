@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -9,8 +9,9 @@ import { formatMoney } from '@/lib/money'
 const mocks = vi.hoisted(() => ({
   read: vi.fn(),
   process: vi.fn(),
+  checkout: vi.fn(),
   ready: true,
-  cardComplete: true,
+  android: true,
   userId: 'parent-327',
   adapter: { testOnly: true, confirm: vi.fn() },
   toast: { success: vi.fn(), message: vi.fn(), error: vi.fn() },
@@ -23,36 +24,12 @@ vi.mock('@/api/payments/process', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/payments/process')>()),
   processEnrollmentPayments: mocks.process,
 }))
+vi.mock('@/api/payments/checkout-session', () => ({ startStripeCheckout: mocks.checkout }))
 vi.mock('@/lib/auth-context', () => ({ useAuth: () => ({ user: { id: mocks.userId } }) }))
-vi.mock('@/lib/stripe', () => ({ stripePromise: Promise.resolve(null), stripeElementsOptions: {} }))
-vi.mock('@stripe/react-stripe-js', () => ({
-  Elements: ({ children }: { children: ReactNode }) => children,
-  CardElement: () => null,
-  useElements: () => null,
-}))
 vi.mock('./usePaymentAdapter', () => ({
-  usePaymentAdapter: () => ({ ready: mocks.ready, adapter: mocks.adapter, android: false }),
+  usePaymentAdapter: () => ({ ready: mocks.ready, adapter: mocks.adapter, android: mocks.android }),
 }))
-vi.mock('./PaymentEntry', () => ({
-  PaymentEntry: ({
-    onCardChange,
-    cardError,
-  }: {
-    onCardChange: (event: { complete: boolean; empty: boolean }) => void
-    cardError?: string | null
-  }) => {
-    const notify = useRef(onCardChange)
-    useEffect(() => {
-      if (mocks.cardComplete) notify.current({ complete: true, empty: false })
-    }, [])
-    return (
-      <>
-        <p>Date card</p>
-        {cardError && <p role="alert">{cardError}</p>}
-      </>
-    )
-  },
-}))
+vi.mock('./PaymentEntry', () => ({ PaymentEntry: (): ReactNode => <p>Metoda de plată</p> }))
 vi.mock('sonner', () => ({ toast: mocks.toast }))
 
 function enrollment(paid = false): EnrollmentPayment {
@@ -104,40 +81,48 @@ function renderPanel() {
 beforeEach(() => {
   vi.clearAllMocks()
   mocks.ready = true
-  mocks.cardComplete = true
+  mocks.android = true
   mocks.userId = 'parent-327'
   mocks.read.mockResolvedValue([enrollment()])
   mocks.process.mockResolvedValue({ outcome: 'canceled', completed: 0, total: 1 })
+  mocks.checkout.mockResolvedValue('redirected')
 })
 
-describe('saved enrollment payment panel', () => {
-  it('explains a missing card under the field without sending a payment request', async () => {
-    mocks.cardComplete = false
+describe('web payment panel on Stripe Checkout', () => {
+  beforeEach(() => {
+    mocks.android = false
+  })
+
+  it('sends the saved enrollment to Stripe and locks the panel while redirecting', async () => {
     renderPanel()
-    fireEvent.click(await screen.findByRole('button', { name: /^Plătește/ }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('Completează datele cardului.')
+    fireEvent.click(
+      await screen.findByRole('button', { name: `Plătește ${formatMoney(31612, 'RON')} pe Stripe` }),
+    )
+    expect(await screen.findByRole('button', { name: 'Te ducem la Stripe…' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Închide' })).toBeDisabled()
+    expect(mocks.checkout).toHaveBeenCalledExactlyOnceWith(['saved-enrollment'])
     expect(mocks.process).not.toHaveBeenCalled()
   })
 
-  it('shows the checkout spinner while confirming and locks the close button', async () => {
-    mocks.process.mockReturnValue(new Promise(() => undefined))
+  it('shows a failed start once, next to the button, without a toast', async () => {
+    mocks.checkout.mockRejectedValue(new Error('Nu am putut deschide plata Stripe. Încearcă din nou.'))
     renderPanel()
-    fireEvent.click(await screen.findByRole('button', { name: /^Plătește/ }))
-    expect(
-      await screen.findByRole('button', { name: 'Verificăm și confirmăm plata…' }),
-    ).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Închide' })).toBeDisabled()
-  })
-
-  it('shows a failed payment once, next to the button, without a toast', async () => {
-    mocks.process.mockRejectedValue(new Error('Plata a fost refuzată de bancă.'))
-    renderPanel()
-    fireEvent.click(await screen.findByRole('button', { name: /^Plătește/ }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('Plata a fost refuzată de bancă.')
-    expect(screen.getAllByText('Plata a fost refuzată de bancă.')).toHaveLength(1)
+    fireEvent.click(await screen.findByRole('button', { name: /pe Stripe$/ }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Nu am putut deschide plata Stripe.')
+    expect(screen.getAllByText(/Nu am putut deschide plata Stripe/)).toHaveLength(1)
     expect(mocks.toast.error).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: /pe Stripe$/ })).toBeEnabled()
   })
 
+  it('confirms in a toast when the order turns out to be paid already', async () => {
+    mocks.checkout.mockResolvedValue('paid')
+    renderPanel()
+    fireEvent.click(await screen.findByRole('button', { name: /pe Stripe$/ }))
+    await waitFor(() => expect(mocks.toast.success).toHaveBeenCalledTimes(1))
+  })
+})
+
+describe('Android payment panel on the native sheet', () => {
   it('puts the accepted amount on the button only and never pays on mount or refresh', async () => {
     const { client } = renderPanel()
     const button = await screen.findByRole('button', {

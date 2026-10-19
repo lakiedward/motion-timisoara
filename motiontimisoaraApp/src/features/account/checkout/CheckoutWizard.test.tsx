@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
@@ -12,7 +11,9 @@ const mocks = vi.hoisted(() => ({
   children: vi.fn(),
   toast: { success: vi.fn(), message: vi.fn(), error: vi.fn() },
   navigate: vi.fn(),
+  checkout: vi.fn(),
 }))
+vi.mock('@/api/payments/checkout-session', () => ({ startStripeCheckout: mocks.checkout }))
 
 vi.mock('@/api/checkout', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/checkout')>()),
@@ -24,17 +25,14 @@ vi.mock('@/api/account', async (importOriginal) => ({
   getMyChildren: mocks.children,
 }))
 vi.mock('@/lib/auth-context', () => ({ useAuth: () => ({ user: { id: 'parent', name: 'Părinte' } }) }))
-vi.mock('@/lib/stripe', () => ({ stripeConfigured: true, stripePromise: Promise.resolve(null) }))
+vi.mock('@/lib/stripe', () => ({ stripeConfigured: true }))
 vi.mock('./usePaymentAdapter', () => ({
-  usePaymentAdapter: () => ({ ready: true, adapter: { confirm: vi.fn() } }),
+  usePaymentAdapter: () => ({ ready: true, android: false, adapter: { confirm: vi.fn() } }),
 }))
 vi.mock('sonner', () => ({ toast: mocks.toast }))
 vi.mock('react-router-dom', async (importOriginal) => ({
   ...(await importOriginal<typeof import('react-router-dom')>()),
   useNavigate: () => mocks.navigate,
-}))
-vi.mock('@stripe/react-stripe-js', () => ({
-  Elements: ({ children }: { children: ReactNode }) => children,
 }))
 
 function renderWizard() {
@@ -163,4 +161,38 @@ test('a parent can enroll themselves as an adult without selecting a child', asy
   expect(mocks.create.mock.calls[0][0].priceVersions).toMatchObject({
     parent: 'b'.repeat(64),
   })
+})
+
+test('a paid card order goes to one Stripe Checkout page for every saved enrollment', async () => {
+  mocks.validate.mockResolvedValue({
+    allowCash: false,
+    capacity: { available: 10, requested: 1, sufficient: true },
+    results: [
+      { childId: 'bebe', name: 'Bebe', eligible: true, amount: 40000, currency: 'RON', priceVersion: 'a'.repeat(64) },
+    ],
+  })
+  mocks.create.mockResolvedValue({
+    enrollmentId: 'enroll-1',
+    enrollmentIds: ['enroll-1'],
+    requiresPaymentIntent: true,
+    prices: [{ childId: 'bebe', amount: 40000, currency: 'RON' }],
+  })
+  mocks.checkout.mockResolvedValue('redirected')
+  const user = userEvent.setup()
+  renderWizard()
+  await user.click(await screen.findByRole('checkbox', { name: /Bebe/ }))
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  await user.click(await screen.findByRole('checkbox', { name: /Confirm suma finală/ }))
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  const values = ['Părinte Audit', 'audit@example.test', 'Strada Audit 1', 'Timișoara', '300001']
+  for (const [index, field] of screen.getAllByRole('textbox').entries()) {
+    await user.clear(field)
+    await user.type(field, values[index])
+  }
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  expect(await screen.findByText(/Plătești pe pagina securizată Stripe/)).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: /^Plătește 400,00 lei pe Stripe$/ }))
+  await waitFor(() => expect(mocks.checkout).toHaveBeenCalledWith(['enroll-1']))
+  expect(await screen.findByRole('button', { name: /Te ducem la Stripe/ })).toBeDisabled()
+  expect(mocks.navigate).not.toHaveBeenCalled()
 })

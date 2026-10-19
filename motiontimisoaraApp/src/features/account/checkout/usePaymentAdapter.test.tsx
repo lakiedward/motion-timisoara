@@ -11,10 +11,6 @@ const mocks = vi.hoisted(() => ({
   supported: vi.fn(() => true),
   availability: vi.fn(),
   nativeConfirm: vi.fn(),
-  webConfirm: vi.fn(),
-  card: { id: 'web-card' },
-  stripeLoaded: true,
-  elementLoaded: true,
 }))
 vi.mock('@/lib/platform', () => ({ isNative: () => mocks.native, platform: () => mocks.platform }))
 vi.mock('@/lib/stripe', () => ({
@@ -26,11 +22,6 @@ vi.mock('@/api/payments/native', () => ({
   nativePaymentsSupported: mocks.supported,
   getNativePaymentAvailability: mocks.availability,
   confirmNativePayment: mocks.nativeConfirm,
-}))
-vi.mock('@stripe/react-stripe-js', () => ({
-  CardElement: 'CardElement',
-  useStripe: () => (mocks.stripeLoaded ? { confirmCardPayment: mocks.webConfirm } : null),
-  useElements: () => ({ getElement: () => (mocks.elementLoaded ? mocks.card : null) }),
 }))
 
 const input = {
@@ -57,23 +48,18 @@ beforeEach(() => {
   mocks.native = true
   mocks.platform = 'android'
   mocks.configured = true
-  mocks.stripeLoaded = true
-  mocks.elementLoaded = true
   mocks.supported.mockReturnValue(true)
   mocks.availability.mockResolvedValue({ googlePay: false, testMode: true })
   mocks.nativeConfirm.mockResolvedValue('completed')
-  mocks.webConfirm.mockResolvedValue({})
 })
 
 describe('payment platform adapters', () => {
-  it('uses the Android test adapter even before web Stripe.js is available', async () => {
-    mocks.stripeLoaded = false
+  it('uses the Android test adapter', async () => {
     const { result } = renderAdapter()
     await waitFor(() => expect(result.current.ready).toBe(true))
     expect(result.current.adapter.testOnly).toBe(true)
     expect(await result.current.adapter.confirm(input)).toBe('completed')
     expect(mocks.nativeConfirm).toHaveBeenCalledExactlyOnceWith(input)
-    expect(mocks.webConfirm).not.toHaveBeenCalled()
   })
 
   it('keeps native cancel distinct from success', async () => {
@@ -105,40 +91,20 @@ describe('payment platform adapters', () => {
     expect(mocks.availability).not.toHaveBeenCalled()
   })
 
-  it('retains web Stripe confirmation and saved billing without the native bridge', async () => {
+  it('is ready on the web without the native bridge, because payment happens on Stripe Checkout', () => {
     mocks.native = false
     mocks.platform = 'web'
     const { result } = renderAdapter()
+    expect(result.current.android).toBe(false)
     expect(result.current.ready).toBe(true)
-    expect(result.current.adapter.testOnly).toBe(false)
-    expect(await result.current.adapter.confirm(input)).toBe('completed')
-    expect(mocks.webConfirm).toHaveBeenCalledWith('payment-secret', {
-      payment_method: {
-        card: mocks.card,
-        billing_details: {
-          name: input.billing.name,
-          email: input.billing.email,
-          address: {
-            line1: input.billing.addressLine1,
-            city: input.billing.city,
-            postal_code: input.billing.postalCode,
-            country: 'RO',
-          },
-        },
-      },
-    })
     expect(mocks.availability).not.toHaveBeenCalled()
-    expect(mocks.nativeConfirm).not.toHaveBeenCalled()
   })
 
-  it('fails web confirmation when card entry has not mounted', async () => {
+  it('is not ready on the web when Stripe is not configured', () => {
     mocks.native = false
     mocks.platform = 'web'
-    mocks.elementLoaded = false
+    mocks.configured = false
     const { result } = renderAdapter()
-    await expect(result.current.adapter.confirm(input)).rejects.toThrow(
-      'Formularul de card nu s-a încărcat',
-    )
-    expect(mocks.webConfirm).not.toHaveBeenCalled()
+    expect(result.current.ready).toBe(false)
   })
 })
