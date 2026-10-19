@@ -98,17 +98,24 @@ test('o citire căzută arată eroare cu reîncercare, nu mesajul de istoric gol
   renderPage()
   expect(await screen.findByText('Nu am putut încărca prezența.')).toBeInTheDocument()
   expect(screen.queryByText('Nicio prezență înregistrată încă.')).not.toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Încearcă din nou' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Reîncearcă' })).toBeInTheDocument()
 })
 
 test('rândurile apar de la cea mai recentă ședință la cea mai veche', async () => {
   renderPage()
   const randuri = await screen.findAllByRole('listitem')
   expect(randuri.map((li) => li.textContent)).toEqual([
-    expect.stringContaining('20.08.2026'),
-    expect.stringContaining('20.07.2026'),
-    expect.stringContaining('10.07.2026'),
+    expect.stringContaining('20 august 2026'),
+    expect.stringContaining('20 iulie 2026'),
+    expect.stringContaining('10 iulie 2026'),
   ])
+})
+
+test('ședințele sunt grupate pe lună, cea mai recentă lună prima', async () => {
+  renderPage()
+  const luni = await screen.findAllByRole('heading', { level: 2 })
+  expect(luni.map((h) => h.textContent)).toEqual(['August 2026', 'Iulie 2026'])
+  expect(screen.getByText('1 prezență din 2')).toBeInTheDocument()
 })
 
 // Criteriul 218 al secțiunii vecine: data singură nu deosebește două ședințe din
@@ -116,7 +123,7 @@ test('rândurile apar de la cea mai recentă ședință la cea mai veche', async
 test('fiecare rând arată și ora ședinței', async () => {
   renderPage()
   const randuri = await screen.findAllByRole('listitem')
-  expect(randuri[0].textContent).toMatch(/20\.08\.2026 · \d{2}:\d{2}/)
+  expect(randuri[0].textContent).toMatch(/Joi, 20 august 2026, \d{2}:\d{2}/)
 })
 
 // Criteriul 216: nota antrenorului era citită din baza de date și aruncată.
