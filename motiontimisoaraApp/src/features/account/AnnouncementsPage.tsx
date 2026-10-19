@@ -8,7 +8,6 @@ import {
   type FeedPage,
 } from '@/api/announcements/parent'
 import { useAuth } from '@/lib/auth-context'
-import { LiveLocationBanner } from '@/features/live-location/parent/LiveLocationBanner'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
@@ -208,9 +207,6 @@ function AnnouncementVisit({ userId }: { userId: string }) {
   return (
     <>
       <PageHeader filter={filterControl} />
-      <div className="mb-6">
-        <LiveLocationBanner always />
-      </div>
       <LiveLocationAnnouncements />
       {firstPage.isPending ? (
         <FeedSkeleton />
