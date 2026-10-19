@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button'
 import { CheckoutPaymentStep } from './CheckoutPaymentStep'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
-import { CheckoutProgress, CheckoutStepList, CheckoutSteps } from './CheckoutSteps'
+import { CheckoutSteps } from './CheckoutSteps'
 import { CheckoutPackagePicker } from './CheckoutPackagePicker'
 
 import type { Offering } from '../CheckoutPage'
@@ -285,9 +285,6 @@ export default function CheckoutWizard({
   const hint =
     step < lastStep && !canAdvance ? advanceHint(steps[step], participantCount, hasAccepted) : null
   const copy = STEP_COPY[steps[step]]
-  const variant =
-    new URLSearchParams(window.location.search).get('varianta') === 'b' ? 'b' : 'a'
-
   const backLink = (
     <Link
       to={-1 as unknown as string}
@@ -542,58 +539,6 @@ export default function CheckoutWizard({
         Înapoi
       </Button>
     ) : null
-
-  if (variant === 'b') {
-    return (
-      <div className="pb-20 lg:pb-0">
-        {backLink}
-        <div className="mt-2 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8">
-          <div className="space-y-6">
-            {heading}
-            <div className="lg:hidden">
-              <CheckoutProgress steps={steps} current={step} />
-            </div>
-            <div className="bg-card space-y-6 rounded-xl border p-5 sm:p-6">
-              {stepHeader}
-              {body}
-            </div>
-          </div>
-          <aside className="bg-card space-y-5 rounded-xl border p-5 lg:sticky lg:top-24">
-            <div className="hidden lg:block">
-              <CheckoutStepList steps={steps} current={step} />
-            </div>
-            <div className="space-y-1 text-sm lg:border-t lg:pt-5">
-              <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">Participanți</span>
-                <span className="font-medium">{participantCount}</span>
-              </div>
-              {offering.perSession && (
-                <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">Pachet</span>
-                  <span className="font-medium">{packageSize} ședințe</span>
-                </div>
-              )}
-              <div className="flex justify-between gap-3 pt-2 text-base font-semibold">
-                <span>Total</span>
-                <span className="tabular-nums">
-                  {participantCount === 0
-                    ? '0,00 lei'
-                    : pricesReady
-                      ? formatRonOffer(total)
-                      : 'Se calculează…'}
-                </span>
-              </div>
-            </div>
-            {hintLine}
-            <div className="flex flex-col-reverse gap-2 [&>button]:w-full">
-              {back}
-              {primary}
-            </div>
-          </aside>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="mx-auto max-w-2xl pb-20 lg:pb-0">
