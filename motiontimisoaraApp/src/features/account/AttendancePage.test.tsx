@@ -105,9 +105,9 @@ test('rândurile apar de la cea mai recentă ședință la cea mai veche', async
   renderPage()
   const randuri = await screen.findAllByRole('listitem')
   expect(randuri.map((li) => li.textContent)).toEqual([
-    expect.stringContaining('20.08.2026'),
-    expect.stringContaining('20.07.2026'),
-    expect.stringContaining('10.07.2026'),
+    expect.stringContaining('20 august 2026'),
+    expect.stringContaining('20 iulie 2026'),
+    expect.stringContaining('10 iulie 2026'),
   ])
 })
 
@@ -123,7 +123,7 @@ test('ședințele sunt grupate pe lună, cea mai recentă lună prima', async ()
 test('fiecare rând arată și ora ședinței', async () => {
   renderPage()
   const randuri = await screen.findAllByRole('listitem')
-  expect(randuri[0].textContent).toMatch(/20\.08\.2026 · \d{2}:\d{2}/)
+  expect(randuri[0].textContent).toMatch(/Joi, 20 august 2026, \d{2}:\d{2}/)
 })
 
 // Criteriul 216: nota antrenorului era citită din baza de date și aruncată.

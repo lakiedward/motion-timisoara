@@ -1,4 +1,4 @@
-import { Check, X } from 'lucide-react'
+import { Check, UserRound, X } from 'lucide-react'
 
 import type { AttendanceRow } from '@/api/account'
 import { plural } from '@/lib/plural'
@@ -10,24 +10,31 @@ interface HistoryProps {
   cuNume: boolean
 }
 
-function prenume(nume: string): string {
-  return nume.split(/\s+/)[0] ?? nume
-}
+const TZ = 'Europe/Bucharest'
+const zi = new Intl.DateTimeFormat('ro-RO', { day: 'numeric', timeZone: TZ })
+const ziSaptamana = new Intl.DateTimeFormat('ro-RO', { weekday: 'short', timeZone: TZ })
+const luna = new Intl.DateTimeFormat('ro-RO', { month: 'long', year: 'numeric', timeZone: TZ })
+const ora = new Intl.DateTimeFormat('ro-RO', { hour: '2-digit', minute: '2-digit', timeZone: TZ })
+const complet = new Intl.DateTimeFormat('ro-RO', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  timeZone: TZ,
+})
 
-function ora(startsAt: string): string {
-  return new Date(startsAt).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })
+function capitalize(text: string) {
+  return text.charAt(0).toLocaleUpperCase('ro-RO') + text.slice(1)
 }
 
 function grupeLuni(randuri: AttendanceRow[]) {
   const grupe: { cheie: string; titlu: string; randuri: AttendanceRow[] }[] = []
   for (const r of randuri) {
     const d = r.occurrence?.starts_at ? new Date(r.occurrence.starts_at) : null
-    const cheie = d ? `${d.getFullYear()}-${d.getMonth()}` : 'fara-data'
-    const titlu = d
-      ? d
-          .toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' })
-          .replace(/^./, (c) => c.toUpperCase())
-      : 'Fără dată'
+    const titlu = d ? capitalize(luna.format(d)) : 'Fără dată'
+    const cheie = titlu
     const ultima = grupe[grupe.length - 1]
     if (ultima?.cheie === cheie) ultima.randuri.push(r)
     else grupe.push({ cheie, titlu, randuri: [r] })
@@ -50,14 +57,13 @@ export function AttendanceMonths({ randuri, numeDupaId, cuNume }: HistoryProps) 
             </div>
             <ul className="bg-card divide-y overflow-hidden rounded-xl border">
               {g.randuri.map((r) => {
-                const cand = r.occurrence?.starts_at
-                const d = cand ? new Date(cand) : null
+                const d = r.occurrence?.starts_at ? new Date(r.occurrence.starts_at) : null
                 const prezent = r.status === 'PRESENT'
                 return (
                   <li key={r.id} className="flex items-center gap-3 px-4 py-3">
-                    {cand && d && (
+                    {d && (
                       <span className="sr-only">
-                        {d.toLocaleDateString('ro-RO')} · {ora(cand)}
+                        {capitalize(complet.format(d).replace(' la ', ', '))}
                       </span>
                     )}
                     <div
@@ -65,22 +71,26 @@ export function AttendanceMonths({ randuri, numeDupaId, cuNume }: HistoryProps) 
                       className="bg-secondary grid size-12 shrink-0 place-items-center rounded-lg text-center leading-none"
                     >
                       <span className="font-display text-lg font-extrabold">
-                        {d?.getDate() ?? '–'}
+                        {d ? zi.format(d) : '–'}
                       </span>
                       <span className="text-muted-foreground text-[0.6875rem] uppercase">
-                        {d
-                          ? d.toLocaleDateString('ro-RO', { weekday: 'short' }).replace('.', '')
-                          : ''}
+                        {d ? ziSaptamana.format(d).replace('.', '') : ''}
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold">
-                        {r.occurrence?.course?.name ?? 'Ședință'}
-                      </p>
-                      <p className="text-muted-foreground truncate text-sm">
-                        {cuNume ? `${prenume(numeDupaId.get(r.child_id) ?? 'Copil')} · ` : ''}
-                        <span aria-hidden="true">{cand ? ora(cand) : ''}</span>
-                      </p>
+                      <p className="font-semibold">{r.occurrence?.course?.name ?? 'Ședință'}</p>
+                      <div className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm">
+                        {d && <span aria-hidden="true">{ora.format(d)}</span>}
+                        {cuNume && (
+                          <span className="text-foreground flex items-center gap-1.5 font-medium">
+                            <UserRound
+                              aria-hidden="true"
+                              className="text-muted-foreground size-4 shrink-0"
+                            />
+                            {numeDupaId.get(r.child_id) ?? 'Copil'}
+                          </span>
+                        )}
+                      </div>
                       {r.note && <p className="text-muted-foreground mt-1 text-xs">{r.note}</p>}
                     </div>
                     <span
