@@ -45,6 +45,8 @@ import { baniToRon } from '@/lib/money'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
 import { cn } from '@/lib/utils'
 
 const selectCls =
@@ -95,7 +97,12 @@ export default function CourseFormPage() {
     queryKey: ['sel-locations'],
     queryFn: getSelectableLocations,
   })
-  const { data: existing } = useQuery({
+  const {
+    data: existing,
+    isPending: seIncarca,
+    isError: aEsuatCitirea,
+    refetch,
+  } = useQuery({
     queryKey: ['course-edit', id],
     queryFn: () => getCourseById(id as string),
     enabled: isEdit,
@@ -223,15 +230,50 @@ export default function CourseFormPage() {
     }
   }
 
+  if (isEdit && aEsuatCitirea) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <InapoiLaCursuri />
+        <StatusView
+          state="error"
+          title="Nu am putut încărca cursul."
+          text="Verifică conexiunea și încearcă din nou."
+          onRetry={() => void refetch()}
+          className="mt-4"
+        />
+      </div>
+    )
+  }
+
+  if (isEdit && !seIncarca && !existing) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <InapoiLaCursuri />
+        <StatusView
+          state="empty"
+          title="Cursul nu a fost găsit."
+          text="Poate a fost șters sau linkul nu mai este valabil."
+          className="mt-4"
+        />
+      </div>
+    )
+  }
+
+  if (isEdit && seIncarca) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <InapoiLaCursuri />
+        <div role="status" aria-label="Se încarcă cursul" className="mt-4 space-y-4">
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-96 rounded-xl" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="mx-auto max-w-2xl">
-      <Link
-        to="/coach/courses"
-        onClick={pleaca}
-        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
-      >
-        <ArrowLeft className="size-4" /> Înapoi
-      </Link>
+      <InapoiLaCursuri onClick={pleaca} />
       <h1 className="font-display mt-4 text-2xl font-bold">
         {isEdit ? 'Editează curs' : 'Curs nou'}
       </h1>
@@ -433,5 +475,21 @@ export default function CourseFormPage() {
         </Dialog.Portal>
       </Dialog.Root>
     </div>
+  )
+}
+
+function InapoiLaCursuri({
+  onClick,
+}: {
+  onClick?: (event: MouseEvent<HTMLAnchorElement>) => void
+}) {
+  return (
+    <Link
+      to="/coach/courses"
+      onClick={onClick}
+      className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
+    >
+      <ArrowLeft className="size-4" /> Înapoi
+    </Link>
   )
 }
