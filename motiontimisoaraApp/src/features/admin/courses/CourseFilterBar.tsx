@@ -6,7 +6,9 @@ import { FILTER_SELECT_CLASS } from '@/features/public/courses/CourseFilters'
 import { cn } from '@/lib/utils'
 import type { StatusFilter } from './course-overview'
 
-const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
+export type FilterOption<S extends string> = { value: S; label: string }
+
+const STATUS_OPTIONS: FilterOption<StatusFilter>[] = [
   { value: 'active', label: 'Active' },
   { value: 'attention', label: 'De verificat' },
   { value: 'inactive', label: 'Inactive' },
@@ -19,20 +21,24 @@ function Count({ n }: { n: number }) {
   return <span className="tabular-nums opacity-75">{n}</span>
 }
 
-export function CourseFilterBar({
+export function CourseFilterBar<S extends string = StatusFilter>({
   status,
   sport,
   statusCounts,
   sports,
   onStatus,
   onSport,
+  statusOptions = STATUS_OPTIONS as FilterOption<S>[],
+  selectId = 'admin-course-sport',
 }: {
-  status: StatusFilter
+  status: S
   sport: string
-  statusCounts: Record<StatusFilter, number>
+  statusCounts: Record<S, number>
   sports: { id: string; name: string; count: number }[]
-  onStatus: (s: StatusFilter) => void
+  onStatus: (s: S) => void
   onSport: (id: string) => void
+  statusOptions?: FilterOption<S>[]
+  selectId?: string
 }) {
   return (
     <div className="mb-3 space-y-2">
@@ -41,9 +47,9 @@ export function CourseFilterBar({
         aria-label="Status"
         className="-mx-6 flex gap-2 overflow-x-auto px-6 pb-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0"
       >
-        {STATUS_OPTIONS.map((o) => {
+        {statusOptions.map((o) => {
           const on = status === o.value
-          const attention = o.value === 'attention' && statusCounts.attention > 0
+          const attention = o.value === 'attention' && statusCounts[o.value] > 0
           return (
             <Button
               key={o.value}
@@ -63,11 +69,11 @@ export function CourseFilterBar({
       </div>
       {sports.length > 1 && (
         <div className="flex items-center gap-3 md:hidden">
-          <Label htmlFor="admin-course-sport" className="shrink-0">
+          <Label htmlFor={selectId} className="shrink-0">
             Sport
           </Label>
           <select
-            id="admin-course-sport"
+            id={selectId}
             value={sport}
             onChange={(e) => onSport(e.target.value)}
             className={FILTER_SELECT_CLASS}

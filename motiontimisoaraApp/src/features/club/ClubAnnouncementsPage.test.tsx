@@ -490,14 +490,20 @@ test('ștergerea în curs blochează confirmarea și butonul rândului ei', asyn
 test('controalele poartă tiparul de atingere al casei', async () => {
   renderPage()
   await screen.findByText('Cantonament de vară')
-  const controale = [
+  const formular = [
     screen.getByLabelText('Titlu'),
+    screen.getByLabelText('Cine primește'),
     screen.getByLabelText('Prioritate'),
+    screen.getByRole('button', { name: 'Adaugă poze sau filmare' }),
     screen.getByRole('button', { name: 'Publică' }),
+  ]
+  for (const c of formular) expect(c.className).toContain('h-touch-target')
+  for (const c of formular.slice(0, 3)) expect(c.className).not.toContain('md:text-sm')
+  const lista = [
     screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }),
     screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”' }),
   ]
-  for (const c of controale) expect(c.className).toContain('h-11')
+  for (const c of lista) expect(c.className).toContain('h-11')
 })
 test('mesajul de lipsă e legat de câmpul lui', async () => {
   const user = userEvent.setup()

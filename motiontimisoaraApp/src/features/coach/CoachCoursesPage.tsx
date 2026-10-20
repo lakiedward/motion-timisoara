@@ -1,37 +1,46 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Pencil, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { getMyCourses, setCourseActive } from '@/api/coach'
-import { formatMoney } from '@/lib/money'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-
-function courseListAgeLabel(ageFrom: number | null, ageTo: number | null) {
-  if (ageFrom != null && ageTo != null) return `${ageFrom}–${ageTo} ani`
-  if (ageFrom != null) return `de la ${ageFrom} ani`
-  if (ageTo != null) return `până la ${ageTo} ani`
-  return null
-}
+import { StatusView } from '@/components/ui/status-view'
+import { CoachCourseCard } from './courses/CoachCourseCard'
+import { CoachCourseFilterBar } from './courses/CoachCourseFilterBar'
+import {
+  NO_FILTERS,
+  filterCoachCourses,
+  hasFilters,
+  sportCounts,
+  statusCounts,
+  type CoachCourseFilters,
+} from './courses/coach-course-filters'
 
 export default function CoachCoursesPage() {
   const qc = useQueryClient()
+  const [filters, setFilters] = useState<CoachCourseFilters>(NO_FILTERS)
   const {
     data: courses = [],
     isLoading,
     isError,
+    isFetching,
     refetch,
   } = useQuery({
     queryKey: ['my-courses'],
     queryFn: getMyCourses,
     retry: false,
   })
+  const visible = filterCoachCourses(courses, filters)
 
   const toggle = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) => setCourseActive(id, active),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['my-courses'] }),
+    onSuccess: (_res, { active }) => {
+      void qc.invalidateQueries({ queryKey: ['my-courses'] })
+      toast.success(active ? 'Cursul este activ.' : 'Cursul a fost dezactivat.')
+    },
     onError: () => toast.error('Nu am putut actualiza cursul.'),
   })
 
@@ -47,69 +56,68 @@ export default function CoachCoursesPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div role="status" aria-label="Se încarcă cursurile" className="grid gap-4 sm:grid-cols-2">
           {[0, 1].map((i) => (
-            <Skeleton key={i} className="h-32 rounded-3xl" />
+            <Skeleton key={i} className="h-52 rounded-3xl" />
           ))}
         </div>
       ) : isError && courses.length === 0 ? (
-        <div role="alert" className="rounded-3xl border border-dashed py-16 text-center">
-          <p className="text-foreground font-medium">Nu am putut încărca cursurile.</p>
-          <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetch()}>
-            Reîncearcă
-          </Button>
-        </div>
+        <StatusView
+          state="error"
+          title="Nu am putut încărca cursurile."
+          text="Verifică conexiunea și încearcă din nou."
+          onRetry={isFetching ? undefined : () => void refetch()}
+        />
       ) : courses.length ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {courses.map((c) => {
-            const ageLabel = courseListAgeLabel(c.age_from, c.age_to)
-            return (
-              <div key={c.id} className="bg-card shadow-card rounded-3xl p-5">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 className="font-display text-lg font-bold">{c.name}</h3>
-                    <p className="text-muted-foreground mt-0.5 text-sm">
-                      {c.location?.name ?? '—'}
-                    </p>
-                    <div className="mt-1 flex flex-wrap gap-1.5">
-                      {c.sport && <Badge>{c.sport.name}</Badge>}
-                      <Badge variant={c.active ? 'success' : 'outline'}>
-                        {c.active ? 'Activ' : 'Inactiv'}
-                      </Badge>
-                    </div>
-                  </div>
-                  <span className="font-display font-bold">{formatMoney(c.price, c.currency)}</span>
-                </div>
-                <div className="text-muted-foreground mt-2 text-sm">
-                  {c.location?.name ?? '—'}
-                  {ageLabel != null && ` · ${ageLabel}`}
-                </div>
-                <div className="mt-4 flex gap-2">
-                  <Button asChild size="sm" variant="outline">
-                    <Link to={`/coach/courses/${c.id}/edit`}>
-                      <Pencil /> Editează
-                    </Link>
-                  </Button>
+        <>
+          <CoachCourseFilterBar
+            filters={filters}
+            statusCounts={statusCounts(courses)}
+            sports={sportCounts(courses)}
+            onChange={setFilters}
+          />
+          {visible.length ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {visible.map((c) => (
+                <CoachCourseCard
+                  key={c.id}
+                  course={c}
+                  pending={toggle.isPending && toggle.variables?.id === c.id}
+                  onToggle={() => toggle.mutate({ id: c.id, active: !c.active })}
+                />
+              ))}
+            </div>
+          ) : (
+            <StatusView
+              state="empty"
+              title="Niciun curs pentru filtrele alese."
+              text="Schimbă căutarea sau filtrele."
+              action={
+                hasFilters(filters) ? (
                   <Button
-                    size="sm"
+                    type="button"
                     variant="outline"
-                    disabled={toggle.isPending}
-                    onClick={() => toggle.mutate({ id: c.id, active: !c.active })}
+                    className="mt-3 h-11 min-h-11"
+                    onClick={() => setFilters(NO_FILTERS)}
                   >
-                    {c.active ? 'Dezactivează' : 'Activează'}
+                    Șterge filtrele
                   </Button>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+                ) : null
+              }
+            />
+          )}
+        </>
       ) : (
-        <div className="text-muted-foreground rounded-3xl border border-dashed py-16 text-center">
-          Niciun curs încă.{' '}
-          <Link to="/coach/courses/new" className="text-primary font-semibold">
-            Creează primul curs
-          </Link>
-        </div>
+        <StatusView
+          state="empty"
+          title="Niciun curs încă."
+          text="Cursurile pe care le creezi apar aici."
+          action={
+            <Button asChild variant="outline" className="mt-3 h-11 min-h-11">
+              <Link to="/coach/courses/new">Creează primul curs</Link>
+            </Button>
+          }
+        />
       )}
     </div>
   )
