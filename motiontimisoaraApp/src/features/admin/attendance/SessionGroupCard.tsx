@@ -1,7 +1,4 @@
-import type { ReactNode } from 'react'
 import { ChevronDown } from 'lucide-react'
-
-import type { AdminSession } from '@/api/attendance/admin-sessions'
 
 import { Highlight } from '@/features/admin/courses/CourseParts'
 import { ORGANIZER_ICON } from '@/features/admin/locations/organizer-icon'
@@ -18,8 +15,6 @@ export function SessionGroupCard({
   query,
   onOpenChange,
   onExpand,
-  renderRow = (s) => <AdminSessionRow key={s.id} session={s} query={query} />,
-  icon,
 }: {
   group: SessionGroup
   open: boolean
@@ -27,10 +22,8 @@ export function SessionGroupCard({
   query: string
   onOpenChange: (open: boolean) => void
   onExpand: () => void
-  renderRow?: (s: AdminSession) => ReactNode
-  icon?: typeof ChevronDown
 }) {
-  const Icon = icon ?? ORGANIZER_ICON[group.kind]
+  const Icon = ORGANIZER_ICON[group.kind]
   const searching = query.trim().length > 0
   const shown = expanded || searching ? group.items : group.items.slice(0, SESSION_PREVIEW_LIMIT)
   const hidden = group.items.length - shown.length
@@ -84,7 +77,9 @@ export function SessionGroupCard({
       {open && (
         <div id={panelId}>
           <ul className="divide-y border-t">
-            {shown.map(renderRow)}
+            {shown.map((s) => (
+              <AdminSessionRow key={s.id} session={s} query={query} />
+            ))}
           </ul>
           {hidden > 0 && (
             <div className="border-t px-4 py-2 md:pl-5">

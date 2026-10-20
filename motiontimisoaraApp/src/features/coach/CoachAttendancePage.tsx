@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, GraduationCap, Search } from 'lucide-react'
+import { ArrowLeft, Search } from 'lucide-react'
 
 import type { AdminSession } from '@/api/attendance/admin-sessions'
 import { getCoachSessions, SESSION_GROUP_LIMIT } from '@/api/coach'
@@ -12,20 +12,17 @@ import {
   NO_SESSION_FILTERS,
   countSessions,
   filterSessions,
-  groupSessionsByOrganizer,
   hasSessionFilters,
   sessionStatusCounts,
   sportCounts,
   type SessionStatus,
 } from '@/features/admin/attendance/attendance-overview'
-import { SessionGroupCard } from '@/features/admin/attendance/SessionGroupCard'
 import { CourseFilterBar, type FilterOption } from '@/features/admin/courses/CourseFilterBar'
 import { ClubLocationListSkeleton } from '@/features/club/locations/ClubLocationListSkeleton'
 import { CoachLocationPanel } from '@/features/live-location/CoachLocationPanel'
 import { cn } from '@/lib/utils'
 import { AttendanceOfflineQueue } from './attendance/AttendanceScanner'
 import { CoachSessionCatalog } from './attendance/CoachSessionCatalog'
-import { CoachSessionRow } from './attendance/CoachSessionRow'
 import { SessionDayList } from './attendance/SessionDayList'
 import {
   nearestSession,
@@ -46,15 +43,10 @@ const STATUS_OPTIONS: FilterOption<SessionStatus>[] = [
 const DEFAULT_FILTERS = { ...NO_SESSION_FILTERS, status: 'all' as SessionStatus }
 
 export default function CoachAttendancePage() {
-  const [params] = useSearchParams()
-  const byCourse = params.get('varianta') === 'a'
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [openId, setOpenId] = useState<string | null>(null)
   const [markingOnPhone, setMarkingOnPhone] = useState(false)
   const [showOlder, setShowOlder] = useState(false)
-  const [toggled, setToggled] = useState<Record<string, boolean>>({})
-  const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['coach-sessions'],
@@ -79,16 +71,12 @@ export default function CoachAttendancePage() {
   const listed = [...upcoming, ...shownPast]
 
   const sel = listed.find((s) => s.id === selectedId) ?? nearestSession(listed)
-  const open = items.find((s) => s.id === openId) ?? null
-  const focus = byCourse ? (open ?? nearestSession(items)) : sel
 
   const set = (patch: Partial<typeof filters>) => setFilters((f) => ({ ...f, ...patch }))
   const select = (s: AdminSession) => {
     setSelectedId(s.id)
     setMarkingOnPhone(true)
   }
-
-  const courseGroups = groupSessionsByOrganizer(items, visible, status === 'all' ? 'upcoming' : status)
 
   const header = (
     <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -124,7 +112,7 @@ export default function CoachAttendancePage() {
         title="Nicio ședință pentru filtrele alese."
         text="Schimbă căutarea sau filtrele."
         action={
-          hasSessionFilters({ ...filters, status: status === 'all' ? 'all' : status }) ? (
+          hasSessionFilters(filters) ? (
             <Button
               type="button"
               variant="outline"
@@ -136,29 +124,6 @@ export default function CoachAttendancePage() {
           ) : null
         }
       />
-    ) : byCourse ? (
-      <div className="grid gap-3">
-        {courseGroups.map((g, i) => (
-          <SessionGroupCard
-            key={g.key}
-            group={g}
-            query={query}
-            icon={GraduationCap}
-            open={toggled[g.key] ?? (searching || i === 0)}
-            expanded={expanded.has(g.key)}
-            onOpenChange={(o) => setToggled((t) => ({ ...t, [g.key]: o }))}
-            onExpand={() => setExpanded((e) => new Set(e).add(g.key))}
-            renderRow={(s) => (
-              <CoachSessionRow
-                key={s.id}
-                session={s}
-                open={openId === s.id}
-                onToggle={() => setOpenId(openId === s.id ? null : s.id)}
-              />
-            )}
-          />
-        ))}
-      </div>
     ) : (
       <div className="grid gap-6 md:grid-cols-[1fr_1.2fr]">
         <div className="min-w-0 space-y-3 lg:-mx-1.5 lg:max-h-[75vh] lg:overflow-y-auto lg:px-1.5">
@@ -233,11 +198,11 @@ export default function CoachAttendancePage() {
     <div>
       {header}
       <CoachLocationPanel
-        occurrenceId={focus?.id ?? null}
-        startsAt={focus?.startsAt}
-        endsAt={focus?.endsAt}
+        occurrenceId={sel?.id ?? null}
+        startsAt={sel?.startsAt}
+        endsAt={sel?.endsAt}
       />
-      {!focus && !isLoading && <AttendanceOfflineQueue />}
+      {!sel && !isLoading && <AttendanceOfflineQueue />}
       {isLoading ? (
         <ClubLocationListSkeleton />
       ) : isError && !items.length ? (
@@ -269,8 +234,7 @@ export default function CoachAttendancePage() {
             {visible.length > 0 &&
               (searching
                 ? `${visible.length} din ${countSessions(items.length)}`
-                : countSessions(byCourse ? visible.length : listed.length))}
-            {byCourse && visible.length > 0 && ` la ${courseGroups.length} cursuri`}
+                : countSessions(listed.length))}
           </p>
           {filtered}
         </>
