@@ -105,6 +105,7 @@ test('o salvare care nu atinge niciun rand esueaza, nu se preface ca a mers', as
       lat: 45.75,
       lng: 21.22,
       county: 'Timiș',
+      description: null,
     }),
   ).rejects.toBeTruthy()
   expect(filtre).toContain('select()')

@@ -274,7 +274,7 @@ export async function getClubLocationById(
   if (error) throw error
   return data
 }
-export type ClubLocationFormInput = Omit<LocationFormInput, 'description'> & {
+export type ClubLocationFormInput = LocationFormInput & {
   county: string | null
 }
 
