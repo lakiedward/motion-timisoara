@@ -67,6 +67,7 @@ test('admin navigation keeps the accepted destinations in order', () => {
     ['Locații', '/admin/locations'],
     ['Tabere', '/admin/camps'],
     ['Concursuri', '/admin/competitions'],
+    ['Anunțuri', '/admin/announcements'],
     ['Sporturi', '/admin/sports'],
     ['Coduri invitație', '/admin/codes'],
   ])
@@ -81,6 +82,7 @@ test.each([
   ['/admin/locations/audit/edit', 'Locații'],
   ['/admin/camps/audit', 'Tabere'],
   ['/admin/competitions/audit', 'Concursuri'],
+  ['/admin/announcements/new', 'Anunțuri'],
   ['/admin/sports', 'Sporturi'],
   ['/admin/codes', 'Coduri invitație'],
 ])('route %s highlights only %s', (path, label) => {

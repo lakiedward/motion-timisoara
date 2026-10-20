@@ -56,6 +56,7 @@ export const adminNavigation: PortalNavItem[] = [
   { to: '/admin/locations', label: 'Locații', icon: MapPin },
   { to: '/admin/camps', label: 'Tabere', icon: Tent },
   { to: '/admin/competitions', label: 'Concursuri', icon: Trophy },
+  { to: '/admin/announcements', label: 'Anunțuri', icon: Megaphone },
   { to: '/admin/sports', label: 'Sporturi', icon: Dumbbell },
   { to: '/admin/codes', label: 'Coduri invitație', icon: Ticket },
 ]
