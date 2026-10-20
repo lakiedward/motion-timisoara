@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { CircleOff, Pencil, Power } from 'lucide-react'
 import type { ClubLocation } from '@/api/club'
@@ -12,9 +13,11 @@ type Props = {
   locatie: ClubLocation
   seComuta: boolean
   onToggle: () => void
+  editTo?: string
+  organizer?: ReactNode
 }
 
-export function ClubLocationRow({ locatie: l, seComuta, onToggle }: Props) {
+export function ClubLocationRow({ locatie: l, seComuta, onToggle, editTo, organizer }: Props) {
   return (
     <li
       className={cn(
@@ -34,6 +37,7 @@ export function ClubLocationRow({ locatie: l, seComuta, onToggle }: Props) {
             </Badge>
           )}
         </div>
+        {organizer}
         <p className="text-muted-foreground mt-1 text-sm wrap-anywhere">
           <span>{formatAdresa(l)}</span>
           <span aria-hidden="true"> · </span>
@@ -44,7 +48,7 @@ export function ClubLocationRow({ locatie: l, seComuta, onToggle }: Props) {
       </div>
       <div className="flex shrink-0 gap-2">
         <Button asChild variant="outline" className="h-11 lg:h-9">
-          <Link to={`/club/locations/${l.id}/edit`} aria-label={`Editează ${l.name}`}>
+          <Link to={editTo ?? `/club/locations/${l.id}/edit`} aria-label={`Editează ${l.name}`}>
             <Pencil aria-hidden="true" /> Editează
           </Link>
         </Button>

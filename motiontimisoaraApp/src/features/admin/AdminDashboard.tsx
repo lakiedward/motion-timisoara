@@ -236,7 +236,11 @@ function StatCard({
         <Icon className="size-5" />
       </span>
       <div className="font-display mt-4 flex h-9 items-center text-3xl font-extrabold">
-        {loading ? <Skeleton className="h-9 w-16" role="status" aria-label="Se încarcă" /> : display}
+        {loading ? (
+          <Skeleton className="h-9 w-16" role="status" aria-label="Se încarcă" />
+        ) : (
+          display
+        )}
       </div>
       <div className="text-muted-foreground mt-1 text-sm break-words">{label}</div>
       {hint ? <div className="text-muted-foreground mt-0.5 text-xs break-words">{hint}</div> : null}

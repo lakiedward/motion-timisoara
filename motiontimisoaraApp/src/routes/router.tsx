@@ -17,6 +17,7 @@ import AdminDashboard from '@/features/admin/AdminDashboard'
 import AdminUsersPage from '@/features/admin/AdminUsersPage'
 import AdminClubsPage from '@/features/admin/AdminClubsPage'
 import AdminCoursesPage from '@/features/admin/AdminCoursesPage'
+import AdminLocationsPage from '@/features/admin/AdminLocationsPage'
 import { EditCourseAction, NewCourseButton } from '@/features/admin/courses/CourseEditActions'
 import AdminSportsPage from '@/features/admin/AdminSportsPage'
 import AdminInviteCodesPage from '@/features/admin/AdminInviteCodesPage'
@@ -248,6 +249,12 @@ export const router = createBrowserRouter([
               {
                 path: '/admin/camps/:id/enrolled',
                 element: <CampEnrolledPage baza="/admin/camps" />,
+              },
+              { path: '/admin/locations', element: <AdminLocationsPage /> },
+              { path: '/admin/locations/new', element: <ClubLocationFormPage portal="admin" /> },
+              {
+                path: '/admin/locations/:id/edit',
+                element: <ClubLocationFormPage portal="admin" />,
               },
               { path: '/admin/sports', element: <AdminSportsPage /> },
               { path: '/admin/codes', element: <AdminInviteCodesPage /> },

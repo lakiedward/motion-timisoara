@@ -38,7 +38,9 @@ test('profilul admin are un singur h1 și câmpurile de nume și telefon', () =>
       <AdminProfilePage />
     </MemoryRouter>,
   )
-  expect(screen.getByRole('heading', { level: 1, name: 'Profil administrator' })).toBeInTheDocument()
+  expect(
+    screen.getByRole('heading', { level: 1, name: 'Profil administrator' }),
+  ).toBeInTheDocument()
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
   expect(screen.getByLabelText('Nume')).toHaveValue('Audit Admin')
   expect(screen.getByLabelText('Telefon')).toBeInTheDocument()
