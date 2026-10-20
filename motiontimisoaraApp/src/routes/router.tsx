@@ -22,6 +22,7 @@ import AdminLocationsPage from '@/features/admin/AdminLocationsPage'
 import AdminActivitiesPage from '@/features/admin/AdminActivitiesPage'
 import AdminAnnouncementsPage from '@/features/admin/announcements/AdminAnnouncementsPage'
 import AdminAnnouncementFormPage from '@/features/admin/announcements/AdminAnnouncementFormPage'
+import AdminAttendancePage from '@/features/admin/attendance/AdminAttendancePage'
 import { EditCourseAction, NewCourseButton } from '@/features/admin/courses/CourseEditActions'
 import AdminSportsPage from '@/features/admin/AdminSportsPage'
 import AdminInviteCodesPage from '@/features/admin/AdminInviteCodesPage'
@@ -263,6 +264,7 @@ export const router = createBrowserRouter([
               },
               { path: '/admin/announcements', element: <AdminAnnouncementsPage /> },
               { path: '/admin/announcements/new', element: <AdminAnnouncementFormPage /> },
+              { path: '/admin/attendance', element: <AdminAttendancePage /> },
               { path: '/admin/locations', element: <AdminLocationsPage /> },
               { path: '/admin/locations/new', element: <ClubLocationFormPage portal="admin" /> },
               {
