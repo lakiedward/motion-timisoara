@@ -13,7 +13,6 @@ const ROLES = {
 const LIVE_ORIGINS = new Set([
   'https://motiontimisoara.com',
   'https://www.motiontimisoara.com',
-  'https://motiontimisoara-demo.netlify.app',
   'https://master--motiontimisoara.netlify.app',
 ])
 const DEPLOY_PREVIEW_ORIGIN = /^https:\/\/deploy-preview-[0-9]+--motiontimisoara\.netlify\.app$/

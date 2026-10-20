@@ -10,9 +10,6 @@ const config: CapacitorConfig = {
     CapacitorHttp: { enabled: true },
     Keyboard: { resize: KeyboardResize.Native },
   },
-  ...(process.env.MOTION_ANDROID_DEMO === '1'
-    ? { server: { url: 'https://motiontimisoara-demo.netlify.app', cleartext: false } }
-    : {}),
 }
 
 export default config
