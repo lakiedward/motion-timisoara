@@ -54,7 +54,9 @@ export function ClubAnnouncementList({
     onSettled: (_d, _e, { id }) => setSeAscund((l) => l.filter((x) => x !== id)),
     onSuccess: (a) => {
       onChanged()
-      toast.success(a.is_active ? 'Anunțul se vede din nou la părinți.' : 'Anunț ascuns de părinți.')
+      toast.success(
+        a.is_active ? 'Anunțul se vede din nou la părinți.' : 'Anunț ascuns de părinți.',
+      )
     },
     onError: () => toast.error('Nu am putut schimba vizibilitatea anunțului.'),
   })
