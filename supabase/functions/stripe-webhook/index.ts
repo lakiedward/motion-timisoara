@@ -10,4 +10,8 @@ serve(paymentWebhookHandler({
     if (!secret) throw new Error("Webhook is not configured");
     return await getStripe().webhooks.constructEventAsync(body, signature, secret);
   },
+  sessionForIntent: async (intentId) => {
+    const sessions = await getStripe().checkout.sessions.list({ payment_intent: intentId, limit: 1 });
+    return sessions.data[0]?.id ?? null;
+  },
 }));

@@ -9,7 +9,9 @@ import { formatMoney } from '@/lib/money'
 const mocks = vi.hoisted(() => ({
   read: vi.fn(),
   process: vi.fn(),
+  checkout: vi.fn(),
   ready: true,
+  android: true,
   userId: 'parent-327',
   adapter: { testOnly: true, confirm: vi.fn() },
   toast: { success: vi.fn(), message: vi.fn(), error: vi.fn() },
@@ -22,15 +24,12 @@ vi.mock('@/api/payments/process', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/payments/process')>()),
   processEnrollmentPayments: mocks.process,
 }))
+vi.mock('@/api/payments/checkout-session', () => ({ startStripeCheckout: mocks.checkout }))
 vi.mock('@/lib/auth-context', () => ({ useAuth: () => ({ user: { id: mocks.userId } }) }))
-vi.mock('@/lib/stripe', () => ({ stripePromise: Promise.resolve(null) }))
-vi.mock('@stripe/react-stripe-js', () => ({
-  Elements: ({ children }: { children: ReactNode }) => children,
-}))
 vi.mock('./usePaymentAdapter', () => ({
-  usePaymentAdapter: () => ({ ready: mocks.ready, adapter: mocks.adapter }),
+  usePaymentAdapter: () => ({ ready: mocks.ready, adapter: mocks.adapter, android: mocks.android }),
 }))
-vi.mock('./PaymentEntry', () => ({ PaymentEntry: () => <p>Card sau Google Pay</p> }))
+vi.mock('./PaymentEntry', () => ({ PaymentEntry: (): ReactNode => <p>Metoda de plată</p> }))
 vi.mock('sonner', () => ({ toast: mocks.toast }))
 
 function enrollment(paid = false): EnrollmentPayment {
@@ -82,33 +81,55 @@ function renderPanel() {
 beforeEach(() => {
   vi.clearAllMocks()
   mocks.ready = true
+  mocks.android = true
   mocks.userId = 'parent-327'
   mocks.read.mockResolvedValue([enrollment()])
   mocks.process.mockResolvedValue({ outcome: 'canceled', completed: 0, total: 1 })
+  mocks.checkout.mockResolvedValue('redirected')
 })
 
-describe('saved enrollment payment panel', () => {
-  it('labels an adult competition payment as their own', async () => {
-    mocks.read.mockResolvedValue([{
-      ...enrollment(),
-      kind: 'COMPETITION',
-      adult_profile_id: mocks.userId,
-      child: null,
-    }])
-    renderPanel()
-    expect(await screen.findByText((_, node) =>
-      node?.tagName === 'P' && node.textContent?.includes('Tu ·') === true,
-    )).toBeInTheDocument()
+describe('web payment panel on Stripe Checkout', () => {
+  beforeEach(() => {
+    mocks.android = false
   })
 
-  it('shows the accepted RON amount and EUR snapshot and never pays on mount or refresh', async () => {
+  it('sends the saved enrollment to Stripe and locks the panel while redirecting', async () => {
+    renderPanel()
+    fireEvent.click(
+      await screen.findByRole('button', { name: `Plătește ${formatMoney(31612, 'RON')} pe Stripe` }),
+    )
+    expect(await screen.findByRole('button', { name: 'Te ducem la Stripe…' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Închide' })).toBeDisabled()
+    expect(mocks.checkout).toHaveBeenCalledExactlyOnceWith(['saved-enrollment'])
+    expect(mocks.process).not.toHaveBeenCalled()
+  })
+
+  it('shows a failed start once, next to the button, without a toast', async () => {
+    mocks.checkout.mockRejectedValue(new Error('Nu am putut deschide plata Stripe. Încearcă din nou.'))
+    renderPanel()
+    fireEvent.click(await screen.findByRole('button', { name: /pe Stripe$/ }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Nu am putut deschide plata Stripe.')
+    expect(screen.getAllByText(/Nu am putut deschide plata Stripe/)).toHaveLength(1)
+    expect(mocks.toast.error).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: /pe Stripe$/ })).toBeEnabled()
+  })
+
+  it('confirms in a toast when the order turns out to be paid already', async () => {
+    mocks.checkout.mockResolvedValue('paid')
+    renderPanel()
+    fireEvent.click(await screen.findByRole('button', { name: /pe Stripe$/ }))
+    await waitFor(() => expect(mocks.toast.success).toHaveBeenCalledTimes(1))
+  })
+})
+
+describe('Android payment panel on the native sheet', () => {
+  it('puts the accepted amount on the button only and never pays on mount or refresh', async () => {
     const { client } = renderPanel()
     const button = await screen.findByRole('button', {
       name: `Plătește ${formatMoney(31612, 'RON')}`,
     })
     expect(button).toBeEnabled()
-    expect(screen.getByText(/1 EUR = 5,123456 lei/)).toBeInTheDocument()
-    expect(screen.getByText(/5 × 12,34/)).toBeInTheDocument()
+    expect(screen.queryByText(/1 EUR = 5,123456 lei/)).not.toBeInTheDocument()
     expect(mocks.process).not.toHaveBeenCalled()
     await act(async () => {
       await client.invalidateQueries({ queryKey: ['enrollment-payment'] })
@@ -131,7 +152,7 @@ describe('saved enrollment payment panel', () => {
     renderPanel()
     fireEvent.click(await screen.findByRole('button', { name: /^Plătește/ }))
     await waitFor(() => expect(mocks.process).toHaveBeenCalledTimes(1))
-    expect(await screen.findByRole('status')).toHaveTextContent('Ai închis plata')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Ai închis plata')
     await waitFor(() => expect(screen.getByRole('button', { name: /^Plătește/ })).toBeEnabled())
     expect(mocks.process).toHaveBeenCalledTimes(1)
     fireEvent.click(screen.getByRole('button', { name: /^Plătește/ }))

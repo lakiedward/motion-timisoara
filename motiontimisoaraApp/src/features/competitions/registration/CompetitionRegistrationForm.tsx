@@ -13,6 +13,7 @@ import {
   type CompetitionSelection,
 } from '@/api/competition/competition-registration'
 import { processEnrollmentPayments, paymentResultMessage } from '@/api/payments/process'
+import { startStripeCheckout } from '@/api/payments/checkout-session'
 import { useAuth } from '@/lib/auth-context'
 import { formatRonOffer } from '@/lib/money'
 import { stripeConfigured } from '@/lib/stripe'
@@ -199,6 +200,10 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
       if (free) return 'free'
       if (paymentMethod === 'CASH') return 'cash'
       if (!created.requiresPaymentIntent) return 'pending'
+      if (!payment.android) {
+        setProgress('Te ducem la Stripe…')
+        return (await startStripeCheckout(created.enrollmentIds)) === 'paid' ? 'paid' : 'redirected'
+      }
       const result = await processEnrollmentPayments(
         created.enrollmentIds,
         payment.adapter,
@@ -214,7 +219,9 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
     },
     onSuccess: (result) => {
       void queryClient.invalidateQueries({ queryKey: ['enrollments'] })
-      if (result === 'free') toast.success('Înscriere confirmată. Nu este nevoie de plată.')
+      if (result === 'redirected') return
+      if (result === 'paid') toast.success('Plata este deja confirmată.')
+      else if (result === 'free') toast.success('Înscriere confirmată. Nu este nevoie de plată.')
       else if (result === 'cash')
         toast.success('Înscriere înregistrată. Plata cash așteaptă confirmarea organizatorului.')
       else if (result === 'pending')
@@ -501,11 +508,12 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
                       !accepted ||
                       !methodAvailable ||
                       (!free && paymentMethod === 'CARD' && !billingValid) ||
-                      finalize.isPending
+                      finalize.isPending ||
+                      finalize.data === 'redirected'
                     }
                     onClick={() => finalize.mutate()}
                   >
-                    {finalize.isPending
+                    {finalize.isPending || finalize.data === 'redirected'
                       ? (progress ?? 'Se procesează…')
                       : free
                         ? 'Confirmă înscrierea gratuită'

@@ -13,6 +13,10 @@ Deno.test("local and deploy preview origins return to themselves", () => {
     stripeReturnBase("https://deploy-preview-150--motiontimisoara.netlify.app", undefined),
     "https://deploy-preview-150--motiontimisoara.netlify.app",
   );
+  assertEquals(
+    stripeReturnBase("https://master--motiontimisoara.netlify.app", undefined),
+    "https://master--motiontimisoara.netlify.app",
+  );
 });
 
 Deno.test("missing configuration falls back to production, never localhost", () => {

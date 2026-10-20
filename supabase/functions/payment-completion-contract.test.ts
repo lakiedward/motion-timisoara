@@ -165,6 +165,7 @@ function webhook(
   let verified = 0;
   const handler = paymentWebhookHandler({
     db,
+    sessionForIntent: () => Promise.resolve(null),
     verifyEvent: async (body, signature) => {
       equal(body, "raw-event");
       verified++;
@@ -267,3 +268,62 @@ Deno.test(
     equal(services.calls.length, 0);
   },
 );
+
+function checkoutWebhook(rows: { id: string; amount: number; gateway_txn_id: string }[], session: string | null, amount = 70000) {
+  const calls: Record<string, unknown>[] = [];
+  const db = {
+    from(table: string) {
+      equal(table, "payments");
+      let ids: string[] = [];
+      return {
+        select() { return this; },
+        in(_column: string, values: string[]) {
+          ids = values;
+          return Promise.resolve({ data: rows.filter((row) => ids.includes(row.id)), error: null });
+        },
+      };
+    },
+    rpc(_name: string, args: Record<string, unknown>) {
+      calls.push(args);
+      return Promise.resolve({ data: { changed: false, status: "SUCCEEDED", enrollmentId: "e", sessionsAdded: 0 }, error: null });
+    },
+  } as unknown as SupabaseClient;
+  const handler = paymentWebhookHandler({
+    db,
+    sessionForIntent: (id) => {
+      equal(id, "pi_checkout");
+      return Promise.resolve(session);
+    },
+    verifyEvent: () => Promise.resolve({
+      type: "payment_intent.succeeded",
+      data: { object: { id: "pi_checkout", metadata: { paymentIds: "a,b" }, amount, amount_received: amount, currency: "ron" } },
+    } as unknown as Stripe.Event),
+  });
+  return { handler, calls };
+}
+
+Deno.test("a Checkout payment confirms every child's payment with its own amount and the session id", async () => {
+  const receiver = checkoutWebhook([
+    { id: "a", amount: 40000, gateway_txn_id: "cs_order" },
+    { id: "b", amount: 30000, gateway_txn_id: "cs_order" },
+  ], "cs_order");
+  equal((await receiver.handler(webhookRequest("valid"))).status, 200);
+  equal(receiver.calls.map((args) => [args.p_payment_id, args.p_amount, args.p_gateway_id]), [
+    ["a", 40000, "cs_order"],
+    ["b", 30000, "cs_order"],
+  ]);
+});
+
+Deno.test("a Checkout payment that does not match the saved session or total is refused", async () => {
+  const rows = [
+    { id: "a", amount: 40000, gateway_txn_id: "cs_order" },
+    { id: "b", amount: 30000, gateway_txn_id: "cs_other" },
+  ];
+  const foreign = checkoutWebhook(rows, "cs_order");
+  equal((await foreign.handler(webhookRequest("valid"))).status, 409);
+  const short = checkoutWebhook([rows[0], { ...rows[1], gateway_txn_id: "cs_order" }], "cs_order", 69999);
+  equal((await short.handler(webhookRequest("valid"))).status, 409);
+  const missing = checkoutWebhook(rows, null);
+  equal((await missing.handler(webhookRequest("valid"))).status, 409);
+  equal(foreign.calls.length + short.calls.length + missing.calls.length, 0);
+});

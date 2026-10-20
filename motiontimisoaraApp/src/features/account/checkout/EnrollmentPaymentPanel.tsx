@@ -1,31 +1,28 @@
 import { useEffect, useRef } from 'react'
-import { Elements } from '@stripe/react-stripe-js'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { CircleCheck, Loader2, Lock } from 'lucide-react'
 import { toast } from 'sonner'
-import { stripePromise } from '@/lib/stripe'
 import { useAuth } from '@/lib/auth-context'
 import { formatOfferPrice } from '@/lib/money'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AcceptedPriceDetails } from '@/components/AcceptedPriceDetails'
 import {
   enrollmentPaid,
   enrollmentPayable,
   getEnrollmentPayments,
 } from '@/api/payments/enrollments'
+import { startStripeCheckout } from '@/api/payments/checkout-session'
 import { paymentResultMessage, processEnrollmentPayments } from '@/api/payments/process'
 import { PaymentEntry } from './PaymentEntry'
 import { usePaymentAdapter } from './usePaymentAdapter'
 
-export function EnrollmentPaymentPanel(props: { enrollmentId: string; onClose: () => void }) {
-  return (
-    <Elements stripe={stripePromise}>
-      <SavedPayment {...props} />
-    </Elements>
-  )
-}
-
-function SavedPayment({ enrollmentId, onClose }: { enrollmentId: string; onClose: () => void }) {
+export function EnrollmentPaymentPanel({
+  enrollmentId,
+  onClose,
+}: {
+  enrollmentId: string
+  onClose: () => void
+}) {
   const { user } = useAuth()
   const qc = useQueryClient()
   const payment = usePaymentAdapter()
@@ -41,6 +38,10 @@ function SavedPayment({ enrollmentId, onClose }: { enrollmentId: string; onClose
     mutationFn: async () => {
       if (!payment.ready) throw new Error('Plata nu este pregătită. Reîncearcă.')
       attempt.current = new AbortController()
+      if (!payment.android) {
+        const started = await startStripeCheckout([enrollmentId])
+        return started === 'paid' ? { outcome: 'ready' as const, completed: 1, total: 1 } : null
+      }
       return processEnrollmentPayments(
         [enrollmentId],
         payment.adapter,
@@ -49,79 +50,106 @@ function SavedPayment({ enrollmentId, onClose }: { enrollmentId: string; onClose
       )
     },
     onSuccess: (result) => {
-      if (attempt.current?.signal.aborted) return
-      const message = paymentResultMessage(result)
-      if (result.outcome === 'ready') toast.success(message)
-      else toast.message(message)
-    },
-    onError: (error: Error) => {
-      if (!attempt.current?.signal.aborted) toast.error(error.message)
-    },
-    onSettled: () => {
+      if (!result || attempt.current?.signal.aborted) return
+      if (result.outcome === 'ready') toast.success(paymentResultMessage(result))
       void qc.invalidateQueries({ queryKey: ['enrollments'] })
-      if (attempt.current?.signal.aborted) return
       void state.refetch()
+    },
+    onError: () => {
+      void qc.invalidateQueries({ queryKey: ['enrollments'] })
+      if (!attempt.current?.signal.aborted) void state.refetch()
     },
   })
   const enrollment = state.data?.[0]
   const saved = enrollment?.payments[0]
   const canPay = enrollment && enrollmentPayable(enrollment)
+  const paid = enrollment ? enrollmentPaid(enrollment) : false
+  const showPay = Boolean(enrollment && saved && !paid && canPay)
+  const redirecting = pay.isPending || (pay.isSuccess && pay.data === null)
+  const failure = pay.error
+    ? pay.error.message
+    : pay.data && pay.data.outcome !== 'ready'
+      ? paymentResultMessage(pay.data)
+      : null
   return (
-    <section aria-label="Reia plata înscrierii" className="mt-4 space-y-4 border-t pt-4">
-      <h2 className="font-semibold">Plata înscrierii</h2>
+    <section aria-label="Reia plata înscrierii" className="space-y-4">
+      <div className="flex items-start gap-3">
+        <span className="bg-background text-primary flex size-9 shrink-0 items-center justify-center rounded-full border">
+          <Lock aria-hidden="true" className="size-4" />
+        </span>
+        <div>
+          <h3 className="font-semibold">Plata înscrierii</h3>
+          {showPay && (
+            <p className="text-muted-foreground text-sm">
+              Reiei plata existentă, cu suma confirmată inițial. Nu se creează o înscriere nouă.
+            </p>
+          )}
+        </div>
+      </div>
       {state.isPending ? (
-        <div role="status" aria-label="Verificăm plata">
-          <Skeleton className="h-20 w-full" />
+        <div role="status" aria-label="Verificăm plata" className="space-y-3">
+          <Skeleton className="h-4 w-3/4" />
+          <div className="flex gap-3">
+            <Skeleton className="h-12 w-24" />
+            <Skeleton className="h-12 flex-1" />
+          </div>
         </div>
       ) : state.isError ? (
-        <div role="alert" className="space-y-2 text-sm">
+        <div role="alert" className="space-y-3 text-sm">
           <p>Nu am putut verifica starea plății. Reîncearcă înainte să plătești.</p>
           <Button variant="outline" onClick={() => void state.refetch()}>
             Reîncearcă
           </Button>
         </div>
       ) : enrollment && saved ? (
-        <>
-          <p className="text-sm">
-            {enrollment.child?.name ?? (enrollment.adult_profile_id ? 'Tu' : 'Participant')} ·{' '}
-            <strong>{formatOfferPrice(saved.amount, saved.currency)}</strong>
+        paid ? (
+          <p role="status" className="text-success-ink flex items-center gap-2 text-sm font-medium">
+            <CircleCheck aria-hidden="true" className="size-5 shrink-0" />
+            Plata este confirmată. Nu mai trebuie să plătești.
           </p>
-          <AcceptedPriceDetails snapshot={saved.pricing_snapshot} />
-          {enrollmentPaid(enrollment) ? (
-            <p role="status" className="text-sm">
-              Plata este confirmată. Nu mai trebuie să plătești.
-            </p>
-          ) : canPay ? (
-            <>
-              <p className="text-muted-foreground text-sm">
-                Reiei plata existentă, cu suma confirmată inițial. Nu se creează o înscriere nouă.
-              </p>
-              <PaymentEntry />
-              {pay.data && pay.data.outcome !== 'ready' && (
-                <p role="status" className="text-muted-foreground text-sm">
-                  {paymentResultMessage(pay.data)}
-                </p>
-              )}
-              <Button
-                disabled={pay.isPending || state.isFetching || !payment.ready}
-                onClick={() => pay.mutate()}
-              >
-                {pay.isPending
-                  ? 'Verificăm și confirmăm plata…'
-                  : `Plătește ${formatOfferPrice(saved.amount, saved.currency)}`}
-              </Button>
-            </>
-          ) : (
-            <p role="status" className="text-muted-foreground text-sm">
-              Această înscriere nu mai poate fi plătită. Verifică starea sau contactează clubul.
-            </p>
-          )}
-        </>
+        ) : canPay ? (
+          <PaymentEntry framed={false} />
+        ) : (
+          <p role="status" className="text-muted-foreground text-sm">
+            Această înscriere nu mai poate fi plătită. Verifică starea sau contactează clubul.
+          </p>
+        )
       ) : null}
-      <div>
-        <Button variant="outline" disabled={pay.isPending} onClick={onClose}>
+      {failure && (
+        <p role="alert" className="text-destructive text-sm">
+          {failure}
+        </p>
+      )}
+      <div className="flex gap-3">
+        <Button
+          variant="ghost"
+          size="lg"
+          className="px-4 text-sm sm:px-6 sm:text-base"
+          disabled={redirecting}
+          onClick={onClose}
+        >
           Închide
         </Button>
+        {showPay && saved && (
+          <Button
+            size="lg"
+            className="h-auto min-h-12 min-w-0 flex-1 px-4 py-2 text-sm leading-tight whitespace-normal sm:px-6 sm:text-base"
+            disabled={redirecting || state.isFetching || !payment.ready}
+            onClick={() => pay.mutate()}
+          >
+            {redirecting ? (
+              <>
+                <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+                <span>{payment.android ? 'Verificăm și confirmăm plata…' : 'Te ducem la Stripe…'}</span>
+              </>
+            ) : (
+              <span>
+                Plătește {formatOfferPrice(saved.amount, saved.currency)}
+                {payment.android ? '' : ' pe Stripe'}
+              </span>
+            )}
+          </Button>
+        )}
       </div>
     </section>
   )

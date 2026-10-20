@@ -1,10 +1,8 @@
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Elements } from '@stripe/react-stripe-js'
 
 import { getConcursPublic } from '@/api/competition/competitions'
 import { getCompetitionCategories } from '@/api/competition/competition-offers'
-import { stripePromise } from '@/lib/stripe'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CompetitionRegistrationForm } from './CompetitionRegistrationForm'
@@ -52,11 +50,9 @@ export default function CompetitionRegistrationPage() {
   }
 
   return (
-    <Elements stripe={stripePromise}>
-      <CompetitionRegistrationForm
-        competition={competition.data}
-        categories={categories.data ?? []}
-      />
-    </Elements>
+    <CompetitionRegistrationForm
+      competition={competition.data}
+      categories={categories.data ?? []}
+    />
   )
 }

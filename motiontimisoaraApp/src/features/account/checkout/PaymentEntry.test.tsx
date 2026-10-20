@@ -16,7 +16,6 @@ const { state, supported } = vi.hoisted(() => ({
 }))
 vi.mock('./usePaymentAdapter', () => ({ usePaymentAdapter: () => state }))
 vi.mock('@/api/payments/native', () => ({ nativePaymentsSupported: supported }))
-vi.mock('@stripe/react-stripe-js', () => ({ CardElement: () => <div>Card web simulat</div> }))
 
 beforeEach(() => {
   state.android = true
@@ -73,11 +72,16 @@ describe('Android payment entry', () => {
     expect(screen.queryByText(/Poți alege Google Pay/)).not.toBeInTheDocument()
   })
 
-  it('preserves web card entry without promising Android wallets', () => {
+  it('sends web parents to Stripe Checkout instead of showing a card field', () => {
     state.android = false
-    render(<PaymentEntry />)
-    expect(screen.getByRole('heading', { name: 'Date card' })).toBeInTheDocument()
-    expect(screen.getByText('Card web simulat')).toBeInTheDocument()
-    expect(screen.queryByText(/Google Pay/)).not.toBeInTheDocument()
+    render(<PaymentEntry childCount={2} />)
+    expect(screen.getByText(/Plătești pe pagina securizată Stripe: card, Apple Pay sau Google Pay/)).toBeInTheDocument()
+    expect(screen.queryByText(/se confirmă separat/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument()
+  })
+
+  it('keeps the Android panel heading below the enrollment card heading when unframed', () => {
+    render(<PaymentEntry framed={false} />)
+    expect(screen.getByRole('heading', { level: 3, name: 'Card sau Google Pay' })).toBeInTheDocument()
   })
 })

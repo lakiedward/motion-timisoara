@@ -184,11 +184,11 @@ jobs:
     - name: Test enrollment pricing contract
       run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/price-snapshot.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/record-attendance-contract.test.ts supabase/functions/coach-live-location-contract.test.ts supabase/functions/camp-live-location-contract.test.ts supabase/functions/bnr-rate-contract.test.ts
     - name: Test payment confirmation and intent retries
-      run: deno test --no-lock supabase/functions/payment-completion-contract.test.ts supabase/functions/_shared/payment-intent.test.ts
+      run: deno test --no-lock supabase/functions/payment-completion-contract.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/checkout-session.test.ts
     - name: Check competition functions and contracts
       run: deno check --no-lock supabase/functions/create-competition-registration/index.ts supabase/functions/validate-competition-registration/index.ts && deno test --no-lock supabase/functions/competition-registration-contract.test.ts supabase/functions/_shared/competition-payment-recipient.test.ts
     - name: Check payment confirmation functions
-      run: deno check --no-lock supabase/functions/mark-cash-paid/index.ts supabase/functions/stripe-webhook/index.ts supabase/functions/cancel-draft-enrollment/index.ts
+      run: deno check --no-lock supabase/functions/mark-cash-paid/index.ts supabase/functions/stripe-webhook/index.ts supabase/functions/cancel-draft-enrollment/index.ts supabase/functions/create-checkout-session/index.ts
     - name: Test isolated camp pricing SQL
       shell: pwsh
       run: ./supabase/tests/run-camp-child-pricing.ps1

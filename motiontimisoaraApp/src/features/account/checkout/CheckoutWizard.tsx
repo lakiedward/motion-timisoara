@@ -31,6 +31,7 @@ import { AddChildInline, CheckoutAdultRow, CheckoutChildRow } from './CheckoutFo
 import { CheckoutBillingFields } from './CheckoutBillingFields'
 import { usePaymentAdapter } from './usePaymentAdapter'
 import { processEnrollmentPayments, paymentResultMessage } from '@/api/payments/process'
+import { startStripeCheckout } from '@/api/payments/checkout-session'
 import {
   checkoutIsFree,
   checkoutParticipantCount,
@@ -218,6 +219,12 @@ export default function CheckoutWizard({
       if (!enrollmentNeedsCardPayment(total, created.requiresPaymentIntent)) {
         return { cash: false as const, free: isFree }
       }
+      if (!payment.android) {
+        setProgress('Te ducem la Stripe…')
+        const started = await startStripeCheckout(created.enrollmentIds)
+        if (started === 'redirected') return { redirected: true as const, cash: false as const, free: false as const }
+        return { cash: false as const, free: false as const, result: { outcome: 'ready' as const, completed: created.enrollmentIds.length, total: created.enrollmentIds.length } }
+      }
       const result = await processEnrollmentPayments(
         created.enrollmentIds,
         payment.adapter,
@@ -233,7 +240,7 @@ export default function CheckoutWizard({
     },
     onSuccess: (result) => {
       void qc.invalidateQueries({ queryKey: ['enrollments'] })
-      if (attempt.current?.signal.aborted) return
+      if (attempt.current?.signal.aborted || 'redirected' in result) return
       setProgress(null)
       if (result.free) {
         toast.success('Înscriere confirmată. Nu este nevoie de plată.')
@@ -301,7 +308,7 @@ export default function CheckoutWizard({
     }
   }
 
-  const busy = finalize.isPending
+  const busy = finalize.isPending || Boolean(finalize.data && 'redirected' in finalize.data)
 
   const hint =
     step < lastStep && !canAdvance ? advanceHint(steps[step], participantCount, hasAccepted) : null
@@ -552,7 +559,11 @@ export default function CheckoutWizard({
         }
       >
         {busy && <Loader2 className="size-4 animate-spin" />}
-        {busy ? (progress ?? 'Se procesează…') : 'Finalizează'}
+        {busy
+          ? (progress ?? 'Se procesează…')
+          : !isFree && method === 'CARD' && !payment.android && pricesReady
+            ? `Plătește ${formatRonOffer(total)} pe Stripe`
+            : 'Finalizează'}
       </Button>
     )
 

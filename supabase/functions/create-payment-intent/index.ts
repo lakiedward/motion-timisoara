@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { getUser, supabaseAdmin } from "../_shared/supabase.ts";
 import { authorizedRonCharge } from "../_shared/payment-charge.ts";
-import { competitionPaymentRecipient } from "../_shared/competition-payment-recipient.ts";
+import { paymentRecipient } from "../_shared/payment-recipient.ts";
 import { preparePaymentIntent } from "../_shared/payment-intent.ts";
 import { withCors } from "../_shared/cors.ts";
 import { calculatePlatformFee, getStripe } from "../_shared/stripe.ts";
@@ -57,100 +57,10 @@ serve(
       payment,
     );
 
-    let destinationAccountId: string | null = null;
-    let destinationType = "PLATFORM";
-    let coachId: string | null = null;
-    let clubId: string | null = null;
-
-    if (enrollment.kind === "COURSE" || enrollment.kind === "ACTIVITY") {
-      const table = enrollment.kind === "COURSE" ? "courses" : "activities";
-      const { data: entity } = await supabaseAdmin
-        .from(table)
-        .select("coach_id, club_id, payment_recipient")
-        .eq("id", enrollment.entity_id)
-        .single();
-
-      if (entity) {
-        coachId = entity.coach_id;
-        clubId = entity.club_id;
-        const recipient = entity.payment_recipient;
-
-        let coachStripeAccount: string | null = null;
-        let coachCanReceive = false;
-        if (coachId) {
-          const { data: cp } = await supabaseAdmin
-            .from("coach_profiles")
-            .select(
-              "stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled, stripe_payouts_enabled",
-            )
-            .eq("user_id", coachId)
-            .single();
-          if (
-            cp?.stripe_onboarding_complete &&
-            cp?.stripe_charges_enabled &&
-            cp?.stripe_payouts_enabled
-          ) {
-            coachStripeAccount = cp.stripe_account_id;
-            coachCanReceive = true;
-          }
-        }
-
-        let clubStripeAccount: string | null = null;
-        let clubCanReceive = false;
-        if (clubId) {
-          const { data: cl } = await supabaseAdmin
-            .from("clubs")
-            .select(
-              "stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled, stripe_payouts_enabled",
-            )
-            .eq("id", clubId)
-            .single();
-          if (
-            cl?.stripe_onboarding_complete &&
-            cl?.stripe_charges_enabled &&
-            cl?.stripe_payouts_enabled
-          ) {
-            clubStripeAccount = cl.stripe_account_id;
-            clubCanReceive = true;
-          }
-        }
-
-        if (recipient === "CLUB") {
-          if (clubCanReceive) {
-            destinationAccountId = clubStripeAccount;
-            destinationType = "CLUB";
-          } else if (coachCanReceive) {
-            destinationAccountId = coachStripeAccount;
-            destinationType = "COACH";
-          }
-        } else if (recipient === "COACH") {
-          if (coachCanReceive) {
-            destinationAccountId = coachStripeAccount;
-            destinationType = "COACH";
-          } else if (clubCanReceive) {
-            destinationAccountId = clubStripeAccount;
-            destinationType = "CLUB";
-          }
-        } else {
-          if (coachCanReceive) {
-            destinationAccountId = coachStripeAccount;
-            destinationType = "COACH";
-          } else if (clubCanReceive) {
-            destinationAccountId = clubStripeAccount;
-            destinationType = "CLUB";
-          }
-        }
-      }
-    } else if (enrollment.kind === "COMPETITION") {
-      const recipient = await competitionPaymentRecipient(
-        supabaseAdmin,
-        enrollment.entity_id,
-      );
-      destinationAccountId = recipient.accountId;
-      destinationType = recipient.type;
-      coachId = recipient.coachId;
-      clubId = recipient.clubId;
-    }
+    const recipient = await paymentRecipient(supabaseAdmin, enrollment);
+    const destinationAccountId = recipient.accountId;
+    const destinationType = recipient.type;
+    const { coachId, clubId } = recipient;
 
     const stripe = getStripe();
     const currencyLower = "ron";
