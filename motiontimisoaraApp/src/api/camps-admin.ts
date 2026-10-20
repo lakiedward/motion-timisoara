@@ -90,7 +90,19 @@ export async function getTaberelemele(p: Proprietar): Promise<TabaraDinLista[]> 
 
   const { data, error } = await q
   if (error) throw error
-  const tabere = data ?? []
+  return completeazaTaberele(data ?? [])
+}
+
+export async function getToateTaberele(): Promise<TabaraDinLista[]> {
+  const { data, error } = await supabase
+    .from('camps')
+    .select('*')
+    .order('period_start', { ascending: false })
+  if (error) throw error
+  return completeazaTaberele(data ?? [])
+}
+
+async function completeazaTaberele(tabere: Tabara[]): Promise<TabaraDinLista[]> {
   if (!tabere.length) return []
 
   const ids = tabere.map((t) => t.id)
