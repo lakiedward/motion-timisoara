@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { StatusView } from '@/components/ui/status-view'
 import { ClubLocationRow } from './locations/ClubLocationRow'
+import { ClubLocationListSkeleton } from './locations/ClubLocationListSkeleton'
 import { ClubLocationFilterBar } from './locations/ClubLocationFilterBar'
 import {
   NO_FILTERS,
@@ -103,7 +104,7 @@ export default function ClubLocationsPage() {
       </div>
 
       {seIncarcaClubul || isLoading ? (
-        <StatusView state="loading" title="Se încarcă locațiile" rows={6} rowHeight={72} />
+        <ClubLocationListSkeleton />
       ) : aEsuatIncarcarea ? (
         <StatusView state="error" title="Nu am putut încărca locațiile." onRetry={reincearca} />
       ) : faraClub ? (
