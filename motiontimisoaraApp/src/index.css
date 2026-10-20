@@ -241,6 +241,9 @@
     color: #fff;
     box-shadow: var(--shadow-btn-primary);
   }
+  .dark .btn-cta--primary:focus-visible {
+    outline-color: var(--foreground);
+  }
   .btn-cta--primary:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 30px rgba(37, 99, 235, 0.4);
