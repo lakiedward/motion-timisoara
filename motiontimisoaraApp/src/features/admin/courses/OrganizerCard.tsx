@@ -96,7 +96,7 @@ export function OrganizerCard({
 
       {open && (
         <div id={panelId}>
-          <table className="hidden w-full border-t text-sm md:table">
+          <table className="hidden w-full border-t text-sm xl:table">
             <thead className="bg-muted/50 text-muted-foreground text-left text-xs uppercase">
               <tr>
                 <th scope="col" className="px-4 py-3 font-semibold md:pl-5">
@@ -159,7 +159,7 @@ export function OrganizerCard({
             </tbody>
           </table>
 
-          <ul className="list-none border-t md:hidden">
+          <ul className="list-none border-t xl:hidden">
             {shown.map((c) => (
               <li key={c.id} className="border-t p-4 first:border-t-0">
                 <div className="flex items-start justify-between gap-3">

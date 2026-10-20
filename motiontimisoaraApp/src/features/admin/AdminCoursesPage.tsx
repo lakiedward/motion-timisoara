@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Search } from 'lucide-react'
 import { toast } from 'sonner'
@@ -185,7 +186,10 @@ export default function AdminCoursesPage({
         </div>
       ) : courses.length === 0 ? (
         <Message>
-          Niciun curs înregistrat. Cursurile se creează din portalul clubului sau al antrenorului.
+          Niciun curs înregistrat.{' '}
+          <Link to="/admin/courses/new" className="text-primary font-semibold">
+            Creează primul curs
+          </Link>
         </Message>
       ) : (
         <>

@@ -25,14 +25,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 
-import {
-  createClubCourse,
-  getClubCourseById,
-  getClubSelectableLocations,
-  getClubRosterForSelect,
-  getMyClub,
-  updateClubCourse,
-} from '@/api/club'
+import { createClubCourse, getClubCourseById, updateClubCourse } from '@/api/club'
 import { incarcaRegulamentCurs, stergeRegulamentCurs } from '@/api/camp-rules-file'
 import { renuntaLaOfertaFaraHero, schimbaPozaOferta } from '@/api/offer-hero'
 import { publicUrl } from '@/api/public'
@@ -46,6 +39,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import { CourseOwnerField } from './course-form/CourseOwnerField'
+import { useCourseFormOwner, type CourseFormPortal } from './course-form/useCourseFormOwner'
 
 const selectCls =
   'border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] lg:h-9'
@@ -73,29 +68,32 @@ type Values = z.infer<typeof schema>
 
 const num = (s: string | undefined) => (s && s.trim() ? Number(s) : null)
 
-export default function ClubCourseFormPage() {
+export default function ClubCourseFormPage({ portal = 'club' }: { portal?: CourseFormPortal }) {
   const { id } = useParams()
   const isEdit = !!id
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const { data: club } = useQuery({ queryKey: ['my-club'], queryFn: getMyClub })
-  const clubId = club?.id ?? ''
   const { data: sports = [] } = useQuery({ queryKey: ['sports'], queryFn: fetchSports })
-  const { data: coaches = [], isSuccess: coachesReady } = useQuery({
-    queryKey: ['club-roster-select', clubId],
-    queryFn: () => getClubRosterForSelect(clubId),
-    enabled: !!clubId,
-  })
   const { data: existing } = useQuery({
     queryKey: ['club-course-edit', id],
     queryFn: () => getClubCourseById(id as string),
     enabled: isEdit,
   })
-  const { data: locations = [], isSuccess: locationsReady } = useQuery({
-    queryKey: ['club-selectable-locations', clubId, existing?.location_id ?? null],
-    queryFn: () => getClubSelectableLocations(clubId, existing?.location_id ?? null),
-    enabled: !!clubId && (!isEdit || !!existing),
-  })
+  const {
+    isAdmin,
+    owner,
+    setOwner,
+    clubs,
+    clubId,
+    hasOwner,
+    coaches,
+    coachesReady,
+    locations,
+    locationsReady,
+    listPath,
+    listQueryKey,
+  } = useCourseFormOwner(portal, existing, isEdit)
+  const [eroareOrganizator, setEroareOrganizator] = useState<string | null>(null)
 
   const {
     register,
@@ -142,8 +140,22 @@ export default function ClubCourseFormPage() {
     }
   }, [existing, coachesReady, locationsReady, reset])
 
+  const verificaOrganizator = () => {
+    const lipsa = isAdmin && !hasOwner ? 'Alege organizatorul' : null
+    setEroareOrganizator(lipsa)
+    return !lipsa
+  }
+
+  const schimbaOrganizator = (urmator: string) => {
+    setOwner(urmator)
+    setEroareOrganizator(null)
+    setValue('coach_id', '')
+    setValue('location_id', '')
+  }
+
   const onSubmit = async (v: Values) => {
-    if (!club) {
+    if (!verificaOrganizator()) return
+    if (!hasOwner) {
       toast.error('Clubul nu a fost găsit.')
       return
     }
@@ -169,7 +181,7 @@ export default function ClubCourseFormPage() {
         await updateClubCourse(id as string, payload)
         if (pozaHero) await schimbaPozaOferta('courses', 'course-photos', id as string, pozaHero)
       } else {
-        const creat = await createClubCourse(club.id, payload)
+        const creat = await createClubCourse(clubId, payload)
         try {
           await schimbaPozaOferta('courses', 'course-photos', creat.id, pozaHero as File)
         } catch {
@@ -182,31 +194,31 @@ export default function ClubCourseFormPage() {
             await incarcaRegulamentCurs(creat.id, fisierLocal)
           } catch {
             toast.error('Cursul a fost creat, dar fișierul regulamentului nu a putut fi urcat.')
-            qc.invalidateQueries({ queryKey: ['club-courses'] })
-            navigate('/club/courses')
+            qc.invalidateQueries({ queryKey: [listQueryKey] })
+            navigate(listPath)
             return
           }
         }
       }
-      qc.invalidateQueries({ queryKey: ['club-courses'] })
+      qc.invalidateQueries({ queryKey: [listQueryKey] })
       toast.success(
         isEdit
           ? 'Curs actualizat. Ședințele viitoare urmează programul.'
           : 'Curs creat. Ședințele au fost generate din program.',
       )
-      navigate('/club/courses')
+      navigate(listPath)
     } catch {
       toast.error('Nu am putut salva cursul.')
     }
   }
 
-  const noCoaches = !coaches.length
-  const noLocations = !locations.length
+  const noCoaches = coachesReady && !coaches.length
+  const noLocations = locationsReady && !locations.length
 
   return (
     <div className="mx-auto max-w-2xl">
       <Link
-        to="/club/courses"
+        to={listPath}
         className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
       >
         <ArrowLeft className="size-4" /> Înapoi
@@ -215,7 +227,7 @@ export default function ClubCourseFormPage() {
         {isEdit ? 'Editează curs' : 'Curs nou'}
       </h1>
 
-      {(noCoaches || noLocations) && !isEdit && (
+      {!isAdmin && (noCoaches || noLocations) && !isEdit && (
         <div className="bg-highlight/10 text-foreground/80 mt-4 rounded-2xl border p-4 text-sm">
           {noCoaches && (
             <p>
@@ -242,9 +254,26 @@ export default function ClubCourseFormPage() {
         onSubmit={handleSubmit(onSubmit, () =>
           setEroareHero(mesajHeroLipsa(pozaHero, existing?.hero_photo_storage_path ?? null)),
         )}
+        onSubmitCapture={verificaOrganizator}
         className="mt-6 space-y-4"
         noValidate
       >
+        {isAdmin && (
+          <CourseOwnerField
+            value={owner}
+            clubs={clubs}
+            locked={isEdit}
+            error={eroareOrganizator}
+            selectClassName={selectCls}
+            onChange={schimbaOrganizator}
+          />
+        )}
+        {isAdmin && hasOwner && (noCoaches || noLocations) && (
+          <div className="bg-highlight/10 text-foreground/80 rounded-2xl border p-4 text-sm">
+            {noCoaches && <p>Organizatorul ales nu are antrenori.</p>}
+            {noLocations && <p>Organizatorul ales nu are locații active.</p>}
+          </div>
+        )}
         <div className="space-y-1.5">
           <Label htmlFor="name">Nume curs</Label>
           <Input
@@ -414,7 +443,7 @@ export default function ClubCourseFormPage() {
             {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>
           <Button type="button" variant="outline" className="h-11 lg:h-9" asChild>
-            <Link to="/club/courses">Anulează</Link>
+            <Link to={listPath}>Anulează</Link>
           </Button>
         </div>
       </form>

@@ -1,10 +1,12 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
 import { toast } from 'sonner'
 
 import AdminCoursesPage from './AdminCoursesPage'
+import { EditCourseAction, NewCourseButton } from './courses/CourseEditActions'
 import { getAllCourses, setCourseActiveAdmin, type AdminCourse } from '@/api/admin'
 
 vi.mock('@/api/admin', () => ({
@@ -20,7 +22,9 @@ function renderPage(props: Parameters<typeof AdminCoursesPage>[0] = {}) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={queryClient}>
-      <AdminCoursesPage {...props} />
+      <MemoryRouter>
+        <AdminCoursesPage {...props} />
+      </MemoryRouter>
     </QueryClientProvider>,
   )
 }
@@ -86,12 +90,15 @@ test('o incarcare esuata da mesaj propriu si reincercare, nu ecranul de lista go
   expect(screen.queryByText(/Niciun curs înregistrat/)).not.toBeInTheDocument()
 })
 
-test('lista goala spune si unde se creeaza cursurile', async () => {
+test('lista goala duce direct la crearea primului curs din admin', async () => {
   mockedCourses.mockResolvedValue([])
   renderPage()
 
   const gol = await screen.findByText(/Niciun curs înregistrat/)
-  expect(gol).toHaveTextContent('Cursurile se creează din portalul clubului sau al antrenorului')
+  expect(within(gol).getByRole('link', { name: 'Creează primul curs' })).toHaveAttribute(
+    'href',
+    '/admin/courses/new',
+  )
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 })
 
@@ -270,15 +277,15 @@ test('un organizator cu multe cursuri arata primele 4 si „Vezi toate"', async 
   expect(within(tabelDin('Audit Antrenor')).getAllByRole('row')).toHaveLength(7)
 })
 
-test('tabelul apare de la 768px in sus, iar fisele doar sub 768px', async () => {
+test('tabelul apare de la 1280px in sus, iar fisele sub 1280px', async () => {
   mockedCourses.mockResolvedValue(lista())
   renderPage()
   await asteaptaLista()
 
   const tabel = tabelDin('Audit Antrenor')
   expect(tabel.className).toMatch(/(^|\s)hidden(\s|$)/)
-  expect(tabel.className).toMatch(/md:table/)
-  expect(fiseDin('Audit Antrenor').className).toMatch(/md:hidden/)
+  expect(tabel.className).toMatch(/xl:table/)
+  expect(fiseDin('Audit Antrenor').className).toMatch(/xl:hidden/)
   expect(within(fiseDin('Audit Antrenor')).getAllByRole('listitem')).toHaveLength(1)
 })
 
@@ -398,6 +405,30 @@ test('antetul si randurile primesc actiuni suplimentare din afara', async () => 
   expect(
     within(fiseDin('Audit Antrenor')).getByRole('button', { name: 'Editează 2 card' }),
   ).toBeInTheDocument()
+})
+
+test('„Curs nou" și „Editează" din admin duc la formularele de curs', async () => {
+  mockedCourses.mockResolvedValue(lista())
+  renderPage({
+    headerActions: <NewCourseButton />,
+    renderRowActions: (course, layout) => <EditCourseAction course={course} layout={layout} />,
+  })
+  await asteaptaLista()
+
+  expect(screen.getByRole('link', { name: 'Curs nou' })).toHaveAttribute(
+    'href',
+    '/admin/courses/new',
+  )
+  const dinTabel = within(rand('Audit Antrenor', 'Înot — audit UI')).getByRole('link', {
+    name: 'Editează Înot — audit UI',
+  })
+  expect(dinTabel).toHaveAttribute('href', '/admin/courses/2/edit')
+  expect(dinTabel.className).toMatch(/lg:min-h-8/)
+  const dinFisa = within(fiseDin('Audit Antrenor')).getByRole('link', {
+    name: 'Editează Înot — audit UI',
+  })
+  expect(dinFisa).toHaveAttribute('href', '/admin/courses/2/edit')
+  expect(dinFisa.className).not.toMatch(/lg:min-h-8/)
 })
 
 test('pe telefon sportul se alege dintr-o lista, iar starile stau pe un singur rand', async () => {
