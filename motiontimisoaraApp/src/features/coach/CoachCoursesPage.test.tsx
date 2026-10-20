@@ -79,6 +79,7 @@ test('empty list shows dashed copy and keeps Curs nou in the header', async () =
   )
   expect(screen.getByRole('link', { name: /curs nou/i })).toBeInTheDocument()
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /creează primul curs/i }).className).toMatch(/min-h-11/)
 })
 
 test('failed load shows error and retry, not the empty list', async () => {
@@ -120,7 +121,7 @@ test('loading keeps the header and two rounded skeletons', () => {
   const skeletons = document.querySelectorAll('[data-slot="skeleton"]')
   expect(skeletons).toHaveLength(2)
   skeletons.forEach((el) => {
-    expect(el.className).toMatch(/h-32/)
+    expect(el.className).toMatch(/h-52/)
     expect(el.className).toMatch(/rounded-3xl/)
     expect(el.className).toMatch(/animate-pulse/)
   })
@@ -179,6 +180,11 @@ test('filled cards show location under the title, badges, price, gray line and o
   expect(deactivate.className).toMatch(/border/)
   expect(deactivate.className).not.toMatch(/ghost/)
   expect(screen.getByRole('button', { name: 'Activează' }).className).toMatch(/border/)
+  expect(deactivate.className).toMatch(/min-h-11/)
+  expect(edit[0].className).toMatch(/min-h-11/)
+  const card = edit[0].closest('[data-slot="card"]')
+  expect(card?.className).toMatch(/border/)
+  expect(card?.className).not.toMatch(/shadow-card/)
 })
 
 test('cards say de la, până la, a full interval, or no age', async () => {
@@ -235,4 +241,37 @@ test('grid uses one column on phone and two from sm up', async () => {
   await screen.findAllByRole('heading', { name: 'Înot' })
   const grid = screen.getAllByRole('heading', { name: 'Înot' })[0].closest('.grid')
   expect(grid?.className).toMatch(/sm:grid-cols-2/)
+})
+
+test('search, status pills and sport pills narrow the list and can be cleared', async () => {
+  const user = userEvent.setup()
+  mockedGetMyCourses.mockResolvedValue([
+    course({ id: '1', name: 'Înot începători' }),
+    course({
+      id: '2',
+      name: 'Alergare juniori',
+      active: false,
+      sport_id: 's2',
+      sport: { id: 's2', code: 'run', name: 'Alergare' },
+      location: { id: 'l2', name: 'Stadion Atletism', city: 'Timișoara' },
+    }),
+  ])
+  renderPage()
+  await screen.findByRole('heading', { name: 'Înot începători' })
+  expect(screen.getByRole('button', { name: /^Active\s*1$/ })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /^Inactive\s*1$/ })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /^Toate\s*2$/ })).toHaveAttribute('aria-pressed', 'true')
+
+  await user.type(screen.getByRole('searchbox', { name: /caută cursuri/i }), 'stadion')
+  expect(screen.queryByRole('heading', { name: 'Înot începători' })).not.toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Alergare juniori' })).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: /^Active\s*1$/ }))
+  expect(screen.getByText('Niciun curs pentru filtrele alese.')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Șterge filtrele' }))
+  expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(2)
+
+  await user.click(screen.getByRole('button', { name: /^Alergare\s*1$/ }))
+  expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(1)
+  expect(screen.getByRole('combobox', { name: 'Sport' })).toHaveValue('s2')
 })
