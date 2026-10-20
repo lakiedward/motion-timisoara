@@ -88,3 +88,19 @@ test('skips the count queries when there are no sessions', async () => {
   expect(await getAdminSessions()).toEqual([])
   expect(calls.some((c) => c.table === 'enrollments')).toBe(false)
 })
+
+test('splits long id lists so request URLs stay short', async () => {
+  rows = {
+    course_occurrences: Array.from({ length: 320 }, (_, i) => ({
+      id: `o${i}`,
+      starts_at: '2026-10-19T15:00:00Z',
+      ends_at: '2026-10-19T16:00:00Z',
+      course: { id: 'k1', name: 'Înot', location: null, sport: null, club: null, coach: null },
+    })),
+  }
+  await getAdminSessions()
+  const lists = calls
+    .filter((c) => c.table === 'attendance' && c.method === 'in')
+    .map((c) => (c.args[1] as string[]).length)
+  expect(lists).toEqual([150, 150, 20])
+})

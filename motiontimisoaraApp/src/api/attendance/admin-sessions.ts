@@ -53,6 +53,22 @@ async function allPages<T>(
   }
 }
 
+const ID_CHUNK = 150
+
+function chunks(ids: string[]) {
+  const out: string[][] = []
+  for (let i = 0; i < ids.length; i += ID_CHUNK) out.push(ids.slice(i, i + ID_CHUNK))
+  return out
+}
+
+async function inChunks<T>(
+  ids: string[],
+  run: (part: string[], from: number, to: number) => PromiseLike<{ data: unknown; error: unknown }>,
+) {
+  const parts = await Promise.all(chunks(ids).map((part) => allPages<T>((a, b) => run(part, a, b))))
+  return parts.flat()
+}
+
 function tally<K extends string>(rows: Record<K, string>[], key: K) {
   const counts = new Map<string, number>()
   for (const r of rows) counts.set(r[key], (counts.get(r[key]) ?? 0) + 1)
@@ -78,21 +94,21 @@ export async function getAdminSessions(now = Date.now()): Promise<AdminSession[]
   const courseIds = [...new Set(sessions.map((s) => s.course!.id))]
   const occurrenceIds = sessions.map((s) => s.id)
   const [enrollments, attendance] = await Promise.all([
-    allPages<{ entity_id: string }>((a, b) =>
+    inChunks<{ entity_id: string }>(courseIds, (part, a, b) =>
       supabase
         .from('enrollments')
         .select('entity_id')
         .eq('kind', 'COURSE')
         .eq('status', 'ACTIVE')
-        .in('entity_id', courseIds)
+        .in('entity_id', part)
         .order('id', { ascending: true })
         .range(a, b),
     ),
-    allPages<{ occurrence_id: string }>((a, b) =>
+    inChunks<{ occurrence_id: string }>(occurrenceIds, (part, a, b) =>
       supabase
         .from('attendance')
         .select('occurrence_id')
-        .in('occurrence_id', occurrenceIds)
+        .in('occurrence_id', part)
         .order('id', { ascending: true })
         .range(a, b),
     ),
