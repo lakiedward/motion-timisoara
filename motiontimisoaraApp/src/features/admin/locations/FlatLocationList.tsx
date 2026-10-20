@@ -1,7 +1,7 @@
 import type { AdminLocation } from '@/api/locations/admin-locations'
 import { ClubLocationRow } from '@/features/club/locations/ClubLocationRow'
 import { Highlight } from '@/features/admin/courses/CourseParts'
-import { ORGANIZER_ICON } from './LocationOrganizerCard'
+import { ORGANIZER_ICON } from './organizer-icon'
 import { organizerOf } from './location-overview'
 
 function OrganizerLine({ location, query }: { location: AdminLocation; query: string }) {

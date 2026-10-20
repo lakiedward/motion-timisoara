@@ -1,19 +1,14 @@
-import { Building2, ChevronDown, MapPinned, UserRound } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 
 import type { AdminLocation } from '@/api/locations/admin-locations'
 import { ClubLocationRow } from '@/features/club/locations/ClubLocationRow'
 import { Highlight } from '@/features/admin/courses/CourseParts'
 import { plural } from '@/lib/plural'
 import { cn } from '@/lib/utils'
-import { countLocations, type LocationGroup, type OrganizerKind } from './location-overview'
+import { countLocations, type LocationGroup } from './location-overview'
+import { ORGANIZER_ICON } from './organizer-icon'
 
 export const LOCATION_PREVIEW_LIMIT = 4
-
-export const ORGANIZER_ICON: Record<OrganizerKind, typeof Building2> = {
-  club: Building2,
-  coach: UserRound,
-  shared: MapPinned,
-}
 
 export function LocationOrganizerCard({
   group,

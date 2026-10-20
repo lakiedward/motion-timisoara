@@ -80,9 +80,7 @@ test('titlul rămâne Administrare, cu un singur h1 și subtitlul de ansamblu', 
 })
 
 test('cele 8 contoare duc la secțiunile lor, Antrenori filtrat pe COACH', async () => {
-  mockedStats.mockResolvedValue(
-    stats({ users: cell(4), coaches: cell(1), clubs: cell(2), courses: cell(3), camps: cell(5) }),
-  )
+  mockedStats.mockResolvedValue(stats({ users: cell(4), coaches: cell(1), clubs: cell(2), courses: cell(3), camps: cell(5) }))
   renderDashboard()
   expect(await screen.findByRole('link', { name: /utilizatori, 4/i })).toHaveAttribute(
     'href',
@@ -142,12 +140,14 @@ test('numerele mari au separator de mii', async () => {
 
 test('eroarea de încărcare are mesaj și Reîncearcă reia cererea', async () => {
   let resolveRetry: ((value: AdminStats) => void) | undefined
-  mockedStats.mockRejectedValueOnce(new Error('500')).mockImplementationOnce(
-    () =>
-      new Promise((resolve) => {
-        resolveRetry = resolve
-      }),
-  )
+  mockedStats
+    .mockRejectedValueOnce(new Error('500'))
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveRetry = resolve
+        }),
+    )
   renderDashboard()
   const alerta = await screen.findByRole('alert')
   expect(alerta).toHaveTextContent('Nu am putut încărca statisticile.')
