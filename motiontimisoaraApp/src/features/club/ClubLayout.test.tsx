@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { vi } from 'vitest'
@@ -44,23 +44,35 @@ test('club chrome keeps the portal nav links and logo to public home', () => {
   const labels = [
     'Panou',
     'Profil club',
-    'Antrenori',
-    'Anunțuri',
     'Cursuri',
     'Activități',
+    'Tabere',
+    'Concursuri',
     'Locații',
+    'Antrenori',
+    'Anunțuri',
   ]
   const hrefs = [
     '/club',
     '/club/profile',
-    '/club/coaches',
-    '/club/announcements',
     '/club/courses',
     '/club/activities',
+    '/club/camps',
+    '/club/competitions',
     '/club/locations',
+    '/club/coaches',
+    '/club/announcements',
   ]
-  const links = labels.map((label) => screen.getByRole('link', { name: label }))
+  const nav = screen.getByRole('navigation', { name: 'Navigare club' })
+  const links = within(nav).getAllByRole('link')
+  expect(links.map((link) => link.textContent)).toEqual(labels)
   links.forEach((link, i) => expect(link).toHaveAttribute('href', hrefs[i]))
+  expect(within(nav).getByRole('group', { name: 'Oferte' })).toHaveTextContent(
+    'CursuriActivitățiTabereConcursuri',
+  )
+  expect(within(nav).getByRole('group', { name: 'Organizare' })).toHaveTextContent(
+    'LocațiiAntrenoriAnunțuri',
+  )
   expect(screen.getAllByRole('link', { name: /motion timișoara/i })[0]).toHaveAttribute('href', '/')
   expect(screen.getByRole('button', { name: 'Deconectare' })).toBeInTheDocument()
 })

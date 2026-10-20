@@ -86,9 +86,17 @@ function navSections(nav: PortalNavItem[]) {
   return sections
 }
 
-function NavList({ nav, onNavigate }: { nav: PortalNavItem[]; onNavigate?: () => void }) {
+function NavList({
+  nav,
+  label,
+  onNavigate,
+}: {
+  nav: PortalNavItem[]
+  label: string
+  onNavigate?: () => void
+}) {
   return (
-    <nav className="flex flex-col gap-1 p-3">
+    <nav aria-label={label} className="flex flex-col gap-1 p-3">
       {navSections(nav).map((section) => (
         <div
           key={section.group ?? section.items[0].to}
@@ -209,6 +217,7 @@ export function PortalLayout({
   const drawerLogo = React.useRef<HTMLAnchorElement>(null)
   const fullName = user?.name.trim() || null
   const firstName = firstNameOf(user?.name)
+  const navLabel = `Navigare ${roleLabel.toLowerCase()}`
 
   const onLogout = async () => {
     if (logoutPending.current) return
@@ -248,7 +257,7 @@ export function PortalLayout({
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
           <RoleLabel>{roleLabel}</RoleLabel>
-          <NavList nav={nav} />
+          <NavList nav={nav} label={navLabel} />
         </div>
         <div className="shrink-0 border-t p-3">
           {profileTo && fullName ? <ProfileCard to={profileTo} name={fullName} /> : null}
@@ -287,7 +296,7 @@ export function PortalLayout({
             </SheetHeader>
             <div className="min-h-0 flex-1 overflow-y-auto">
               <RoleLabel>{roleLabel}</RoleLabel>
-              <NavList nav={nav} onNavigate={closeSheet} />
+              <NavList nav={nav} label={navLabel} onNavigate={closeSheet} />
             </div>
             <div className="mt-auto shrink-0 border-t p-3">
               {profileTo && fullName ? (
