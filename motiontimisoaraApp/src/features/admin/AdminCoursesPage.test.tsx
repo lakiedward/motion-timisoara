@@ -277,15 +277,15 @@ test('un organizator cu multe cursuri arata primele 4 si „Vezi toate"', async 
   expect(within(tabelDin('Audit Antrenor')).getAllByRole('row')).toHaveLength(7)
 })
 
-test('tabelul apare de la 768px in sus, iar fisele doar sub 768px', async () => {
+test('tabelul apare de la 1280px in sus, iar fisele sub 1280px', async () => {
   mockedCourses.mockResolvedValue(lista())
   renderPage()
   await asteaptaLista()
 
   const tabel = tabelDin('Audit Antrenor')
   expect(tabel.className).toMatch(/(^|\s)hidden(\s|$)/)
-  expect(tabel.className).toMatch(/md:table/)
-  expect(fiseDin('Audit Antrenor').className).toMatch(/md:hidden/)
+  expect(tabel.className).toMatch(/xl:table/)
+  expect(fiseDin('Audit Antrenor').className).toMatch(/xl:hidden/)
   expect(within(fiseDin('Audit Antrenor')).getAllByRole('listitem')).toHaveLength(1)
 })
 
@@ -423,9 +423,7 @@ test('„Curs nou" și „Editează" din admin duc la formularele de curs', asyn
     name: 'Editează Înot — audit UI',
   })
   expect(dinTabel).toHaveAttribute('href', '/admin/courses/2/edit')
-  expect(dinTabel.className).toMatch(/size-touch-target/)
-  expect(dinTabel.className).toMatch(/lg:size-8/)
-  expect(within(dinTabel).getByText('Editează').className).toMatch(/hidden xl:inline/)
+  expect(dinTabel.className).toMatch(/lg:min-h-8/)
   const dinFisa = within(fiseDin('Audit Antrenor')).getByRole('link', {
     name: 'Editează Înot — audit UI',
   })
