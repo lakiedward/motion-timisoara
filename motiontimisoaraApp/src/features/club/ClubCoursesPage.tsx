@@ -1,17 +1,29 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Pencil, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { getMyClub, getClubCourses, setClubCourseActive } from '@/api/club'
-import { formatMoney } from '@/lib/money'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
 import { CurrentLocationSessions } from '@/features/live-location/CurrentLocationSessions'
+import { ClubCourseFilterBar } from './courses/ClubCourseFilterBar'
+import { ClubCourseListSkeleton } from './courses/ClubCourseListSkeleton'
+import { ClubCourseRows } from './courses/ClubCourseRows'
+import {
+  NO_FILTERS,
+  coachCounts,
+  filterClubCourses,
+  hasFilters,
+  sportCounts,
+  statusCounts,
+  type ClubCourseFilters,
+} from './courses/club-course-filters'
 
 export default function ClubCoursesPage() {
   const qc = useQueryClient()
+  const [filters, setFilters] = useState<ClubCourseFilters>(NO_FILTERS)
   const {
     data: club,
     isLoading: clubLoading,
@@ -23,6 +35,7 @@ export default function ClubCoursesPage() {
     data: courses = [],
     isLoading: coursesLoading,
     isError: coursesError,
+    isFetching,
     refetch,
   } = useQuery({
     queryKey: ['club-courses', clubId],
@@ -36,6 +49,7 @@ export default function ClubCoursesPage() {
     if (clubError) void refetchClub()
     if (clubId && coursesError) void refetch()
   }
+  const visible = filterClubCourses(courses, filters)
   const toggle = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) =>
       setClubCourseActive(id, active),
@@ -47,12 +61,13 @@ export default function ClubCoursesPage() {
           : 'Nu am putut actualiza cursul.',
       ),
   })
+  const pendingId = toggle.isPending ? (toggle.variables?.id ?? null) : null
 
   return (
     <div>
       <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="font-display text-2xl font-bold text-foreground">Cursurile clubului</h1>
-        <Button asChild>
+        <Button asChild className="h-11 min-h-11">
           <Link to="/club/courses/new">
             <Plus /> Curs nou
           </Link>
@@ -65,61 +80,51 @@ export default function ClubCoursesPage() {
         courseSource={{ isLoading, isError: isError && !courses.length, retry: retryCourses }}
       />
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {[0, 1].map((i) => (
-            <Skeleton key={i} className="h-52 rounded-3xl lg:h-48" />
-          ))}
-        </div>
+        <ClubCourseListSkeleton />
       ) : isError && !courses.length ? (
-        <div role="alert" className="rounded-3xl border border-dashed py-16 text-center">
-          <p className="text-foreground font-medium">Nu am putut încărca cursurile.</p>
-          <Button className="mt-4 h-11 min-h-11" type="button" onClick={retryCourses}>
-            Reîncearcă
-          </Button>
-        </div>
+        <StatusView
+          state="error"
+          title="Nu am putut încărca cursurile."
+          text="Verifică conexiunea și încearcă din nou."
+          onRetry={isFetching ? undefined : retryCourses}
+        />
       ) : courses.length ? (
-        <div className="grid gap-4 sm:auto-rows-fr sm:grid-cols-2">
-          {courses.map((c) => (
-            <div key={c.id} className="bg-card shadow-card rounded-3xl p-5">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <h3 className="font-display text-lg font-bold">{c.name}</h3>
-
-                  <div className="text-muted-foreground text-sm">{c.location?.name ?? '—'}</div>
-                  <div className="mt-1 flex flex-wrap gap-1.5">
-                    {c.sport && <Badge>{c.sport.name}</Badge>}
-                    <Badge variant={c.active ? 'success' : 'outline'}>
-                      {c.active ? 'Activ' : 'Inactiv'}
-                    </Badge>
-                  </div>
-                </div>
-                <span className="font-display font-bold">{formatMoney(c.price, c.currency)}</span>
-              </div>
-
-              <div className="text-muted-foreground mt-2 text-sm">
-                {c.coach?.name ?? '—'}
-                {c.age_from != null && ` · ${c.age_from}–${c.age_to} ani`}
-              </div>
-              <div className="mt-4 flex gap-2">
-                <Button asChild size="sm" variant="outline">
-                  <Link to={`/club/courses/${c.id}/edit`}>
-                    <Pencil /> Editează
-                  </Link>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={toggle.isPending}
-                  onClick={() => toggle.mutate({ id: c.id, active: !c.active })}
-                >
-                  {c.active ? 'Dezactivează' : 'Activează'}
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+        <>
+          <ClubCourseFilterBar
+            filters={filters}
+            statusCounts={statusCounts(courses)}
+            sports={sportCounts(courses)}
+            coaches={coachCounts(courses)}
+            onChange={setFilters}
+          />
+          {!visible.length ? (
+            <StatusView
+              state="empty"
+              title="Niciun curs pentru filtrele alese."
+              text="Schimbă căutarea sau filtrele."
+              action={
+                hasFilters(filters) ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="mt-3 h-11 min-h-11"
+                    onClick={() => setFilters(NO_FILTERS)}
+                  >
+                    Șterge filtrele
+                  </Button>
+                ) : null
+              }
+            />
+          ) : (
+            <ClubCourseRows
+              courses={visible}
+              pendingId={pendingId}
+              onToggle={(c) => toggle.mutate({ id: c.id, active: !c.active })}
+            />
+          )}
+        </>
       ) : (
-        <div className="text-muted-foreground rounded-3xl border border-dashed py-16 text-center">
+        <div className="text-muted-foreground rounded-xl border border-dashed border-input py-16 text-center">
           Niciun curs încă.{' '}
           <Link to="/club/courses/new" className="text-primary font-semibold">
             Creează primul curs
