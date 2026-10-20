@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatScanTime, groupScans, scanCounts, waitingText } from './ScanQueueParts'
+import { formatScanTime, groupScans, scanCounts, waitingText } from './scan-queue'
 import type { ScanEntry } from './attendance-queue'
 
 const scan = (occurrenceId: string, capturedAt: string, state: ScanEntry['state']): ScanEntry => ({

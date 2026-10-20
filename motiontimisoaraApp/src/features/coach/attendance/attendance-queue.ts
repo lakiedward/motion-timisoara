@@ -208,9 +208,7 @@ export class AttendanceQueue {
             await this.change(
               (entries) =>
                 entries.map((row) =>
-                  row.id === entry.id
-                    ? { ...row, state: 'rejected', message: error.message }
-                    : row,
+                  row.id === entry.id ? { ...row, state: 'rejected', message: error.message } : row,
                 ),
               true,
             )

@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button'
 import { scanAttendanceCode } from './native-scanner'
 import { useAttendanceQueue } from './attendance-context'
 import type { AttendanceQueue } from './attendance-queue'
-import { GroupCounts, ScanRow, SyncStatus, groupScans, type ScanGroup } from './ScanQueueParts'
+import { GroupCounts, ScanRow, SyncStatus } from './ScanQueueParts'
+import { groupScans, type ScanGroup } from './scan-queue'
 
 function useQueueState(queue: AttendanceQueue) {
   const snapshot = useSyncExternalStore(queue.subscribe, queue.getSnapshot)
