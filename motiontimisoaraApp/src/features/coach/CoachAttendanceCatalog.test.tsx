@@ -207,13 +207,15 @@ test('scheletele de încărcare au înălțimea unui rând de copil, pe fiecare 
   const { container } = renderPage()
 
   await screen.findAllByText('Înot începători')
-  const schelete = await waitFor(() => {
-    const found = container.querySelectorAll('[data-slot="skeleton"]')
+  const randuri = await waitFor(() => {
+    const found = container.querySelectorAll('[aria-busy="true"] > li')
     expect(found.length).toBeGreaterThanOrEqual(3)
     return found
   })
-  schelete.forEach((s) => {
-    expect(s.className).toMatch(/(^| )h-14( |$)/)
+  randuri.forEach((r) => {
+    expect(r.className).toMatch(/flex-col/)
+    expect(r.className).toMatch(/lg:flex-row/)
+    expect(r.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThanOrEqual(4)
   })
 })
 
@@ -226,7 +228,9 @@ test('pe telefon butoanele stau pe rândul lor și împart lățimea, cu ținta 
   expect(buton.className).toMatch(/lg:min-h-9/)
   expect(buton.className).not.toMatch(/md:min-h-9/)
   expect(rand.className).toMatch(/flex-col/)
-  expect(rand.className).toMatch(/sm:flex-row/)
+  expect(rand.className).toMatch(/lg:flex-row/)
+  expect(rand.className).not.toMatch(/(sm|md):flex-row/)
+  expect(buton.parentElement!.className).toMatch(/(^| )gap-3( |$)/)
 })
 
 test('ședința mai veche de două săptămâni e marcată ca pontare retroactivă', async () => {
