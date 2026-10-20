@@ -75,8 +75,7 @@ export default function ClubCoursesPage() {
       </div>
 
       <CurrentLocationSessions
-        courseIds={courses.map((course) => course.id)}
-        courseNames={Object.fromEntries(courses.map((course) => [course.id, course.name]))}
+        courses={courses.map((c) => ({ id: c.id, name: c.name, coachName: c.coach?.name ?? null }))}
         courseSource={{ isLoading, isError: isError && !courses.length, retry: retryCourses }}
       />
       {isLoading ? (
