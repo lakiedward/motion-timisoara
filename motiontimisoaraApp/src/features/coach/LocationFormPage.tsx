@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
+import { locationWriteErrorMessage } from '@/lib/geography/shared-location-guard'
 import { toast } from 'sonner'
 
 import { createLocation, getLocationById, updateLocation } from '@/api/coach'
@@ -79,8 +80,8 @@ export default function LocationFormPage() {
       qc.invalidateQueries({ queryKey: ['my-locations'] })
       toast.success(isEdit ? 'Locație actualizată.' : 'Locație creată.')
       navigate('/coach/locations')
-    } catch {
-      toast.error('Nu am putut salva locația.')
+    } catch (e) {
+      toast.error(locationWriteErrorMessage(e, 'Nu am putut salva locația.'))
     }
   }
 

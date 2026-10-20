@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { MapPin, Pencil, Plus } from 'lucide-react'
+import { locationWriteErrorMessage } from '@/lib/geography/shared-location-guard'
 import { toast } from 'sonner'
 
 import { getMyLocations, setLocationActive } from '@/api/coach'
@@ -18,7 +19,7 @@ export default function CoachLocationsPage() {
   const toggle = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) => setLocationActive(id, active),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['my-locations'] }),
-    onError: () => toast.error('Nu am putut actualiza locația.'),
+    onError: (e) => toast.error(locationWriteErrorMessage(e, 'Nu am putut actualiza locația.')),
   })
 
   return (
