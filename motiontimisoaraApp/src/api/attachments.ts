@@ -12,6 +12,7 @@ export type AtasamentAfisabil = {
   id: string
   fel: 'IMAGE' | 'VIDEO' | 'URL'
   link: string
+  linkDescarcare: string | null
   contentType: string | null
   expiraLa: string | null
 }
@@ -20,6 +21,27 @@ function extensia(nume: string, contentType: string): string {
   const dinNume = nume.includes('.') ? nume.split('.').pop()! : ''
   if (dinNume && dinNume.length <= 5) return dinNume.toLowerCase()
   return contentType.split('/')[1] ?? 'bin'
+}
+
+const NUME_DESCARCARE = 'filmare-motiontimisoara'
+
+async function linkuriDeDescarcare(cai: string[]): Promise<Map<string, string>> {
+  const peExtensie = new Map<string, string[]>()
+  for (const cale of cai) {
+    const ext = cale.includes('.') ? cale.split('.').pop()!.toLowerCase() : 'mp4'
+    peExtensie.set(ext, [...(peExtensie.get(ext) ?? []), cale])
+  }
+  const linkuri = new Map<string, string>()
+  for (const [ext, grup] of peExtensie) {
+    const { data, error } = await supabase.storage
+      .from(BUCKET)
+      .createSignedUrls(grup, VIATA_LINK_SECUNDE, { download: `${NUME_DESCARCARE}.${ext}` })
+    if (error) throw error
+    for (const s of data ?? []) {
+      if (s.signedUrl && s.path) linkuri.set(s.path, s.signedUrl)
+    }
+  }
+  return linkuri
 }
 
 const ownerColumn = (source: AnnouncementAttachmentSource) =>
@@ -89,6 +111,12 @@ export async function getAtasamente(
       if (s.signedUrl && s.path) linkuri.set(s.path, s.signedUrl)
     }
   }
+  const descarcari = await linkuriDeDescarcare(
+    randuri
+      .filter((r) => r.type === 'VIDEO')
+      .map((r) => r.storage_path)
+      .filter((c): c is string => !!c),
+  )
 
   const pe: Record<string, AtasamentAfisabil[]> = {}
   for (const r of randuri) {
@@ -100,6 +128,7 @@ export async function getAtasamente(
       id: r.id,
       fel: r.type as AtasamentAfisabil['fel'],
       link,
+      linkDescarcare: r.storage_path ? (descarcari.get(r.storage_path) ?? null) : null,
       contentType: r.content_type,
       expiraLa: r.expires_at,
     })

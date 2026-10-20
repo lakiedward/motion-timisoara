@@ -42,10 +42,14 @@ vi.mock('@/lib/supabase', () => ({
           storage.push({ apel: 'remove', argumente: a })
           return { error: null }
         },
-        createSignedUrls: async (cai: string[]) => {
-          storage.push({ apel: 'createSignedUrls', argumente: [cai] })
+        createSignedUrls: async (cai: string[], _ttl: number, options?: { download: string }) => {
+          storage.push({
+            apel: 'createSignedUrls',
+            argumente: options ? [cai, options] : [cai],
+          })
+          const prefix = options ? `https://descarca/${options.download}/` : 'https://semnat/'
           return {
-            data: cai.map((path) => ({ path, signedUrl: `https://semnat/${path}`, error: null })),
+            data: cai.map((path) => ({ path, signedUrl: `${prefix}${path}`, error: null })),
             error: signingError,
           }
         },
@@ -158,10 +162,20 @@ test('linkurile semnate se cer o singură dată, pentru toate fișierele', async
   ]
   const pe = await getAtasamente(['an-1'])
   const semnari = storage.filter((s) => s.apel === 'createSignedUrls')
-  expect(semnari).toHaveLength(1)
-  expect(semnari[0].argumente[0] as string[]).toHaveLength(2)
+  expect(semnari).toEqual([
+    { apel: 'createSignedUrls', argumente: [['an-1/x.jpg', 'an-1/y.mp4']] },
+    {
+      apel: 'createSignedUrls',
+      argumente: [['an-1/y.mp4'], { download: 'filmare-motiontimisoara.mp4' }],
+    },
+  ])
   expect(pe['an-1']).toHaveLength(2)
   expect(pe['an-1'][0].link).toBe('https://semnat/an-1/x.jpg')
+  expect(pe['an-1'][0].linkDescarcare).toBeNull()
+  expect(pe['an-1'][1].link).toBe('https://semnat/an-1/y.mp4')
+  expect(pe['an-1'][1].linkDescarcare).toBe(
+    'https://descarca/filmare-motiontimisoara.mp4/an-1/y.mp4',
+  )
   expect(pe['an-1'][1].expiraLa).toBe('2026-09-25T09:00:00Z')
 })
 
@@ -205,6 +219,7 @@ test.each([
       id: 'image',
       fel: 'IMAGE',
       link: 'https://semnat/announcement-1/image.jpg',
+      linkDescarcare: null,
       contentType: 'image/jpeg',
       expiraLa: null,
     },
@@ -214,6 +229,7 @@ test.each([
       id: 'external-link',
       fel: 'URL',
       link: 'https://motion.example/program.pdf',
+      linkDescarcare: null,
       contentType: null,
       expiraLa: null,
     },
