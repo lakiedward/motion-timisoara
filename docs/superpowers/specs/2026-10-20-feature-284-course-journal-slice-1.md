@@ -7,11 +7,15 @@ Owner decisions of 2026-08-26 (recorded on feature #284) and the correction of 2
 ## Already in production
 
 - Migration 00022 (`20260826100816`): `announcement_attachments.club_announcement_id` with `ON DELETE CASCADE`, exactly one owner column enforced by `announcement_attachments_owner_ck`, and `expires_at` for videos, indexed.
-- Migration 00023 (`20260826100903`): storage policies follow the announcement. A file is readable when its first path segment is an announcement the reader can see; the announcement RLS limits that to the parents with an active enrollment, the course coach and the owning club. Upload and delete belong to the announcement owner or ADMIN.
+- Migration 00023 (`20260826100903`): storage policies follow the announcement. A file is readable when its first path segment is an announcement the reader can see; the announcement RLS limits that to the parents with an active enrollment, the owning club and ADMIN. Upload and delete belong to the announcement owner or ADMIN.
 - Migration 00024 (`20260827083602`) and the `purge-expired-media` edge function: a daily job deletes expired video files and rows.
 - `src/lib/media.ts` validates and resizes before upload; `src/api/attachments.ts` uploads, rolls back uploaded files when the row insert fails, and serves signed links valid for one hour.
 
-Slice 1 therefore needs no new migration and no production write.
+Slice 1 needed no migration for the upload itself.
+
+## Course coach read access
+
+A read-only impersonation in production on 2026-10-20 showed the coach of a targeted course could not read the club announcement or its files, although this slice's scope names the coach among the readers. Migration 00097 (approved by the owner on 2026-10-20) adds the coach of the targeted course to `club_announcements_select`, for published announcements only, and only when the course belongs to the announcing club; club-wide, activity and camp announcements stay as before. The attachment and storage policies follow the announcement, so the coach reads the files too. `supabase/tests/club-announcement-coach-read.sql` covers the coach, another coach, the enrolled parent and a parent of another course.
 
 ## This change
 

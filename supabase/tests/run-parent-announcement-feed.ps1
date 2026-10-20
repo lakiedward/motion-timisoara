@@ -33,10 +33,10 @@ try {
         Start-Sleep -Milliseconds 500
     }
     if (-not $ready) { throw 'Isolated PostgreSQL did not become ready within 30 seconds.' }
-    foreach ($file in @('00019_announcement_views.sql', '00021_club_announcement_audience_ownership.sql', '00055_camp_announcement_audience.sql', '00056_parent_announcement_feed.sql')) {
+    foreach ($file in @('00019_announcement_views.sql', '00021_club_announcement_audience_ownership.sql', '00055_camp_announcement_audience.sql', '00056_parent_announcement_feed.sql', '00097_club_announcements_course_coach_read.sql')) {
         Invoke-AnnouncementDocker @('cp', (Join-Path $PSScriptRoot "../migrations/$file"), "${containerName}:/tmp/$file")
     }
-    foreach ($file in @('parent-announcement-feed-bootstrap.sql', 'parent-announcement-feed.sql')) {
+    foreach ($file in @('parent-announcement-feed-bootstrap.sql', 'parent-announcement-feed.sql', 'club-announcement-coach-read.sql')) {
         Invoke-AnnouncementDocker @('cp', (Join-Path $PSScriptRoot $file), "${containerName}:/tmp/$file")
         Invoke-AnnouncementDocker @('exec', $containerName, 'psql', '-X', '-U', 'supabase_admin', '-d', $database, '-v', 'ON_ERROR_STOP=1', '-f', "/tmp/$file")
     }

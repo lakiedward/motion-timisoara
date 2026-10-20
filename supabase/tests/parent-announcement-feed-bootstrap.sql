@@ -231,6 +231,7 @@ CREATE POLICY "profiles_select" ON public.profiles FOR SELECT TO "anon", "authen
 \i /tmp/00021_club_announcement_audience_ownership.sql
 \i /tmp/00055_camp_announcement_audience.sql
 \i /tmp/00056_parent_announcement_feed.sql
+\i /tmp/00097_club_announcements_course_coach_read.sql
 CREATE TABLE public.test_results (label TEXT NOT NULL);
 GRANT SELECT, INSERT ON public.test_results TO authenticated, anon;
 CREATE FUNCTION public.test_uuid(n INTEGER) RETURNS UUID LANGUAGE sql IMMUTABLE AS $$
