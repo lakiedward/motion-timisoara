@@ -1,381 +1,243 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
-import { toast } from 'sonner'
+import { useQuery } from '@tanstack/react-query'
+import { ArrowLeft, Search } from 'lucide-react'
 
-import { AttendanceScanner, AttendanceOfflineQueue } from './attendance/AttendanceScanner'
-import { AttendanceError } from '@/api/attendance'
-import { childAge } from '@/api/account'
-import {
-  getCoachSessions,
-  getSessionRoster,
-  markAttendance,
-  markManyPresent,
-  PAST_VISIBLE_DAYS,
-  SESSION_GROUP_LIMIT,
-  type CoachSession,
-  type RosterEntry,
-} from '@/api/coach'
-import { Badge } from '@/components/ui/badge'
+import type { AdminSession } from '@/api/attendance/admin-sessions'
+import { getCoachSessions, SESSION_GROUP_LIMIT } from '@/api/coach'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import { cn } from '@/lib/utils'
+import { Input } from '@/components/ui/input'
+import { StatusView } from '@/components/ui/status-view'
+import {
+  NO_SESSION_FILTERS,
+  countSessions,
+  filterSessions,
+  hasSessionFilters,
+  sessionStatusCounts,
+  sportCounts,
+  type SessionStatus,
+} from '@/features/admin/attendance/attendance-overview'
+import { CourseFilterBar, type FilterOption } from '@/features/admin/courses/CourseFilterBar'
+import { ClubLocationListSkeleton } from '@/features/club/locations/ClubLocationListSkeleton'
 import { CoachLocationPanel } from '@/features/live-location/CoachLocationPanel'
+import { cn } from '@/lib/utils'
+import { AttendanceOfflineQueue } from './attendance/AttendanceScanner'
+import { CoachSessionCatalog } from './attendance/CoachSessionCatalog'
+import { SessionDayList } from './attendance/SessionDayList'
+import {
+  nearestSession,
+  recentPast,
+  sessionWhen,
+  splitByTime,
+  toSessionList,
+} from './attendance/coach-session-list'
 
-const WEEKDAYS = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă']
+const STATUS_OPTIONS: FilterOption<SessionStatus>[] = [
+  { value: 'all', label: 'Toate' },
+  { value: 'unmarked', label: 'Nepontate' },
+  { value: 'today', label: 'Azi' },
+  { value: 'upcoming', label: 'Următoare' },
+  { value: 'past', label: 'Trecute' },
+]
 
-function formatWhen(startsAt: string) {
-  const d = new Date(startsAt)
-  const date = d.toLocaleDateString('ro-RO')
-  const time = d.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })
-  return `${WEEKDAYS[d.getDay()]} ${date} · ${time}`
-}
-
-function isRetroactive(startsAt: string) {
-  return Date.now() - new Date(startsAt).getTime() > PAST_VISIBLE_DAYS * 24 * 60 * 60 * 1000
-}
+const DEFAULT_FILTERS = { ...NO_SESSION_FILTERS, status: 'all' as SessionStatus }
 
 export default function CoachAttendancePage() {
-  const qc = useQueryClient()
-  const {
-    data: groups,
-    isLoading,
-    isError,
-    refetch,
-  } = useQuery({
+  const [filters, setFilters] = useState(DEFAULT_FILTERS)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [markingOnPhone, setMarkingOnPhone] = useState(false)
+  const [showOlder, setShowOlder] = useState(false)
+
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['coach-sessions'],
     queryFn: getCoachSessions,
     retry: false,
   })
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [showOlder, setShowOlder] = useState(false)
-  const [markingOnPhone, setMarkingOnPhone] = useState(false)
+  const items = useMemo(() => toSessionList(data), [data])
 
-  const upcoming = groups?.upcoming ?? []
-  const past = groups?.past ?? []
-  const total = upcoming.length + past.length
+  const { query, status } = filters
+  const searching = query.trim().length > 0
+  const counts = useMemo(() => sessionStatusCounts(items), [items])
+  const sports = useMemo(
+    () => sportCounts(filterSessions(items, { status, sport: '', query: '' })),
+    [items, status],
+  )
+  const visible = useMemo(() => filterSessions(items, filters), [items, filters])
+  const { upcoming, past } = splitByTime(visible)
+  const recent = recentPast(past)
+  const fold = !showOlder && !searching && status !== 'unmarked' && recent.length < past.length
+  const shownPast = fold && (upcoming.length || recent.length) ? recent : past
+  const olderCount = past.length - shownPast.length
+  const listed = [...upcoming, ...shownPast]
 
-  const recentCount = groups?.pastRecentCount ?? 0
-  const foldPast = !showOlder && (upcoming.length > 0 || recentCount > 0)
-  const visiblePast = foldPast ? past.slice(0, recentCount) : past
-  const olderCount = past.length - visiblePast.length
+  const sel = listed.find((s) => s.id === selectedId) ?? nearestSession(listed)
 
-  const ordered = [...upcoming, ...visiblePast]
-  const sel = ordered.find((s) => s.id === selectedId) ?? ordered[0] ?? null
-
-  const {
-    data: roster = [],
-    isLoading: rosterLoading,
-    isError: rosterError,
-    refetch: refetchRoster,
-  } = useQuery({
-    queryKey: ['roster', sel?.id],
-    queryFn: () => getSessionRoster(sel!.course!.id, sel!.id),
-    enabled: !!sel?.course,
-    retry: false,
-  })
-
-  const marked = roster.filter((r) => r.status !== null).length
-  const unmarked = roster.filter((r) => r.status === null)
-
-  const invalidate = (occurrenceId: string) => {
-    qc.invalidateQueries({ queryKey: ['roster', occurrenceId] })
-    qc.invalidateQueries({ queryKey: ['coach-sessions'] })
+  const set = (patch: Partial<typeof filters>) => setFilters((f) => ({ ...f, ...patch }))
+  const select = (s: AdminSession) => {
+    setSelectedId(s.id)
+    setMarkingOnPhone(true)
   }
 
-  const mark = useMutation({
-    mutationFn: ({
-      occurrenceId,
-      childId,
-      status,
-    }: {
-      occurrenceId: string
-      childId: string
-      status: RosterEntry['status']
-      childName: string
-    }) => markAttendance(occurrenceId, childId, status),
-    onSuccess: (_result, variables) => invalidate(variables.occurrenceId),
-    onError: (error, v) =>
-      toast.error(
-        `Nu am putut salva prezența pentru ${v.childName}.${error instanceof AttendanceError ? ` ${error.message}` : ''}`,
-      ),
-  })
-
-  const markAll = useMutation({
-    mutationFn: ({ occurrenceId, childIds }: { occurrenceId: string; childIds: string[] }) =>
-      markManyPresent(occurrenceId, childIds),
-    onSuccess: (_result, variables) => invalidate(variables.occurrenceId),
-    onError: () => toast.error('Nu am putut marca toți copiii prezenți.'),
-  })
-
-  const busy = mark.isPending || markAll.isPending
-
-  const catalogActions = roster.length ? (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-muted-foreground text-sm">
-        {marked} din {roster.length} pontați
-      </span>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="h-11 min-h-11 lg:h-9 lg:min-h-9"
-        disabled={busy || !unmarked.length}
-        onClick={() =>
-          sel &&
-          markAll.mutate({ occurrenceId: sel.id, childIds: unmarked.map((row) => row.child_id) })
-        }
-      >
-        Toți prezenți
-      </Button>
-    </div>
-  ) : null
-
-  const rosterPanel = !sel ? null : rosterLoading ? (
-    <div className="space-y-2">
-      {[0, 1, 2, 3].map((i) => (
-        <Skeleton key={i} className="h-32 rounded-3xl lg:h-[70px]" />
-      ))}
-    </div>
-  ) : rosterError && !roster.length ? (
-    <div role="alert" className="rounded-3xl border border-dashed py-16 text-center">
-      <p className="text-foreground font-medium">Nu am putut încărca lista de copii.</p>
-      <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetchRoster()}>
-        Reîncearcă
-      </Button>
-    </div>
-  ) : roster.length ? (
-    <ul className="space-y-2">
-      {roster.map((r) => (
-        <li
-          key={r.child_id}
-          className="bg-card shadow-card flex flex-col gap-3 rounded-3xl border p-3 lg:flex-row lg:items-center lg:justify-between"
-        >
-          <div className="min-w-0">
-            <div className="line-clamp-1 font-medium lg:line-clamp-2">{r.child_name}</div>
-            <div className="text-muted-foreground text-sm">{childAge(r.child_birth_date)} ani</div>
-
-            <Link
-              to={`/coach/children/${r.child_id}/qr`}
-              className="text-primary inline-flex min-h-11 items-center text-sm underline-offset-4 hover:underline lg:min-h-0"
-            >
-              Cod QR
-            </Link>
-          </div>
-          <div className="flex gap-3 lg:shrink-0">
-            {(['PRESENT', 'ABSENT'] as const).map((status) => {
-              const active = r.status === status
-              return (
-                <Button
-                  key={status}
-                  size="sm"
-                  variant={active ? (status === 'PRESENT' ? 'default' : 'destructive') : 'outline'}
-                  aria-pressed={active}
-                  disabled={busy}
-                  className="h-11 min-h-11 flex-1 lg:h-9 lg:min-h-9 lg:flex-none"
-                  onClick={() =>
-                    mark.mutate({
-                      occurrenceId: sel.id,
-                      childId: r.child_id,
-                      childName: r.child_name,
-                      status: active ? null : status,
-                    })
-                  }
-                >
-                  {status === 'PRESENT' ? 'Prezent' : 'Absent'}
-                </Button>
-              )
-            })}
-          </div>
-        </li>
-      ))}
-    </ul>
-  ) : (
-    <div className="text-muted-foreground bg-card rounded-3xl border border-dashed px-6 py-16 text-center">
-      Niciun copil înscris la acest curs încă. Înscrierile le fac părinții din contul lor — lista se
-      completează singură pe măsură ce se înscriu.
+  const header = (
+    <div className="mb-4 flex flex-wrap items-center gap-3">
+      <h1 className="font-display text-foreground mr-auto text-2xl font-bold">
+        Prezență
+        {items.length > 0 && (
+          <span className="text-muted-foreground ml-2 text-base font-normal">
+            ({items.length})
+          </span>
+        )}
+      </h1>
+      <div className="relative order-last w-full md:order-none md:w-80">
+        <Search
+          aria-hidden="true"
+          className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+        />
+        <Input
+          type="search"
+          value={query}
+          onChange={(e) => set({ query: e.target.value })}
+          placeholder="Caută curs sau locație"
+          aria-label="Caută ședințe după curs sau locație"
+          className="h-touch-target min-h-touch-target pl-9 lg:h-9 lg:min-h-9"
+        />
+      </div>
     </div>
   )
 
-  function sessionCard(s: CoachSession) {
-    const active = sel?.id === s.id
-    return (
-      <li key={s.id} className={cn(markingOnPhone && !active && 'hidden md:block')}>
-        <button
-          onClick={() => {
-            setSelectedId(s.id)
-            setMarkingOnPhone(true)
-          }}
-          aria-current={active ? 'true' : undefined}
-          className={cn(
-            'shadow-card w-full rounded-3xl border-2 p-4 text-left text-sm transition-colors',
-            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-            active ? 'border-primary bg-primary/10' : 'border-border bg-card hover:bg-accent',
+  const filtered =
+    visible.length === 0 ? (
+      <StatusView
+        state="empty"
+        title="Nicio ședință pentru filtrele alese."
+        text="Schimbă căutarea sau filtrele."
+        action={
+          hasSessionFilters(filters) ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-3 h-touch-target min-h-touch-target"
+              onClick={() => setFilters(DEFAULT_FILTERS)}
+            >
+              Șterge filtrele
+            </Button>
+          ) : null
+        }
+      />
+    ) : (
+      <div className="grid gap-6 md:grid-cols-[1fr_1.2fr]">
+        <div className="min-w-0 space-y-3 lg:-mx-1.5 lg:max-h-[75vh] lg:overflow-y-auto lg:px-1.5">
+          {markingOnPhone && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-touch-target min-h-touch-target -ml-2 md:hidden"
+              onClick={() => setMarkingOnPhone(false)}
+            >
+              <ArrowLeft /> Înapoi la ședințe
+            </Button>
           )}
-        >
-          <div className="flex items-start justify-between gap-2">
-            <span className="line-clamp-2 min-w-0 font-semibold">{s.course?.name}</span>
-            <Badge variant={s.attendance_recorded ? 'success' : 'outline'}>
-              {s.attendance_recorded ? 'Pontată' : 'Nepontată'}
-            </Badge>
-          </div>
-          <div className="text-muted-foreground mt-1">{formatWhen(s.starts_at)}</div>
-          <div className="text-muted-foreground mt-0.5">
-            {s.course?.location?.name ?? '—'} · {s.enrolled_count}{' '}
-            {s.enrolled_count === 1 ? 'copil' : 'copii'}
-          </div>
-        </button>
-
-        {active && markingOnPhone && (
-          <div className="mt-3 space-y-3 md:hidden">
-            {sel && isRetroactive(sel.starts_at) && (
-              <Badge variant="outline">Pontare retroactivă</Badge>
-            )}
-            {sel && (
-              <AttendanceScanner
-                occurrenceId={sel.id}
-                label={`${sel.course?.name} · ${formatWhen(sel.starts_at)}`}
-              />
-            )}
-            {catalogActions}
-            {rosterPanel}
-          </div>
-        )}
-      </li>
+          {[
+            { title: 'Următoarele', list: upcoming },
+            { title: 'Trecute', list: shownPast },
+          ].map(({ title, list }) => (
+            <SessionDayList
+              key={title}
+              title={title}
+              items={list}
+              query={query}
+              selectedId={sel?.id ?? null}
+              hideOthers={markingOnPhone}
+              onSelect={select}
+              renderInline={(s) =>
+                markingOnPhone ? (
+                  <div className="space-y-3 border-t p-3 md:hidden">
+                    <CoachSessionCatalog session={s} />
+                  </div>
+                ) : null
+              }
+            />
+          ))}
+          {olderCount > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              className={cn(
+                'h-touch-target min-h-touch-target w-full',
+                markingOnPhone && 'hidden md:flex',
+              )}
+              onClick={() => setShowOlder(true)}
+            >
+              Vezi mai mult ({olderCount})
+            </Button>
+          )}
+          {data?.truncated && (
+            <p className="text-muted-foreground text-xs">
+              Se afișează primele {SESSION_GROUP_LIMIT} de ședințe din fiecare grup. Ai mai multe
+              ședințe decât atât.
+            </p>
+          )}
+        </div>
+        <div className="hidden min-w-0 md:block lg:max-h-[75vh] lg:overflow-y-auto">
+          {sel && (
+            <div className="bg-card space-y-3 rounded-xl border p-4">
+              <h2 className="font-display text-foreground font-bold wrap-anywhere">
+                {sel.courseName}
+                <span className="text-muted-foreground block text-sm font-normal">
+                  {sessionWhen(sel)}
+                </span>
+              </h2>
+              <CoachSessionCatalog session={sel} />
+            </div>
+          )}
+        </div>
+      </div>
     )
-  }
 
   return (
     <div>
-      <h1 className="font-display text-foreground mb-6 text-2xl font-bold">Prezență</h1>
+      {header}
       <CoachLocationPanel
         occurrenceId={sel?.id ?? null}
-        startsAt={sel?.starts_at}
-        endsAt={sel?.ends_at}
+        startsAt={sel?.startsAt}
+        endsAt={sel?.endsAt}
       />
-
       {!sel && !isLoading && <AttendanceOfflineQueue />}
       {isLoading ? (
-        <div className="grid gap-6 md:grid-cols-[1fr_1.2fr]">
-          <div className="space-y-2">
-            {[0, 1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-28 rounded-3xl" />
-            ))}
-          </div>
-          <Skeleton className="hidden h-40 rounded-3xl md:block" />
-        </div>
-      ) : isError && !total ? (
-        <div role="alert" className="rounded-3xl border border-dashed py-16 text-center">
-          <p className="text-foreground font-medium">Nu am putut încărca ședințele.</p>
-          <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetch()}>
-            Reîncearcă
-          </Button>
-        </div>
-      ) : total ? (
-        <div className="grid gap-6 md:grid-cols-[1fr_1.2fr]">
-          <div className="min-w-0 space-y-2 lg:-mx-1.5 lg:max-h-[70vh] lg:overflow-y-auto lg:px-1.5">
-            {markingOnPhone && (
-              <Button
-                type="button"
-                variant="ghost"
-                className="h-11 min-h-11 -ml-2 md:hidden"
-                onClick={() => setMarkingOnPhone(false)}
-              >
-                <ArrowLeft /> Înapoi la ședințe
-              </Button>
-            )}
-
-            <h2
-              className={cn(
-                'text-muted-foreground text-sm font-semibold',
-                markingOnPhone && 'hidden md:block',
-              )}
-            >
-              Ședințe ({upcoming.length + visiblePast.length})
-            </h2>
-
-            {upcoming.length > 0 && (
-              <section className="space-y-2">
-                <h3
-                  className={cn(
-                    'text-muted-foreground pt-1 text-xs font-semibold uppercase',
-                    markingOnPhone && 'hidden md:block',
-                  )}
-                >
-                  Următoarele
-                </h3>
-                <ul className="space-y-2">{upcoming.map(sessionCard)}</ul>
-              </section>
-            )}
-
-            {past.length > 0 && (
-              <section className="space-y-2">
-                <h3
-                  className={cn(
-                    'text-muted-foreground pt-3 text-xs font-semibold uppercase',
-                    markingOnPhone && 'hidden md:block',
-                  )}
-                >
-                  Trecute
-                </h3>
-                <ul className="space-y-2">{visiblePast.map(sessionCard)}</ul>
-                {!showOlder && olderCount > 0 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={cn('h-11 min-h-11 w-full', markingOnPhone && 'hidden md:flex')}
-                    onClick={() => setShowOlder(true)}
-                  >
-                    Vezi mai mult ({olderCount})
-                  </Button>
-                )}
-              </section>
-            )}
-
-            {groups?.truncated && (
-              <p
-                className={cn(
-                  'text-muted-foreground pt-2 text-xs',
-                  markingOnPhone && 'hidden md:block',
-                )}
-              >
-                Se afișează primele {SESSION_GROUP_LIMIT} de ședințe din fiecare grup. Ai mai multe
-                ședințe decât atât.
-              </p>
-            )}
-          </div>
-
-          <div className="hidden min-w-0 md:flex md:flex-col md:gap-2 lg:max-h-[70vh] lg:overflow-hidden">
-            <div className="space-y-2">
-              <h2 className="text-muted-foreground text-sm font-semibold">
-                {sel ? `Prezență · ${sel.course?.name} · ${formatWhen(sel.starts_at)}` : ''}
-                {sel && isRetroactive(sel.starts_at) && (
-                  <Badge variant="outline" className="ml-2">
-                    Pontare retroactivă
-                  </Badge>
-                )}
-              </h2>
-              {sel && (
-                <AttendanceScanner
-                  occurrenceId={sel.id}
-                  label={`${sel.course?.name} · ${formatWhen(sel.starts_at)}`}
-                />
-              )}
-              {catalogActions}
-            </div>
-            <div className="-mx-1.5 overflow-y-auto px-1.5">{rosterPanel}</div>
-          </div>
-        </div>
+        <ClubLocationListSkeleton />
+      ) : isError && !items.length ? (
+        <StatusView state="error" title="Nu am putut încărca ședințele." onRetry={() => refetch()} />
+      ) : !items.length ? (
+        <StatusView
+          state="empty"
+          title="Nicio ședință programată."
+          text="Adaugă ședințe la cursurile tale."
+          action={
+            <Button asChild className="mt-3 h-touch-target min-h-touch-target">
+              <Link to="/coach/courses">Mergi la Cursurile mele</Link>
+            </Button>
+          }
+        />
       ) : (
-        <div className="rounded-3xl border border-dashed py-16 text-center">
-          <p className="text-muted-foreground">
-            Nicio ședință programată. Adaugă ședințe la cursurile tale.
+        <>
+          <CourseFilterBar
+            status={status}
+            sport={filters.sport}
+            statusCounts={counts}
+            sports={sports}
+            statusOptions={STATUS_OPTIONS}
+            selectId="coach-attendance-sport"
+            onStatus={(s) => set({ status: s })}
+            onSport={(sport) => set({ sport })}
+          />
+          <p role="status" className="text-muted-foreground mb-2 text-sm">
+            {visible.length > 0 &&
+              (searching
+                ? `${visible.length} din ${countSessions(items.length)}`
+                : countSessions(listed.length))}
           </p>
-          <Button asChild className="mt-4 h-11 min-h-11">
-            <Link to="/coach/courses">Mergi la Cursurile mele</Link>
-          </Button>
-        </div>
+          {filtered}
+        </>
       )}
     </div>
   )

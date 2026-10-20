@@ -56,7 +56,7 @@ function ScannerControls({
   return (
     <section
       aria-label="Scanare QR pentru prezență"
-      className="bg-card mb-3 space-y-3 rounded-3xl border p-4"
+      className="bg-card space-y-3 rounded-xl border p-4"
     >
       <div>
         <h2 className="font-semibold">Scanează prezența</h2>

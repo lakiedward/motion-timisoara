@@ -7,14 +7,8 @@ import { toast } from 'sonner'
 
 import CoachAttendancePage from './CoachAttendancePage'
 vi.mock('@/features/live-location/CoachLocationPanel', () => ({ CoachLocationPanel: () => null }))
-import {
-  getCoachSessions,
-  getSessionRoster,
-  markAttendance,
-  markManyPresent,
-  type CoachSession,
-  type RosterEntry,
-} from '@/api/coach'
+import { getCoachSessions, getSessionRoster, type CoachSession, type RosterEntry } from '@/api/coach'
+import { markAttendance, markManyPresent } from '@/api/attendance'
 
 vi.mock('@/api/coach', () => ({
   getCoachSessions: vi.fn(),
@@ -23,6 +17,11 @@ vi.mock('@/api/coach', () => ({
   markManyPresent: vi.fn(),
   PAST_VISIBLE_DAYS: 14,
   SESSION_GROUP_LIMIT: 100,
+}))
+vi.mock('@/api/attendance', () => ({
+  markAttendance: vi.fn(),
+  markManyPresent: vi.fn(),
+  AttendanceError: class extends Error {},
 }))
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
@@ -47,8 +46,9 @@ function session(over: Partial<CoachSession> & { id: string }): CoachSession {
     course_id: 'crs',
     starts_at: '2026-08-20T14:00:00.000Z',
     ends_at: '2026-08-20T15:00:00.000Z',
-    course: { id: 'crs', name: 'Înot începători', location: { name: 'Bazin' } },
+    course: { id: 'crs', name: 'Înot începători', location: { name: 'Bazin' }, sport: null },
     enrolled_count: 3,
+    marked_count: 0,
     attendance_recorded: false,
     ...over,
   } as CoachSession
@@ -91,15 +91,13 @@ afterEach(() => {
 
 test('antetul catalogului conține cursul, ziua, data și ora ședinței', async () => {
   renderCatalog(trioCopii())
-  const antet = await screen.findByRole('heading', { name: /Prezență · Înot începători/ })
-  expect(antet.textContent).toMatch(
-    /(Luni|Marți|Miercuri|Joi|Vineri|Sâmbătă|Duminică) \d{2}\.\d{2}\.\d{4} · \d{2}:\d{2}/,
-  )
+  const antet = await screen.findByRole('heading', { name: /^Înot începători/ })
+  expect(antet.textContent).toMatch(/(Ieri|Azi|Mâine), joi 20 august · \d{2}:\d{2}/)
 })
 
 test('contorul arată câți copii sunt pontați din total', async () => {
   renderCatalog(trioCopii())
-  expect(await screen.findByText('2 din 3 pontați')).toBeInTheDocument()
+  expect(await screen.findByText('2 din 3 copii pontați')).toBeInTheDocument()
 })
 
 test('Toți prezenți trimite doar copiii nepontați', async () => {
@@ -121,22 +119,22 @@ test('reapăsarea butonului activ șterge pontarea, o apăsare nouă o setează'
   const user = userEvent.setup()
   renderCatalog(trioCopii())
   const randAna = (await screen.findByText('Ana Dumitrescu')).closest('li')!
-  await user.click(within(randAna).getByRole('button', { name: 'Prezent' }))
+  await user.click(within(randAna).getByRole('button', { name: /^Prezent/ }))
   expect(mockedMark).toHaveBeenLastCalledWith('s1', 'c1', null)
 
   const randLuca = screen.getByText('Luca Georgescu').closest('li')!
-  await user.click(within(randLuca).getByRole('button', { name: 'Prezent' }))
+  await user.click(within(randLuca).getByRole('button', { name: /^Prezent/ }))
   expect(mockedMark).toHaveBeenLastCalledWith('s1', 'c3', 'PRESENT')
 })
 
 test('butonul activ e marcat pentru tehnologiile asistive', async () => {
   renderCatalog(trioCopii())
   const randAna = (await screen.findByText('Ana Dumitrescu')).closest('li')!
-  expect(within(randAna).getByRole('button', { name: 'Prezent' })).toHaveAttribute(
+  expect(within(randAna).getByRole('button', { name: /^Prezent/ })).toHaveAttribute(
     'aria-pressed',
     'true',
   )
-  expect(within(randAna).getByRole('button', { name: 'Absent' })).toHaveAttribute(
+  expect(within(randAna).getByRole('button', { name: /^Absent/ })).toHaveAttribute(
     'aria-pressed',
     'false',
   )
@@ -147,7 +145,7 @@ test('mesajul de eroare la salvare conține numele copilului', async () => {
   mockedMark.mockRejectedValueOnce(new Error('boom'))
   renderCatalog(trioCopii())
   const randLuca = (await screen.findByText('Luca Georgescu')).closest('li')!
-  await user.click(within(randLuca).getByRole('button', { name: 'Absent' }))
+  await user.click(within(randLuca).getByRole('button', { name: /^Absent/ }))
   await waitFor(() =>
     expect(toast.error).toHaveBeenCalledWith('Nu am putut salva prezența pentru Luca Georgescu.'),
   )
@@ -172,7 +170,7 @@ test('un refetch eșuat păstrează copiii deja încărcați, fără să arate e
   expect(await screen.findByText('Ana Dumitrescu')).toBeInTheDocument()
 
   const randLuca = screen.getByText('Luca Georgescu').closest('li')!
-  await user.click(within(randLuca).getByRole('button', { name: 'Prezent' }))
+  await user.click(within(randLuca).getByRole('button', { name: /^Prezent/ }))
   await waitFor(() => expect(mockedRoster).toHaveBeenCalledTimes(2))
 
   expect(screen.getByText('Ana Dumitrescu')).toBeInTheDocument()
@@ -188,15 +186,19 @@ test('lista goală de copii explică rolul părinților și nu oferă niciun but
   expect(screen.queryByText(/din \d+ pontați/)).not.toBeInTheDocument()
 })
 
-test('rândul arată vârsta, se oprește la două rânduri și are forma cardurilor site-ului', async () => {
+test('rândul arată vârsta și codul QR, iar lista e plată, ca la /admin/attendance', async () => {
   renderCatalog(trioCopii())
   const nume = await screen.findByText('Ana Dumitrescu')
   const rand = nume.closest('li')!
   expect(within(rand).getByText(/^\d+ ani$/)).toBeInTheDocument()
-  expect(nume.className).toMatch(/line-clamp-1/)
-  expect(nume.className).toMatch(/lg:line-clamp-2/)
-  expect(rand.className).toMatch(/rounded-3xl/)
-  expect(rand.className).toMatch(/shadow-card/)
+  expect(within(rand).getByRole('link', { name: 'Cod QR' })).toHaveAttribute(
+    'href',
+    '/coach/children/c1/qr',
+  )
+  const lista = rand.closest('ul')!
+  expect(lista.className).toMatch(/rounded-xl/)
+  expect(lista.className).toMatch(/divide-y/)
+  expect(lista.className).not.toMatch(/shadow/)
 })
 
 test('scheletele de încărcare au înălțimea unui rând de copil, pe fiecare viewport', async () => {
@@ -204,28 +206,27 @@ test('scheletele de încărcare au înălțimea unui rând de copil, pe fiecare 
   mockedRoster.mockReturnValue(new Promise(() => {}))
   const { container } = renderPage()
 
-  await screen.findByText('Înot începători')
+  await screen.findAllByText('Înot începători')
   const schelete = await waitFor(() => {
     const found = container.querySelectorAll('[data-slot="skeleton"]')
     expect(found.length).toBeGreaterThanOrEqual(3)
     return found
   })
   schelete.forEach((s) => {
-    expect(s.className).toMatch(/(^| )h-32( |$)/)
-    expect(s.className).toMatch(/lg:h-\[70px\]/)
+    expect(s.className).toMatch(/(^| )h-14( |$)/)
   })
 })
 
-test('sub 1024 px butoanele stau pe rândul lor și împart lățimea, cu ținta de tap întreagă', async () => {
+test('pe telefon butoanele stau pe rândul lor și împart lățimea, cu ținta de tap întreagă', async () => {
   renderCatalog(trioCopii())
   const rand = (await screen.findByText('Ana Dumitrescu')).closest('li')!
-  const buton = within(rand).getByRole('button', { name: 'Prezent' })
-  expect(buton.className).toMatch(/min-h-11/)
+  const buton = within(rand).getByRole('button', { name: /^Prezent/ })
+  expect(buton.className).toMatch(/min-h-touch-target/)
   expect(buton.className).toMatch(/flex-1/)
   expect(buton.className).toMatch(/lg:min-h-9/)
   expect(buton.className).not.toMatch(/md:min-h-9/)
   expect(rand.className).toMatch(/flex-col/)
-  expect(rand.className).toMatch(/lg:flex-row/)
+  expect(rand.className).toMatch(/sm:flex-row/)
 })
 
 test('ședința mai veche de două săptămâni e marcată ca pontare retroactivă', async () => {
@@ -242,7 +243,7 @@ test('ședința mai veche de două săptămâni e marcată ca pontare retroactiv
 
 test('ședința recentă nu e marcată ca retroactivă', async () => {
   renderCatalog(trioCopii())
-  await screen.findByText('2 din 3 pontați')
+  await screen.findByText('2 din 3 copii pontați')
   expect(screen.queryByText('Pontare retroactivă')).not.toBeInTheDocument()
 })
 
@@ -260,13 +261,13 @@ test.each([
   )
   mockedRoster.mockResolvedValue(trioCopii())
   renderPage()
-  await screen.findByText('2 din 3 pontați')
+  await screen.findByText('2 din 3 copii pontați')
   expect(screen.queryAllByText('Pontare retroactivă').length > 0).toBe(retroactive)
 })
 
 test('textul de rezervă Selectează o ședință nu mai există', async () => {
   renderCatalog(trioCopii())
-  await screen.findByText('2 din 3 pontați')
+  await screen.findByText('2 din 3 copii pontați')
   expect(screen.queryByText(/Selectează o ședință/)).not.toBeInTheDocument()
 })
 
@@ -307,6 +308,6 @@ test('pe telefon catalogul stă sub ședința aleasă, cu contor și acțiune î
   await user.click(card)
   const panou = card.closest('li')!.querySelector('div.md\\:hidden') as HTMLElement
   expect(panou).not.toBeNull()
-  expect(within(panou).getByText('2 din 3 pontați')).toBeInTheDocument()
+  expect(within(panou).getByText('2 din 3 copii pontați')).toBeInTheDocument()
   expect(within(panou).getByRole('button', { name: 'Toți prezenți' })).toBeInTheDocument()
 })
