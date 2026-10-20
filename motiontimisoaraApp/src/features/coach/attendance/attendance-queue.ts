@@ -16,14 +16,32 @@ const entrySchema = z
   })
   .refine((entry) => entry.state === 'confirmed' || !!entry.token)
 
-const storedSchema = z.object({ version: z.literal(1), entries: z.array(entrySchema).max(1000) })
+const storedSchema = z.object({
+  version: z.literal(1),
+  entries: z.array(entrySchema).max(1000),
+  syncedAt: z.string().datetime().optional(),
+})
 export type ScanEntry = z.infer<typeof entrySchema>
-type Snapshot = { entries: ScanEntry[]; ready: boolean; syncing: boolean; error: string | null }
+type Snapshot = {
+  entries: ScanEntry[]
+  ready: boolean
+  syncing: boolean
+  waiting: boolean
+  syncedAt: string | null
+  error: string | null
+}
 type Storage = { get: () => Promise<string | null>; set: (value: string) => Promise<void> }
 type Sender = (body: AttendanceRequest, actorId: string) => Promise<AttendanceResult>
 
 export class AttendanceQueue {
-  private snapshot: Snapshot = { entries: [], ready: false, syncing: false, error: null }
+  private snapshot: Snapshot = {
+    entries: [],
+    ready: false,
+    syncing: false,
+    waiting: false,
+    syncedAt: null,
+    error: null,
+  }
   private listeners = new Set<() => void>()
   private writes = Promise.resolve()
   private loading: Promise<void> | null = null
@@ -66,8 +84,13 @@ export class AttendanceQueue {
     this.loading = (async () => {
       try {
         const raw = await this.storage.get()
-        const entries = raw ? storedSchema.parse(JSON.parse(raw)).entries : []
-        this.publish({ entries, ready: true, error: null })
+        const stored = raw ? storedSchema.parse(JSON.parse(raw)) : null
+        this.publish({
+          entries: stored?.entries ?? [],
+          syncedAt: stored?.syncedAt ?? null,
+          ready: true,
+          error: null,
+        })
       } catch {
         this.publish({
           error: 'Scanările salvate nu pot fi citite. Reîncearcă înainte să scanezi.',
@@ -87,11 +110,14 @@ export class AttendanceQueue {
     this.active = false
   }
 
-  private change(transform: (entries: ScanEntry[]) => ScanEntry[]) {
+  private change(transform: (entries: ScanEntry[]) => ScanEntry[], synced = false) {
     const write = this.writes.then(async () => {
       const entries = transform(this.snapshot.entries)
-      await this.storage.set(JSON.stringify({ version: 1, entries }))
-      this.publish({ entries, error: null })
+      const syncedAt = synced ? new Date().toISOString() : this.snapshot.syncedAt
+      await this.storage.set(
+        JSON.stringify({ version: 1, entries, ...(syncedAt ? { syncedAt } : {}) }),
+      )
+      this.publish({ entries, syncedAt, error: null })
     })
     this.writes = write.catch(() => {})
     return write
@@ -151,7 +177,10 @@ export class AttendanceQueue {
     try {
       while (this.active) {
         const entry = this.snapshot.entries.find((row) => row.state === 'pending')
-        if (!entry?.token) break
+        if (!entry?.token) {
+          this.publish({ waiting: false })
+          break
+        }
         try {
           const result = await this.send(
             {
@@ -163,26 +192,34 @@ export class AttendanceQueue {
             this.actorId,
           )
           const message = `${result.childName ?? 'Copil'} · ${result.outcome === 'duplicate' ? 'Deja procesat — verifică starea din catalog' : 'Prezent confirmat'}`
-          await this.change((entries) =>
-            entries.map((row) =>
-              row.id === entry.id ? { ...row, token: undefined, state: 'confirmed', message } : row,
-            ),
+          await this.change(
+            (entries) =>
+              entries.map((row) =>
+                row.id === entry.id
+                  ? { ...row, token: undefined, state: 'confirmed', message }
+                  : row,
+              ),
+            true,
           )
+          this.publish({ waiting: false })
           this.confirmed(entry.occurrenceId)
         } catch (error) {
           if (error instanceof AttendanceError && !error.retryable) {
-            await this.change((entries) =>
-              entries.map((row) =>
-                row.id === entry.id ? { ...row, state: 'rejected', message: error.message } : row,
-              ),
+            await this.change(
+              (entries) =>
+                entries.map((row) =>
+                  row.id === entry.id
+                    ? { ...row, state: 'rejected', message: error.message }
+                    : row,
+                ),
+              true,
             )
           } else {
-            this.publish({
-              error:
-                error instanceof AttendanceError
-                  ? error.message
-                  : 'Scanările sunt păstrate pe acest telefon. Sincronizarea va fi reluată.',
-            })
+            this.publish(
+              error instanceof AttendanceError && error.code === 'AUTH'
+                ? { waiting: false, error: error.message }
+                : { waiting: true, error: null },
+            )
             break
           }
         }
