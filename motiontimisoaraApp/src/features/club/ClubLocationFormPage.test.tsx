@@ -105,7 +105,7 @@ test('formularul nu mai are câmpuri de latitudine și longitudine', async () =>
 test('câmpurile păstrate rămân pe ecran, harta se adaugă lângă ele', async () => {
   renderForm()
   await screen.findByDisplayValue('Bazin Audit')
-  for (const eticheta of ['Nume', 'Tip', 'Județ / regiune', 'Oraș', 'Adresă']) {
+  for (const eticheta of ['Nume', 'Tip', 'Județ / regiune', 'Oraș', 'Adresă', 'Descriere']) {
     expect(screen.getByLabelText(eticheta)).toBeInTheDocument()
   }
   expect(screen.getByRole('heading', { name: 'Editează locație' })).toBeInTheDocument()
@@ -119,8 +119,24 @@ test('fără punct pe hartă salvarea e oprită și nu ajunge la server', async 
   await user.type(screen.getByLabelText('Nume'), 'Sala Nouă')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
 
-  expect(await screen.findByText('Pune punctul pe hartă')).toBeInTheDocument()
+  const mesaj = await screen.findByText('Pune punctul pe hartă')
+  const adresa = screen.getByLabelText('Adresă')
+  expect(adresa).toHaveAttribute('aria-describedby', mesaj.id)
+  expect(adresa.parentElement?.nextElementSibling).toBe(mesaj)
   expect(mockedCreare).not.toHaveBeenCalled()
+})
+test('descrierea scrisă de club ajunge la salvare', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  await screen.findByDisplayValue('Bazin Audit')
+  await user.type(screen.getByLabelText('Descriere'), 'Intrarea din spate')
+  await user_salveaza()
+  await waitFor(() =>
+    expect(mockedActualizare).toHaveBeenCalledWith(
+      'loc-1',
+      expect.objectContaining({ description: 'Intrarea din spate' }),
+    ),
+  )
 })
 test('o sugestie aleasă umple adresa, orașul și deblochează salvarea', async () => {
   const user = userEvent.setup()
@@ -337,7 +353,7 @@ test('copying another club location fills exact source data and saves for the cu
   expect(screen.getByLabelText('Tip')).toHaveValue(nearbySource.type)
   expect(screen.getByLabelText('Adresă')).toHaveValue(nearbySource.address)
   expect(screen.getByLabelText('Oraș')).toHaveValue(nearbySource.city)
-  expect(screen.queryByLabelText('Descriere')).not.toBeInTheDocument()
+  expect(screen.getByLabelText('Descriere')).toHaveValue('')
 
   await user_salveaza()
   await waitFor(() =>
@@ -347,6 +363,7 @@ test('copying another club location fills exact source data and saves for the cu
       address: nearbySource.address,
       city: nearbySource.city,
       county: 'Timiș',
+      description: null,
       lat: nearbySource.lat,
       lng: nearbySource.lng,
     }),

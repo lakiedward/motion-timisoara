@@ -39,6 +39,7 @@ type Props = {
   onResolvingChange?: (resolving: boolean) => void
   invalid?: boolean
   errorId?: string
+  error?: string
 }
 
 function UrmarestePunctul({ point }: { point: { lat: number; lng: number } | null }) {
@@ -77,6 +78,7 @@ export default function LocationPicker({
   onResolvingChange,
   invalid,
   errorId,
+  error,
 }: Props) {
   const carto = cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY)
   const [cautareAmanata, setCautareAmanata] = useState('')
@@ -199,7 +201,7 @@ export default function LocationPicker({
           id="address"
           type="search"
           autoComplete="off"
-          className="h-11 pl-9 lg:h-9"
+          className="h-11 scroll-mt-24 pl-9 lg:h-9"
           placeholder="Strada, numărul sau numele locului"
           value={address}
           onChange={(e) => {
@@ -263,6 +265,11 @@ export default function LocationPicker({
           </ul>
         )}
       </div>
+      {error && (
+        <p id={errorId} className="text-destructive text-xs">
+          {error}
+        </p>
+      )}
 
       <p className="text-muted-foreground text-xs">
         Caută adresa sau pune punctul pe hartă. Județul/regiunea, orașul și adresa se completează

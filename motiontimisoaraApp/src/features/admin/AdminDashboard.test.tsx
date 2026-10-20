@@ -80,7 +80,9 @@ test('titlul rămâne Administrare, cu un singur h1 și subtitlul de ansamblu', 
 })
 
 test('cele 8 contoare duc la secțiunile lor, Antrenori filtrat pe COACH', async () => {
-  mockedStats.mockResolvedValue(stats({ users: cell(4), coaches: cell(1), clubs: cell(2), courses: cell(3), camps: cell(5) }))
+  mockedStats.mockResolvedValue(
+    stats({ users: cell(4), coaches: cell(1), clubs: cell(2), courses: cell(3), camps: cell(5) }),
+  )
   renderDashboard()
   expect(await screen.findByRole('link', { name: /utilizatori, 4/i })).toHaveAttribute(
     'href',
@@ -140,14 +142,12 @@ test('numerele mari au separator de mii', async () => {
 
 test('eroarea de încărcare are mesaj și Reîncearcă reia cererea', async () => {
   let resolveRetry: ((value: AdminStats) => void) | undefined
-  mockedStats
-    .mockRejectedValueOnce(new Error('500'))
-    .mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          resolveRetry = resolve
-        }),
-    )
+  mockedStats.mockRejectedValueOnce(new Error('500')).mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        resolveRetry = resolve
+      }),
+  )
   renderDashboard()
   const alerta = await screen.findByRole('alert')
   expect(alerta).toHaveTextContent('Nu am putut încărca statisticile.')
@@ -188,17 +188,17 @@ test('eșecul unui singur card lasă restul vizibile și spune ce lipsește', as
   expect(screen.getByTestId('admin-stat-utilizatori')).toBeInTheDocument()
 })
 
-test('grila e 1 / 2 / 4 coloane, cardurile au înălțime stabilă și inel de focus', async () => {
+test('contoarele stau în 3 grupuri, 1 coloană pe telefon și 3 pe desktop, fiecare rând e link cu focus', async () => {
   mockedStats.mockResolvedValue(stats())
   const { container } = renderDashboard()
   await screen.findByTestId('admin-stat-utilizatori')
   const grila = container.querySelector('.grid')
   expect(grila?.className).toMatch(/grid-cols-1/)
-  expect(grila?.className).toMatch(/md:grid-cols-2/)
-  expect(grila?.className).toMatch(/lg:grid-cols-4/)
-  expect(grila?.className).not.toMatch(/xl:grid-cols-4/)
+  expect(grila?.className).toMatch(/lg:grid-cols-3/)
   expect(grila?.className).not.toMatch(/overflow-x-auto/)
-  for (const id of [
+  const grupuri = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
+  expect(grupuri).toEqual(['Oameni', 'Organizatori', 'Oferte'])
+  const rows = [
     'admin-stat-utilizatori',
     'admin-stat-antrenori',
     'admin-stat-cluburi',
@@ -207,17 +207,16 @@ test('grila e 1 / 2 / 4 coloane, cardurile au înălțime stabilă și inel de f
     'admin-stat-concursuri',
     'admin-stat-utilizatori-noi',
     'admin-stat-coduri',
-  ]) {
-    const card = screen.getByTestId(id)
-    expect(card.className).toMatch(/min-h-\[11\.5rem\]/)
-    expect(card.className).toMatch(/h-full/)
-    expect(card.className).toMatch(/cursor-pointer/)
-    expect(card.className).toMatch(/focus-visible:outline-2/)
-    expect(card.className).toMatch(/focus-visible:outline-ring/)
-    expect(card.className).not.toMatch(/ring-ring\/50/)
-    expect(card.className).not.toMatch(/outline-primary/)
-    expect(card.className).toMatch(/hover:-translate-y-1/)
+  ]
+  for (const id of rows) {
+    const row = screen.getByTestId(id)
+    expect(row.tagName).toBe('A')
+    expect(row.className).toMatch(/min-h-touch-target/)
+    expect(row.className).toMatch(/focus-visible:outline-2/)
+    expect(row.className).toMatch(/focus-visible:outline-ring/)
+    expect(row.className).not.toMatch(/translate/)
   }
+  expect(screen.getAllByRole('link').filter((l) => l.dataset.testid)).toHaveLength(rows.length)
 })
 
 test('în încărcare cardurile au aria-busy și status', async () => {
