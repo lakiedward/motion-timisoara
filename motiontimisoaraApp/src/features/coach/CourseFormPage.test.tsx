@@ -105,10 +105,10 @@ beforeEach(() => {
 test('fără program, salvarea e blocată și cursul nu se creează', async () => {
   const user = userEvent.setup()
   renderForm()
-  await user.type(await screen.findByLabelText('Nume curs'), 'Curs fără program')
-  await user.selectOptions(screen.getByLabelText('Sport'), SPORT)
-  await user.selectOptions(screen.getByLabelText('Locație'), LOC)
-  await user.type(screen.getByLabelText('Preț / ședință (lei)'), '80')
+  await user.type(await screen.findByLabelText(/^Nume curs/), 'Curs fără program')
+  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
+  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC)
+  await user.type(screen.getByLabelText(/^Preț \/ ședință \(lei\)/), '80')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   expect(
     await screen.findByText('Selectează cel puțin o zi și completează orele.'),
@@ -120,12 +120,12 @@ test('crearea trimite regula și anunță generarea ședințelor', async () => {
   const user = userEvent.setup()
   mockedCreate.mockResolvedValue({ id: 'c-new' } as never)
   renderForm()
-  await user.type(await screen.findByLabelText('Nume curs'), 'Înot de seară')
-  await user.selectOptions(screen.getByLabelText('Sport'), SPORT)
-  await user.selectOptions(screen.getByLabelText('Locație'), LOC)
-  await user.type(screen.getByLabelText('Preț / ședință (lei)'), '80')
-  await user.type(screen.getByLabelText('Capacitate'), '12')
-  await user.type(screen.getByLabelText('Descriere'), 'Înot pentru începători.')
+  await user.type(await screen.findByLabelText(/^Nume curs/), 'Înot de seară')
+  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
+  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC)
+  await user.type(screen.getByLabelText(/^Preț \/ ședință \(lei\)/), '80')
+  await user.type(screen.getByLabelText(/^Capacitate/), '12')
+  await user.type(screen.getByLabelText(/^Descriere/), 'Înot pentru începători.')
   await completeazaProgram(user)
   punePozaHero()
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
@@ -171,15 +171,15 @@ test('EUR citește cursul BNR și îl îngheață pe curs', async () => {
   const user = userEvent.setup()
   mockedCreate.mockResolvedValue({ id: 'c-eur' } as never)
   renderForm()
-  await user.type(await screen.findByLabelText('Nume curs'), 'Înot euro')
-  await user.selectOptions(screen.getByLabelText('Sport'), SPORT)
-  await user.selectOptions(screen.getByLabelText('Locație'), LOC)
+  await user.type(await screen.findByLabelText(/^Nume curs/), 'Înot euro')
+  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
+  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC)
   await user.click(screen.getByRole('radio', { name: 'Euro (EUR)' }))
   expect(await screen.findByText('Curs BNR din 19.09.2026: 5,123456 lei/EUR')).toBeInTheDocument()
   expect(screen.queryByLabelText('Cursul tău: 1 EUR în lei')).not.toBeInTheDocument()
-  await user.type(screen.getByLabelText('Preț / ședință (EUR)'), '20')
-  await user.type(screen.getByLabelText('Capacitate'), '12')
-  await user.type(screen.getByLabelText('Descriere'), 'Înot pentru începători.')
+  await user.type(screen.getByLabelText(/^Preț \/ ședință \(EUR\)/), '20')
+  await user.type(screen.getByLabelText(/^Capacitate/), '12')
+  await user.type(screen.getByLabelText(/^Descriere/), 'Înot pentru începători.')
   await completeazaProgram(user)
   punePozaHero()
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
@@ -194,11 +194,11 @@ test('EUR citește cursul BNR și îl îngheață pe curs', async () => {
 test('fără descriere, salvarea cursului se oprește', async () => {
   const user = userEvent.setup()
   renderForm()
-  await user.type(await screen.findByLabelText('Nume curs'), 'Curs fără descriere')
-  await user.selectOptions(screen.getByLabelText('Sport'), SPORT)
-  await user.selectOptions(screen.getByLabelText('Locație'), LOC)
-  await user.type(screen.getByLabelText('Preț / ședință (lei)'), '80')
-  await user.type(screen.getByLabelText('Capacitate'), '12')
+  await user.type(await screen.findByLabelText(/^Nume curs/), 'Curs fără descriere')
+  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
+  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC)
+  await user.type(screen.getByLabelText(/^Preț \/ ședință \(lei\)/), '80')
+  await user.type(screen.getByLabelText(/^Capacitate/), '12')
   await completeazaProgram(user)
   punePozaHero()
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
@@ -209,16 +209,29 @@ test('fără descriere, salvarea cursului se oprește', async () => {
 test('fără capacitate, salvarea cursului se oprește', async () => {
   const user = userEvent.setup()
   renderForm()
-  await user.type(await screen.findByLabelText('Nume curs'), 'Curs fără capacitate')
-  await user.selectOptions(screen.getByLabelText('Sport'), SPORT)
-  await user.selectOptions(screen.getByLabelText('Locație'), LOC)
-  await user.type(screen.getByLabelText('Preț / ședință (lei)'), '80')
-  await user.type(screen.getByLabelText('Descriere'), 'Înot pentru începători.')
+  await user.type(await screen.findByLabelText(/^Nume curs/), 'Curs fără capacitate')
+  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
+  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC)
+  await user.type(screen.getByLabelText(/^Preț \/ ședință \(lei\)/), '80')
+  await user.type(screen.getByLabelText(/^Descriere/), 'Înot pentru începători.')
   await completeazaProgram(user)
   punePozaHero()
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   expect(await screen.findByText('Capacitatea este obligatorie.')).toBeInTheDocument()
   expect(mockedCreate).not.toHaveBeenCalled()
+  const capacitate = screen.getByLabelText(/^Capacitate/)
+  expect(capacitate).toHaveAttribute('aria-invalid', 'true')
+  expect(capacitate).toHaveAccessibleDescription('Capacitatea este obligatorie.')
+})
+
+test('câmpurile sunt grupate în Despre curs, Copii și locuri și Preț', async () => {
+  renderForm()
+  expect(await screen.findByText('Despre curs')).toBeInTheDocument()
+  expect(screen.getByText('Copii și locuri')).toBeInTheDocument()
+  expect(screen.getByText('Preț')).toBeInTheDocument()
+  expect(screen.getByLabelText(/^Vârstă minimă/)).toHaveAccessibleDescription(
+    'Lasă gol dacă nu ai limită. Poți completa doar una.',
+  )
 })
 
 test('sub vârste stă fraza despre limita opțională, fără toggle', async () => {
@@ -248,32 +261,38 @@ test('fără curs BNR, EUR blochează salvarea cursului', async () => {
 test('la curs nou, sportul și locația rămân pe linie până alegi', async () => {
   renderForm()
   expect(await screen.findByRole('option', { name: 'Înot' })).toBeInTheDocument()
-  expect(screen.getByLabelText('Sport')).toHaveValue('')
-  expect(screen.getByLabelText('Locație')).toHaveValue('')
-  expect(screen.queryByText('Sportul rămâne cel salvat: cursul are înscrieri.')).not.toBeInTheDocument()
+  expect(screen.getByLabelText(/^Sport/)).toHaveValue('')
+  expect(screen.getByLabelText(/^Locație/)).toHaveValue('')
+  expect(
+    screen.queryByText('Sportul rămâne cel salvat: cursul are înscrieri.'),
+  ).not.toBeInTheDocument()
 })
 
 test('sportul și locația salvate rămân după ce listele ajung târziu', async () => {
   let rezolvaSporturi: (valoare: unknown) => void = () => {}
   let rezolvaLocatii: (valoare: unknown) => void = () => {}
-  mockedSports.mockReturnValue(new Promise((resolve) => {
-    rezolvaSporturi = resolve
-  }) as never)
-  mockedLocations.mockReturnValue(new Promise((resolve) => {
-    rezolvaLocatii = resolve
-  }) as never)
+  mockedSports.mockReturnValue(
+    new Promise((resolve) => {
+      rezolvaSporturi = resolve
+    }) as never,
+  )
+  mockedLocations.mockReturnValue(
+    new Promise((resolve) => {
+      rezolvaLocatii = resolve
+    }) as never,
+  )
   mockedExisting.mockResolvedValue(cursSalvat() as never)
   renderForm('/coach/courses/c1/edit')
   await screen.findByDisplayValue('Înot avansat')
-  const sportInainte = screen.getByLabelText('Sport') as HTMLSelectElement
-  const locatieInainte = screen.getByLabelText('Locație') as HTMLSelectElement
+  const sportInainte = screen.getByLabelText(/^Sport/) as HTMLSelectElement
+  const locatieInainte = screen.getByLabelText(/^Locație/) as HTMLSelectElement
   expect(sportInainte.value).toBe('')
   expect(locatieInainte.value).toBe('')
   rezolvaSporturi([{ id: SPORT, name: 'Înot' }])
   rezolvaLocatii([{ id: LOC, name: 'Bazin Olimpic Timișoara', city: 'Timișoara' }])
   await waitFor(() => {
-    expect(screen.getByLabelText('Sport')).toHaveValue(SPORT)
-    expect(screen.getByLabelText('Locație')).toHaveValue(LOC)
+    expect(screen.getByLabelText(/^Sport/)).toHaveValue(SPORT)
+    expect(screen.getByLabelText(/^Locație/)).toHaveValue(LOC)
   })
 })
 
@@ -284,22 +303,22 @@ test('înscrierea activă blochează sportul, locația și prețul, iar restul s
   mockedUpdate.mockResolvedValue({ id: 'c1' } as never)
   renderForm('/coach/courses/c1/edit')
   await screen.findByDisplayValue('Înot avansat')
-  await waitFor(() => expect(screen.getByLabelText('Sport')).toBeDisabled())
-  expect(screen.getByLabelText('Sport')).toHaveValue(SPORT)
-  expect(screen.getByLabelText('Locație')).toBeDisabled()
-  expect(screen.getByLabelText('Locație')).toHaveValue(LOC)
-  expect(screen.getByLabelText('Preț / ședință (lei)')).toBeDisabled()
-  expect(screen.getByLabelText('Preț / ședință (lei)')).toHaveValue(12)
+  await waitFor(() => expect(screen.getByLabelText(/^Sport/)).toBeDisabled())
+  expect(screen.getByLabelText(/^Sport/)).toHaveValue(SPORT)
+  expect(screen.getByLabelText(/^Locație/)).toBeDisabled()
+  expect(screen.getByLabelText(/^Locație/)).toHaveValue(LOC)
+  expect(screen.getByLabelText(/^Preț \/ ședință \(lei\)/)).toBeDisabled()
+  expect(screen.getByLabelText(/^Preț \/ ședință \(lei\)/)).toHaveValue(12)
   expect(screen.getByRole('radio', { name: 'Lei (RON)' })).toBeDisabled()
   expect(screen.getByRole('radio', { name: 'Euro (EUR)' })).toBeDisabled()
   expect(screen.getByText('Sportul rămâne cel salvat: cursul are înscrieri.')).toBeInTheDocument()
   expect(screen.getByText('Locația rămâne cea salvată: cursul are înscrieri.')).toBeInTheDocument()
   expect(screen.getByText('Prețul rămâne cel salvat: cursul are înscrieri.')).toBeInTheDocument()
-  expect(screen.getByLabelText('Nume curs')).toBeEnabled()
+  expect(screen.getByLabelText(/^Nume curs/)).toBeEnabled()
   expect(screen.getByLabelText('Nivel')).toBeEnabled()
   expect(screen.getByLabelText('Vârstă minimă')).toBeEnabled()
-  expect(screen.getByLabelText('Capacitate')).toBeEnabled()
-  expect(screen.getByLabelText('Descriere')).toBeEnabled()
+  expect(screen.getByLabelText(/^Capacitate/)).toBeEnabled()
+  expect(screen.getByLabelText(/^Descriere/)).toBeEnabled()
   expect(screen.getByRole('button', { name: 'Luni' })).toBeEnabled()
   expect(screen.queryByRole('button', { name: 'Șterge' })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Dezactivează' })).not.toBeInTheDocument()
@@ -308,7 +327,7 @@ test('înscrierea activă blochează sportul, locația și prețul, iar restul s
   const luni = screen.getByRole('group', { name: 'Luni' })
   fireEvent.change(within(luni).getByLabelText('Ora start'), { target: { value: '10:00' } })
   fireEvent.change(within(luni).getByLabelText('Ora final'), { target: { value: '11:00' } })
-  await user.type(screen.getByLabelText('Descriere'), ' Actualizat.')
+  await user.type(screen.getByLabelText(/^Descriere/), ' Actualizat.')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() => expect(mockedUpdate).toHaveBeenCalled())
   expect(mockedUpdate.mock.calls[0][1]).toMatchObject({
@@ -328,10 +347,12 @@ test('fără înscriere, sportul, locația și prețul rămân deschise', async 
   renderForm('/coach/courses/c1/edit')
   await screen.findByDisplayValue('Înot avansat')
   await waitFor(() => expect(mockedInscrieri).toHaveBeenCalledWith('c1'))
-  expect(screen.getByLabelText('Sport')).toBeEnabled()
-  expect(screen.getByLabelText('Locație')).toBeEnabled()
-  expect(screen.getByLabelText('Preț / ședință (lei)')).toBeEnabled()
-  expect(screen.queryByText('Sportul rămâne cel salvat: cursul are înscrieri.')).not.toBeInTheDocument()
+  expect(screen.getByLabelText(/^Sport/)).toBeEnabled()
+  expect(screen.getByLabelText(/^Locație/)).toBeEnabled()
+  expect(screen.getByLabelText(/^Preț \/ ședință \(lei\)/)).toBeEnabled()
+  expect(
+    screen.queryByText('Sportul rămâne cel salvat: cursul are înscrieri.'),
+  ).not.toBeInTheDocument()
 })
 
 test('Anulează fără modificări pleacă direct', async () => {
@@ -349,14 +370,14 @@ test('Anulează și Înapoi întreabă când editarea are modificări', async ()
   mockedExisting.mockResolvedValue(cursSalvat() as never)
   renderForm('/coach/courses/c1/edit')
   await screen.findByDisplayValue('Înot avansat')
-  await user.type(screen.getByLabelText('Nume curs'), ' x')
+  await user.type(screen.getByLabelText(/^Nume curs/), ' x')
   await user.click(screen.getByRole('link', { name: 'Anulează' }))
   expect(await screen.findByRole('dialog', { name: 'Renunți la modificări?' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Rămân' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Renunț' })).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Rămân' }))
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  expect(screen.getByLabelText('Nume curs')).toHaveValue('Înot avansat x')
+  expect(screen.getByLabelText(/^Nume curs/)).toHaveValue('Înot avansat x')
   await user.click(screen.getByRole('link', { name: 'Înapoi' }))
   expect(await screen.findByRole('dialog', { name: 'Renunți la modificări?' })).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Renunț' }))
@@ -366,7 +387,7 @@ test('Anulează și Înapoi întreabă când editarea are modificări', async ()
 test('la curs nou, Anulează pleacă fără întrebare', async () => {
   const user = userEvent.setup()
   renderForm()
-  await user.type(await screen.findByLabelText('Nume curs'), 'Curs nou')
+  await user.type(await screen.findByLabelText(/^Nume curs/), 'Curs nou')
   await user.click(screen.getByRole('link', { name: 'Anulează' }))
   expect(await screen.findByText('Lista cursuri')).toBeInTheDocument()
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
