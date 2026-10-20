@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
 
@@ -27,8 +26,6 @@ async function loadAttachments(
 
 export default function CoachAnnouncementsPage() {
   const qc = useQueryClient()
-  const [params] = useSearchParams()
-  const compact = params.get('v') === 'b'
   const [composing, setComposing] = useState(false)
   const courses = useQuery({ queryKey: ['my-courses'], queryFn: getMyCourses, retry: false })
   const allCourses = (courses.data ?? []).map((c) => ({ id: c.id, name: c.name }))
@@ -67,7 +64,7 @@ export default function CoachAnnouncementsPage() {
         refresh()
         setComposing(false)
       }}
-      onCancel={compact ? () => setComposing(false) : undefined}
+      onCancel={() => setComposing(false)}
     />
   )
 
@@ -82,14 +79,14 @@ export default function CoachAnnouncementsPage() {
             </span>
           )}
         </h1>
-        {compact && canCompose && !composing && (
+        {canCompose && !composing && (
           <Button className="h-11 min-h-11 w-full md:w-auto" onClick={() => setComposing(true)}>
             <Plus /> Anunț nou
           </Button>
         )}
       </div>
 
-      {canCompose && (!compact || composing) && form}
+      {canCompose && composing && form}
 
       {loading ? (
         <StatusView state="loading" title="Se încarcă anunțurile" rows={2} rowHeight={160} />
@@ -112,7 +109,6 @@ export default function CoachAnnouncementsPage() {
           courses={allCourses}
           attachments={media.data ?? {}}
           onChanged={refresh}
-          compact={compact}
         />
       ) : (
         <StatusView

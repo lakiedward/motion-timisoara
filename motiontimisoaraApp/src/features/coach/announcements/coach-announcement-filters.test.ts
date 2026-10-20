@@ -31,7 +31,9 @@ const items = [
 ]
 
 test('caută fără diacritice în text, titlu, curs și club', () => {
-  expect(filterCoachAnnouncements(items, { ...NO_FILTERS, query: 'sedinta' }, names)).toHaveLength(1)
+  expect(filterCoachAnnouncements(items, { ...NO_FILTERS, query: 'sedinta' }, names)).toHaveLength(
+    1,
+  )
   expect(filterCoachAnnouncements(items, { ...NO_FILTERS, query: 'inot' }, names)).toHaveLength(1)
   expect(filterCoachAnnouncements(items, { ...NO_FILTERS, query: 'motion' }, names)).toHaveLength(1)
 })

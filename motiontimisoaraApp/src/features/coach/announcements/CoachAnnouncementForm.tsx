@@ -31,7 +31,7 @@ type Values = z.infer<typeof schema>
 type Props = {
   courses: { id: string; name: string }[]
   onPublished: () => void
-  onCancel?: () => void
+  onCancel: () => void
 }
 
 export default function CoachAnnouncementForm({ courses, onPublished, onCancel }: Props) {
@@ -126,11 +126,9 @@ export default function CoachAnnouncementForm({ courses, onPublished, onCancel }
               Fixează sus la părinți
             </label>
             <div className="flex flex-col-reverse gap-2 sm:flex-row">
-              {onCancel && (
-                <Button type="button" variant="ghost" onClick={onCancel} disabled={create.isPending}>
-                  Renunță
-                </Button>
-              )}
+              <Button type="button" variant="ghost" onClick={onCancel} disabled={create.isPending}>
+                Renunță
+              </Button>
               <Button type="submit" disabled={create.isPending}>
                 {create.isPending ? 'Se publică…' : 'Publică'}
               </Button>

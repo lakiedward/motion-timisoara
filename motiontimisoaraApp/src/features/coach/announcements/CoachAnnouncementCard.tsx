@@ -16,7 +16,6 @@ type Props = {
   busy: boolean
   onTogglePin: () => void
   onDelete: () => void
-  compact?: boolean
 }
 
 export function CoachAnnouncementCard({
@@ -26,9 +25,8 @@ export function CoachAnnouncementCard({
   busy,
   onTogglePin,
   onDelete,
-  compact = false,
 }: Props) {
-  const [open, setOpen] = useState(!compact)
+  const [open, setOpen] = useState(false)
   const fromClub = a.source === 'club'
   const priority = a.priority ? (PRIORITY[a.priority] ?? PRIORITY.NORMAL) : null
   const label = a.title ?? courseName

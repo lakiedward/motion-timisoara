@@ -29,18 +29,11 @@ type Props = {
   courses: { id: string; name: string }[]
   attachments: Record<string, AtasamentAfisabil[]>
   onChanged: () => void
-  compact?: boolean
 }
 
 const PAGE = 15
 
-export function CoachAnnouncementList({
-  items,
-  courses,
-  attachments,
-  onChanged,
-  compact = false,
-}: Props) {
+export function CoachAnnouncementList({ items, courses, attachments, onChanged }: Props) {
   const [filters, setFilters] = useState<CoachAnnouncementFilters>(NO_FILTERS)
   const [limit, setLimit] = useState(PAGE)
   const [toDelete, setToDelete] = useState<CoachAnnouncement | null>(null)
@@ -134,7 +127,6 @@ export function CoachAnnouncementList({
                       }
                       onTogglePin={() => pin.mutate({ id: a.id, pinned: !a.pinned })}
                       onDelete={() => setToDelete(a)}
-                      compact={compact}
                     />
                   </li>
                 ))}

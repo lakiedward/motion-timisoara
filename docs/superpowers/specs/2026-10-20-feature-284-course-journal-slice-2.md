@@ -20,7 +20,8 @@ Production policies checked read-only on 2026-10-20:
 - `incarcaAtasamente` and `stergeFisiereleAnuntului` take the announcement source, so the coach's files go to `announcement_id`.
 - Compose form: flat Card "Anunț nou" like the club form, with course select (active courses, preselected when there is one), text, the shared `AnnouncementMediaPicker` (same limits: 6 photos at 1600 px, one video ≤ 60 s and ≤ 50 MB) and "Fixează sus la părinți".
 - List: the shared filter bar (`CourseFilterBar`, now with configurable label for its second row) with search, source pills Toate / Ale mele / De la club with counts and a course row (pills from 768 px, select below). Pinned announcements come first in "Fixate sus", the rest grouped by month, 15 at a time with "Arată încă". Club announcements are read-only and say so.
-- Two directions for the owner: A keeps the form always open above the list (as on `/club/announcements`); B puts an "Anunț nou" button in the header and shows shorter cards (two text lines, "Vezi tot și N atașamente"). Until the owner chooses, `?v=b` shows B; the losing direction and the switch are removed before merge.
+- Layout chosen by the owner on 2026-10-20 (card, option "Aleg B, buton și carduri scurte"): the "Anunț nou" button in the header opens the form (with "Renunță"), so the list starts at the top of the page, and cards show two lines of text with "Vezi tot și N atașamente". The rejected direction A kept the form always open above the list, as on `/club/announcements`; on a phone it pushed the list about 700 px down.
+- Criteria for the new page were approved by the owner on 2026-10-20 (card "Aprob criteriile anunțuri antrenor").
 
 ## Verification
 
