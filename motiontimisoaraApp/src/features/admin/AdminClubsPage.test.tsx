@@ -5,13 +5,17 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { vi } from 'vitest'
 
 import AdminClubsPage from './AdminClubsPage'
-import { getAllClubs, type AdminClub } from '@/api/admin'
+import { getAllClubs, getAllCourses, type AdminClub, type AdminCourse } from '@/api/admin'
 
 vi.mock('@/api/admin', () => ({
   getAllClubs: vi.fn(),
+  getAllCourses: vi.fn(),
 }))
 
 const mockedClubs = vi.mocked(getAllClubs)
+const mockedCourses = vi.mocked(getAllCourses)
+
+const curs = (club_id: string, active: boolean) => ({ club_id, active }) as AdminCourse
 
 function renderPage(ruta = '/admin/clubs') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -49,11 +53,22 @@ function asteaptaLista() {
 }
 
 function carduri() {
-  return within(screen.getByRole('list')).getAllByRole('listitem')
+  return screen.getAllByRole('list').flatMap((l) => within(l).getAllByRole('listitem'))
+}
+
+function numeClub(nume: string) {
+  return screen.getByText(
+    (_, el) => el?.textContent === nume && el.classList.contains('font-semibold'),
+  )
+}
+
+function grup(nume: string) {
+  return screen.getByRole('region', { name: nume })
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
+  mockedCourses.mockResolvedValue([curs('a', true), curs('a', false), curs('z', false)])
 })
 
 test('un singur H1 Cluburi, fără subtitlu și fără trunchiere', async () => {
@@ -63,82 +78,112 @@ test('un singur H1 Cluburi, fără subtitlu și fără trunchiere', async () => 
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
   expect(titlu.className).toMatch(/break-words/)
   expect(titlu.className).not.toMatch(/truncate/)
-  expect(screen.queryByText(/privire de ansamblu/i)).not.toBeInTheDocument()
 })
 
-test('grila e 1 / 2 / 4 coloane, fără overflow orizontal', async () => {
+test('cluburile sunt grupate după activitate, primul grup deschis, fără overflow', async () => {
   mockedClubs.mockResolvedValue(listaNesortata())
   renderPage()
   await asteaptaLista()
-  const grila = screen.getByRole('list')
-  expect(grila.className).toMatch(/grid-cols-1/)
-  expect(grila.className).toMatch(/md:grid-cols-2/)
-  expect(grila.className).toMatch(/lg:grid-cols-4/)
-  expect(grila.className).not.toMatch(/lg:grid-cols-3/)
-  expect(grila.className).not.toMatch(/overflow-x-auto/)
+  const butoane = screen.getAllByRole('button', { expanded: true })
+  expect(butoane).toHaveLength(1)
+  expect(butoane[0]).toHaveTextContent('Cu cursuri active')
+  expect(screen.getByRole('button', { name: /Doar cursuri inactive/ })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  )
+  expect(screen.getByRole('button', { name: /Fără cursuri/ })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  )
+  expect(within(grup('Cu cursuri active')).getByText('Alpha Club')).toBeInTheDocument()
+  expect(screen.getByText('6 cluburi, 1 cu cursuri active')).toBeInTheDocument()
+  for (const l of screen.getAllByRole('list')) expect(l.className).not.toMatch(/overflow-x-auto/)
 })
 
-test('cardul arată nume, oraș și email, cu — unde lipsește', async () => {
+test('un grup mare arată 4 cluburi și Vezi toate', async () => {
+  mockedCourses.mockResolvedValue([])
   mockedClubs.mockResolvedValue(listaNesortata())
   renderPage()
   await asteaptaLista()
-
-  const alpha = carduri().find((item) => within(item).queryByText('Alpha Club'))
-  expect(alpha).toBeTruthy()
-  expect(within(alpha!).getAllByText('—')).toHaveLength(1)
-  expect(within(alpha!).getByText('alpha@club.test')).toBeInTheDocument()
-
-  const miscare = carduri().find((item) => within(item).queryByText('Club Mișcare'))
-  expect(miscare).toBeTruthy()
-  expect(within(miscare!).getByText('Timișoara')).toBeInTheDocument()
-  expect(within(miscare!).getByText('—')).toBeInTheDocument()
-
-  const gamma = carduri().find((item) => within(item).queryByText('Gamma Club'))
-  expect(gamma).toBeTruthy()
-  expect(within(gamma!).getAllByText('—')).toHaveLength(2)
+  expect(carduri()).toHaveLength(4)
+  await userEvent.click(screen.getByRole('button', { name: 'Vezi toate cele 6 cluburi' }))
+  expect(carduri()).toHaveLength(6)
 })
 
-test('cardurile rămân statice, fără link de detaliu', async () => {
+test('cardul arată nume, oraș, email și cursurile, cu — unde lipsește', async () => {
+  mockedCourses.mockResolvedValue([curs('a', true), curs('a', false)])
   mockedClubs.mockResolvedValue(listaNesortata())
   renderPage()
   await asteaptaLista()
-  expect(screen.queryByRole('link', { name: 'Alpha Club' })).not.toBeInTheDocument()
-  expect(screen.queryByRole('link', { name: 'Zebra Club' })).not.toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: /Fără cursuri/ }))
+  await userEvent.click(screen.getByRole('button', { name: /Vezi toate/ }))
+
+  const alpha = carduri().find((item) => within(item).queryByText('Alpha Club'))!
+  expect(within(alpha).getAllByText('—')).toHaveLength(1)
+  expect(within(alpha).getByText('alpha@club.test')).toBeInTheDocument()
+  expect(alpha).toHaveTextContent('1 activ din 2 cursuri')
+
+  const miscare = carduri().find((item) => within(item).queryByText('Club Mișcare'))!
+  expect(within(miscare).getByText('Timișoara')).toBeInTheDocument()
+  expect(within(miscare).getByText('—')).toBeInTheDocument()
+  expect(miscare).toHaveTextContent('Niciun curs')
+
+  const gamma = carduri().find((item) => within(item).queryByText('Gamma Club'))!
+  expect(within(gamma).getAllByText('—')).toHaveLength(2)
+})
+
+test('rândurile de club rămân statice, fără link de detaliu', async () => {
+  mockedClubs.mockResolvedValue(listaNesortata())
+  renderPage()
+  await asteaptaLista()
+  expect(screen.queryByRole('link', { name: /Alpha Club/ })).not.toBeInTheDocument()
   for (const card of carduri()) {
     expect(card.tagName).toBe('LI')
-    expect(card.className).not.toMatch(/focus-visible:ring/)
+    expect(within(card).queryByRole('link')).not.toBeInTheDocument()
   }
 })
 
-test('cautarea filtreaza dupa nume, oras sau email, peste diacritice', async () => {
+test('cautarea filtreaza dupa nume, oras sau email, peste diacritice, si deschide grupurile', async () => {
   mockedClubs.mockResolvedValue(listaNesortata())
   renderPage()
   await asteaptaLista()
   const camp = screen.getByLabelText(/Caută cluburi/)
 
   await userEvent.type(camp, 'miscare')
-  await waitFor(() => expect(screen.getByText('Club Mișcare')).toBeInTheDocument())
+  await waitFor(() => expect(numeClub('Club Mișcare')).toBeInTheDocument())
   expect(screen.queryByText('Alpha Club')).not.toBeInTheDocument()
 
   await userEvent.clear(camp)
-  await userEvent.type(camp, 'timisoara')
-  await waitFor(() => expect(screen.getByText('Club Mișcare')).toBeInTheDocument())
+  await userEvent.type(camp, 'oradea')
+  await waitFor(() => expect(screen.getByText('Delta Club')).toBeInTheDocument())
   expect(screen.queryByText('Zebra Club')).not.toBeInTheDocument()
+  expect(screen.getByText('1 din 6 cluburi')).toBeInTheDocument()
 
   await userEvent.clear(camp)
   await userEvent.type(camp, 'zebra@')
-  await waitFor(() => expect(screen.getByText('Zebra Club')).toBeInTheDocument())
+  await waitFor(() => expect(numeClub('Zebra Club')).toBeInTheDocument())
   expect(screen.queryByText('Alpha Club')).not.toBeInTheDocument()
 })
 
-test('lista goala are mesajul ei si nu ofera reincercare sau stergerea cautarii', async () => {
+test('filtrul Oraș păstrează doar cluburile din orașul ales', async () => {
+  mockedClubs.mockResolvedValue(listaNesortata())
+  renderPage()
+  await asteaptaLista()
+  const oras = within(screen.getByRole('group', { name: 'Oraș' }))
+  await userEvent.click(oras.getByRole('button', { name: /Arad/ }))
+  expect(await screen.findByText('Zebra Club')).toBeInTheDocument()
+  expect(screen.queryByText('Alpha Club')).not.toBeInTheDocument()
+  expect(screen.getByText('1 din 6 cluburi')).toBeInTheDocument()
+})
+
+test('lista goala are mesajul ei si nu ofera reincercare sau stergerea filtrelor', async () => {
   mockedClubs.mockResolvedValue([])
   renderPage()
   expect(await screen.findByText('Niciun club înregistrat.')).toBeInTheDocument()
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Reîncearcă' })).not.toBeInTheDocument()
   expect(screen.queryByText('Niciun club găsit.')).not.toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Șterge căutarea' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Șterge filtrele' })).not.toBeInTheDocument()
 })
 
 test('o cautare fara rezultate spune Niciun club găsit, nu ca baza e goala', async () => {
@@ -147,15 +192,13 @@ test('o cautare fara rezultate spune Niciun club găsit, nu ca baza e goala', as
   await asteaptaLista()
   const camp = screen.getByLabelText(/Caută cluburi/)
   await userEvent.type(camp, 'zzz')
-  expect(await screen.findByText(/Niciun club găsit/)).toBeInTheDocument()
+  expect(await screen.findByText('Niciun club găsit.')).toBeInTheDocument()
   expect(screen.queryByText('Niciun club înregistrat.')).not.toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Șterge căutarea' })).toBeInTheDocument()
 
-  await userEvent.click(screen.getByRole('button', { name: 'Șterge căutarea' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Șterge filtrele' }))
   expect(await screen.findByText('Alpha Club')).toBeInTheDocument()
   expect(camp).toHaveValue('')
-  expect(screen.queryByText(/Niciun club găsit/)).not.toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Șterge căutarea' })).not.toBeInTheDocument()
+  expect(screen.queryByText('Niciun club găsit.')).not.toBeInTheDocument()
 })
 
 test('o incarcare esuata da mesaj propriu si reincercare, nu ecranul de lista goala', async () => {
@@ -187,10 +230,24 @@ test('Reîncearcă e dezactivat cu Se reîncarcă…, apoi mută focusul pe H1',
   })
 })
 
-test('lista e sortata A-Z dupa nume, chiar daca API-ul intoarce altfel', async () => {
+test('fără cursuri încărcate, lista rămâne utilizabilă într-un singur grup', async () => {
+  mockedCourses.mockRejectedValue(new Error('500'))
+  mockedClubs.mockResolvedValue(listaNesortata())
+  renderPage()
+  expect(await screen.findByRole('button', { name: /Toate cluburile/ })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  )
+  expect(screen.queryByText(/active din/)).not.toBeInTheDocument()
+  expect(screen.getByText('6 cluburi')).toBeInTheDocument()
+})
+
+test('în fiecare grup cluburile sunt sortate A-Z după nume', async () => {
+  mockedCourses.mockResolvedValue([])
   mockedClubs.mockResolvedValue(listaNesortata())
   renderPage()
   await asteaptaLista()
+  await userEvent.click(screen.getByRole('button', { name: /Vezi toate/ }))
   const nume = carduri().map((item) => item.querySelector('.font-semibold')?.textContent)
   expect(nume).toEqual([
     'Alpha Club',
@@ -211,14 +268,11 @@ test('Adaugă club duce la /admin/codes', async () => {
   expect(screen.getByText('pagina coduri invitație')).toBeInTheDocument()
 })
 
-test('in incarcare, scheletul pastreaza grila de carduri', async () => {
+test('in incarcare, antetul ramane si apare scheletul', async () => {
   mockedClubs.mockReturnValue(new Promise(() => {}) as never)
   renderPage()
   expect(screen.getByRole('heading', { level: 1, name: 'Cluburi' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Adaugă club' })).toBeInTheDocument()
-  const grila = screen.getByRole('list')
-  expect(grila).toHaveAttribute('aria-busy', 'true')
-  expect(grila.className).toMatch(/lg:grid-cols-4/)
-  expect(carduri()).toHaveLength(6)
-  expect(document.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(6)
+  expect(document.querySelector('[aria-busy="true"]')).toBeInTheDocument()
+  expect(document.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(2)
 })

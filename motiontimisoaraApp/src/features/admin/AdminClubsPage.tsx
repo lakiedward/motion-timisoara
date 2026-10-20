@@ -1,163 +1,189 @@
 import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Building2, Plus, Search } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 
-import { getAllClubs, type AdminClub } from '@/api/admin'
+import { getAllClubs, getAllCourses } from '@/api/admin'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
+import { plural } from '@/lib/plural'
+import { CourseFilterBar } from './courses/CourseFilterBar'
+import { ClubGroupCard } from './clubs/ClubGroupCard'
+import {
+  NO_CLUB_FILTERS,
+  clubCityCounts,
+  filterClubs,
+  groupClubs,
+  hasClubFilters,
+  summarizeClubs,
+  type ClubGroup,
+} from './clubs/club-overview'
 
-function fold(s: string) {
-  return s
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase()
-}
-
-function dashIfMissing(value: string | null | undefined) {
-  const trimmed = value?.trim()
-  return trimmed ? trimmed : '—'
-}
-
-function sortClubsByName(clubs: AdminClub[]) {
-  return [...clubs].sort((a, b) => a.name.localeCompare(b.name, 'ro', { sensitivity: 'base' }))
-}
-
-const clubGridClass =
-  'grid grid-cols-1 items-stretch gap-4 overflow-visible py-1 md:grid-cols-2 lg:grid-cols-4'
-
-const clubCardClass =
-  'bg-card shadow-card flex h-full min-h-[7.5rem] min-w-0 items-start gap-3 rounded-3xl p-5'
+const countClubs = (n: number) => plural(n, 'club', 'cluburi')
 
 function LoadingState() {
   return (
-    <ul className={clubGridClass} aria-busy="true">
-      {[0, 1, 2, 3, 4, 5].map((i) => (
-        <li key={i} className={clubCardClass}>
-          <Skeleton className="size-11 shrink-0 rounded-xl" />
-          <div className="min-w-0 flex-1 space-y-2">
-            <Skeleton className="h-5 w-32" />
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-4 w-40" />
-          </div>
-        </li>
-      ))}
-    </ul>
+    <div aria-busy="true">
+      <Skeleton className="mb-4 h-5 w-64" />
+      <div className="grid gap-3">
+        {[0, 1, 2].map((i) => (
+          <Skeleton key={i} className="h-16 rounded-xl" />
+        ))}
+      </div>
+    </div>
   )
 }
 
 export default function AdminClubsPage() {
   const headingRef = useRef<HTMLHeadingElement>(null)
-  const [q, setQ] = useState('')
+  const [filters, setFilters] = useState(NO_CLUB_FILTERS)
   const [retrying, setRetrying] = useState(false)
-  const {
-    data: clubs = [],
-    isLoading,
-    isError,
-    refetch,
-  } = useQuery({ queryKey: ['admin-clubs'], queryFn: getAllClubs, retry: false })
+  const [toggled, setToggled] = useState<Record<string, boolean>>({})
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const clubsQuery = useQuery({ queryKey: ['admin-clubs'], queryFn: getAllClubs, retry: false })
+  const coursesQuery = useQuery({
+    queryKey: ['admin-courses'],
+    queryFn: getAllCourses,
+    retry: false,
+  })
+  const clubs = useMemo(() => clubsQuery.data ?? [], [clubsQuery.data])
+  const coursesKnown = coursesQuery.isSuccess
 
-  const sorted = useMemo(() => sortClubsByName(clubs), [clubs])
-  const filtered = useMemo(() => {
-    const needle = fold(q.trim())
-    if (!needle) return sorted
-    return sorted.filter((club) =>
-      fold(`${club.name} ${club.city ?? ''} ${club.email ?? ''}`).includes(needle),
-    )
-  }, [sorted, q])
+  const summaries = useMemo(
+    () => summarizeClubs(clubs, coursesQuery.data ?? []),
+    [clubs, coursesQuery.data],
+  )
+  const visible = useMemo(() => filterClubs(summaries, filters), [summaries, filters])
+  const cities = useMemo(() => clubCityCounts(summaries), [summaries])
+  const groups = useMemo<ClubGroup[]>(
+    () =>
+      coursesKnown
+        ? groupClubs(visible)
+        : visible.length
+          ? [{ key: 'all', name: 'Toate cluburile', clubs: visible }]
+          : [],
+    [visible, coursesKnown],
+  )
+  const withCourses = summaries.filter((c) => c.activeCourses > 0).length
+  const query = filters.query
+  const searching = query.trim().length > 0
+  const set = (patch: Partial<typeof filters>) => setFilters((f) => ({ ...f, ...patch }))
+  const toggleKey = (g: ClubGroup) => `${searching ? `q:${query.trim()}:` : ''}${g.key}`
+  const isOpen = (g: ClubGroup, i: number) => toggled[toggleKey(g)] ?? (searching || i === 0)
 
   async function onRetry() {
     setRetrying(true)
     try {
-      const result = await refetch()
+      const result = await clubsQuery.refetch()
       if (!result.error) headingRef.current?.focus()
     } finally {
       setRetrying(false)
     }
   }
 
-  const showError = clubs.length === 0 && (isError || retrying)
-  const showSkeleton = isLoading && !showError
+  const showError = clubs.length === 0 && (clubsQuery.isError || retrying)
+  const loading = (clubsQuery.isLoading || coursesQuery.isLoading) && !showError
 
   return (
     <div className="min-w-0">
-      <div className="mb-4 flex min-w-0 flex-col gap-3">
-        <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <h1
-            ref={headingRef}
-            tabIndex={-1}
-            className="font-display text-foreground text-2xl font-bold break-words outline-none"
-          >
-            Cluburi
-          </h1>
-          <Button asChild className="h-11 min-h-11 w-fit shrink-0">
-            <Link to="/admin/codes">
-              <Plus className="size-4" aria-hidden="true" />
-              Adaugă club
-            </Link>
-          </Button>
-        </div>
-        <div className="relative w-full min-w-0 md:w-72">
-          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <h1
+          ref={headingRef}
+          tabIndex={-1}
+          className="font-display text-foreground mr-auto text-2xl font-bold break-words outline-none"
+        >
+          Cluburi
+        </h1>
+        <div className="relative order-last w-full md:order-none md:w-80">
+          <Search
+            aria-hidden="true"
+            className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+          />
           <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
+            type="search"
+            value={query}
+            onChange={(e) => set({ query: e.target.value })}
             placeholder="Caută după nume, oraș sau email"
             aria-label="Caută cluburi după nume, oraș sau email"
-            className="h-11 min-h-11 pl-9 lg:h-9 lg:min-h-9"
+            className="h-touch-target min-h-touch-target pl-9 lg:h-9 lg:min-h-9"
           />
         </div>
+        <Button asChild className="h-touch-target min-h-touch-target lg:h-9 lg:min-h-9">
+          <Link to="/admin/codes">
+            <Plus aria-hidden="true" /> Adaugă club
+          </Link>
+        </Button>
       </div>
 
-      {showSkeleton ? (
+      {loading ? (
         <LoadingState />
       ) : showError ? (
-        <div role="alert" className="rounded-3xl border border-dashed py-16 text-center">
-          <p className="text-foreground font-medium">Nu am putut încărca cluburile.</p>
-          <Button
-            className="mt-4 h-11 min-h-11"
-            type="button"
-            disabled={retrying}
-            onClick={() => void onRetry()}
-          >
-            {retrying ? 'Se reîncarcă…' : 'Reîncearcă'}
-          </Button>
-        </div>
+        <StatusView
+          state="error"
+          title="Nu am putut încărca cluburile."
+          onRetry={() => void onRetry()}
+          retrying={retrying}
+        />
       ) : clubs.length === 0 ? (
-        <div className="text-muted-foreground rounded-3xl border border-dashed py-16 text-center">
-          Niciun club înregistrat.
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="text-muted-foreground rounded-3xl border border-dashed py-16 text-center">
-          Niciun club găsit.{' '}
-          <button
-            type="button"
-            onClick={() => setQ('')}
-            className="text-primary inline-flex min-h-11 items-center font-semibold lg:min-h-0"
-          >
-            Șterge căutarea
-          </button>
-        </div>
+        <StatusView state="empty" title="Niciun club înregistrat." />
       ) : (
-        <ul className={clubGridClass}>
-          {filtered.map((club) => (
-            <li key={club.id} className={clubCardClass}>
-              <span className="bg-primary/10 text-primary grid size-11 shrink-0 place-items-center rounded-xl">
-                <Building2 className="size-5" />
-              </span>
-              <div className="min-w-0">
-                <div className="font-semibold break-words">{dashIfMissing(club.name)}</div>
-                <div className="text-muted-foreground text-sm break-words">
-                  {dashIfMissing(club.city)}
-                </div>
-                <div className="text-muted-foreground text-sm break-all">
-                  {dashIfMissing(club.email)}
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <>
+          <CourseFilterBar
+            status="all"
+            sport={filters.city}
+            statusCounts={{ all: clubs.length }}
+            sports={cities}
+            statusOptions={[]}
+            onStatus={() => {}}
+            onSport={(city) => set({ city })}
+            selectId="admin-club-city"
+            sportLabel="Oraș"
+            allSportsLabel="Toate orașele"
+          />
+          <p role="status" className="text-muted-foreground mb-3 text-sm">
+            {visible.length > 0 &&
+              (hasClubFilters(filters)
+                ? `${visible.length} din ${countClubs(clubs.length)}`
+                : coursesKnown
+                  ? `${countClubs(clubs.length)}, ${withCourses} cu cursuri active`
+                  : countClubs(clubs.length))}
+          </p>
+
+          {visible.length === 0 ? (
+            <StatusView
+              state="empty"
+              title="Niciun club găsit."
+              text="Schimbă căutarea sau filtrele."
+              action={
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-touch-target min-h-touch-target mt-3"
+                  onClick={() => setFilters(NO_CLUB_FILTERS)}
+                >
+                  Șterge filtrele
+                </Button>
+              }
+            />
+          ) : (
+            <div className="grid gap-3">
+              {groups.map((g, i) => (
+                <ClubGroupCard
+                  key={g.key}
+                  group={g}
+                  query={query}
+                  coursesKnown={coursesKnown}
+                  open={isOpen(g, i)}
+                  expanded={expanded.has(g.key)}
+                  onOpenChange={(open) => setToggled((t) => ({ ...t, [toggleKey(g)]: open }))}
+                  onExpand={() => setExpanded((e) => new Set(e).add(g.key))}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   )
