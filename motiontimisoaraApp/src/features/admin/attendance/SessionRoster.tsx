@@ -1,26 +1,36 @@
+import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import { childAge } from '@/api/account'
 import { AttendanceError, markAttendance, markManyPresent } from '@/api/attendance'
-import type { AdminSession } from '@/api/attendance/admin-sessions'
 import { getSessionRoster, type RosterEntry } from '@/api/coach'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { plural } from '@/lib/plural'
 
-export function AdminSessionRoster({ session }: { session: AdminSession }) {
+export function SessionRoster({
+  courseId,
+  occurrenceId,
+  listKey,
+  qrLinks = false,
+}: {
+  courseId: string
+  occurrenceId: string
+  listKey: string
+  qrLinks?: boolean
+}) {
   const qc = useQueryClient()
   const roster = useQuery({
-    queryKey: ['roster', session.id],
-    queryFn: () => getSessionRoster(session.courseId, session.id),
+    queryKey: ['roster', occurrenceId],
+    queryFn: () => getSessionRoster(courseId, occurrenceId),
     retry: false,
   })
 
   const refresh = () => {
-    qc.invalidateQueries({ queryKey: ['roster', session.id] })
-    qc.invalidateQueries({ queryKey: ['admin-sessions'] })
+    qc.invalidateQueries({ queryKey: ['roster', occurrenceId] })
+    qc.invalidateQueries({ queryKey: [listKey] })
   }
 
   const mark = useMutation({
@@ -31,7 +41,7 @@ export function AdminSessionRoster({ session }: { session: AdminSession }) {
       childId: string
       childName: string
       status: RosterEntry['status']
-    }) => markAttendance(session.id, childId, status),
+    }) => markAttendance(occurrenceId, childId, status),
     onSuccess: refresh,
     onError: (error, v) =>
       toast.error(
@@ -39,7 +49,7 @@ export function AdminSessionRoster({ session }: { session: AdminSession }) {
       ),
   })
   const markAll = useMutation({
-    mutationFn: (childIds: string[]) => markManyPresent(session.id, childIds),
+    mutationFn: (childIds: string[]) => markManyPresent(occurrenceId, childIds),
     onSuccess: refresh,
     onError: () => toast.error('Nu am putut marca toți copiii prezenți.'),
   })
@@ -67,7 +77,7 @@ export function AdminSessionRoster({ session }: { session: AdminSession }) {
   if (!rows.length)
     return (
       <p className="text-muted-foreground rounded-xl border border-dashed px-4 py-6 text-center text-sm">
-        Niciun copil înscris la acest curs încă.
+        Niciun copil înscris la acest curs încă. Înscrierile le fac părinții din contul lor.
       </p>
     )
 
@@ -98,6 +108,14 @@ export function AdminSessionRoster({ session }: { session: AdminSession }) {
               <div className="text-muted-foreground text-sm">
                 {childAge(r.child_birth_date)} ani
               </div>
+              {qrLinks && (
+                <Link
+                  to={`/coach/children/${r.child_id}/qr`}
+                  className="text-primary inline-flex min-h-touch-target items-center text-sm underline-offset-4 hover:underline lg:min-h-0"
+                >
+                  Cod QR
+                </Link>
+              )}
             </div>
             <div className="flex gap-2 sm:shrink-0">
               {(['PRESENT', 'ABSENT'] as const).map((status) => {

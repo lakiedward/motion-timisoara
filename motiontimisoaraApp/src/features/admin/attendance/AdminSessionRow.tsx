@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Highlight } from '@/features/admin/courses/CourseParts'
 import { plural } from '@/lib/plural'
 import { cn } from '@/lib/utils'
-import { AdminSessionRoster } from './AdminSessionRoster'
+import { SessionRoster } from './SessionRoster'
 import { formatDay, formatTime, isStarted, isUnmarked } from './attendance-overview'
 
-function MarkBadge({ s }: { s: AdminSession }) {
+export function MarkBadge({ s }: { s: AdminSession }) {
   if (!isStarted(s)) return <Badge variant="outline">Urmează</Badge>
   if (!s.enrolledCount) return <Badge variant="outline">Fără copii</Badge>
   if (isUnmarked(s))
@@ -78,7 +78,7 @@ export function AdminSessionRow({ session: s, query }: { session: AdminSession; 
       </div>
       {open && (
         <div id={panelId} className="mt-3">
-          <AdminSessionRoster session={s} />
+          <SessionRoster courseId={s.courseId} occurrenceId={s.id} listKey="admin-sessions" />
         </div>
       )}
     </li>

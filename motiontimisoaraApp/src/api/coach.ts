@@ -242,8 +242,14 @@ export async function setLocationActive(id: string, is_active: boolean) {
   if (error) throw error
 }
 export type CoachSession = Tables<'course_occurrences'> & {
-  course: { id: string; name: string; location: { name: string } | null } | null
+  course: {
+    id: string
+    name: string
+    location: { name: string } | null
+    sport: { id: string; name: string } | null
+  } | null
   enrolled_count: number
+  marked_count: number
   attendance_recorded: boolean
 }
 
@@ -261,7 +267,8 @@ export interface CoachSessionGroups {
   truncated: boolean
 }
 
-const SESSION_SELECT = '*, course:courses!inner(id, name, coach_id, location:locations(name))'
+const SESSION_SELECT =
+  '*, course:courses!inner(id, name, coach_id, location:locations(name), sport:sports(id, name))'
 
 const PAGE_SIZE = 1000
 
@@ -344,11 +351,15 @@ export async function getCoachSessions(): Promise<CoachSessionGroups> {
   for (const row of enrollmentRows) {
     enrolled.set(row.entity_id, (enrolled.get(row.entity_id) ?? 0) + 1)
   }
-  const marked = new Set(attendanceRows.map((r) => r.occurrence_id))
+  const marked = new Map<string, number>()
+  for (const row of attendanceRows) {
+    marked.set(row.occurrence_id, (marked.get(row.occurrence_id) ?? 0) + 1)
+  }
 
   const decorate = (s: CoachSession): CoachSession => ({
     ...s,
     enrolled_count: s.course ? (enrolled.get(s.course.id) ?? 0) : 0,
+    marked_count: marked.get(s.id) ?? 0,
     attendance_recorded: marked.has(s.id),
   })
 
