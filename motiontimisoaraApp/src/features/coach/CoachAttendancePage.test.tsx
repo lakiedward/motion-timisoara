@@ -36,8 +36,9 @@ function session(overrides: Partial<CoachSession> & { id: string }): CoachSessio
     course_id: 'c1',
     starts_at: '2026-08-20T14:00:00.000Z',
     ends_at: '2026-08-20T15:00:00.000Z',
-    course: { id: 'c1', name: 'Înot începători', location: { name: 'Bazin Olimpic' } },
+    course: { id: 'c1', name: 'Înot începători', location: { name: 'Bazin Olimpic' }, sport: null },
     enrolled_count: 3,
+    marked_count: 0,
     attendance_recorded: false,
     ...overrides,
   } as CoachSession
@@ -53,21 +54,31 @@ const groups = (over: Partial<Awaited<ReturnType<typeof getCoachSessions>>> = {}
 
 beforeEach(() => {
   mockedGetSessionRoster.mockResolvedValue([])
+  vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-08-18T12:00:00.000Z') })
+})
+
+afterEach(() => {
+  vi.useRealTimers()
 })
 
 // --- Criteriul 1: starea pontării pe card ---
-test('fiecare card spune dacă ședința e pontată sau nu', async () => {
+test('fiecare card spune dacă ședința e pontată, nepontată sau urmează, ca la admin', async () => {
   mockedGetCoachSessions.mockResolvedValue(
     groups({
-      upcoming: [
-        session({ id: 's1', attendance_recorded: true }),
-        session({ id: 's2', attendance_recorded: false }),
+      upcoming: [session({ id: 's0' })],
+      past: [
+        session({ id: 's1', starts_at: '2026-08-15T14:00:00.000Z', marked_count: 3 }),
+        session({ id: 's2', starts_at: '2026-08-16T14:00:00.000Z' }),
+        session({ id: 's3', starts_at: '2026-08-17T14:00:00.000Z', marked_count: 1 }),
       ],
+      pastRecentCount: 3,
     }),
   )
   renderPage()
   expect(await screen.findByText('Pontată')).toBeInTheDocument()
   expect(screen.getByText('Nepontată')).toBeInTheDocument()
+  expect(screen.getByText('1 din 3 pontați')).toBeInTheDocument()
+  expect(screen.getByText('Urmează')).toBeInTheDocument()
 })
 
 // --- Criteriul 2: gruparea Următoarele / Trecute ---
@@ -80,8 +91,8 @@ test('ședințele viitoare și cele trecute stau în grupuri separate, viitorul 
     }),
   )
   renderPage()
-  const urmatoarele = await screen.findByRole('heading', { name: 'Următoarele' })
-  const trecute = screen.getByRole('heading', { name: 'Trecute' })
+  const urmatoarele = await screen.findByRole('heading', { name: /^Următoarele/ })
+  const trecute = screen.getByRole('heading', { name: /^Trecute/ })
   expect(urmatoarele.compareDocumentPosition(trecute)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
 })
 
@@ -108,7 +119,7 @@ test('starea goală duce spre Cursurile mele printr-un control de 44 px', async 
   renderPage()
   const link = await screen.findByRole('link', { name: /cursurile mele/i })
   expect(link).toHaveAttribute('href', '/coach/courses')
-  expect(link.className).toMatch(/min-h-11/)
+  expect(link.className).toMatch(/min-h-touch-target/)
 })
 
 // --- Criteriul 13: preselectarea ședinței celei mai apropiate ---
@@ -150,7 +161,7 @@ test('ședințele mai vechi de două săptămâni apar abia după Vezi mai mult'
         session({
           id: 'veche',
           starts_at: '2026-07-20T14:00:00.000Z',
-          course: { id: 'c2', name: 'Alergare veche', location: null },
+          course: { id: 'c2', name: 'Alergare veche', location: null, sport: null },
         }),
       ],
       pastRecentCount: 1,
@@ -158,13 +169,13 @@ test('ședințele mai vechi de două săptămâni apar abia după Vezi mai mult'
   )
   const user = userEvent.setup()
   renderPage()
-  expect(await screen.findByText('Ședințe (1)')).toBeInTheDocument()
+  expect(await screen.findByText('1 ședință')).toBeInTheDocument()
   expect(screen.queryByText('Alergare veche')).not.toBeInTheDocument()
 
   await user.click(screen.getByRole('button', { name: /Vezi mai mult \(1\)/ }))
 
   expect(screen.getByText('Alergare veche')).toBeInTheDocument()
-  expect(screen.getByText('Ședințe (2)')).toBeInTheDocument()
+  expect(screen.getByText('2 ședințe')).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /Vezi mai mult/ })).not.toBeInTheDocument()
 })
 
@@ -182,7 +193,7 @@ test('cu numai ședințe mai vechi de două săptămâni, lista le arată pe toa
     }),
   )
   renderPage()
-  expect(await screen.findByText('Ședințe (2)')).toBeInTheDocument()
+  expect(await screen.findByText('2 ședințe')).toBeInTheDocument()
   const cards = screen.getAllByRole('button', { name: /Înot începători/ })
   expect(cards).toHaveLength(2)
   expect(cards[0]).toHaveAttribute('aria-current', 'true')
@@ -190,7 +201,7 @@ test('cu numai ședințe mai vechi de două săptămâni, lista le arată pe toa
 })
 
 // --- Criteriile 7, 9, 11: conținutul cardului și antetul ---
-test('cardul arată locația, numărul de copii și ziua întreagă; antetul arată numărul', async () => {
+test('rândul arată locația și numărul de copii, ziua întreagă stă în antetul zilei', async () => {
   mockedGetCoachSessions.mockResolvedValue(
     groups({
       upcoming: [
@@ -200,35 +211,40 @@ test('cardul arată locația, numărul de copii și ziua întreagă; antetul ara
     }),
   )
   renderPage()
-  expect(await screen.findByText('Ședințe (2)')).toBeInTheDocument()
-  expect(screen.getByText(/Bazin Olimpic · 1 copil$/)).toBeInTheDocument()
-  expect(screen.getByText(/Bazin Olimpic · 0 copii$/)).toBeInTheDocument()
-
-  const cards = screen.getAllByRole('button', { name: /Înot începători/ })
-  expect(cards[0].textContent).toMatch(/(Duminică|Luni|Marți|Miercuri|Joi|Vineri|Sâmbătă) \d/)
+  expect(await screen.findByText('2 ședințe')).toBeInTheDocument()
+  expect(screen.getAllByText('Bazin Olimpic')).toHaveLength(2)
+  expect(screen.getByText('1 copil')).toBeInTheDocument()
+  expect(screen.getByText('0 copii')).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Joi 20 august' })).toBeInTheDocument()
 })
 
 test('fără locație pe curs, cardul scrie o liniuță în locul ei', async () => {
   mockedGetCoachSessions.mockResolvedValue(
     groups({
       upcoming: [
-        session({ id: 's1', course: { id: 'c1', name: 'Înot începători', location: null } }),
+        session({
+          id: 's1',
+          course: { id: 'c1', name: 'Înot începători', location: null, sport: null },
+        }),
       ],
     }),
   )
   renderPage()
-  expect(await screen.findByText(/^— · 3 copii$/)).toBeInTheDocument()
+  const card = await screen.findByRole('button', { name: /Înot începători/ })
+  expect(within(card).getByText('—')).toBeInTheDocument()
 })
 
 // --- Criteriile 5, 6, 10: focus din sistemul de design, două coloane, formă de card ---
-test('cardul folosește inelul de focus din sistemul de design și forma de card a site-ului', async () => {
+test('rândul folosește inelul de focus din sistemul de design, iar ziua e un card plat', async () => {
   mockedGetCoachSessions.mockResolvedValue(groups({ upcoming: [session({ id: 's1' })] }))
   renderPage()
   const card = await screen.findByRole('button', { name: /Înot începători/ })
   expect(card.className).toMatch(/focus-visible:outline-2/)
   expect(card.className).toMatch(/focus-visible:outline-ring/)
-  expect(card.className).toMatch(/rounded-3xl/)
-  expect(card.className).toMatch(/shadow-card/)
+  const zi = card.closest('ul')!.parentElement!
+  expect(zi.className).toMatch(/rounded-xl/)
+  expect(zi.className).toMatch(/border/)
+  expect(zi.className).not.toMatch(/shadow/)
 })
 
 // Regresie: `overflow-y` calculează `overflow-x: auto`, deci lista care derulează
@@ -263,4 +279,46 @@ test('când sunt mai multe ședințe decât aduce interogarea, lista o spune pe 
   )
   renderPage()
   expect(await screen.findByText(/Se afișează primele 100 de ședințe/)).toBeInTheDocument()
+})
+
+test('căutarea găsește ședințele după curs sau locație și spune câte din total', async () => {
+  mockedGetCoachSessions.mockResolvedValue(
+    groups({
+      upcoming: [
+        session({ id: 's1' }),
+        session({
+          id: 's2',
+          course: { id: 'c2', name: 'Alergare', location: { name: 'Parcul Rozelor' }, sport: null },
+        }),
+      ],
+    }),
+  )
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByText('2 ședințe')
+  await user.type(screen.getByRole('searchbox'), 'rozelor')
+  expect(screen.getByText('1 din 2 ședințe')).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /Înot începători/ })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /Alergare/ })).toBeInTheDocument()
+})
+
+test('filtrul Nepontate lasă doar ședințele începute cu copii nepontați', async () => {
+  mockedGetCoachSessions.mockResolvedValue(
+    groups({
+      upcoming: [session({ id: 'viitoare' })],
+      past: [
+        session({ id: 'gata', starts_at: '2026-08-15T14:00:00.000Z', marked_count: 3 }),
+        session({ id: 'restanta', starts_at: '2026-08-16T14:00:00.000Z' }),
+      ],
+      pastRecentCount: 2,
+    }),
+  )
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByText('3 ședințe')
+  await user.click(screen.getByRole('button', { name: /^Nepontate/ }))
+  expect(screen.getByText('1 ședință')).toBeInTheDocument()
+  expect(screen.getByText('Nepontată')).toBeInTheDocument()
+  expect(screen.queryByText('Pontată')).not.toBeInTheDocument()
+  expect(screen.queryByText('Urmează')).not.toBeInTheDocument()
 })
