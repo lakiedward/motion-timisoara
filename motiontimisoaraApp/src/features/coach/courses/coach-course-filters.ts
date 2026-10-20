@@ -1,17 +1,11 @@
 import type { CoachCourse } from '@/api/coach'
+import { fold } from '@/features/admin/courses/course-overview'
 
 export type CoachStatusFilter = 'active' | 'inactive' | 'all'
 
 export type CoachCourseFilters = { status: CoachStatusFilter; sport: string; query: string }
 
 export const NO_FILTERS: CoachCourseFilters = { status: 'all', sport: '', query: '' }
-
-export function fold(s: string) {
-  return s
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase()
-}
 
 export function matchesStatus(course: CoachCourse, status: CoachStatusFilter) {
   if (status === 'active') return course.active

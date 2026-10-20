@@ -6,7 +6,7 @@ Date: 2026-10-20. Owner chose direction B on the decision card "Cum arată lista
 
 - `/coach/courses` keeps the two-column card grid, now on the flat `Card` primitive like the coach dashboard (#497).
 - A filter bar above the grid: search by course name or location (diacritics ignored), status pills Active / Inactive / Toate with counts, sport pills with counts on md+ and a native sport `<select>` on phones.
-- The bar follows the `/admin/courses` filter bar from #456 (PR #223). Until #223 lands the coach copy lives in `src/features/coach/courses/`; after it merges both should share one component.
+- The status/sport pills reuse `CourseFilterBar` from `/admin/courses` (#456), now generic over its status options; the coach page passes Active / Inactive / Toate and adds its own search input.
 - Empty results show `StatusView` with "Șterge filtrele"; card actions are 44px outline buttons.
 
 ## Tradeoffs
