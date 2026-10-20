@@ -1,44 +1,53 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronDown, ChevronRight, MapPin } from 'lucide-react'
+import { MapPin } from 'lucide-react'
 import { getCurrentLocationOccurrences } from '@/api/live-location'
+import { getActiveLocationSessions } from '@/api/live-location/discovery'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { useAuth } from '@/lib/auth-context'
 import { LocationViewer } from './LocationViewer'
-
-const TZ = 'Europe/Bucharest'
-const zi = new Intl.DateTimeFormat('ro-RO', { day: 'numeric', timeZone: TZ })
-const ziSaptamana = new Intl.DateTimeFormat('ro-RO', { weekday: 'short', timeZone: TZ })
-const ora = new Intl.DateTimeFormat('ro-RO', { hour: '2-digit', minute: '2-digit', timeZone: TZ })
+import { SessionRowItem } from './SessionRowItem'
+import { VISIBLE_SESSIONS, buildSessionRows, type CourseInfo } from './current-sessions'
 
 export function CurrentLocationSessions({
-  courseIds,
-  courseNames,
+  courses,
   courseSource,
 }: {
-  courseIds: string[]
-  courseNames: Record<string, string>
+  courses: CourseInfo[]
   courseSource: { isLoading: boolean; isError: boolean; retry: () => void }
 }) {
   const { user } = useAuth()
   const [selection, setSelection] = useState<{ actor: string; occurrence: string } | null>(null)
-  const ids = [...new Set(courseIds)].sort()
-  const names = courseNames
+  const [showAll, setShowAll] = useState(false)
+  const ids = [...new Set(courses.map((course) => course.id))].sort()
+  const club = user?.role === 'CLUB'
+  const ready = club && ids.length > 0 && !courseSource.isLoading && !courseSource.isError
   const occurrences = useQuery({
     queryKey: ['live-location-occurrences', user?.id, ids],
     queryFn: () => getCurrentLocationOccurrences(ids),
-    enabled:
-      user?.role === 'CLUB' && ids.length > 0 && !courseSource.isLoading && !courseSource.isError,
+    enabled: ready,
     retry: false,
     refetchInterval: 30_000,
   })
-  if (user?.role !== 'CLUB') return null
+  const hasOccurrences = (occurrences.data?.length ?? 0) > 0
+  const sessions = useQuery({
+    queryKey: ['active-location-sessions', user?.id],
+    queryFn: () => getActiveLocationSessions(user!.id),
+    enabled: ready && hasOccurrences,
+    retry: false,
+    refetchInterval: 15_000,
+  })
+  if (!club) return null
+  if (!courseSource.isLoading && !courseSource.isError && ids.length === 0) return null
   const selected = selection?.actor === user.id ? selection.occurrence : null
-  const loading = courseSource.isLoading || occurrences.isLoading
-  const error = courseSource.isError || occurrences.isError
-  const list = occurrences.data ?? []
-  const live = list.length > 0
+  const loading =
+    courseSource.isLoading || occurrences.isLoading || (hasOccurrences && sessions.isLoading)
+  const error = courseSource.isError || occurrences.isError || sessions.isError
+  const rows = buildSessionRows(occurrences.data ?? [], courses, sessions.data ?? [])
+  const live = rows.length > 0
+  const visible = showAll ? rows : rows.slice(0, VISIBLE_SESSIONS)
   return (
     <section
       className="bg-card mb-6 overflow-hidden rounded-xl border"
@@ -78,65 +87,47 @@ export function CurrentLocationSessions({
           state="error"
           title="Nu am putut încărca ședințele pentru locație."
           text="Verifică conexiunea și încearcă din nou."
-          retryLabel="Reîncearcă ședințele"
           className="border-t py-8"
           onRetry={() => {
             if (courseSource.isError) courseSource.retry()
-            else void occurrences.refetch()
+            if (occurrences.isError) void occurrences.refetch()
+            if (sessions.isError) void sessions.refetch()
           }}
         />
       ) : null}
       {!loading && !error && live && (
-        <ul className="divide-y border-t">
-          {list.map((occurrence) => {
-            const start = new Date(occurrence.starts_at)
-            const open = selected === occurrence.id
-            const Icon = open ? ChevronDown : ChevronRight
-            return (
-              <li key={occurrence.id}>
-                <button
-                  type="button"
-                  aria-expanded={open}
-                  className="hover:bg-muted/50 focus-visible:outline-ring flex min-h-touch-target w-full items-center gap-3 px-4 py-3 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 sm:px-6"
-                  onClick={() =>
-                    setSelection(open ? null : { actor: user.id, occurrence: occurrence.id })
+        <>
+          <ul className="divide-y border-t">
+            {visible.map((row) => {
+              const open = selected === row.occurrence.id
+              return (
+                <SessionRowItem
+                  key={row.occurrence.id}
+                  row={row}
+                  open={open}
+                  viewerKey={`${user.id}:${row.occurrence.id}`}
+                  onToggle={() =>
+                    setSelection(open ? null : { actor: user.id, occurrence: row.occurrence.id })
                   }
-                >
-                  <span
-                    aria-hidden="true"
-                    className="bg-secondary flex size-12 shrink-0 flex-col items-center justify-center rounded-lg text-center leading-none"
-                  >
-                    <span className="font-display text-lg font-extrabold">{zi.format(start)}</span>
-                    <span className="text-muted-foreground text-[0.6875rem] uppercase">
-                      {ziSaptamana.format(start).replace('.', '')}
-                    </span>
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-semibold">
-                      {names[occurrence.course_id] ?? 'Ședință'}
-                    </span>
-                    <span className="text-muted-foreground block text-sm">
-                      A început la {ora.format(start)}
-                    </span>
-                  </span>
-                  <span className="text-primary flex shrink-0 items-center gap-1 text-sm font-semibold">
-                    <span className="hidden sm:inline">{open ? 'Ascunde' : 'Vezi locația'}</span>
-                    <Icon aria-hidden="true" className="size-5" />
-                  </span>
-                </button>
-                {open && (
-                  <LocationViewer
-                    key={`${user.id}:${selected}`}
-                    occurrenceId={selected}
-                    className="px-4 pt-1 pb-4 sm:px-6 sm:pb-6"
-                  />
-                )}
-              </li>
-            )
-          })}
-        </ul>
+                />
+              )
+            })}
+          </ul>
+          {rows.length > VISIBLE_SESSIONS && (
+            <div className="border-t px-4 py-2 sm:px-6">
+              <Button
+                type="button"
+                variant="ghost"
+                className="text-primary h-11 min-h-11 w-full sm:w-auto"
+                onClick={() => setShowAll((value) => !value)}
+              >
+                {showAll ? 'Arată mai puține' : `Arată toate (${rows.length})`}
+              </Button>
+            </div>
+          )}
+        </>
       )}
-      {selected && !list.some((occurrence) => occurrence.id === selected) && (
+      {selected && !rows.some((row) => row.occurrence.id === selected) && (
         <LocationViewer
           key={`${user.id}:${selected}`}
           occurrenceId={selected}
