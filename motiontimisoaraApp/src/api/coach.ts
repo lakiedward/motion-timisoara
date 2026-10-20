@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 import { regenerateCourseOccurrences } from '@/api/course-occurrences'
+import { countActivityEnrollments } from '@/api/activities/admin-activities'
 
 export type CoachCourse = Tables<'courses'> & {
   sport: Pick<Tables<'sports'>, 'id' | 'code' | 'name'> | null
@@ -111,6 +112,25 @@ export async function getSelectableLocations(): Promise<
 export type CoachActivity = Tables<'activities'> & {
   sport: Pick<Tables<'sports'>, 'id' | 'code' | 'name'> | null
   location: Pick<Tables<'locations'>, 'id' | 'name'> | null
+  enrolled: number
+}
+
+async function getActivityEnrollmentCounts(ids: string[]) {
+  const rows: { entity_id: string }[] = []
+  if (!ids.length) return countActivityEnrollments(rows)
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from('enrollments')
+      .select('entity_id')
+      .eq('kind', 'ACTIVITY')
+      .eq('status', 'ACTIVE')
+      .in('entity_id', ids)
+      .order('id')
+      .range(from, from + PAGE_SIZE - 1)
+    if (error) throw error
+    rows.push(...(data ?? []))
+    if ((data ?? []).length < PAGE_SIZE) return countActivityEnrollments(rows)
+  }
 }
 
 export async function getMyActivities(): Promise<CoachActivity[]> {
@@ -121,7 +141,9 @@ export async function getMyActivities(): Promise<CoachActivity[]> {
     .eq('coach_id', coachId)
     .order('activity_date', { ascending: false })
   if (error) throw error
-  return (data ?? []) as unknown as CoachActivity[]
+  const activities = (data ?? []) as unknown as Omit<CoachActivity, 'enrolled'>[]
+  const counts = await getActivityEnrollmentCounts(activities.map((a) => a.id))
+  return activities.map((a) => ({ ...a, enrolled: counts.get(a.id) ?? 0 }))
 }
 
 export async function getActivityById(id: string): Promise<Tables<'activities'> | null> {
