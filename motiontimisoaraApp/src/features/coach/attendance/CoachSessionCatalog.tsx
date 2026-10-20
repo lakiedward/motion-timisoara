@@ -1,10 +1,16 @@
 import type { AdminSession } from '@/api/attendance/admin-sessions'
 import { Badge } from '@/components/ui/badge'
-import { SessionRoster } from '@/features/admin/attendance/SessionRoster'
+import { SessionRoster, type RosterLook } from '@/features/admin/attendance/SessionRoster'
 import { AttendanceScanner } from './AttendanceScanner'
 import { isRetroactive, sessionWhen } from './coach-session-list'
 
-export function CoachSessionCatalog({ session }: { session: AdminSession }) {
+export function CoachSessionCatalog({
+  session,
+  look,
+}: {
+  session: AdminSession
+  look: RosterLook
+}) {
   return (
     <div className="space-y-3">
       {isRetroactive(session) && <Badge variant="outline">Pontare retroactivă</Badge>}
@@ -17,6 +23,7 @@ export function CoachSessionCatalog({ session }: { session: AdminSession }) {
         occurrenceId={session.id}
         listKey="coach-sessions"
         qrLinks
+        look={look}
       />
     </div>
   )

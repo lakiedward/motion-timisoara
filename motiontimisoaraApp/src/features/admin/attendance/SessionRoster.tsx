@@ -5,21 +5,35 @@ import { toast } from 'sonner'
 import { childAge } from '@/api/account'
 import { AttendanceError, markAttendance, markManyPresent } from '@/api/attendance'
 import { getSessionRoster, type RosterEntry } from '@/api/coach'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { plural } from '@/lib/plural'
+import { cn } from '@/lib/utils'
+
+export type RosterLook = 'list' | 'marked'
+
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join('')
+    .toUpperCase()
 
 export function SessionRoster({
   courseId,
   occurrenceId,
   listKey,
   qrLinks = false,
+  look = 'list',
 }: {
   courseId: string
   occurrenceId: string
   listKey: string
   qrLinks?: boolean
+  look?: RosterLook
 }) {
   const qc = useQueryClient()
   const roster = useQuery({
@@ -60,11 +74,25 @@ export function SessionRoster({
 
   if (roster.isLoading)
     return (
-      <div className="space-y-2" aria-busy="true">
-        {[0, 1, 2].map((i) => (
-          <Skeleton key={i} className="h-14 rounded-xl" />
+      <ul
+        className="divide-y rounded-xl border"
+        aria-busy="true"
+        aria-label="Se încarcă lista de copii"
+      >
+        {[0, 1, 2, 3].map((i) => (
+          <li key={i} className="flex flex-col gap-2 px-3 py-2 lg:flex-row lg:items-center">
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <Skeleton className="h-5 w-40 max-w-full" />
+              <Skeleton className="h-4 w-16" />
+              {qrLinks && <Skeleton className="h-4 w-14" />}
+            </div>
+            <div className="flex gap-3">
+              <Skeleton className="h-touch-target flex-1 rounded-full lg:h-9 lg:w-20 lg:flex-none" />
+              <Skeleton className="h-touch-target flex-1 rounded-full lg:h-9 lg:w-20 lg:flex-none" />
+            </div>
+          </li>
         ))}
-      </div>
+      </ul>
     )
   if (roster.isError && !rows.length)
     return (
@@ -98,54 +126,79 @@ export function SessionRoster({
         </Button>
       </div>
       <ul className="divide-y rounded-xl border">
-        {rows.map((r) => (
-          <li
-            key={r.child_id}
-            className="flex flex-col gap-2 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <div className="min-w-0">
-              <div className="font-medium wrap-anywhere">{r.child_name}</div>
-              <div className="text-muted-foreground text-sm">
-                {childAge(r.child_birth_date)} ani
-              </div>
-              {qrLinks && (
-                <Link
-                  to={`/coach/children/${r.child_id}/qr`}
-                  className="text-primary inline-flex min-h-touch-target items-center text-sm underline-offset-4 hover:underline lg:min-h-0"
-                >
-                  Cod QR
-                </Link>
+        {rows.map((r) => {
+          const marked = look === 'marked'
+          const qr = qrLinks && (
+            <Link
+              to={`/coach/children/${r.child_id}/qr`}
+              className="text-primary inline-flex min-h-touch-target items-center text-sm underline-offset-4 hover:underline lg:min-h-0"
+            >
+              Cod QR
+            </Link>
+          )
+          return (
+            <li
+              key={r.child_id}
+              className={cn(
+                'relative flex flex-col gap-2 px-3 py-2 lg:flex-row lg:items-center lg:justify-between',
+                marked &&
+                  'before:absolute before:inset-y-0 before:left-0 before:w-1 before:rounded-l-xl',
+                marked && r.status === 'PRESENT' && 'before:bg-success',
+                marked && r.status === 'ABSENT' && 'before:bg-destructive',
               )}
-            </div>
-            <div className="flex gap-2 sm:shrink-0">
-              {(['PRESENT', 'ABSENT'] as const).map((status) => {
-                const active = r.status === status
-                return (
-                  <Button
-                    key={status}
-                    type="button"
-                    variant={
-                      active ? (status === 'PRESENT' ? 'default' : 'destructive') : 'outline'
-                    }
-                    aria-pressed={active}
-                    aria-label={`${status === 'PRESENT' ? 'Prezent' : 'Absent'}: ${r.child_name}`}
-                    disabled={busy}
-                    className="h-touch-target min-h-touch-target flex-1 sm:flex-none lg:h-9 lg:min-h-9"
-                    onClick={() =>
-                      mark.mutate({
-                        childId: r.child_id,
-                        childName: r.child_name,
-                        status: active ? null : status,
-                      })
-                    }
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                {marked && (
+                  <Avatar aria-hidden="true">
+                    <AvatarFallback>{initials(r.child_name)}</AvatarFallback>
+                  </Avatar>
+                )}
+                <div className="min-w-0">
+                  <div
+                    className={cn(
+                      'truncate font-medium',
+                      !marked && 'lg:line-clamp-2 lg:whitespace-normal lg:break-words',
+                    )}
                   >
-                    {status === 'PRESENT' ? 'Prezent' : 'Absent'}
-                  </Button>
-                )
-              })}
-            </div>
-          </li>
-        ))}
+                    {r.child_name}
+                  </div>
+                  <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 text-sm">
+                    <span>{childAge(r.child_birth_date)} ani</span>
+                    {marked && qr}
+                  </div>
+                  {!marked && qr}
+                </div>
+              </div>
+              <div className="flex gap-3 lg:shrink-0 lg:gap-2">
+                {(['PRESENT', 'ABSENT'] as const).map((status) => {
+                  const active = r.status === status
+                  return (
+                    <Button
+                      key={status}
+                      type="button"
+                      variant={
+                        active ? (status === 'PRESENT' ? 'default' : 'destructive') : 'outline'
+                      }
+                      aria-pressed={active}
+                      aria-label={`${status === 'PRESENT' ? 'Prezent' : 'Absent'}: ${r.child_name}`}
+                      disabled={busy}
+                      className="h-touch-target min-h-touch-target flex-1 lg:h-9 lg:min-h-9 lg:flex-none"
+                      onClick={() =>
+                        mark.mutate({
+                          childId: r.child_id,
+                          childName: r.child_name,
+                          status: active ? null : status,
+                        })
+                      }
+                    >
+                      {status === 'PRESENT' ? 'Prezent' : 'Absent'}
+                    </Button>
+                  )
+                })}
+              </div>
+            </li>
+          )
+        })}
       </ul>
     </div>
   )

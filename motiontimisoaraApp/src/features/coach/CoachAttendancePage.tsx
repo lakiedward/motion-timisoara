@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Search } from 'lucide-react'
 
@@ -47,6 +47,8 @@ export default function CoachAttendancePage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [markingOnPhone, setMarkingOnPhone] = useState(false)
   const [showOlder, setShowOlder] = useState(false)
+  const [params] = useSearchParams()
+  const look = params.get('varianta') === 'b' ? 'marked' : 'list'
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['coach-sessions'],
@@ -83,9 +85,7 @@ export default function CoachAttendancePage() {
       <h1 className="font-display text-foreground mr-auto text-2xl font-bold">
         Prezență
         {items.length > 0 && (
-          <span className="text-muted-foreground ml-2 text-base font-normal">
-            ({items.length})
-          </span>
+          <span className="text-muted-foreground ml-2 text-base font-normal">({items.length})</span>
         )}
       </h1>
       <div className="relative order-last w-full md:order-none md:w-80">
@@ -126,7 +126,7 @@ export default function CoachAttendancePage() {
       />
     ) : (
       <div className="grid gap-6 md:grid-cols-[1fr_1.2fr]">
-        <div className="min-w-0 space-y-3 lg:-mx-1.5 lg:max-h-[75vh] lg:overflow-y-auto lg:px-1.5">
+        <div className="min-w-0 space-y-3 lg:-mx-1.5 lg:max-h-[calc(100dvh-21rem)] lg:overflow-y-auto lg:px-1.5">
           {markingOnPhone && (
             <Button
               type="button"
@@ -152,7 +152,7 @@ export default function CoachAttendancePage() {
               renderInline={(s) =>
                 markingOnPhone ? (
                   <div className="space-y-3 border-t p-3 md:hidden">
-                    <CoachSessionCatalog session={s} />
+                    <CoachSessionCatalog session={s} look={look} />
                   </div>
                 ) : null
               }
@@ -178,16 +178,16 @@ export default function CoachAttendancePage() {
             </p>
           )}
         </div>
-        <div className="hidden min-w-0 md:block lg:max-h-[75vh] lg:overflow-y-auto">
+        <div className="hidden min-w-0 md:block lg:max-h-[calc(100dvh-21rem)] lg:overflow-y-auto">
           {sel && (
-            <div className="bg-card space-y-3 rounded-xl border p-4">
-              <h2 className="font-display text-foreground font-bold wrap-anywhere">
-                {sel.courseName}
+            <div className="bg-card space-y-3 rounded-xl border px-4 pb-4">
+              <h2 className="font-display text-foreground bg-card -mx-4 rounded-t-xl border-b px-4 py-3 font-bold lg:sticky lg:top-0 lg:z-10">
+                <span className="line-clamp-2 wrap-anywhere">{sel.courseName}</span>
                 <span className="text-muted-foreground block text-sm font-normal">
                   {sessionWhen(sel)}
                 </span>
               </h2>
-              <CoachSessionCatalog session={sel} />
+              <CoachSessionCatalog session={sel} look={look} />
             </div>
           )}
         </div>
@@ -206,7 +206,11 @@ export default function CoachAttendancePage() {
       {isLoading ? (
         <ClubLocationListSkeleton />
       ) : isError && !items.length ? (
-        <StatusView state="error" title="Nu am putut încărca ședințele." onRetry={() => refetch()} />
+        <StatusView
+          state="error"
+          title="Nu am putut încărca ședințele."
+          onRetry={() => refetch()}
+        />
       ) : !items.length ? (
         <StatusView
           state="empty"
