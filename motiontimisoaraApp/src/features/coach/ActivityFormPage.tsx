@@ -29,6 +29,7 @@ import { OfferRulesFieldset } from '@/components/RulesFileField'
 import { campRulesFileFromRow, type CampRulesFileMeta } from '@/lib/camp-rules'
 import { baniToRon } from '@/lib/money'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { StatusView } from '@/components/ui/status-view'
@@ -278,141 +279,171 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
         noValidate
       >
         {isAdmin && (
-          <ActivityOwnerFields
-            owner={form.owner}
-            clubs={form.clubs}
-            locked={isEdit}
-            ownerError={eroareOrganizator}
-            coaches={form.coaches}
-            coachField={register('coach_id')}
-            coachError={errors.coach_id?.message}
-            noCoaches={noCoaches}
-            noLocations={noLocations}
-            selectClassName={selectCls}
-            onOwner={schimbaOrganizator}
-          />
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-display text-lg">Cine o organizează</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ActivityOwnerFields
+                owner={form.owner}
+                clubs={form.clubs}
+                locked={isEdit}
+                ownerError={eroareOrganizator}
+                coaches={form.coaches}
+                coachField={register('coach_id')}
+                coachError={errors.coach_id?.message}
+                noCoaches={noCoaches}
+                noLocations={noLocations}
+                selectClassName={selectCls}
+                onOwner={schimbaOrganizator}
+              />
+            </CardContent>
+          </Card>
         )}
-        <div className="space-y-1.5">
-          <Label htmlFor="name">Nume</Label>
-          <Input id="name" {...register('name')} aria-invalid={!!errors.name} />
-          {errors.name && <p className="text-destructive text-xs">{errors.name.message}</p>}
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <OfferCurrencyFields
-            currency={currency}
-            currencyField={register('currency')}
-            setValue={setValue}
-          />
-          <div className="space-y-1.5">
-            <Label htmlFor="sport_id">Sport</Label>
-            <select id="sport_id" className={cn(selectCls)} {...register('sport_id')}>
-              <option value="">—</option>
-              {sports.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-            {errors.sport_id && (
-              <p className="text-destructive text-xs">{errors.sport_id.message}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="location_id">Locație</Label>
-            <select id="location_id" className={cn(selectCls)} {...register('location_id')}>
-              <option value="">—</option>
-              {locations.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.name}
-                </option>
-              ))}
-            </select>
-            {errors.location_id && (
-              <p className="text-destructive text-xs">{errors.location_id.message}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="activity_date">Data</Label>
-            <Input
-              id="activity_date"
-              type="date"
-              {...register('activity_date')}
-              aria-invalid={!!errors.activity_date}
-            />
-            {errors.activity_date && (
-              <p className="text-destructive text-xs">{errors.activity_date.message}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="price_lei">Preț ({currency === 'EUR' ? 'EUR' : 'lei'})</Label>
-            <Input
-              id="price_lei"
-              type="number"
-              step="0.01"
-              {...register('price_lei')}
-              aria-invalid={!!errors.price_lei}
-            />
-            {errors.price_lei && (
-              <p className="text-destructive text-xs">{errors.price_lei.message}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="start_time">Ora început</Label>
-            <Input
-              id="start_time"
-              type="time"
-              {...register('start_time')}
-              aria-invalid={!!errors.start_time}
-            />
-            {errors.start_time && (
-              <p className="text-destructive text-xs">{errors.start_time.message}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="end_time">Ora final</Label>
-            <Input
-              id="end_time"
-              type="time"
-              {...register('end_time')}
-              aria-invalid={!!errors.end_time}
-            />
-            {errors.end_time && (
-              <p className="text-destructive text-xs">{errors.end_time.message}</p>
-            )}
-          </div>
-          <p className="text-muted-foreground text-sm sm:col-span-2">
-            Orele sunt în fusul României.
-          </p>
-          <div className="space-y-1.5">
-            <Label htmlFor="capacity">Capacitate</Label>
-            <Input id="capacity" type="number" {...register('capacity')} />
-            <p className="text-muted-foreground text-sm">Lasă gol dacă nu ai limită.</p>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="age_from">Vârstă minimă</Label>
-            <Input id="age_from" type="number" {...register('age_from')} />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="age_to">Vârstă maximă</Label>
-            <Input id="age_to" type="number" {...register('age_to')} />
-          </div>
-          <p className="text-muted-foreground text-sm sm:col-span-2">
-            Lasă gol dacă nu ai limită. Poți completa doar una.
-          </p>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="description">Descriere</Label>
-          <textarea
-            id="description"
-            rows={3}
-            {...register('description')}
-            aria-invalid={!!errors.description}
-            className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
-          />
-          {errors.description && (
-            <p className="text-destructive text-xs">{errors.description.message}</p>
-          )}
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-display text-lg">Despre activitate</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="name">Nume</Label>
+              <Input id="name" {...register('name')} aria-invalid={!!errors.name} />
+              {errors.name && <p className="text-destructive text-xs">{errors.name.message}</p>}
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <OfferCurrencyFields
+                currency={currency}
+                currencyField={register('currency')}
+                setValue={setValue}
+              />
+              <div className="space-y-1.5">
+                <Label htmlFor="sport_id">Sport</Label>
+                <select id="sport_id" className={cn(selectCls)} {...register('sport_id')}>
+                  <option value="">—</option>
+                  {sports.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.sport_id && (
+                  <p className="text-destructive text-xs">{errors.sport_id.message}</p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="location_id">Locație</Label>
+                <select id="location_id" className={cn(selectCls)} {...register('location_id')}>
+                  <option value="">—</option>
+                  {locations.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.location_id && (
+                  <p className="text-destructive text-xs">{errors.location_id.message}</p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="price_lei">Preț ({currency === 'EUR' ? 'EUR' : 'lei'})</Label>
+                <Input
+                  id="price_lei"
+                  type="number"
+                  step="0.01"
+                  {...register('price_lei')}
+                  aria-invalid={!!errors.price_lei}
+                />
+                {errors.price_lei && (
+                  <p className="text-destructive text-xs">{errors.price_lei.message}</p>
+                )}
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="description">Descriere</Label>
+              <textarea
+                id="description"
+                rows={3}
+                {...register('description')}
+                aria-invalid={!!errors.description}
+                className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
+              />
+              {errors.description && (
+                <p className="text-destructive text-xs">{errors.description.message}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-display text-lg">Când are loc</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="activity_date">Data</Label>
+                <Input
+                  id="activity_date"
+                  type="date"
+                  {...register('activity_date')}
+                  aria-invalid={!!errors.activity_date}
+                />
+                {errors.activity_date && (
+                  <p className="text-destructive text-xs">{errors.activity_date.message}</p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="start_time">Ora început</Label>
+                <Input
+                  id="start_time"
+                  type="time"
+                  {...register('start_time')}
+                  aria-invalid={!!errors.start_time}
+                />
+                {errors.start_time && (
+                  <p className="text-destructive text-xs">{errors.start_time.message}</p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="end_time">Ora final</Label>
+                <Input
+                  id="end_time"
+                  type="time"
+                  {...register('end_time')}
+                  aria-invalid={!!errors.end_time}
+                />
+                {errors.end_time && (
+                  <p className="text-destructive text-xs">{errors.end_time.message}</p>
+                )}
+              </div>
+            </div>
+            <p className="text-muted-foreground text-sm">Orele sunt în fusul României.</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-display text-lg">Locuri și vârste</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="capacity">Capacitate</Label>
+                <Input id="capacity" type="number" {...register('capacity')} />
+                <p className="text-muted-foreground text-sm">Lasă gol dacă nu ai limită.</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="age_from">Vârstă minimă</Label>
+                <Input id="age_from" type="number" {...register('age_from')} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="age_to">Vârstă maximă</Label>
+                <Input id="age_to" type="number" {...register('age_to')} />
+              </div>
+            </div>
+            <p className="text-muted-foreground text-sm">
+              Lasă gol dacă nu ai limită. Poți completa doar una.
+            </p>
+          </CardContent>
+        </Card>
         <HeroPhotoField
           hint={MESAJ_POZA_HERO}
           savedUrl={publicUrl('activity-photos', existing?.hero_photo_storage_path)}
