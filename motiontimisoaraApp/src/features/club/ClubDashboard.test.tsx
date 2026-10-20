@@ -146,9 +146,10 @@ test('stats mix is Antrenori, Cursuri, Locații, Stripe — not Anunțuri', asyn
 test('zero courses and locations stay visible as 0', async () => {
   mockClubStats()
   renderDashboard()
-  expect(await screen.findByTestId('club-stat-cursuri')).toHaveTextContent('0')
-  expect(screen.getByTestId('club-stat-locatii')).toHaveTextContent('0')
-  expect(screen.getByTestId('club-stat-antrenori')).toHaveTextContent('0')
+  const cursuri = await screen.findByTestId('club-stat-cursuri')
+  await waitFor(() => expect(cursuri).toHaveTextContent('0'))
+  await waitFor(() => expect(screen.getByTestId('club-stat-locatii')).toHaveTextContent('0'))
+  await waitFor(() => expect(screen.getByTestId('club-stat-antrenori')).toHaveTextContent('0'))
   expect(screen.queryByText('Niciun club asociat contului.')).not.toBeInTheDocument()
 })
 
@@ -181,9 +182,50 @@ test('stat cards share a fixed min-height so stacked phone tiles match', async (
   mockClubStats()
   renderDashboard()
   const stripe = await screen.findByTestId('club-stat-stripe')
-  for (const id of ['club-stat-antrenori', 'club-stat-cursuri', 'club-stat-locatii', 'club-stat-stripe']) {
+  for (const id of [
+    'club-stat-antrenori',
+    'club-stat-cursuri',
+    'club-stat-locatii',
+    'club-stat-stripe',
+  ]) {
     expect(screen.getByTestId(id).className).toMatch(/min-h-\[11\.5rem\]/)
     expect(screen.getByTestId(id).className).toMatch(/h-full/)
   }
   expect(stripe.className).toMatch(/cursor-pointer/)
+})
+
+test('counts show a skeleton while loading instead of a false 0', async () => {
+  mockClubStats()
+  mockedGetClubCourses.mockReturnValue(new Promise(() => {}))
+  renderDashboard()
+  const cursuri = await screen.findByTestId('club-stat-cursuri')
+  expect(screen.getByRole('status', { name: 'Se încarcă: Cursuri' })).toBeInTheDocument()
+  expect(cursuri).not.toHaveTextContent('0')
+})
+
+test('a failed count shows a dash and a hint, not 0', async () => {
+  mockClubStats()
+  mockedGetClubLocations.mockRejectedValue(new Error('500'))
+  renderDashboard()
+  const locatii = await screen.findByTestId('club-stat-locatii')
+  await waitFor(() => expect(locatii).toHaveTextContent('—'))
+  expect(locatii).toHaveTextContent('Nu am putut număra')
+  expect(locatii).not.toHaveTextContent('0')
+})
+
+test('failed club request offers Reîncearcă and recovers', async () => {
+  mockClubStats()
+  mockedGetMyClub.mockRejectedValueOnce(new Error('500'))
+  renderDashboard()
+  const retry = await screen.findByRole('button', { name: 'Reîncearcă' })
+  retry.click()
+  expect(await screen.findByRole('heading', { name: 'Salut, Audit!' })).toBeInTheDocument()
+})
+
+test('empty counts carry a next-step hint', async () => {
+  mockClubStats()
+  renderDashboard()
+  expect(await screen.findByText('Adaugă primul curs')).toBeInTheDocument()
+  expect(screen.getByText('Adaugă prima locație')).toBeInTheDocument()
+  expect(screen.getByText('Configurează plățile cu cardul')).toBeInTheDocument()
 })
