@@ -10,20 +10,28 @@ export function RequiredMark() {
   )
 }
 
+export function RequiredFieldsNote() {
+  return (
+    <p className="text-muted-foreground mt-2 text-sm">
+      Câmpurile marcate cu <span className="text-destructive">*</span> sunt obligatorii.
+    </p>
+  )
+}
+
 export function FormSection({
   title,
   description,
   children,
 }: {
   title: string
-  description: string
+  description?: string
   children: ReactNode
 }) {
   return (
     <Card>
       <CardHeader>
         <CardTitle className="font-display text-lg">{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+        {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
       <CardContent className="space-y-4">{children}</CardContent>
     </Card>

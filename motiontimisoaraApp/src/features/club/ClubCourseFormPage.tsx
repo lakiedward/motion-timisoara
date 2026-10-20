@@ -40,7 +40,7 @@ import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { FormSection, RequiredMark } from '@/components/FormSection'
+import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
 import { CourseOwnerField } from './course-form/CourseOwnerField'
 import { useCourseFormOwner, type CourseFormPortal } from './course-form/useCourseFormOwner'
 
@@ -237,9 +237,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
       <h1 className="font-display mt-4 text-2xl font-bold">
         {isEdit ? 'Editează curs' : 'Curs nou'}
       </h1>
-      <p className="text-muted-foreground mt-2 text-sm">
-        Câmpurile marcate cu <span className="text-destructive">*</span> sunt obligatorii.
-      </p>
+      <RequiredFieldsNote />
 
       {!isAdmin && (noCoaches || noLocations) && !isEdit && (
         <div className="bg-highlight/10 text-foreground/80 mt-4 rounded-xl border p-4 text-sm">
