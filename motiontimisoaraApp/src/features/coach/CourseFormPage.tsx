@@ -17,7 +17,7 @@ import {
   requireSerializedProgram,
   validateCourseProgramFields,
 } from '@/lib/course-program/recurrence'
-import { useEffect, useState, type MouseEvent } from 'react'
+import { useEffect, useState, type MouseEvent, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -43,12 +43,42 @@ import { OfferRulesFieldset } from '@/components/RulesFileField'
 import { campRulesFileFromRow, type CampRulesFileMeta } from '@/lib/camp-rules'
 import { baniToRon } from '@/lib/money'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { cn } from '@/lib/utils'
+import { Textarea } from '@/components/ui/textarea'
 
 const selectCls =
-  'border-input focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50'
+  'border-input dark:bg-input/30 flex h-touch-target w-full min-w-0 rounded-md border bg-transparent px-3 text-base shadow-xs transition-[color,box-shadow] outline-none hover:border-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-invalid:border-2 aria-invalid:border-destructive disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
+
+function Obligatoriu() {
+  return (
+    <span className="text-destructive" aria-hidden="true">
+      *
+    </span>
+  )
+}
+
+function Sectiune({
+  titlu,
+  descriere,
+  children,
+}: {
+  titlu: string
+  descriere: string
+  children: ReactNode
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-display text-lg">{titlu}</CardTitle>
+        <CardDescription>{descriere}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">{children}</CardContent>
+    </Card>
+  )
+}
 
 const NOTA_SPORT = 'Sportul rămâne cel salvat: cursul are înscrieri.'
 const NOTA_LOCATIE = 'Locația rămâne cea salvată: cursul are înscrieri.'
@@ -144,6 +174,13 @@ export default function CourseFormPage() {
   const cheieSport = cheieOptiuneSalvata(existing?.sport_id, sports, 'sport-in-asteptare')
   const cheieLocatie = cheieOptiuneSalvata(existing?.location_id, locations, 'locatie-in-asteptare')
 
+  const camp = (nume: keyof Values, nota?: string) => ({
+    'aria-invalid': !!errors[nume],
+    'aria-describedby':
+      [nota, fieldDescription(nume, undefined, errors[nume]?.message)].filter(Boolean).join(' ') ||
+      undefined,
+  })
+
   const pleaca = (event: MouseEvent<HTMLAnchorElement>) => {
     if (!areModificari) return
     event.preventDefault()
@@ -236,151 +273,180 @@ export default function CourseFormPage() {
         {isEdit ? 'Editează curs' : 'Curs nou'}
       </h1>
 
+      <p className="text-muted-foreground mt-2 text-sm">
+        Câmpurile marcate cu <span className="text-destructive">*</span> sunt obligatorii.
+      </p>
+
       <form
         onSubmit={handleSubmit(onSubmit, () =>
           setEroareHero(mesajHeroLipsa(pozaHero, existing?.hero_photo_storage_path ?? null)),
         )}
-        className="mt-6 space-y-4"
+        className="mt-6 space-y-6"
         noValidate
       >
-        <div className="space-y-1.5">
-          <Label htmlFor="name">Nume curs</Label>
-          <Input id="name" {...register('name')} aria-invalid={!!errors.name} />
-          {errors.name && <p className="text-destructive text-xs">{errors.name.message}</p>}
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <Sectiune titlu="Despre curs" descriere="Ce vede părintele pe pagina cursului.">
+          <div className="space-y-1.5">
+            <Label htmlFor="name">
+              Nume curs <Obligatoriu />
+            </Label>
+            <Input id="name" required {...register('name')} {...camp('name')} />
+            <FieldMessage id="name" error={errors.name?.message} />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="min-w-0 space-y-1.5">
+              <Label htmlFor="sport_id">
+                Sport <Obligatoriu />
+              </Label>
+              <select
+                id="sport_id"
+                key={cheieSport}
+                className={selectCls}
+                {...register('sport_id')}
+                {...camp('sport_id', campuriBlocate ? 'sport-blocat' : undefined)}
+                disabled={campuriBlocate}
+              >
+                <option value="">—</option>
+                {sports.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+              {campuriBlocate && (
+                <p id="sport-blocat" className="text-muted-foreground text-sm">
+                  {NOTA_SPORT}
+                </p>
+              )}
+              <FieldMessage id="sport_id" error={errors.sport_id?.message} />
+            </div>
+            <div className="min-w-0 space-y-1.5">
+              <Label htmlFor="location_id">
+                Locație <Obligatoriu />
+              </Label>
+              <select
+                id="location_id"
+                key={cheieLocatie}
+                className={selectCls}
+                {...register('location_id')}
+                {...camp('location_id', campuriBlocate ? 'locatie-blocata' : undefined)}
+                disabled={campuriBlocate}
+              >
+                <option value="">—</option>
+                {locations.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+              {campuriBlocate && (
+                <p id="locatie-blocata" className="text-muted-foreground text-sm">
+                  {NOTA_LOCATIE}
+                </p>
+              )}
+              <FieldMessage id="location_id" error={errors.location_id?.message} />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="description">
+              Descriere <Obligatoriu />
+            </Label>
+            <Textarea
+              id="description"
+              rows={4}
+              required
+              {...register('description')}
+              {...camp('description')}
+            />
+            <FieldMessage id="description" error={errors.description?.message} />
+          </div>
+        </Sectiune>
+
+        <Sectiune titlu="Copii și locuri" descriere="Pentru cine e cursul și câți copii primești.">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="min-w-0 space-y-1.5">
+              <Label htmlFor="level">Nivel</Label>
+              <select id="level" className={selectCls} {...register('level')}>
+                <option value="">—</option>
+                <option value="incepator">Începător</option>
+                <option value="intermediar">Intermediar</option>
+                <option value="avansat">Avansat</option>
+              </select>
+            </div>
+            <div className="min-w-0 space-y-1.5">
+              <Label htmlFor="capacity">
+                Capacitate <Obligatoriu />
+              </Label>
+              <Input
+                id="capacity"
+                type="number"
+                required
+                {...register('capacity')}
+                {...camp('capacity')}
+              />
+              <FieldMessage id="capacity" error={errors.capacity?.message} />
+            </div>
+            <div className="min-w-0 space-y-1.5">
+              <Label htmlFor="age_from">Vârstă minimă</Label>
+              <Input
+                id="age_from"
+                type="number"
+                aria-describedby="varste-hint"
+                {...register('age_from')}
+              />
+            </div>
+            <div className="min-w-0 space-y-1.5">
+              <Label htmlFor="age_to">Vârstă maximă</Label>
+              <Input
+                id="age_to"
+                type="number"
+                aria-describedby="varste-hint"
+                {...register('age_to')}
+              />
+            </div>
+            <p id="varste-hint" className="text-muted-foreground text-sm sm:col-span-2">
+              Lasă gol dacă nu ai limită. Poți completa doar una.
+            </p>
+          </div>
+        </Sectiune>
+
+        <Sectiune titlu="Preț" descriere="Cât plătește părintele pentru o ședință.">
           <OfferCurrencyFields
             currency={currency}
             currencyField={register('currency')}
             setValue={setValue}
             disabled={campuriBlocate}
           />
-          <div className="space-y-1.5">
-            <Label htmlFor="sport_id">Sport</Label>
-            <select
-              id="sport_id"
-              key={cheieSport}
-              className={cn(selectCls)}
-              aria-describedby={campuriBlocate ? 'sport-blocat' : undefined}
-              {...register('sport_id')}
-              disabled={campuriBlocate}
-            >
-              <option value="">—</option>
-              {sports.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-            {campuriBlocate && (
-              <p id="sport-blocat" className="text-muted-foreground text-sm">
-                {NOTA_SPORT}
-              </p>
-            )}
-            {errors.sport_id && (
-              <p className="text-destructive text-xs">{errors.sport_id.message}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="location_id">Locație</Label>
-            <select
-              id="location_id"
-              key={cheieLocatie}
-              className={cn(selectCls)}
-              aria-describedby={campuriBlocate ? 'locatie-blocata' : undefined}
-              {...register('location_id')}
-              disabled={campuriBlocate}
-            >
-              <option value="">—</option>
-              {locations.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.name}
-                </option>
-              ))}
-            </select>
-            {campuriBlocate && (
-              <p id="locatie-blocata" className="text-muted-foreground text-sm">
-                {NOTA_LOCATIE}
-              </p>
-            )}
-            {errors.location_id && (
-              <p className="text-destructive text-xs">{errors.location_id.message}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="level">Nivel</Label>
-            <select id="level" className={cn(selectCls)} {...register('level')}>
-              <option value="">—</option>
-              <option value="incepator">Începător</option>
-              <option value="intermediar">Intermediar</option>
-              <option value="avansat">Avansat</option>
-            </select>
-          </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 sm:max-w-[calc(50%-0.5rem)]">
             <Label htmlFor="price_per_session_lei">
-              Preț / ședință ({currency === 'EUR' ? 'EUR' : 'lei'})
+              Preț / ședință ({currency === 'EUR' ? 'EUR' : 'lei'}) <Obligatoriu />
             </Label>
             <Input
               id="price_per_session_lei"
               type="number"
               step="0.01"
-              aria-describedby={campuriBlocate ? 'pret-blocat' : undefined}
+              required
               {...register('price_per_session_lei')}
+              {...camp('price_per_session_lei', campuriBlocate ? 'pret-blocat' : undefined)}
               disabled={campuriBlocate}
-              aria-invalid={!!errors.price_per_session_lei}
             />
             {campuriBlocate && (
               <p id="pret-blocat" className="text-muted-foreground text-sm">
                 {NOTA_PRET}
               </p>
             )}
-            {errors.price_per_session_lei && (
-              <p className="text-destructive text-xs">{errors.price_per_session_lei.message}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="age_from">Vârstă minimă</Label>
-            <Input id="age_from" type="number" {...register('age_from')} />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="age_to">Vârstă maximă</Label>
-            <Input id="age_to" type="number" {...register('age_to')} />
-          </div>
-          <p className="text-muted-foreground text-sm sm:col-span-2">
-            Lasă gol dacă nu ai limită. Poți completa doar una.
-          </p>
-          <div className="space-y-1.5">
-            <Label htmlFor="capacity">Capacitate</Label>
-            <Input
-              id="capacity"
-              type="number"
-              {...register('capacity')}
-              aria-invalid={!!errors.capacity}
+            <FieldMessage
+              id="price_per_session_lei"
+              error={errors.price_per_session_lei?.message}
             />
-            {errors.capacity && (
-              <p className="text-destructive text-xs">{errors.capacity.message}</p>
-            )}
           </div>
-        </div>
+        </Sectiune>
+
         <CourseProgramFields
           control={control}
           register={register}
           setValue={setValue}
           errors={errors}
         />
-        <div className="space-y-1.5">
-          <Label htmlFor="description">Descriere</Label>
-          <textarea
-            id="description"
-            rows={4}
-            {...register('description')}
-            aria-invalid={!!errors.description}
-            className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
-          />
-          {errors.description && (
-            <p className="text-destructive text-xs">{errors.description.message}</p>
-          )}
-        </div>
         <HeroPhotoField
           hint={MESAJ_POZA_HERO}
           savedUrl={publicUrl('course-photos', existing?.hero_photo_storage_path)}
@@ -400,7 +466,7 @@ export default function CourseFormPage() {
           remove={stergeRegulamentCurs}
           intro="Fișierul apare pe pagina publică a cursului. Părinții îl pot deschide; nu trebuie să îl accepte la înscriere."
         />
-        <div className="flex gap-2 pt-2">
+        <div className="flex flex-wrap gap-2 pt-2">
           <Button type="submit" disabled={isSubmitting || faraCurs}>
             {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>

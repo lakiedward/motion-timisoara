@@ -1,7 +1,9 @@
 import { beforeEach, expect, test, vi } from 'vitest'
 
 import {
+  countCourseEnrollments,
   countCreatedSince,
+  getAllCourses,
   formatAdminCount,
   getAdminStats,
   inviteCodeStatus,
@@ -213,4 +215,33 @@ test('getAdminStats nu aruncă dacă o numărătoare eșuează', async () => {
     error: 'Nu am putut încărca numărul de tabere.',
   })
   expect(result.newUsers7d).toEqual({ value: 2, error: null, capped: false })
+})
+
+test('getAllCourses atașează fiecărui curs înscrierile active și în așteptare', async () => {
+  raspuns = {
+    courses: { data: [{ id: 'c1' }, { id: 'c2' }], error: null },
+    enrollments: {
+      data: [
+        { entity_id: 'c1', status: 'ACTIVE' },
+        { entity_id: 'c1', status: 'ACTIVE' },
+        { entity_id: 'c1', status: 'PENDING' },
+      ],
+      error: null,
+    },
+  }
+  const cursuri = await getAllCourses()
+  expect(cursuri.map((c) => [c.id, c.enrollments])).toEqual([
+    ['c1', { active: 2, pending: 1 }],
+    ['c2', { active: 0, pending: 0 }],
+  ])
+  expect(cereri.enrollments).toContain('eq(kind,COURSE)')
+  expect(cereri.enrollments).toContain('in(status,ACTIVE,PENDING)')
+})
+
+test('countCourseEnrollments ignoră alte stări', () => {
+  const counts = countCourseEnrollments([
+    { entity_id: 'a', status: 'CANCELLED' },
+    { entity_id: 'a', status: 'PENDING' },
+  ])
+  expect(counts.get('a')).toEqual({ active: 0, pending: 1 })
 })
