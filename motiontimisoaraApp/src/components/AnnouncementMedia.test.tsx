@@ -1,6 +1,10 @@
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, expect, test } from 'vitest'
+import { afterEach, expect, test, vi } from 'vitest'
+
+const mocks = vi.hoisted(() => ({ native: vi.fn(() => false), open: vi.fn() }))
+vi.mock('@/lib/platform', () => ({ isNative: mocks.native }))
+vi.mock('@capacitor/browser', () => ({ Browser: { open: mocks.open } }))
 
 import type { AtasamentAfisabil } from '@/api/attachments'
 import AnnouncementMedia from './AnnouncementMedia'
@@ -10,13 +14,18 @@ function attachment(overrides: Partial<AtasamentAfisabil> = {}): AtasamentAfisab
     id: 'image-1',
     fel: 'IMAGE',
     link: 'https://motion.example/photo.jpg',
+    linkDescarcare: null,
     contentType: 'image/jpeg',
     expiraLa: null,
     ...overrides,
   }
 }
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  mocks.native.mockReturnValue(false)
+  mocks.open.mockReset()
+})
 
 test('opens the photo with the keyboard, traps focus and returns it after Escape', async () => {
   const user = userEvent.setup()
@@ -111,4 +120,33 @@ test('preserves playback, expiry information and downloading of videos', () => {
   const download = screen.getByRole('link', { name: 'Descarcă' })
   expect(download).toHaveAttribute('download')
   expect(download).toHaveAttribute('href', 'https://motion.example/training.mp4')
+})
+
+const savedVideo = attachment({
+  fel: 'VIDEO',
+  link: 'https://motion.example/training.mp4',
+  linkDescarcare: 'https://motion.example/training.mp4?download=filmare-motiontimisoara.mp4',
+  expiraLa: '2026-09-25T12:00:00Z',
+})
+
+test('downloads through the signed attachment link that saves the video', () => {
+  render(<AnnouncementMedia atasamente={[savedVideo]} />)
+  expect(screen.getByLabelText('Filmare atașată anunțului')).toHaveAttribute(
+    'src',
+    'https://motion.example/training.mp4',
+  )
+  expect(screen.getByRole('link', { name: 'Descarcă' })).toHaveAttribute(
+    'href',
+    'https://motion.example/training.mp4?download=filmare-motiontimisoara.mp4',
+  )
+})
+
+test('opens the download in the system browser inside the native app', async () => {
+  mocks.native.mockReturnValue(true)
+  const user = userEvent.setup()
+  render(<AnnouncementMedia atasamente={[savedVideo]} />)
+  await user.click(screen.getByRole('link', { name: 'Descarcă' }))
+  expect(mocks.open).toHaveBeenCalledWith({
+    url: 'https://motion.example/training.mp4?download=filmare-motiontimisoara.mp4',
+  })
 })

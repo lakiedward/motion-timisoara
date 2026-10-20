@@ -1,8 +1,11 @@
+import { Browser } from '@capacitor/browser'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Download, Link2, X } from 'lucide-react'
+import type { MouseEvent } from 'react'
 
 import type { AtasamentAfisabil } from '@/api/attachments'
 import { Button } from '@/components/ui/button'
+import { isNative } from '@/lib/platform'
 
 function formatExpiryDate(iso: string): string {
   return new Date(iso).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' })
@@ -28,6 +31,12 @@ function getExternalLink(value: string): { href: string; label: string } | null 
   } catch {
     return null
   }
+}
+
+function openDownloadNatively(event: MouseEvent<HTMLAnchorElement>, url: string) {
+  if (!isNative()) return
+  event.preventDefault()
+  void Browser.open({ url })
 }
 
 function AnnouncementImage({
@@ -113,27 +122,34 @@ export default function AnnouncementMedia({ atasamente }: { atasamente: Atasamen
         </ul>
       )}
 
-      {videos.map((attachment) => (
-        <div key={attachment.id} className="space-y-1.5">
-          <video
-            src={attachment.link}
-            controls
-            preload="metadata"
-            aria-label="Filmare atașată anunțului"
-            className="bg-muted max-h-96 w-full rounded-xl"
-          />
-          {attachment.expiraLa && (
-            <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-              <span>Filmarea se șterge pe {formatExpiryDate(attachment.expiraLa)}.</span>
-              <Button asChild variant="link" className="h-auto min-h-11 p-0 text-xs">
-                <a href={attachment.link} download>
-                  <Download className="size-3.5" aria-hidden="true" /> Descarcă
-                </a>
-              </Button>
-            </div>
-          )}
-        </div>
-      ))}
+      {videos.map((attachment) => {
+        const downloadUrl = attachment.linkDescarcare ?? attachment.link
+        return (
+          <div key={attachment.id} className="space-y-1.5">
+            <video
+              src={attachment.link}
+              controls
+              preload="metadata"
+              aria-label="Filmare atașată anunțului"
+              className="bg-muted max-h-96 w-full rounded-xl"
+            />
+            {attachment.expiraLa && (
+              <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                <span>Filmarea se șterge pe {formatExpiryDate(attachment.expiraLa)}.</span>
+                <Button asChild variant="link" className="h-auto min-h-11 p-0 text-xs">
+                  <a
+                    href={downloadUrl}
+                    download
+                    onClick={(event) => openDownloadNatively(event, downloadUrl)}
+                  >
+                    <Download className="size-3.5" aria-hidden="true" /> Descarcă
+                  </a>
+                </Button>
+              </div>
+            )}
+          </div>
+        )
+      })}
 
       {!!links.length && (
         <ul className="space-y-2">
