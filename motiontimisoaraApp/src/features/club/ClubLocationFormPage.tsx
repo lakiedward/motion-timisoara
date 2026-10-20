@@ -12,8 +12,10 @@ import { createClubLocation, updateClubLocation } from '@/api/club'
 import { createAdminLocation } from '@/api/locations/admin-locations'
 import LocationPicker from '@/components/LocationPicker'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import LocationTypeOptions from '@/components/location-form/LocationTypeOptions'
 import { cityForCounty, countyForCity, normalizeCounty } from '@/lib/geography/romanian-places'
 import NearbyLocations from './location-form/NearbyLocations'
@@ -40,6 +42,7 @@ const schema = z
     address: z.string().optional(),
     city: z.string().optional(),
     county: z.string().optional(),
+    description: z.string().optional(),
     lat: z.number().nullable(),
     lng: z.number().nullable(),
   })
@@ -92,6 +95,7 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
         city: existing.city ?? '',
         county:
           normalizeCounty(existing.county) ?? existing.county ?? countyForCity(existing.city) ?? '',
+        description: existing.description ?? '',
         lat: existing.lat,
         lng: existing.lng,
       })
@@ -154,6 +158,7 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
       address: v.address || null,
       city: v.city || null,
       county: v.county || null,
+      description: v.description || null,
       lat: v.lat,
       lng: v.lng,
     }
@@ -213,117 +218,141 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
         {isEdit ? 'Editează locație' : 'Locație nouă'}
       </h1>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4" noValidate>
-        {isAdmin && (
-          <LocationOwnerField
-            value={owner}
-            clubs={form.clubs}
-            coaches={form.coaches}
-            locked={isEdit}
-            lockedName={existing?.club?.name ?? existing?.creator?.name ?? '—'}
-            error={ownerError}
-            selectClassName={locationSelectClassName}
-            onChange={(next) => {
-              form.setOwner(next)
-              setOwnerError(null)
-            }}
-          />
-        )}
-        <div className="space-y-1.5">
-          <Label htmlFor="name">Nume</Label>
-          <Input
-            id="name"
-            className="h-11 lg:h-9"
-            {...register('name')}
-            aria-invalid={!!errors.name}
-            aria-describedby={errors.name ? 'name-error' : undefined}
-          />
-          {errors.name && (
-            <p id="name-error" className="text-destructive text-xs">
-              {errors.name.message}
-            </p>
-          )}
-        </div>
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-6" noValidate>
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-display text-lg">Despre locație</CardTitle>
+            <CardDescription>Numele și tipul apar la cursuri, activități și pe hartă.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isAdmin && (
+              <LocationOwnerField
+                value={owner}
+                clubs={form.clubs}
+                coaches={form.coaches}
+                locked={isEdit}
+                lockedName={existing?.club?.name ?? existing?.creator?.name ?? '—'}
+                error={ownerError}
+                selectClassName={locationSelectClassName}
+                onChange={(next) => {
+                  form.setOwner(next)
+                  setOwnerError(null)
+                }}
+              />
+            )}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="name">Nume</Label>
+                <Input
+                  id="name"
+                  className="h-11 scroll-mt-24 lg:h-9"
+                  {...register('name')}
+                  aria-invalid={!!errors.name}
+                  aria-describedby={errors.name ? 'name-error' : undefined}
+                />
+                {errors.name && (
+                  <p id="name-error" className="text-destructive text-xs">
+                    {errors.name.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="type">Tip</Label>
+                <select id="type" className={locationSelectClassName} {...register('type')}>
+                  <LocationTypeOptions />
+                </select>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="description">Descriere</Label>
+              <Textarea
+                id="description"
+                rows={3}
+                placeholder="Intrarea, parcarea sau alte repere pentru părinți"
+                {...register('description')}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="space-y-1.5">
-          <div className="space-y-1.5">
-            <Label htmlFor="type">Tip</Label>
-            <select id="type" className={locationSelectClassName} {...register('type')}>
-              <LocationTypeOptions />
-            </select>
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-display text-lg">Unde se află</CardTitle>
+            <CardDescription>
+              Punctul de pe hartă arată unde vin copiii la antrenament.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <LocationAddressFields
+              county={county}
+              city={city}
+              onCountyChange={(nextCounty) => {
+                activePickerVersion.current += 1
+                setPickerVersion(activePickerVersion.current)
+                setValue('county', nextCounty, { shouldDirty: true })
+                setValue('city', '', { shouldDirty: true })
+              }}
+              onCityChange={(nextCity) => {
+                activePickerVersion.current += 1
+                setPickerVersion(activePickerVersion.current)
+                setValue('city', nextCity, { shouldDirty: true })
+              }}
+            />
 
-        <LocationAddressFields
-          county={county}
-          city={city}
-          onCountyChange={(nextCounty) => {
-            activePickerVersion.current += 1
-            setPickerVersion(activePickerVersion.current)
-            setValue('county', nextCounty, { shouldDirty: true })
-            setValue('city', '', { shouldDirty: true })
-          }}
-          onCityChange={(nextCity) => {
-            activePickerVersion.current += 1
-            setPickerVersion(activePickerVersion.current)
-            setValue('city', nextCity, { shouldDirty: true })
-          }}
-        />
-
-        <LocationPicker
-          key={pickerVersion}
-          value={punct}
-          address={address}
-          onResolvingChange={setIsResolvingAddress}
-          onAddressChange={(nextAddress) => setValue('address', nextAddress, { shouldDirty: true })}
-          invalid={!!errors.lat}
-          errorId={errors.lat ? 'punct-error' : undefined}
-          onChange={(p) => {
-            if (activePickerVersion.current !== pickerVersion) return
-            if (getValues('lat') !== p.lat || getValues('lng') !== p.lng) {
-              setLocationChoice(null)
-              if (!p.resolved) {
-                setValue('address', '')
-                setValue('county', '')
-                setValue('city', '')
+            <LocationPicker
+              key={pickerVersion}
+              value={punct}
+              address={address}
+              onResolvingChange={setIsResolvingAddress}
+              onAddressChange={(nextAddress) =>
+                setValue('address', nextAddress, { shouldDirty: true })
               }
-            }
-            setValue('lat', p.lat)
-            setValue('lng', p.lng)
-            void trigger('lat')
-            if (p.resolved) {
-              const nextCounty =
-                normalizeCounty(p.county) ?? p.county ?? countyForCity(p.city) ?? ''
-              setValue('county', nextCounty, { shouldDirty: true })
-              setValue('city', p.city ? cityForCounty(p.city, nextCounty) : '', {
-                shouldDirty: true,
-              })
-              setValue('address', p.address ?? '', { shouldDirty: true })
-            }
-          }}
-        />
-        {errors.lat && (
-          <p id="punct-error" className="text-destructive text-xs">
-            {errors.lat.message}
-          </p>
-        )}
-        {!isEdit && punct && (
-          <NearbyLocations
-            locations={nearbyLocations}
-            clubId={clubId}
-            isPending={nearbyQuery.isPending || nearbyQuery.isFetching}
-            isError={nearbyQuery.isError}
-            isFetching={nearbyQuery.isFetching}
-            choice={currentChoice}
-            onRetry={() => void nearbyQuery.refetch()}
-            onChoose={chooseNearbyLocation}
-            onCreateNew={() =>
-              setLocationChoice({ pointKey: locationPointKey(punct), sourceId: null })
-            }
-          />
-        )}
+              invalid={!!errors.lat}
+              errorId={errors.lat ? 'punct-error' : undefined}
+              error={errors.lat?.message}
+              onChange={(p) => {
+                if (activePickerVersion.current !== pickerVersion) return
+                if (getValues('lat') !== p.lat || getValues('lng') !== p.lng) {
+                  setLocationChoice(null)
+                  if (!p.resolved) {
+                    setValue('address', '')
+                    setValue('county', '')
+                    setValue('city', '')
+                  }
+                }
+                setValue('lat', p.lat)
+                setValue('lng', p.lng)
+                void trigger('lat')
+                if (p.resolved) {
+                  const nextCounty =
+                    normalizeCounty(p.county) ?? p.county ?? countyForCity(p.city) ?? ''
+                  setValue('county', nextCounty, { shouldDirty: true })
+                  setValue('city', p.city ? cityForCounty(p.city, nextCounty) : '', {
+                    shouldDirty: true,
+                  })
+                  setValue('address', p.address ?? '', { shouldDirty: true })
+                }
+              }}
+            />
+            {!isEdit && punct && (
+              <NearbyLocations
+                locations={nearbyLocations}
+                clubId={clubId}
+                isPending={nearbyQuery.isPending || nearbyQuery.isFetching}
+                isError={nearbyQuery.isError}
+                isFetching={nearbyQuery.isFetching}
+                choice={currentChoice}
+                onRetry={() => void nearbyQuery.refetch()}
+                onChoose={chooseNearbyLocation}
+                onCreateNew={() =>
+                  setLocationChoice({ pointKey: locationPointKey(punct), sourceId: null })
+                }
+              />
+            )}
+          </CardContent>
+        </Card>
 
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-2">
           <Button
             type="submit"
             className="h-11 lg:h-9"

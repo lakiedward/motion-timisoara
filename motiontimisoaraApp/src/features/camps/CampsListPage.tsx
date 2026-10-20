@@ -2,18 +2,20 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Plus, Users, Images, ReceiptText, Clock } from 'lucide-react'
 
-import { getTaberelemele, type TabaraDinLista } from '@/api/camps-admin'
+import { getTaberelemele, getToateTaberele, type TabaraDinLista } from '@/api/camps-admin'
 import { formatZi, sAIncheiat } from '@/api/camps'
 import { formatMoney, rezumatPretPeVarsta } from '@/lib/money'
 import { plural } from '@/lib/plural'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { useAuth } from '@/lib/auth-context'
 import { useProprietarTabere } from './useProprietarTabere'
 import type { CampPortalBaza } from './camp-portal'
 import CampInvitations from './CampInvitations'
 
 export default function CampsListPage({ baza }: { baza: CampPortalBaza }) {
   const { proprietar, gata, eroare, reincearca, eClub } = useProprietarTabere()
+  const eAdmin = useAuth().user?.role === 'ADMIN'
 
   const {
     data: tabere = [],
@@ -21,8 +23,10 @@ export default function CampsListPage({ baza }: { baza: CampPortalBaza }) {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ['taberele-mele', proprietar.clubId, proprietar.coachUserId],
-    queryFn: () => getTaberelemele(proprietar),
+    queryKey: eAdmin
+      ? ['taberele-toate']
+      : ['taberele-mele', proprietar.clubId, proprietar.coachUserId],
+    queryFn: () => (eAdmin ? getToateTaberele() : getTaberelemele(proprietar)),
     enabled: gata,
   })
   if (eroare || isError) {
@@ -42,7 +46,7 @@ export default function CampsListPage({ baza }: { baza: CampPortalBaza }) {
 
   return (
     <div>
-      {!eClub && <CampInvitations />}
+      {!eClub && !eAdmin && <CampInvitations />}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl font-bold">Tabere</h1>
