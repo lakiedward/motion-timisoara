@@ -11,11 +11,13 @@ const watches = (page: Page) => page.evaluate(() =>
 
 async function startSharing(page: Page) {
   const panel = coachPanel(page);
-  await expect(panel.getByRole('checkbox')).toBeEnabled();
-  await panel.getByRole('checkbox').check();
-  await panel.getByRole('button', { name: 'Pornește partajarea' }).click();
+  await panel.getByRole('button', { name: 'Partajează locația' }).click();
+  const consent = page.getByRole('dialog', { name: 'Partajezi locația pentru tabără?' });
+  await expect(consent.getByRole('checkbox')).toBeEnabled();
+  await consent.getByRole('checkbox').check();
+  await consent.getByRole('button', { name: 'Pornește partajarea' }).click();
   await expect(activeBanner(page)).toBeVisible();
-  await expect(panel.getByText(/Ultima poziție trimisă/)).toBeVisible();
+  await expect(panel.getByText(/ultima poziție \d/)).toBeVisible();
 }
 
 for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 }, { width: 1440, height: 900 }]) {
@@ -41,7 +43,7 @@ for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 
       await expect(copil.getByRole('button', { name: 'Confirmă sosirea', exact: true })).toBeVisible();
       await expect.poll(() => parentActions('list').length).toBeGreaterThan(0);
       await expect(live(parent)).toHaveCount(0);
-      await expect(coachPanel(coach).getByRole('button', { name: 'Pornește partajarea' })).toBeDisabled();
+      await expect(coachPanel(coach).getByRole('button', { name: 'Partajează locația' })).toBeEnabled();
       expect(await watches(coach)).toBe(0);
       await captureCamp(coach, info, 'before-arrival');
 
