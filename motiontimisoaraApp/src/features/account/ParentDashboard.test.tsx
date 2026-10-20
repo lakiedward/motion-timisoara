@@ -111,14 +111,15 @@ test('a failed child list keeps the error in place of the list and retry brings 
   enrollmentsRequest.mockResolvedValue([enrollment('ACTIVE')])
   renderDashboard()
 
-  expect(await screen.findByRole('button', { name: 'Reîncearcă: Copiii mei' })).toBeEnabled()
-  expect(screen.getByRole('heading', { name: 'Copiii mei' })).toBeInTheDocument()
+  const list = await screen.findByRole('region', { name: 'Copiii mei' })
+  expect(await within(list).findByRole('button', { name: 'Reîncearcă' })).toBeEnabled()
+  expect(within(list).getByText('Nu am putut încărca datele.')).toBeInTheDocument()
   expect(screen.getAllByText('Nu am putut încărca datele.')).toHaveLength(2)
   expect(screen.queryByText('Niciun copil adăugat încă.')).not.toBeInTheDocument()
   expect(screen.queryByRole('link', { name: 'Adaugă copil' })).not.toBeInTheDocument()
   expect(screen.queryByRole('link', { name: 'Adaugă primul copil' })).not.toBeInTheDocument()
 
-  fireEvent.click(screen.getByRole('button', { name: 'Reîncearcă: Copiii mei' }))
+  fireEvent.click(within(list).getByRole('button', { name: 'Reîncearcă' }))
   await waitFor(() => expect(childrenRequest).toHaveBeenCalledTimes(2))
   expect(enrollmentsRequest).toHaveBeenCalledTimes(1)
   expect(screen.queryByText('Niciun copil adăugat încă.')).not.toBeInTheDocument()
@@ -130,7 +131,11 @@ test('a failed child list keeps the error in place of the list and retry brings 
     'href',
     '/account/child/child-520',
   )
-  expect(screen.queryByRole('button', { name: 'Reîncearcă: Copiii mei' })).not.toBeInTheDocument()
+  expect(
+    within(screen.getByRole('region', { name: 'Copiii mei' })).queryByRole('button', {
+      name: 'Reîncearcă',
+    }),
+  ).not.toBeInTheDocument()
   expect(screen.queryByText('Nu am putut încărca datele.')).not.toBeInTheDocument()
   expect(screen.queryByText('Niciun copil adăugat încă.')).not.toBeInTheDocument()
 })

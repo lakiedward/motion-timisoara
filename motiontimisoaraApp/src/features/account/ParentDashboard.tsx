@@ -3,13 +3,15 @@ import { useQuery } from '@tanstack/react-query'
 import { CalendarCheck, Plus, Search, UserRound } from 'lucide-react'
 
 import { useAuth } from '@/lib/auth-context'
-import { childAge, getMyChildren, getMyEnrollments } from '@/api/account'
+import { getMyChildren, getMyEnrollments } from '@/api/account'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
 import { cn } from '@/lib/utils'
 import { PushSettingsCard } from '@/features/notifications/PushSettingsCard'
 import { LiveLocationBanner } from '@/features/live-location/parent/LiveLocationBanner'
+import { DashboardChildrenList } from './DashboardChildrenList'
 
 export default function ParentDashboard() {
   const { user } = useAuth()
@@ -77,31 +79,13 @@ export default function ParentDashboard() {
 
       <PushSettingsCard />
 
-      {childrenListLoading && (
-        <div role="status" aria-label="Se încarcă lista copiilor" className="space-y-4">
-          <Skeleton className="h-6 w-32" />
-          <Skeleton className="h-24 rounded-3xl" />
-        </div>
-      )}
-
-      {childrenQuery.isError && !childrenQuery.isFetching && (
-        <section>
+      {(childrenListLoading || childrenQuery.isError || childrenQuery.isSuccess) && (
+        <section aria-labelledby="dashboard-children-title">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-xl font-bold">Copiii mei</h2>
-          </div>
-          <LoadFailure
-            label="Copiii mei"
-            retrying={false}
-            onRetry={() => void childrenQuery.refetch()}
-          />
-        </section>
-      )}
-
-      {childrenQuery.isSuccess && (
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-xl font-bold">Copiii mei</h2>
-            {children.length > 0 && (
+            <h2 id="dashboard-children-title" className="font-display text-xl font-bold">
+              Copiii mei
+            </h2>
+            {childrenQuery.isSuccess && children.length > 0 && (
               <Button asChild size="sm" variant="outline">
                 <Link to="/account/child/new">
                   <Plus /> Adaugă copil
@@ -109,33 +93,30 @@ export default function ParentDashboard() {
               </Button>
             )}
           </div>
-          {children.length ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {children.map((c) => (
-                <Link
-                  key={c.id}
-                  to={`/account/child/${c.id}`}
-                  className="bg-card shadow-card hover:shadow-card-hover flex items-center gap-3 rounded-3xl p-5 transition-all hover:-translate-y-1"
-                >
-                  <span className="bg-primary/10 text-primary grid size-12 place-items-center rounded-full font-bold">
-                    {c.name.charAt(0)}
-                  </span>
-                  <div>
-                    <div className="font-semibold">{c.name}</div>
-                    <div className="text-muted-foreground text-sm">
-                      {childAge(c.birth_date)} ani
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+          {childrenListLoading ? (
+            <StatusView
+              state="loading"
+              title="Se încarcă lista copiilor"
+              rows={2}
+              rowHeight={88}
+              className="gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            />
+          ) : childrenQuery.isError ? (
+            <StatusView state="error" onRetry={() => void childrenQuery.refetch()} />
+          ) : children.length ? (
+            <DashboardChildrenList items={children} />
           ) : (
-            <div className="text-muted-foreground rounded-3xl border border-dashed py-12 text-center">
-              Niciun copil adăugat încă.{' '}
-              <Link to="/account/child/new" className="text-primary font-semibold">
-                Adaugă primul copil
-              </Link>
-            </div>
+            <StatusView
+              state="empty"
+              title="Niciun copil adăugat încă."
+              action={
+                <Button asChild className="mt-3">
+                  <Link to="/account/child/new">
+                    <Plus /> Adaugă primul copil
+                  </Link>
+                </Button>
+              }
+            />
           )}
         </section>
       )}
