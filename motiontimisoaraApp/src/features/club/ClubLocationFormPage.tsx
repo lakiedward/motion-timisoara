@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
+import { locationWriteErrorMessage } from '@/lib/geography/shared-location-guard'
 import { toast } from 'sonner'
 
 import { createClubLocation, getClubLocationById, getMyClub, updateClubLocation } from '@/api/club'
@@ -153,8 +154,8 @@ export default function ClubLocationFormPage() {
       qc.invalidateQueries({ queryKey: ['club-nearby-locations'] })
       toast.success(isEdit ? 'Locație actualizată.' : 'Locație creată.')
       navigate('/club/locations')
-    } catch {
-      toast.error('Nu am putut salva locația.')
+    } catch (e) {
+      toast.error(locationWriteErrorMessage(e, 'Nu am putut salva locația.'))
     }
   }
   if (isEdit && !!clubId && aEsuatCitirea) {

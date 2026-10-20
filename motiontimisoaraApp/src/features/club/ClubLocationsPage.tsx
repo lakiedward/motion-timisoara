@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
+import { locationWriteErrorMessage } from '@/lib/geography/shared-location-guard'
 import { toast } from 'sonner'
 
 import { getMyClub, getClubLocations, setClubLocationActive, type ClubLocation } from '@/api/club'
@@ -55,7 +56,7 @@ export default function ClubLocationsPage() {
       qc.invalidateQueries({ queryKey: ['club-locations', clubId] })
       toast.success(active ? `${name} e din nou activă.` : `${name} a fost dezactivată.`)
     },
-    onError: () => toast.error('Nu am putut actualiza locația.'),
+    onError: (e) => toast.error(locationWriteErrorMessage(e, 'Nu am putut actualiza locația.')),
   })
   const { active, inactive } = grupeazaDupaStare(filterLocations(locations, filtre))
   const total = locations.length
