@@ -38,7 +38,6 @@ Use `npm run typecheck`, not bare `tsc --noEmit`: the root TypeScript configurat
 - The app requires `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. `VITE_STRIPE_PUBLISHABLE_KEY` is optional; an absent key gives cash-only fallback. Vitest supplies test Supabase values itself.
 - Product Supabase: `ehdzafadshbaaghzdzdo`. Team Tracker Supabase: `ntjzghsbrzkvpkniotaj`. Keep them separate.
 - Supabase local services and isolated SQL runners need Docker. Native iOS builds need macOS/Xcode; Windows/browser checks cannot prove iOS behavior.
-- `MOTION_ANDROID_DEMO=1` builds an Android shell loading the public demo URL. It does not prove a bundled local web build.
 
 ## Code conventions that must be preserved
 
