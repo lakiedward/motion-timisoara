@@ -77,14 +77,14 @@ beforeEach(() => {
 })
 
 async function completeaza(user: ReturnType<typeof userEvent.setup>, locatie: string) {
-  await user.type(screen.getByLabelText('Nume'), 'Atelier ciclism')
-  await user.selectOptions(screen.getByLabelText('Sport'), SPORT)
-  await user.selectOptions(screen.getByLabelText('Locație'), locatie)
-  fireEvent.change(screen.getByLabelText('Data'), { target: { value: '2027-07-10' } })
-  fireEvent.change(screen.getByLabelText('Ora început'), { target: { value: '09:00' } })
-  fireEvent.change(screen.getByLabelText('Ora final'), { target: { value: '11:00' } })
-  await user.type(screen.getByLabelText('Preț (lei)'), '20')
-  await user.type(screen.getByLabelText('Descriere'), 'Atelier pentru copii.')
+  await user.type(screen.getByLabelText(/^Nume/), 'Atelier ciclism')
+  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
+  await user.selectOptions(screen.getByLabelText(/^Locație/), locatie)
+  fireEvent.change(screen.getByLabelText(/^Data/), { target: { value: '2027-07-10' } })
+  fireEvent.change(screen.getByLabelText(/^Ora început/), { target: { value: '09:00' } })
+  fireEvent.change(screen.getByLabelText(/^Ora final/), { target: { value: '11:00' } })
+  await user.type(screen.getByLabelText(/^Preț \(lei\)/), '20')
+  await user.type(screen.getByLabelText(/^Descriere/), 'Atelier pentru copii.')
   fireEvent.change(screen.getByLabelText('Poza din capul paginii'), {
     target: { files: [new File(['poza'], 'hero.jpg', { type: 'image/jpeg' })] },
   })
@@ -172,7 +172,7 @@ test('editing keeps the organizer locked and saves a new coach', async () => {
     { user_id: SOLO_COACH, name: 'Ana Rusu' },
   ] as never)
   renderForm('/admin/activities/a1/edit')
-  await waitFor(() => expect(screen.getByLabelText('Nume')).toHaveValue('Atelier existent'))
+  await waitFor(() => expect(screen.getByLabelText(/^Nume/)).toHaveValue('Atelier existent'))
   expect(screen.getByRole('combobox', { name: 'Organizator' })).toBeDisabled()
   expect(screen.getByLabelText('Antrenor')).toHaveValue(CLUB_COACH)
   await user.selectOptions(screen.getByLabelText('Antrenor'), SOLO_COACH)

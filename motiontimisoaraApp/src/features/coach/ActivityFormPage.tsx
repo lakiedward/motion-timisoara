@@ -29,17 +29,18 @@ import { OfferRulesFieldset } from '@/components/RulesFileField'
 import { campRulesFileFromRow, type CampRulesFileMeta } from '@/lib/camp-rules'
 import { baniToRon } from '@/lib/money'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
+import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { StatusView } from '@/components/ui/status-view'
+import { Textarea } from '@/components/ui/textarea'
 import { INDEPENDENT_OWNER } from '@/features/club/course-form/useCourseFormOwner'
 import { ActivityOwnerFields } from './activity-form/ActivityOwnerFields'
 import { useActivityFormOwner, type ActivityFormPortal } from './activity-form/useActivityFormOwner'
-import { cn } from '@/lib/utils'
 
 const selectCls =
-  'border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] lg:h-9'
+  'border-input dark:bg-input/30 flex h-touch-target w-full min-w-0 rounded-md border bg-transparent px-3 text-base shadow-xs transition-[color,box-shadow] outline-none hover:border-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-invalid:border-2 aria-invalid:border-destructive disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
 
 function minuteDinOra(ora: string) {
   const [ore, minute] = ora.split(':')
@@ -57,9 +58,9 @@ const schema = z
     coach_id: z.string().optional(),
     sport_id: z.string().min(1, 'Alege un sport'),
     location_id: z.string().min(1, 'Alege o locație'),
-    activity_date: z.string().min(1, 'Obligatoriu'),
-    start_time: z.string().min(1, 'Obligatoriu'),
-    end_time: z.string().min(1, 'Obligatoriu'),
+    activity_date: z.string().min(1, 'Alege data.'),
+    start_time: z.string().min(1, 'Alege ora de început.'),
+    end_time: z.string().min(1, 'Alege ora de final.'),
     price_lei: offerAmountSchema,
     capacity: z.string().optional(),
     age_from: z.string().optional(),
@@ -229,6 +230,13 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
     }
   }
 
+  const camp = (nume: keyof Values, nota?: string) => ({
+    'aria-invalid': !!errors[nume],
+    'aria-describedby':
+      [nota, fieldDescription(nume, undefined, errors[nume]?.message)].filter(Boolean).join(' ') ||
+      undefined,
+  })
+
   const noCoaches = form.coachesReady && !form.coaches.length
   const noLocations = form.locationsReady && !locations.length
   const backLink = (
@@ -269,181 +277,208 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
       <h1 className="font-display mt-4 text-2xl font-bold">
         {isEdit ? 'Editează activitate' : 'Activitate nouă'}
       </h1>
+      <RequiredFieldsNote />
 
       <form
         onSubmit={handleSubmit(onSubmit, () =>
           setEroareHero(mesajHeroLipsa(pozaHero, existing?.hero_photo_storage_path ?? null)),
         )}
         onSubmitCapture={verificaOrganizator}
-        className="mt-6 space-y-4"
+        className="mt-6 space-y-6"
         noValidate
       >
         {isAdmin && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-display text-lg">Cine o organizează</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <ActivityOwnerFields
-                owner={form.owner}
-                clubs={form.clubs}
-                locked={isEdit}
-                ownerError={eroareOrganizator}
-                coaches={form.coaches}
-                coachField={register('coach_id')}
-                coachError={errors.coach_id?.message}
-                noCoaches={noCoaches}
-                noLocations={noLocations}
-                selectClassName={selectCls}
-                onOwner={schimbaOrganizator}
-              />
-            </CardContent>
-          </Card>
+          <FormSection
+            title="Cine o organizează"
+            description="Clubul sau antrenorul care ține activitatea."
+          >
+            <ActivityOwnerFields
+              owner={form.owner}
+              clubs={form.clubs}
+              locked={isEdit}
+              ownerError={eroareOrganizator}
+              coaches={form.coaches}
+              coachField={register('coach_id')}
+              coachError={errors.coach_id?.message}
+              noCoaches={noCoaches}
+              noLocations={noLocations}
+              selectClassName={selectCls}
+              onOwner={schimbaOrganizator}
+            />
+          </FormSection>
         )}
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-display text-lg">Despre activitate</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="name">Nume</Label>
-              <Input id="name" {...register('name')} aria-invalid={!!errors.name} />
-              {errors.name && <p className="text-destructive text-xs">{errors.name.message}</p>}
+        <FormSection
+          title="Despre activitate"
+          description="Ce vede părintele pe pagina activității."
+        >
+          <div className="space-y-1.5">
+            <Label htmlFor="name">
+              Nume <RequiredMark />
+            </Label>
+            <Input id="name" required {...register('name')} {...camp('name')} />
+            <FieldMessage id="name" error={errors.name?.message} />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="min-w-0 space-y-1.5">
+              <Label htmlFor="sport_id">
+                Sport <RequiredMark />
+              </Label>
+              <select
+                id="sport_id"
+                className={selectCls}
+                {...register('sport_id')}
+                {...camp('sport_id')}
+              >
+                <option value="">—</option>
+                {sports.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+              <FieldMessage id="sport_id" error={errors.sport_id?.message} />
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <OfferCurrencyFields
-                currency={currency}
-                currencyField={register('currency')}
-                setValue={setValue}
+            <div className="min-w-0 space-y-1.5">
+              <Label htmlFor="location_id">
+                Locație <RequiredMark />
+              </Label>
+              <select
+                id="location_id"
+                className={selectCls}
+                {...register('location_id')}
+                {...camp('location_id')}
+              >
+                <option value="">—</option>
+                {locations.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+              <FieldMessage id="location_id" error={errors.location_id?.message} />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="description">
+              Descriere <RequiredMark />
+            </Label>
+            <Textarea
+              id="description"
+              rows={4}
+              required
+              {...register('description')}
+              {...camp('description')}
+            />
+            <FieldMessage id="description" error={errors.description?.message} />
+          </div>
+        </FormSection>
+        <FormSection title="Când are loc" description="Ziua și intervalul orar al activității.">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="min-w-0 space-y-1.5">
+              <Label htmlFor="activity_date">
+                Data <RequiredMark />
+              </Label>
+              <Input
+                id="activity_date"
+                type="date"
+                required
+                {...register('activity_date')}
+                {...camp('activity_date')}
               />
-              <div className="space-y-1.5">
-                <Label htmlFor="sport_id">Sport</Label>
-                <select id="sport_id" className={cn(selectCls)} {...register('sport_id')}>
-                  <option value="">—</option>
-                  {sports.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.sport_id && (
-                  <p className="text-destructive text-xs">{errors.sport_id.message}</p>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="location_id">Locație</Label>
-                <select id="location_id" className={cn(selectCls)} {...register('location_id')}>
-                  <option value="">—</option>
-                  {locations.map((l) => (
-                    <option key={l.id} value={l.id}>
-                      {l.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.location_id && (
-                  <p className="text-destructive text-xs">{errors.location_id.message}</p>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="price_lei">Preț ({currency === 'EUR' ? 'EUR' : 'lei'})</Label>
-                <Input
-                  id="price_lei"
-                  type="number"
-                  step="0.01"
-                  {...register('price_lei')}
-                  aria-invalid={!!errors.price_lei}
-                />
-                {errors.price_lei && (
-                  <p className="text-destructive text-xs">{errors.price_lei.message}</p>
-                )}
-              </div>
+              <FieldMessage id="activity_date" error={errors.activity_date?.message} />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="description">Descriere</Label>
-              <textarea
-                id="description"
-                rows={3}
-                {...register('description')}
-                aria-invalid={!!errors.description}
-                className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
+            <div className="min-w-0 space-y-1.5">
+              <Label htmlFor="start_time">
+                Ora început <RequiredMark />
+              </Label>
+              <Input
+                id="start_time"
+                type="time"
+                required
+                {...register('start_time')}
+                {...camp('start_time', 'ore-hint')}
               />
-              {errors.description && (
-                <p className="text-destructive text-xs">{errors.description.message}</p>
-              )}
+              <FieldMessage id="start_time" error={errors.start_time?.message} />
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-display text-lg">Când are loc</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="activity_date">Data</Label>
-                <Input
-                  id="activity_date"
-                  type="date"
-                  {...register('activity_date')}
-                  aria-invalid={!!errors.activity_date}
-                />
-                {errors.activity_date && (
-                  <p className="text-destructive text-xs">{errors.activity_date.message}</p>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="start_time">Ora început</Label>
-                <Input
-                  id="start_time"
-                  type="time"
-                  {...register('start_time')}
-                  aria-invalid={!!errors.start_time}
-                />
-                {errors.start_time && (
-                  <p className="text-destructive text-xs">{errors.start_time.message}</p>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="end_time">Ora final</Label>
-                <Input
-                  id="end_time"
-                  type="time"
-                  {...register('end_time')}
-                  aria-invalid={!!errors.end_time}
-                />
-                {errors.end_time && (
-                  <p className="text-destructive text-xs">{errors.end_time.message}</p>
-                )}
-              </div>
+            <div className="min-w-0 space-y-1.5">
+              <Label htmlFor="end_time">
+                Ora final <RequiredMark />
+              </Label>
+              <Input
+                id="end_time"
+                type="time"
+                required
+                {...register('end_time')}
+                {...camp('end_time', 'ore-hint')}
+              />
+              <FieldMessage id="end_time" error={errors.end_time?.message} />
             </div>
-            <p className="text-muted-foreground text-sm">Orele sunt în fusul României.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-display text-lg">Locuri și vârste</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="capacity">Capacitate</Label>
-                <Input id="capacity" type="number" {...register('capacity')} />
-                <p className="text-muted-foreground text-sm">Lasă gol dacă nu ai limită.</p>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="age_from">Vârstă minimă</Label>
-                <Input id="age_from" type="number" {...register('age_from')} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="age_to">Vârstă maximă</Label>
-                <Input id="age_to" type="number" {...register('age_to')} />
-              </div>
+          </div>
+          <p id="ore-hint" className="text-muted-foreground text-sm">
+            Orele sunt în fusul României.
+          </p>
+        </FormSection>
+        <FormSection
+          title="Copii și locuri"
+          description="Pentru cine e activitatea și câți copii primești."
+        >
+          <div className="space-y-1.5 sm:max-w-[calc(50%-0.5rem)]">
+            <Label htmlFor="capacity">Capacitate</Label>
+            <Input
+              id="capacity"
+              type="number"
+              aria-describedby="capacitate-hint"
+              {...register('capacity')}
+            />
+            <p id="capacitate-hint" className="text-muted-foreground text-sm">
+              Lasă gol dacă nu ai limită.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="min-w-0 space-y-1.5">
+              <Label htmlFor="age_from">Vârstă minimă</Label>
+              <Input
+                id="age_from"
+                type="number"
+                aria-describedby="varste-hint"
+                {...register('age_from')}
+              />
             </div>
-            <p className="text-muted-foreground text-sm">
+            <div className="min-w-0 space-y-1.5">
+              <Label htmlFor="age_to">Vârstă maximă</Label>
+              <Input
+                id="age_to"
+                type="number"
+                aria-describedby="varste-hint"
+                {...register('age_to')}
+              />
+            </div>
+            <p id="varste-hint" className="text-muted-foreground text-sm sm:col-span-2">
               Lasă gol dacă nu ai limită. Poți completa doar una.
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </FormSection>
+        <FormSection title="Preț" description="Cât plătește părintele pentru activitate.">
+          <OfferCurrencyFields
+            currency={currency}
+            currencyField={register('currency')}
+            setValue={setValue}
+          />
+          <div className="space-y-1.5 sm:max-w-[calc(50%-0.5rem)]">
+            <Label htmlFor="price_lei">
+              Preț ({currency === 'EUR' ? 'EUR' : 'lei'}) <RequiredMark />
+            </Label>
+            <Input
+              id="price_lei"
+              type="number"
+              step="0.01"
+              required
+              {...register('price_lei')}
+              {...camp('price_lei')}
+            />
+            <FieldMessage id="price_lei" error={errors.price_lei?.message} />
+          </div>
+        </FormSection>
         <HeroPhotoField
           hint={MESAJ_POZA_HERO}
           savedUrl={publicUrl('activity-photos', existing?.hero_photo_storage_path)}
