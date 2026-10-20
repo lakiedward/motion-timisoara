@@ -12,6 +12,7 @@ import CoachLocationsPage from '@/features/coach/CoachLocationsPage'
 import LocationFormPage from '@/features/coach/LocationFormPage'
 import CoachAttendancePage from '@/features/coach/CoachAttendancePage'
 import CoachOwnProfilePage from '@/features/coach/CoachOwnProfilePage'
+import CoachAnnouncementsPage from '@/features/coach/announcements/CoachAnnouncementsPage'
 import AdminLayout from '@/features/admin/AdminLayout'
 import AdminDashboard from '@/features/admin/AdminDashboard'
 import AdminUsersPage from '@/features/admin/AdminUsersPage'
@@ -159,6 +160,7 @@ export const router = createBrowserRouter([
             children: [
               { path: '/coach', element: <CoachDashboard /> },
               { path: '/coach/courses', element: <CoachCoursesPage /> },
+              { path: '/coach/announcements', element: <CoachAnnouncementsPage /> },
               { path: '/coach/courses/new', element: <CourseFormPage /> },
               { path: '/coach/courses/:id/edit', element: <CourseFormPage /> },
               { path: '/coach/activities', element: <CoachActivitiesPage /> },
