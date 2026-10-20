@@ -20,6 +20,8 @@ import AdminClubsPage from '@/features/admin/AdminClubsPage'
 import AdminCoursesPage from '@/features/admin/AdminCoursesPage'
 import AdminLocationsPage from '@/features/admin/AdminLocationsPage'
 import AdminActivitiesPage from '@/features/admin/AdminActivitiesPage'
+import AdminAnnouncementsPage from '@/features/admin/announcements/AdminAnnouncementsPage'
+import AdminAnnouncementFormPage from '@/features/admin/announcements/AdminAnnouncementFormPage'
 import { EditCourseAction, NewCourseButton } from '@/features/admin/courses/CourseEditActions'
 import AdminSportsPage from '@/features/admin/AdminSportsPage'
 import AdminInviteCodesPage from '@/features/admin/AdminInviteCodesPage'
@@ -259,6 +261,8 @@ export const router = createBrowserRouter([
                 path: '/admin/activities/:id/edit',
                 element: <ActivityFormPage portal="admin" />,
               },
+              { path: '/admin/announcements', element: <AdminAnnouncementsPage /> },
+              { path: '/admin/announcements/new', element: <AdminAnnouncementFormPage /> },
               { path: '/admin/locations', element: <AdminLocationsPage /> },
               { path: '/admin/locations/new', element: <ClubLocationFormPage portal="admin" /> },
               {
