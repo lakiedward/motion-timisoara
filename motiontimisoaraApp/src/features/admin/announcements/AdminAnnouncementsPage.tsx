@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus, Search } from 'lucide-react'
 import { toast } from 'sonner'
@@ -18,7 +18,6 @@ import { StatusView } from '@/components/ui/status-view'
 import { CourseFilterBar, type FilterOption } from '@/features/admin/courses/CourseFilterBar'
 import { ClubLocationListSkeleton } from '@/features/club/locations/ClubLocationListSkeleton'
 import { plural } from '@/lib/plural'
-import { AdminAnnouncementItem } from './AdminAnnouncementItem'
 import { AnnouncementOrganizerCard } from './AnnouncementOrganizerCard'
 import {
   NO_ANNOUNCEMENT_FILTERS,
@@ -26,7 +25,6 @@ import {
   announcementStatusCounts,
   countAnnouncements,
   filterAnnouncements,
-  groupAnnouncementsByMonth,
   groupAnnouncementsByOrganizer,
   hasAnnouncementFilters,
   sourceCounts,
@@ -42,7 +40,6 @@ const STATUS_OPTIONS: FilterOption<AnnouncementStatus>[] = [
 ]
 
 const SECTION_LABEL = { club: 'Cluburi', coach: 'Antrenori independenți' } as const
-const PAGE = 15
 
 async function toggleAnnouncement(a: AdminAnnouncement) {
   if (a.source === 'club') await setAnnouncementActive(a.id, !a.visible)
@@ -63,12 +60,9 @@ function toggledMessage(a: AdminAnnouncement) {
 
 export default function AdminAnnouncementsPage() {
   const qc = useQueryClient()
-  const [params] = useSearchParams()
-  const feed = params.get('varianta') === 'b'
   const [filters, setFilters] = useState(NO_ANNOUNCEMENT_FILTERS)
   const [toggled, setToggled] = useState<Record<string, boolean>>({})
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
-  const [limit, setLimit] = useState(PAGE)
   const [pendingIds, setPendingIds] = useState<string[]>([])
   const [toDelete, setToDelete] = useState<AdminAnnouncement | null>(null)
 
@@ -127,10 +121,8 @@ export default function AdminAnnouncementsPage() {
     toggled[toggleKey(g)] ?? (searching || firstOfKind.has(g.key))
   const set = (patch: Partial<typeof filters>) => {
     setFilters((f) => ({ ...f, ...patch }))
-    setLimit(PAGE)
   }
   const clear = () => set({ ...NO_ANNOUNCEMENT_FILTERS, status: 'all' })
-  const shown = visible.slice(0, limit)
 
   return (
     <div>
@@ -201,9 +193,7 @@ export default function AdminAnnouncementsPage() {
             {visible.length > 0 &&
               (searching
                 ? `${visible.length} din ${countAnnouncements(items.length)}`
-                : feed
-                  ? countAnnouncements(visible.length)
-                  : `${countAnnouncements(visible.length)} la ${plural(groups.length, 'organizator', 'organizatori')}`)}
+                : `${countAnnouncements(visible.length)} la ${plural(groups.length, 'organizator', 'organizatori')}`)}
             {elsewhere > 0 && (
               <>
                 {visible.length > 0 && ' · '}
@@ -237,47 +227,6 @@ export default function AdminAnnouncementsPage() {
                 ) : null
               }
             />
-          ) : feed ? (
-            <div className="mt-4 max-w-3xl space-y-6">
-              {groupAnnouncementsByMonth(shown).map((g) => (
-                <section key={g.key} aria-label={g.title}>
-                  <div className="mb-2 flex items-baseline justify-between gap-3">
-                    <h2 className="font-display text-base font-semibold">{g.title}</h2>
-                    <span className="text-muted-foreground text-sm">
-                      {countAnnouncements(g.items.length)}
-                    </span>
-                  </div>
-                  <div className="space-y-3">
-                    {g.items.map((a) => (
-                      <AdminAnnouncementItem
-                        key={`${a.source}-${a.id}`}
-                        announcement={a}
-                        query={query}
-                        layout="card"
-                        pending={pendingIds.includes(a.id)}
-                        onToggle={() => toggle.mutate(a)}
-                        onDelete={() => setToDelete(a)}
-                      />
-                    ))}
-                  </div>
-                </section>
-              ))}
-              {visible.length > shown.length && (
-                <div className="flex flex-col items-center gap-2">
-                  <p className="text-muted-foreground text-sm">
-                    Vezi {shown.length} din {visible.length}
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-touch-target min-h-touch-target"
-                    onClick={() => setLimit((n) => n + PAGE)}
-                  >
-                    Arată încă {Math.min(PAGE, visible.length - shown.length)}
-                  </Button>
-                </div>
-              )}
-            </div>
           ) : (
             (['club', 'coach'] as const).map((kind) => {
               const ofKind = groups.filter((g) => g.kind === kind)

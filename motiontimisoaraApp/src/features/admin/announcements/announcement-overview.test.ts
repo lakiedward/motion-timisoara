@@ -2,7 +2,6 @@ import type { AdminAnnouncement } from '@/api/announcements/admin-announcements'
 import {
   announcementStatusCounts,
   filterAnnouncements,
-  groupAnnouncementsByMonth,
   groupAnnouncementsByOrganizer,
   sourceCounts,
 } from './announcement-overview'
@@ -65,13 +64,5 @@ test('groups clubs before coaches by name and keeps totals from all items', () =
     ['Alfa Club', 1, 1],
     ['Zebra Club', 1, 2],
     ['Ana', 1, 1],
-  ])
-})
-
-test('groups by month newest first', () => {
-  expect(groupAnnouncementsByMonth(items).map((g) => g.title)).toEqual([
-    'Octombrie 2026',
-    'Septembrie 2026',
-    'August 2026',
   ])
 })

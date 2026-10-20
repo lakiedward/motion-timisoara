@@ -119,21 +119,3 @@ export function groupAnnouncementsByOrganizer(
       (x.kind === y.kind ? 0 : x.kind === 'club' ? -1 : 1) || x.name.localeCompare(y.name, 'ro'),
   )
 }
-
-const monthFormat = new Intl.DateTimeFormat('ro-RO', {
-  month: 'long',
-  year: 'numeric',
-  timeZone: 'Europe/Bucharest',
-})
-
-export function groupAnnouncementsByMonth(items: AdminAnnouncement[]) {
-  const groups: { key: string; title: string; items: AdminAnnouncement[] }[] = []
-  for (const a of [...items].sort((x, y) => y.createdAt.localeCompare(x.createdAt))) {
-    const raw = monthFormat.format(new Date(a.createdAt))
-    const title = raw.charAt(0).toLocaleUpperCase('ro-RO') + raw.slice(1)
-    const group = groups.find((g) => g.key === title)
-    if (group) group.items.push(a)
-    else groups.push({ key: title, title, items: [a] })
-  }
-  return groups
-}

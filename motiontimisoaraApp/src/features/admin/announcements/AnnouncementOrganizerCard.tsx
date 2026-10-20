@@ -84,7 +84,6 @@ export function AnnouncementOrganizerCard({
                 key={`${a.source}-${a.id}`}
                 announcement={a}
                 query={query}
-                layout="row"
                 pending={pendingIds.includes(a.id)}
                 onToggle={() => onToggleItem(a)}
                 onDelete={() => onDeleteItem(a)}

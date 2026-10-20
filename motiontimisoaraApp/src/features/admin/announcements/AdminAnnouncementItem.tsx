@@ -19,7 +19,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { StatusView } from '@/components/ui/status-view'
 import { Highlight } from '@/features/admin/courses/CourseParts'
-import { ORGANIZER_ICON } from '@/features/admin/locations/organizer-icon'
 import { PRIORITY, formatData } from '@/features/club/announcements/announcement-list'
 import { plural } from '@/lib/plural'
 import { cn } from '@/lib/utils'
@@ -28,14 +27,12 @@ import { announcementLabel } from './announcement-overview'
 export function AdminAnnouncementItem({
   announcement: a,
   query,
-  layout,
   pending,
   onToggle,
   onDelete,
 }: {
   announcement: AdminAnnouncement
   query: string
-  layout: 'row' | 'card'
   pending: boolean
   onToggle: () => void
   onDelete: () => void
@@ -48,29 +45,18 @@ export function AdminAnnouncementItem({
   })
   const priority = a.priority && a.priority !== 'NORMAL' ? (PRIORITY[a.priority] ?? null) : null
   const label = announcementLabel(a)
-  const OrganizerIcon = ORGANIZER_ICON[a.organizerKind]
-  const card = layout === 'card'
-  const Root = card ? 'article' : 'li'
   const expandable = a.mediaCount > 0 || a.content.length > 140 || a.content.includes('\n')
 
   return (
-    <Root
+    <li
       className={cn(
-        'min-w-0',
-        card
-          ? 'bg-card space-y-3 rounded-xl border p-5 sm:p-6'
-          : 'flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-start sm:gap-4 sm:px-5',
-        !a.visible && (card ? 'bg-muted/40 border-dashed' : 'bg-muted/40'),
+        'flex min-w-0 flex-col gap-3 px-4 py-3 sm:flex-row sm:items-start sm:gap-4 sm:px-5',
+        !a.visible && 'bg-muted/40',
       )}
     >
-      <div className={cn('min-w-0 space-y-2', !card && 'flex-1')}>
+      <div className="min-w-0 flex-1 space-y-2">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <h3
-            className={cn(
-              'font-display min-w-0 font-bold wrap-anywhere',
-              card ? 'text-lg' : 'text-base',
-            )}
-          >
+          <h3 className="font-display min-w-0 text-base font-bold wrap-anywhere">
             <Highlight text={label} query={query} />
           </h3>
           <Badge variant="outline">{a.source === 'club' ? 'De la club' : 'De la antrenor'}</Badge>
@@ -87,12 +73,6 @@ export function AdminAnnouncementItem({
           )}
         </div>
         <p className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-          {card && (
-            <span className="inline-flex min-w-0 items-center gap-1 wrap-anywhere">
-              <OrganizerIcon aria-hidden="true" className="size-4 shrink-0" />
-              <Highlight text={a.organizerName} query={query} />
-            </span>
-          )}
           {a.title && (
             <span className="inline-flex min-w-0 items-center gap-1 wrap-anywhere">
               <Users aria-hidden="true" className="size-4 shrink-0" />
@@ -143,7 +123,7 @@ export function AdminAnnouncementItem({
           </Button>
         ) : null}
       </div>
-      <div className={cn('flex shrink-0 flex-wrap gap-2', card && 'border-t pt-3')}>
+      <div className="flex shrink-0 flex-wrap gap-2">
         <Button
           type="button"
           variant="outline"
@@ -166,7 +146,7 @@ export function AdminAnnouncementItem({
           <Trash2 aria-hidden="true" /> Șterge
         </Button>
       </div>
-    </Root>
+    </li>
   )
 }
 
