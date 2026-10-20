@@ -97,10 +97,7 @@ function NavList({ nav, onNavigate }: { nav: PortalNavItem[]; onNavigate?: () =>
           className="flex flex-col gap-1 [&+&]:mt-3"
         >
           {section.group ? (
-            <p
-              aria-hidden="true"
-              className="text-muted-foreground px-3 pb-1 text-xs font-medium"
-            >
+            <p aria-hidden="true" className="text-muted-foreground px-3 pb-1 text-xs font-medium">
               {section.group}
             </p>
           ) : null}
