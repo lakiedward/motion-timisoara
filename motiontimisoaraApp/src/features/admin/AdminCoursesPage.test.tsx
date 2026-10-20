@@ -1,6 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
 import { toast } from 'sonner'
 
@@ -20,7 +21,9 @@ function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={queryClient}>
-      <AdminCoursesPage />
+      <MemoryRouter>
+        <AdminCoursesPage />
+      </MemoryRouter>
     </QueryClientProvider>,
   )
 }
@@ -84,12 +87,15 @@ test('o incarcare esuata da mesaj propriu si reincercare, nu ecranul de lista go
   expect(screen.queryByText(/Niciun curs înregistrat/)).not.toBeInTheDocument()
 })
 
-test('lista goala spune si unde se creeaza cursurile, fiindca din admin nu se poate', async () => {
+test('lista goala duce direct la crearea primului curs din admin', async () => {
   mockedCourses.mockResolvedValue([])
   renderPage()
 
   const gol = await screen.findByText(/Niciun curs înregistrat/)
-  expect(gol).toHaveTextContent('Cursurile se creează din portalul clubului sau al antrenorului')
+  expect(within(gol).getByRole('link', { name: 'Creează primul curs' })).toHaveAttribute(
+    'href',
+    '/admin/courses/new',
+  )
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Reîncearcă' })).not.toBeInTheDocument()
 })
@@ -112,7 +118,9 @@ test('un refetch picat nu sterge de pe ecran cursurile deja incarcate', async ()
   renderPage()
   await asteaptaLista()
 
-  await userEvent.click(within(rand('Alergare — audit UI')).getByRole('button', { name: 'Activează' }))
+  await userEvent.click(
+    within(rand('Alergare — audit UI')).getByRole('button', { name: 'Activează' }),
+  )
 
   await waitFor(() => expect(mockedCourses).toHaveBeenCalledTimes(2))
   expect(screen.getByRole('table')).toBeInTheDocument()
@@ -125,7 +133,9 @@ test('in incarcare, sceletul pastreaza antetul si tine locul numaratorului', asy
   mockedCourses.mockReturnValue(new Promise(() => {}) as never)
   renderPage()
 
-  const antet = within(tabel()).getAllByRole('columnheader').map((th) => th.textContent)
+  const antet = within(tabel())
+    .getAllByRole('columnheader')
+    .map((th) => th.textContent)
   expect(antet.slice(0, 5)).toEqual(['Curs', 'Sport', 'Antrenor', 'Preț', 'Status'])
   const inainteaTabelului = tabel().closest('div')!.previousElementSibling!
   expect(inainteaTabelului.getAttribute('data-slot')).toBe('skeleton')
@@ -241,7 +251,9 @@ test('o comutare reusita confirma cu numele cursului', async () => {
   renderPage()
   await asteaptaLista()
 
-  await userEvent.click(within(rand('Alergare — audit UI')).getByRole('button', { name: 'Activează' }))
+  await userEvent.click(
+    within(rand('Alergare — audit UI')).getByRole('button', { name: 'Activează' }),
+  )
 
   await waitFor(() =>
     expect(toast.success).toHaveBeenCalledWith('Cursul Alergare — audit UI a fost activat.'),
@@ -255,7 +267,9 @@ test('o comutare esuata pastreaza eroarea si nu confirma nimic', async () => {
   renderPage()
   await asteaptaLista()
 
-  await userEvent.click(within(rand('Alergare — audit UI')).getByRole('button', { name: 'Activează' }))
+  await userEvent.click(
+    within(rand('Alergare — audit UI')).getByRole('button', { name: 'Activează' }),
+  )
 
   await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Nu am putut actualiza cursul.'))
   expect(toast.success).not.toHaveBeenCalled()
@@ -290,4 +304,33 @@ test('o cautare fara rezultate spune ca e o cautare, nu ca platforma e goala', a
 
   await userEvent.click(screen.getByRole('button', { name: 'Șterge căutarea' }))
   expect(await screen.findByRole('table')).toBeInTheDocument()
+})
+
+test('„Curs nou" din antet duce la formularul de creare', async () => {
+  mockedCourses.mockResolvedValue(lista())
+  renderPage()
+  await asteaptaLista()
+
+  expect(screen.getByRole('link', { name: 'Curs nou' })).toHaveAttribute(
+    'href',
+    '/admin/courses/new',
+  )
+})
+
+test('fiecare curs are „Editează" spre formularul lui, în tabel și pe fișă', async () => {
+  mockedCourses.mockResolvedValue(lista())
+  const { container } = renderPage()
+  await asteaptaLista()
+
+  const dinTabel = within(rand('Alergare — audit UI')).getByRole('link', { name: /Editează/ })
+  expect(dinTabel).toHaveAttribute('href', '/admin/courses/3/edit')
+  expect(dinTabel.className).toMatch(/min-h-11/)
+  expect(dinTabel.className).toMatch(/lg:min-h-8/)
+
+  const fise = within(container.querySelector('ul')!).getAllByRole('link', { name: /Editează/ })
+  expect(fise.map((link) => link.getAttribute('href')).sort()).toEqual([
+    '/admin/courses/1/edit',
+    '/admin/courses/2/edit',
+    '/admin/courses/3/edit',
+  ])
 })

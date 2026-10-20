@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Search } from 'lucide-react'
+import { Pencil, Plus, Search } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { getAllCourses, setCourseActiveAdmin, type AdminCourse } from '@/api/admin'
@@ -55,6 +56,16 @@ function ToggleAction({
       onClick={() => onToggle({ id: course.id, name: course.name, active: !course.active })}
     >
       {course.active ? 'Dezactivează' : 'Activează'}
+    </Button>
+  )
+}
+
+function EditAction({ course, className }: { course: AdminCourse; className?: string }) {
+  return (
+    <Button asChild variant="outline" size="sm" className={className}>
+      <Link to={`/admin/courses/${course.id}/edit`} aria-label={`Editează ${course.name}`}>
+        <Pencil /> Editează
+      </Link>
     </Button>
   )
 }
@@ -143,9 +154,9 @@ export default function AdminCoursesPage() {
 
   return (
     <div>
-      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <h1 className="font-display text-foreground text-2xl font-bold">Cursuri</h1>
-        <div className="relative w-full md:w-72">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <h1 className="font-display text-foreground mr-auto text-2xl font-bold">Cursuri</h1>
+        <div className="relative order-last w-full md:order-none md:w-72">
           <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
             value={q}
@@ -155,6 +166,11 @@ export default function AdminCoursesPage() {
             className="h-11 min-h-11 pl-9 lg:h-9 lg:min-h-9"
           />
         </div>
+        <Button asChild className="h-11 min-h-11 lg:h-9 lg:min-h-9">
+          <Link to="/admin/courses/new">
+            <Plus /> Curs nou
+          </Link>
+        </Button>
       </div>
 
       {isLoading ? (
@@ -168,7 +184,10 @@ export default function AdminCoursesPage() {
         </div>
       ) : courses.length === 0 ? (
         <div className="text-muted-foreground rounded-3xl border border-dashed px-6 py-16 text-center">
-          Niciun curs înregistrat. Cursurile se creează din portalul clubului sau al antrenorului.
+          Niciun curs înregistrat.{' '}
+          <Link to="/admin/courses/new" className="text-primary font-semibold">
+            Creează primul curs
+          </Link>
         </div>
       ) : (
         <>
@@ -234,12 +253,15 @@ export default function AdminCoursesPage() {
                           <StatusBadge active={c.active} />
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <ToggleAction
-                            course={c}
-                            pending={toggle.isPending}
-                            onToggle={onToggle}
-                            className="h-11 min-h-11 lg:h-8 lg:min-h-8"
-                          />
+                          <div className="flex justify-end gap-2">
+                            <EditAction course={c} className="h-11 min-h-11 lg:h-8 lg:min-h-8" />
+                            <ToggleAction
+                              course={c}
+                              pending={toggle.isPending}
+                              onToggle={onToggle}
+                              className="h-11 min-h-11 lg:h-8 lg:min-h-8"
+                            />
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -266,12 +288,15 @@ export default function AdminCoursesPage() {
                       <span className="font-display font-bold">
                         {formatMoney(c.price, c.currency)}
                       </span>
-                      <ToggleAction
-                        course={c}
-                        pending={toggle.isPending}
-                        onToggle={onToggle}
-                        className="h-11 min-h-11"
-                      />
+                      <div className="flex gap-2">
+                        <EditAction course={c} className="h-11 min-h-11" />
+                        <ToggleAction
+                          course={c}
+                          pending={toggle.isPending}
+                          onToggle={onToggle}
+                          className="h-11 min-h-11"
+                        />
+                      </div>
                     </div>
                   </li>
                 ))}

@@ -213,6 +213,8 @@ export const router = createBrowserRouter([
               { path: '/admin/users', element: <AdminUsersPage /> },
               { path: '/admin/clubs', element: <AdminClubsPage /> },
               { path: '/admin/courses', element: <AdminCoursesPage /> },
+              { path: '/admin/courses/new', element: <ClubCourseFormPage portal="admin" /> },
+              { path: '/admin/courses/:id/edit', element: <ClubCourseFormPage portal="admin" /> },
               {
                 path: '/admin/competitions',
                 element: <CompetitionsListPage baza="/admin/competitions" />,

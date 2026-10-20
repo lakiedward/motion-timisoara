@@ -369,13 +369,13 @@ export interface ClubCourseFormInput {
   description: string | null
   recurrence_rule: string
 }
-export async function createClubCourse(clubId: string, input: ClubCourseFormInput) {
+export async function createClubCourse(clubId: string | null, input: ClubCourseFormInput) {
   const { data, error } = await supabase
     .from('courses')
     .insert({
       ...input,
       club_id: clubId,
-      payment_recipient: 'CLUB',
+      payment_recipient: clubId ? 'CLUB' : 'COACH',
       price: input.price_per_session * 8,
       active: true,
     })

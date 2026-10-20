@@ -361,3 +361,14 @@ export async function setCourseActiveAdmin(id: string, active: boolean) {
   const { error } = await supabase.from('courses').update({ active }).eq('id', id).select().single()
   if (error) throw error
 }
+
+export async function getCoachesForSelect(): Promise<{ user_id: string; name: string }[]> {
+  const { data, error } = await supabase
+    .from('coach_profiles')
+    .select('user_id, profile:profiles(name)')
+  if (error) throw error
+  type Row = { user_id: string; profile: { name: string } | null }
+  return ((data ?? []) as unknown as Row[])
+    .map((r) => ({ user_id: r.user_id, name: r.profile?.name ?? '—' }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'ro'))
+}
