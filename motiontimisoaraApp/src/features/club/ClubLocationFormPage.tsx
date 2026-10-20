@@ -3,12 +3,13 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
 import { locationWriteErrorMessage } from '@/lib/geography/shared-location-guard'
 import { toast } from 'sonner'
 
-import { createClubLocation, getClubLocationById, getMyClub, updateClubLocation } from '@/api/club'
+import { createClubLocation, updateClubLocation } from '@/api/club'
+import { createAdminLocation } from '@/api/locations/admin-locations'
 import LocationPicker from '@/components/LocationPicker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,6 +26,12 @@ import {
   type NearbyLocation,
 } from './location-form/nearby-locations'
 import { useNearbyLocations } from './location-form/useNearbyLocations'
+import { LocationOwnerField } from './location-form/LocationOwnerField'
+import {
+  parseOwner,
+  useLocationFormOwner,
+  type LocationFormPortal,
+} from './location-form/useLocationFormOwner'
 
 const schema = z
   .object({
@@ -42,7 +49,7 @@ const schema = z
   })
 type Values = z.infer<typeof schema>
 
-export default function ClubLocationFormPage() {
+export default function ClubLocationFormPage({ portal = 'club' }: { portal?: LocationFormPortal }) {
   const { id } = useParams()
   const isEdit = !!id
   const navigate = useNavigate()
@@ -51,18 +58,16 @@ export default function ClubLocationFormPage() {
   const [pickerVersion, setPickerVersion] = useState(0)
   const [isResolvingAddress, setIsResolvingAddress] = useState(false)
   const activePickerVersion = useRef(0)
-  const { data: club } = useQuery({ queryKey: ['my-club'], queryFn: getMyClub })
-  const clubId = club?.id ?? ''
+  const [ownerError, setOwnerError] = useState<string | null>(null)
+  const form = useLocationFormOwner(portal, id)
+  const { club, isAdmin, owner, listPath } = form
+  const clubId = form.nearbyScope
   const {
     data: existing,
     isPending: seIncarca,
     isError: aEsuatCitirea,
     refetch,
-  } = useQuery({
-    queryKey: ['club-location-edit', clubId, id],
-    queryFn: () => getClubLocationById(id as string, clubId),
-    enabled: isEdit && !!clubId,
-  })
+  } = form.existingQuery
 
   const {
     register,
@@ -130,7 +135,12 @@ export default function ClubLocationFormPage() {
   }
 
   const onSubmit = async (v: Values) => {
-    if (!club) {
+    const target = parseOwner(owner)
+    if (isAdmin && !isEdit && !target) {
+      setOwnerError('Alege organizatorul')
+      return
+    }
+    if (!isAdmin && !club) {
       toast.error('Clubul nu a fost găsit.')
       return
     }
@@ -149,20 +159,21 @@ export default function ClubLocationFormPage() {
     }
     try {
       if (isEdit) await updateClubLocation(id as string, payload)
-      else await createClubLocation(club.id, payload)
-      qc.invalidateQueries({ queryKey: ['club-locations'] })
+      else if (isAdmin && target) await createAdminLocation(target, payload)
+      else if (club) await createClubLocation(club.id, payload)
+      qc.invalidateQueries({ queryKey: [form.listQueryKey] })
       qc.invalidateQueries({ queryKey: ['club-nearby-locations'] })
       toast.success(isEdit ? 'Locație actualizată.' : 'Locație creată.')
-      navigate('/club/locations')
+      navigate(listPath)
     } catch (e) {
       toast.error(locationWriteErrorMessage(e, 'Nu am putut salva locația.'))
     }
   }
-  if (isEdit && !!clubId && aEsuatCitirea) {
+  if (isEdit && form.readyToRead && aEsuatCitirea) {
     return (
       <div className="mx-auto max-w-2xl">
         <Link
-          to="/club/locations"
+          to={listPath}
           className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
         >
           <ArrowLeft className="size-4" /> Înapoi
@@ -176,11 +187,11 @@ export default function ClubLocationFormPage() {
       </div>
     )
   }
-  if (isEdit && !!clubId && !seIncarca && !existing) {
+  if (isEdit && form.readyToRead && !seIncarca && !existing) {
     return (
       <div className="mx-auto max-w-2xl">
         <Link
-          to="/club/locations"
+          to={listPath}
           className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
         >
           <ArrowLeft className="size-4" /> Înapoi
@@ -193,7 +204,7 @@ export default function ClubLocationFormPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <Link
-        to="/club/locations"
+        to={listPath}
         className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
       >
         <ArrowLeft className="size-4" /> Înapoi
@@ -203,6 +214,21 @@ export default function ClubLocationFormPage() {
       </h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4" noValidate>
+        {isAdmin && (
+          <LocationOwnerField
+            value={owner}
+            clubs={form.clubs}
+            coaches={form.coaches}
+            locked={isEdit}
+            lockedName={existing?.club?.name ?? existing?.creator?.name ?? '—'}
+            error={ownerError}
+            selectClassName={locationSelectClassName}
+            onChange={(next) => {
+              form.setOwner(next)
+              setOwnerError(null)
+            }}
+          />
+        )}
         <div className="space-y-1.5">
           <Label htmlFor="name">Nume</Label>
           <Input
@@ -306,7 +332,7 @@ export default function ClubLocationFormPage() {
             {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>
           <Button type="button" variant="outline" className="h-11 lg:h-9" asChild>
-            <Link to="/club/locations">Anulează</Link>
+            <Link to={listPath}>Anulează</Link>
           </Button>
         </div>
       </form>
