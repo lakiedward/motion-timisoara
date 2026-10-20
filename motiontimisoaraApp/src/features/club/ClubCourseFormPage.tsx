@@ -278,6 +278,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
               locked={isEdit}
               error={eroareOrganizator}
               selectClassName={selectCls}
+              required
               onChange={schimbaOrganizator}
             />
           )}

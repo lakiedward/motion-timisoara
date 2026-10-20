@@ -84,14 +84,14 @@ test('adminul nu citește „clubul meu" și trebuie să aleagă organizatorul',
 
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   expect(await screen.findByText('Alege organizatorul')).toBeInTheDocument()
-  expect(screen.getByLabelText('Organizator')).toHaveAttribute('aria-invalid', 'true')
+  expect(screen.getByLabelText(/^Organizator/)).toHaveAttribute('aria-invalid', 'true')
   expect(createClubCourse).not.toHaveBeenCalled()
 })
 
 test('antrenorii și locațiile urmează organizatorul ales', async () => {
   const user = userEvent.setup()
   renderForm()
-  const organizator = await screen.findByLabelText('Organizator')
+  const organizator = await screen.findByLabelText(/^Organizator/)
   await screen.findByRole('option', { name: 'Club Audit Motion' })
 
   await user.selectOptions(organizator, CLUB)
@@ -114,7 +114,7 @@ test('un curs creat pentru antrenor independent pleacă fără club și duce în
   vi.mocked(createClubCourse).mockResolvedValue({ id: 'c-nou' } as never)
   renderForm()
   await screen.findByRole('option', { name: 'Club Audit Motion' })
-  await user.selectOptions(screen.getByLabelText('Organizator'), 'independent')
+  await user.selectOptions(screen.getByLabelText(/^Organizator/), 'independent')
   await screen.findByRole('option', { name: 'Antrenor independent Ana' })
   await user.type(screen.getByLabelText(/^Nume curs/), 'Atletism independent')
   await user.selectOptions(screen.getByLabelText(/^Antrenor/), ANTRENOR_INDEPENDENT)
@@ -162,7 +162,7 @@ test('la editare organizatorul rămâne blocat pe cel salvat, iar antrenorul se 
   } as never)
   renderForm('/admin/courses/c1/edit')
 
-  const organizator = await screen.findByLabelText('Organizator')
+  const organizator = await screen.findByLabelText(/^Organizator/)
   await waitFor(() => expect(organizator).toHaveValue(CLUB))
   expect(organizator).toBeDisabled()
   expect(screen.getByText(/Organizatorul rămâne cel de la creare/)).toBeInTheDocument()
