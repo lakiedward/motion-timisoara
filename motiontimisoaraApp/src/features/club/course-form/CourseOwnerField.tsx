@@ -1,4 +1,5 @@
 import { Label } from '@/components/ui/label'
+import { RequiredMark } from '@/components/FormSection'
 import type { AdminClub } from '@/api/admin'
 import { INDEPENDENT_OWNER } from './useCourseFormOwner'
 
@@ -8,6 +9,7 @@ export function CourseOwnerField({
   locked,
   error,
   selectClassName,
+  required = false,
   onChange,
 }: {
   value: string
@@ -15,12 +17,13 @@ export function CourseOwnerField({
   locked: boolean
   error: string | null
   selectClassName: string
+  required?: boolean
   onChange: (owner: string) => void
 }) {
   const hintId = locked ? 'owner-hint' : error ? 'owner-error' : undefined
   return (
     <div className="space-y-1.5">
-      <Label htmlFor="owner">Organizator</Label>
+      <Label htmlFor="owner">Organizator {required && <RequiredMark />}</Label>
       <select
         id="owner"
         className={selectClassName}
