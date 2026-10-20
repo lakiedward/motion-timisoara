@@ -47,6 +47,10 @@ const CURS = { kind: 'COURSE' as const, id: 'curs-1', name: 'Înot începători'
 const ACTIVITATE = { kind: 'ACTIVITY' as const, id: 'act-1', name: 'Cros de toamnă', active: true }
 const TABARA = { kind: 'CAMP' as const, id: 'tabara-1', name: 'Tabără de vară', active: true }
 const CURS_OPRIT = { kind: 'COURSE' as const, id: 'curs-vechi', name: 'Schi 2025', active: false }
+async function confirmaStergerea(user: ReturnType<typeof userEvent.setup>) {
+  const dialog = await screen.findByRole('alertdialog')
+  await user.click(within(dialog).getByRole('button', { name: 'Șterge' }))
+}
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
@@ -254,27 +258,27 @@ test('eticheta nu confundă un curs cu o activitate care are același id', async
 })
 test('ștergerea cere confirmare care numește anunțul, iar refuzul îl păstrează', async () => {
   const user = userEvent.setup()
-  const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
   renderPage()
   await screen.findByText('Cantonament de vară')
   await user.click(screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”' }))
-  expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('Cantonament de vară'))
-  expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('ireversibilă'))
+  const dialog = await screen.findByRole('alertdialog')
+  expect(dialog).toHaveTextContent('Ștergi anunțul „Cantonament de vară”?')
+  expect(dialog).toHaveTextContent(/dispare definitiv/)
+  await user.click(within(dialog).getByRole('button', { name: 'Anulează' }))
+  await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
   expect(mockedSterge).not.toHaveBeenCalled()
-  confirmSpy.mockRestore()
+  expect(screen.getByText('Cantonament de vară')).toBeInTheDocument()
 })
 test('confirmarea acceptată chiar șterge anunțul', async () => {
   const user = userEvent.setup()
-  const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
   renderPage()
   await screen.findByText('Cantonament de vară')
   await user.click(screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”' }))
+  await confirmaStergerea(user)
   await waitFor(() => expect(mockedSterge).toHaveBeenCalledWith('a'))
-  confirmSpy.mockRestore()
 })
 test('ștergerea scoate întâi fișierele din bucket, apoi anunțul', async () => {
   const user = userEvent.setup()
-  const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
   const ordine: string[] = []
   vi.mocked(stergeFisiereleAnuntului).mockImplementation(async () => {
     ordine.push('fisiere')
@@ -285,19 +289,17 @@ test('ștergerea scoate întâi fișierele din bucket, apoi anunțul', async () 
   renderPage()
   await screen.findByText('Cantonament de vară')
   await user.click(screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”' }))
+  await confirmaStergerea(user)
   await waitFor(() => expect(ordine).toEqual(['fisiere', 'anunt']))
   expect(stergeFisiereleAnuntului).toHaveBeenCalledWith('a')
-  confirmSpy.mockRestore()
 })
 test('ascunderea nu cere confirmare', async () => {
   const user = userEvent.setup()
-  const confirmSpy = vi.spyOn(window, 'confirm')
   renderPage()
   await screen.findByText('Cantonament de vară')
-  await user.click(screen.getByRole('button', { name: 'Ascunde anunțul „Cantonament de vară”' }))
+  await user.click(screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }))
   await waitFor(() => expect(mockedComuta).toHaveBeenCalledWith('a', false))
-  expect(confirmSpy).not.toHaveBeenCalled()
-  confirmSpy.mockRestore()
+  expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
 })
 test('publicarea cu formularul gol spune ce lipsește, pe câmp', async () => {
   const user = userEvent.setup()
@@ -405,10 +407,10 @@ test('numele butoanelor spun despre ce anunț e vorba', async () => {
   renderPage()
   await screen.findByText('Cantonament de vară')
   expect(
-    screen.getByRole('button', { name: 'Ascunde anunțul „Cantonament de vară”' }),
+    screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }),
   ).toBeInTheDocument()
   expect(
-    screen.getByRole('button', { name: 'Afișează anunțul „Bazinul închis”' }),
+    screen.getByRole('button', { name: 'Arată părinților anunțul „Bazinul închis”' }),
   ).toBeInTheDocument()
   expect(
     screen.getByRole('button', { name: 'Șterge anunțul „Bazinul închis”' }),
@@ -419,33 +421,32 @@ test('o ascundere refuzată de bază se vede pe ecran', async () => {
   mockedComuta.mockRejectedValue(new Error('RLS'))
   renderPage()
   await screen.findByText('Cantonament de vară')
-  await user.click(screen.getByRole('button', { name: 'Ascunde anunțul „Cantonament de vară”' }))
+  await user.click(screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }))
   await waitFor(() =>
     expect(toast.error).toHaveBeenCalledWith('Nu am putut schimba vizibilitatea anunțului.'),
   )
 })
 test('o ștergere refuzată de bază se vede pe ecran', async () => {
   const user = userEvent.setup()
-  const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
   mockedSterge.mockRejectedValue(new Error('RLS'))
   renderPage()
   await screen.findByText('Cantonament de vară')
   await user.click(screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”' }))
+  await confirmaStergerea(user)
   await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Nu am putut șterge anunțul.'))
-  confirmSpy.mockRestore()
 })
 test('cât timp o ascundere e în curs se blochează doar butonul apăsat', async () => {
   const user = userEvent.setup()
   mockedComuta.mockReturnValue(new Promise(() => {}) as never)
   renderPage()
   await screen.findByText('Cantonament de vară')
-  await user.click(screen.getByRole('button', { name: 'Ascunde anunțul „Cantonament de vară”' }))
+  await user.click(screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }))
   await waitFor(() =>
     expect(
-      screen.getByRole('button', { name: 'Ascunde anunțul „Cantonament de vară”' }),
+      screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }),
     ).toBeDisabled(),
   )
-  expect(screen.getByRole('button', { name: 'Afișează anunțul „Bazinul închis”' })).toBeEnabled()
+  expect(screen.getByRole('button', { name: 'Arată părinților anunțul „Bazinul închis”' })).toBeEnabled()
   expect(screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”' })).toBeEnabled()
 })
 test('o apăsare pe alt rând nu redeschide butonul rândului încă în lucru', async () => {
@@ -453,41 +454,38 @@ test('o apăsare pe alt rând nu redeschide butonul rândului încă în lucru',
   mockedComuta.mockReturnValue(new Promise(() => {}) as never)
   renderPage()
   await screen.findByText('Cantonament de vară')
-  await user.click(screen.getByRole('button', { name: 'Ascunde anunțul „Cantonament de vară”' }))
+  await user.click(screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }))
   await waitFor(() =>
     expect(
-      screen.getByRole('button', { name: 'Ascunde anunțul „Cantonament de vară”' }),
+      screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }),
     ).toBeDisabled(),
   )
-  await user.click(screen.getByRole('button', { name: 'Afișează anunțul „Bazinul închis”' }))
+  await user.click(screen.getByRole('button', { name: 'Arată părinților anunțul „Bazinul închis”' }))
   expect(
-    screen.getByRole('button', { name: 'Ascunde anunțul „Cantonament de vară”' }),
+    screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }),
   ).toBeDisabled()
-  expect(screen.getByRole('button', { name: 'Afișează anunțul „Bazinul închis”' })).toBeDisabled()
+  expect(screen.getByRole('button', { name: 'Arată părinților anunțul „Bazinul închis”' })).toBeDisabled()
   expect(mockedComuta).toHaveBeenCalledTimes(2)
 })
-test('ștergerea blochează doar butonul rândului ei, și rămâne blocat', async () => {
+test('ștergerea în curs blochează confirmarea și butonul rândului ei', async () => {
   const user = userEvent.setup()
-  const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
   mockedSterge.mockReturnValue(new Promise(() => {}) as never)
   renderPage()
   await screen.findByText('Cantonament de vară')
   await user.click(screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”' }))
+  await confirmaStergerea(user)
+  const dialog = screen.getByRole('alertdialog')
   await waitFor(() =>
-    expect(
-      screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”' }),
-    ).toBeDisabled(),
+    expect(within(dialog).getByRole('button', { name: 'Șterge' })).toBeDisabled(),
   )
-  expect(screen.getByRole('button', { name: 'Șterge anunțul „Bazinul închis”' })).toBeEnabled()
+  await user.click(within(dialog).getByRole('button', { name: 'Șterge' }))
+  expect(mockedSterge).toHaveBeenCalledTimes(1)
   expect(
-    screen.getByRole('button', { name: 'Ascunde anunțul „Cantonament de vară”' }),
-  ).toBeEnabled()
-  await user.click(screen.getByRole('button', { name: 'Șterge anunțul „Bazinul închis”' }))
-  expect(
-    screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”' }),
+    screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”', hidden: true }),
   ).toBeDisabled()
-  expect(mockedSterge).toHaveBeenCalledTimes(2)
-  confirmSpy.mockRestore()
+  expect(
+    screen.getByRole('button', { name: 'Șterge anunțul „Bazinul închis”', hidden: true }),
+  ).toBeEnabled()
 })
 test('controalele poartă tiparul de atingere al casei', async () => {
   renderPage()
@@ -502,7 +500,7 @@ test('controalele poartă tiparul de atingere al casei', async () => {
   for (const c of formular) expect(c.className).toContain('h-touch-target')
   for (const c of formular.slice(0, 3)) expect(c.className).not.toContain('md:text-sm')
   const lista = [
-    screen.getByRole('button', { name: 'Ascunde anunțul „Cantonament de vară”' }),
+    screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }),
     screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”' }),
   ]
   for (const c of lista) expect(c.className).toContain('h-11')
@@ -522,8 +520,8 @@ test('mesajul de lipsă e legat de câmpul lui', async () => {
 test('un anunț ascuns spune că nu ajunge la părinți', async () => {
   renderPage()
   await screen.findByText('Bazinul închis')
-  expect(screen.getByText('Ascuns — nu ajunge la părinți.')).toBeInTheDocument()
-  expect(screen.getAllByText(/nu ajunge la părinți/)).toHaveLength(1)
+  expect(screen.getByText(/Părinții nu mai văd acest anunț/)).toBeInTheDocument()
+  expect(screen.getAllByText(/Părinții nu mai văd/)).toHaveLength(1)
 })
 test('antetul arată câte anunțuri are clubul', async () => {
   renderPage()
