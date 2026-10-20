@@ -30,6 +30,8 @@ export function CourseFilterBar<S extends string = StatusFilter>({
   onSport,
   statusOptions = STATUS_OPTIONS as FilterOption<S>[],
   selectId = 'admin-course-sport',
+  sportLabel = 'Sport',
+  allSportsLabel = 'Toate sporturile',
 }: {
   status: S
   sport: string
@@ -39,6 +41,8 @@ export function CourseFilterBar<S extends string = StatusFilter>({
   onSport: (id: string) => void
   statusOptions?: FilterOption<S>[]
   selectId?: string
+  sportLabel?: string
+  allSportsLabel?: string
 }) {
   return (
     <div className="mb-3 space-y-2">
@@ -70,7 +74,7 @@ export function CourseFilterBar<S extends string = StatusFilter>({
       {sports.length > 1 && (
         <div className="flex items-center gap-3 md:hidden">
           <Label htmlFor={selectId} className="shrink-0">
-            Sport
+            {sportLabel}
           </Label>
           <select
             id={selectId}
@@ -78,7 +82,7 @@ export function CourseFilterBar<S extends string = StatusFilter>({
             onChange={(e) => onSport(e.target.value)}
             className={FILTER_SELECT_CLASS}
           >
-            <option value="">Toate sporturile</option>
+            <option value="">{allSportsLabel}</option>
             {sports.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name} ({s.count})
@@ -88,7 +92,7 @@ export function CourseFilterBar<S extends string = StatusFilter>({
         </div>
       )}
       {sports.length > 1 && (
-        <div role="group" aria-label="Sport" className="hidden flex-wrap gap-2 md:flex">
+        <div role="group" aria-label={sportLabel} className="hidden flex-wrap gap-2 md:flex">
           <Button
             type="button"
             variant={sport ? 'outline' : 'default'}
@@ -96,7 +100,7 @@ export function CourseFilterBar<S extends string = StatusFilter>({
             className={PILL}
             onClick={() => onSport('')}
           >
-            Toate sporturile
+            {allSportsLabel}
           </Button>
           {sports.map((s) => {
             const on = sport === s.id

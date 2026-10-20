@@ -101,6 +101,13 @@ test('atașamentele se leagă de anunțul de club, nu de cel de curs', async () 
   expect(randuri[0].announcement_id).toBeUndefined()
 })
 
+test('atașamentele antrenorului se leagă de anunțul de curs', async () => {
+  await incarcaAtasamente('anunt-2', [poza], 'coach')
+  const randuri = argumenteTabela.insert?.[0] as Record<string, unknown>[]
+  expect(randuri[0]).toMatchObject({ announcement_id: 'anunt-2' })
+  expect(randuri[0].club_announcement_id).toBeUndefined()
+})
+
 test('o încărcare picată la mijloc scoate înapoi ce apucase să urce', async () => {
   let apel = 0
   const supabase = (await import('@/lib/supabase')).supabase

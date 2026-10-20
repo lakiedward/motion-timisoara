@@ -32,6 +32,7 @@ export const coachNavigation: PortalNavItem[] = [
   { to: '/coach/competitions', label: 'Concursuri', icon: Trophy, group: 'Oferte' },
   { to: '/coach/locations', label: 'Locații', icon: MapPin, group: 'Organizare' },
   { to: '/coach/attendance', label: 'Prezență', icon: ClipboardCheck, group: 'Organizare' },
+  { to: '/coach/announcements', label: 'Anunțuri', icon: Megaphone, group: 'Organizare' },
 ]
 
 export const clubNavigation: PortalNavItem[] = [
