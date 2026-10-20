@@ -4,6 +4,8 @@ import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 
+import { toast } from 'sonner'
+
 import ClubLocationsPage from './ClubLocationsPage'
 import { getClubLocations, getMyClub, setClubLocationActive } from '@/api/club'
 
@@ -118,39 +120,81 @@ test('un club fără locații vede îndemnul de a adăuga prima', async () => {
 // Criteriul 3: azi acțiunea pleca tăcut, pe o locație cu curs activ.
 test('dezactivarea cere confirmare care spune pe câte cursuri cade', async () => {
   const user = userEvent.setup()
-  const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
   renderPage()
   await screen.findByText('Bazin Audit Motion')
 
   await user.click(screen.getByRole('button', { name: 'Dezactivează Bazin Audit Motion' }))
 
-  expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('Se ține 1 curs aici'))
+  const dialog = await screen.findByRole('alertdialog')
+  expect(within(dialog).getByText(/Aici se ține 1 curs\./)).toBeInTheDocument()
+  await user.click(within(dialog).getByRole('button', { name: 'Anulează' }))
   expect(mockedComuta).not.toHaveBeenCalled()
-  confirmSpy.mockRestore()
+  expect(
+    screen.getByRole('button', { name: 'Dezactivează Bazin Audit Motion' }),
+  ).toBeInTheDocument()
 })
 
-test('confirmarea acceptată chiar dezactivează', async () => {
+test('confirmarea acceptată chiar dezactivează și spune că s-a făcut', async () => {
   const user = userEvent.setup()
-  const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
   renderPage()
   await screen.findByText('Bazin Audit Motion')
 
   await user.click(screen.getByRole('button', { name: 'Dezactivează Bazin Audit Motion' }))
+  const dialog = await screen.findByRole('alertdialog')
+  await user.click(within(dialog).getByRole('button', { name: 'Dezactivează' }))
   await waitFor(() => expect(mockedComuta).toHaveBeenCalledWith('a', false))
-  confirmSpy.mockRestore()
+  await waitFor(() =>
+    expect(toast.success).toHaveBeenCalledWith('Bazin Audit Motion a fost dezactivată.'),
+  )
 })
 
-// Reactivarea nu are consecințe, deci nu-l punem pe club să confirme degeaba.
+test('confirmarea pune verbul la plural când sunt mai multe cursuri', async () => {
+  const user = userEvent.setup()
+  mockedLocatii.mockResolvedValue([loc('a', 'Bazin Mare', true, 3)] as never)
+  renderPage()
+  await user.click(await screen.findByRole('button', { name: 'Dezactivează Bazin Mare' }))
+  expect(await screen.findByText(/Aici se țin 3 cursuri\./)).toBeInTheDocument()
+})
+
 test('activarea nu cere confirmare', async () => {
   const user = userEvent.setup()
-  const confirmSpy = vi.spyOn(window, 'confirm')
   renderPage()
   await screen.findByText('Pin picker QA')
 
   await user.click(screen.getByRole('button', { name: 'Activează Pin picker QA' }))
   await waitFor(() => expect(mockedComuta).toHaveBeenCalledWith('b', true))
-  expect(confirmSpy).not.toHaveBeenCalled()
-  confirmSpy.mockRestore()
+  expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+})
+
+test('o dezactivare refuzată arată eroare și lasă locația activă', async () => {
+  const user = userEvent.setup()
+  mockedComuta.mockRejectedValue(new Error('PGRST116') as never)
+  renderPage()
+  await user.click(await screen.findByRole('button', { name: 'Dezactivează Bazin Audit Motion' }))
+  await user.click(
+    within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Dezactivează' }),
+  )
+  await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Nu am putut actualiza locația.'))
+  expect(
+    screen.getByRole('button', { name: 'Dezactivează Bazin Audit Motion', hidden: true }),
+  ).toBeInTheDocument()
+  expect(toast.success).not.toHaveBeenCalled()
+})
+
+test('un cont fără club nu e îndemnat să adauge prima locație', async () => {
+  mockedClub.mockResolvedValue(null as never)
+  renderPage()
+  expect(await screen.findByText('Contul nu are un club asociat.')).toBeInTheDocument()
+  expect(screen.queryByText('Nicio locație încă.')).not.toBeInTheDocument()
+})
+
+test('activele și inactivele stau în grupuri separate, cu numărul lor', async () => {
+  renderPage()
+  const active = await screen.findByRole('region', { name: 'Active' })
+  const inactive = screen.getByRole('region', { name: 'Inactive' })
+  expect(within(active).getByText('Bazin Audit Motion')).toBeInTheDocument()
+  expect(within(inactive).getByText('Pin picker QA')).toBeInTheDocument()
+  expect(within(active).getByRole('heading', { level: 2 }).textContent).toBe('Active · 1')
 })
 
 // Criteriul 11: o sală scoasă din uz nu are de ce să stea între cele utilizabile.
@@ -192,7 +236,26 @@ test('antetul arată câte locații are clubul', async () => {
 // Criteriul 14 + numărul de cursuri de pe card, cu acordul la număr.
 test('cardul spune câte cursuri se țin acolo, doar când există', async () => {
   renderPage()
-  const cardActiv = (await screen.findByText('Bazin Audit Motion')).closest('div')!
-  expect(within(cardActiv).getByText('1 curs aici')).toBeInTheDocument()
+  const rand = (await screen.findByText('Bazin Audit Motion')).closest('li')!
+  expect(within(rand).getByText(/1 curs aici/)).toBeInTheDocument()
   expect(screen.queryByText('0 cursuri aici')).not.toBeInTheDocument()
+})
+
+test('căutarea și filtrele de stare restrâng lista și se pot șterge', async () => {
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByText('Bazin Audit Motion')
+  expect(screen.getByRole('button', { name: /^Toate\s*2$/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+
+  await user.type(screen.getByRole('searchbox', { name: /caută locații/i }), 'picker')
+  expect(screen.queryByText('Bazin Audit Motion')).not.toBeInTheDocument()
+  expect(screen.getByText('Pin picker QA')).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: /^Active\s*1$/ }))
+  expect(screen.getByText('Nicio locație pentru filtrele alese.')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Șterge filtrele' }))
+  expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(2)
 })
