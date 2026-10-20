@@ -147,9 +147,10 @@ test('the dashboard offers a way into Stripe setup and shows its state', async (
   mockedStripeStatus.mockResolvedValue({ hasProfile: true, onboardingComplete: false })
 
   renderDashboard()
-  const card = await screen.findByLabelText('Stripe, Neconfigurat')
+  const card = await screen.findByLabelText('Plăți cu cardul, Neconfigurat')
   expect(card).toHaveAttribute('href', '/coach/stripe')
   expect(card).toHaveAttribute('data-testid', 'coach-stat-stripe')
+  expect(card).toHaveTextContent('Părinții vor putea plăti cursurile tale cu cardul.')
 })
 
 test('a coach who finished onboarding sees the configured state', async () => {
@@ -157,8 +158,39 @@ test('a coach who finished onboarding sees the configured state', async () => {
   mockedStripeStatus.mockResolvedValue({ hasProfile: true, onboardingComplete: true })
 
   renderDashboard()
-  expect(await screen.findByLabelText('Stripe, Configurat')).toHaveAttribute(
-    'href',
-    '/coach/stripe',
-  )
+  const card = await screen.findByLabelText('Plăți cu cardul, Configurat')
+  expect(card).toHaveAttribute('href', '/coach/stripe')
+  expect(card).not.toHaveTextContent('Părinții vor putea plăti')
+})
+
+test('a failed Stripe status request does not claim the account is not configured', async () => {
+  mockedGetMyCourses.mockResolvedValue([])
+  mockedStripeStatus.mockRejectedValue(new Error('500'))
+
+  renderDashboard()
+  const card = await screen.findByLabelText('Plăți cu cardul, Nu am putut verifica statusul')
+  expect(card).toHaveAttribute('href', '/coach/stripe')
+  expect(card).toHaveTextContent('Nu am putut verifica statusul')
+  expect(card).not.toHaveTextContent('Neconfigurat')
+  expect(card).not.toHaveTextContent('Părinții vor putea plăti')
+})
+
+test('while courses and Stripe load, the dashboard shows skeletons instead of zeros or a status', async () => {
+  mockedGetMyCourses.mockReturnValue(new Promise(() => {}))
+  mockedStripeStatus.mockReturnValue(new Promise(() => {}))
+  renderDashboard()
+  expect(await screen.findByLabelText('Se încarcă: Cursuri')).toBeInTheDocument()
+  expect(screen.getByLabelText('Se încarcă: Cursuri active')).toBeInTheDocument()
+  expect(screen.queryByText('0')).not.toBeInTheDocument()
+  expect(screen.queryByText('Neconfigurat')).not.toBeInTheDocument()
+  expect(screen.queryByText('Nu ai încă niciun curs.')).not.toBeInTheDocument()
+})
+
+test('a failed courses request can be retried from the error card', async () => {
+  mockedGetMyCourses.mockRejectedValueOnce(new Error('500')).mockResolvedValueOnce([])
+  renderDashboard()
+  const alert = await screen.findByRole('alert')
+  alert.querySelector('button')?.click()
+  expect(await screen.findByText('Nu ai încă niciun curs.')).toBeInTheDocument()
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 })

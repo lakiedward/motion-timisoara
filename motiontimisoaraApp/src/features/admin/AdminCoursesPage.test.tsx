@@ -430,3 +430,19 @@ test('„Curs nou" și „Editează" din admin duc la formularele de curs', asyn
   expect(dinFisa).toHaveAttribute('href', '/admin/courses/2/edit')
   expect(dinFisa.className).not.toMatch(/lg:min-h-8/)
 })
+
+test('pe telefon sportul se alege dintr-o lista, iar starile stau pe un singur rand', async () => {
+  mockedCourses.mockResolvedValue(lista())
+  renderPage()
+  await asteaptaLista()
+  await userEvent.click(pastila(/^Toate\s*3/))
+
+  expect(screen.getByRole('group', { name: 'Status' }).className).toMatch(/overflow-x-auto/)
+  expect(screen.getByRole('group', { name: 'Sport' }).className).toMatch(/hidden.*md:flex/)
+  const select = screen.getByRole('combobox', { name: 'Sport' })
+  expect(select.closest('div')!.className).toMatch(/md:hidden/)
+
+  await userEvent.selectOptions(select, 'alergare')
+  expect(screen.queryByText('Înot — audit UI')).not.toBeInTheDocument()
+  expect(pastila(/^Alergare/)).toHaveAttribute('aria-pressed', 'true')
+})

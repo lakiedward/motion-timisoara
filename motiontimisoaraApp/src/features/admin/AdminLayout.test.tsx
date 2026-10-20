@@ -52,17 +52,14 @@ test('admin chrome include Tabere către formularul de tabără', () => {
   expect(screen.getByRole('link', { name: 'Panou' })).toHaveAttribute('href', '/admin')
 })
 
-test('prenumele din dreapta e link către profil, nu un item de navigare', () => {
+test('cardul de profil și prenumele din dreapta duc la profil, nu sunt itemi de navigare', () => {
   renderLayout()
-  const profileLinks = screen.getAllByRole('link', { name: 'Audit' })
-  expect(profileLinks.length).toBeGreaterThanOrEqual(1)
-  for (const link of profileLinks) {
-    expect(link).toHaveAttribute('href', '/admin/profile')
-    expect(link.className).toMatch(/text-primary/)
-    expect(link.className).toMatch(/hover:underline/)
-    expect(link.className).toMatch(/focus-visible:outline-2/)
-    expect(link.querySelector('svg')).toBeTruthy()
-  }
+  const card = screen.getByRole('link', { name: /^Audit Admin/ })
+  expect(card).toHaveAttribute('href', '/admin/profile')
+  expect(card.className).toMatch(/focus-visible:outline-2/)
+  const chip = screen.getByRole('link', { name: 'Audit' })
+  expect(chip).toHaveAttribute('href', '/admin/profile')
+  expect(chip.className).toMatch(/min-h-11/)
   const nav = screen.getByRole('navigation')
   expect(nav).not.toHaveTextContent('Audit')
 })

@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LogOut, Menu, UserRound } from 'lucide-react'
+import { LogOut, Menu } from 'lucide-react'
 
 import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
@@ -76,20 +76,44 @@ function LogoutControl({
   )
 }
 
+function navSections(nav: PortalNavItem[]) {
+  const sections: { group?: string; items: PortalNavItem[] }[] = []
+  for (const item of nav) {
+    const last = sections[sections.length - 1]
+    if (last && last.group === item.group) last.items.push(item)
+    else sections.push({ group: item.group, items: [item] })
+  }
+  return sections
+}
+
 function NavList({ nav, onNavigate }: { nav: PortalNavItem[]; onNavigate?: () => void }) {
   return (
     <nav className="flex flex-col gap-1 p-3">
-      {nav.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          end={item.end}
-          onClick={onNavigate}
-          className={navItemClass}
+      {navSections(nav).map((section) => (
+        <div
+          key={section.group ?? section.items[0].to}
+          role={section.group ? 'group' : undefined}
+          aria-label={section.group}
+          className="flex flex-col gap-1 [&+&]:mt-3"
         >
-          <item.icon className="size-4.5" aria-hidden="true" />
-          {item.label}
-        </NavLink>
+          {section.group ? (
+            <p aria-hidden="true" className="text-muted-foreground px-3 pb-1 text-xs font-medium">
+              {section.group}
+            </p>
+          ) : null}
+          {section.items.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              onClick={onNavigate}
+              className={navItemClass}
+            >
+              <item.icon className="size-4.5" aria-hidden="true" />
+              {item.label}
+            </NavLink>
+          ))}
+        </div>
       ))}
     </nav>
   )
@@ -103,30 +127,66 @@ function RoleLabel({ children }: { children: string }) {
   )
 }
 
-function ProfileNameLink({
+function initialsOf(name: string) {
+  return name
+    .split(/\s+/)
+    .map((word) => word[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+}
+
+function ProfileCard({
   to,
   name,
   onNavigate,
-  className,
 }: {
   to: string
   name: string
   onNavigate?: () => void
-  className?: string
 }) {
   return (
     <Link
       to={to}
       onClick={onNavigate}
       className={cn(
-        'text-primary flex min-h-11 cursor-pointer items-center gap-2 rounded-xl px-3 text-sm font-medium underline-offset-4',
-        'hover:bg-secondary hover:underline [&:hover]:bg-secondary [&:hover]:underline',
+        'bg-muted mb-2 flex min-h-11 cursor-pointer items-center gap-3 rounded-2xl p-3 transition-colors',
+        'hover:bg-secondary [&:hover]:bg-secondary',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-        className,
       )}
     >
-      <UserRound className="size-4 shrink-0" aria-hidden="true" />
-      {name}
+      <span
+        aria-hidden="true"
+        className="bg-primary grid size-9 shrink-0 place-items-center rounded-full text-xs font-bold text-white"
+      >
+        {initialsOf(name)}
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-semibold">{name}</span>
+        <span className="text-muted-foreground block truncate text-xs">Profilul meu</span>
+      </span>
+    </Link>
+  )
+}
+
+function ProfileChip({ to, name }: { to: string; name: string }) {
+  return (
+    <Link
+      to={to}
+      className={cn(
+        'ml-auto flex min-h-11 cursor-pointer items-center gap-2 rounded-full py-1 pr-3 pl-1 text-sm font-medium transition-colors',
+        'hover:bg-secondary [&:hover]:bg-secondary',
+        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+      )}
+    >
+      <span
+        aria-hidden="true"
+        className="bg-primary grid size-8 place-items-center rounded-full text-xs font-bold text-white"
+      >
+        {initialsOf(name)}
+      </span>
+      {firstNameOf(name)}
     </Link>
   )
 }
@@ -147,6 +207,7 @@ export function PortalLayout({
   const [logoutError, setLogoutError] = React.useState<string | null>(null)
   const logoutPending = React.useRef(false)
   const drawerLogo = React.useRef<HTMLAnchorElement>(null)
+  const fullName = user?.name.trim() || null
   const firstName = firstNameOf(user?.name)
 
   const onLogout = async () => {
@@ -190,9 +251,7 @@ export function PortalLayout({
           <NavList nav={nav} />
         </div>
         <div className="shrink-0 border-t p-3">
-          {profileTo && firstName ? (
-            <ProfileNameLink to={profileTo} name={firstName} className="mb-1" />
-          ) : null}
+          {profileTo && fullName ? <ProfileCard to={profileTo} name={fullName} /> : null}
           <LogoutControl pending={loggingOut} error={logoutError} onLogout={onLogout} />
         </div>
       </aside>
@@ -231,13 +290,8 @@ export function PortalLayout({
               <NavList nav={nav} onNavigate={closeSheet} />
             </div>
             <div className="mt-auto shrink-0 border-t p-3">
-              {profileTo && firstName ? (
-                <ProfileNameLink
-                  to={profileTo}
-                  name={firstName}
-                  onNavigate={closeSheet}
-                  className="mb-1"
-                />
+              {profileTo && fullName ? (
+                <ProfileCard to={profileTo} name={fullName} onNavigate={closeSheet} />
               ) : null}
               <LogoutControl pending={loggingOut} error={logoutError} onLogout={onLogout} />
             </div>
@@ -246,8 +300,8 @@ export function PortalLayout({
         <Link to="/" className={logoLinkClassName}>
           <Logo />
         </Link>
-        {profileTo && firstName ? (
-          <ProfileNameLink to={profileTo} name={firstName} className="ml-auto px-2" />
+        {profileTo && fullName ? (
+          <ProfileChip to={profileTo} name={fullName} />
         ) : (
           <span className="ml-auto text-sm font-medium">{firstName}</span>
         )}
