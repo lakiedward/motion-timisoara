@@ -186,3 +186,12 @@ test('an unknown id shows the not-found state', async () => {
   renderForm('/admin/activities/lipsa/edit')
   expect(await screen.findByText('Activitatea nu a fost găsită.')).toBeInTheDocument()
 })
+
+test('a failed load offers a retry instead of not-found', async () => {
+  vi.mocked(getActivityById).mockRejectedValueOnce(new Error('offline'))
+  renderForm('/admin/activities/a1/edit')
+  expect(await screen.findByText('Nu am putut încărca activitatea.')).toBeInTheDocument()
+  vi.mocked(getActivityById).mockResolvedValueOnce(null)
+  await userEvent.click(screen.getByRole('button', { name: 'Reîncearcă' }))
+  expect(await screen.findByText('Activitatea nu a fost găsită.')).toBeInTheDocument()
+})
