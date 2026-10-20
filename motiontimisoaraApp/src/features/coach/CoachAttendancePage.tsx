@@ -83,7 +83,9 @@ export default function CoachAttendancePage() {
       <h1 className="font-display text-foreground mr-auto text-2xl font-bold">
         Prezență
         {items.length > 0 && (
-          <span className="text-muted-foreground ml-2 text-base font-normal">({items.length})</span>
+          <span className="text-muted-foreground ml-2 text-base font-normal">
+            ({items.length})
+          </span>
         )}
       </h1>
       <div className="relative order-last w-full md:order-none md:w-80">
@@ -204,11 +206,7 @@ export default function CoachAttendancePage() {
       {isLoading ? (
         <ClubLocationListSkeleton />
       ) : isError && !items.length ? (
-        <StatusView
-          state="error"
-          title="Nu am putut încărca ședințele."
-          onRetry={() => refetch()}
-        />
+        <StatusView state="error" title="Nu am putut încărca ședințele." onRetry={() => refetch()} />
       ) : !items.length ? (
         <StatusView
           state="empty"
