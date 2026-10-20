@@ -111,8 +111,8 @@ test('la editare, antrenorul salvat apare selectat chiar dacă lista lui vine du
   await screen.findByDisplayValue('Înot avansat')
 
   await waitFor(() => {
-    expect(screen.getByLabelText('Antrenor')).toHaveValue(ANTRENOR)
-    expect(screen.getByLabelText('Locație')).toHaveValue(LOC_COMUNA)
+    expect(screen.getByLabelText(/^Antrenor/)).toHaveValue(ANTRENOR)
+    expect(screen.getByLabelText(/^Locație/)).toHaveValue(LOC_COMUNA)
   })
 })
 
@@ -124,7 +124,7 @@ test('selectul de locație folosește lista utilizabilă, nu doar locațiile pro
   // La creare nu exista curs, deci nicio locatie de pastrat.
   expect(mockedLocations).toHaveBeenCalledWith('club-1', null)
   expect(
-    within(screen.getByLabelText('Locație')).getByText('Bazin Olimpic Timișoara'),
+    within(screen.getByLabelText(/^Locație/)).getByText('Bazin Olimpic Timișoara'),
   ).toBeInTheDocument()
 })
 
@@ -155,18 +155,18 @@ test('locația dezactivată a unui curs rămâne în listă la editare', async (
 
   // Interogarea primeste locatia curenta, ca sa o poata pastra chiar inactiva.
   await waitFor(() => expect(mockedLocations).toHaveBeenCalledWith('club-1', 'loc-inactiva'))
-  await waitFor(() => expect(screen.getByLabelText('Locație')).toHaveValue('loc-inactiva'))
+  await waitFor(() => expect(screen.getByLabelText(/^Locație/)).toHaveValue('loc-inactiva'))
 })
 
 // --- Criteriul 3: fiecare camp gresit e marcat si legat de mesajul lui ---
 test('validarea marchează toate câmpurile greșite și leagă fiecare mesaj de câmpul lui', async () => {
   const user = userEvent.setup()
   renderForm()
-  await screen.findByLabelText('Nume curs')
+  await screen.findByLabelText(/^Nume curs/)
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
 
   for (const eticheta of ['Nume curs', 'Antrenor', 'Sport', 'Locație', 'Preț / ședință (lei)']) {
-    const camp = screen.getByLabelText(eticheta)
+    const camp = screen.getByLabelText(new RegExp(`^${eticheta.replace(/[()/]/g, '\\$&')}`))
     await waitFor(() => expect(camp).toHaveAttribute('aria-invalid', 'true'))
     const id = camp.getAttribute('aria-describedby')
     expect(id, `${eticheta} nu are aria-describedby`).toBeTruthy()
@@ -178,17 +178,15 @@ test('validarea marchează toate câmpurile greșite și leagă fiecare mesaj de
 })
 
 // --- Criteriul 2: tinta de tap sub 1024 px ---
-test('câmpurile și acțiunea de trimitere cresc la 44 px sub 1024 px', async () => {
+test('câmpurile și acțiunea de trimitere au ținta de 44 px', async () => {
   renderForm()
-  const nume = await screen.findByLabelText('Nume curs')
-  expect(nume.className).toMatch(/(^| )h-11( |$)/)
-  expect(nume.className).toMatch(/lg:h-9/)
-  const select = screen.getByLabelText('Antrenor')
-  expect(select.className).toMatch(/(^| )h-11( |$)/)
-  expect(select.className).toMatch(/lg:h-9/)
+  const nume = await screen.findByLabelText(/Nume curs/)
+  expect(nume.className).toMatch(/(^| )h-touch-target( |$)/)
+  const select = screen.getByLabelText(/Antrenor/)
+  expect(select.className).toMatch(/(^| )h-touch-target( |$)/)
   const salveaza = screen.getByRole('button', { name: 'Salvează' })
-  expect(salveaza.className).toMatch(/(^| )h-11( |$)/)
-  expect(salveaza.className).toMatch(/lg:h-9/)
+  expect(salveaza.className).toMatch(/(^| )h-touch-target( |$)/)
+  expect(salveaza.className).not.toMatch(/lg:h-9/)
 })
 
 // --- Criteriul 7: fara select gol neexplicat ---
@@ -211,11 +209,11 @@ test('salvarea reușită creează cursul și duce înapoi în listă', async () 
   const user = userEvent.setup()
   vi.mocked(createClubCourse).mockResolvedValue({ id: 'c-nou' } as never)
   renderForm()
-  await user.type(await screen.findByLabelText('Nume curs'), 'Curs nou de test')
-  await user.selectOptions(screen.getByLabelText('Antrenor'), ANTRENOR)
-  await user.selectOptions(screen.getByLabelText('Sport'), SPORT)
-  await user.selectOptions(screen.getByLabelText('Locație'), LOC_COMUNA)
-  await user.type(screen.getByLabelText('Preț / ședință (lei)'), '80')
+  await user.type(await screen.findByLabelText(/^Nume curs/), 'Curs nou de test')
+  await user.selectOptions(screen.getByLabelText(/^Antrenor/), ANTRENOR)
+  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
+  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC_COMUNA)
+  await user.type(screen.getByLabelText(/^Preț \/ ședință \(lei\)/), '80')
   await completeazaProgram(user)
   punePozaHero()
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
@@ -235,11 +233,11 @@ test('salvarea eșuată păstrează valorile completate și anunță eroarea', a
   const user = userEvent.setup()
   vi.mocked(createClubCourse).mockRejectedValue(new Error('500'))
   renderForm()
-  await user.type(await screen.findByLabelText('Nume curs'), 'Curs care nu se salvează')
-  await user.selectOptions(screen.getByLabelText('Antrenor'), ANTRENOR)
-  await user.selectOptions(screen.getByLabelText('Sport'), SPORT)
-  await user.selectOptions(screen.getByLabelText('Locație'), LOC_COMUNA)
-  await user.type(screen.getByLabelText('Preț / ședință (lei)'), '80')
+  await user.type(await screen.findByLabelText(/^Nume curs/), 'Curs care nu se salvează')
+  await user.selectOptions(screen.getByLabelText(/^Antrenor/), ANTRENOR)
+  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
+  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC_COMUNA)
+  await user.type(screen.getByLabelText(/^Preț \/ ședință \(lei\)/), '80')
   await completeazaProgram(user)
   punePozaHero()
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
@@ -247,8 +245,8 @@ test('salvarea eșuată păstrează valorile completate și anunță eroarea', a
   const { toast } = await import('sonner')
   await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Nu am putut salva cursul.'))
   // Într-un formular cu 10 câmpuri, pierderea datelor la eroare e cel mai scump lucru.
-  expect(screen.getByLabelText('Nume curs')).toHaveValue('Curs care nu se salvează')
-  expect(screen.getByLabelText('Preț / ședință (lei)')).toHaveValue(80)
+  expect(screen.getByLabelText(/^Nume curs/)).toHaveValue('Curs care nu se salvează')
+  expect(screen.getByLabelText(/^Preț \/ ședință \(lei\)/)).toHaveValue(80)
 })
 
 // --- Criteriul 8: structura si titlurile celor doua moduri ---
@@ -278,14 +276,14 @@ test('EUR citește cursul BNR și îl îngheață pe cursul de club', async () =
   const user = userEvent.setup()
   vi.mocked(createClubCourse).mockResolvedValue({ id: 'c-eur' } as never)
   renderForm()
-  await user.type(await screen.findByLabelText('Nume curs'), 'Curs euro')
-  await user.selectOptions(screen.getByLabelText('Antrenor'), ANTRENOR)
-  await user.selectOptions(screen.getByLabelText('Sport'), SPORT)
-  await user.selectOptions(screen.getByLabelText('Locație'), LOC_COMUNA)
+  await user.type(await screen.findByLabelText(/^Nume curs/), 'Curs euro')
+  await user.selectOptions(screen.getByLabelText(/^Antrenor/), ANTRENOR)
+  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
+  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC_COMUNA)
   await user.click(screen.getByRole('radio', { name: 'Euro (EUR)' }))
   expect(await screen.findByText('Curs BNR din 19.09.2026: 5,123456 lei/EUR')).toBeInTheDocument()
   expect(screen.queryByLabelText('Cursul tău: 1 EUR în lei')).not.toBeInTheDocument()
-  await user.type(screen.getByLabelText('Preț / ședință (EUR)'), '25')
+  await user.type(screen.getByLabelText(/^Preț \/ ședință \(EUR\)/), '25')
   await completeazaProgram(user)
   punePozaHero()
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
@@ -295,4 +293,19 @@ test('EUR citește cursul BNR și îl îngheață pe cursul de club', async () =
     eur_ron_rate_micros: 5123456,
     price_per_session: 2500,
   })
+})
+
+test('cât timp listele se încarcă, selecturile spun asta și salvarea nu pornește', async () => {
+  let gataLocatii: (value: never) => void = () => {}
+  mockedLocations.mockReturnValue(new Promise((resolve) => (gataLocatii = resolve)))
+  renderForm()
+  await screen.findByRole('option', { name: 'Audit Antrenor' })
+  expect(within(screen.getByLabelText(/^Locație/)).getByRole('option')).toHaveTextContent(
+    'Se încarcă…',
+  )
+  expect(screen.getByRole('button', { name: 'Salvează' })).toBeDisabled()
+  expect(screen.getByRole('status')).toHaveTextContent('Se încarcă opțiunile…')
+  gataLocatii([{ id: LOC_COMUNA, name: 'Bazin Olimpic Timișoara', city: 'Timișoara' }] as never)
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Salvează' })).toBeEnabled())
+  expect(screen.queryByText('Se încarcă opțiunile…')).not.toBeInTheDocument()
 })
