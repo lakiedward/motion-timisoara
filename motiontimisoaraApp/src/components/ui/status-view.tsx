@@ -11,6 +11,7 @@ interface StatusViewProps {
   text?: React.ReactNode
   onRetry?: () => void
   retryLabel?: string
+  retrying?: boolean
   action?: React.ReactNode
   rows?: number
   rowHeight?: number
@@ -23,6 +24,7 @@ function StatusView({
   text,
   onRetry,
   retryLabel = 'Reîncearcă',
+  retrying = false,
   action,
   rows = 3,
   rowHeight = 88,
@@ -71,9 +73,9 @@ function StatusView({
       </p>
       {text ? <p className="text-muted-foreground max-w-100 text-sm">{text}</p> : null}
       {isError && onRetry ? (
-        <Button type="button" className="mt-3" onClick={onRetry}>
-          <RefreshCw aria-hidden="true" />
-          {retryLabel}
+        <Button type="button" className="mt-3" onClick={onRetry} disabled={retrying}>
+          <RefreshCw aria-hidden="true" className={cn(retrying && 'animate-spin')} />
+          {retrying ? 'Se reîncarcă…' : retryLabel}
         </Button>
       ) : null}
       {!isError && action ? action : null}
