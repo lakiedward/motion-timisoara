@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Search } from 'lucide-react'
 
@@ -47,8 +47,6 @@ export default function CoachAttendancePage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [markingOnPhone, setMarkingOnPhone] = useState(false)
   const [showOlder, setShowOlder] = useState(false)
-  const [params] = useSearchParams()
-  const look = params.get('varianta') === 'b' ? 'marked' : 'list'
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['coach-sessions'],
@@ -152,7 +150,7 @@ export default function CoachAttendancePage() {
               renderInline={(s) =>
                 markingOnPhone ? (
                   <div className="space-y-3 border-t p-3 md:hidden">
-                    <CoachSessionCatalog session={s} look={look} />
+                    <CoachSessionCatalog session={s} />
                   </div>
                 ) : null
               }
@@ -187,7 +185,7 @@ export default function CoachAttendancePage() {
                   {sessionWhen(sel)}
                 </span>
               </h2>
-              <CoachSessionCatalog session={sel} look={look} />
+              <CoachSessionCatalog session={sel} />
             </div>
           )}
         </div>

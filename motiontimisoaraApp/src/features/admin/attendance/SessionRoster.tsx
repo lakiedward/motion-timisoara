@@ -12,8 +12,6 @@ import { StatusView } from '@/components/ui/status-view'
 import { plural } from '@/lib/plural'
 import { cn } from '@/lib/utils'
 
-export type RosterLook = 'list' | 'marked'
-
 const initials = (name: string) =>
   name
     .split(/\s+/)
@@ -27,13 +25,11 @@ export function SessionRoster({
   occurrenceId,
   listKey,
   qrLinks = false,
-  look = 'list',
 }: {
   courseId: string
   occurrenceId: string
   listKey: string
   qrLinks?: boolean
-  look?: RosterLook
 }) {
   const qc = useQueryClient()
   const roster = useQuery({
@@ -81,10 +77,12 @@ export function SessionRoster({
       >
         {[0, 1, 2, 3].map((i) => (
           <li key={i} className="flex flex-col gap-2 px-3 py-2 lg:flex-row lg:items-center">
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <Skeleton className="h-5 w-40 max-w-full" />
-              <Skeleton className="h-4 w-16" />
-              {qrLinks && <Skeleton className="h-4 w-14" />}
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <Skeleton className="size-8 shrink-0 rounded-full" />
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <Skeleton className="h-5 w-40 max-w-full" />
+                <Skeleton className={qrLinks ? 'h-touch-target w-28 lg:h-4' : 'h-4 w-16'} />
+              </div>
             </div>
             <div className="flex gap-3">
               <Skeleton className="h-touch-target flex-1 rounded-full lg:h-9 lg:w-20 lg:flex-none" />
@@ -127,7 +125,6 @@ export function SessionRoster({
       </div>
       <ul className="divide-y rounded-xl border">
         {rows.map((r) => {
-          const marked = look === 'marked'
           const qr = qrLinks && (
             <Link
               to={`/coach/children/${r.child_id}/qr`}
@@ -141,32 +138,21 @@ export function SessionRoster({
               key={r.child_id}
               className={cn(
                 'relative flex flex-col gap-2 px-3 py-2 lg:flex-row lg:items-center lg:justify-between',
-                marked &&
-                  'before:absolute before:inset-y-0 before:left-0 before:w-1 before:rounded-l-xl',
-                marked && r.status === 'PRESENT' && 'before:bg-success',
-                marked && r.status === 'ABSENT' && 'before:bg-destructive',
+                'before:absolute before:inset-y-0 before:left-0 before:w-1 before:rounded-l-xl',
+                r.status === 'PRESENT' && 'before:bg-success',
+                r.status === 'ABSENT' && 'before:bg-destructive',
               )}
             >
               <div className="flex min-w-0 items-center gap-3">
-                {marked && (
-                  <Avatar aria-hidden="true">
-                    <AvatarFallback>{initials(r.child_name)}</AvatarFallback>
-                  </Avatar>
-                )}
+                <Avatar aria-hidden="true">
+                  <AvatarFallback>{initials(r.child_name)}</AvatarFallback>
+                </Avatar>
                 <div className="min-w-0">
-                  <div
-                    className={cn(
-                      'truncate font-medium',
-                      !marked && 'lg:line-clamp-2 lg:whitespace-normal lg:break-words',
-                    )}
-                  >
-                    {r.child_name}
-                  </div>
+                  <div className="truncate font-medium">{r.child_name}</div>
                   <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 text-sm">
                     <span>{childAge(r.child_birth_date)} ani</span>
-                    {marked && qr}
+                    {qr}
                   </div>
-                  {!marked && qr}
                 </div>
               </div>
               <div className="flex gap-3 lg:shrink-0 lg:gap-2">

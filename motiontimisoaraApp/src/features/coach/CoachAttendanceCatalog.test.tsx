@@ -315,3 +315,14 @@ test('pe telefon catalogul stă sub ședința aleasă, cu contor și acțiune î
   expect(within(panou).getByText('2 din 3 copii pontați')).toBeInTheDocument()
   expect(within(panou).getByRole('button', { name: 'Toți prezenți' })).toBeInTheDocument()
 })
+
+test('fiecare copil are inițialele lui, iar copiii pontați au dunga stării lor', async () => {
+  renderCatalog(trioCopii())
+  const ana = (await screen.findByText('Ana Dumitrescu')).closest('li')!
+  const andrei = screen.getByText('Andrei Popescu').closest('li')!
+  const luca = screen.getByText('Luca Georgescu').closest('li')!
+  expect(within(ana).getByText('AD')).toBeInTheDocument()
+  expect(ana.className).toMatch(/before:bg-success/)
+  expect(andrei.className).toMatch(/before:bg-destructive/)
+  expect(luca.className).not.toMatch(/before:bg-(success|destructive)/)
+})
