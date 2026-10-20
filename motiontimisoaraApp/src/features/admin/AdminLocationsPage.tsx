@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus, Search } from 'lucide-react'
 import { toast } from 'sonner'
@@ -14,8 +14,6 @@ import { ClubLocationListSkeleton } from '@/features/club/locations/ClubLocation
 import { CourseFilterBar, type FilterOption } from './courses/CourseFilterBar'
 import { plural } from '@/lib/plural'
 import { LocationOrganizerCard } from './locations/LocationOrganizerCard'
-import { FlatLocationList } from './locations/FlatLocationList'
-import { OrganizerFilter } from './locations/OrganizerFilter'
 import {
   NO_LOCATION_FILTERS,
   countLocations,
@@ -23,7 +21,6 @@ import {
   groupByOrganizer,
   hasLocationFilters,
   locationStatusCounts,
-  organizerOptions,
   type LocationGroup,
   type LocationStatus,
 } from './locations/location-overview'
@@ -42,8 +39,6 @@ const SECTION_LABEL = {
 
 export default function AdminLocationsPage() {
   const qc = useQueryClient()
-  const [params] = useSearchParams()
-  const flat = params.get('varianta') === 'b'
   const [filters, setFilters] = useState(NO_LOCATION_FILTERS)
   const [toggled, setToggled] = useState<Record<string, boolean>>({})
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
@@ -73,16 +68,11 @@ export default function AdminLocationsPage() {
   const query = filters.query
   const searching = query.trim().length > 0
   const counts = useMemo(() => locationStatusCounts(locations), [locations])
-  const organizers = useMemo(() => organizerOptions(locations), [locations])
-  const visible = useMemo(
-    () => filterLocations(locations, flat ? filters : { ...filters, organizer: '' }),
-    [locations, filters, flat],
-  )
+  const visible = useMemo(() => filterLocations(locations, filters), [locations, filters])
   const elsewhere = useMemo(
     () =>
       searching
-        ? filterLocations(locations, { ...filters, status: 'all', organizer: '' }).length -
-          visible.length
+        ? filterLocations(locations, { ...filters, status: 'all' }).length - visible.length
         : 0,
     [locations, filters, searching, visible.length],
   )
@@ -163,19 +153,9 @@ export default function AdminLocationsPage() {
             onStatus={(status) => set({ status })}
             onSport={() => {}}
           />
-          {flat && organizers.length > 1 && (
-            <div className="mb-3 md:max-w-sm">
-              <OrganizerFilter
-                value={filters.organizer}
-                options={organizers}
-                onChange={(organizer) => set({ organizer })}
-              />
-            </div>
-          )}
-
           <p role="status" className="text-muted-foreground text-sm">
             {visible.length > 0 &&
-              (searching || filters.organizer
+              (searching
                 ? `${visible.length} din ${countLocations(locations.length)}`
                 : `${countLocations(visible.length)} la ${plural(groups.length, 'organizator', 'organizatori')}`)}
             {elsewhere > 0 && (
@@ -183,7 +163,7 @@ export default function AdminLocationsPage() {
                 {visible.length > 0 && ' · '}
                 <button
                   type="button"
-                  onClick={() => set({ status: 'all', organizer: '' })}
+                  onClick={() => set({ status: 'all' })}
                   className="text-primary inline-flex min-h-touch-target items-center font-semibold lg:min-h-0"
                 >
                   {elsewhere === 1 ? 'Încă 1 rezultat' : `Încă ${elsewhere} rezultate`} în alte
@@ -210,13 +190,6 @@ export default function AdminLocationsPage() {
                   </Button>
                 ) : null
               }
-            />
-          ) : flat ? (
-            <FlatLocationList
-              locations={visible}
-              query={query}
-              pendingIds={pendingIds}
-              onToggleLocation={onToggleLocation}
             />
           ) : (
             (['club', 'coach', 'shared'] as const).map((kind) => {

@@ -14,10 +14,10 @@ type Props = {
   seComuta: boolean
   onToggle: () => void
   editTo?: string
-  organizer?: ReactNode
+  details?: ReactNode
 }
 
-export function ClubLocationRow({ locatie: l, seComuta, onToggle, editTo, organizer }: Props) {
+export function ClubLocationRow({ locatie: l, seComuta, onToggle, editTo, details }: Props) {
   return (
     <li
       className={cn(
@@ -37,7 +37,6 @@ export function ClubLocationRow({ locatie: l, seComuta, onToggle, editTo, organi
             </Badge>
           )}
         </div>
-        {organizer}
         <p className="text-muted-foreground mt-1 text-sm wrap-anywhere">
           <span>{formatAdresa(l)}</span>
           <span aria-hidden="true"> · </span>
@@ -45,6 +44,7 @@ export function ClubLocationRow({ locatie: l, seComuta, onToggle, editTo, organi
             {l.courseCount ? `${plural(l.courseCount, 'curs', 'cursuri')} aici` : 'niciun curs'}
           </span>
         </p>
+        {details}
       </div>
       <div className="flex shrink-0 gap-2">
         <Button asChild variant="outline" className="h-11 lg:h-9">

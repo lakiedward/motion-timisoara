@@ -91,6 +91,16 @@ export function LocationOrganizerCard({
                 seComuta={pendingIds.includes(l.id)}
                 onToggle={() => onToggleLocation(l)}
                 editTo={`/admin/locations/${l.id}/edit`}
+                details={
+                  l.usedBy.length > 0 && (
+                    <p className="text-muted-foreground mt-1 text-sm wrap-anywhere">
+                      Folosită și de:{' '}
+                      <span className="text-foreground font-medium">
+                        <Highlight text={l.usedBy.join(', ')} query={query} />
+                      </span>
+                    </p>
+                  )
+                }
               />
             ))}
           </ul>

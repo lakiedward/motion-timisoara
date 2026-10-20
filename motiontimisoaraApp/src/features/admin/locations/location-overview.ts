@@ -14,12 +14,10 @@ export type LocationGroup = LocationOrganizer & {
   courseCount: number
 }
 
-export type AdminLocationFilters = { status: LocationStatus; organizer: string; query: string }
+export type AdminLocationFilters = { status: LocationStatus; query: string }
 
-export const ALL_ORGANIZERS = ''
 export const NO_LOCATION_FILTERS: AdminLocationFilters = {
   status: 'active',
-  organizer: ALL_ORGANIZERS,
   query: '',
 }
 
@@ -41,22 +39,17 @@ function matchesStatus(l: AdminLocation, status: LocationStatus) {
 function matchesQuery(l: AdminLocation, query: string) {
   const needle = fold(query.trim())
   if (!needle) return true
-  return fold(`${l.name} ${l.address ?? ''} ${l.city ?? ''} ${organizerOf(l).name}`).includes(
-    needle,
-  )
+  return fold(
+    `${l.name} ${l.address ?? ''} ${l.city ?? ''} ${organizerOf(l).name} ${l.usedBy.join(' ')}`,
+  ).includes(needle)
 }
 
 export function filterLocations(locations: AdminLocation[], f: AdminLocationFilters) {
-  return locations.filter(
-    (l) =>
-      matchesStatus(l, f.status) &&
-      (!f.organizer || organizerOf(l).key === f.organizer) &&
-      matchesQuery(l, f.query),
-  )
+  return locations.filter((l) => matchesStatus(l, f.status) && matchesQuery(l, f.query))
 }
 
 export function hasLocationFilters(f: AdminLocationFilters) {
-  return f.status !== 'all' || !!f.organizer || f.query.trim() !== ''
+  return f.status !== 'all' || f.query.trim() !== ''
 }
 
 export function locationStatusCounts(locations: AdminLocation[]): Record<LocationStatus, number> {
@@ -87,17 +80,6 @@ export function groupByOrganizer(all: AdminLocation[], visible: AdminLocation[])
     .filter((g) => g.locations.length > 0)
     .map((g) => ({ ...g, locations: [...g.locations].sort(byName) }))
     .sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind] || byName(a, b))
-}
-
-export function organizerOptions(locations: AdminLocation[]) {
-  const seen = new Map<string, LocationOrganizer & { count: number }>()
-  for (const l of locations) {
-    const o = organizerOf(l)
-    const entry = seen.get(o.key) ?? { ...o, count: 0 }
-    entry.count += 1
-    seen.set(o.key, entry)
-  }
-  return [...seen.values()].sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind] || byName(a, b))
 }
 
 export const countLocations = (n: number) => plural(n, 'locație', 'locații')
