@@ -10,7 +10,15 @@ import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { StatusView } from '@/components/ui/status-view'
 import { ClubLocationRow } from './locations/ClubLocationRow'
-import { grupeazaDupaStare } from './locations/location-list'
+import { ClubLocationFilterBar } from './locations/ClubLocationFilterBar'
+import {
+  NO_FILTERS,
+  filterLocations,
+  grupeazaDupaStare,
+  hasFilters,
+  statusCounts,
+  type LocationFilters,
+} from './locations/location-list'
 
 export default function ClubLocationsPage() {
   const qc = useQueryClient()
@@ -34,6 +42,7 @@ export default function ClubLocationsPage() {
   })
   const [seComuta, setSeComuta] = useState<string[]>([])
   const [deDezactivat, setDeDezactivat] = useState<ClubLocation | null>(null)
+  const [filtre, setFiltre] = useState<LocationFilters>(NO_FILTERS)
 
   const toggle = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean; name: string }) =>
@@ -47,7 +56,7 @@ export default function ClubLocationsPage() {
     },
     onError: () => toast.error('Nu am putut actualiza locația.'),
   })
-  const { active, inactive } = grupeazaDupaStare(locations)
+  const { active, inactive } = grupeazaDupaStare(filterLocations(locations, filtre))
   const total = locations.length
   const faraClub = !seIncarcaClubul && !aEsuatClubul && !club
   const aEsuatIncarcarea = aEsuatClubul || (isError && !total)
@@ -104,10 +113,37 @@ export default function ClubLocationsPage() {
           text="Locațiile se adaugă după ce clubul e creat."
         />
       ) : total ? (
-        <div className="grid gap-8">
-          {grup('Active', active)}
-          {grup('Inactive', inactive)}
-        </div>
+        <>
+          <ClubLocationFilterBar
+            filters={filtre}
+            statusCounts={statusCounts(locations)}
+            onChange={setFiltre}
+          />
+          {active.length + inactive.length ? (
+            <div className="grid gap-8">
+              {grup('Active', active)}
+              {grup('Inactive', inactive)}
+            </div>
+          ) : (
+            <StatusView
+              state="empty"
+              title="Nicio locație pentru filtrele alese."
+              text="Schimbă căutarea sau filtrele."
+              action={
+                hasFilters(filtre) ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="mt-3 h-11 min-h-11"
+                    onClick={() => setFiltre(NO_FILTERS)}
+                  >
+                    Șterge filtrele
+                  </Button>
+                ) : null
+              }
+            />
+          )}
+        </>
       ) : (
         <StatusView
           state="empty"

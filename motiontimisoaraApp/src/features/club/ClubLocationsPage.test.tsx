@@ -240,3 +240,22 @@ test('cardul spune câte cursuri se țin acolo, doar când există', async () =>
   expect(within(rand).getByText(/1 curs aici/)).toBeInTheDocument()
   expect(screen.queryByText('0 cursuri aici')).not.toBeInTheDocument()
 })
+
+test('căutarea și filtrele de stare restrâng lista și se pot șterge', async () => {
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByText('Bazin Audit Motion')
+  expect(screen.getByRole('button', { name: /^Toate\s*2$/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+
+  await user.type(screen.getByRole('searchbox', { name: /caută locații/i }), 'picker')
+  expect(screen.queryByText('Bazin Audit Motion')).not.toBeInTheDocument()
+  expect(screen.getByText('Pin picker QA')).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: /^Active\s*1$/ }))
+  expect(screen.getByText('Nicio locație pentru filtrele alese.')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Șterge filtrele' }))
+  expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(2)
+})
