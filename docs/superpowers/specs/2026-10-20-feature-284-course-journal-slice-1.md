@@ -15,7 +15,7 @@ Slice 1 needed no migration for the upload itself.
 
 ## Course coach read access
 
-A read-only impersonation in production on 2026-10-20 showed the coach of a targeted course could not read the club announcement or its files, although this slice's scope names the coach among the readers. Migration 00097 (approved by the owner on 2026-10-20) adds the coach of the targeted course to `club_announcements_select`, for published announcements only, and only when the course belongs to the announcing club; club-wide, activity and camp announcements stay as before. The attachment and storage policies follow the announcement, so the coach reads the files too. `supabase/tests/club-announcement-coach-read.sql` covers the coach, another coach, the enrolled parent and a parent of another course.
+A read-only impersonation in production on 2026-10-20 showed the coach of a targeted course could not read the club announcement or its files, although this slice's scope names the coach among the readers. Migration 00097 (approved by the owner on 2026-10-20) adds the coach of the targeted course to `club_announcements_select`, for published announcements only, and only when the course belongs to the announcing club; club-wide, activity and camp announcements stay as before. The attachment and storage policies follow the announcement, so the coach reads the files too. `supabase/tests/club-announcement-coach-read.sql` covers the course coach, a coach of an untargeted course, the enrolled parent and a parent of another course.
 
 ## This change
 

@@ -1,6 +1,5 @@
 \set ON_ERROR_STOP on
 RESET ROLE;
-INSERT INTO public.profiles (id, name, role) VALUES (public.test_uuid(9), 'Other Coach', 'COACH');
 INSERT INTO public.club_announcements (id, club_id, author_user_id, title, content, audience_kind, audience_id, created_at) VALUES
     (public.test_uuid(210), public.test_uuid(11), public.test_uuid(5), 'Hidden course', 'Hidden from the course', 'COURSE', public.test_uuid(21), now() - interval '1 day'),
     (public.test_uuid(211), public.test_uuid(12), public.test_uuid(6), 'Forged course', 'Other club targets course 21', 'COURSE', public.test_uuid(21), now() - interval '1 day');
