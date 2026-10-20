@@ -53,7 +53,6 @@ function curs(over: Partial<ClubCourse> & { id: string; name: string }): ClubCou
   } as ClubCourse
 }
 
-/** Două cursuri cu același nume, care se deosebesc doar prin locație. */
 const omonime = (): ClubCourse[] => [
   curs({
     id: '1',
@@ -69,7 +68,6 @@ beforeEach(() => {
   vi.mocked(getCurrentLocationOccurrences).mockResolvedValue([])
 })
 
-// --- Criteriul 1: pe telefon butonul coboară pe rândul lui ---
 test('antetul stivuiește „Curs nou” sub titlu până la 640 px și îl readuce alături de la sm', async () => {
   mockedCourses.mockResolvedValue([])
   const { container } = renderPage()
@@ -77,11 +75,9 @@ test('antetul stivuiește „Curs nou” sub titlu până la 640 px și îl read
   const antet = container.querySelector('h1')!.parentElement!
   expect(antet.className).toMatch(/flex-col/)
   expect(antet.className).toMatch(/sm:flex-row/)
-  // La 375 px titlul și butonul stăteau la 6 px unul de altul.
   expect(antet.className).not.toMatch(/^\s*flex items-center justify-between\s*$/)
 })
 
-// --- Criteriul 2: locația deosebește cursurile omonime, din zona titlului ---
 test('locația apare în zona titlului, deci două cursuri omonime nu mai arată identic', async () => {
   mockedCourses.mockResolvedValue(omonime())
   renderPage()
@@ -91,17 +87,15 @@ test('locația apare în zona titlului, deci două cursuri omonime nu mai arată
   expect(new Set(zone).size).toBe(2)
 })
 
-// --- Criteriul 7: locația nu se repetă; linia gri păstrează antrenorul ---
 test('linia gri are antrenorul și vârsta, iar locația apare o singură dată pe card', async () => {
   mockedCourses.mockResolvedValue([curs({ id: '1', name: 'Atletism juniori' })])
   renderPage()
-  const card = (await screen.findByText('Atletism juniori')).closest('div.bg-card') as HTMLElement
+  const card = (await screen.findByText('Atletism juniori')).closest('li') as HTMLElement
   expect(within(card).getByText(/Audit Antrenor · 8–13 ani/)).toBeInTheDocument()
   const aparitii = card.textContent!.split('Stadion Atletism').length - 1
   expect(aparitii).toBe(1)
 })
 
-// --- Criteriul 4: eroarea nu mai arată ca lista goală ---
 test('eșecul încărcării are mesaj propriu și „Reîncearcă”, fără textul de listă goală', async () => {
   mockedCourses.mockRejectedValue(new Error('500'))
   renderPage()
@@ -111,13 +105,10 @@ test('eșecul încărcării are mesaj propriu și „Reîncearcă”, fără tex
   expect(within(alerta).getByText('Nu am putut încărca cursurile.')).toBeInTheDocument()
   expect(within(alerta).getByRole('button', { name: 'Reîncearcă' })).toBeInTheDocument()
   expect(screen.queryByText(/Niciun curs încă/)).not.toBeInTheDocument()
-  // Titlul și acțiunea principală rămân disponibile în starea de eroare.
   expect(screen.getByRole('heading', { name: 'Cursurile clubului' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: /Curs nou/ })).toBeInTheDocument()
 })
 
-// Regresie (Bugbot): comutarea Activ/Inactiv invalideaza lista, iar un refetch
-// picat trecator nu are voie sa stearga cursurile deja incarcate de pe ecran.
 test('un refetch eșuat după comutare păstrează cursurile, fără să arate eroarea', async () => {
   const user = userEvent.setup()
   mockedCourses
@@ -135,7 +126,6 @@ test('un refetch eșuat după comutare păstrează cursurile, fără să arate e
   expect(screen.queryByText('Nu am putut încărca cursurile.')).not.toBeInTheDocument()
 })
 
-// --- Criteriul 8: starea goală rămâne cutia punctată, cu ambele drumuri ---
 test('lista goală păstrează cutia punctată și cele două drumuri spre creare', async () => {
   mockedCourses.mockResolvedValue([])
   renderPage()
@@ -145,20 +135,15 @@ test('lista goală păstrează cutia punctată și cele două drumuri spre crear
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 })
 
-// --- Criteriul 10: scheletele au înălțimea cardului real ---
-test('scheletele de încărcare urmăresc înălțimea cardului real, pe fiecare treaptă', async () => {
+test('scheletele de încărcare urmăresc înălțimea rândului real, pe fiecare treaptă', async () => {
   mockedCourses.mockReturnValue(new Promise(() => {}))
-  const { container } = renderPage()
-  const schelete = await waitFor(() => {
-    const found = container.querySelectorAll('.grid [data-slot="skeleton"]')
-    expect(found.length).toBeGreaterThanOrEqual(2)
-    return found
-  })
-  // Măsurat în browser: cardul real are 210 px sub 1024 px și 190 px peste.
-  // `h-32` dădea 128 px, deci lista sărea cu 42 px când soseau datele.
-  schelete.forEach((s) => {
-    expect(s.className).toMatch(/(^| )h-52( |$)/)
-    expect(s.className).toMatch(/lg:h-48/)
+  renderPage()
+  const incarcare = await screen.findByRole('status', { name: 'Se încarcă cursurile' })
+  const randuri = incarcare.querySelectorAll('.divide-y > [data-slot="skeleton"]')
+  expect(randuri.length).toBeGreaterThanOrEqual(2)
+  randuri.forEach((r) => {
+    expect(r.className).toMatch(/(^| )h-40( |$)/)
+    expect(r.className).toMatch(/md:h-27/)
   })
 })
 
@@ -231,17 +216,38 @@ test('retry without a known club identity never executes the disabled courses qu
   expect(mockedCourses).not.toHaveBeenCalled()
 })
 
-// --- Criteriul 11: rândurile grilei sunt egale de la sm în sus, libere pe telefon ---
-test('grila egalizează rândurile de la sm în sus, dar lasă telefonul să crească', async () => {
-  mockedCourses.mockResolvedValue(omonime())
-  const { container } = renderPage()
-  await screen.findAllByText('Înot — audit UI')
-  const grila = container.querySelector('.grid')!
-  expect(grila.className).toMatch(/sm:auto-rows-fr/)
-  expect(grila.className).not.toMatch(/(^| )auto-rows-fr/)
+test('lista grupează cursurile Active/Inactive fără să taie numele lung', async () => {
+  const lung = 'Pregătire fizică generală pentru începători'
+  mockedCourses.mockResolvedValue([
+    curs({ id: '1', name: lung }),
+    curs({ id: '2', name: 'Atletism juniori', active: false }),
+  ])
+  renderPage()
+  const titlu = await screen.findByRole('heading', { name: lung })
+  expect(titlu.className).toMatch(/break-words/)
+  expect(titlu.className).not.toMatch(/truncate|line-clamp/)
+  expect(screen.getByRole('region', { name: 'Active' })).toHaveTextContent(lung)
+  expect(screen.getByRole('region', { name: 'Inactive' })).toHaveTextContent('Atletism juniori')
 })
 
-// --- Criteriul 9: comutarea e tăcută la succes ---
+test('căutarea și filtrul de antrenor restrâng lista, iar „Șterge filtrele” o readuce', async () => {
+  const user = userEvent.setup()
+  mockedCourses.mockResolvedValue([
+    curs({ id: '1', name: 'Înot începători', coach: { id: 'c1', name: 'Andrei Popescu' } }),
+    curs({ id: '2', name: 'Atletism juniori', coach: { id: 'c2', name: 'Maria Ionescu' } }),
+  ])
+  renderPage()
+  await screen.findByText('Înot începători')
+  await user.selectOptions(screen.getByLabelText('Antrenor'), 'c2')
+  expect(screen.queryByText('Înot începători')).not.toBeInTheDocument()
+  expect(screen.getByText('Atletism juniori')).toBeInTheDocument()
+  await user.type(screen.getByRole('searchbox'), 'inot')
+  expect(screen.getByText('Niciun curs pentru filtrele alese.')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Șterge filtrele' }))
+  expect(screen.getByText('Înot începători')).toBeInTheDocument()
+  expect(screen.getByText('Atletism juniori')).toBeInTheDocument()
+})
+
 test('comutarea reușită nu afișează niciun mesaj', async () => {
   const user = userEvent.setup()
   mockedCourses.mockResolvedValue([curs({ id: '1', name: 'Atletism juniori', active: false })])
@@ -253,7 +259,6 @@ test('comutarea reușită nu afișează niciun mesaj', async () => {
   expect(toast.error).not.toHaveBeenCalled()
 })
 
-// --- Criteriul 12: refuzul RLS spune de ce ---
 test('refuzul pe 42501 spune că antrenorul nu e din club; alte erori rămân generice', async () => {
   const user = userEvent.setup()
   mockedCourses.mockResolvedValue([curs({ id: '1', name: 'Atletism juniori', active: false })])
