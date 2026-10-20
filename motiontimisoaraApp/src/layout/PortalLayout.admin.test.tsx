@@ -55,7 +55,7 @@ beforeEach(() => {
   mocks.signOut.mockReset().mockResolvedValue({ error: null })
 })
 
-test('admin navigation keeps the eight accepted destinations in order', () => {
+test('admin navigation keeps the accepted destinations in order', () => {
   renderPortal()
   const links = within(screen.getByRole('navigation')).getAllByRole('link')
   expect(links.map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
@@ -63,6 +63,7 @@ test('admin navigation keeps the eight accepted destinations in order', () => {
     ['Utilizatori', '/admin/users'],
     ['Cluburi', '/admin/clubs'],
     ['Cursuri', '/admin/courses'],
+    ['Locații', '/admin/locations'],
     ['Tabere', '/admin/camps'],
     ['Concursuri', '/admin/competitions'],
     ['Sporturi', '/admin/sports'],
@@ -75,6 +76,7 @@ test.each([
   ['/admin/users/audit', 'Utilizatori'],
   ['/admin/clubs/audit', 'Cluburi'],
   ['/admin/courses/audit', 'Cursuri'],
+  ['/admin/locations/audit/edit', 'Locații'],
   ['/admin/camps/audit', 'Tabere'],
   ['/admin/competitions/audit', 'Concursuri'],
   ['/admin/sports', 'Sporturi'],
