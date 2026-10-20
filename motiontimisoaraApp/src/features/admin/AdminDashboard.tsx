@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   Building2,
+  ChevronRight,
   GraduationCap,
   Tent,
   Ticket,
@@ -23,13 +24,12 @@ import {
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { usesNativeNavigation } from '@/layout/native/native-runtime'
-import { cn } from '@/lib/utils'
 
-const statCardClass = cn(
-  'bg-card shadow-card flex h-full min-h-[11.5rem] min-w-0 cursor-pointer flex-col rounded-3xl p-6 transition-all',
-  'hover:-translate-y-1 hover:shadow-card-hover [&:hover]:-translate-y-1 [&:hover]:shadow-card-hover',
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-)
+const GROUPS: { title: string; keys: AdminStatKey[] }[] = [
+  { title: 'Oameni', keys: ['users', 'newUsers7d', 'coaches'] },
+  { title: 'Organizatori', keys: ['clubs', 'activeInviteCodes'] },
+  { title: 'Oferte', keys: ['courses', 'camps', 'competitions'] },
+]
 
 const STATS: {
   key: AdminStatKey
@@ -149,7 +149,7 @@ export default function AdminDashboard() {
         ) : null}
       </div>
       {totalFailure ? (
-        <div role="alert" className="rounded-3xl border border-dashed py-16 text-center">
+        <div role="alert" className="rounded-xl border border-dashed py-16 text-center">
           <p className="text-foreground font-medium">Nu am putut încărca statisticile.</p>
           <Button
             className="mt-4 h-11 min-h-11"
@@ -163,7 +163,7 @@ export default function AdminDashboard() {
       ) : (
         <>
           {partialFailed.length > 0 ? (
-            <div role="alert" className="rounded-3xl border border-dashed px-6 py-4">
+            <div role="alert" className="rounded-xl border border-dashed px-6 py-4">
               <p className="text-foreground font-medium">
                 Nu am putut încărca: {partialFailed.join(', ')}.
               </p>
@@ -177,18 +177,31 @@ export default function AdminDashboard() {
               </Button>
             </div>
           ) : null}
-          <div className="grid grid-cols-1 items-stretch gap-4 overflow-visible py-1 md:grid-cols-2 lg:grid-cols-4">
-            {STATS.map((stat) => (
-              <StatCard
-                key={stat.key}
-                to={stat.to}
-                testId={stat.testId}
-                icon={stat.icon}
-                label={stat.label}
-                hint={stat.hint}
-                cell={data?.[stat.key]}
-                loading={isLoading}
-              />
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+            {GROUPS.map((group) => (
+              <section key={group.title} className="bg-card min-w-0 rounded-xl border">
+                <h2 className="font-display text-foreground border-b px-5 py-4 text-base font-bold">
+                  {group.title}
+                </h2>
+                <ul className="divide-y">
+                  {group.keys.map((key) => {
+                    const stat = STATS.find((s) => s.key === key)!
+                    return (
+                      <li key={key}>
+                        <StatRow
+                          to={stat.to}
+                          testId={stat.testId}
+                          icon={stat.icon}
+                          label={stat.label}
+                          hint={stat.hint}
+                          cell={data?.[stat.key]}
+                          loading={isLoading}
+                        />
+                      </li>
+                    )
+                  })}
+                </ul>
+              </section>
             ))}
           </div>
         </>
@@ -197,15 +210,7 @@ export default function AdminDashboard() {
   )
 }
 
-function StatCard({
-  to,
-  testId,
-  icon: Icon,
-  cell,
-  label,
-  hint,
-  loading,
-}: {
+type StatProps = {
   to: string
   testId: string
   icon: LucideIcon
@@ -213,10 +218,11 @@ function StatCard({
   label: string
   hint?: string
   loading: boolean
-}) {
+}
+
+function statText({ cell, label, hint, loading }: StatProps) {
   const failed = Boolean(cell?.error)
-  const shown = cell?.value ?? 0
-  const display = failed ? '—' : formatAdminCount(shown, cell?.capped)
+  const display = failed ? '—' : formatAdminCount(cell?.value ?? 0, cell?.capped)
   const aria = loading
     ? `${label}, se încarcă`
     : failed
@@ -224,25 +230,50 @@ function StatCard({
       : hint
         ? `${label}, ${display}, ${hint}`
         : `${label}, ${display}`
+  return { failed, display, aria }
+}
+
+function StatIcon({ icon: Icon }: { icon: LucideIcon }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="bg-primary/10 text-primary grid size-11 shrink-0 place-items-center rounded-xl"
+    >
+      <Icon className="size-5" />
+    </span>
+  )
+}
+
+function StatValue({ loading, display }: { loading: boolean; display: string }) {
+  return loading ? <Skeleton className="h-8 w-14" role="status" aria-label="Se încarcă" /> : display
+}
+
+function StatRow(props: StatProps) {
+  const { to, testId, icon, cell, label, hint, loading } = props
+  const { failed, display, aria } = statText(props)
   return (
     <Link
       to={to}
       data-testid={testId}
-      className={statCardClass}
       aria-label={aria}
       aria-busy={loading || undefined}
+      className="group hover:bg-muted/60 focus-visible:outline-ring flex min-h-touch-target items-center gap-4 px-5 py-3 transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2"
     >
-      <span className="bg-primary/10 text-primary grid size-11 place-items-center rounded-xl">
-        <Icon className="size-5" />
-      </span>
-      <div className="font-display mt-4 flex h-9 items-center text-3xl font-extrabold">
-        {loading ? <Skeleton className="h-9 w-16" role="status" aria-label="Se încarcă" /> : display}
+      <StatIcon icon={icon} />
+      <div className="min-w-0 flex-1">
+        <div className="text-foreground text-sm font-medium break-words">{label}</div>
+        {hint ? <div className="text-muted-foreground text-xs break-words">{hint}</div> : null}
+        {failed && cell?.error ? (
+          <p className="text-destructive mt-1 text-xs break-words">{cell.error}</p>
+        ) : null}
       </div>
-      <div className="text-muted-foreground mt-1 text-sm break-words">{label}</div>
-      {hint ? <div className="text-muted-foreground mt-0.5 text-xs break-words">{hint}</div> : null}
-      {failed && cell?.error ? (
-        <p className="text-destructive mt-2 text-xs break-words">{cell.error}</p>
-      ) : null}
+      <div className="font-display text-foreground text-2xl font-extrabold">
+        <StatValue loading={loading} display={display} />
+      </div>
+      <ChevronRight
+        aria-hidden="true"
+        className="text-muted-foreground group-hover:text-primary size-5 shrink-0 transition-colors"
+      />
     </Link>
   )
 }

@@ -4,12 +4,12 @@ import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
 
 import CampsListPage from './CampsListPage'
-import { getTaberelemele, type TabaraDinLista } from '@/api/camps-admin'
+import { getTaberelemele, getToateTaberele, type TabaraDinLista } from '@/api/camps-admin'
 import { formatMoney } from '@/lib/money'
 
 vi.mock('@/api/camps-admin', async () => {
   const real = await vi.importActual<typeof import('@/api/camps-admin')>('@/api/camps-admin')
-  return { ...real, getTaberelemele: vi.fn() }
+  return { ...real, getTaberelemele: vi.fn(), getToateTaberele: vi.fn() }
 })
 vi.mock('./useProprietarTabere', () => ({
   useProprietarTabere: () => ({
@@ -21,6 +21,10 @@ vi.mock('./useProprietarTabere', () => ({
   }),
 }))
 vi.mock('./CampInvitations', () => ({ default: () => null }))
+const auth = vi.hoisted(() => ({ role: 'CLUB' }))
+vi.mock('@/lib/auth-context', () => ({
+  useAuth: () => ({ user: { id: 'user-1', role: auth.role } }),
+}))
 
 const BAZA = '/club/camps'
 
@@ -71,7 +75,9 @@ function deseneaza() {
 }
 
 beforeEach(() => {
+  auth.role = 'CLUB'
   vi.mocked(getTaberelemele).mockReset()
+  vi.mocked(getToateTaberele).mockReset()
 })
 
 test('o tabără by_age arată numărul de categorii de vârstă și intervalul de preț', async () => {
@@ -91,7 +97,9 @@ test('o tabără by_age arată numărul de categorii de vârstă și intervalul 
 })
 
 test('fără categorii de vârstă, prețul e Gratuit', async () => {
-  vi.mocked(getTaberelemele).mockResolvedValue([tabara({ categorii: 0, preturiPeVarsta: [], price: 0 })])
+  vi.mocked(getTaberelemele).mockResolvedValue([
+    tabara({ categorii: 0, preturiPeVarsta: [], price: 0 }),
+  ])
   deseneaza()
   expect(await screen.findByText('Gratuit')).toBeInTheDocument()
   expect(screen.getByText('Fără categorii')).toBeInTheDocument()
@@ -134,4 +142,12 @@ test('fără tabere, mesajul e altul decât cel de eroare', async () => {
   deseneaza()
   expect(await screen.findByText('Nicio tabără încă.')).toBeInTheDocument()
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+})
+
+test('adminul vede toate taberele, nu doar pe ale lui', async () => {
+  auth.role = 'ADMIN'
+  vi.mocked(getToateTaberele).mockResolvedValue([tabara({ title: 'Tabăra unui club' })])
+  deseneaza()
+  expect(await screen.findByRole('heading', { name: 'Tabăra unui club' })).toBeInTheDocument()
+  expect(getTaberelemele).not.toHaveBeenCalled()
 })
