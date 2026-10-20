@@ -110,7 +110,7 @@ test('preserves playback, expiry information and downloading of videos', () => {
         attachment({
           fel: 'VIDEO',
           link: 'https://motion.example/training.mp4',
-          expiraLa: '2026-09-25T12:00:00Z',
+          expiraLa: '2099-09-25T12:00:00Z',
         }),
       ]}
     />,
@@ -126,7 +126,7 @@ const savedVideo = attachment({
   fel: 'VIDEO',
   link: 'https://motion.example/training.mp4',
   linkDescarcare: 'https://motion.example/training.mp4?download=filmare-motiontimisoara.mp4',
-  expiraLa: '2026-09-25T12:00:00Z',
+  expiraLa: '2099-09-25T12:00:00Z',
 })
 
 test('downloads through the signed attachment link that saves the video', () => {
@@ -139,6 +139,12 @@ test('downloads through the signed attachment link that saves the video', () => 
     'href',
     'https://motion.example/training.mp4?download=filmare-motiontimisoara.mp4',
   )
+})
+
+test('says a video past its deletion date is about to be removed', () => {
+  render(<AnnouncementMedia atasamente={[{ ...savedVideo, expiraLa: '2026-01-05T08:00:00Z' }]} />)
+  expect(screen.getByText('Filmarea se șterge în curând.')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Descarcă' })).toBeInTheDocument()
 })
 
 test('opens the download in the system browser inside the native app', async () => {

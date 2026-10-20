@@ -7,8 +7,10 @@ import type { AtasamentAfisabil } from '@/api/attachments'
 import { Button } from '@/components/ui/button'
 import { isNative } from '@/lib/platform'
 
-function formatExpiryDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' })
+function describeExpiry(iso: string): string {
+  const expiry = new Date(iso)
+  if (expiry.getTime() <= Date.now()) return 'Filmarea se șterge în curând.'
+  return `Filmarea se șterge pe ${expiry.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' })}.`
 }
 
 function getExternalLink(value: string): { href: string; label: string } | null {
@@ -135,7 +137,7 @@ export default function AnnouncementMedia({ atasamente }: { atasamente: Atasamen
             />
             {attachment.expiraLa && (
               <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-                <span>Filmarea se șterge pe {formatExpiryDate(attachment.expiraLa)}.</span>
+                <span>{describeExpiry(attachment.expiraLa)}</span>
                 <Button asChild variant="link" className="h-auto min-h-11 p-0 text-xs">
                   <a
                     href={downloadUrl}
