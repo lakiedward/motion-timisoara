@@ -38,13 +38,13 @@ export const coachNavigation: PortalNavItem[] = [
 export const clubNavigation: PortalNavItem[] = [
   { to: '/club', label: 'Panou', icon: LayoutDashboard, end: true },
   { to: '/club/profile', label: 'Profil club', icon: Building2 },
-  { to: '/club/coaches', label: 'Antrenori', icon: Users },
-  { to: '/club/announcements', label: 'Anunțuri', icon: Megaphone },
-  { to: '/club/courses', label: 'Cursuri', icon: GraduationCap },
-  { to: '/club/activities', label: 'Activități', icon: CalendarRange },
-  { to: '/club/camps', label: 'Tabere', icon: Tent },
-  { to: '/club/competitions', label: 'Concursuri', icon: Trophy },
-  { to: '/club/locations', label: 'Locații', icon: MapPin },
+  { to: '/club/courses', label: 'Cursuri', icon: GraduationCap, group: 'Oferte' },
+  { to: '/club/activities', label: 'Activități', icon: CalendarRange, group: 'Oferte' },
+  { to: '/club/camps', label: 'Tabere', icon: Tent, group: 'Oferte' },
+  { to: '/club/competitions', label: 'Concursuri', icon: Trophy, group: 'Oferte' },
+  { to: '/club/locations', label: 'Locații', icon: MapPin, group: 'Organizare' },
+  { to: '/club/coaches', label: 'Antrenori', icon: Users, group: 'Organizare' },
+  { to: '/club/announcements', label: 'Anunțuri', icon: Megaphone, group: 'Organizare' },
 ]
 
 export const adminNavigation: PortalNavItem[] = [
