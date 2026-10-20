@@ -334,27 +334,62 @@ export async function getAllClubs(): Promise<AdminClub[]> {
   return (data as AdminClub[] | null) ?? []
 }
 
+export type CourseEnrollmentCounts = { active: number; pending: number }
+
 export type AdminCourse = Tables<'courses'> & {
   sport: Pick<Tables<'sports'>, 'name'> | null
   coach: Pick<Tables<'profiles'>, 'name'> | null
-
   location: Pick<Tables<'locations'>, 'name'> | null
-
   club: Pick<Tables<'clubs'>, 'name'> | null
+  enrollments: CourseEnrollmentCounts
+}
+
+async function getCourseEnrollmentRows() {
+  const rows: { entity_id: string; status: string }[] = []
+  for (let from = 0; ; from += POSTGREST_MAX_ROWS) {
+    const { data, error } = await supabase
+      .from('enrollments')
+      .select('entity_id, status')
+      .eq('kind', 'COURSE')
+      .in('status', ['ACTIVE', 'PENDING'])
+      .order('id')
+      .range(from, from + POSTGREST_MAX_ROWS - 1)
+    if (error) throw error
+    rows.push(...(data ?? []))
+    if ((data ?? []).length < POSTGREST_MAX_ROWS) return rows
+  }
+}
+
+export function countCourseEnrollments(rows: { entity_id: string; status: string }[]) {
+  const counts = new Map<string, CourseEnrollmentCounts>()
+  for (const row of rows) {
+    const c = counts.get(row.entity_id) ?? { active: 0, pending: 0 }
+    if (row.status === 'ACTIVE') c.active += 1
+    else if (row.status === 'PENDING') c.pending += 1
+    counts.set(row.entity_id, c)
+  }
+  return counts
 }
 
 export async function getAllCourses(): Promise<AdminCourse[]> {
-  const { data, error } = await supabase
-    .from('courses')
-    .select(
-      '*, sport:sports(name), coach:profiles(name), location:locations(name), club:clubs(name)',
-    )
-    .order('name')
+  const [courses, enrollments] = await Promise.all([
+    supabase
+      .from('courses')
+      .select(
+        '*, sport:sports(name), coach:profiles(name), location:locations(name), club:clubs(name)',
+      )
+      .order('name')
+      .order('price')
+      .order('id'),
+    getCourseEnrollmentRows(),
+  ])
+  if (courses.error) throw courses.error
 
-    .order('price')
-    .order('id')
-  if (error) throw error
-  return (data ?? []) as unknown as AdminCourse[]
+  const counts = countCourseEnrollments(enrollments)
+  return ((courses.data ?? []) as unknown as Omit<AdminCourse, 'enrollments'>[]).map((c) => ({
+    ...c,
+    enrollments: counts.get(c.id) ?? { active: 0, pending: 0 },
+  }))
 }
 
 export async function setCourseActiveAdmin(id: string, active: boolean) {

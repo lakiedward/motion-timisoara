@@ -17,6 +17,7 @@ import AdminDashboard from '@/features/admin/AdminDashboard'
 import AdminUsersPage from '@/features/admin/AdminUsersPage'
 import AdminClubsPage from '@/features/admin/AdminClubsPage'
 import AdminCoursesPage from '@/features/admin/AdminCoursesPage'
+import { EditCourseAction, NewCourseButton } from '@/features/admin/courses/CourseEditActions'
 import AdminSportsPage from '@/features/admin/AdminSportsPage'
 import AdminInviteCodesPage from '@/features/admin/AdminInviteCodesPage'
 import AdminProfilePage from '@/features/admin/AdminProfilePage'
@@ -212,7 +213,17 @@ export const router = createBrowserRouter([
               { path: '/admin/profile', element: <AdminProfilePage /> },
               { path: '/admin/users', element: <AdminUsersPage /> },
               { path: '/admin/clubs', element: <AdminClubsPage /> },
-              { path: '/admin/courses', element: <AdminCoursesPage /> },
+              {
+                path: '/admin/courses',
+                element: (
+                  <AdminCoursesPage
+                    headerActions={<NewCourseButton />}
+                    renderRowActions={(course, layout) => (
+                      <EditCourseAction course={course} layout={layout} />
+                    )}
+                  />
+                ),
+              },
               { path: '/admin/courses/new', element: <ClubCourseFormPage portal="admin" /> },
               { path: '/admin/courses/:id/edit', element: <ClubCourseFormPage portal="admin" /> },
               {
