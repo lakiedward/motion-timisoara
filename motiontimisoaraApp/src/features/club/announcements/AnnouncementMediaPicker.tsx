@@ -95,19 +95,6 @@ export default function AnnouncementMediaPicker({ files, onChange, disabled = fa
 
   const meta = (f: FisierPregatit) => (f.fel === 'VIDEO' ? videoMeta(f) : marime(f.continut.size))
 
-  const removeButton = (f: FisierPregatit, i: number) => (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon"
-      className="shrink-0"
-      aria-label={`Scoate ${f.numeOriginal}`}
-      onClick={() => remove(i)}
-    >
-      <X />
-    </Button>
-  )
-
   return (
     <div className="space-y-3">
       <Button
@@ -144,17 +131,25 @@ export default function AnnouncementMediaPicker({ files, onChange, disabled = fa
         </p>
       )}
       {!!files.length && (
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <ul className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           {files.map((f, i) => (
-            <li key={`${f.numeOriginal}-${i}`} className="overflow-hidden rounded-xl border">
-              {preview(f, i)}
-              <div className="flex items-center gap-1 py-1 pl-3">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{f.numeOriginal}</p>
-                  <p className="text-muted-foreground text-xs">{meta(f)}</p>
-                </div>
-                {removeButton(f, i)}
+            <li key={`${f.numeOriginal}-${i}`} className="min-w-0">
+              <div className="relative overflow-hidden rounded-xl border">
+                {preview(f, i)}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-0 right-0 rounded-full hover:bg-transparent dark:hover:bg-transparent"
+                  aria-label={`Scoate ${f.numeOriginal}`}
+                  onClick={() => remove(i)}
+                >
+                  <span className="bg-background/90 text-foreground flex size-7 items-center justify-center rounded-full border">
+                    <X className="size-4" />
+                  </span>
+                </Button>
               </div>
+              <p className="text-muted-foreground mt-1 truncate text-xs">{meta(f)}</p>
             </li>
           ))}
         </ul>

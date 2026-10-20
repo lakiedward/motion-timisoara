@@ -36,7 +36,7 @@ test('alegerea fișierelor e un buton în română, fără inputul nativ vizibil
   expect(screen.getByText(/0 din 6 poze · 0 din 1 filmare/)).toBeInTheDocument()
 })
 
-test('fiecare fișier ales arată miniatura sau iconița, numele, mărimea și Scoate', async () => {
+test('fiecare fișier ales arată miniatura sau iconița, mărimea și Scoate cu numele lui', async () => {
   const user = userEvent.setup()
   render(<Harness />)
   await user.upload(screen.getByLabelText('Alege poze sau filmare'), [
@@ -45,10 +45,10 @@ test('fiecare fișier ales arată miniatura sau iconița, numele, mărimea și S
   ])
   const items = await screen.findAllByRole('listitem', {}, { timeout: 4000 })
   expect(items).toHaveLength(2)
-  expect(within(items[0]).getByText('bazin.jpg')).toBeInTheDocument()
+  expect(within(items[0]).getByRole('button', { name: 'Scoate bazin.jpg' })).toBeInTheDocument()
   expect(within(items[0]).getByText('300 KB')).toBeInTheDocument()
   expect(items[0].querySelector('img')?.getAttribute('src')).toBe('blob:preview')
-  expect(within(items[1]).getByText('start.mp4')).toBeInTheDocument()
+  expect(within(items[1]).getByRole('button', { name: 'Scoate start.mp4' })).toBeInTheDocument()
   expect(within(items[1]).getByText('5 MB')).toBeInTheDocument()
   expect(items[1].querySelector('img')).toBeNull()
   expect(
@@ -57,7 +57,7 @@ test('fiecare fișier ales arată miniatura sau iconița, numele, mărimea și S
 
   await user.click(screen.getByRole('button', { name: 'Scoate bazin.jpg' }))
   expect(screen.getAllByRole('listitem')).toHaveLength(1)
-  expect(screen.queryByText('bazin.jpg')).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Scoate bazin.jpg' })).not.toBeInTheDocument()
 })
 
 test('o filmare peste 50 MB e respinsă cu mesaj, înainte de încărcare', async () => {

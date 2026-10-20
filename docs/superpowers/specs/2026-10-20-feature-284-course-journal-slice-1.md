@@ -2,7 +2,7 @@
 
 ## Accepted scope
 
-Owner decisions of 2026-08-26 (recorded on feature #284) and the correction of 2026-08-31 apply: photos and videos are uploaded to the private `announcement-media` bucket, at most 6 photos resized in the browser to 1600 px and one video of at most 60 s and 50 MB per announcement, rejected before upload with a clear message. Only videos expire, after 30 days. Delivery plan v30 item 1066 asks for this slice: the specification, the data model and the club upload. Section #3925 "Formular anunț nou" (criteria 2721–2734, approved 2026-10-20) defines how the form looks and behaves; on 2026-10-20 the owner chose the grid layout for the selected files.
+Owner decisions of 2026-08-26 (recorded on feature #284) and the correction of 2026-08-31 apply: photos and videos are uploaded to the private `announcement-media` bucket, at most 6 photos resized in the browser to 1600 px and one video of at most 60 s and 50 MB per announcement, rejected before upload with a clear message. Only videos expire, after 30 days. Delivery plan v30 item 1066 asks for this slice: the specification, the data model and the club upload. Section #3925 "Formular anunț nou" (criteria 2721–2734, approved 2026-10-20) defines how the form looks and behaves; on 2026-10-20 the owner chose a compact grid for the selected files.
 
 ## Already in production
 
@@ -17,7 +17,7 @@ Slice 1 therefore needs no new migration and no production write.
 
 - The compose form moves from `ClubAnnouncementsPage.tsx` to `src/features/club/announcements/AnnouncementComposeForm.tsx`, so the announcement list (section #487) and the form can change independently.
 - The form is a flat `Card` titled "Anunț nou" with a sentence on where the announcement goes, uses `Input`, `Textarea` and `FieldMessage`, keeps every field and select at 44 px with 16 px text, focuses the first invalid field, and shows "Se publică…" while publishing.
-- `AnnouncementMediaPicker` replaces the native file input with the outline button "Adaugă poze sau filmare" on web and native, then shows a grid of square previews with name, size (and duration for the video) and a 44 px remove control. It reuses the gallery pattern of camp photos and competition route photos. A counter shows photos and video against their limits and, once a video is chosen, the date it will be deleted.
+- `AnnouncementMediaPicker` replaces the native file input with the outline button "Adaugă poze sau filmare" on web and native, then shows a compact grid of square previews, three per row on phones and five on wider screens, with the size (and duration for the video) under each and a 44 px remove control on its corner whose accessible name carries the file name. The owner chose this compact grid over larger tiles with visible file names because six photos and a video made the form about 1540 px tall on a phone; the compact grid saves about 445 px. Tiles follow the camp and competition gallery pattern. A counter shows photos and video against their limits and, once a video is chosen, the date it will be deleted.
 - `FisierPregatit` carries the measured video duration so the preview can show it.
 
 ## Open item found during this slice
