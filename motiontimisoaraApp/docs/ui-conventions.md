@@ -24,7 +24,7 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
     Cât timp tokenul nu există, asta NU e o convenție — e un item de lucru.
 
     canonic  src/index.css --touch-target
-    măsurat  207 valori scrise de mână, în 75 fișiere
+    măsurat  200 valori scrise de mână, în 74 fișiere
     →        unde trăiește tokenul e o alegere, nu o măsurătoare. Deschis pe Focus.
 
 ## Forme de așteptare  [RESPECTATĂ]
@@ -33,7 +33,7 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
 
     canonic  src/components/ui/skeleton.tsx
     blocat   0 animate-pulse în afara primitivei
-    folosit  65 fișiere
+    folosit  64 fișiere
 
 ## Culorile de brand  [RESPECTATĂ]
 
