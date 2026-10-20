@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   CheckCircle2,
   ChevronRight,
+  CircleAlert,
   CircleCheck,
   CreditCard,
   GraduationCap,
@@ -42,7 +43,13 @@ export default function CoachDashboard() {
     retry: false,
   })
   const stripeComplete = stripeQuery.data?.onboardingComplete ?? false
-  const stripeLabel = stripeComplete ? 'Configurat' : 'Neconfigurat'
+  const stripeLabel = stripeQuery.isPending
+    ? 'se încarcă'
+    : stripeQuery.isError
+      ? 'Nu am putut verifica statusul'
+      : stripeComplete
+        ? 'Configurat'
+        : 'Neconfigurat'
 
   return (
     <div className="space-y-8">
@@ -113,7 +120,7 @@ export default function CoachDashboard() {
         <Link
           to="/coach/stripe"
           data-testid="coach-stat-stripe"
-          aria-label={`Stripe, ${stripeQuery.isPending ? 'se încarcă' : stripeLabel}`}
+          aria-label={`Plăți cu cardul, ${stripeLabel}`}
           className={linkCardClass}
         >
           <span className="bg-primary/10 text-primary grid size-11 shrink-0 place-items-center rounded-xl">
@@ -124,6 +131,11 @@ export default function CoachDashboard() {
             <div className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
               {stripeQuery.isPending ? (
                 <Skeleton className="h-5 w-28" />
+              ) : stripeQuery.isError ? (
+                <>
+                  <CircleAlert className="text-muted-foreground size-5" /> Nu am putut verifica
+                  statusul
+                </>
               ) : stripeComplete ? (
                 <>
                   <CheckCircle2 className="text-success-ink size-5" /> Configurat
@@ -134,6 +146,11 @@ export default function CoachDashboard() {
                 </>
               )}
             </div>
+            {stripeQuery.isSuccess && !stripeComplete ? (
+              <p className="text-muted-foreground mt-1 text-sm">
+                Părinții vor putea plăti cursurile tale cu cardul.
+              </p>
+            ) : null}
           </div>
           <ChevronRight aria-hidden="true" className="text-muted-foreground size-5 shrink-0" />
         </Link>
