@@ -21,3 +21,13 @@ No migration and no policy change: the same signed-URL permission applies.
 
 - Unit tests for the extra signing call, the download name and the native branch.
 - Browser on deploy-preview: the response for "Descarcă" carries `Content-Disposition: attachment`, and the browser saves the file instead of navigating. Native WebView behavior is not verifiable from the cloud and is reported as such.
+
+## Follow-up: video retention (slice 4)
+
+Checked in production on 2026-10-20:
+
+- The deletion date already shows under every video on the club, coach and parent cards (`AnnouncementMedia`, from `expires_at`, 30 days after upload).
+- The cron job `curatenie-media-expirata` (migration 00024) is active and runs daily at 03:30 UTC; `purge-expired-media` is deployed. Each run returns early with a warning because the Vault secret `service_role_key` is missing, so two test videos that expired on 2026-09-26 are still in the bucket.
+- While the job is blocked, those cards showed a deletion date in the past. The card now says "Filmarea se șterge în curând." once the date has passed, and the download stays available until the file is gone.
+
+The job needs no code change. Once the owner adds the legacy `service_role` key to the Vault under `service_role_key`, one manual call of `public.cheama_purge_expired_media()` proves the deletion of both the files and the rows.
