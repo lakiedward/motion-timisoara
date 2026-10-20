@@ -125,8 +125,8 @@ export async function getMyActivities(): Promise<CoachActivity[]> {
 }
 
 export async function getActivityById(id: string): Promise<Tables<'activities'> | null> {
-  const { data, error } = await supabase.from('activities').select('*').eq('id', id).single()
-  if (error) return null
+  const { data, error } = await supabase.from('activities').select('*').eq('id', id).maybeSingle()
+  if (error) throw error
   return data
 }
 

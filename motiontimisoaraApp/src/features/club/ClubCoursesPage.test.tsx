@@ -10,6 +10,7 @@ import { getCurrentLocationOccurrences } from '@/api/live-location'
 vi.mock('@/lib/auth-context', () => ({
   useAuth: () => ({ user: { id: 'club-user', role: 'CLUB' } }),
 }))
+vi.mock('@/api/live-location/discovery', () => ({ getActiveLocationSessions: vi.fn() }))
 vi.mock('@/api/live-location', () => ({
   getCurrentLocationOccurrences: vi.fn(),
   locationRequest: vi.fn(),
@@ -168,18 +169,20 @@ test('location discovery stays loading through both club and course lookup', asy
   await waitFor(() => expect(mockedCourses).toHaveBeenCalledWith('club-1'))
   expect(section.querySelector('[data-slot="skeleton"]')).toBeInTheDocument()
   expect(within(section).queryByText('Nicio ședință în desfășurare.')).not.toBeInTheDocument()
-  await act(async () => resolveCourses([]))
+  await act(async () => resolveCourses([curs({ id: 'c-1', name: 'Înot începători' })]))
   await within(section).findByText('Nicio ședință în desfășurare.')
-  expect(getCurrentLocationOccurrences).not.toHaveBeenCalled()
+  expect(getCurrentLocationOccurrences).toHaveBeenCalledWith(['c-1'])
 })
 
 test('location discovery reports a course dependency failure and retries that dependency', async () => {
-  mockedCourses.mockRejectedValueOnce(new Error('offline')).mockResolvedValue([])
+  mockedCourses
+    .mockRejectedValueOnce(new Error('offline'))
+    .mockResolvedValue([curs({ id: 'c-1', name: 'Înot începători' })])
   renderPage()
   const section = screen.getByRole('region', { name: 'Ședințe cu locație în timp real' })
   await within(section).findByText('Nu am putut încărca ședințele pentru locație.')
   expect(within(section).queryByText('Nicio ședință în desfășurare.')).not.toBeInTheDocument()
-  await userEvent.click(within(section).getByRole('button', { name: 'Reîncearcă ședințele' }))
+  await userEvent.click(within(section).getByRole('button', { name: 'Reîncearcă' }))
   await within(section).findByText('Nicio ședință în desfășurare.')
   expect(mockedCourses).toHaveBeenCalledTimes(2)
 })
@@ -199,7 +202,7 @@ test('one retry recovers simultaneous club and course failures when the club ide
     expect(client.getQueryState(['club-courses', 'club-1'])?.status).toBe('error')
   })
   const section = screen.getByRole('region', { name: 'Ședințe cu locație în timp real' })
-  await userEvent.click(within(section).getByRole('button', { name: 'Reîncearcă ședințele' }))
+  await userEvent.click(within(section).getByRole('button', { name: 'Reîncearcă' }))
   await screen.findByText('Curs recuperat')
   expect(mockedClub).toHaveBeenCalledTimes(2)
   expect(mockedCourses).toHaveBeenCalledTimes(2)
@@ -211,7 +214,7 @@ test('retry without a known club identity never executes the disabled courses qu
   renderPage()
   const section = screen.getByRole('region', { name: 'Ședințe cu locație în timp real' })
   await within(section).findByText('Nu am putut încărca ședințele pentru locație.')
-  await userEvent.click(within(section).getByRole('button', { name: 'Reîncearcă ședințele' }))
+  await userEvent.click(within(section).getByRole('button', { name: 'Reîncearcă' }))
   await waitFor(() => expect(mockedClub).toHaveBeenCalledTimes(2))
   expect(mockedCourses).not.toHaveBeenCalled()
 })

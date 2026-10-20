@@ -12,20 +12,21 @@ export const INDEPENDENT_OWNER = 'independent'
 
 export function useCourseFormOwner(
   portal: CourseFormPortal,
-  existing: Tables<'courses'> | null | undefined,
+  existing: Pick<Tables<'courses'>, 'club_id' | 'location_id'> | null | undefined,
   isEdit: boolean,
+  enabled = true,
 ) {
   const isAdmin = portal === 'admin'
   const [chosen, setChosen] = useState('')
   const { data: myClub } = useQuery({
     queryKey: ['my-club'],
     queryFn: getMyClub,
-    enabled: !isAdmin,
+    enabled: enabled && !isAdmin,
   })
   const { data: clubs = [] } = useQuery({
     queryKey: ['admin-clubs'],
     queryFn: getAllClubs,
-    enabled: isAdmin,
+    enabled: enabled && isAdmin,
   })
 
   const savedOwner = existing ? (existing.club_id ?? INDEPENDENT_OWNER) : ''
@@ -37,7 +38,7 @@ export function useCourseFormOwner(
   const { data: coaches = [], isSuccess: coachesReady } = useQuery({
     queryKey: isAdmin ? ['admin-course-coaches', owner] : ['club-roster-select', owner],
     queryFn: () => (independent ? getCoachesForSelect() : getClubRosterForSelect(owner)),
-    enabled: !!owner,
+    enabled: enabled && !!owner,
   })
   const { data: locations = [], isSuccess: locationsReady } = useQuery({
     queryKey: isAdmin
@@ -45,7 +46,7 @@ export function useCourseFormOwner(
       : ['club-selectable-locations', owner, keepLocationId],
     queryFn: () =>
       independent ? getSelectableLocations() : getClubSelectableLocations(owner, keepLocationId),
-    enabled: !!owner && (!isEdit || !!existing),
+    enabled: enabled && !!owner && (!isEdit || !!existing),
   })
 
   return {
