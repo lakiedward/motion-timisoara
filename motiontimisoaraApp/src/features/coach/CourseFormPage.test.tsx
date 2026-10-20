@@ -392,3 +392,28 @@ test('la curs nou, Anulează pleacă fără întrebare', async () => {
   expect(await screen.findByText('Lista cursuri')).toBeInTheDocument()
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
+
+test('un curs inexistent arată „Cursul nu a fost găsit.” în loc de formular gol', async () => {
+  mockedExisting.mockResolvedValue(null)
+  renderForm('/coach/courses/c-lipsa/edit')
+  expect(await screen.findByText('Cursul nu a fost găsit.')).toBeInTheDocument()
+  expect(screen.queryByLabelText('Nume curs')).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Salvează' })).not.toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Înapoi' })).toHaveAttribute('href', '/coach/courses')
+})
+
+test('cât se încarcă cursul nu apare formularul gol', async () => {
+  mockedExisting.mockReturnValue(new Promise(() => {}))
+  renderForm('/coach/courses/c1/edit')
+  expect(await screen.findByRole('status', { name: 'Se încarcă cursul' })).toBeInTheDocument()
+  expect(screen.queryByLabelText('Nume curs')).not.toBeInTheDocument()
+})
+
+test('dacă citirea cursului eșuează, Reîncearcă îl încarcă din nou', async () => {
+  const user = userEvent.setup()
+  mockedExisting.mockRejectedValueOnce(new Error('rețea')).mockResolvedValue(cursSalvat() as never)
+  renderForm('/coach/courses/c1/edit')
+  expect(await screen.findByText('Nu am putut încărca cursul.')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Reîncearcă' }))
+  expect(await screen.findByDisplayValue('Înot avansat')).toBeInTheDocument()
+})

@@ -27,8 +27,9 @@ export async function getMyCourses(): Promise<CoachCourse[]> {
 }
 
 export async function getCourseById(id: string): Promise<Tables<'courses'> | null> {
-  const { data, error } = await supabase.from('courses').select('*').eq('id', id).single()
-  if (error) return null
+  const { data, error } = await supabase.from('courses').select('*').eq('id', id).maybeSingle()
+  if (error?.code === '22P02') return null
+  if (error) throw error
   return data
 }
 
