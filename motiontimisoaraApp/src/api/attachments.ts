@@ -22,9 +22,13 @@ function extensia(nume: string, contentType: string): string {
   return contentType.split('/')[1] ?? 'bin'
 }
 
+const ownerColumn = (source: AnnouncementAttachmentSource) =>
+  source === 'club' ? 'club_announcement_id' : 'announcement_id'
+
 export async function incarcaAtasamente(
-  clubAnnouncementId: string,
+  announcementId: string,
   fisiere: FisierPregatit[],
+  source: AnnouncementAttachmentSource = 'club',
 ): Promise<Atasament[]> {
   if (!fisiere.length) return []
   const urcate: string[] = []
@@ -32,7 +36,7 @@ export async function incarcaAtasamente(
   try {
     const randuri = []
     for (const [i, f] of fisiere.entries()) {
-      const cale = `${clubAnnouncementId}/${crypto.randomUUID()}.${extensia(f.numeOriginal, f.contentType)}`
+      const cale = `${announcementId}/${crypto.randomUUID()}.${extensia(f.numeOriginal, f.contentType)}`
       const { error } = await supabase.storage.from(BUCKET).upload(cale, f.continut, {
         contentType: f.contentType,
         upsert: false,
@@ -40,7 +44,9 @@ export async function incarcaAtasamente(
       if (error) throw error
       urcate.push(cale)
       randuri.push({
-        club_announcement_id: clubAnnouncementId,
+        ...(source === 'club'
+          ? { club_announcement_id: announcementId }
+          : { announcement_id: announcementId }),
         type: f.fel,
         storage_path: cale,
         content_type: f.contentType,
@@ -63,7 +69,7 @@ export async function getAtasamente(
   source: AnnouncementAttachmentSource = 'club',
 ): Promise<Record<string, AtasamentAfisabil[]>> {
   if (!announcementIds.length) return {}
-  const announcementColumn = source === 'club' ? 'club_announcement_id' : 'announcement_id'
+  const announcementColumn = ownerColumn(source)
   const { data, error } = await supabase
     .from('announcement_attachments')
     .select('*')
@@ -101,12 +107,15 @@ export async function getAtasamente(
   return pe
 }
 
-export async function stergeFisiereleAnuntului(clubAnnouncementId: string): Promise<void> {
+export async function stergeFisiereleAnuntului(
+  announcementId: string,
+  source: AnnouncementAttachmentSource = 'club',
+): Promise<void> {
   try {
     const { data } = await supabase
       .from('announcement_attachments')
       .select('storage_path')
-      .eq('club_announcement_id', clubAnnouncementId)
+      .eq(ownerColumn(source), announcementId)
     const cai = (data ?? []).map((r) => r.storage_path).filter((c): c is string => !!c)
     if (cai.length) await supabase.storage.from(BUCKET).remove(cai)
   } catch {
