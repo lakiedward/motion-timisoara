@@ -21,16 +21,17 @@ export interface PortalNavItem {
   label: string
   icon: LucideIcon
   end?: boolean
+  group?: string
 }
 
 export const coachNavigation: PortalNavItem[] = [
   { to: '/coach', label: 'Panou', icon: LayoutDashboard, end: true },
-  { to: '/coach/courses', label: 'Cursuri', icon: GraduationCap },
-  { to: '/coach/activities', label: 'Activități', icon: CalendarRange },
-  { to: '/coach/camps', label: 'Tabere', icon: Tent },
-  { to: '/coach/competitions', label: 'Concursuri', icon: Trophy },
-  { to: '/coach/locations', label: 'Locații', icon: MapPin },
-  { to: '/coach/attendance', label: 'Prezență', icon: ClipboardCheck },
+  { to: '/coach/courses', label: 'Cursuri', icon: GraduationCap, group: 'Oferte' },
+  { to: '/coach/activities', label: 'Activități', icon: CalendarRange, group: 'Oferte' },
+  { to: '/coach/camps', label: 'Tabere', icon: Tent, group: 'Oferte' },
+  { to: '/coach/competitions', label: 'Concursuri', icon: Trophy, group: 'Oferte' },
+  { to: '/coach/locations', label: 'Locații', icon: MapPin, group: 'Organizare' },
+  { to: '/coach/attendance', label: 'Prezență', icon: ClipboardCheck, group: 'Organizare' },
 ]
 
 export const clubNavigation: PortalNavItem[] = [

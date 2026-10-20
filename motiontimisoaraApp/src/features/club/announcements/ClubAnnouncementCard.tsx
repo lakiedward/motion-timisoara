@@ -1,0 +1,92 @@
+import { CalendarDays, Eye, EyeOff, Trash2, Users } from 'lucide-react'
+import type { ClubAnnouncement } from '@/api/club'
+import type { AtasamentAfisabil } from '@/api/attachments'
+import AnnouncementMedia from '@/components/AnnouncementMedia'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import { formatData, priorityOf } from './announcement-list'
+
+type Props = {
+  anunt: ClubAnnouncement
+  tinta: string
+  atasamente: AtasamentAfisabil[]
+  seAscunde: boolean
+  seSterge: boolean
+  onToggle: () => void
+  onDelete: () => void
+}
+
+export function ClubAnnouncementCard({
+  anunt: a,
+  tinta,
+  atasamente,
+  seAscunde,
+  seSterge,
+  onToggle,
+  onDelete,
+}: Props) {
+  const p = priorityOf(a)
+  return (
+    <article
+      className={cn(
+        'bg-card min-w-0 space-y-3 rounded-xl border p-5 sm:p-6',
+        !a.is_active && 'bg-muted/40 border-dashed',
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="font-display min-w-0 text-lg font-bold wrap-anywhere">{a.title}</h3>
+        <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
+          <Badge variant={p.variant}>{p.label}</Badge>
+          {!a.is_active && (
+            <Badge variant="outline">
+              <EyeOff aria-hidden="true" /> Ascuns
+            </Badge>
+          )}
+        </div>
+      </div>
+      <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm">
+        <span className="flex min-w-0 items-center gap-1.5">
+          <Users aria-hidden="true" className="size-4 shrink-0" />
+          <span className="wrap-anywhere">Trimis către: {tinta}</span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <CalendarDays aria-hidden="true" className="size-4 shrink-0" />
+          <time dateTime={a.created_at}>{formatData(a.created_at)}</time>
+        </span>
+      </div>
+      <p className="text-foreground/90 leading-relaxed whitespace-pre-wrap wrap-anywhere">
+        {a.content}
+      </p>
+      <AnnouncementMedia atasamente={atasamente} />
+      {!a.is_active && (
+        <p className="text-muted-foreground text-sm">
+          Părinții nu mai văd acest anunț. „Arată părinților” îl pune la loc.
+        </p>
+      )}
+      <div className="flex flex-wrap gap-2 border-t pt-3">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 lg:h-9"
+          disabled={seAscunde}
+          aria-label={`${a.is_active ? 'Ascunde de părinți' : 'Arată părinților'} anunțul „${a.title}”`}
+          onClick={onToggle}
+        >
+          {a.is_active ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+          {a.is_active ? 'Ascunde de părinți' : 'Arată părinților'}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          className="text-destructive h-11 lg:h-9"
+          disabled={seSterge}
+          aria-label={`Șterge anunțul „${a.title}”`}
+          onClick={onDelete}
+        >
+          <Trash2 aria-hidden="true" /> Șterge
+        </Button>
+      </div>
+    </article>
+  )
+}

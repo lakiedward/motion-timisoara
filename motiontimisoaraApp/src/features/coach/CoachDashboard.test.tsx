@@ -162,3 +162,23 @@ test('a coach who finished onboarding sees the configured state', async () => {
     '/coach/stripe',
   )
 })
+
+test('while courses and Stripe load, the dashboard shows skeletons instead of zeros or a status', async () => {
+  mockedGetMyCourses.mockReturnValue(new Promise(() => {}))
+  mockedStripeStatus.mockReturnValue(new Promise(() => {}))
+  renderDashboard()
+  expect(await screen.findByLabelText('Se încarcă: Cursuri')).toBeInTheDocument()
+  expect(screen.getByLabelText('Se încarcă: Cursuri active')).toBeInTheDocument()
+  expect(screen.queryByText('0')).not.toBeInTheDocument()
+  expect(screen.queryByText('Neconfigurat')).not.toBeInTheDocument()
+  expect(screen.queryByText('Nu ai încă niciun curs.')).not.toBeInTheDocument()
+})
+
+test('a failed courses request can be retried from the error card', async () => {
+  mockedGetMyCourses.mockRejectedValueOnce(new Error('500')).mockResolvedValueOnce([])
+  renderDashboard()
+  const alert = await screen.findByRole('alert')
+  alert.querySelector('button')?.click()
+  expect(await screen.findByText('Nu ai încă niciun curs.')).toBeInTheDocument()
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+})
