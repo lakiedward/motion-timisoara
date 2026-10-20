@@ -19,12 +19,8 @@ import { toast } from 'sonner'
 
 import { incarcaRegulamentActivitate, stergeRegulamentActivitate } from '@/api/camp-rules-file'
 import { renuntaLaOfertaFaraHero, schimbaPozaOferta } from '@/api/offer-hero'
-import {
-  createActivity,
-  getActivityById,
-  getSelectableLocations,
-  updateActivity,
-} from '@/api/coach'
+import { createActivity, getActivityById, updateActivity } from '@/api/coach'
+import { createAdminActivity, updateAdminActivity } from '@/api/activities/admin-activities'
 import { HeroPhotoField } from '@/components/HeroPhotoField'
 import { MESAJ_POZA_HERO, mesajHeroLipsa } from '@/lib/hero-photo'
 import { publicUrl } from '@/api/public'
@@ -35,10 +31,14 @@ import { baniToRon } from '@/lib/money'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { StatusView } from '@/components/ui/status-view'
+import { INDEPENDENT_OWNER } from '@/features/club/course-form/useCourseFormOwner'
+import { ActivityOwnerFields } from './activity-form/ActivityOwnerFields'
+import { useActivityFormOwner, type ActivityFormPortal } from './activity-form/useActivityFormOwner'
 import { cn } from '@/lib/utils'
 
 const selectCls =
-  'border-input focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px]'
+  'border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] lg:h-9'
 
 function minuteDinOra(ora: string) {
   const [ore, minute] = ora.split(':')
@@ -53,6 +53,7 @@ const schema = z
   .object({
     ...offerCurrencyShape,
     name: z.string().min(3, 'Minim 3 caractere'),
+    coach_id: z.string().optional(),
     sport_id: z.string().min(1, 'Alege un sport'),
     location_id: z.string().min(1, 'Alege o locație'),
     activity_date: z.string().min(1, 'Obligatoriu'),
@@ -79,21 +80,25 @@ type Values = z.infer<typeof schema>
 
 const num = (s: string | undefined) => (s && s.trim() ? Number(s) : null)
 
-export default function ActivityFormPage() {
+export default function ActivityFormPage({ portal = 'coach' }: { portal?: ActivityFormPortal }) {
   const { id } = useParams()
   const isEdit = !!id
   const navigate = useNavigate()
   const qc = useQueryClient()
   const { data: sports = [] } = useQuery({ queryKey: ['sports'], queryFn: fetchSports })
-  const { data: locations = [] } = useQuery({
-    queryKey: ['sel-locations'],
-    queryFn: getSelectableLocations,
-  })
-  const { data: existing } = useQuery({
+  const {
+    data: existing,
+    isFetched: existingFetched,
+    isError: existingError,
+    refetch: refetchExisting,
+  } = useQuery({
     queryKey: ['activity-edit', id],
     queryFn: () => getActivityById(id as string),
     enabled: isEdit,
   })
+  const form = useActivityFormOwner(portal, existing, isEdit)
+  const { isAdmin, locations, listPath, listQueryKey } = form
+  const [eroareOrganizator, setEroareOrganizator] = useState<string | null>(null)
 
   const {
     register,
@@ -101,6 +106,7 @@ export default function ActivityFormPage() {
     handleSubmit,
     reset,
     setValue,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<Values>({
     resolver: zodResolver(schema),
@@ -123,7 +129,7 @@ export default function ActivityFormPage() {
   const faraCurs = eurFaraCurs(currency, cursEur)
 
   useEffect(() => {
-    if (existing) {
+    if (existing && form.coachesReady && form.locationsReady) {
       reset({
         ...offerCurrencyValues(existing),
         name: existing.name,
@@ -137,11 +143,30 @@ export default function ActivityFormPage() {
         age_from: existing.age_from?.toString() ?? '',
         age_to: existing.age_to?.toString() ?? '',
         description: existing.description ?? '',
+        coach_id: existing.coach_id,
       })
     }
-  }, [existing, reset])
+  }, [existing, form.coachesReady, form.locationsReady, reset])
+
+  const verificaOrganizator = () => {
+    const lipsa = isAdmin && !form.hasOwner ? 'Alege organizatorul' : null
+    setEroareOrganizator(lipsa)
+    return !lipsa
+  }
+
+  const schimbaOrganizator = (urmator: string) => {
+    form.setOwner(urmator)
+    setEroareOrganizator(null)
+    setValue('coach_id', '')
+    setValue('location_id', '')
+  }
 
   const onSubmit = async (v: Values) => {
+    if (!verificaOrganizator()) return
+    if (isAdmin && !v.coach_id) {
+      setError('coach_id', { message: 'Alege un antrenor' })
+      return
+    }
     const lipsa = mesajHeroLipsa(pozaHero, existing?.hero_photo_storage_path ?? null)
     setEroareHero(lipsa)
     if (lipsa) return
@@ -161,11 +186,20 @@ export default function ActivityFormPage() {
     }
     try {
       if (isEdit) {
-        await updateActivity(id as string, payload)
+        if (isAdmin) await updateAdminActivity(id as string, v.coach_id as string, payload)
+        else await updateActivity(id as string, payload)
         if (pozaHero)
           await schimbaPozaOferta('activities', 'activity-photos', id as string, pozaHero)
       } else {
-        const creata = await createActivity(payload)
+        const creata = isAdmin
+          ? await createAdminActivity(
+              {
+                clubId: form.owner === INDEPENDENT_OWNER ? null : form.owner,
+                coachId: v.coach_id as string,
+              },
+              payload,
+            )
+          : await createActivity(payload)
         try {
           await schimbaPozaOferta('activities', 'activity-photos', creata.id, pozaHero as File)
         } catch {
@@ -180,28 +214,57 @@ export default function ActivityFormPage() {
             toast.error(
               'Activitatea a fost creată, dar fișierul regulamentului nu a putut fi urcat.',
             )
-            qc.invalidateQueries({ queryKey: ['my-activities'] })
-            navigate('/coach/activities')
+            qc.invalidateQueries({ queryKey: [listQueryKey] })
+            navigate(listPath)
             return
           }
         }
       }
-      qc.invalidateQueries({ queryKey: ['my-activities'] })
+      qc.invalidateQueries({ queryKey: [listQueryKey] })
       toast.success(isEdit ? 'Activitate actualizată.' : 'Activitate creată.')
-      navigate('/coach/activities')
+      navigate(listPath)
     } catch {
       toast.error('Nu am putut salva activitatea.')
     }
   }
 
+  const noCoaches = form.coachesReady && !form.coaches.length
+  const noLocations = form.locationsReady && !locations.length
+  const backLink = (
+    <Link
+      to={listPath}
+      className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
+    >
+      <ArrowLeft className="size-4" /> Înapoi
+    </Link>
+  )
+
+  if (isEdit && existingFetched && !existing) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        {backLink}
+        <div className="mt-6">
+          {existingError ? (
+            <StatusView
+              state="error"
+              title="Nu am putut încărca activitatea."
+              onRetry={() => refetchExisting()}
+            />
+          ) : (
+            <StatusView
+              state="empty"
+              title="Activitatea nu a fost găsită."
+              text="Poate a fost ștearsă sau linkul nu mai este valabil."
+            />
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="mx-auto max-w-2xl">
-      <Link
-        to="/coach/activities"
-        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
-      >
-        <ArrowLeft className="size-4" /> Înapoi
-      </Link>
+      {backLink}
       <h1 className="font-display mt-4 text-2xl font-bold">
         {isEdit ? 'Editează activitate' : 'Activitate nouă'}
       </h1>
@@ -210,9 +273,25 @@ export default function ActivityFormPage() {
         onSubmit={handleSubmit(onSubmit, () =>
           setEroareHero(mesajHeroLipsa(pozaHero, existing?.hero_photo_storage_path ?? null)),
         )}
+        onSubmitCapture={verificaOrganizator}
         className="mt-6 space-y-4"
         noValidate
       >
+        {isAdmin && (
+          <ActivityOwnerFields
+            owner={form.owner}
+            clubs={form.clubs}
+            locked={isEdit}
+            ownerError={eroareOrganizator}
+            coaches={form.coaches}
+            coachField={register('coach_id')}
+            coachError={errors.coach_id?.message}
+            noCoaches={noCoaches}
+            noLocations={noLocations}
+            selectClassName={selectCls}
+            onOwner={schimbaOrganizator}
+          />
+        )}
         <div className="space-y-1.5">
           <Label htmlFor="name">Nume</Label>
           <Input id="name" {...register('name')} aria-invalid={!!errors.name} />
@@ -358,7 +437,7 @@ export default function ActivityFormPage() {
             {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>
           <Button type="button" variant="outline" asChild>
-            <Link to="/coach/activities">Anulează</Link>
+            <Link to={listPath}>Anulează</Link>
           </Button>
         </div>
       </form>
