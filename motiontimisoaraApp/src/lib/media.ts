@@ -31,6 +31,7 @@ export type FisierPregatit = {
   continut: Blob
   numeOriginal: string
   contentType: string
+  durata?: number | null
 }
 
 export function esteImagine(f: File): boolean {
@@ -192,6 +193,7 @@ export async function pregatesteFisiere(
         continut: f,
         numeOriginal: f.name,
         contentType: f.type || 'video/mp4',
+        durata,
       })
       continue
     }
