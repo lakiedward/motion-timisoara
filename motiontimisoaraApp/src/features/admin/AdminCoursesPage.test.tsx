@@ -423,7 +423,9 @@ test('„Curs nou" și „Editează" din admin duc la formularele de curs', asyn
     name: 'Editează Înot — audit UI',
   })
   expect(dinTabel).toHaveAttribute('href', '/admin/courses/2/edit')
-  expect(dinTabel.className).toMatch(/lg:min-h-8/)
+  expect(dinTabel.className).toMatch(/size-touch-target/)
+  expect(dinTabel.className).toMatch(/lg:size-8/)
+  expect(within(dinTabel).getByText('Editează').className).toMatch(/hidden xl:inline/)
   const dinFisa = within(fiseDin('Audit Antrenor')).getByRole('link', {
     name: 'Editează Înot — audit UI',
   })

@@ -21,19 +21,25 @@ export function EditCourseAction({
   course: AdminCourse
   layout: 'table' | 'card'
 }) {
+  const table = layout === 'table'
   return (
     <Button
       asChild
       variant="outline"
       size="sm"
       className={
-        layout === 'table'
-          ? 'h-touch-target min-h-touch-target lg:h-8 lg:min-h-8'
+        table
+          ? 'size-touch-target min-h-touch-target px-0 lg:size-8 lg:min-h-8 xl:w-auto xl:px-3'
           : 'h-touch-target min-h-touch-target'
       }
     >
-      <Link to={`/admin/courses/${course.id}/edit`} aria-label={`Editează ${course.name}`}>
-        <Pencil /> Editează
+      <Link
+        to={`/admin/courses/${course.id}/edit`}
+        aria-label={`Editează ${course.name}`}
+        title="Editează"
+      >
+        <Pencil />
+        <span className={table ? 'hidden xl:inline' : undefined}>Editează</span>
       </Link>
     </Button>
   )
