@@ -61,11 +61,11 @@ test('the form opens from Anunț nou and lists only active courses', async () =>
   expect(screen.queryByRole('heading', { name: 'Anunț nou' })).not.toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: /Anunț nou/ }))
   const select = screen.getByLabelText('Cursul')
-  expect(within(select).getAllByRole('option').map((o) => o.textContent)).toEqual([
-    'Alege cursul',
-    'Înot începători',
-    'Atletism',
-  ])
+  expect(
+    within(select)
+      .getAllByRole('option')
+      .map((o) => o.textContent),
+  ).toEqual(['Alege cursul', 'Înot începători', 'Atletism'])
   await userEvent.click(screen.getByRole('button', { name: 'Publică' }))
   expect(await screen.findByText('Alege cursul', { selector: 'p, span' })).toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Renunță' }))
