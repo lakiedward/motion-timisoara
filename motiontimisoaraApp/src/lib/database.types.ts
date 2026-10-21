@@ -1030,6 +1030,7 @@ export type Database = {
         Row: {
           address: string | null
           approved_at: string | null
+          approved_by: string | null
           bank_account: string | null
           bank_name: string | null
           city: string | null
@@ -1060,6 +1061,7 @@ export type Database = {
         Insert: {
           address?: string | null
           approved_at?: string | null
+          approved_by?: string | null
           bank_account?: string | null
           bank_name?: string | null
           city?: string | null
@@ -1090,6 +1092,7 @@ export type Database = {
         Update: {
           address?: string | null
           approved_at?: string | null
+          approved_by?: string | null
           bank_account?: string | null
           bank_name?: string | null
           city?: string | null
@@ -1118,6 +1121,13 @@ export type Database = {
           website?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "clubs_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "clubs_owner_user_id_fkey"
             columns: ["owner_user_id"]
@@ -3114,6 +3124,8 @@ export type Database = {
         Args: never
         Returns: {
           address: string | null
+          approved_at: string | null
+          approved_by: string | null
           bank_account: string | null
           bank_name: string | null
           city: string | null
