@@ -115,6 +115,7 @@ async function simulate(page: Page, role: Role) {
       child_id: ids.child, status: 'ACTIVE', remaining_sessions: 5, sessions_used: 1, child, payments: [], created_at: fixedTime }]);
     if (url.pathname === '/rest/v1/attendance') return respond([{ id: 'attendance-simulation', occurrence_id: ids.occurrence,
       child_id: ids.child, status: 'PRESENT', occurrence: { starts_at: occurrence.starts_at, course } }]);
+    if (url.pathname === '/rest/v1/rpc/get_my_children_camp_attendance') return respond([]);
     if (url.pathname === '/functions/v1/coach-live-location') {
       const body = request.postDataJSON() as LocationAction;
       evidence.actions.push(body);
