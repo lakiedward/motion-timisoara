@@ -89,6 +89,7 @@ test('la editare, antrenorul salvat apare selectat chiar dacă lista lui vine du
   // select-urile: `reset` punea o valoare fără `<option>`, iar efectul nu se relua.
   mockedExisting.mockResolvedValue({
     id: 'c1',
+    club_id: 'club-1',
     name: 'Înot avansat',
     sport_id: SPORT,
     location_id: LOC_COMUNA,
@@ -134,6 +135,7 @@ test('selectul de locație folosește lista utilizabilă, nu doar locațiile pro
 test('locația dezactivată a unui curs rămâne în listă la editare', async () => {
   mockedExisting.mockResolvedValue({
     id: 'c1',
+    club_id: 'club-1',
     name: 'Înot avansat',
     sport_id: SPORT,
     location_id: 'loc-inactiva',
@@ -257,6 +259,7 @@ test('titlul urmează modul: „Curs nou” la creare, „Editează curs” la e
 
   mockedExisting.mockResolvedValue({
     id: 'c1',
+    club_id: 'club-1',
     name: 'Înot avansat',
     sport_id: SPORT,
     location_id: LOC_COMUNA,
@@ -308,4 +311,28 @@ test('cât timp listele se încarcă, selecturile spun asta și salvarea nu porn
   gataLocatii([{ id: LOC_COMUNA, name: 'Bazin Olimpic Timișoara', city: 'Timișoara' }] as never)
   await waitFor(() => expect(screen.getByRole('button', { name: 'Salvează' })).toBeEnabled())
   expect(screen.queryByText('Se încarcă opțiunile…')).not.toBeInTheDocument()
+})
+
+test('pe un link de curs inexistent apare „Cursul nu a fost găsit.”, nu un formular gol', async () => {
+  mockedExisting.mockResolvedValue(null)
+  renderForm('/club/courses/lipsa/edit')
+  expect(await screen.findByText('Cursul nu a fost găsit.')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /Înapoi/ })).toHaveAttribute('href', '/club/courses')
+  expect(screen.queryByRole('heading', { name: 'Editează curs' })).not.toBeInTheDocument()
+})
+
+test('cursul altui club nu se deschide în formularul clubului', async () => {
+  mockedExisting.mockResolvedValue({ id: 'c9', club_id: 'alt-club', name: 'Străin' } as never)
+  renderForm('/club/courses/c9/edit')
+  expect(await screen.findByText('Cursul nu a fost găsit.')).toBeInTheDocument()
+  expect(screen.queryByDisplayValue('Străin')).not.toBeInTheDocument()
+})
+
+test('dacă cursul nu se poate citi, Reîncearcă repetă citirea', async () => {
+  mockedExisting.mockRejectedValueOnce(new Error('retea'))
+  renderForm('/club/courses/c1/edit')
+  expect(await screen.findByText('Nu am putut încărca cursul.')).toBeInTheDocument()
+  mockedExisting.mockResolvedValue({ id: 'c1', club_id: 'club-1', name: 'Înot avansat' } as never)
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Reîncearcă' }))
+  expect(await screen.findByRole('heading', { name: 'Editează curs' })).toBeInTheDocument()
 })
