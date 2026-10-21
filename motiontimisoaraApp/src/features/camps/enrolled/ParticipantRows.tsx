@@ -93,7 +93,7 @@ function ParticipantRow({
         ))}
         <Contacte copil={copil} />
       </div>
-      <div className="flex shrink-0 flex-col gap-2 md:flex-row-reverse md:items-center">
+      <div className="flex shrink-0 flex-col gap-2 md:flex-row-reverse md:items-start">
         {!eAdult && copil.copilId && (
           <Button
             asChild

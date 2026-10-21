@@ -54,7 +54,7 @@ export function CampArrivalOnCard({
   return (
     <div className={className}>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-muted-foreground text-sm" role="status">
+        <p className="text-muted-foreground text-sm sm:whitespace-nowrap" role="status">
           {participant.departedAt
             ? 'Plecat din tabără'
             : participant.arrivedAt

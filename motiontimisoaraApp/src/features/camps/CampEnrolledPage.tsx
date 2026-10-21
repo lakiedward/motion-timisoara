@@ -185,7 +185,7 @@ export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
                 groups={grupuri}
                 ziuaTaberei={ziuaTaberei}
                 baza={baza}
-                sosire={(c) => arrival(c, 'space-y-2 md:[&_p]:whitespace-nowrap')}
+                sosire={(c) => arrival(c, 'space-y-2')}
               />
             )}
           </>
