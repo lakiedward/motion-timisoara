@@ -3,11 +3,18 @@ import { MapPin } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { LocationChoice, NearbyLocation } from './nearby-locations'
+import { isOwnLocation, type LocationChoice, type NearbyLocation } from './nearby-locations'
+
+export type NearbyOwnerCopy = {
+  ownLabel: string
+  editBasePath: string
+  choiceNote: string
+}
 
 type Props = {
   locations: NearbyLocation[]
-  clubId: string
+  ownerId: string
+  copy: NearbyOwnerCopy
   isPending: boolean
   isError: boolean
   isFetching: boolean
@@ -19,7 +26,8 @@ type Props = {
 
 export default function NearbyLocations({
   locations,
-  clubId,
+  ownerId,
+  copy,
   isPending,
   isError,
   isFetching,
@@ -81,12 +89,12 @@ export default function NearbyLocations({
                 </p>
               </div>
             </div>
-            {location.club_id === clubId ? (
+            {isOwnLocation(location, ownerId) ? (
               <div className="space-y-2">
-                <p className="text-muted-foreground text-sm">Deja în locațiile clubului</p>
+                <p className="text-muted-foreground text-sm">{copy.ownLabel}</p>
                 <Button type="button" variant="outline" size="sm" className="min-h-11" asChild>
                   <Link
-                    to={`/club/locations/${location.id}/edit`}
+                    to={`${copy.editBasePath}/${location.id}/edit`}
                     aria-label={`Editează ${location.name}`}
                   >
                     Editează locația
@@ -111,8 +119,7 @@ export default function NearbyLocations({
       </ul>
       {choice?.sourceId && (
         <p role="status" className="text-muted-foreground text-sm">
-          La salvare, clubul va avea propria locație în acest punct. Poți ajusta detaliile din
-          formular.
+          {copy.choiceNote}
         </p>
       )}
       <Button

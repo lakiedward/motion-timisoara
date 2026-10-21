@@ -1,9 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { vi } from 'vitest'
-import { StrictMode } from 'react'
+import { StrictMode, useSyncExternalStore } from 'react'
 
 import CoachSignupPage from './CoachSignupPage'
 import { registerCoach, signInWithGoogle, type AppUser } from '@/api/auth'
@@ -194,7 +194,14 @@ test('successful redemption retries only profile loading, never the invitation t
   await enterCode(user)
   await user.click(screen.getByRole('button', { name: 'Continuă' }))
   await user.click(screen.getByRole('button', { name: 'Finalizează' }))
-  expect(await screen.findByRole('alert')).toHaveTextContent('Contul de antrenor a fost activat')
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Profilul nu s-a încărcat. Verifică conexiunea și reîncearcă.',
+  )
+  expect(screen.getByRole('heading', { name: 'Contul de antrenor e activ' })).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Mergi la pagina principală' })).toHaveAttribute(
+    'href',
+    '/',
+  )
   expect(screen.getByTestId('location')).toHaveTextContent('/register-coach')
   await user.click(screen.getByRole('button', { name: 'Reîncearcă încărcarea profilului' }))
   expect(await screen.findByText('pagina cursului')).toBeInTheDocument()
@@ -212,10 +219,39 @@ test.each([{ ...parent }, { ...coach, id: 'another-user' }])(
     await enterCode(user)
     await user.click(screen.getByRole('button', { name: 'Continuă' }))
     await user.click(screen.getByRole('button', { name: 'Finalizează' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('profilul nu s-a încărcat')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Profilul nu s-a încărcat')
     expect(screen.queryByText('panou antrenor')).not.toBeInTheDocument()
   },
 )
+
+test('an activated coach profile that loads later navigates without another tap', async () => {
+  const user = userEvent.setup()
+  let current: AppUser = parent
+  const listeners = new Set<() => void>()
+  mockedUseAuth.mockImplementation(() => {
+    const user = useSyncExternalStore(
+      (listener) => {
+        listeners.add(listener)
+        return () => listeners.delete(listener)
+      },
+      () => current,
+    )
+    return { user, loading: false, profileError: null, refresh }
+  })
+  refresh.mockResolvedValue(null)
+  renderPage('/register-coach?returnUrl=%2Fcursuri%2Fabc')
+  await enterCode(user)
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  await user.click(screen.getByRole('button', { name: 'Finalizează' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('Profilul nu s-a încărcat')
+  expect(screen.queryByText('pagina cursului')).not.toBeInTheDocument()
+  act(() => {
+    current = coach
+    listeners.forEach((listener) => listener())
+  })
+  expect(await screen.findByText('pagina cursului')).toBeInTheDocument()
+  expect(mockedRedeem).toHaveBeenCalledTimes(1)
+})
 
 test('Google persists the code before redirecting, while the continuation excludes its value', async () => {
   const user = userEvent.setup()

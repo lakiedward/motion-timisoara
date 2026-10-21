@@ -226,9 +226,20 @@ export async function getMyLocations(): Promise<ClubLocation[]> {
   }))
 }
 
+export async function getCurrentCoachId(): Promise<string> {
+  return uid()
+}
+
 export async function getLocationById(id: string): Promise<Tables<'locations'> | null> {
-  const { data, error } = await supabase.from('locations').select('*').eq('id', id).single()
-  if (error) return null
+  const coachId = await uid()
+  const { data, error } = await supabase
+    .from('locations')
+    .select('*')
+    .eq('id', id)
+    .eq('created_by_user_id', coachId)
+    .maybeSingle()
+  if (error?.code === '22P02') return null
+  if (error) throw error
   return data
 }
 
@@ -240,6 +251,7 @@ export interface LocationFormInput {
   lat: number | null
   lng: number | null
   description: string | null
+  county?: string | null
 }
 
 export async function createLocation(input: LocationFormInput): Promise<Tables<'locations'>> {
