@@ -3,20 +3,15 @@ import { UserRound } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 
-/**
- * Floating shortcut to the account area. Rendered only when authenticated.
- * Phase 3 wires `authenticated` to the real auth state; for now it stays hidden.
- */
-export function FabAccount({ authenticated = false }: { authenticated?: boolean }) {
-  if (!authenticated) return null
+export function FabAccount({ visible }: { visible: boolean }) {
+  if (!visible) return null
   return (
     <Button
       asChild
-      size="icon"
-      className="fixed right-5 bottom-5 z-30 size-12 rounded-full shadow-lg lg:hidden"
-      aria-label="Contul meu"
+      size={null}
+      className="fixed right-5 bottom-5 z-30 size-12 rounded-full shadow-lg lg:hidden [&_svg:not([class*='size-'])]:size-5"
     >
-      <Link to="/account">
+      <Link to="/account" aria-label="Contul meu">
         <UserRound />
       </Link>
     </Button>
