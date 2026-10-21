@@ -9,7 +9,6 @@ import CourseFormPage from '@/features/coach/CourseFormPage'
 import CoachActivitiesPage from '@/features/coach/CoachActivitiesPage'
 import ActivityFormPage from '@/features/coach/ActivityFormPage'
 import CoachLocationsPage from '@/features/coach/CoachLocationsPage'
-import LocationFormPage from '@/features/coach/LocationFormPage'
 import CoachAttendancePage from '@/features/coach/CoachAttendancePage'
 import CoachOwnProfilePage from '@/features/coach/CoachOwnProfilePage'
 import CoachAnnouncementsPage from '@/features/coach/announcements/CoachAnnouncementsPage'
@@ -172,8 +171,11 @@ export const router = createBrowserRouter([
               { path: '/coach/activities/new', element: <ActivityFormPage /> },
               { path: '/coach/activities/:id/edit', element: <ActivityFormPage /> },
               { path: '/coach/locations', element: <CoachLocationsPage /> },
-              { path: '/coach/locations/new', element: <LocationFormPage /> },
-              { path: '/coach/locations/:id/edit', element: <LocationFormPage /> },
+              { path: '/coach/locations/new', element: <ClubLocationFormPage portal="coach" /> },
+              {
+                path: '/coach/locations/:id/edit',
+                element: <ClubLocationFormPage portal="coach" />,
+              },
               {
                 path: '/coach/competitions',
                 element: <CompetitionsListPage baza="/coach/competitions" />,
