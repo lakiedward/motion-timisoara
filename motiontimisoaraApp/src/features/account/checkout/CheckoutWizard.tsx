@@ -29,6 +29,7 @@ import { CheckoutPackagePicker } from './CheckoutPackagePicker'
 import type { Offering } from '../CheckoutPage'
 import { AddChildInline, CheckoutAdultRow, CheckoutChildRow } from './CheckoutFormFields'
 import { CheckoutBillingFields } from './CheckoutBillingFields'
+import { CheckoutRulesConsent } from './CheckoutRulesConsent'
 import { usePaymentAdapter } from './usePaymentAdapter'
 import { processEnrollmentPayments, paymentResultMessage } from '@/api/payments/process'
 import { startStripeCheckout } from '@/api/payments/checkout-session'
@@ -458,24 +459,16 @@ export default function CheckoutWizard({
             </div>
           </div>
 
-          <label className="flex cursor-pointer items-start gap-3 text-sm">
-            <input
-              type="checkbox"
-              className="accent-primary focus-visible:outline-ring mt-0.5 size-4 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2"
-              checked={hasAccepted}
-              onChange={(e) => {
-                setAccepted(e.target.checked)
-                setAcceptedPrices(currentPrices ?? null)
-              }}
-            />
-            <span>
-              Confirm suma finală în lei și accept regulamentul și{' '}
-              <Link to="/termeni" className="text-primary font-medium">
-                termenii și condițiile
-              </Link>
-              .
-            </span>
-          </label>
+          <CheckoutRulesConsent
+            kind={kind}
+            title={offering.title}
+            rules={offering.rules}
+            checked={hasAccepted}
+            onCheckedChange={(value) => {
+              setAccepted(value)
+              setAcceptedPrices(currentPrices ?? null)
+            }}
+          />
         </section>
       )}
       {steps[step] === 'Facturare' && (
