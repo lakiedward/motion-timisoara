@@ -9,12 +9,15 @@ import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { AnnouncementScheduleFields } from './AnnouncementScheduleFields'
 import {
   PRIORITY_OPTIONS,
-  announcementTextSchema,
+  announcementSchema,
   selectCls,
-  type AnnouncementTextValues,
+  withScheduleRules,
+  type AnnouncementValues,
 } from './announcement-form'
+import { scheduleFromFields, scheduleState, scheduleToFields } from './announcement-schedule'
 
 type Props = {
   anunt: ClubAnnouncement
@@ -28,21 +31,28 @@ export function AnnouncementEditForm({ anunt, onSaved, onCancel }: Props) {
     content: `edit-${anunt.id}-content`,
     priority: `edit-${anunt.id}-priority`,
   }
+  const initial = scheduleToFields(anunt)
   const {
     register,
     handleSubmit,
     formState: { errors, isDirty },
-  } = useForm<AnnouncementTextValues>({
-    resolver: zodResolver(announcementTextSchema),
-    defaultValues: { title: anunt.title, content: anunt.content, priority: anunt.priority },
+  } = useForm<AnnouncementValues>({
+    resolver: zodResolver(withScheduleRules(announcementSchema, initial)),
+    defaultValues: {
+      title: anunt.title,
+      content: anunt.content,
+      priority: anunt.priority,
+      ...initial,
+    },
   })
 
   const save = useMutation({
-    mutationFn: (v: AnnouncementTextValues) =>
+    mutationFn: (v: AnnouncementValues) =>
       updateClubAnnouncement(anunt.id, {
         title: v.title.trim(),
         content: v.content.trim(),
         priority: v.priority,
+        ...scheduleFromFields(v),
       }),
     onSuccess: () => {
       onSaved()
@@ -83,6 +93,13 @@ export function AnnouncementEditForm({ anunt, onSaved, onCancel }: Props) {
         <FieldMessage id={ids.content} error={errors.content?.message} />
       </div>
 
+      <AnnouncementScheduleFields
+        idPrefix={`edit-${anunt.id}`}
+        register={register}
+        errors={errors}
+        disabled={save.isPending}
+      />
+
       <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1.5 sm:w-56">
           <Label htmlFor={ids.priority}>Prioritate</Label>
@@ -104,7 +121,9 @@ export function AnnouncementEditForm({ anunt, onSaved, onCancel }: Props) {
         </div>
       </div>
       <p className="text-muted-foreground text-xs">
-        Părinții văd textul nou imediat. Nu primesc o notificare nouă.
+        {scheduleState(anunt) === 'scheduled'
+          ? 'Părinții văd anunțul și primesc notificarea la data publicării.'
+          : 'Părinții văd textul nou imediat. Nu primesc o notificare nouă.'}
       </p>
     </form>
   )

@@ -1,4 +1,4 @@
-import { CalendarDays, Eye, EyeOff, Pencil, Trash2, Users } from 'lucide-react'
+import { CalendarDays, CalendarX, Clock, Eye, EyeOff, Pencil, Trash2, Users } from 'lucide-react'
 import type { ClubAnnouncement } from '@/api/club'
 import type { AtasamentAfisabil } from '@/api/attachments'
 import AnnouncementMedia from '@/components/AnnouncementMedia'
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { AnnouncementEditForm } from './AnnouncementEditForm'
 import { formatData, priorityOf } from './announcement-list'
+import { formatMoment, scheduleState } from './announcement-schedule'
 
 type Props = {
   anunt: ClubAnnouncement
@@ -34,6 +35,7 @@ export function ClubAnnouncementCard({
   onDelete,
 }: Props) {
   const p = priorityOf(a)
+  const stare = scheduleState(a)
   if (editezAici) {
     return (
       <article className="bg-card min-w-0 space-y-4 rounded-xl border p-5 sm:p-6">
@@ -50,13 +52,23 @@ export function ClubAnnouncementCard({
     <article
       className={cn(
         'bg-card min-w-0 space-y-3 rounded-xl border p-5 sm:p-6',
-        !a.is_active && 'bg-muted/40 border-dashed',
+        (!a.is_active || stare === 'expired') && 'bg-muted/40 border-dashed',
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <h3 className="font-display min-w-0 text-lg font-bold wrap-anywhere">{a.title}</h3>
         <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
           <Badge variant={p.variant}>{p.label}</Badge>
+          {stare === 'scheduled' && (
+            <Badge variant="outline">
+              <Clock aria-hidden="true" /> Programat
+            </Badge>
+          )}
+          {stare === 'expired' && (
+            <Badge variant="outline">
+              <CalendarX aria-hidden="true" /> Expirat
+            </Badge>
+          )}
           {!a.is_active && (
             <Badge variant="outline">
               <EyeOff aria-hidden="true" /> Ascuns
@@ -73,16 +85,41 @@ export function ClubAnnouncementCard({
           <CalendarDays aria-hidden="true" className="size-4 shrink-0" />
           <time dateTime={a.created_at}>{formatData(a.created_at)}</time>
         </span>
+        {stare === 'scheduled' && a.publish_at && (
+          <span className="flex items-center gap-1.5">
+            <Clock aria-hidden="true" className="size-4 shrink-0" />
+            <span>
+              Apare pe <time dateTime={a.publish_at}>{formatMoment(a.publish_at)}</time>
+            </span>
+          </span>
+        )}
+        {a.expires_at && (
+          <span className="flex items-center gap-1.5">
+            <CalendarX aria-hidden="true" className="size-4 shrink-0" />
+            <span>
+              {stare === 'expired' ? 'A expirat pe' : 'Expiră pe'}{' '}
+              <time dateTime={a.expires_at}>{formatMoment(a.expires_at)}</time>
+            </span>
+          </span>
+        )}
       </div>
       <p className="text-foreground/90 leading-relaxed whitespace-pre-wrap wrap-anywhere">
         {a.content}
       </p>
       <AnnouncementMedia atasamente={atasamente} />
-      {!a.is_active && (
+      {!a.is_active ? (
         <p className="text-muted-foreground text-sm">
           Părinții nu mai văd acest anunț. „Arată părinților” îl pune la loc.
         </p>
-      )}
+      ) : stare === 'expired' ? (
+        <p className="text-muted-foreground text-sm">
+          Părinții nu mai văd acest anunț. Din „Editează” poți alege o expirare nouă.
+        </p>
+      ) : stare === 'scheduled' ? (
+        <p className="text-muted-foreground text-sm">
+          Părinții încă nu văd anunțul. Notificarea pleacă la data publicării.
+        </p>
+      ) : null}
       <div className="flex flex-wrap gap-2 border-t pt-3">
         <Button
           type="button"

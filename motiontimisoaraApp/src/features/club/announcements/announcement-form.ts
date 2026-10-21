@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { EMPTY_SCHEDULE, scheduleIssues, type ScheduleFields } from './announcement-schedule'
+
 export const selectCls =
   'border-input dark:bg-input/30 flex h-touch-target w-full min-w-0 rounded-md border bg-transparent px-3 text-base shadow-xs transition-[color,box-shadow] outline-none hover:border-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring'
 
@@ -16,3 +18,24 @@ export const announcementTextSchema = z.object({
   priority: z.string(),
 })
 export type AnnouncementTextValues = z.infer<typeof announcementTextSchema>
+
+export const scheduleShape = {
+  publishDate: z.string(),
+  publishTime: z.string(),
+  expiresDate: z.string(),
+  expiresTime: z.string(),
+}
+
+export const announcementSchema = announcementTextSchema.extend(scheduleShape)
+export type AnnouncementValues = z.infer<typeof announcementSchema>
+
+export function withScheduleRules<T extends z.ZodType<ScheduleFields>>(
+  schema: T,
+  initial: ScheduleFields = EMPTY_SCHEDULE,
+) {
+  return schema.superRefine((v, ctx) => {
+    for (const issue of scheduleIssues(v, { initial })) {
+      ctx.addIssue({ code: 'custom', path: [issue.field], message: issue.message })
+    }
+  })
+}

@@ -15,7 +15,14 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import type { FisierPregatit } from '@/lib/media'
 import AnnouncementMediaPicker from './AnnouncementMediaPicker'
-import { PRIORITY_OPTIONS, announcementTextSchema, selectCls } from './announcement-form'
+import { AnnouncementScheduleFields } from './AnnouncementScheduleFields'
+import {
+  PRIORITY_OPTIONS,
+  announcementSchema,
+  selectCls,
+  withScheduleRules,
+} from './announcement-form'
+import { EMPTY_SCHEDULE, scheduleFromFields, scheduleState } from './announcement-schedule'
 
 const WHOLE_CLUB = 'CLUB'
 
@@ -25,7 +32,7 @@ const AUDIENCE_GROUPS: { kind: AudienceKind; label: string }[] = [
   { kind: 'CAMP', label: 'Tabere' },
 ]
 
-const schema = announcementTextSchema.extend({ audience: z.string() })
+const schema = withScheduleRules(announcementSchema.extend({ audience: z.string() }))
 type Values = z.infer<typeof schema>
 
 const EMPTY_FORM: Values = {
@@ -33,6 +40,7 @@ const EMPTY_FORM: Values = {
   content: '',
   priority: 'NORMAL',
   audience: WHOLE_CLUB,
+  ...EMPTY_SCHEDULE,
 }
 
 function readAudience(value: string): { kind: AudienceKind; id: string | null } {
@@ -49,6 +57,7 @@ type Props = {
 
 export default function AnnouncementComposeForm({ clubId, audiences, onPublished }: Props) {
   const [files, setFiles] = useState<FisierPregatit[]>([])
+  const [resetari, setResetari] = useState(0)
   const {
     register,
     handleSubmit,
@@ -66,15 +75,21 @@ export default function AnnouncementComposeForm({ clubId, audiences, onPublished
         priority: v.priority,
         audience_kind: audience.kind,
         audience_id: audience.id,
+        ...scheduleFromFields(v),
       })
       if (files.length) await incarcaAtasamente(announcement.id, files)
       return announcement
     },
-    onSuccess: () => {
+    onSuccess: (announcement) => {
       reset(EMPTY_FORM)
       setFiles([])
+      setResetari((n) => n + 1)
       onPublished()
-      toast.success('Anunț publicat.')
+      toast.success(
+        scheduleState(announcement) === 'scheduled'
+          ? 'Anunț programat. Părinții îl văd la data aleasă.'
+          : 'Anunț publicat.',
+      )
     },
     onError: () => toast.error('Nu am putut publica anunțul.'),
   })
@@ -145,6 +160,15 @@ export default function AnnouncementComposeForm({ clubId, audiences, onPublished
               Anunțul ajunge doar la părinții cu un copil înscris activ.
             </p>
           </div>
+
+          <AnnouncementScheduleFields
+            key={resetari}
+            idPrefix="compose"
+            collapsible
+            register={register}
+            errors={errors}
+            disabled={create.isPending}
+          />
 
           <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="space-y-1.5 sm:w-56">
