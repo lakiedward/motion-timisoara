@@ -5,6 +5,7 @@ import {
   getClubAnnouncements,
   getClubAudiences,
   setAnnouncementActive,
+  updateClubAnnouncement,
 } from './club'
 let raspuns: Record<
   string,
@@ -161,4 +162,17 @@ test('ștergerea cere rândul înapoi, ca zero rânduri să fie eroare', async (
 test('o ștergere refuzată de bază aruncă, nu se dă drept reușită', async () => {
   raspuns = { club_announcements: { data: null, error: { message: 'RLS' } } }
   await expect(deleteClubAnnouncement('a')).rejects.toBeTruthy()
+})
+test('editarea schimbă doar titlul, conținutul și prioritatea și cere rândul înapoi', async () => {
+  raspuns = { club_announcements: { data: anunt('a', 'Nou'), error: null } }
+  await updateClubAnnouncement('a', { title: 'Nou', content: 'Text', priority: 'HIGH' })
+  expect(argumente.update).toEqual([{ title: 'Nou', content: 'Text', priority: 'HIGH' }])
+  expect(filtre).toContain('eq(id,a)')
+  expect(filtre).toContain('single()')
+})
+test('o editare refuzată de bază aruncă, nu se dă drept reușită', async () => {
+  raspuns = { club_announcements: { data: null, error: { message: 'RLS' } } }
+  await expect(
+    updateClubAnnouncement('a', { title: 'Nou', content: 'Text', priority: 'HIGH' }),
+  ).rejects.toBeTruthy()
 })

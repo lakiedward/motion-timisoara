@@ -217,6 +217,19 @@ export async function setAnnouncementActive(
   if (error) throw error
   return data
 }
+export async function updateClubAnnouncement(
+  id: string,
+  changes: { title: string; content: string; priority: string },
+): Promise<ClubAnnouncement> {
+  const { data, error } = await supabase
+    .from('club_announcements')
+    .update(changes)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
 export async function deleteClubAnnouncement(id: string): Promise<ClubAnnouncement> {
   const { data, error } = await supabase
     .from('club_announcements')

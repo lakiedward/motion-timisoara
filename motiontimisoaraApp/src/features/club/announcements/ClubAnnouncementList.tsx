@@ -38,6 +38,11 @@ export function ClubAnnouncementList({
   const [filtru, setFiltru] = useState(TOATE)
   const [deSters, setDeSters] = useState<ClubAnnouncement | null>(null)
   const [seAscund, setSeAscund] = useState<string[]>([])
+  const [deEditat, setDeEditat] = useState<string | null>(null)
+  const termina = (saved: boolean) => {
+    setDeEditat(null)
+    if (saved) onChanged()
+  }
   const filtruVizibil = items.length > 1
   const filtruActiv = filtruVizibil ? filtru : TOATE
   const randuri =
@@ -80,6 +85,9 @@ export function ClubAnnouncementList({
     seAscunde: seAscund.includes(a.id),
     seSterge: del.isPending && del.variables === a.id,
     onToggle: () => toggle.mutate({ id: a.id, active: !a.is_active }),
+    editezAici: deEditat === a.id,
+    onEdit: () => setDeEditat(a.id),
+    onEditDone: termina,
     onDelete: () => setDeSters(a),
   })
 

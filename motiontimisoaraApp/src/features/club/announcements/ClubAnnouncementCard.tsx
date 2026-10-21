@@ -1,10 +1,11 @@
-import { CalendarDays, Eye, EyeOff, Trash2, Users } from 'lucide-react'
+import { CalendarDays, Eye, EyeOff, Pencil, Trash2, Users } from 'lucide-react'
 import type { ClubAnnouncement } from '@/api/club'
 import type { AtasamentAfisabil } from '@/api/attachments'
 import AnnouncementMedia from '@/components/AnnouncementMedia'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { AnnouncementEditForm } from './AnnouncementEditForm'
 import { formatData, priorityOf } from './announcement-list'
 
 type Props = {
@@ -13,6 +14,9 @@ type Props = {
   atasamente: AtasamentAfisabil[]
   seAscunde: boolean
   seSterge: boolean
+  editezAici: boolean
+  onEdit: () => void
+  onEditDone: (saved: boolean) => void
   onToggle: () => void
   onDelete: () => void
 }
@@ -23,10 +27,25 @@ export function ClubAnnouncementCard({
   atasamente,
   seAscunde,
   seSterge,
+  editezAici,
+  onEdit,
+  onEditDone,
   onToggle,
   onDelete,
 }: Props) {
   const p = priorityOf(a)
+  if (editezAici) {
+    return (
+      <article className="bg-card min-w-0 space-y-4 rounded-xl border p-5 sm:p-6">
+        <h3 className="font-display text-lg font-bold">Editezi anunțul</h3>
+        <AnnouncementEditForm
+          anunt={a}
+          onSaved={() => onEditDone(true)}
+          onCancel={() => onEditDone(false)}
+        />
+      </article>
+    )
+  }
   return (
     <article
       className={cn(
@@ -65,6 +84,15 @@ export function ClubAnnouncementCard({
         </p>
       )}
       <div className="flex flex-wrap gap-2 border-t pt-3">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 lg:h-9"
+          aria-label={`Editează anunțul „${a.title}”`}
+          onClick={onEdit}
+        >
+          <Pencil aria-hidden="true" /> Editează
+        </Button>
         <Button
           type="button"
           variant="outline"
