@@ -13,13 +13,14 @@ const adminCodes: InviteCodesSource = {
 
 export default function AdminInviteCodesPage() {
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="min-w-0 space-y-6">
       <h1 className="font-display text-2xl font-bold text-foreground">Coduri și antrenori</h1>
       <CreateCoachForm />
       <InviteCodesSection
         source={adminCodes}
         title="Coduri invitație"
         description="Trimite codul unui antrenor ca să își creeze singur contul."
+        layout="grouped"
       />
     </div>
   )

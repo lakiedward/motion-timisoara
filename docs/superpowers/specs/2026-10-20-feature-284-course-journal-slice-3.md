@@ -31,3 +31,7 @@ Checked in production on 2026-10-20:
 - While the job is blocked, those cards showed a deletion date in the past. The card now says "Filmarea se șterge în curând." once the date has passed, and the download stays available until the file is gone.
 
 The job needs no code change. Once the owner adds the legacy `service_role` key to the Vault under `service_role_key`, one manual call of `public.cheama_purge_expired_media()` proves the deletion of both the files and the rows.
+
+### First run, 2026-10-21
+
+The owner added `service_role_key` to the Vault (a legacy JWT with `role = service_role`) and approved a manual run. The function answered 401 from its own check: the gateway accepted the JWT, but it no longer equals the `SUPABASE_SERVICE_ROLE_KEY` the edge runtime exposes, which the project now provides in the new key format. The function therefore accepts either that exact key or a bearer JWT whose `role` is `service_role`. The gateway (`verify_jwt = true`) has already verified the signature, so the role claim cannot be forged while that setting stays on; `config.toml` says so next to it.
