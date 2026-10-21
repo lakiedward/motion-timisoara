@@ -9,15 +9,6 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 
-export const SPORT_ICON: Record<string, string> = {
-  inot: '🏊',
-  ciclism: '🚴',
-  alergare: '🏃',
-  triatlon: '🏆',
-  atletism: '🏅',
-  gimnastica: '🤸',
-}
-
 export const SPORT_GLYPH: Record<string, LucideIcon> = {
   inot: Waves,
   ciclism: Bike,

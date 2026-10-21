@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { CalendarDays, Clock, MapPin, Users } from 'lucide-react'
@@ -90,6 +91,7 @@ export default function ActivitiesPage() {
 
 function CardActivitate({ activitate }: { activitate: ActivitateDinLista }) {
   const plina = activitate.locuriRamase !== null && activitate.locuriRamase <= 0
+  const [photoFailed, setPhotoFailed] = useState(false)
 
   return (
     <Link
@@ -97,8 +99,14 @@ function CardActivitate({ activitate }: { activitate: ActivitateDinLista }) {
       className="group bg-card shadow-card hover:shadow-card-hover hover:border-primary/40 flex h-full flex-col overflow-hidden rounded-xl border transition-[box-shadow,border-color] duration-300 motion-reduce:transition-none"
     >
       <div className="relative h-32 shrink-0 overflow-hidden">
-        {activitate.heroUrl ? (
-          <img src={activitate.heroUrl} alt="" className="size-full object-cover" />
+        {activitate.heroUrl && !photoFailed ? (
+          <img
+            src={activitate.heroUrl}
+            alt=""
+            loading="lazy"
+            onError={() => setPhotoFailed(true)}
+            className="size-full object-cover"
+          />
         ) : (
           <SportIllustration code={activitate.sportCode} />
         )}

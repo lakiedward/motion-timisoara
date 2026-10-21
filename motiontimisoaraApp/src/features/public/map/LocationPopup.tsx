@@ -4,7 +4,12 @@ import { formatZi, type TabaraDinLista } from '@/api/camps'
 import type { ActivityListItem, CourseListItem } from '@/api/public'
 import type { Loc } from '@/lib/locuri'
 import { plural } from '@/lib/plural'
-import { SPORT_COLOR, SPORT_COLOR_FALLBACK, SPORT_ICON } from '@/components/sport/sport-icons'
+import {
+  SPORT_COLOR,
+  SPORT_COLOR_FALLBACK,
+  SPORT_GLYPH,
+  SPORT_GLYPH_FALLBACK,
+} from '@/components/sport/sport-icons'
 
 const dateFmt = new Intl.DateTimeFormat('ro-RO', { day: 'numeric', month: 'short' })
 
@@ -22,6 +27,7 @@ function PopupRow({
   isCamp?: boolean
 }) {
   const color = SPORT_COLOR[sportCode ?? ''] ?? SPORT_COLOR_FALLBACK
+  const Glyph = SPORT_GLYPH[sportCode ?? ''] ?? SPORT_GLYPH_FALLBACK
   return (
     <Link
       to={to}
@@ -36,11 +42,7 @@ function PopupRow({
             : { backgroundColor: `${color}1f`, boxShadow: `inset 0 0 0 1px ${color}33` }
         }
       >
-        {isCamp ? (
-          <Tent className="size-4" />
-        ) : (
-          (SPORT_ICON[sportCode ?? ''] ?? <MapPin className="size-4" />)
-        )}
+        {isCamp ? <Tent className="size-4" /> : <Glyph className="text-foreground size-4" />}
       </span>
       <span className="min-w-0 flex-1">
         <span className="text-foreground block break-words text-sm font-semibold">{title}</span>

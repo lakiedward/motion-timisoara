@@ -1,5 +1,5 @@
 import { vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
@@ -147,6 +147,15 @@ test('fără poză, cardul pune o iconiță, nu un emoji', async () => {
   expect(card.querySelector('svg')).toBeInTheDocument()
   expect(card.textContent).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u)
   expect(screen.getByText('Ciclism')).toBeInTheDocument()
+})
+
+test('dacă poza nu se încarcă, cardul trece pe ilustrația sportului', async () => {
+  mocked.mockResolvedValue([ACTIVITATE])
+  deseneaza()
+  const card = await screen.findByRole('link', { name: /DEMO — Atelier de ciclism/ })
+  fireEvent.error(card.querySelector('img')!)
+  expect(card.querySelector('img')).toBeNull()
+  expect(card.querySelector('[data-sport-illustration="ciclism"]')).toBeInTheDocument()
 })
 
 test('prețul 0 este Gratuit', async () => {
