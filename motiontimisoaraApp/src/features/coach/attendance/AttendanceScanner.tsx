@@ -105,20 +105,6 @@ export function AttendanceScanner(props: { occurrenceId: string; label: string }
   return queue ? <ScannerControls {...props} queue={queue} /> : null
 }
 
-function SingleCardQueue({ queue, groups }: { queue: AttendanceQueue; groups: ScanGroup[] }) {
-  const { snapshot, pending, rejected } = useQueueState(queue)
-  return (
-    <section
-      aria-label="Scanări de sincronizat"
-      className="bg-card mb-4 space-y-3 rounded-xl border p-4"
-    >
-      <h2 className="font-semibold">Scanări de sincronizat</h2>
-      <SyncStatus queue={queue} snapshot={snapshot} pending={pending} rejected={rejected} />
-      <InlineGroups queue={queue} groups={groups} />
-    </section>
-  )
-}
-
 function CardPerSessionQueue({ queue, groups }: { queue: AttendanceQueue; groups: ScanGroup[] }) {
   const { snapshot, pending, rejected } = useQueueState(queue)
   return (
@@ -159,18 +145,7 @@ function OfflineQueue({ queue }: { queue: AttendanceQueue }) {
   const snapshot = useSyncExternalStore(queue.subscribe, queue.getSnapshot)
   const groups = groupScans(snapshot.entries).filter((group) => group.pending + group.rejected > 0)
   if (!groups.length) return snapshot.error ? <p role="alert">{snapshot.error}</p> : null
-  const variant = (() => {
-    try {
-      return localStorage.getItem('qa-3460-variant')
-    } catch {
-      return null
-    }
-  })()
-  return variant === 'b' ? (
-    <CardPerSessionQueue queue={queue} groups={groups} />
-  ) : (
-    <SingleCardQueue queue={queue} groups={groups} />
-  )
+  return <CardPerSessionQueue queue={queue} groups={groups} />
 }
 
 export function AttendanceOfflineQueue() {
