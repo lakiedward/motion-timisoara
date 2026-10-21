@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StarRating } from '@/components/StarRating'
+import type { CoachClub } from '@/api/public'
+import { CoachClubs } from './CoachClubs'
 
 const CARD_LAYOUT =
   'mt-4 flex-col items-center gap-5 p-6 text-center sm:flex-row sm:items-center sm:p-8 sm:text-left'
@@ -51,6 +53,7 @@ export function CoachHero({
   name,
   photoUrl,
   sports,
+  clubs = [],
   bio,
   rating,
   myRating,
@@ -58,6 +61,7 @@ export function CoachHero({
   name: string
   photoUrl: string | null
   sports: { id: string; name: string }[]
+  clubs?: CoachClub[]
   bio: string | null
   rating: { avg: number; count: number } | undefined
   myRating?: ReactNode
@@ -81,6 +85,7 @@ export function CoachHero({
               ))}
             </div>
           )}
+          <CoachClubs clubs={clubs} />
           {bio && <p className="text-muted-foreground mt-3 max-w-xl">{bio}</p>}
           {rating && rating.count > 0 && (
             <div className="mt-3 flex items-center justify-center gap-2 sm:justify-start">
