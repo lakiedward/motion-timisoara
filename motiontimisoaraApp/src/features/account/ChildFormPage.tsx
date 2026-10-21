@@ -1,5 +1,5 @@
 import { type ComponentProps, useEffect } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -8,6 +8,8 @@ import { ArrowLeft, QrCode } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { createChild, getChild, updateChild } from '@/api/account'
+import { useAuth } from '@/lib/auth-context'
+import { validReturnPath } from '@/lib/auth/return-path'
 import { toIso } from '@/lib/camp-period'
 import { formatLevel, toLevelSlug } from '@/lib/level'
 import { Button } from '@/components/ui/button'
@@ -76,6 +78,12 @@ export default function ChildFormPage() {
   const idArataAUuid = !isEdit || UUID.test(id)
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { user } = useAuth()
+  const [params] = useSearchParams()
+  const bunVenit = !isEdit && params.get('bun-venit') === '1'
+  const dupaSalvare = bunVenit
+    ? validReturnPath(params.get('returnUrl')) || '/account'
+    : '/account/children'
   const {
     data: existing,
     isPending: seIncarca,
@@ -92,7 +100,12 @@ export default function ChildFormPage() {
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<Values>({ resolver: zodResolver(schema) })
+  } = useForm<Values>({
+    resolver: zodResolver(schema),
+    defaultValues: bunVenit
+      ? { emergency_contact_name: user?.name ?? '', emergency_phone: user?.phone ?? '' }
+      : undefined,
+  })
 
   const nivelSalvat = existing?.level ?? ''
   const nivelCunoscut = toLevelSlug(nivelSalvat)
@@ -141,7 +154,7 @@ export default function ChildFormPage() {
       else await createChild(date)
       qc.invalidateQueries({ queryKey: ['children'] })
       toast.success(isEdit ? 'Copil actualizat.' : 'Copil adăugat.')
-      navigate('/account/children')
+      navigate(dupaSalvare)
     } catch {
       toast.error('Nu am putut salva. Încearcă din nou.')
     }
@@ -196,10 +209,16 @@ export default function ChildFormPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <InapoiLaCopii />
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+      {!bunVenit && <InapoiLaCopii />}
+      <div
+        className={
+          bunVenit
+            ? 'flex flex-wrap items-center justify-between gap-3'
+            : 'mt-4 flex flex-wrap items-center justify-between gap-3'
+        }
+      >
         <h1 className="font-display text-foreground text-2xl font-bold">
-          {isEdit ? 'Editează copil' : 'Adaugă copil'}
+          {isEdit ? 'Editează copil' : bunVenit ? 'Adaugă-ți copilul' : 'Adaugă copil'}
         </h1>
         {isEdit && (
           <Button asChild variant="outline">
@@ -209,6 +228,12 @@ export default function ChildFormPage() {
           </Button>
         )}
       </div>
+      {bunVenit && (
+        <p className="text-muted-foreground mt-2">
+          Contul tău e gata. Adaugă copilul ca să-l poți înscrie la cursuri, tabere și activități.
+          Poți face asta și mai târziu, din Copiii mei.
+        </p>
+      )}
       <p className="text-muted-foreground mt-2 text-sm">
         Câmpurile marcate cu <span className="text-destructive">*</span> sunt obligatorii.
       </p>
@@ -424,10 +449,12 @@ export default function ChildFormPage() {
 
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <Button type="button" variant="ghost" asChild>
-            <Link to="/account/children">Anulează</Link>
+            <Link to={bunVenit ? dupaSalvare : '/account/children'}>
+              {bunVenit ? 'Mai târziu' : 'Anulează'}
+            </Link>
           </Button>
           <Button type="submit" disabled={isSubmitting} className="sm:min-w-40">
-            {isSubmitting ? 'Se salvează…' : 'Salvează'}
+            {isSubmitting ? 'Se salvează…' : bunVenit ? 'Salvează copilul' : 'Salvează'}
           </Button>
         </div>
       </form>
