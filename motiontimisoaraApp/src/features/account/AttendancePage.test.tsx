@@ -15,6 +15,12 @@ import {
   getMyChildrenCampAttendance,
 } from '@/api/account'
 
+import { getMyChildrenActivityAttendance } from '@/api/attendance/activity-attendance'
+
+vi.mock('@/api/attendance/activity-attendance', () => ({
+  getMyChildrenActivityAttendance: vi.fn(),
+}))
+
 vi.mock('@/api/account', () => ({
   getMyChildren: vi.fn(),
   getChildAttendance: vi.fn(),
@@ -26,6 +32,7 @@ const mockedCopii = vi.mocked(getMyChildren)
 const mockedPrezenta = vi.mocked(getChildAttendance)
 const mockedPrezentaToti = vi.mocked(getChildrenAttendance)
 const mockedTabere = vi.mocked(getMyChildrenCampAttendance)
+const mockedActivitati = vi.mocked(getMyChildrenActivityAttendance)
 
 const COPIL_A = 'aaaaaaaa-0000-4000-8000-000000000001'
 const COPIL_B = 'bbbbbbbb-0000-4000-8000-000000000002'
@@ -69,6 +76,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   vi.useFakeTimers({ shouldAdvanceTime: true, now: AZI })
   mockedCopii.mockResolvedValue(copii as never)
+  mockedActivitati.mockResolvedValue([])
   const implicite = [
     rand('r1', '2026-08-20T14:00:00Z', 'PRESENT', 'Înot — audit UI'),
     rand('r2', '2026-07-20T15:00:00Z', 'ABSENT', null, 'A anunțat că e răcit.'),
@@ -381,6 +389,47 @@ test('pe un copil ales se văd doar taberele lui', async () => {
 
 test('o citire căzută a taberelor arată eroare cu reîncercare', async () => {
   mockedTabere.mockRejectedValue(new Error('boom'))
+  renderPage()
+  expect(await screen.findByText('Nu am putut încărca prezența.')).toBeInTheDocument()
+})
+
+const activitate = (
+  id: string,
+  zi: string,
+  status: 'PRESENT' | 'ABSENT',
+  child_id: string = COPIL_A,
+) => ({
+  id,
+  child_id,
+  activity_id: 'dddddddd-0000-4000-8000-000000000004',
+  status,
+  activity: { name: 'Ștafeta de vară', activity_date: zi, start_time: '10:00:00' },
+})
+
+test('activitatea pontată apare cu insigna Activitate și intră în rezumat', async () => {
+  mockedTabere.mockResolvedValue([sosire('t1', '2026-08-10T06:30:00Z')] as never)
+  mockedActivitati.mockResolvedValue([
+    activitate('v1', '2026-08-15', 'ABSENT'),
+    activitate('v2', '2026-08-16', 'PRESENT', 'eeeeeeee-0000-4000-8000-000000000009'),
+  ] as never)
+  renderPage()
+  const rezumat = await screen.findByText(/înregistrări/)
+  expect(rezumat.textContent).toContain(
+    '3 prezențe din 5 înregistrări: 3 ședințe de curs, 1 activitate, 1 tabără.',
+  )
+  expect(
+    screen.getByText(
+      'Se numără ședințele pontate de antrenor, activitățile pontate și sosirile la tabără.',
+    ),
+  ).toBeInTheDocument()
+  const rand = screen.getByText('Ștafeta de vară').closest('li')!
+  expect(within(rand).getByText('Activitate')).toBeInTheDocument()
+  expect(within(rand).getByText('Absent')).toBeInTheDocument()
+  expect(screen.getAllByText('Ștafeta de vară')).toHaveLength(1)
+})
+
+test('o citire căzută a activităților arată eroare cu reîncercare', async () => {
+  mockedActivitati.mockRejectedValue(new Error('boom'))
   renderPage()
   expect(await screen.findByText('Nu am putut încărca prezența.')).toBeInTheDocument()
 })
