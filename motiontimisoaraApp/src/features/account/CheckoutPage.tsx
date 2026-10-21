@@ -6,6 +6,14 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import CheckoutWizard from './checkout/CheckoutWizard'
+import type { OfferingRules } from './checkout/CheckoutRulesConsent'
+import {
+  ACTIVITY_RULES_FILE_BUCKET,
+  CAMP_RULES_FILE_BUCKET,
+  COURSE_RULES_FILE_BUCKET,
+  rulesFileAfisabil,
+} from '@/api/camp-rules-file'
+import { campRulesForDisplay } from '@/lib/camp-rules'
 
 const DEFAULT_PACKAGES = [5, 10, 20]
 
@@ -14,6 +22,7 @@ export interface Offering {
   title: string
   perSession: boolean
   packages: number[]
+  rules?: OfferingRules
 }
 
 function parsePackages(raw: string | null): number[] {
@@ -47,12 +56,29 @@ export default function CheckoutPage() {
     queryFn: async (): Promise<Offering | null> => {
       if (kind === 'CAMP') {
         const camp = await getCheckoutCamp(id, slug)
-        return camp ? { id: camp.id, title: camp.title, perSession: false, packages: [] } : null
+        return camp
+          ? {
+              id: camp.id,
+              title: camp.title,
+              perSession: false,
+              packages: [],
+              rules: {
+                text: campRulesForDisplay(camp.rules),
+                file: rulesFileAfisabil(CAMP_RULES_FILE_BUCKET, camp),
+              },
+            }
+          : null
       }
       if (kind === 'ACTIVITY' && id) {
         const activity = await getActivity(id)
         return activity
-          ? { id: activity.id, title: activity.name, perSession: false, packages: [] }
+          ? {
+              id: activity.id,
+              title: activity.name,
+              perSession: false,
+              packages: [],
+              rules: { text: null, file: rulesFileAfisabil(ACTIVITY_RULES_FILE_BUCKET, activity) },
+            }
           : null
       }
       if (kind === 'COURSE' && id) {
@@ -63,6 +89,7 @@ export default function CheckoutPage() {
               title: course.name,
               perSession: true,
               packages: parsePackages(course.package_options),
+              rules: { text: null, file: rulesFileAfisabil(COURSE_RULES_FILE_BUCKET, course) },
             }
           : null
       }
