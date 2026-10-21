@@ -88,13 +88,15 @@ test('page hierarchy and active/used/expired states remain readable', async () =
   expect(screen.getByRole('heading', { level: 1, name: 'Coduri și antrenori' })).toBeVisible()
   expect(screen.getByRole('heading', { level: 2, name: 'Adaugă antrenor direct' })).toBeVisible()
   expect(await screen.findByText('Activ')).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: /Folosite\s*1 cod/ }))
+  fireEvent.click(screen.getByRole('button', { name: /^Expirate\s*1 cod/ }))
   expect(screen.getAllByText('Utilizări: 0/2')).toHaveLength(2)
   expect(screen.getByText('Utilizări: 1/1')).toBeVisible()
   expect(screen.getAllByText('Fără expirare')).toHaveLength(2)
   expect(screen.getByText('Folosit')).toBeVisible()
   expect(screen.getByText('Expirat')).toBeVisible()
   expect(inviteCodeStatus(firstCode)).toBe('active')
-  expect(screen.getByText(/Expirat pe/)).toHaveTextContent(/\d{2}:\d{2}/)
+  expect(screen.getByText(/^A expirat pe/)).toHaveTextContent(/\d{2}:\d{2}/)
 })
 
 test('loading and error do not report an empty list, retry recovers', async () => {
@@ -262,7 +264,8 @@ test('deletion keeps its target and preserves the row on backend failure', async
   const request = deferred<void>()
   mocks.deleteCode.mockReturnValue(request.promise)
   renderPage()
-  fireEvent.click(await screen.findByRole('button', { name: 'Șterge codul invitație 1' }))
+  fireEvent.click(await screen.findByRole('button', { name: /Folosite\s*1 cod/ }))
+  fireEvent.click(screen.getByRole('button', { name: 'Șterge codul invitație 1' }))
   const other = await screen.findByRole('button', { name: 'Șterge codul invitație 2' })
   expect(other).toBeDisabled()
   fireEvent.click(other)
@@ -477,4 +480,45 @@ test('an older clipboard rejection cannot replace the newer code copy success', 
   await act(async () => clipboard.reject(new Error('Denied')))
   expect(screen.queryByText(/Nu am putut copia/)).not.toBeInTheDocument()
   expect(screen.getByText('Codul nou a fost copiat.')).toBeVisible()
+})
+
+test('search and status pills narrow the grouped list', async () => {
+  renderPage(false)
+  expect(await screen.findByText('SYNTHETIC-ONE')).toBeVisible()
+  expect(screen.getByRole('button', { name: /Active\s*1 cod/ })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  )
+  expect(screen.getByRole('button', { name: /Folosite\s*1 cod/ })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  )
+  expect(screen.getByText('2 coduri, 1 activ')).toBeVisible()
+  fireEvent.change(screen.getByRole('searchbox', { name: /Caută coduri/ }), {
+    target: { value: 'two' },
+  })
+  expect(screen.queryByText('SYNTHETIC-ONE')).not.toBeInTheDocument()
+  expect(screen.getByText('TWO')).toBeVisible()
+  expect(screen.getByText('1 din 2 coduri')).toBeVisible()
+  fireEvent.change(screen.getByRole('searchbox', { name: /Caută coduri/ }), {
+    target: { value: '' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: /^Folosite\s*1$/ }))
+  expect(screen.queryByText('SYNTHETIC-ONE')).not.toBeInTheDocument()
+  expect(screen.getByText('SYNTHETIC-TWO')).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: /^Expirate\s*0$/ }))
+  expect(screen.getByText('Niciun cod găsit.')).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: 'Șterge filtrele' }))
+  expect(screen.getByText('SYNTHETIC-ONE')).toBeVisible()
+})
+
+test('a long group shows a preview and expands on request', async () => {
+  mocks.getCodes.mockResolvedValue(
+    Array.from({ length: 7 }, (_, i) => ({ ...firstCode, id: `row-${i}`, code: `SYNTH-${i}` })),
+  )
+  renderPage(false)
+  expect(await screen.findByText('SYNTH-4')).toBeVisible()
+  expect(screen.queryByText('SYNTH-5')).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Vezi toate cele 7 coduri' }))
+  expect(screen.getByText('SYNTH-6')).toBeVisible()
 })
