@@ -84,14 +84,14 @@ test('adminul nu citește „clubul meu" și trebuie să aleagă organizatorul',
 
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   expect(await screen.findByText('Alege organizatorul')).toBeInTheDocument()
-  expect(screen.getByLabelText('Organizator')).toHaveAttribute('aria-invalid', 'true')
+  expect(screen.getByLabelText(/^Organizator/)).toHaveAttribute('aria-invalid', 'true')
   expect(createClubCourse).not.toHaveBeenCalled()
 })
 
 test('antrenorii și locațiile urmează organizatorul ales', async () => {
   const user = userEvent.setup()
   renderForm()
-  const organizator = await screen.findByLabelText('Organizator')
+  const organizator = await screen.findByLabelText(/^Organizator/)
   await screen.findByRole('option', { name: 'Club Audit Motion' })
 
   await user.selectOptions(organizator, CLUB)
@@ -99,14 +99,14 @@ test('antrenorii și locațiile urmează organizatorul ales', async () => {
   expect(await screen.findByRole('option', { name: 'Bazinul clubului' })).toBeInTheDocument()
   expect(getClubRosterForSelect).toHaveBeenCalledWith(CLUB)
 
-  await user.selectOptions(screen.getByLabelText('Antrenor'), ANTRENOR_CLUB)
+  await user.selectOptions(screen.getByLabelText(/^Antrenor/), ANTRENOR_CLUB)
   await user.selectOptions(organizator, 'independent')
   expect(
     await screen.findByRole('option', { name: 'Antrenor independent Ana' }),
   ).toBeInTheDocument()
   expect(await screen.findByRole('option', { name: 'Stadion public' })).toBeInTheDocument()
   expect(screen.queryByRole('option', { name: 'Antrenor de club' })).not.toBeInTheDocument()
-  expect(screen.getByLabelText('Antrenor')).toHaveValue('')
+  expect(screen.getByLabelText(/^Antrenor/)).toHaveValue('')
 })
 
 test('un curs creat pentru antrenor independent pleacă fără club și duce în lista admin', async () => {
@@ -114,13 +114,13 @@ test('un curs creat pentru antrenor independent pleacă fără club și duce în
   vi.mocked(createClubCourse).mockResolvedValue({ id: 'c-nou' } as never)
   renderForm()
   await screen.findByRole('option', { name: 'Club Audit Motion' })
-  await user.selectOptions(screen.getByLabelText('Organizator'), 'independent')
+  await user.selectOptions(screen.getByLabelText(/^Organizator/), 'independent')
   await screen.findByRole('option', { name: 'Antrenor independent Ana' })
-  await user.type(screen.getByLabelText('Nume curs'), 'Atletism independent')
-  await user.selectOptions(screen.getByLabelText('Antrenor'), ANTRENOR_INDEPENDENT)
-  await user.selectOptions(screen.getByLabelText('Sport'), SPORT)
-  await user.selectOptions(await screen.findByLabelText('Locație'), LOC_PUBLICA)
-  await user.type(screen.getByLabelText('Preț / ședință (lei)'), '60')
+  await user.type(screen.getByLabelText(/^Nume curs/), 'Atletism independent')
+  await user.selectOptions(screen.getByLabelText(/^Antrenor/), ANTRENOR_INDEPENDENT)
+  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
+  await user.selectOptions(await screen.findByLabelText(/^Locație/), LOC_PUBLICA)
+  await user.type(screen.getByLabelText(/^Preț \/ ședință \(lei\)/), '60')
   await user.click(screen.getByRole('button', { name: 'Luni' }))
   const luni = screen.getByRole('group', { name: 'Luni' })
   fireEvent.change(within(luni).getByLabelText('Ora start'), { target: { value: '18:00' } })
@@ -162,11 +162,11 @@ test('la editare organizatorul rămâne blocat pe cel salvat, iar antrenorul se 
   } as never)
   renderForm('/admin/courses/c1/edit')
 
-  const organizator = await screen.findByLabelText('Organizator')
+  const organizator = await screen.findByLabelText(/^Organizator/)
   await waitFor(() => expect(organizator).toHaveValue(CLUB))
   expect(organizator).toBeDisabled()
   expect(screen.getByText(/Organizatorul rămâne cel de la creare/)).toBeInTheDocument()
-  await waitFor(() => expect(screen.getByLabelText('Antrenor')).toHaveValue(ANTRENOR_CLUB))
+  await waitFor(() => expect(screen.getByLabelText(/^Antrenor/)).toHaveValue(ANTRENOR_CLUB))
   expect(screen.getByRole('link', { name: 'Anulează' })).toHaveAttribute('href', '/admin/courses')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() => expect(updateClubCourse).toHaveBeenCalled())

@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
 import { Textarea } from '@/components/ui/textarea'
 import LocationTypeOptions from '@/components/location-form/LocationTypeOptions'
 import { cityForCounty, countyForCity, normalizeCounty } from '@/lib/geography/romanian-places'
@@ -174,46 +176,60 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
       toast.error(locationWriteErrorMessage(e, 'Nu am putut salva locația.'))
     }
   }
+  const backLink = (
+    <Link
+      to={listPath}
+      className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
+    >
+      <ArrowLeft className="size-4" /> Înapoi
+    </Link>
+  )
+
   if (isEdit && form.readyToRead && aEsuatCitirea) {
     return (
       <div className="mx-auto max-w-2xl">
-        <Link
-          to={listPath}
-          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
-        >
-          <ArrowLeft className="size-4" /> Înapoi
-        </Link>
-        <div role="alert" className="mt-6 rounded-3xl border border-dashed py-16 text-center">
-          <p className="text-foreground font-medium">Nu am putut încărca locația.</p>
-          <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetch()}>
-            Reîncearcă
-          </Button>
-        </div>
+        {backLink}
+        <StatusView
+          state="error"
+          title="Nu am putut încărca locația."
+          text="Verifică conexiunea și încearcă din nou."
+          onRetry={() => void refetch()}
+          className="mt-4"
+        />
       </div>
     )
   }
+
   if (isEdit && form.readyToRead && !seIncarca && !existing) {
     return (
       <div className="mx-auto max-w-2xl">
-        <Link
-          to={listPath}
-          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
-        >
-          <ArrowLeft className="size-4" /> Înapoi
-        </Link>
-        <p className="text-muted-foreground mt-6">Locația nu a fost găsită.</p>
+        {backLink}
+        <StatusView
+          state="empty"
+          title="Locația nu a fost găsită."
+          text="Poate a fost ștearsă sau linkul nu mai este valabil."
+          className="mt-4"
+        />
+      </div>
+    )
+  }
+
+  if (isEdit && !existing) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        {backLink}
+        <div role="status" aria-label="Se încarcă locația" className="mt-4 space-y-4">
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-64 rounded-xl" />
+          <Skeleton className="h-96 rounded-xl" />
+        </div>
       </div>
     )
   }
 
   return (
     <div className="mx-auto max-w-2xl">
-      <Link
-        to={listPath}
-        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
-      >
-        <ArrowLeft className="size-4" /> Înapoi
-      </Link>
+      {backLink}
       <h1 className="font-display mt-4 text-2xl font-bold">
         {isEdit ? 'Editează locație' : 'Locație nouă'}
       </h1>
@@ -222,7 +238,9 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
         <Card>
           <CardHeader>
             <CardTitle className="font-display text-lg">Despre locație</CardTitle>
-            <CardDescription>Numele și tipul apar la cursuri, activități și pe hartă.</CardDescription>
+            <CardDescription>
+              Numele și tipul apar la cursuri, activități și pe hartă.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {isAdmin && (
