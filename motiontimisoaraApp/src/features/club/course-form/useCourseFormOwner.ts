@@ -26,6 +26,7 @@ export function useCourseFormOwner(
   const { data: clubs = [] } = useQuery({
     queryKey: ['admin-clubs'],
     queryFn: getAllClubs,
+    select: (all) => all.filter((club) => club.approved_at),
     enabled: enabled && isAdmin,
   })
 

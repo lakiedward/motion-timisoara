@@ -63,7 +63,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   apasaPeHarta = null
   vi.mocked(getAllClubs).mockResolvedValue([
-    { id: CLUB, name: 'Club Audit Motion', city: 'Timișoara', email: null },
+    { id: CLUB, name: 'Club Audit Motion', city: 'Timișoara', email: null, approved_at: '2026-09-01T00:00:00Z' },
   ])
   vi.mocked(getCoachesForSelect).mockResolvedValue([{ user_id: COACH, name: 'Ana Rusu' }])
   vi.mocked(createAdminLocation).mockResolvedValue(undefined)

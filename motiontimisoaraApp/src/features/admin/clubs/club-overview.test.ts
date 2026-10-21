@@ -12,6 +12,7 @@ import {
 const club = (id: string, name: string, city: string | null, email: string | null): AdminClub => ({
   id,
   name,
+  approved_at: '2026-09-01T00:00:00Z',
   city,
   email,
 })
