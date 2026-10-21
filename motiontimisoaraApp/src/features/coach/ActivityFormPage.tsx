@@ -8,7 +8,7 @@ import {
   parseScaledDecimal,
   eurFaraCurs,
 } from '@/lib/pricing/offer-currency'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type MouseEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -19,7 +19,12 @@ import { toast } from 'sonner'
 
 import { incarcaRegulamentActivitate, stergeRegulamentActivitate } from '@/api/camp-rules-file'
 import { renuntaLaOfertaFaraHero, schimbaPozaOferta } from '@/api/offer-hero'
-import { createActivity, getActivityById, updateActivity } from '@/api/coach'
+import {
+  activitateaAreInscrieri,
+  createActivity,
+  getActivityById,
+  updateActivity,
+} from '@/api/coach'
 import { createAdminActivity, updateAdminActivity } from '@/api/activities/admin-activities'
 import { HeroPhotoField } from '@/components/HeroPhotoField'
 import { MESAJ_POZA_HERO, mesajHeroLipsa } from '@/lib/hero-photo'
@@ -33,14 +38,20 @@ import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/Form
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { Textarea } from '@/components/ui/textarea'
 import { INDEPENDENT_OWNER } from '@/features/club/course-form/useCourseFormOwner'
 import { ActivityOwnerFields } from './activity-form/ActivityOwnerFields'
+import { LeaveFormDialog } from './activity-form/LeaveFormDialog'
 import { useActivityFormOwner, type ActivityFormPortal } from './activity-form/useActivityFormOwner'
 
 const selectCls =
   'border-input dark:bg-input/30 flex h-touch-target w-full min-w-0 rounded-md border bg-transparent px-3 text-base shadow-xs transition-[color,box-shadow] outline-none hover:border-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-invalid:border-2 aria-invalid:border-destructive disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
+
+const NOTA_SPORT = 'Sportul rămâne cel salvat: activitatea are înscrieri.'
+const NOTA_LOCATIE = 'Locația rămâne cea salvată: activitatea are înscrieri.'
+const NOTA_PRET = 'Prețul rămâne cel salvat: activitatea are înscrieri.'
 
 function minuteDinOra(ora: string) {
   const [ore, minute] = ora.split(':')
@@ -54,7 +65,7 @@ function minuteDinOra(ora: string) {
 const schema = z
   .object({
     ...offerCurrencyShape,
-    name: z.string().min(3, 'Minim 3 caractere'),
+    name: z.string().trim().min(3, 'Numele are cel puțin 3 caractere.'),
     coach_id: z.string().optional(),
     sport_id: z.string().min(1, 'Alege un sport'),
     location_id: z.string().min(1, 'Alege o locație'),
@@ -87,10 +98,13 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
   const isEdit = !!id
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const { data: sports = [] } = useQuery({ queryKey: ['sports'], queryFn: fetchSports })
+  const { data: sports = [], isPending: sporturiSeIncarca } = useQuery({
+    queryKey: ['sports'],
+    queryFn: fetchSports,
+  })
   const {
     data: existing,
-    isFetched: existingFetched,
+    isPending: seIncarca,
     isError: existingError,
     refetch: refetchExisting,
   } = useQuery({
@@ -98,6 +112,12 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
     queryFn: () => getActivityById(id as string),
     enabled: isEdit,
   })
+  const { data: areInscrieri = false } = useQuery({
+    queryKey: ['activity-has-enrollments', id],
+    queryFn: () => activitateaAreInscrieri(id as string),
+    enabled: isEdit,
+  })
+  const campuriBlocate = isEdit && areInscrieri
   const form = useActivityFormOwner(portal, existing, isEdit)
   const { isAdmin, locations, listPath, listQueryKey } = form
   const [eroareOrganizator, setEroareOrganizator] = useState<string | null>(null)
@@ -109,7 +129,7 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
     reset,
     setValue,
     setError,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: { currency: 'RON', eur_ron_rate: '' },
@@ -129,6 +149,13 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
   const currency = useWatch({ control, name: 'currency' })
   const cursEur = useWatch({ control, name: 'eur_ron_rate' })
   const faraCurs = eurFaraCurs(currency, cursEur)
+  const [intrebarePlecare, setIntrebarePlecare] = useState(false)
+  const areModificari = isEdit && (isDirty || pozaHero !== null)
+  const pleaca = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (!areModificari) return
+    event.preventDefault()
+    setIntrebarePlecare(true)
+  }
 
   useEffect(() => {
     if (existing && form.coachesReady && form.locationsReady) {
@@ -242,13 +269,14 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
   const backLink = (
     <Link
       to={listPath}
+      onClick={pleaca}
       className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
     >
       <ArrowLeft className="size-4" /> Înapoi
     </Link>
   )
 
-  if (isEdit && existingFetched && !existing) {
+  if (isEdit && !seIncarca && !existing) {
     return (
       <div className="mx-auto max-w-2xl">
         {backLink}
@@ -266,6 +294,18 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
               text="Poate a fost ștearsă sau linkul nu mai este valabil."
             />
           )}
+        </div>
+      </div>
+    )
+  }
+
+  if (isEdit && (seIncarca || sporturiSeIncarca || !form.coachesReady || !form.locationsReady)) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        {backLink}
+        <div role="status" aria-label="Se încarcă activitatea" className="mt-4 space-y-4">
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-96 rounded-xl" />
         </div>
       </div>
     )
@@ -327,7 +367,8 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
                 id="sport_id"
                 className={selectCls}
                 {...register('sport_id')}
-                {...camp('sport_id')}
+                {...camp('sport_id', campuriBlocate ? 'sport-blocat' : undefined)}
+                disabled={campuriBlocate}
               >
                 <option value="">—</option>
                 {sports.map((s) => (
@@ -336,6 +377,11 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
                   </option>
                 ))}
               </select>
+              {campuriBlocate && (
+                <p id="sport-blocat" className="text-muted-foreground text-sm">
+                  {NOTA_SPORT}
+                </p>
+              )}
               <FieldMessage id="sport_id" error={errors.sport_id?.message} />
             </div>
             <div className="min-w-0 space-y-1.5">
@@ -346,7 +392,8 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
                 id="location_id"
                 className={selectCls}
                 {...register('location_id')}
-                {...camp('location_id')}
+                {...camp('location_id', campuriBlocate ? 'locatie-blocata' : undefined)}
+                disabled={campuriBlocate}
               >
                 <option value="">—</option>
                 {locations.map((l) => (
@@ -355,6 +402,11 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
                   </option>
                 ))}
               </select>
+              {campuriBlocate && (
+                <p id="locatie-blocata" className="text-muted-foreground text-sm">
+                  {NOTA_LOCATIE}
+                </p>
+              )}
               <FieldMessage id="location_id" error={errors.location_id?.message} />
             </div>
           </div>
@@ -463,6 +515,7 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
             currency={currency}
             currencyField={register('currency')}
             setValue={setValue}
+            disabled={campuriBlocate}
           />
           <div className="space-y-1.5 sm:max-w-[calc(50%-0.5rem)]">
             <Label htmlFor="price_lei">
@@ -474,8 +527,14 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
               step="0.01"
               required
               {...register('price_lei')}
-              {...camp('price_lei')}
+              {...camp('price_lei', campuriBlocate ? 'pret-blocat' : undefined)}
+              disabled={campuriBlocate}
             />
+            {campuriBlocate && (
+              <p id="pret-blocat" className="text-muted-foreground text-sm">
+                {NOTA_PRET}
+              </p>
+            )}
             <FieldMessage id="price_lei" error={errors.price_lei?.message} />
           </div>
         </FormSection>
@@ -503,10 +562,17 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
             {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>
           <Button type="button" variant="outline" asChild>
-            <Link to={listPath}>Anulează</Link>
+            <Link to={listPath} onClick={pleaca}>
+              Anulează
+            </Link>
           </Button>
         </div>
       </form>
+      <LeaveFormDialog
+        open={intrebarePlecare}
+        onOpenChange={setIntrebarePlecare}
+        onLeave={() => navigate(listPath)}
+      />
     </div>
   )
 }

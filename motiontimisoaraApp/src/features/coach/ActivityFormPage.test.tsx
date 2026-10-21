@@ -6,6 +6,7 @@ import { vi } from 'vitest'
 
 import ActivityFormPage from './ActivityFormPage'
 import {
+  activitateaAreInscrieri,
   createActivity,
   getActivityById,
   getSelectableLocations,
@@ -15,6 +16,7 @@ import { fetchSports } from '@/api/sports'
 import { getCursBnr } from '@/api/bnr-rate'
 
 vi.mock('@/api/coach', () => ({
+  activitateaAreInscrieri: vi.fn().mockResolvedValue(false),
   getSelectableLocations: vi.fn(),
   getActivityById: vi.fn(),
   createActivity: vi.fn(),
@@ -52,6 +54,7 @@ function renderForm() {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.mocked(activitateaAreInscrieri).mockResolvedValue(false)
   vi.mocked(fetchSports).mockResolvedValue([{ id: SPORT, name: 'Înot' }] as never)
   vi.mocked(getSelectableLocations).mockResolvedValue([
     { id: LOC, name: 'Bazin Olimpic Timișoara', city: 'Timișoara' },
@@ -243,4 +246,113 @@ test('editarea precompletează vârstele salvate', async () => {
   await waitFor(() => expect(screen.getByLabelText('Vârstă minimă')).toHaveValue(8))
   expect(screen.getByLabelText('Vârstă maximă')).toHaveValue(null)
   expect(mockedUpdate).not.toHaveBeenCalled()
+})
+
+const SALVATA = {
+  id: 'act-1',
+  name: 'Activitate salvată',
+  sport_id: SPORT,
+  location_id: LOC,
+  activity_date: '2027-07-10',
+  start_time: '09:00:00',
+  end_time: '11:00:00',
+  price: 2000,
+  capacity: null,
+  description: 'Ieșire de probă.',
+  currency: 'RON',
+  eur_ron_rate_micros: null,
+  age_from: null,
+  age_to: null,
+  hero_photo_storage_path: 'act-1/hero/a.jpg',
+}
+
+function renderEdit() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={['/coach/activities/act-1/edit']}>
+        <Routes>
+          <Route path="/coach/activities/:id/edit" element={<ActivityFormPage />} />
+          <Route path="/coach/activities" element={<p>Lista activități</p>} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  )
+}
+
+test('numele prea scurt spune ce lipsește', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  await user.type(await screen.findByLabelText(/^Nume/), 'Ab')
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  expect(await screen.findByText('Numele are cel puțin 3 caractere.')).toBeInTheDocument()
+  expect(mockedCreate).not.toHaveBeenCalled()
+})
+
+test('editarea arată schelete cât se încarcă, fără formular gol', async () => {
+  vi.mocked(getActivityById).mockReturnValue(new Promise(() => {}))
+  renderEdit()
+  expect(await screen.findByRole('status', { name: 'Se încarcă activitatea' })).toBeInTheDocument()
+  expect(screen.queryByLabelText(/^Nume/)).not.toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /Înapoi/ })).toBeInTheDocument()
+})
+
+test('cu înscrieri, sportul, locația și prețul rămân cele salvate', async () => {
+  const user = userEvent.setup()
+  vi.mocked(getActivityById).mockResolvedValue(SALVATA as never)
+  vi.mocked(activitateaAreInscrieri).mockResolvedValue(true)
+  mockedUpdate.mockResolvedValue(undefined as never)
+  renderEdit()
+  await waitFor(() => expect(screen.getByLabelText(/^Preț/)).toBeDisabled())
+  expect(screen.getByLabelText(/^Sport/)).toBeDisabled()
+  expect(screen.getByLabelText(/^Locație/)).toBeDisabled()
+  expect(
+    screen.getByText('Sportul rămâne cel salvat: activitatea are înscrieri.'),
+  ).toBeInTheDocument()
+  expect(
+    screen.getByText('Locația rămâne cea salvată: activitatea are înscrieri.'),
+  ).toBeInTheDocument()
+  expect(
+    screen.getByText('Prețul rămâne cel salvat: activitatea are înscrieri.'),
+  ).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() => expect(mockedUpdate).toHaveBeenCalled())
+  expect(mockedUpdate.mock.calls[0][1]).toMatchObject({
+    sport_id: SPORT,
+    location_id: LOC,
+    price: 2000,
+  })
+})
+
+test('fără înscrieri, câmpurile rămân editabile', async () => {
+  vi.mocked(getActivityById).mockResolvedValue(SALVATA as never)
+  renderEdit()
+  await waitFor(() => expect(screen.getByLabelText(/^Nume/)).toHaveValue('Activitate salvată'))
+  expect(screen.getByLabelText(/^Preț/)).toBeEnabled()
+  expect(screen.queryByText(/activitatea are înscrieri/)).not.toBeInTheDocument()
+})
+
+test('cu modificări nesalvate, Anulează întreabă înainte de plecare', async () => {
+  const user = userEvent.setup()
+  vi.mocked(getActivityById).mockResolvedValue(SALVATA as never)
+  renderEdit()
+  const nume = await screen.findByLabelText(/^Nume/)
+  await waitFor(() => expect(nume).toHaveValue('Activitate salvată'))
+  await user.type(nume, ' nouă')
+  await user.click(screen.getByRole('link', { name: 'Anulează' }))
+  expect(await screen.findByRole('dialog', { name: 'Renunți la modificări?' })).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Rămân' }))
+  expect(screen.getByLabelText(/^Nume/)).toHaveValue('Activitate salvată nouă')
+  await user.click(screen.getByRole('link', { name: /Înapoi/ }))
+  await user.click(await screen.findByRole('button', { name: 'Renunț' }))
+  expect(await screen.findByText('Lista activități')).toBeInTheDocument()
+})
+
+test('fără modificări, Anulează pleacă direct', async () => {
+  const user = userEvent.setup()
+  vi.mocked(getActivityById).mockResolvedValue(SALVATA as never)
+  renderEdit()
+  await waitFor(() => expect(screen.getByLabelText(/^Nume/)).toHaveValue('Activitate salvată'))
+  await user.click(screen.getByRole('link', { name: 'Anulează' }))
+  expect(await screen.findByText('Lista activități')).toBeInTheDocument()
 })
