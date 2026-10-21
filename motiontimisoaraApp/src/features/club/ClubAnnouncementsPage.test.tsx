@@ -67,7 +67,7 @@ beforeEach(() => {
     anunt('b', 'Bazinul închis', false),
   ] as never)
   mockedTinte.mockResolvedValue([CURS, ACTIVITATE, TABARA, CURS_OPRIT] as never)
-  mockedCreeaza.mockResolvedValue(undefined as never)
+  mockedCreeaza.mockResolvedValue({ id: 'nou', publish_at: null, expires_at: null } as never)
   mockedComuta.mockResolvedValue(undefined as never)
   mockedSterge.mockResolvedValue(undefined as never)
 })
@@ -332,6 +332,8 @@ test('publicarea reușită golește formularul și anunță', async () => {
       priority: 'NORMAL',
       audience_kind: 'CLUB',
       audience_id: null,
+      publish_at: null,
+      expires_at: null,
     }),
   )
   await waitFor(() => expect(screen.getByLabelText('Titlu')).toHaveValue(''))

@@ -1,4 +1,5 @@
 import type { ClubAnnouncement, ClubAudience } from '@/api/club'
+import { scheduleState, type ScheduleState } from './announcement-schedule'
 
 export type PriorityStyle = {
   label: string
@@ -39,29 +40,27 @@ export function numeleTintei(
   return INDISPONIBIL[a.audience_kind] ?? `${fel} indisponibil`
 }
 
-const TZ = 'Europe/Bucharest'
 const dateFormat = new Intl.DateTimeFormat('ro-RO', {
   day: 'numeric',
   month: 'long',
   year: 'numeric',
-  timeZone: TZ,
-})
-const monthFormat = new Intl.DateTimeFormat('ro-RO', {
-  month: 'long',
-  year: 'numeric',
-  timeZone: TZ,
+  timeZone: 'Europe/Bucharest',
 })
 
 export const formatData = (iso: string) => dateFormat.format(new Date(iso))
 
-export function grupeazaPeLuni(items: ClubAnnouncement[]) {
-  const grupe: { key: string; title: string; items: ClubAnnouncement[] }[] = []
-  for (const a of items) {
-    const raw = monthFormat.format(new Date(a.created_at))
-    const title = raw.charAt(0).toLocaleUpperCase('ro-RO') + raw.slice(1)
-    const grupa = grupe.find((g) => g.key === title)
-    if (grupa) grupa.items.push(a)
-    else grupe.push({ key: title, title, items: [a] })
-  }
-  return grupe
+const GRUPE: { key: ScheduleState; title: string }[] = [
+  { key: 'scheduled', title: 'Programate' },
+  { key: 'live', title: 'Vizibile acum' },
+  { key: 'expired', title: 'Expirate' },
+]
+
+const momentPublicarii = (a: ClubAnnouncement) => new Date(a.publish_at ?? a.created_at).getTime()
+
+export function grupeazaPeStare(items: ClubAnnouncement[], acum = new Date()) {
+  return GRUPE.map(({ key, title }) => {
+    const din = items.filter((a) => scheduleState(a, acum) === key)
+    if (key === 'scheduled') din.sort((x, y) => momentPublicarii(x) - momentPublicarii(y))
+    return { key, title, items: din }
+  }).filter((g) => g.items.length > 0)
 }

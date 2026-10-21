@@ -194,6 +194,8 @@ export async function createClubAnnouncement(input: {
   priority: string
   audience_kind: AudienceKind
   audience_id: string | null
+  publish_at?: string | null
+  expires_at?: string | null
 }): Promise<ClubAnnouncement> {
   const author = await uid()
   const { data, error } = await supabase
@@ -219,7 +221,13 @@ export async function setAnnouncementActive(
 }
 export async function updateClubAnnouncement(
   id: string,
-  changes: { title: string; content: string; priority: string },
+  changes: {
+    title: string
+    content: string
+    priority: string
+    publish_at?: string | null
+    expires_at?: string | null
+  },
 ): Promise<ClubAnnouncement> {
   const { data, error } = await supabase
     .from('club_announcements')

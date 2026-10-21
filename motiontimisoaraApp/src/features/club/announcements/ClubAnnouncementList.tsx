@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label'
 import { StatusView } from '@/components/ui/status-view'
 import { plural } from '@/lib/plural'
 import { ClubAnnouncementCard } from './ClubAnnouncementCard'
-import { ETICHETA_TINTA, grupeazaPeLuni, numeleTintei } from './announcement-list'
+import { ETICHETA_TINTA, grupeazaPeStare, numeleTintei } from './announcement-list'
 
 const TOATE = 'TOATE'
 const TOT_CLUBUL = 'CLUB'
@@ -133,7 +133,7 @@ export function ClubAnnouncementList({
         />
       ) : (
         <div className="space-y-6">
-          {grupeazaPeLuni(randuri).map((g) => (
+          {grupeazaPeStare(randuri).map((g) => (
             <section key={g.key} aria-label={g.title}>
               <div className="mb-2 flex items-baseline justify-between gap-3">
                 <h3 className="font-display text-base font-semibold">{g.title}</h3>

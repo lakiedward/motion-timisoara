@@ -74,6 +74,8 @@ test('salvarea trimite titlul, conținutul și prioritatea noi, apoi reîncarcă
       title: 'Antrenament mutat la 18:30',
       content: 'Conținut Antrenament mutat',
       priority: 'HIGH',
+      publish_at: null,
+      expires_at: null,
     }),
   )
   await waitFor(() => expect(onChanged).toHaveBeenCalled())
@@ -88,7 +90,9 @@ test('un titlu gol nu se salvează și arată eroarea pe câmp', async () => {
   const form = screen.getByRole('form')
   await user.clear(within(form).getByLabelText('Titlu'))
   await user.click(within(form).getByRole('button', { name: 'Salvează' }))
-  expect(await within(form).findByText('Scrie un titlu de cel puțin 2 caractere')).toBeInTheDocument()
+  expect(
+    await within(form).findByText('Scrie un titlu de cel puțin 2 caractere'),
+  ).toBeInTheDocument()
   expect(mockedUpdate).not.toHaveBeenCalled()
 })
 
@@ -114,4 +118,69 @@ test('o salvare refuzată păstrează formularul deschis și anunță eroarea', 
   await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Nu am putut salva modificările.'))
   expect(screen.getByRole('form')).toBeInTheDocument()
   expect(onChanged).not.toHaveBeenCalled()
+})
+
+test('programarea din „Editează” salvează data publicării și a expirării', async () => {
+  const user = userEvent.setup()
+  mockedUpdate.mockResolvedValue(anunt('a', 'Antrenament mutat'))
+  renderList()
+  await user.click(screen.getByRole('button', { name: 'Editează anunțul „Antrenament mutat”' }))
+  const form = screen.getByRole('form')
+  await user.type(within(form).getByLabelText('Ziua publicării'), '2099-10-24')
+  await user.type(within(form).getByLabelText('Ora publicării'), '09:00')
+  await user.type(within(form).getByLabelText('Ziua expirării'), '2099-10-31')
+  await user.type(within(form).getByLabelText('Ora expirării'), '20:00')
+  await user.click(within(form).getByRole('button', { name: 'Salvează' }))
+  await waitFor(() =>
+    expect(mockedUpdate).toHaveBeenCalledWith('a', {
+      title: 'Antrenament mutat',
+      content: 'Conținut Antrenament mutat',
+      priority: 'URGENT',
+      publish_at: '2099-10-24T06:00:00.000Z',
+      expires_at: '2099-10-31T18:00:00.000Z',
+    }),
+  )
+})
+
+test('expirarea înaintea publicării arată eroarea și nu salvează', async () => {
+  const user = userEvent.setup()
+  renderList()
+  await user.click(screen.getByRole('button', { name: 'Editează anunțul „Antrenament mutat”' }))
+  const form = screen.getByRole('form')
+  await user.type(within(form).getByLabelText('Ziua publicării'), '2099-10-24')
+  await user.type(within(form).getByLabelText('Ora publicării'), '09:00')
+  await user.type(within(form).getByLabelText('Ziua expirării'), '2099-10-23')
+  await user.type(within(form).getByLabelText('Ora expirării'), '09:00')
+  await user.click(within(form).getByRole('button', { name: 'Salvează' }))
+  expect(
+    await within(form).findByText('Expirarea trebuie să fie după publicare'),
+  ).toBeInTheDocument()
+  expect(mockedUpdate).not.toHaveBeenCalled()
+})
+
+test('cardul spune când un anunț e programat sau a expirat', () => {
+  const queryClient = new QueryClient()
+  render(
+    <QueryClientProvider client={queryClient}>
+      <ClubAnnouncementList
+        items={[
+          { ...anunt('p', 'Programat'), publish_at: '2099-10-24T06:00:00Z' },
+          { ...anunt('e', 'Expirat'), expires_at: '2020-10-24T06:00:00Z' },
+        ]}
+        tinte={[]}
+        tinteNecunoscute={false}
+        atasamente={{}}
+        onChanged={vi.fn()}
+      />
+    </QueryClientProvider>,
+  )
+  const programat = screen.getByRole('heading', { name: 'Programat' }).closest('article')!
+  expect(programat).toHaveTextContent('Apare pe 24 octombrie 2099')
+  expect(
+    within(programat).getByText(
+      'Părinții încă nu văd anunțul. Notificarea pleacă la data publicării.',
+    ),
+  ).toBeInTheDocument()
+  const expirat = screen.getByRole('heading', { name: 'Expirat' }).closest('article')!
+  expect(expirat).toHaveTextContent('A expirat pe 24 octombrie 2020')
 })
