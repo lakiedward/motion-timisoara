@@ -9,14 +9,14 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
 
 6 convenții · 5 respectate · 1 în derivă · 0 fără canonic
 
-## Stare de eroare ≠ listă goală  [DERIVĂ 8/86]
+## Stare de eroare ≠ listă goală  [DERIVĂ 7/86]
 
     Orice ecran care încarcă date are trei ieșiri distincte: așteptare,
     eroare cu reîncercare, gol. Nu cad una peste alta — o listă goală
     nu poate fi cum arată o rețea căzută.
 
     canonic  src/features/camps/CampsListPage.tsx
-    plafon   8 ecrane fără ramură de eroare, din 86 — poate doar scădea
+    plafon   7 ecrane fără ramură de eroare, din 86 — poate doar scădea
 
 ## Țintă tactilă  [RESPECTATĂ]
 
@@ -24,7 +24,7 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
     Cât timp tokenul nu există, asta NU e o convenție — e un item de lucru.
 
     canonic  src/index.css --touch-target
-    măsurat  199 valori scrise de mână, în 73 fișiere
+    măsurat  199 valori scrise de mână, în 74 fișiere
     →        unde trăiește tokenul e o alegere, nu o măsurătoare. Deschis pe Focus.
 
 ## Forme de așteptare  [RESPECTATĂ]
