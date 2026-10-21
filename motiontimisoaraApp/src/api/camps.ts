@@ -86,13 +86,17 @@ export type TabaraDinLista = {
   locuriRamase: number | null
 }
 
-export async function getTaberePublice(azi = new Date()): Promise<TabaraDinLista[]> {
-  const { data, error } = await supabase
+export async function getTaberePublice(
+  azi = new Date(),
+  clubId?: string,
+): Promise<TabaraDinLista[]> {
+  let q = supabase
     .from('camps')
     .select(
       '*, club:clubs(id, name), coach:profiles(id, name), location:locations(id, name, lat, lng, address, city)',
     )
-    .order('period_start')
+  if (clubId) q = q.eq('club_id', clubId)
+  const { data, error } = await q.order('period_start')
   if (error) throw error
 
   const viitoare = (data ?? []).filter((c) => !sAIncheiat(c.period_end, azi))

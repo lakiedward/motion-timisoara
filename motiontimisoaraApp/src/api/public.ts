@@ -91,6 +91,17 @@ export async function getCoachCourses(coachId: string): Promise<CourseCatalogIte
   return withSpotsRemaining(data)
 }
 
+export async function getClubCourses(clubId: string): Promise<CourseCatalogItem[]> {
+  const { data, error } = await supabase
+    .from('courses')
+    .select(COURSE_CATALOG_SELECT)
+    .eq('active', true)
+    .eq('club_id', clubId)
+    .order('name')
+  if (error) throw error
+  return withSpotsRemaining(data)
+}
+
 /** Remaining seats for a public course (SECURITY DEFINER RPC). Null = unlimited / unknown. */
 export async function getCourseSpotsRemaining(courseId: string): Promise<number | null> {
   const { data, error } = await supabase.rpc('course_spots_remaining', {
@@ -344,13 +355,18 @@ type ActivitateBruta = ActivitateProgramata & {
   coach: { name: string } | null
 }
 
-export async function getActivitatiPublice(acum = new Date()): Promise<ActivitateDinLista[]> {
-  const { data, error } = await supabase
+export async function getActivitatiPublice(
+  acum = new Date(),
+  clubId?: string,
+): Promise<ActivitateDinLista[]> {
+  let q = supabase
     .from('activities')
     .select(
       'id, name, activity_date, start_time, end_time, price, currency, hero_photo_storage_path, sport:sports(id, code, name, default_photo_storage_path), location:locations(name), club:clubs(name), coach:profiles(name)',
     )
     .eq('active', true)
+  if (clubId) q = q.eq('club_id', clubId)
+  const { data, error } = await q
     .order('activity_date')
     .order('start_time')
   if (error) throw error
