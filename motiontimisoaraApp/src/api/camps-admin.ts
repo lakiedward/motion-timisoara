@@ -174,6 +174,7 @@ async function completeazaTaberele(tabere: Tabara[]): Promise<TabaraDinLista[]> 
 
 export async function getTabaraDeEditat(id: string): Promise<Tabara | null> {
   const { data, error } = await supabase.from('camps').select('*').eq('id', id).maybeSingle()
+  if (error?.code === '22P02') return null
   if (error) throw error
   return data
 }

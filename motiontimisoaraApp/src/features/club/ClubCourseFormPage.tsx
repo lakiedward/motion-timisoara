@@ -40,6 +40,8 @@ import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
 import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
 import { CourseOwnerField } from './course-form/CourseOwnerField'
 import { useCourseFormOwner, type CourseFormPortal } from './course-form/useCourseFormOwner'
@@ -79,7 +81,12 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
     queryKey: ['sports'],
     queryFn: fetchSports,
   })
-  const { data: existing } = useQuery({
+  const {
+    data: existing,
+    isPending: seIncarca,
+    isError: aEsuatCitirea,
+    refetch,
+  } = useQuery({
     queryKey: ['club-course-edit', id],
     queryFn: () => getClubCourseById(id as string),
     enabled: isEdit,
@@ -91,6 +98,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
     clubs,
     clubId,
     hasOwner,
+    ownerReady,
     coaches,
     coachesReady,
     locations,
@@ -226,14 +234,60 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
   })
   const optiuneGoala = (gata: boolean) => <option value="">{gata ? '—' : 'Se încarcă…'}</option>
 
+  const backLink = (
+    <Link
+      to={listPath}
+      className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
+    >
+      <ArrowLeft className="size-4" /> Înapoi
+    </Link>
+  )
+  const alAltuiClub = !isAdmin && !!existing && existing.club_id !== owner
+
+  if (isEdit && aEsuatCitirea) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        {backLink}
+        <StatusView
+          state="error"
+          title="Nu am putut încărca cursul."
+          text="Verifică conexiunea și încearcă din nou."
+          onRetry={() => void refetch()}
+          className="mt-4"
+        />
+      </div>
+    )
+  }
+
+  if (isEdit && !seIncarca && ownerReady && (!existing || alAltuiClub)) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        {backLink}
+        <StatusView
+          state="empty"
+          title="Cursul nu a fost găsit."
+          text="Poate a fost șters sau linkul nu mai este valabil."
+          className="mt-4"
+        />
+      </div>
+    )
+  }
+
+  if (isEdit && (seIncarca || !ownerReady)) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        {backLink}
+        <div role="status" aria-label="Se încarcă cursul" className="mt-4 space-y-4">
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-96 rounded-xl" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="mx-auto max-w-2xl">
-      <Link
-        to={listPath}
-        className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
-      >
-        <ArrowLeft className="size-4" /> Înapoi
-      </Link>
+      {backLink}
       <h1 className="font-display mt-4 text-2xl font-bold">
         {isEdit ? 'Editează curs' : 'Curs nou'}
       </h1>

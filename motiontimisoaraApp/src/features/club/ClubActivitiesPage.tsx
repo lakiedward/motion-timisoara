@@ -41,6 +41,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
 import { cn } from '@/lib/utils'
 
 const selectCls =
@@ -190,7 +191,10 @@ function Formular() {
   const isEdit = !!id
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const { data: club } = useQuery({ queryKey: ['my-club'], queryFn: getMyClub })
+  const { data: club, isFetched: clubFetched } = useQuery({
+    queryKey: ['my-club'],
+    queryFn: getMyClub,
+  })
   const clubId = club?.id ?? ''
   const { data: sports = [] } = useQuery({ queryKey: ['sports'], queryFn: fetchSports })
   const { data: coaches = [], isSuccess: coachesReady } = useQuery({
@@ -200,8 +204,9 @@ function Formular() {
   })
   const {
     data: existing,
-    isLoading: existingLoading,
-    isFetched: existingFetched,
+    isPending: seIncarca,
+    isError: aEsuatCitirea,
+    refetch,
   } = useQuery({
     queryKey: ['club-activity', id],
     queryFn: () => getClubActivityById(id as string),
@@ -313,25 +318,52 @@ function Formular() {
     }
   }
 
-  if (isEdit && existingLoading) {
+  const backLink = (
+    <Link
+      to="/club/activities"
+      className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
+    >
+      <ArrowLeft className="size-4" /> Înapoi
+    </Link>
+  )
+
+  if (isEdit && aEsuatCitirea) {
     return (
-      <div className="mx-auto max-w-2xl space-y-4">
-        <Skeleton className="h-8 w-40" />
-        <Skeleton className="h-64 rounded-3xl" />
+      <div className="mx-auto max-w-2xl">
+        {backLink}
+        <StatusView
+          state="error"
+          title="Nu am putut încărca activitatea."
+          text="Verifică conexiunea și încearcă din nou."
+          onRetry={() => void refetch()}
+          className="mt-4"
+        />
       </div>
     )
   }
 
-  if (isEdit && existingFetched && (!existing || (club && existing.club_id !== club.id))) {
+  if (isEdit && !seIncarca && clubFetched && (!existing || existing.club_id !== clubId)) {
     return (
       <div className="mx-auto max-w-2xl">
-        <Link
-          to="/club/activities"
-          className="text-muted-foreground hover:text-foreground inline-flex min-h-11 items-center gap-1 text-sm"
-        >
-          <ArrowLeft className="size-4" /> Înapoi
-        </Link>
-        <p className="text-muted-foreground mt-6">Activitatea nu aparține clubului.</p>
+        {backLink}
+        <StatusView
+          state="empty"
+          title="Activitatea nu a fost găsită."
+          text="Poate a fost ștearsă sau linkul nu mai este valabil."
+          className="mt-4"
+        />
+      </div>
+    )
+  }
+
+  if (isEdit && (seIncarca || !clubFetched)) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        {backLink}
+        <div role="status" aria-label="Se încarcă activitatea" className="mt-4 space-y-4">
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-96 rounded-xl" />
+        </div>
       </div>
     )
   }
@@ -341,12 +373,7 @@ function Formular() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <Link
-        to="/club/activities"
-        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
-      >
-        <ArrowLeft className="size-4" /> Înapoi
-      </Link>
+      {backLink}
       <h1 className="font-display mt-4 text-2xl font-bold">
         {isEdit ? 'Editează activitate' : 'Activitate nouă'}
       </h1>

@@ -325,8 +325,9 @@ export async function getClubCourses(clubId: string): Promise<ClubCourse[]> {
   return (data ?? []) as unknown as ClubCourse[]
 }
 export async function getClubCourseById(id: string): Promise<Tables<'courses'> | null> {
-  const { data, error } = await supabase.from('courses').select('*').eq('id', id).single()
-  if (error) return null
+  const { data, error } = await supabase.from('courses').select('*').eq('id', id).maybeSingle()
+  if (error?.code === '22P02') return null
+  if (error) throw error
   return data
 }
 export async function getClubRosterForSelect(clubId: string): Promise<
@@ -470,7 +471,8 @@ export async function setClubActivityActive(id: string, active: boolean) {
 }
 
 export async function getClubActivityById(id: string): Promise<Tables<'activities'> | null> {
-  const { data, error } = await supabase.from('activities').select('*').eq('id', id).single()
-  if (error) return null
+  const { data, error } = await supabase.from('activities').select('*').eq('id', id).maybeSingle()
+  if (error?.code === '22P02') return null
+  if (error) throw error
   return data
 }

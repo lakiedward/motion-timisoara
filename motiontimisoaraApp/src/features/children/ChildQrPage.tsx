@@ -9,6 +9,7 @@ import { getChild, regenereazaCodulCopilului, type Child } from '@/api/account'
 import { useAuth } from '@/lib/auth-context'
 import { codQr } from '@/lib/cod-qr'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 
 /**
@@ -29,6 +30,7 @@ export default function ChildQrPage({ inapoi }: { inapoi: string }) {
   const { user } = useAuth()
   const qc = useQueryClient()
   const poateRegenera = user?.role === 'PARENT' || user?.role === 'ADMIN'
+  const [confirmare, setConfirmare] = useState(false)
 
   const {
     data: copil,
@@ -40,7 +42,10 @@ export default function ChildQrPage({ inapoi }: { inapoi: string }) {
   const regenerare = useMutation({
     mutationFn: () => regenereazaCodulCopilului(childId),
     onSuccess: (token) => {
-      qc.setQueryData<Child | null>(['child', childId], (vechi) => (vechi ? { ...vechi, qr_token: token } : vechi))
+      setConfirmare(false)
+      qc.setQueryData<Child | null>(['child', childId], (vechi) =>
+        vechi ? { ...vechi, qr_token: token } : vechi,
+      )
       qc.invalidateQueries({ queryKey: ['children'] })
       toast.success('Cod nou generat. Cel vechi nu mai e recunoscut.')
     },
@@ -98,15 +103,23 @@ export default function ChildQrPage({ inapoi }: { inapoi: string }) {
             variant="outline"
             className="mt-3 h-11 min-h-11"
             disabled={regenerare.isPending}
-            onClick={() => {
-              if (confirm(`Generezi un cod nou pentru ${copil.name}? Codul de acum nu va mai fi recunoscut.`))
-                regenerare.mutate()
-            }}
+            onClick={() => setConfirmare(true)}
           >
             <RefreshCw className="size-4" /> Generează un cod nou
           </Button>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmare}
+        onOpenChange={setConfirmare}
+        title={`Generezi un cod nou pentru ${copil.name}?`}
+        description="Codul de acum nu va mai fi recunoscut, nici pe pozele printate sau salvate."
+        confirmLabel="Generează"
+        destructive
+        pending={regenerare.isPending}
+        onConfirm={() => regenerare.mutate()}
+      />
     </Cadru>
   )
 }
@@ -114,9 +127,11 @@ export default function ChildQrPage({ inapoi }: { inapoi: string }) {
 function ImagineQr({ token, nume }: { token: string; nume: string }) {
   // Rezultatul poartă tokenul din care a fost desenat: la un token nou, cel
   // vechi devine automat „încă nedesenat", fără un setState în efect.
-  const [desenat, setDesenat] = useState<{ token: string; imagine: string | null; aEsuat: boolean } | null>(
-    null,
-  )
+  const [desenat, setDesenat] = useState<{
+    token: string
+    imagine: string | null
+    aEsuat: boolean
+  } | null>(null)
   const imagine = desenat?.token === token ? desenat.imagine : null
   const aEsuat = desenat?.token === token && desenat.aEsuat
 
@@ -201,7 +216,13 @@ function ImagineQr({ token, nume }: { token: string; nume: string }) {
             <Download className="size-4" /> Salvează imaginea
           </a>
         </Button>
-        <Button type="button" variant="outline" className="h-11 min-h-11" disabled={!imagine} onClick={printeaza}>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 min-h-11"
+          disabled={!imagine}
+          onClick={printeaza}
+        >
           <Printer className="size-4" /> Printează
         </Button>
       </div>

@@ -40,6 +40,8 @@ import {
 } from '@/lib/camp-rules'
 import { incarcaRegulamentFisier } from '@/api/camp-rules-file'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
 import { cn } from '@/lib/utils'
 import { useProprietarTabere } from './useProprietarTabere'
 import type { CampPortalBaza } from './camp-portal'
@@ -70,7 +72,12 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   const [sablonSelectat, setSablonSelectat] = useState('')
   const [locatiePastrata, setLocatiePastrata] = useState<string | null>(null)
 
-  const { data: tabara, isError: eroareTabara } = useQuery({
+  const {
+    data: tabara,
+    isPending: seIncarcaTabara,
+    isError: eroareTabara,
+    refetch: reincarcaTabara,
+  } = useQuery({
     queryKey: ['tabara-de-editat', id],
     queryFn: () => getTabaraDeEditat(id as string),
     enabled: eEditare,
@@ -284,22 +291,59 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
     else void handleSubmit(onSubmit, onInvalid)()
   }
 
+  const backLink = (
+    <Link
+      to={baza}
+      className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
+    >
+      <ArrowLeft className="size-4" /> Înapoi la tabere
+    </Link>
+  )
+
   if (eEditare && eroareTabara) {
     return (
-      <div className="py-16 text-center" role="alert">
-        <p className="text-foreground font-medium">Nu am putut încărca tabăra.</p>
+      <div className="mx-auto max-w-2xl">
+        {backLink}
+        <StatusView
+          state="error"
+          title="Nu am putut încărca tabăra."
+          text="Verifică conexiunea și încearcă din nou."
+          onRetry={() => void reincarcaTabara()}
+          className="mt-4"
+        />
+      </div>
+    )
+  }
+
+  if (eEditare && !seIncarcaTabara && !tabara) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        {backLink}
+        <StatusView
+          state="empty"
+          title="Tabăra nu a fost găsită."
+          text="Poate a fost ștearsă sau linkul nu mai este valabil."
+          className="mt-4"
+        />
+      </div>
+    )
+  }
+
+  if (eEditare && seIncarcaTabara) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        {backLink}
+        <div role="status" aria-label="Se încarcă tabăra" className="mt-4 space-y-4">
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-96 rounded-xl" />
+        </div>
       </div>
     )
   }
 
   return (
     <div className="mx-auto max-w-2xl">
-      <Link
-        to={baza}
-        className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
-      >
-        <ArrowLeft className="size-4" /> Înapoi la tabere
-      </Link>
+      {backLink}
       <h1 className="font-display mt-2 text-2xl font-bold">
         {eEditare ? 'Editează tabăra' : 'Tabără nouă'}
       </h1>

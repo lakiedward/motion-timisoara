@@ -73,15 +73,28 @@ beforeEach(() => {
 })
 
 test('coach cards expose a named, touch-sized removal that asks for confirmation', async () => {
-  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
   renderPage()
   const remove = await screen.findByRole('button', { name: 'Elimină antrenorul Andrei Popescu' })
   expect(remove.className).toContain('min-h-11')
   expect(remove.className).toContain('min-w-11')
   fireEvent.click(remove)
-  expect(confirm).toHaveBeenCalledWith('Elimini antrenorul Andrei Popescu din club?')
+  const dialog = await screen.findByRole('alertdialog', {
+    name: 'Elimini antrenorul Andrei Popescu din club?',
+  })
+  expect(within(dialog).getByRole('button', { name: 'Anulează' })).toHaveFocus()
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Anulează' }))
+  await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
   expect(mocks.removeCoach).not.toHaveBeenCalled()
-  confirm.mockRestore()
+})
+
+test('confirming the dialog removes the coach and closes it', async () => {
+  mocks.removeCoach.mockResolvedValue(undefined)
+  renderPage()
+  fireEvent.click(await screen.findByRole('button', { name: 'Elimină antrenorul Andrei Popescu' }))
+  const dialog = await screen.findByRole('alertdialog')
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Elimină' }))
+  await waitFor(() => expect(mocks.removeCoach).toHaveBeenCalledWith('club-1', 'cp-1'))
+  await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
 })
 
 test('a failed coach list shows an error with retry instead of the empty message', async () => {
@@ -99,19 +112,43 @@ test('an empty club shows the empty message', async () => {
   expect(await screen.findByText(/Niciun antrenor în club/)).toBeVisible()
 })
 
-test('the direct form uses first and last name and links errors to fields', async () => {
+test('the direct form opens from its toggle and moves focus to the first name', async () => {
   renderPage()
   await screen.findByText('Andrei Popescu')
+  const heading = screen.getByRole('heading', { name: 'Adaugă antrenor direct' })
+  expect(heading.closest('[data-slot="card"]')).not.toBeNull()
+  expect(screen.queryByRole('button', { name: /Creează antrenor/ })).toBeNull()
+  const toggle = screen.getByRole('button', { name: 'Adaugă antrenor' })
+  expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  fireEvent.click(toggle)
+  await waitFor(() => expect(screen.getByLabelText(/^Prenume/)).toHaveFocus())
+  expect(screen.getByText(/sunt obligatorii/)).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: 'Închide formularul' }))
+  expect(screen.getByRole('button', { name: 'Adaugă antrenor' })).toHaveFocus()
+})
+
+async function openForm() {
+  renderPage()
+  await screen.findByText('Andrei Popescu')
+  fireEvent.click(screen.getByRole('button', { name: 'Adaugă antrenor' }))
+}
+
+function fillForm() {
+  fireEvent.change(screen.getByLabelText(/^Prenume/), { target: { value: 'Ioana' } })
+  fireEvent.change(screen.getByLabelText(/^Nume/), { target: { value: 'Marin' } })
+  fireEvent.change(screen.getByLabelText(/^Email/), { target: { value: 'ioana@exemplu.ro' } })
+}
+
+test('the direct form uses first and last name and links errors to fields', async () => {
+  await openForm()
   fireEvent.click(screen.getByRole('button', { name: /Creează antrenor/ }))
-  const first = screen.getByLabelText('Prenume')
+  const first = screen.getByLabelText(/^Prenume/)
   await waitFor(() => expect(first).toHaveAttribute('aria-invalid', 'true'))
   expect(first.getAttribute('aria-describedby')).toBe('coach-firstName-error')
   expect(document.getElementById('coach-firstName-error')).toHaveTextContent('Minim 2 caractere')
   expect(first.className).toContain('min-h-11')
 
-  fireEvent.change(first, { target: { value: 'Ioana' } })
-  fireEvent.change(screen.getByLabelText('Nume'), { target: { value: 'Marin' } })
-  fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'ioana@exemplu.ro' } })
+  fillForm()
   fireEvent.click(screen.getByRole('button', { name: /Creează antrenor/ }))
   await waitFor(() =>
     expect(mocks.createCoach).toHaveBeenCalledWith({
@@ -122,6 +159,51 @@ test('the direct form uses first and last name and links errors to fields', asyn
   )
   expect(await screen.findByRole('button', { name: 'Copiază parola temporară' })).toBeVisible()
   expect(screen.getByText('Tmp-1')).toBeVisible()
+  expect(screen.getByLabelText(/^Prenume/)).toHaveValue('')
+  await waitFor(() => expect(mocks.getCoaches).toHaveBeenCalledTimes(2))
+})
+
+test('a failed creation keeps the server message under the button and the typed data', async () => {
+  mocks.createCoach.mockRejectedValue(new Error('Există deja un cont cu acest email.'))
+  await openForm()
+  fillForm()
+  fireEvent.click(screen.getByRole('button', { name: /Creează antrenor/ }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('Există deja un cont cu acest email.')
+  expect(screen.getByLabelText(/^Email/)).toHaveValue('ioana@exemplu.ro')
+})
+
+test('creation disables the fields and a double click creates one account', async () => {
+  let finish: (value: unknown) => void = () => {}
+  mocks.createCoach.mockReturnValue(new Promise((resolve) => (finish = resolve)))
+  await openForm()
+  fillForm()
+  const submit = screen.getByRole('button', { name: /Creează antrenor/ })
+  fireEvent.click(submit)
+  fireEvent.click(submit)
+  expect(await screen.findByRole('button', { name: /Se creează/ })).toBeDisabled()
+  expect(screen.getByLabelText(/^Email/)).toBeDisabled()
+  expect(mocks.createCoach).toHaveBeenCalledTimes(1)
+  finish({ userId: 'n', email: 'ioana@exemplu.ro', tempPassword: 'Tmp-1' })
+  expect(await screen.findByText('Tmp-1')).toBeVisible()
+})
+
+test('the account details button copies the email and temporary password together', async () => {
+  await openForm()
+  fillForm()
+  fireEvent.click(screen.getByRole('button', { name: /Creează antrenor/ }))
+  fireEvent.click(await screen.findByRole('button', { name: /Copiază datele de cont/ }))
+  await waitFor(() =>
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+      'Email: ioana@exemplu.ro\nParolă temporară: Tmp-1',
+    ),
+  )
+  expect(await screen.findByText('Emailul și parola temporară au fost copiate.')).toBeVisible()
+})
+
+test('the toggle stays disabled until the club is loaded', async () => {
+  mocks.getMyClub.mockReturnValue(new Promise(() => {}))
+  renderPage()
+  expect(screen.getByRole('button', { name: 'Adaugă antrenor' })).toBeDisabled()
 })
 
 test('club codes show status, uses and expiry, with named actions', async () => {
