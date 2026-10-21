@@ -4,6 +4,7 @@ export const ACCOUNT_NAV = [
   { to: '/account/enrollments', label: 'Înscrieri' },
   { to: '/account/attendance', label: 'Prezență' },
   { to: '/account/announcements', label: 'Anunțuri' },
+  { to: '/account/profile', label: 'Profilul meu' },
 ] as const
 
 const SECTION_PREFIXES: [string, string][] = [
@@ -15,6 +16,7 @@ const SECTION_PREFIXES: [string, string][] = [
   ['/account/competitions/', '/account/enrollments'],
   ['/account/attendance', '/account/attendance'],
   ['/account/announcements', '/account/announcements'],
+  ['/account/profile', '/account/profile'],
   ['/account/locatie', '/account'],
 ]
 

@@ -43,7 +43,7 @@ describe('native role navigation', () => {
         '/coach/stripe',
       ],
     ],
-    ['PARENT', ['/account/enrollments', '/account/attendance']],
+    ['PARENT', ['/account/enrollments', '/account/attendance', '/account/profile']],
   ])('%s retains secondary functions in account', (role, expected) => {
     const routes = accountGroups(role).flatMap((group) => group.items.map((item) => item.to))
     expect(routes).toEqual(expect.arrayContaining(expected))
@@ -66,6 +66,7 @@ describe('native role navigation', () => {
     ['/register-coach', null, '/cont', '/signup'],
     ['/club/stripe/onboarding/complete', 'CLUB', '/cont', '/club/stripe'],
     ['/admin/profile', 'ADMIN', '/cont', '/admin'],
+    ['/account/profile', 'PARENT', '/cont', '/cont'],
   ])('%s preserves context and has a direct-link back destination', (path, role, active, back) => {
     expect(activeDestination(path, role)).toBe(active)
     expect(nativeScreen(path, role).backTo).toBe(back)
