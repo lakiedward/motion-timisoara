@@ -100,3 +100,29 @@ test('a parent rates with 44px stars', async () => {
   await userEvent.click(star)
   expect(mocks.submitCoachRating).toHaveBeenCalledWith('coach-1', 4)
 })
+
+test('the hero links every visible club of the coach, in alphabetical order', async () => {
+  mocks.getCoachByUserId.mockResolvedValue({
+    ...coach,
+    club_coaches: [
+      { club: { id: 'club-2', name: 'Delfinii', logo_storage_path: null } },
+      { club: null },
+      { club: { id: 'club-1', name: 'Aqua Sport', logo_storage_path: null } },
+    ],
+  })
+  renderPage()
+  const first = await screen.findByRole('link', { name: 'Aqua Sport' })
+  const second = screen.getByRole('link', { name: 'Delfinii' })
+  expect(screen.getByText(/Antrenor la/)).toBeVisible()
+  expect(first).toHaveAttribute('href', '/cluburi/club-1')
+  expect(first).toHaveClass('min-h-touch-target')
+  expect(second).toHaveAttribute('href', '/cluburi/club-2')
+  expect(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+})
+
+test('a coach without a visible club shows no club line', async () => {
+  mocks.getCoachByUserId.mockResolvedValue({ ...coach, club_coaches: [{ club: null }] })
+  renderPage()
+  expect(await screen.findByRole('heading', { level: 1, name: 'Ana Pop' })).toBeVisible()
+  expect(screen.queryByText(/Antrenor la/)).toBeNull()
+})
