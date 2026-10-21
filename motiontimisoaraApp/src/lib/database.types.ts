@@ -127,6 +127,55 @@ export type Database = {
           },
         ]
       }
+      activity_attendance: {
+        Row: {
+          activity_id: string
+          child_id: string
+          id: string
+          recorded_at: string
+          recorded_by: string | null
+          status: string
+        }
+        Insert: {
+          activity_id: string
+          child_id: string
+          id?: string
+          recorded_at?: string
+          recorded_by?: string | null
+          status: string
+        }
+        Update: {
+          activity_id?: string
+          child_id?: string
+          id?: string
+          recorded_at?: string
+          recorded_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_attendance_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_attendance_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_attendance_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcement_attachments: {
         Row: {
           announcement_id: string | null
@@ -3216,6 +3265,15 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      record_activity_attendance: {
+        Args: {
+          p_activity_id: string
+          p_child_ids: string[]
+          p_only_unmarked?: boolean
+          p_status: string
+        }
+        Returns: number
       }
       record_attendance_transaction: {
         Args: { p_actor_id: string; p_payload: Json }

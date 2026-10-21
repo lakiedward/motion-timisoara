@@ -6,7 +6,9 @@ import { plural } from '@/lib/plural'
 import { cn } from '@/lib/utils'
 import type { AttendanceEntry } from './attendance-entries'
 
-const KIND_BADGE = { COURSE: 'Curs', CAMP: 'Tabără' } as const
+const KIND_BADGE = { COURSE: 'Curs', CAMP: 'Tabără', ACTIVITY: 'Activitate' } as const
+
+const KIND_VARIANT = { COURSE: 'secondary', CAMP: 'highlight', ACTIVITY: 'outline' } as const
 
 interface HistoryProps {
   randuri: AttendanceEntry[]
@@ -94,7 +96,7 @@ export function AttendanceMonths({ randuri, numeDupaId, cuNume, cuTip }: History
                       <p className="font-semibold">{r.title}</p>
                       <div className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm">
                         {cuTip && (
-                          <Badge variant={tabara ? 'highlight' : 'secondary'}>
+                          <Badge variant={KIND_VARIANT[r.kind]}>
                             {KIND_BADGE[r.kind]}
                           </Badge>
                         )}

@@ -1,4 +1,4 @@
-import { attendanceEntries, kindBreakdown } from './attendance-entries'
+import { attendanceEntries, bucharestDate, kindBreakdown } from './attendance-entries'
 
 const curs = (id: string, startsAt: string | null, status = 'PRESENT') => ({
   id,
@@ -46,4 +46,34 @@ test('rezumatul pe tipuri respectă acordul la număr', () => {
   )
   expect(kindBreakdown(e)).toBe('1 ședință de curs, 2 tabere')
   expect(kindBreakdown([])).toBe('')
+})
+
+const activitate = (id: string, status: 'PRESENT' | 'ABSENT', day = '2026-10-18') => ({
+  id,
+  child_id: 'c1',
+  activity_id: 'x1',
+  status,
+  activity: { name: 'Ștafeta de toamnă', activity_date: day, start_time: '10:00:00' },
+})
+
+test('activitățile intră în istoric la ora de start din București', () => {
+  const e = attendanceEntries([], [], null, [activitate('v', 'ABSENT')])
+  expect(e[0]).toMatchObject({ kind: 'ACTIVITY', present: false, title: 'Ștafeta de toamnă' })
+  expect(e[0].date?.toISOString()).toBe('2026-10-18T07:00:00.000Z')
+  expect(bucharestDate('2026-12-01', '10:00:00').toISOString()).toBe('2026-12-01T08:00:00.000Z')
+})
+
+test('rezumatul numără și activitățile', () => {
+  const e = attendanceEntries(
+    [curs('a', '2026-08-01T10:00:00Z') as never],
+    [tabara('t', '2026-08-10T06:00:00Z')],
+    null,
+    [activitate('v', 'PRESENT'), activitate('w', 'PRESENT', '2026-10-19')],
+  )
+  expect(kindBreakdown(e)).toBe('1 ședință de curs, 2 activități, 1 tabără')
+})
+
+test('o activitate ascunsă păstrează rândul cu titlu generic', () => {
+  const e = attendanceEntries([], [], null, [{ ...activitate('v', 'PRESENT'), activity: null }])
+  expect(e[0]).toMatchObject({ title: 'Activitate', date: null })
 })
