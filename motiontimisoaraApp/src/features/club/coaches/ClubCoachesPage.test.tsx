@@ -135,7 +135,7 @@ test('club codes show status, uses and expiry, with named actions', async () => 
   expect(screen.getByText('Activ')).toBeVisible()
   expect(screen.getByText('Folosit')).toBeVisible()
   expect(screen.getAllByText('Expirat')[0]).toBeVisible()
-  expect(screen.getByText(/Expirat pe/)).toBeVisible()
+  expect(screen.getByText(/A expirat pe/)).toBeVisible()
   expect(screen.getAllByText(/Utilizări: \d\/1/)).toHaveLength(3)
   expect(screen.getByRole('button', { name: 'Copiază codul invitație 1' })).toBeVisible()
   expect(screen.getByRole('button', { name: 'Șterge codul invitație 3' })).toBeVisible()
