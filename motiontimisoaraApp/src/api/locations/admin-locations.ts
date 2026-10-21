@@ -66,6 +66,7 @@ export async function getLocationAdmin(id: string): Promise<AdminLocation | null
     .select(ADMIN_LOCATION_SELECT)
     .eq('id', id)
     .maybeSingle()
+  if (error?.code === '22P02') return null
   if (error) throw error
   if (!data) return null
   return toAdminLocation(data as unknown as Row)

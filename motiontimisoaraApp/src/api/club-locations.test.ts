@@ -89,6 +89,16 @@ test('un id care nu e al clubului intoarce nimic, nu randul altui club', async (
   raspuns = { locations: { data: null, error: null } }
   expect(await getClubLocationById('a-altui-club', 'club-1')).toBeNull()
 })
+
+test('un id care nu e uuid intoarce nimic, nu o eroare de incarcare', async () => {
+  raspuns = { locations: { data: null, error: { code: '22P02', message: 'invalid uuid' } } }
+  expect(await getClubLocationById('nu-exista', 'club-1')).toBeNull()
+})
+
+test('alta eroare la citire ajunge la ecran ca eroare', async () => {
+  raspuns = { locations: { data: null, error: { code: '500', message: 'down' } } }
+  await expect(getClubLocationById('proprie', 'club-1')).rejects.toMatchObject({ code: '500' })
+})
 test('o salvare care nu atinge niciun rand esueaza, nu se preface ca a mers', async () => {
   raspuns = {
     locations: {
