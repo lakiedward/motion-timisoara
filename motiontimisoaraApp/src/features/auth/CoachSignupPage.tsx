@@ -11,6 +11,7 @@ import { GoogleSignInButton } from './GoogleSignInButton'
 import { StepDots, SportsField } from './wizard-bits'
 import { useReturnUrl, withReturnUrl } from './return-url'
 import { coachContinuation, coachReturnPath } from './coach/continuation'
+import { COACH_PROFILE_LOAD_ERROR, CoachActivatedState } from './coach/CoachActivatedState'
 import {
   clearCoachInvitationDraft,
   readCoachInvitationDraft,
@@ -100,6 +101,12 @@ export default function CoachSignupPage() {
     setValue('password', '')
   }, [user, setValue])
 
+  useEffect(() => {
+    if (!completed || refreshing || user?.role !== 'COACH') return
+    if (completed.userId && user.id !== completed.userId) return
+    navigate(returnUrl || roleHome('COACH'), { replace: true })
+  }, [completed, refreshing, user, navigate, returnUrl])
+
   const next = async () => {
     const fields: (keyof Values)[] =
       step === 0
@@ -133,14 +140,10 @@ export default function CoachSignupPage() {
       if (confirmed?.role === 'COACH' && (!expectedUserId || confirmed.id === expectedUserId)) {
         navigate(returnUrl || roleHome('COACH'), { replace: true })
       } else {
-        setServerError(
-          'Contul de antrenor a fost activat, dar profilul nu s-a încărcat. Reîncearcă încărcarea.',
-        )
+        setServerError(COACH_PROFILE_LOAD_ERROR)
       }
     } catch {
-      setServerError(
-        'Contul de antrenor a fost activat, dar profilul nu s-a încărcat. Reîncearcă încărcarea.',
-      )
+      setServerError(COACH_PROFILE_LOAD_ERROR)
     } finally {
       setRefreshing(false)
     }
@@ -178,21 +181,11 @@ export default function CoachSignupPage() {
 
   if (completed) {
     return (
-      <AuthLayout title="Înregistrare antrenor" subtitle="Contul de antrenor a fost activat">
-        {serverError && (
-          <p className="text-destructive text-sm" role="alert">
-            {serverError}
-          </p>
-        )}
-        <Button
-          type="button"
-          className="mt-4 w-full"
-          disabled={refreshing}
-          onClick={() => void refreshCompletedProfile(completed.userId)}
-        >
-          {refreshing ? 'Se încarcă profilul…' : 'Reîncearcă încărcarea profilului'}
-        </Button>
-      </AuthLayout>
+      <CoachActivatedState
+        refreshing={refreshing}
+        error={serverError}
+        onRetry={() => void refreshCompletedProfile(completed.userId)}
+      />
     )
   }
 
