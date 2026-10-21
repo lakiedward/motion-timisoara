@@ -15,11 +15,9 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import type { FisierPregatit } from '@/lib/media'
 import AnnouncementMediaPicker from './AnnouncementMediaPicker'
+import { PRIORITY_OPTIONS, announcementTextSchema, selectCls } from './announcement-form'
 
 const WHOLE_CLUB = 'CLUB'
-
-const selectCls =
-  'border-input dark:bg-input/30 flex h-touch-target w-full min-w-0 rounded-md border bg-transparent px-3 text-base shadow-xs transition-[color,box-shadow] outline-none hover:border-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring'
 
 const AUDIENCE_GROUPS: { kind: AudienceKind; label: string }[] = [
   { kind: 'COURSE', label: 'Cursuri' },
@@ -27,12 +25,7 @@ const AUDIENCE_GROUPS: { kind: AudienceKind; label: string }[] = [
   { kind: 'CAMP', label: 'Tabere' },
 ]
 
-const schema = z.object({
-  title: z.string().trim().min(2, 'Scrie un titlu de cel puțin 2 caractere'),
-  content: z.string().trim().min(2, 'Scrie conținutul anunțului'),
-  priority: z.string(),
-  audience: z.string(),
-})
+const schema = announcementTextSchema.extend({ audience: z.string() })
 type Values = z.infer<typeof schema>
 
 const EMPTY_FORM: Values = {
@@ -157,10 +150,11 @@ export default function AnnouncementComposeForm({ clubId, audiences, onPublished
             <div className="space-y-1.5 sm:w-56">
               <Label htmlFor="priority">Prioritate</Label>
               <select id="priority" className={selectCls} {...register('priority')}>
-                <option value="LOW">Scăzută</option>
-                <option value="NORMAL">Normală</option>
-                <option value="HIGH">Ridicată</option>
-                <option value="URGENT">Urgentă</option>
+                {PRIORITY_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
               </select>
             </div>
 
