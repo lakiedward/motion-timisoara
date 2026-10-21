@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, CalendarDays, Clock, MapPin, Users, type LucideIcon } from 'lucide-react'
@@ -16,6 +17,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { SportIllustration } from '@/components/sport/SportIllustration'
 import { OrganizerCoaches } from './components/OrganizerCoaches'
 import { PublicHeroBand } from './PublicHeroBand'
+
+const LINK_HARTA =
+  'text-primary -my-2.5 inline-flex min-h-touch-target items-center rounded-md font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring'
 
 function ziActivitate(data: string): string {
   const [an, luna, zi] = data.split('-').map(Number)
@@ -37,7 +41,7 @@ function Fapt({
 }: {
   icon: LucideIcon
   eticheta: string
-  children: string
+  children: ReactNode
 }) {
   return (
     <div className="flex items-center gap-1.5">
@@ -146,7 +150,17 @@ export default function ActivityDetailPage() {
           </Fapt>
           {a.location && (
             <Fapt icon={MapPin} eticheta="Loc">
-              {a.location.name}
+              {a.location.lat != null && a.location.lng != null ? (
+                <Link
+                  to={`/harta?location=${encodeURIComponent(a.location.id)}`}
+                  className={LINK_HARTA}
+                  aria-label={`${a.location.name} — vezi pe hartă`}
+                >
+                  {a.location.name}
+                </Link>
+              ) : (
+                a.location.name
+              )}
             </Fapt>
           )}
           {!incheiata && a.locuriRamase !== null && a.locuriRamase > 0 && (
