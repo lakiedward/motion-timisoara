@@ -11,6 +11,7 @@ import { StatusView } from '@/components/ui/status-view'
 import { plural } from '@/lib/plural'
 import { CourseFilterBar } from './courses/CourseFilterBar'
 import { ClubGroupCard } from './clubs/ClubGroupCard'
+import { PendingClubsCard } from './clubs/PendingClubsCard'
 import {
   NO_CLUB_FILTERS,
   clubCityCounts,
@@ -56,15 +57,17 @@ export default function AdminClubsPage() {
     [clubs, coursesQuery.data],
   )
   const visible = useMemo(() => filterClubs(summaries, filters), [summaries, filters])
+  const pending = useMemo(() => visible.filter((c) => !c.approved_at), [visible])
+  const approved = useMemo(() => visible.filter((c) => c.approved_at), [visible])
   const cities = useMemo(() => clubCityCounts(summaries), [summaries])
   const groups = useMemo<ClubGroup[]>(
     () =>
       coursesKnown
-        ? groupClubs(visible)
-        : visible.length
-          ? [{ key: 'all', name: 'Toate cluburile', clubs: visible }]
+        ? groupClubs(approved)
+        : approved.length
+          ? [{ key: 'all', name: 'Toate cluburile', clubs: approved }]
           : [],
-    [visible, coursesKnown],
+    [approved, coursesKnown],
   )
   const withCourses = summaries.filter((c) => c.activeCourses > 0).length
   const query = filters.query
@@ -169,6 +172,7 @@ export default function AdminClubsPage() {
             />
           ) : (
             <div className="grid gap-3">
+              <PendingClubsCard clubs={pending} query={query} coursesKnown={coursesKnown} />
               {groups.map((g, i) => (
                 <ClubGroupCard
                   key={g.key}

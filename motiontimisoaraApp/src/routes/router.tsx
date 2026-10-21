@@ -27,6 +27,7 @@ import AdminSportsPage from '@/features/admin/AdminSportsPage'
 import AdminInviteCodesPage from '@/features/admin/AdminInviteCodesPage'
 import AdminProfilePage from '@/features/admin/AdminProfilePage'
 import ClubLayout from '@/features/club/ClubLayout'
+import { ClubApprovalGate } from '@/features/club/ClubApproval'
 import ClubDashboard from '@/features/club/ClubDashboard'
 import ClubProfilePage from '@/features/club/profile/ClubProfilePage'
 import ClubCoachesPage from '@/features/club/coaches/ClubCoachesPage'
@@ -285,46 +286,51 @@ export const router = createBrowserRouter([
           {
             element: <ClubLayout />,
             children: [
-              { path: '/club', element: <ClubDashboard /> },
-              { path: '/club/stripe', element: <ClubStripePage /> },
-              { path: '/club/stripe/onboarding/complete', element: <ClubStripePage /> },
-              { path: '/club/stripe/onboarding/refresh', element: <ClubStripePage /> },
               { path: '/club/profile', element: <ClubProfilePage /> },
-              { path: '/club/coaches', element: <ClubCoachesPage /> },
-              { path: '/club/announcements', element: <ClubAnnouncementsPage /> },
-              { path: '/club/courses', element: <ClubCoursesPage /> },
-              { path: '/club/courses/new', element: <ClubCourseFormPage /> },
-              { path: '/club/courses/:id/edit', element: <ClubCourseFormPage /> },
-              { path: '/club/activities', element: <ClubActivitiesPage /> },
-              { path: '/club/activities/new', element: <ClubActivitiesPage /> },
-              { path: '/club/activities/:id/edit', element: <ClubActivitiesPage /> },
-              { path: '/club/locations', element: <ClubLocationsPage /> },
-              { path: '/club/locations/new', element: <ClubLocationFormPage /> },
-              { path: '/club/locations/:id/edit', element: <ClubLocationFormPage /> },
               {
-                path: '/club/competitions',
-                element: <CompetitionsListPage baza="/club/competitions" />,
+                element: <ClubApprovalGate />,
+                children: [
+                  { path: '/club', element: <ClubDashboard /> },
+                  { path: '/club/stripe', element: <ClubStripePage /> },
+                  { path: '/club/stripe/onboarding/complete', element: <ClubStripePage /> },
+                  { path: '/club/stripe/onboarding/refresh', element: <ClubStripePage /> },
+                  { path: '/club/coaches', element: <ClubCoachesPage /> },
+                  { path: '/club/announcements', element: <ClubAnnouncementsPage /> },
+                  { path: '/club/courses', element: <ClubCoursesPage /> },
+                  { path: '/club/courses/new', element: <ClubCourseFormPage /> },
+                  { path: '/club/courses/:id/edit', element: <ClubCourseFormPage /> },
+                  { path: '/club/activities', element: <ClubActivitiesPage /> },
+                  { path: '/club/activities/new', element: <ClubActivitiesPage /> },
+                  { path: '/club/activities/:id/edit', element: <ClubActivitiesPage /> },
+                  { path: '/club/locations', element: <ClubLocationsPage /> },
+                  { path: '/club/locations/new', element: <ClubLocationFormPage /> },
+                  { path: '/club/locations/:id/edit', element: <ClubLocationFormPage /> },
+                  {
+                    path: '/club/competitions',
+                    element: <CompetitionsListPage baza="/club/competitions" />,
+                  },
+                  {
+                    path: '/club/competitions/new',
+                    element: <CompetitionFormPage baza="/club/competitions" />,
+                  },
+                  {
+                    path: '/club/competitions/:id/edit',
+                    element: <CompetitionFormPage baza="/club/competitions" />,
+                  },
+                  {
+                    path: '/club/competitions/:id/results',
+                    element: <CompetitionPodiumPage baza="/club/competitions" />,
+                  },
+                  { path: '/club/camps', element: <CampsListPage baza="/club/camps" /> },
+                  { path: '/club/camps/new', element: <CampFormPage baza="/club/camps" /> },
+                  { path: '/club/camps/:id/edit', element: <CampFormPage baza="/club/camps" /> },
+                  {
+                    path: '/club/camps/:id/enrolled',
+                    element: <CampEnrolledPage baza="/club/camps" />,
+                  },
+                  { path: '/club/children/:id/qr', element: <ChildQrPage inapoi="/club/camps" /> },
+                ],
               },
-              {
-                path: '/club/competitions/new',
-                element: <CompetitionFormPage baza="/club/competitions" />,
-              },
-              {
-                path: '/club/competitions/:id/edit',
-                element: <CompetitionFormPage baza="/club/competitions" />,
-              },
-              {
-                path: '/club/competitions/:id/results',
-                element: <CompetitionPodiumPage baza="/club/competitions" />,
-              },
-              { path: '/club/camps', element: <CampsListPage baza="/club/camps" /> },
-              { path: '/club/camps/new', element: <CampFormPage baza="/club/camps" /> },
-              { path: '/club/camps/:id/edit', element: <CampFormPage baza="/club/camps" /> },
-              {
-                path: '/club/camps/:id/enrolled',
-                element: <CampEnrolledPage baza="/club/camps" />,
-              },
-              { path: '/club/children/:id/qr', element: <ChildQrPage inapoi="/club/camps" /> },
             ],
           },
         ],

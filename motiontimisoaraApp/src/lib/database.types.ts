@@ -1078,6 +1078,8 @@ export type Database = {
       clubs: {
         Row: {
           address: string | null
+          approved_at: string | null
+          approved_by: string | null
           bank_account: string | null
           bank_name: string | null
           city: string | null
@@ -1107,6 +1109,8 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           bank_account?: string | null
           bank_name?: string | null
           city?: string | null
@@ -1136,6 +1140,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           bank_account?: string | null
           bank_name?: string | null
           city?: string | null
@@ -1164,6 +1170,13 @@ export type Database = {
           website?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "clubs_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "clubs_owner_user_id_fkey"
             columns: ["owner_user_id"]
@@ -2929,6 +2942,7 @@ export type Database = {
       admin_clubs: {
         Args: never
         Returns: {
+          approved_at: string
           city: string
           email: string
           id: string
@@ -2970,6 +2984,7 @@ export type Database = {
         }
         Returns: Json
       }
+      approve_club: { Args: { p_club_id: string }; Returns: undefined }
       audience_club_id: {
         Args: { p_id: string; p_kind: string }
         Returns: string
@@ -3158,6 +3173,8 @@ export type Database = {
         Args: never
         Returns: {
           address: string | null
+          approved_at: string | null
+          approved_by: string | null
           bank_account: string | null
           bank_name: string | null
           city: string | null

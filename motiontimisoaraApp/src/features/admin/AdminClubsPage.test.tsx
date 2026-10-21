@@ -5,9 +5,16 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { vi } from 'vitest'
 
 import AdminClubsPage from './AdminClubsPage'
-import { getAllClubs, getAllCourses, type AdminClub, type AdminCourse } from '@/api/admin'
+import {
+  approveClub,
+  getAllClubs,
+  getAllCourses,
+  type AdminClub,
+  type AdminCourse,
+} from '@/api/admin'
 
 vi.mock('@/api/admin', () => ({
+  approveClub: vi.fn(),
   getAllClubs: vi.fn(),
   getAllCourses: vi.fn(),
 }))
@@ -35,6 +42,7 @@ function club(over: Partial<AdminClub> & { id: string; name: string }): AdminClu
   return {
     city: 'Timișoara',
     email: `${over.id}@club.test`,
+    approved_at: '2026-09-01T00:00:00Z',
     ...over,
   }
 }
@@ -275,4 +283,41 @@ test('in incarcare, antetul ramane si apare scheletul', async () => {
   expect(screen.getByRole('link', { name: 'Adaugă club' })).toBeInTheDocument()
   expect(document.querySelector('[aria-busy="true"]')).toBeInTheDocument()
   expect(document.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(2)
+})
+
+test('cluburile în așteptare apar în cardul De aprobat, nu în grupuri', async () => {
+  mockedClubs.mockResolvedValue([
+    ...listaNesortata(),
+    club({ id: 'n', name: 'Club Nou', email: 'nou@club.test', approved_at: null }),
+  ])
+  renderPage()
+  await asteaptaLista()
+  const deAprobat = screen.getByRole('region', { name: 'De aprobat' })
+  expect(within(deAprobat).getByText('Club Nou')).toBeInTheDocument()
+  expect(deAprobat).toHaveTextContent('1 club nou, ascuns de pe site până îl aprobi')
+  expect(within(grup('Fără cursuri')).queryByText('Club Nou')).not.toBeInTheDocument()
+})
+
+test('fără cluburi în așteptare nu apare cardul De aprobat', async () => {
+  mockedClubs.mockResolvedValue(listaNesortata())
+  renderPage()
+  await asteaptaLista()
+  expect(screen.queryByRole('region', { name: 'De aprobat' })).not.toBeInTheDocument()
+})
+
+test('Aprobă cere confirmare, apoi aprobă clubul și reîncarcă lista', async () => {
+  const user = userEvent.setup()
+  vi.mocked(approveClub).mockResolvedValue(undefined)
+  mockedClubs.mockResolvedValue([
+    ...listaNesortata(),
+    club({ id: 'n', name: 'Club Nou', approved_at: null }),
+  ])
+  renderPage()
+  await asteaptaLista()
+  await user.click(screen.getByRole('button', { name: 'Aprobă' }))
+  const dialog = await screen.findByRole('alertdialog', { name: 'Aprobi clubul Club Nou?' })
+  expect(approveClub).not.toHaveBeenCalled()
+  await user.click(within(dialog).getByRole('button', { name: 'Aprobă clubul' }))
+  await waitFor(() => expect(approveClub).toHaveBeenCalledWith('n'))
+  await waitFor(() => expect(mockedClubs).toHaveBeenCalledTimes(2))
 })

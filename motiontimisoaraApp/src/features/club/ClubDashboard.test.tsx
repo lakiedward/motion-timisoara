@@ -61,6 +61,8 @@ function club(overrides: Partial<Club> = {}): Club {
     id: '078f8e37-ff13-45ce-a16d-486fa86de466',
     name: 'Club Audit Motion',
     owner_user_id: 'club-owner',
+    approved_at: '2026-09-01T00:00:00Z',
+    approved_by: null,
     city: 'Timișoara',
     address: null,
     bank_account: null,

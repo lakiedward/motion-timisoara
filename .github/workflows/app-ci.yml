@@ -190,6 +190,15 @@ jobs:
         shell: pwsh
         run: ./supabase/tests/run-shared-location-guard.ps1
 
+  club-approval-sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify club approval
+        shell: pwsh
+        run: ./supabase/tests/run-club-approval.ps1
+
   build:
     runs-on: ubuntu-latest
     defaults:
