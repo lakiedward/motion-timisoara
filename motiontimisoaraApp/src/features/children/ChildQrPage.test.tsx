@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -16,7 +16,13 @@ vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 const TOKEN = '3f1c2a9e8b7d4c6f5a2e1d0c9b8a7f6e'
 const TOKEN_NOU = 'aaaaaaaabbbbbbbbccccccccdddddddd'
-const COPIL = { id: 'c1', name: 'Bogdan Ștefan', birth_date: '2018-03-04', qr_token: TOKEN, parent_id: 'p1' }
+const COPIL = {
+  id: 'c1',
+  name: 'Bogdan Ștefan',
+  birth_date: '2018-03-04',
+  qr_token: TOKEN,
+  parent_id: 'p1',
+}
 
 function renderPagina(ruta = '/account/child/c1/qr') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -24,8 +30,14 @@ function renderPagina(ruta = '/account/child/c1/qr') {
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[ruta]}>
         <Routes>
-          <Route path="/account/child/:id/qr" element={<ChildQrPage inapoi="/account/children" />} />
-          <Route path="/coach/children/:id/qr" element={<ChildQrPage inapoi="/coach/attendance" />} />
+          <Route
+            path="/account/child/:id/qr"
+            element={<ChildQrPage inapoi="/account/children" />}
+          />
+          <Route
+            path="/coach/children/:id/qr"
+            element={<ChildQrPage inapoi="/coach/attendance" />}
+          />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -36,44 +48,68 @@ beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(useAuth).mockReturnValue({ user: { id: 'p1', role: 'PARENT' } } as never)
   vi.mocked(getChild).mockResolvedValue(COPIL as never)
-  vi.mocked(QRCode.toDataURL).mockImplementation(async (text) => `data:image/png;base64,${String(text)}` as never)
+  vi.mocked(QRCode.toDataURL).mockImplementation(
+    async (text) => `data:image/png;base64,${String(text)}` as never,
+  )
 })
 
 test('codul se desenează din token, cu prefixul versiunii, și poartă numele copilului', async () => {
   renderPagina()
 
-  expect(await screen.findByRole('heading', { name: 'Codul QR al lui Bogdan Ștefan' })).toBeInTheDocument()
+  expect(
+    await screen.findByRole('heading', { name: 'Codul QR al lui Bogdan Ștefan' }),
+  ).toBeInTheDocument()
   const img = await screen.findByRole('img', { name: 'Codul QR al lui Bogdan Ștefan' })
   expect(img).toHaveAttribute('src', `data:image/png;base64,MT1:${TOKEN}`)
-  expect(QRCode.toDataURL).toHaveBeenCalledWith(`MT1:${TOKEN}`, expect.objectContaining({ errorCorrectionLevel: 'M' }))
+  expect(QRCode.toDataURL).toHaveBeenCalledWith(
+    `MT1:${TOKEN}`,
+    expect.objectContaining({ errorCorrectionLevel: 'M' }),
+  )
   // Numele fișierului salvat: fără diacritice, ca slugurile din restul aplicației.
-  expect(screen.getByRole('link', { name: /Salvează imaginea/ })).toHaveAttribute('download', 'cod-qr-bogdan-stefan.png')
+  expect(screen.getByRole('link', { name: /Salvează imaginea/ })).toHaveAttribute(
+    'download',
+    'cod-qr-bogdan-stefan.png',
+  )
 })
 
 test('părintele generează un cod nou, iar codul de pe ecran se schimbă fără a doua citire', async () => {
   const user = userEvent.setup()
-  vi.spyOn(window, 'confirm').mockReturnValue(true)
   vi.mocked(regenereazaCodulCopilului).mockResolvedValue(TOKEN_NOU)
   renderPagina()
 
   await screen.findByRole('img', { name: /Codul QR/ })
   await user.click(screen.getByRole('button', { name: /Generează un cod nou/ }))
+  const dialog = await screen.findByRole('alertdialog', {
+    name: 'Generezi un cod nou pentru Bogdan Ștefan?',
+  })
+  expect(within(dialog).getByRole('button', { name: 'Anulează' })).toHaveFocus()
+  expect(regenereazaCodulCopilului).not.toHaveBeenCalled()
+  await user.click(within(dialog).getByRole('button', { name: 'Generează' }))
 
   expect(regenereazaCodulCopilului).toHaveBeenCalledWith('c1')
   await waitFor(() =>
-    expect(screen.getByRole('img', { name: /Codul QR/ })).toHaveAttribute('src', `data:image/png;base64,MT1:${TOKEN_NOU}`),
+    expect(screen.getByRole('img', { name: /Codul QR/ })).toHaveAttribute(
+      'src',
+      `data:image/png;base64,MT1:${TOKEN_NOU}`,
+    ),
   )
+  expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
   // Copilul NU s-a recitit: tokenul nou a venit din răspunsul funcției.
   expect(getChild).toHaveBeenCalledTimes(1)
 })
 
 test('refuzul confirmării nu generează nimic', async () => {
   const user = userEvent.setup()
-  vi.spyOn(window, 'confirm').mockReturnValue(false)
   renderPagina()
 
   await screen.findByRole('img', { name: /Codul QR/ })
-  await user.click(screen.getByRole('button', { name: /Generează un cod nou/ }))
+  const buton = screen.getByRole('button', { name: /Generează un cod nou/ })
+  await user.click(buton)
+  await screen.findByRole('alertdialog')
+  await user.keyboard('{Escape}')
+
+  await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
+  expect(buton).toHaveFocus()
 
   expect(regenereazaCodulCopilului).not.toHaveBeenCalled()
 })
@@ -99,7 +135,9 @@ test('un copil pe care nu-l vezi nu deschide un cod', async () => {
 
 // O citire căzută nu e un copil inexistent: are reîncercare.
 test('o citire căzută arată eroarea, cu reîncercare', async () => {
-  vi.mocked(getChild).mockRejectedValueOnce(new Error('rețea')).mockResolvedValueOnce(COPIL as never)
+  vi.mocked(getChild)
+    .mockRejectedValueOnce(new Error('rețea'))
+    .mockResolvedValueOnce(COPIL as never)
   const user = userEvent.setup()
   renderPagina()
 

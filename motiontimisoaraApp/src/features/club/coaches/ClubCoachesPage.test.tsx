@@ -73,15 +73,28 @@ beforeEach(() => {
 })
 
 test('coach cards expose a named, touch-sized removal that asks for confirmation', async () => {
-  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
   renderPage()
   const remove = await screen.findByRole('button', { name: 'Elimină antrenorul Andrei Popescu' })
   expect(remove.className).toContain('min-h-11')
   expect(remove.className).toContain('min-w-11')
   fireEvent.click(remove)
-  expect(confirm).toHaveBeenCalledWith('Elimini antrenorul Andrei Popescu din club?')
+  const dialog = await screen.findByRole('alertdialog', {
+    name: 'Elimini antrenorul Andrei Popescu din club?',
+  })
+  expect(within(dialog).getByRole('button', { name: 'Anulează' })).toHaveFocus()
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Anulează' }))
+  await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
   expect(mocks.removeCoach).not.toHaveBeenCalled()
-  confirm.mockRestore()
+})
+
+test('confirming the dialog removes the coach and closes it', async () => {
+  mocks.removeCoach.mockResolvedValue(undefined)
+  renderPage()
+  fireEvent.click(await screen.findByRole('button', { name: 'Elimină antrenorul Andrei Popescu' }))
+  const dialog = await screen.findByRole('alertdialog')
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Elimină' }))
+  await waitFor(() => expect(mocks.removeCoach).toHaveBeenCalledWith('club-1', 'cp-1'))
+  await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
 })
 
 test('a failed coach list shows an error with retry instead of the empty message', async () => {

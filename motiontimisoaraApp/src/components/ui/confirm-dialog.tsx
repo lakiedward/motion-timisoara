@@ -30,6 +30,7 @@ function ConfirmDialog({
   onConfirm,
 }: ConfirmDialogProps) {
   const cancelRef = React.useRef<HTMLButtonElement>(null)
+  const returnFocusRef = React.useRef<HTMLElement | null>(null)
   return (
     <DialogPrimitive.Root open={open} onOpenChange={(next) => !pending && onOpenChange(next)}>
       <DialogPrimitive.Portal>
@@ -42,7 +43,17 @@ function ConfirmDialog({
           data-slot="confirm-dialog"
           onOpenAutoFocus={(event) => {
             event.preventDefault()
+            returnFocusRef.current =
+              document.activeElement instanceof HTMLElement ? document.activeElement : null
             cancelRef.current?.focus()
+          }}
+          onCloseAutoFocus={(event) => {
+            const target = returnFocusRef.current
+            returnFocusRef.current = null
+            if (target?.isConnected) {
+              event.preventDefault()
+              target.focus()
+            }
           }}
           onPointerDownOutside={(event) => event.preventDefault()}
           className={cn(
