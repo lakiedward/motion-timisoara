@@ -1,6 +1,6 @@
 import { beforeEach, expect, test, vi } from 'vitest'
 
-import { cursulAreInscrieri } from './coach'
+import { activitateaAreInscrieri, cursulAreInscrieri } from './coach'
 
 type Apel = { method: string; args: unknown[] }
 let apeluri: Apel[] = []
@@ -56,4 +56,16 @@ test('zero înscrieri înseamnă că prețul rămâne deschis', async () => {
 test('eroarea de citire ajunge la formular', async () => {
   rezultat = { count: null, error: { message: 'refuzat' } }
   await expect(cursulAreInscrieri('curs-1')).rejects.toEqual({ message: 'refuzat' })
+})
+
+test('numără înscrierile active și în așteptare ale activității', async () => {
+  rezultat = { count: 1, error: null }
+  await expect(activitateaAreInscrieri('act-1')).resolves.toBe(true)
+  expect(apeluri).toEqual([
+    { method: 'from', args: ['enrollments'] },
+    { method: 'select', args: ['id', { count: 'exact', head: true }] },
+    { method: 'eq', args: ['kind', 'ACTIVITY'] },
+    { method: 'eq', args: ['entity_id', 'act-1'] },
+    { method: 'in', args: ['status', ['ACTIVE', 'PENDING']] },
+  ])
 })

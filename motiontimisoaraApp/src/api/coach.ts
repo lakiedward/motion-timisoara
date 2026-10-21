@@ -33,15 +33,23 @@ export async function getCourseById(id: string): Promise<Tables<'courses'> | nul
   return data
 }
 
-export async function cursulAreInscrieri(courseId: string): Promise<boolean> {
+async function ofertaAreInscrieri(kind: 'COURSE' | 'ACTIVITY', entityId: string) {
   const { count, error } = await supabase
     .from('enrollments')
     .select('id', { count: 'exact', head: true })
-    .eq('kind', 'COURSE')
-    .eq('entity_id', courseId)
+    .eq('kind', kind)
+    .eq('entity_id', entityId)
     .in('status', ['ACTIVE', 'PENDING'])
   if (error) throw error
   return (count ?? 0) > 0
+}
+
+export function cursulAreInscrieri(courseId: string): Promise<boolean> {
+  return ofertaAreInscrieri('COURSE', courseId)
+}
+
+export function activitateaAreInscrieri(activityId: string): Promise<boolean> {
+  return ofertaAreInscrieri('ACTIVITY', activityId)
 }
 
 export interface CourseFormInput {
