@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { vi } from 'vitest'
 
 import RegisterPage from './RegisterPage'
@@ -25,6 +25,11 @@ function signedOut(): AuthState {
   return { user: null, loading: false, profileError: null, refresh: vi.fn() } as AuthState
 }
 
+function WelcomeProbe() {
+  const { search } = useLocation()
+  return <div>ecranul copilului {search}</div>
+}
+
 function renderRegister(entry = '/register') {
   return render(
     <MemoryRouter initialEntries={[entry]}>
@@ -32,6 +37,7 @@ function renderRegister(entry = '/register') {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<div>pagina de autentificare</div>} />
         <Route path="/account" element={<div>contul părintelui</div>} />
+        <Route path="/account/child/new" element={<WelcomeProbe />} />
         <Route path="/coach" element={<div>panoul antrenorului</div>} />
         <Route path="/courses/42" element={<div>cursul ales</div>} />
       </Routes>
@@ -160,4 +166,19 @@ test('Autentifică-te leads to the login page', async () => {
   await user.click(screen.getByRole('link', { name: 'Autentifică-te' }))
 
   expect(screen.getByText('pagina de autentificare')).toBeInTheDocument()
+})
+
+test('după un cont nou cu sesiune, părintele ajunge pe ecranul de adăugat copilul', async () => {
+  mockedSignUp.mockResolvedValue({
+    data: { user: {}, session: {} },
+    error: null,
+  } as unknown as SignUpResult)
+  renderRegister(`/register?returnUrl=${encodeURIComponent('/courses/42')}`)
+  await fillAndSubmit()
+
+  expect(
+    await screen.findByText(
+      `ecranul copilului ?bun-venit=1&returnUrl=${encodeURIComponent('/courses/42')}`,
+    ),
+  ).toBeInTheDocument()
 })
