@@ -271,6 +271,7 @@ export async function getClubLocationById(
     .eq('id', id)
     .eq('club_id', clubId)
     .maybeSingle()
+  if (error?.code === '22P02') return null
   if (error) throw error
   return data
 }
