@@ -3052,6 +3052,19 @@ export type Database = {
           registration_id: string
         }[]
       }
+      get_my_children_camp_attendance: {
+        Args: never
+        Returns: {
+          arrived_at: string
+          camp_id: string
+          camp_title: string
+          child_id: string
+          departed_at: string
+          id: string
+          period_end: string
+          period_start: string
+        }[]
+      }
       get_my_coach_profile_id: { Args: never; Returns: string }
       get_my_push_preferences: { Args: never; Returns: Json }
       get_my_role: { Args: never; Returns: string }

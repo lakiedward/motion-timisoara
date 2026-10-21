@@ -8,17 +8,24 @@ import AttendancePage from './AttendancePage'
 vi.mock('@/features/live-location/parent/LiveLocationBanner', () => ({
   LiveLocationBanner: () => null,
 }))
-import { getChildAttendance, getChildrenAttendance, getMyChildren } from '@/api/account'
+import {
+  getChildAttendance,
+  getChildrenAttendance,
+  getMyChildren,
+  getMyChildrenCampAttendance,
+} from '@/api/account'
 
 vi.mock('@/api/account', () => ({
   getMyChildren: vi.fn(),
   getChildAttendance: vi.fn(),
   getChildrenAttendance: vi.fn(),
+  getMyChildrenCampAttendance: vi.fn(),
 }))
 
 const mockedCopii = vi.mocked(getMyChildren)
 const mockedPrezenta = vi.mocked(getChildAttendance)
 const mockedPrezentaToti = vi.mocked(getChildrenAttendance)
+const mockedTabere = vi.mocked(getMyChildrenCampAttendance)
 
 const COPIL_A = 'aaaaaaaa-0000-4000-8000-000000000001'
 const COPIL_B = 'bbbbbbbb-0000-4000-8000-000000000002'
@@ -70,6 +77,7 @@ beforeEach(() => {
   // Pagina pornește pe „Toți copiii", deci cererea implicită e cea combinată.
   mockedPrezentaToti.mockResolvedValue(implicite as never)
   mockedPrezenta.mockResolvedValue(implicite as never)
+  mockedTabere.mockResolvedValue([])
 })
 
 afterEach(() => {
@@ -303,4 +311,76 @@ test('un copil ales fără pontări e numit în mesaj și se poate reveni la to�
       'true',
     ),
   )
+})
+
+const sosire = (
+  id: string,
+  sosit: string,
+  child_id: string = COPIL_A,
+  plecat: string | null = null,
+) => ({
+  id,
+  child_id,
+  camp_id: 'cccccccc-0000-4000-8000-000000000003',
+  camp_title: 'Tabăra de vară',
+  period_start: '2026-08-10',
+  period_end: '2026-08-14',
+  arrived_at: sosit,
+  departed_at: plecat,
+})
+
+test('fără tabere, rândurile nu au insignă de tip și rezumatul rămâne pe ședințe', async () => {
+  renderPage()
+  const rezumat = await screen.findByText(/ședințe înregistrate/)
+  expect(rezumat.textContent).toContain('2 prezențe din 3 ședințe înregistrate.')
+  expect(screen.queryByText('Curs')).not.toBeInTheDocument()
+})
+
+test('sosirea la tabără apare în istoric cu insigna Tabără, perioada și Sosit', async () => {
+  mockedTabere.mockResolvedValue([
+    sosire('t1', '2026-08-10T06:30:00Z', COPIL_A, '2026-08-14T13:00:00Z'),
+  ] as never)
+  renderPage()
+  const titlu = await screen.findByText('Tabăra de vară')
+  const rand = titlu.closest('li') as HTMLElement
+  expect(within(rand).getByText('Tabără')).toBeInTheDocument()
+  expect(within(rand).getByText(/10\.08\.2026 – 14\.08\.2026/)).toBeInTheDocument()
+  expect(within(rand).getByText(/sosit 10 aug\.?, 09:30/)).toBeInTheDocument()
+  expect(within(rand).getByText(/plecat 14 aug\.?, 16:00/)).toBeInTheDocument()
+  expect(within(rand).getByText('Sosit')).toBeInTheDocument()
+  expect(screen.getAllByText('Curs')).toHaveLength(3)
+  const randuri = screen.getAllByRole('listitem')
+  expect(within(randuri[0]).getByText('Înot — audit UI')).toBeInTheDocument()
+  expect(randuri[1]).toBe(rand)
+})
+
+test('rezumatul numără separat ședințele de curs și taberele', async () => {
+  mockedTabere.mockResolvedValue([sosire('t1', '2026-08-10T06:30:00Z')] as never)
+  renderPage()
+  const rezumat = await screen.findByText(/înregistrări/)
+  expect(rezumat.textContent).toContain(
+    '3 prezențe din 4 înregistrări: 3 ședințe de curs, 1 tabără.',
+  )
+  expect(
+    screen.getByText('Se numără ședințele pontate de antrenor și sosirile la tabără.'),
+  ).toBeInTheDocument()
+})
+
+test('pe un copil ales se văd doar taberele lui', async () => {
+  const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+  mockedTabere.mockResolvedValue([
+    { ...sosire('t1', '2026-08-10T06:30:00Z', COPIL_A), camp_title: 'Tabăra Anei' },
+    { ...sosire('t2', '2026-08-11T06:30:00Z', COPIL_B), camp_title: 'Tabăra lui Bogdan' },
+  ] as never)
+  renderPage()
+  await screen.findByText('Tabăra lui Bogdan')
+  await user.click(screen.getByRole('button', { name: /Ana/ }))
+  await screen.findByText('Tabăra Anei')
+  expect(screen.queryByText('Tabăra lui Bogdan')).not.toBeInTheDocument()
+})
+
+test('o citire căzută a taberelor arată eroare cu reîncercare', async () => {
+  mockedTabere.mockRejectedValue(new Error('boom'))
+  renderPage()
+  expect(await screen.findByText('Nu am putut încărca prezența.')).toBeInTheDocument()
 })
