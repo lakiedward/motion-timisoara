@@ -63,7 +63,13 @@ beforeEach(() => {
   vi.clearAllMocks()
   apasaPeHarta = null
   vi.mocked(getAllClubs).mockResolvedValue([
-    { id: CLUB, name: 'Club Audit Motion', city: 'Timișoara', email: null, approved_at: '2026-09-01T00:00:00Z' },
+    {
+      id: CLUB,
+      name: 'Club Audit Motion',
+      city: 'Timișoara',
+      email: null,
+      approved_at: '2026-09-01T00:00:00Z',
+    },
   ])
   vi.mocked(getCoachesForSelect).mockResolvedValue([{ user_id: COACH, name: 'Ana Rusu' }])
   vi.mocked(createAdminLocation).mockResolvedValue(undefined)
@@ -73,7 +79,7 @@ beforeEach(() => {
 })
 
 async function completeaza(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(await screen.findByLabelText('Nume'), 'Sala Nouă')
+  await user.type(await screen.findByLabelText(/^Nume/), 'Sala Nouă')
   await waitFor(() => expect(apasaPeHarta).not.toBeNull())
   act(() => apasaPeHarta?.({ latlng: { lat: 45.75, lng: 21.22 } }))
   await waitFor(() => expect(screen.getByRole('button', { name: 'Salvează' })).toBeEnabled())
@@ -93,7 +99,7 @@ test('locația nouă se salvează pe clubul sau antrenorul ales și revine la li
   const user = userEvent.setup()
   renderForm('/admin/locations/new')
   await screen.findByRole('option', { name: 'Ana Rusu' })
-  await user.selectOptions(screen.getByLabelText('Organizator'), `coach:${COACH}`)
+  await user.selectOptions(screen.getByLabelText(/^Organizator/), `coach:${COACH}`)
   await completeaza(user)
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() =>
@@ -124,11 +130,24 @@ test('la editare organizatorul e blocat și se vede numele lui', async () => {
   const user = userEvent.setup()
   renderForm('/admin/locations/loc-1/edit')
   await screen.findByDisplayValue('Bazin Audit')
-  const owner = screen.getByLabelText('Organizator')
+  const owner = screen.getByLabelText(/^Organizator/)
   expect(owner).toBeDisabled()
   expect(owner).toHaveDisplayValue('Club Audit Motion')
   expect(screen.getByText('Organizatorul rămâne cel de la creare.')).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() => expect(updateClubLocation).toHaveBeenCalledWith('loc-1', expect.any(Object)))
   expect(await screen.findByText('Lista admin')).toBeInTheDocument()
+})
+
+test('numele, tipul, locul pe hartă și organizatorul sunt marcate obligatorii', async () => {
+  const { container } = renderForm('/admin/locations/new')
+  await screen.findByLabelText(/^Nume/)
+  expect(screen.getByText(/Câmpurile marcate cu/)).toBeInTheDocument()
+  for (const id of ['name', 'type', 'owner']) {
+    expect(container.querySelector(`label[for="${id}"]`)?.textContent).toContain('*')
+  }
+  expect(screen.getByRole('group', { name: 'Locul pe hartă' })).toBeInTheDocument()
+  for (const id of ['description', 'address']) {
+    expect(container.querySelector(`label[for="${id}"]`)?.textContent).not.toContain('*')
+  }
 })

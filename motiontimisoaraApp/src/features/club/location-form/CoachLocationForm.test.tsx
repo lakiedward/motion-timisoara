@@ -81,7 +81,7 @@ test('antrenorul vede formularul comun, fără câmpuri de latitudine și longit
 test('fără punct pe hartă locația antrenorului nu se creează', async () => {
   const user = userEvent.setup()
   renderForm('/coach/locations/new')
-  await user.type(await screen.findByLabelText('Nume'), 'Sala Nouă')
+  await user.type(await screen.findByLabelText(/^Nume/), 'Sala Nouă')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   expect(await screen.findByText('Pune punctul pe hartă')).toBeInTheDocument()
   expect(createLocation).not.toHaveBeenCalled()
@@ -90,7 +90,7 @@ test('fără punct pe hartă locația antrenorului nu se creează', async () => 
 test('cu punct pe hartă locația se creează pe antrenor și revine la listă', async () => {
   const user = userEvent.setup()
   renderForm('/coach/locations/new')
-  await user.type(await screen.findByLabelText('Nume'), 'Sala Nouă')
+  await user.type(await screen.findByLabelText(/^Nume/), 'Sala Nouă')
   await waitFor(() => expect(apasaPeHarta).not.toBeNull())
   act(() => apasaPeHarta?.({ latlng: { lat: 45.75, lng: 21.22 } }))
   await waitFor(() => expect(screen.getByRole('button', { name: 'Salvează' })).toBeEnabled())

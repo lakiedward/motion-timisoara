@@ -45,7 +45,7 @@ test('while the club is still loading the edit page shows a skeleton, not an emp
   vi.mocked(getMyClub).mockReturnValue(new Promise(() => {}))
   renderEdit()
   expect(await screen.findByRole('status', { name: 'Se încarcă locația' })).toBeInTheDocument()
-  expect(screen.queryByLabelText('Nume')).not.toBeInTheDocument()
+  expect(screen.queryByLabelText(/^Nume/)).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Salvează' })).not.toBeInTheDocument()
   expect(screen.getByRole('link', { name: /Înapoi/ })).toHaveAttribute('href', '/club/locations')
 })
@@ -55,7 +55,7 @@ test('while the location is loading the edit page shows a skeleton, not an empty
   vi.mocked(getClubLocationById).mockReturnValue(new Promise(() => {}))
   renderEdit()
   expect(await screen.findByRole('status', { name: 'Se încarcă locația' })).toBeInTheDocument()
-  expect(screen.queryByLabelText('Nume')).not.toBeInTheDocument()
+  expect(screen.queryByLabelText(/^Nume/)).not.toBeInTheDocument()
 })
 
 test('a missing location explains why and keeps the way back to the list', async () => {
