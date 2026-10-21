@@ -78,3 +78,15 @@ test('keeps the location link to the map and the coach link', () => {
   expect(screen.getByRole('link', { name: /Ana Pop/ })).toHaveAttribute('href', '/antrenori/coach-1')
   expect(screen.getByText('5 locuri rămase')).toBeInTheDocument()
 })
+
+test('shows the location address under its name only when it has one', () => {
+  const { unmount } = renderInfo()
+  expect(screen.queryByText('Str. Înotului 1')).not.toBeInTheDocument()
+  unmount()
+  renderInfo({
+    location: { name: 'Bazin Olimpic Timișoara', address: '  Str. Înotului 1 ' },
+  } as Partial<CourseDetail>)
+  expect(screen.getByRole('link', { name: /Bazin Olimpic Timișoara/ })).toHaveTextContent(
+    'Str. Înotului 1',
+  )
+})

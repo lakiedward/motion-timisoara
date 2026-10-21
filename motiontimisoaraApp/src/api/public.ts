@@ -370,6 +370,7 @@ type ActivitateBruta = ActivitateProgramata & {
 export async function getActivitatiPublice(
   acum = new Date(),
   clubId?: string,
+  coachId?: string,
 ): Promise<ActivitateDinLista[]> {
   let q = supabase
     .from('activities')
@@ -378,6 +379,7 @@ export async function getActivitatiPublice(
     )
     .eq('active', true)
   if (clubId) q = q.eq('club_id', clubId)
+  if (coachId) q = q.eq('coach_id', coachId)
   const { data, error } = await q
     .order('activity_date')
     .order('start_time')

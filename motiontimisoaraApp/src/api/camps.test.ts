@@ -382,6 +382,32 @@ test('organizatorul iese și din club, și din antrenor', async () => {
     link: '/antrenori/u1',
   })
 })
+test('filtrul de antrenor cuprinde taberele lui și pe cele unde a acceptat să fie în echipă', async () => {
+  raspuns = {
+    camp_coaches: { data: [{ camp_id: 'b' }, { camp_id: 'x' }], error: null },
+    camps: { data: TREI_TABERE, error: null },
+    enrollments: { data: [], error: null },
+  }
+  await getTaberePublice(new Date(2026, 7, 28), undefined, { userId: 'u1', profileId: 'p1' })
+  expect(cereri.camp_coaches).toEqual(
+    expect.arrayContaining(['eq(coach_profile_id,p1)', 'eq(status,accepted)']),
+  )
+  expect(cereri.camps).toContain('or(coach_id.eq.u1,id.in.(b,x))')
+})
+
+test('fără tabere în echipă, filtrul de antrenor cere doar taberele lui', async () => {
+  raspuns = { camp_coaches: { data: [], error: null }, camps: { data: [], error: null } }
+  await getTaberePublice(new Date(2026, 7, 28), undefined, { userId: 'u1', profileId: 'p1' })
+  expect(cereri.camps).toContain('or(coach_id.eq.u1)')
+})
+
+test('lista publică fără filtru nu citește echipele de antrenori', async () => {
+  raspuns = { camps: { data: [], error: null } }
+  await getTaberePublice(new Date(2026, 7, 28))
+  expect(cereri.camp_coaches).toBeUndefined()
+  expect(cereri.camps?.some((c) => c.startsWith('or('))).toBe(false)
+})
+
 test('când nu rămâne nicio tabără, nu se mai cer înscrierile', async () => {
   raspuns = { camps: { data: TREI_TABERE, error: null } }
   const lista = await getTaberePublice(new Date(2030, 0, 1))
