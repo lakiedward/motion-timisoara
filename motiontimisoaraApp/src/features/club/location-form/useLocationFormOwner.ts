@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 
 import { getAllClubs, getCoachesForSelect } from '@/api/admin'
 import { getClubLocationById, getMyClub } from '@/api/club'
+import { getCurrentCoachId, getLocationById } from '@/api/coach'
 import {
   getLocationAdmin,
   type AdminLocation,
@@ -10,7 +11,7 @@ import {
 } from '@/api/locations/admin-locations'
 import type { Tables } from '@/lib/database.types'
 
-export type LocationFormPortal = 'club' | 'admin'
+export type LocationFormPortal = 'club' | 'admin' | 'coach'
 
 export type EditableLocation = Tables<'locations'> &
   Partial<Pick<AdminLocation, 'club' | 'creator'>>
@@ -29,14 +30,26 @@ export function parseOwner(value: string): LocationOwner | null {
   return null
 }
 
+const PORTAL_PATHS: Record<LocationFormPortal, { list: string; listKey: string }> = {
+  club: { list: '/club/locations', listKey: 'club-locations' },
+  admin: { list: '/admin/locations', listKey: 'admin-locations' },
+  coach: { list: '/coach/locations', listKey: 'my-locations' },
+}
+
 export function useLocationFormOwner(portal: LocationFormPortal, id: string | undefined) {
   const isAdmin = portal === 'admin'
+  const isCoach = portal === 'coach'
   const isEdit = !!id
   const [chosen, setChosen] = useState('')
   const { data: club } = useQuery({
     queryKey: ['my-club'],
     queryFn: getMyClub,
-    enabled: !isAdmin,
+    enabled: portal === 'club',
+  })
+  const { data: coachId = '' } = useQuery({
+    queryKey: ['current-coach-id'],
+    queryFn: getCurrentCoachId,
+    enabled: isCoach,
   })
   const myClubId = club?.id ?? ''
   const { data: clubs = [] } = useQuery({
@@ -50,31 +63,43 @@ export function useLocationFormOwner(portal: LocationFormPortal, id: string | un
     enabled: isAdmin && !isEdit,
   })
   const existingQuery = useQuery({
-    queryKey: isAdmin ? ['admin-location-edit', id] : ['club-location-edit', myClubId, id],
+    queryKey: isAdmin
+      ? ['admin-location-edit', id]
+      : isCoach
+        ? ['location-edit', coachId, id]
+        : ['club-location-edit', myClubId, id],
     queryFn: (): Promise<EditableLocation | null> =>
-      isAdmin ? getLocationAdmin(id as string) : getClubLocationById(id as string, myClubId),
-    enabled: isEdit && (isAdmin || !!myClubId),
+      isAdmin
+        ? getLocationAdmin(id as string)
+        : isCoach
+          ? getLocationById(id as string)
+          : getClubLocationById(id as string, myClubId),
+    enabled: isEdit && (isAdmin || (isCoach ? !!coachId : !!myClubId)),
   })
   const existing = existingQuery.data
-  const owner = !isAdmin
-    ? myClubId && `club:${myClubId}`
-    : isEdit
-      ? existing
-        ? ownerValue(existing)
-        : ''
-      : chosen
+  const owner = isCoach
+    ? coachId && `coach:${coachId}`
+    : !isAdmin
+      ? myClubId && `club:${myClubId}`
+      : isEdit
+        ? existing
+          ? ownerValue(existing)
+          : ''
+        : chosen
+  const ownerId = owner.includes(':') ? owner.slice(owner.indexOf(':') + 1) : ''
 
   return {
     isAdmin,
+    isCoach,
     club,
     clubs,
     coaches,
     owner,
     setOwner: setChosen,
-    nearbyScope: owner.startsWith('club:') ? owner.slice(5) : owner || (isAdmin ? 'admin' : ''),
-    readyToRead: isAdmin || !!myClubId,
+    nearbyScope: ownerId || owner || (isAdmin ? 'admin' : ''),
+    readyToRead: isAdmin || (isCoach ? !!coachId : !!myClubId),
     existingQuery,
-    listPath: isAdmin ? '/admin/locations' : '/club/locations',
-    listQueryKey: isAdmin ? 'admin-locations' : 'club-locations',
+    listPath: PORTAL_PATHS[portal].list,
+    listQueryKey: PORTAL_PATHS[portal].listKey,
   }
 }
