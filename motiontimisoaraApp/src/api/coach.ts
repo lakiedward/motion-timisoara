@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 import { regenerateCourseOccurrences } from '@/api/course-occurrences'
+import type { ClubLocation } from '@/api/club'
 import { countActivityEnrollments } from '@/api/activities/admin-activities'
 
 export type CoachCourse = Tables<'courses'> & {
@@ -210,20 +211,35 @@ export async function setActivityActive(id: string, active: boolean) {
     .single()
   if (error) throw error
 }
-export async function getMyLocations(): Promise<Tables<'locations'>[]> {
+export async function getMyLocations(): Promise<ClubLocation[]> {
+  const coachId = await uid()
+  const { data, error } = await supabase
+    .from('locations')
+    .select('*, courses(count)')
+    .eq('created_by_user_id', coachId)
+    .order('name')
+  if (error) throw error
+  type Row = Tables<'locations'> & { courses?: { count: number }[] }
+  return ((data ?? []) as unknown as Row[]).map(({ courses, ...loc }) => ({
+    ...loc,
+    courseCount: courses?.[0]?.count ?? 0,
+  }))
+}
+
+export async function getCurrentCoachId(): Promise<string> {
+  return uid()
+}
+
+export async function getLocationById(id: string): Promise<Tables<'locations'> | null> {
   const coachId = await uid()
   const { data, error } = await supabase
     .from('locations')
     .select('*')
+    .eq('id', id)
     .eq('created_by_user_id', coachId)
-    .order('name')
+    .maybeSingle()
+  if (error?.code === '22P02') return null
   if (error) throw error
-  return data ?? []
-}
-
-export async function getLocationById(id: string): Promise<Tables<'locations'> | null> {
-  const { data, error } = await supabase.from('locations').select('*').eq('id', id).single()
-  if (error) return null
   return data
 }
 
@@ -235,6 +251,7 @@ export interface LocationFormInput {
   lat: number | null
   lng: number | null
   description: string | null
+  county?: string | null
 }
 
 export async function createLocation(input: LocationFormInput): Promise<Tables<'locations'>> {

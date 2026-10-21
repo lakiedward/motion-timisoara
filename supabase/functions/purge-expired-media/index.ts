@@ -12,6 +12,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { supabaseAdmin } from "../_shared/supabase.ts";
 import { withCors } from "../_shared/cors.ts";
+import { isServiceCaller } from "./auth.ts";
 
 const BUCKET = "announcement-media";
 /** Câte rânduri se iau într-o rulare. Restul rămân pentru rularea următoare. */
@@ -90,14 +91,12 @@ serve(
       });
     }
 
-    // Poarta: doar cine are cheia de service poate cere ștergerea.
-    //
-    // Supabase verifică deja JWT-ul înainte să ajungă cererea aici, dar asta lasă
-    // să treacă și cheia anon, care e publică. Verificarea de mai jos e cea care
-    // contează: apelantul e pg_cron, nu un om cu sesiune.
-    const cheie = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    const trimisa = (req.headers.get("Authorization") ?? "").replace("Bearer ", "");
-    if (!cheie || trimisa !== cheie) {
+    if (
+      !isServiceCaller(
+        req.headers.get("Authorization"),
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
+      )
+    ) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },

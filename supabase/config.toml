@@ -121,7 +121,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.purge-expired-media]
-# Chemata de pg_cron cu cheia de service. `verify_jwt` e stratul exterior;
-# functia isi verifica oricum cheia explicit, fiindca `verify_jwt` lasa sa treaca
-# si cheia anon, care e publica.
+# Chemata de pg_cron cu un JWT service_role. `verify_jwt` verifica semnatura,
+# iar functia cere rolul service_role din el, fiindca `verify_jwt` lasa sa treaca
+# si cheia anon. Nu dezactiva `verify_jwt` aici: rolul ar putea fi falsificat.
 verify_jwt = true

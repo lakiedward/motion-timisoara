@@ -164,8 +164,8 @@ it('allows dismissing a rejected scan whose occurrence is absent from the curren
     </AttendanceContext.Provider>,
   )
   const user = userEvent.setup()
-  await user.click(screen.getByText('Scanări din alte ședințe'))
+  expect(screen.getByRole('region', { name: 'Înot' })).toHaveTextContent('Respins')
   await user.click(screen.getByRole('button', { name: 'Ascunde rezultatul' }))
   await waitFor(() => expect(JSON.parse(saved).entries).toEqual([]))
-  expect(screen.getByRole('status')).toHaveTextContent('0 în așteptare · 0 de verificat')
+  expect(screen.getByRole('status')).not.toHaveTextContent('de verificat')
 })
