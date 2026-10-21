@@ -5,10 +5,21 @@ import { beforeEach, expect, test, vi } from 'vitest'
 
 import ClubDetailPage from './ClubDetailPage'
 
-const mocks = vi.hoisted(() => ({ getPublicClub: vi.fn() }))
+const mocks = vi.hoisted(() => ({
+  getPublicClub: vi.fn(),
+  getClubCourses: vi.fn(),
+  getActivitatiPublice: vi.fn(),
+  getTaberePublice: vi.fn(),
+}))
 vi.mock('@/api/public', async (original) => ({
   ...(await original<typeof import('@/api/public')>()),
   getPublicClub: mocks.getPublicClub,
+  getClubCourses: mocks.getClubCourses,
+  getActivitatiPublice: mocks.getActivitatiPublice,
+}))
+vi.mock('@/api/camps', async (original) => ({
+  ...(await original<typeof import('@/api/camps')>()),
+  getTaberePublice: mocks.getTaberePublice,
 }))
 vi.mock('./map/ClubLocationMap', () => ({
   default: ({ lat, lng, label }: { lat: number; lng: number; label: string }) => (
@@ -50,7 +61,12 @@ function renderPage() {
   )
 }
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => {
+  vi.clearAllMocks()
+  mocks.getClubCourses.mockResolvedValue([])
+  mocks.getActivitatiPublice.mockResolvedValue([])
+  mocks.getTaberePublice.mockResolvedValue([])
+})
 
 test('the public page shows the address and a map with a pin when the club has a point', async () => {
   mocks.getPublicClub.mockResolvedValue(club)

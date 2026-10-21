@@ -216,6 +216,7 @@ function randDetaliu(
       default_photo_storage_path: 'ciclism.jpg',
     },
     location: {
+      id: 'loc-1',
       name: 'DEMO — Parc de antrenament',
       address: 'Str. Exemplu 1',
       lat: 45.751,
