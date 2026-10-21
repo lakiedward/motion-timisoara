@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
@@ -123,11 +123,46 @@ test('o tabără cu preț unic păstrează prețul global și itemele', async ()
   expect(screen.queryByText('Gratuit')).not.toBeInTheDocument()
 })
 
-test('cardul duce la editare pe baza portalului', async () => {
+test('rândul duce la editare și la înscriși pe baza portalului', async () => {
   vi.mocked(getTaberelemele).mockResolvedValue([tabara({ preturiPeVarsta: [40000], categorii: 1 })])
   deseneaza()
-  const card = await screen.findByRole('link', { name: /Tabără de munte/ })
-  expect(card).toHaveAttribute('href', '/club/camps/tabara-1/edit')
+  expect(await screen.findByRole('link', { name: 'Editează Tabără de munte' })).toHaveAttribute(
+    'href',
+    '/club/camps/tabara-1/edit',
+  )
+  expect(screen.getByRole('link', { name: 'Înscriși la Tabără de munte' })).toHaveAttribute(
+    'href',
+    '/club/camps/tabara-1/enrolled',
+  )
+})
+
+test('taberele se grupează pe stare și se filtrează după căutare și stare', async () => {
+  vi.mocked(getTaberelemele).mockResolvedValue([
+    tabara({ id: 'v', title: 'Tabără viitoare', location_text: 'Semenic' }),
+    tabara({
+      id: 'i',
+      title: 'Tabără veche',
+      period_start: '2020-07-01',
+      period_end: '2020-07-05',
+    }),
+  ])
+  deseneaza()
+  expect(await screen.findByRole('region', { name: 'Viitoare' })).toBeInTheDocument()
+  expect(screen.getByRole('region', { name: 'Încheiate' })).toBeInTheDocument()
+
+  fireEvent.click(screen.getByRole('button', { name: /Încheiate/ }))
+  expect(screen.queryByRole('heading', { name: 'Tabără viitoare' })).not.toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Tabără veche' })).toBeInTheDocument()
+
+  fireEvent.click(screen.getByRole('button', { name: /Toate/ }))
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'semenic' } })
+  expect(screen.getByRole('heading', { name: 'Tabără viitoare' })).toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Tabără veche' })).not.toBeInTheDocument()
+
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'xyz' } })
+  expect(screen.getByText('Nicio tabără pentru filtrele alese.')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Șterge filtrele' }))
+  expect(screen.getByRole('heading', { name: 'Tabără veche' })).toBeInTheDocument()
 })
 
 test('o listă care nu se încarcă spune asta, nu „nicio tabără”', async () => {
@@ -141,6 +176,10 @@ test('fără tabere, mesajul e altul decât cel de eroare', async () => {
   vi.mocked(getTaberelemele).mockResolvedValue([])
   deseneaza()
   expect(await screen.findByText('Nicio tabără încă.')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /Creează prima tabără/ })).toHaveAttribute(
+    'href',
+    '/club/camps/new',
+  )
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 })
 
