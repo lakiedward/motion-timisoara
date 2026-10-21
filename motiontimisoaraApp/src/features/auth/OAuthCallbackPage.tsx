@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 import { AuthLayout } from './AuthLayout'
-import { useReturnUrl, withReturnUrl } from './return-url'
+import { useReturnUrl, welcomeChildPath, withReturnUrl } from './return-url'
 import { isCoachContinuation } from './coach/continuation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -85,7 +85,10 @@ export default function OAuthCallbackPage() {
       return
     }
     await refresh()
-    navigate(returnUrl || roleHome(pending.role), { replace: true })
+    navigate(
+      pending.role === 'PARENT' ? welcomeChildPath(returnUrl) : returnUrl || roleHome(pending.role),
+      { replace: true },
+    )
   }
 
   if (phase === 'loading') {

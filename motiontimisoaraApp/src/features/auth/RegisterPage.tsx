@@ -8,7 +8,7 @@ import { CircleAlert, MailCheck } from 'lucide-react'
 import { AuthLayout } from './AuthLayout'
 import { AuthFields } from './AuthFields'
 import { GoogleSignInButton } from './GoogleSignInButton'
-import { useReturnUrl, withReturnUrl } from './return-url'
+import { useReturnUrl, welcomeChildPath, withReturnUrl } from './return-url'
 import { signupErrorMessage } from './signup-error'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
@@ -50,7 +50,7 @@ export default function RegisterPage() {
     const { data } = result
     if (data.session) {
       await refresh()
-      navigate(returnUrl || '/account')
+      navigate(welcomeChildPath(returnUrl))
     } else {
       setSent(true)
     }

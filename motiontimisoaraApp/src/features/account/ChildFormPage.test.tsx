@@ -13,6 +13,10 @@ vi.mock('@/api/account', () => ({
   updateChild: vi.fn(),
 }))
 
+vi.mock('@/lib/auth-context', () => ({
+  useAuth: () => ({ user: { name: 'Ana Popescu', phone: '+40712345678' } }),
+}))
+
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 const mockedGet = vi.mocked(getChild)
@@ -45,6 +49,8 @@ function renderForm(ruta = `/account/child/${COPIL_ID}`) {
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[ruta]}>
         <Routes>
+          <Route path="/account" element={<p>Panoul părintelui</p>} />
+          <Route path="/cursuri/42" element={<p>Cursul ales</p>} />
           <Route path="/account/children" element={<p>Lista de copii</p>} />
           <Route path="/account/child/new" element={<ChildFormPage />} />
           <Route path="/account/child/:id" element={<ChildFormPage />} />
@@ -321,4 +327,48 @@ test('câmpurile opționale lăsate goale se salvează ca lipsă, nu ca text gol
       }),
     ),
   )
+})
+
+test('după înregistrare, ecranul de bun venit are „Mai târziu” spre panou și contactul precompletat', async () => {
+  renderForm('/account/child/new?bun-venit=1')
+  expect(await screen.findByRole('heading', { name: 'Adaugă-ți copilul' })).toBeInTheDocument()
+  expect(screen.queryByRole('link', { name: 'Înapoi' })).not.toBeInTheDocument()
+  expect(screen.getByLabelText(/Contact urgență/)).toHaveValue('Ana Popescu')
+  expect(screen.getByLabelText(/Telefon urgență/)).toHaveValue('+40712345678')
+  expect(screen.getByRole('link', { name: 'Mai târziu' })).toHaveAttribute('href', '/account')
+})
+
+test('copilul salvat la bun venit duce părintele unde voia să ajungă', async () => {
+  const user = userEvent.setup()
+  renderForm(`/account/child/new?bun-venit=1&returnUrl=${encodeURIComponent('/cursuri/42')}`)
+  expect(screen.getByRole('link', { name: 'Mai târziu' })).toHaveAttribute('href', '/cursuri/42')
+  await user.type(screen.getByLabelText(/Nume/), 'Ioana')
+  await user.type(screen.getByLabelText(/Data nașterii/), '2017-05-04')
+  await user.click(screen.getByLabelText('Da, poate apărea'))
+  await user.click(screen.getByRole('button', { name: 'Salvează copilul' }))
+  await waitFor(() =>
+    expect(mockedCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Ioana', emergency_contact_name: 'Ana Popescu' }),
+    ),
+  )
+  expect(await screen.findByText('Cursul ales')).toBeInTheDocument()
+})
+
+test('un returnUrl extern la bun venit e ignorat', async () => {
+  renderForm(`/account/child/new?bun-venit=1&returnUrl=${encodeURIComponent('//rau.example')}`)
+  expect(await screen.findByRole('link', { name: 'Mai târziu' })).toHaveAttribute(
+    'href',
+    '/account',
+  )
+})
+
+test('formularul obișnuit din Copiii mei rămâne neschimbat', async () => {
+  renderForm('/account/child/new')
+  expect(await screen.findByRole('heading', { name: 'Adaugă copil' })).toBeInTheDocument()
+  expect(screen.getByLabelText(/Contact urgență/)).toHaveValue('')
+  expect(screen.getByRole('link', { name: 'Anulează' })).toHaveAttribute(
+    'href',
+    '/account/children',
+  )
+  expect(screen.queryByRole('link', { name: 'Mai târziu' })).not.toBeInTheDocument()
 })
