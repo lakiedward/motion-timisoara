@@ -156,6 +156,23 @@ export async function getChildrenAttendance(childIds: string[]): Promise<Attenda
   return (data ?? []) as unknown as AttendanceRow[]
 }
 
+export interface CampAttendanceRow {
+  id: string
+  child_id: string
+  camp_id: string
+  camp_title: string
+  period_start: string
+  period_end: string
+  arrived_at: string
+  departed_at: string | null
+}
+
+export async function getMyChildrenCampAttendance(): Promise<CampAttendanceRow[]> {
+  const { data, error } = await supabase.rpc('get_my_children_camp_attendance')
+  if (error) throw error
+  return (data ?? []) as CampAttendanceRow[]
+}
+
 export function childAge(birthDate: string): number {
   const d = new Date(birthDate)
   const now = new Date()

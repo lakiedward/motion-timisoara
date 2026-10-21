@@ -3,7 +3,12 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { Users } from 'lucide-react'
 
-import { getChildAttendance, getChildrenAttendance, getMyChildren } from '@/api/account'
+import {
+  getChildAttendance,
+  getChildrenAttendance,
+  getMyChildren,
+  getMyChildrenCampAttendance,
+} from '@/api/account'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { StatusView } from '@/components/ui/status-view'
@@ -11,6 +16,7 @@ import { inceputPerioada, type Perioada } from '@/lib/perioada'
 import { plural } from '@/lib/plural'
 import { cn } from '@/lib/utils'
 import { AttendanceMonths } from '@/features/account/attendance/AttendanceMonths'
+import { attendanceEntries, kindBreakdown } from '@/features/account/attendance/attendance-entries'
 import { LiveLocationBanner } from '@/features/live-location/parent/LiveLocationBanner'
 
 const selectCls =
@@ -49,23 +55,32 @@ export default function AttendancePage() {
     enabled: totiCopiii ? idsCopii.length > 0 : !!ales,
   })
 
+  const {
+    data: tabere = [],
+    isPending: seIncarcaTabere,
+    isError: aEsuatTabere,
+    refetch: refetchTabere,
+  } = useQuery({
+    queryKey: ['camp-attendance'],
+    queryFn: getMyChildrenCampAttendance,
+    enabled: idsCopii.length > 0,
+  })
+
   const numeDupaId = useMemo(() => new Map(children.map((c) => [c.id, c.name])), [children])
 
-  const randuri = useMemo(() => {
-    const de_la = inceputPerioada(perioada)
-    return records
-      .filter((r) => {
-        if (!de_la) return true
-        if (!r.occurrence?.starts_at) return false
-        return new Date(r.occurrence.starts_at) >= de_la
-      })
-      .sort(
-        (a, b) => +new Date(b.occurrence?.starts_at ?? 0) - +new Date(a.occurrence?.starts_at ?? 0),
-      )
-  }, [records, perioada])
+  const tabereAlese = useMemo(
+    () => (totiCopiii ? tabere : tabere.filter((t) => t.child_id === ales)),
+    [tabere, totiCopiii, ales],
+  )
+  const toate = useMemo(() => attendanceEntries(records, tabereAlese, null), [records, tabereAlese])
+  const randuri = useMemo(
+    () => attendanceEntries(records, tabereAlese, inceputPerioada(perioada)),
+    [records, tabereAlese, perioada],
+  )
 
-  const prezente = randuri.filter((r) => r.status === 'PRESENT').length
-  const filtrulAscundeTot = randuri.length === 0 && records.length > 0
+  const prezente = randuri.filter((r) => r.present).length
+  const filtrulAscundeTot = randuri.length === 0 && toate.length > 0
+  const cuTabere = toate.some((r) => r.kind === 'CAMP')
 
   const numeAles = numeDupaId.get(ales) ?? 'Copilul ales'
 
@@ -144,14 +159,17 @@ export default function AttendancePage() {
             </Button>
           }
         />
-      ) : aEsuatCitirea ? (
+      ) : aEsuatCitirea || aEsuatTabere ? (
         <StatusView
           state="error"
           title="Nu am putut încărca prezența."
           text="Verifică conexiunea și încearcă din nou."
-          onRetry={() => refetch()}
+          onRetry={() => {
+            if (aEsuatCitirea) refetch()
+            if (aEsuatTabere) refetchTabere()
+          }}
         />
-      ) : seIncarcaPrezenta ? (
+      ) : seIncarcaPrezenta || seIncarcaTabere ? (
         <StatusView state="loading" title="Se încarcă prezența" rowHeight={64} />
       ) : (
         <div className="space-y-4">
@@ -159,9 +177,13 @@ export default function AttendancePage() {
             <span className="font-semibold">{prezente}</span>{' '}
             {plural(prezente, 'prezență', 'prezențe', true)} din{' '}
             <span className="font-semibold">{randuri.length}</span>{' '}
-            {plural(randuri.length, 'ședință înregistrată', 'ședințe înregistrate', true)}.
+            {cuTabere
+              ? `${plural(randuri.length, 'înregistrare', 'înregistrări', true)}${randuri.length ? `: ${kindBreakdown(randuri)}` : ''}.`
+              : `${plural(randuri.length, 'ședință înregistrată', 'ședințe înregistrate', true)}.`}
             <p className="text-muted-foreground mt-1 text-xs">
-              Se numără doar ședințele pontate de antrenor.
+              {cuTabere
+                ? 'Se numără ședințele pontate de antrenor și sosirile la tabără.'
+                : 'Se numără doar ședințele pontate de antrenor.'}
             </p>
           </div>
 
@@ -170,6 +192,7 @@ export default function AttendancePage() {
               randuri={randuri}
               numeDupaId={numeDupaId}
               cuNume={totiCopiii && children.length > 1}
+              cuTip={cuTabere}
             />
           ) : filtrulAscundeTot ? (
             <StatusView
