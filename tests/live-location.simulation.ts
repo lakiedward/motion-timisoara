@@ -104,7 +104,7 @@ async function simulate(page: Page, role: Role) {
     if (request.method() === 'OPTIONS') return respond(null);
     if (url.pathname === '/rest/v1/rpc/my_profile') return respond([actor]);
     if (url.pathname === '/auth/v1/user') return respond({ ...actor, aud: 'authenticated', user_metadata: {} });
-    if (url.pathname === '/rest/v1/rpc/my_club') return respond([{ id: ids.club, owner_user_id: ids.clubOwner, name: 'Club Simulat' }]);
+    if (url.pathname === '/rest/v1/rpc/my_club') return respond([{ id: ids.club, owner_user_id: ids.clubOwner, name: 'Club Simulat', approved_at: '2026-09-01T00:00:00Z' }]);
     if (url.pathname === '/rest/v1/children') return respond([child]);
     if (url.pathname === '/rest/v1/courses') return respond([course]);
     if (url.pathname === '/rest/v1/course_occurrences') {
