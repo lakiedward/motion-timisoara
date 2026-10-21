@@ -12,6 +12,7 @@ import { createClubLocation, updateClubLocation } from '@/api/club'
 import { createLocation, updateLocation } from '@/api/coach'
 import { createAdminLocation } from '@/api/locations/admin-locations'
 import LocationPicker from '@/components/LocationPicker'
+import { RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -238,6 +239,7 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
       <h1 className="font-display mt-4 text-2xl font-bold">
         {isEdit ? 'Editează locație' : 'Locație nouă'}
       </h1>
+      <RequiredFieldsNote />
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-6" noValidate>
         <Card>
@@ -265,7 +267,9 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
             )}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="name">Nume</Label>
+                <Label htmlFor="name">
+                  Nume <RequiredMark />
+                </Label>
                 <Input
                   id="name"
                   className="h-11 scroll-mt-24 lg:h-9"
@@ -280,7 +284,9 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="type">Tip</Label>
+                <Label htmlFor="type">
+                  Tip <RequiredMark />
+                </Label>
                 <select id="type" className={locationSelectClassName} {...register('type')}>
                   <LocationTypeOptions />
                 </select>
@@ -324,6 +330,7 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
 
             <LocationPicker
               key={pickerVersion}
+              pointRequired
               value={punct}
               address={address}
               onResolvingChange={setIsResolvingAddress}

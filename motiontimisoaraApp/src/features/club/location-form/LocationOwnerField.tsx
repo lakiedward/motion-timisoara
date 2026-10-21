@@ -1,3 +1,4 @@
+import { RequiredMark } from '@/components/FormSection'
 import { Label } from '@/components/ui/label'
 import type { AdminClub } from '@/api/admin'
 import { SHARED_OWNER } from './useLocationFormOwner'
@@ -24,7 +25,7 @@ export function LocationOwnerField({
   const hintId = locked ? 'owner-hint' : error ? 'owner-error' : undefined
   return (
     <div className="space-y-1.5">
-      <Label htmlFor="owner">Organizator</Label>
+      <Label htmlFor="owner">Organizator {!locked && <RequiredMark />}</Label>
       <select
         id="owner"
         className={selectClassName}

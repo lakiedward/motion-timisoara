@@ -105,7 +105,7 @@ test('formularul nu mai are câmpuri de latitudine și longitudine', async () =>
 test('câmpurile păstrate rămân pe ecran, harta se adaugă lângă ele', async () => {
   renderForm()
   await screen.findByDisplayValue('Bazin Audit')
-  for (const eticheta of ['Nume', 'Tip', 'Județ / regiune', 'Oraș', 'Adresă', 'Descriere']) {
+  for (const eticheta of [/^Nume/, /^Tip/, 'Județ / regiune', 'Oraș', 'Adresă', 'Descriere']) {
     expect(screen.getByLabelText(eticheta)).toBeInTheDocument()
   }
   expect(screen.getByRole('heading', { name: 'Editează locație' })).toBeInTheDocument()
@@ -115,8 +115,8 @@ test('câmpurile păstrate rămân pe ecran, harta se adaugă lângă ele', asyn
 test('fără punct pe hartă salvarea e oprită și nu ajunge la server', async () => {
   const user = userEvent.setup()
   renderForm('/club/locations/new')
-  await screen.findByLabelText('Nume')
-  await user.type(screen.getByLabelText('Nume'), 'Sala Nouă')
+  await screen.findByLabelText(/^Nume/)
+  await user.type(screen.getByLabelText(/^Nume/), 'Sala Nouă')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
 
   const mesaj = await screen.findByText('Pune punctul pe hartă')
@@ -182,7 +182,7 @@ test('un id care nu e al clubului arată „nu a fost găsită”, nu un formula
   mockedLocatie.mockResolvedValue(null)
   renderForm()
   expect(await screen.findByText('Locația nu a fost găsită.')).toBeInTheDocument()
-  expect(screen.queryByLabelText('Nume')).not.toBeInTheDocument()
+  expect(screen.queryByLabelText(/^Nume/)).not.toBeInTheDocument()
 })
 
 test('cererea de citire primește clubul curent, nu doar id-ul din adresă', async () => {
@@ -349,8 +349,8 @@ test('copying another club location fills exact source data and saves for the cu
   useSource.focus()
   await user.keyboard('{Enter}')
   await waitFor(() => expect(screen.getByRole('button', { name: 'Salvează' })).toBeEnabled())
-  expect(screen.getByLabelText('Nume')).toHaveValue(nearbySource.name)
-  expect(screen.getByLabelText('Tip')).toHaveValue(nearbySource.type)
+  expect(screen.getByLabelText(/^Nume/)).toHaveValue(nearbySource.name)
+  expect(screen.getByLabelText(/^Tip/)).toHaveValue(nearbySource.type)
   expect(screen.getByLabelText('Adresă')).toHaveValue(nearbySource.address)
   expect(screen.getByLabelText('Oraș')).toHaveValue(nearbySource.city)
   expect(screen.getByLabelText('Descriere')).toHaveValue('')
@@ -402,7 +402,7 @@ test('explicit new-place choice preserves the authored form and current pin', as
   const user = userEvent.setup()
   mockedNearbyLocations.mockResolvedValue([nearbySource])
   renderForm('/club/locations/new')
-  await user.type(screen.getByLabelText('Nume'), 'Alt loc')
+  await user.type(screen.getByLabelText(/^Nume/), 'Alt loc')
   await pickPoint()
   await user.click(await screen.findByRole('button', { name: 'Creează un loc diferit' }))
   await user_salveaza()
@@ -601,7 +601,7 @@ test('returning to create at the saved point finds the new own-club location', a
     },
   ])
   renderForm('/club/locations/new', queryClient)
-  await user.type(screen.getByLabelText('Nume'), 'Loc creat')
+  await user.type(screen.getByLabelText(/^Nume/), 'Loc creat')
   await pickPoint()
   await user_salveaza()
   await screen.findByText('Lista de locații')
