@@ -26,6 +26,7 @@ import { EditCourseAction, NewCourseButton } from '@/features/admin/courses/Cour
 import AdminSportsPage from '@/features/admin/AdminSportsPage'
 import AdminInviteCodesPage from '@/features/admin/AdminInviteCodesPage'
 import AdminProfilePage from '@/features/admin/AdminProfilePage'
+import ParentProfilePage from '@/features/account/profile/ParentProfilePage'
 import ClubLayout from '@/features/club/ClubLayout'
 import { ClubApprovalGate } from '@/features/club/ClubApproval'
 import ClubDashboard from '@/features/club/ClubDashboard'
@@ -143,6 +144,7 @@ export const router = createBrowserRouter([
                   { path: '/account/enrollments', element: <EnrollmentsPage /> },
                   { path: '/account/attendance', element: <AttendancePage /> },
                   { path: '/account/announcements', element: <AnnouncementsPage /> },
+                  { path: '/account/profile', element: <ParentProfilePage /> },
                   { path: '/account/locatie', element: <CoachLocationPage /> },
                   { path: '/account/checkout', element: <CheckoutPage /> },
                   { path: '/account/plata', element: <PaymentReturnPage /> },

@@ -15,6 +15,7 @@ describe('activeAccountTab', () => {
     ['/account/competitions/maraton/register', '/account/enrollments'],
     ['/account/attendance', '/account/attendance'],
     ['/account/announcements', '/account/announcements'],
+    ['/account/profile', '/account/profile'],
   ])('%s lights up %s', (path, tab) => {
     expect(activeAccountTab(path)).toBe(tab)
   })
