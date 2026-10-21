@@ -5,13 +5,14 @@ import { CalendarCheck, Plus, Search, UserRound } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { getMyChildren, getMyEnrollments } from '@/api/account'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { cn } from '@/lib/utils'
 import { PushSettingsCard } from '@/features/notifications/PushSettingsCard'
 import { LiveLocationBanner } from '@/features/live-location/parent/LiveLocationBanner'
 import { DashboardChildrenList } from './DashboardChildrenList'
+import { ProfileCompletionCard } from './ProfileCompletionCard'
 
 export default function ParentDashboard() {
   const { user } = useAuth()
@@ -35,19 +36,7 @@ export default function ParentDashboard() {
 
       <LiveLocationBanner />
 
-      {user?.needsProfileCompletion && (
-        <Card>
-          <CardContent className="space-y-3">
-            <p className="font-semibold">Completează-ți profilul</p>
-            <p className="text-muted-foreground text-sm">
-              Adaugă numărul de telefon pentru a finaliza profilul.
-            </p>
-            <Button asChild>
-              <Link to="/auth/callback?returnUrl=%2Faccount">Completează profilul</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      <ProfileCompletionCard />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Stat
