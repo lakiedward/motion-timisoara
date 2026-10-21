@@ -12,6 +12,7 @@ import { createAdminActivity, updateAdminActivity } from '@/api/activities/admin
 import { fetchSports } from '@/api/sports'
 
 vi.mock('@/api/coach', () => ({
+  activitateaAreInscrieri: vi.fn().mockResolvedValue(false),
   getSelectableLocations: vi.fn(),
   getActivityById: vi.fn(),
   createActivity: vi.fn(),

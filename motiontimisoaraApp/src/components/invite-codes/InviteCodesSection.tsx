@@ -3,16 +3,15 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus } from 'lucide-react'
 
-import { inviteCodeStatus } from '@/api/admin'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import CopyInviteValueButton from './CopyInviteValueButton'
+import InviteCodeList, { type InviteListLayout } from './InviteCodeList'
 
 const inviteSchema = z.object({
   maxUses: z.string().refine((value) => {
@@ -48,10 +47,12 @@ export default function InviteCodesSection({
   source,
   title,
   description,
+  layout = 'plain',
 }: {
   source: InviteCodesSource
   title: string
   description: string
+  layout?: InviteListLayout
 }) {
   const qc = useQueryClient()
   const generationPending = useRef(false)
@@ -273,69 +274,14 @@ export default function InviteCodesSection({
               </Button>
             </div>
           ) : codes.length ? (
-            <ul className="space-y-2">
-              {codes.map((code, index) => {
-                const status = inviteCodeStatus(code)
-                const expires = code.expires_at
-                  ? new Intl.DateTimeFormat('ro-RO', {
-                      dateStyle: 'medium',
-                      timeStyle: 'short',
-                    }).format(new Date(code.expires_at))
-                  : null
-                return (
-                  <li
-                    key={code.id}
-                    className="bg-card flex flex-wrap items-center justify-between gap-2 rounded-2xl border p-3"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <code className="bg-muted break-all rounded px-2 py-1 font-mono text-sm">
-                          {code.code}
-                        </code>
-                        <Badge variant={status === 'active' ? 'success' : 'outline'}>
-                          {status === 'used'
-                            ? 'Folosit'
-                            : status === 'expired'
-                              ? 'Expirat'
-                              : 'Activ'}
-                        </Badge>
-                      </div>
-                      <p className="text-muted-foreground mt-2 text-sm">
-                        Utilizări: {code.current_uses}/{code.max_uses}
-                      </p>
-                      <p className="text-muted-foreground mt-1 text-xs">
-                        {expires
-                          ? `${status === 'expired' ? 'Expirat' : 'Expiră'} pe ${expires} (${timezone})`
-                          : 'Fără expirare'}
-                      </p>
-                    </div>
-                    <div className="flex min-w-0 items-start gap-1">
-                      <CopyInviteValueButton
-                        key={code.code}
-                        value={code.code}
-                        label={`Copiază codul invitație ${index + 1}`}
-                        successMessage="Codul existent a fost copiat."
-                      />
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        className="text-destructive min-h-11 min-w-11"
-                        aria-label={
-                          del.isPending && del.variables === code.id
-                            ? `Se șterge codul invitație ${index + 1}`
-                            : `Șterge codul invitație ${index + 1}`
-                        }
-                        disabled={del.isPending}
-                        onClick={() => void onDelete(code.id)}
-                      >
-                        <Trash2 />
-                      </Button>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
+            <InviteCodeList
+              codes={codes}
+              layout={layout}
+              timezone={timezone}
+              deletingId={del.isPending ? del.variables : undefined}
+              deleteDisabled={del.isPending}
+              onDelete={(id) => void onDelete(id)}
+            />
           ) : (
             <div className="text-muted-foreground rounded-3xl border border-dashed py-16 text-center">
               Niciun cod. Generează unul pentru a invita un antrenor.

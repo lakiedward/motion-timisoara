@@ -126,7 +126,7 @@ export default function CoachAttendancePage() {
       />
     ) : (
       <div className="grid gap-6 md:grid-cols-[1fr_1.2fr]">
-        <div className="min-w-0 space-y-3 lg:-mx-1.5 lg:max-h-[75vh] lg:overflow-y-auto lg:px-1.5">
+        <div className="min-w-0 space-y-3 lg:-mx-1.5 lg:max-h-[calc(100dvh-21rem)] lg:overflow-y-auto lg:px-1.5">
           {markingOnPhone && (
             <Button
               type="button"
@@ -178,11 +178,11 @@ export default function CoachAttendancePage() {
             </p>
           )}
         </div>
-        <div className="hidden min-w-0 md:block lg:max-h-[75vh] lg:overflow-y-auto">
+        <div className="hidden min-w-0 md:block lg:max-h-[calc(100dvh-21rem)] lg:overflow-y-auto">
           {sel && (
-            <div className="bg-card space-y-3 rounded-xl border p-4">
-              <h2 className="font-display text-foreground font-bold wrap-anywhere">
-                {sel.courseName}
+            <div className="bg-card space-y-3 rounded-xl border px-4 pb-4">
+              <h2 className="font-display text-foreground bg-card -mx-4 rounded-t-xl border-b px-4 py-3 font-bold lg:sticky lg:top-0 lg:z-10">
+                <span className="line-clamp-2 wrap-anywhere">{sel.courseName}</span>
                 <span className="text-muted-foreground block text-sm font-normal">
                   {sessionWhen(sel)}
                 </span>
