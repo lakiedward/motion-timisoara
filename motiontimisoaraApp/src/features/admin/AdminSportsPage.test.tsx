@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, expect, test, vi } from 'vitest'
@@ -124,30 +124,65 @@ test('duplicate code keeps the entered name and existing rows for retry', async 
 })
 
 test('canceling delete sends no request, while confirmed deletion targets only the selected sport', async () => {
-  const confirmation = vi.spyOn(window, 'confirm').mockReturnValue(false)
   renderPage()
   await screen.findByText('Alergare')
   await userEvent.click(screen.getByRole('button', { name: 'Șterge sportul Înot' }))
-  expect(confirmation).toHaveBeenCalledWith('Ștergi sportul Înot?')
+  expect(screen.getByRole('alertdialog')).toHaveTextContent('Ștergi sportul Înot?')
+  await userEvent.click(screen.getByRole('button', { name: 'Anulează' }))
+  expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
   expect(deleteSport).not.toHaveBeenCalled()
-  confirmation.mockReturnValue(true)
   await userEvent.click(screen.getByRole('button', { name: 'Șterge sportul Înot' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Șterge sportul' }))
   await waitFor(() => expect(deleteSport).toHaveBeenCalledExactlyOnceWith('b'))
   expect(toast.success).toHaveBeenCalledWith('Sport șters.')
-  confirmation.mockRestore()
+  await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
 })
 
 test('failed delete keeps both rows and does not claim a network error means existing usage', async () => {
-  const confirmation = vi.spyOn(window, 'confirm').mockReturnValue(true)
   vi.mocked(deleteSport).mockRejectedValue(new Error('offline'))
   renderPage()
   await screen.findByText('Alergare')
   await userEvent.click(screen.getByRole('button', { name: 'Șterge sportul Alergare' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Șterge sportul' }))
   expect(await screen.findByRole('alert')).toHaveTextContent(/conexiunea/)
   expect(screen.getByRole('alert')).not.toHaveTextContent(/folosit/)
   expect(screen.getByText('Alergare')).toBeInTheDocument()
   expect(screen.getByText('Înot')).toBeInTheDocument()
-  confirmation.mockRestore()
+})
+
+test('used sport refusal explains the real reason', async () => {
+  vi.mocked(deleteSport).mockRejectedValue(
+    new SportMutationError(
+      'Sportul este folosit de cursuri, activități, antrenori sau cluburi și nu poate fi șters.',
+    ),
+  )
+  renderPage()
+  await screen.findByText('Alergare')
+  await userEvent.click(screen.getByRole('button', { name: 'Șterge sportul Alergare' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Șterge sportul' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent(/folosit/)
+})
+
+test('search and photo filters narrow the grouped list', async () => {
+  renderPage()
+  await screen.findByText('Alergare')
+  expect(screen.getByRole('region', { name: 'Fără poză standard' })).toHaveTextContent('Înot')
+  expect(screen.getByRole('region', { name: 'Cu poză standard' })).toHaveTextContent('Alergare')
+  await userEvent.click(
+    within(screen.getByRole('group', { name: 'Status' })).getByRole('button', {
+      name: /Cu poză standard/,
+    }),
+  )
+  expect(screen.queryByText('Înot')).not.toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: /^Toate/ }))
+  await userEvent.type(screen.getByRole('searchbox'), 'inot')
+  expect(screen.queryByText('Alergare')).not.toBeInTheDocument()
+  expect(screen.getByText('1 din 2 sporturi')).toBeInTheDocument()
+  await userEvent.clear(screen.getByRole('searchbox'))
+  await userEvent.type(screen.getByRole('searchbox'), 'tenis')
+  expect(screen.getByText('Niciun sport găsit.')).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Șterge filtrele' }))
+  expect(screen.getByText('Alergare')).toBeInTheDocument()
 })
 
 test('pending photo save blocks competing row mutations and duplicated uploads', async () => {
