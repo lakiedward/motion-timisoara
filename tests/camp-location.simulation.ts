@@ -37,7 +37,7 @@ for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 
       await parent.goto('/account/announcements');
       await expect(parent.getByRole('link', { name: /Unde e antrenorul|Vezi pe hartă/ })).toHaveCount(0);
       await parent.goto('/account/locatie');
-      await expect(coach.getByRole('heading', { name: 'Cine s-a înscris' })).toBeVisible();
+      await expect(coach.getByRole('heading', { level: 1, name: /^Participanți/ })).toBeVisible();
       await expect(coach.getByRole('heading', { name: 'Prezență în tabără' })).toHaveCount(0);
       const copil = coach.getByRole('listitem').filter({ hasText: 'Copil Simulat Ana' });
       await expect(copil.getByRole('button', { name: 'Confirmă sosirea', exact: true })).toBeVisible();
