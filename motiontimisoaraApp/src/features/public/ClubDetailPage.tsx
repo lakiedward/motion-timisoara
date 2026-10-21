@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ClubHero } from './club-detail/ClubHero'
+import { ClubOffer } from './club-detail/ClubOffer'
 import ClubLocationMap from './map/ClubLocationMap'
 
 export default function ClubDetailPage() {
@@ -52,7 +53,7 @@ export default function ClubDetailPage() {
     <div>
       <ClubHero club={club} />
       <div className="mx-auto max-w-5xl px-6">
-        <div className="mt-8 grid gap-8 pb-16 lg:grid-cols-[1.6fr_1fr]">
+        <div className="mt-8 grid gap-8 pb-10 lg:grid-cols-[1.6fr_1fr]">
           <div>
             {club.description && (
               <>
@@ -106,6 +107,7 @@ export default function ClubDetailPage() {
             )}
           </aside>
         </div>
+        <ClubOffer clubId={club.id} />
       </div>
     </div>
   )
