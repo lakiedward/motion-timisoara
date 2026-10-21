@@ -706,3 +706,20 @@ test('la editare, Salvează tabăra actualizează oferta existentă', async () =
   expect(vi.mocked(saveCampOffer).mock.calls[0][0]).toBe('tabara-1')
   expect(toast.success).toHaveBeenCalledWith('Tabără actualizată.')
 })
+
+test.each(PORTALE)('pe %s, un link de tabără inexistent arată „Tabăra nu a fost găsită.”', async (baza) => {
+  vi.mocked(getTabaraDeEditat).mockResolvedValue(null)
+  renderForm(`${baza}/lipsa/edit`)
+  expect(await screen.findByText('Tabăra nu a fost găsită.')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /Înapoi la tabere/ })).toHaveAttribute('href', baza)
+  expect(screen.queryByRole('heading', { name: 'Editează tabăra' })).not.toBeInTheDocument()
+})
+
+test('dacă tabăra nu se poate citi, Reîncearcă repetă citirea', async () => {
+  vi.mocked(getTabaraDeEditat).mockRejectedValueOnce(new Error('retea'))
+  renderForm('/club/camps/tabara-1/edit')
+  expect(await screen.findByText('Nu am putut încărca tabăra.')).toBeInTheDocument()
+  vi.mocked(getTabaraDeEditat).mockResolvedValue({ ...TABARA } as never)
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Reîncearcă' }))
+  expect(await screen.findByRole('heading', { name: 'Editează tabăra' })).toBeInTheDocument()
+})

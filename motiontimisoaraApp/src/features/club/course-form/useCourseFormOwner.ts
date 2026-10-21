@@ -18,7 +18,7 @@ export function useCourseFormOwner(
 ) {
   const isAdmin = portal === 'admin'
   const [chosen, setChosen] = useState('')
-  const { data: myClub } = useQuery({
+  const { data: myClub, isFetched: myClubFetched } = useQuery({
     queryKey: ['my-club'],
     queryFn: getMyClub,
     enabled: enabled && !isAdmin,
@@ -56,6 +56,7 @@ export function useCourseFormOwner(
     clubs,
     clubId,
     hasOwner: !!owner,
+    ownerReady: isAdmin || myClubFetched,
     coaches,
     coachesReady,
     locations,

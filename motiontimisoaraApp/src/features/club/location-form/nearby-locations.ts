@@ -18,6 +18,37 @@ function distanceMeters(a: LocationPoint, b: LocationPoint): number {
   return 2 * EARTH_RADIUS_METERS * Math.asin(Math.sqrt(Math.min(1, arc)))
 }
 
+export function isOwnLocation(
+  location: Pick<LocationRow, 'club_id' | 'created_by_user_id'>,
+  ownerId: string,
+): boolean {
+  if (!ownerId) return false
+  return (
+    location.club_id === ownerId || (!location.club_id && location.created_by_user_id === ownerId)
+  )
+}
+
+export const NEARBY_OWNER_COPY = {
+  club: {
+    ownLabel: 'Deja în locațiile clubului',
+    editBasePath: '/club/locations',
+    choiceNote:
+      'La salvare, clubul va avea propria locație în acest punct. Poți ajusta detaliile din formular.',
+  },
+  coach: {
+    ownLabel: 'Deja în locațiile tale',
+    editBasePath: '/coach/locations',
+    choiceNote:
+      'La salvare, vei avea propria locație în acest punct. Poți ajusta detaliile din formular.',
+  },
+  admin: {
+    ownLabel: 'Deja în locațiile organizatorului',
+    editBasePath: '/admin/locations',
+    choiceNote:
+      'La salvare, organizatorul va avea propria locație în acest punct. Poți ajusta detaliile din formular.',
+  },
+} as const
+
 export function locationPointKey(point: LocationPoint): string {
   return `${point.lat},${point.lng}`
 }

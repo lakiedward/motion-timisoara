@@ -165,3 +165,24 @@ test('editarea încarcă activitatea clubului', async () => {
     '/activitati/act-1',
   )
 })
+
+test('pe un link de activitate inexistent apare „Activitatea nu a fost găsită.”', async () => {
+  vi.mocked(getClubActivityById).mockResolvedValue(null)
+  renderPage('/club/activities/lipsa/edit')
+  expect(await screen.findByText('Activitatea nu a fost găsită.')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /Înapoi/ })).toHaveAttribute('href', '/club/activities')
+  expect(screen.queryByRole('heading', { name: 'Editează activitate' })).not.toBeInTheDocument()
+})
+
+test('activitatea altui club apare ca negăsită', async () => {
+  vi.mocked(getClubActivityById).mockResolvedValue({ id: 'a9', club_id: 'alt-club' } as never)
+  renderPage('/club/activities/a9/edit')
+  expect(await screen.findByText('Activitatea nu a fost găsită.')).toBeInTheDocument()
+})
+
+test('dacă activitatea nu se poate citi, apare Reîncearcă', async () => {
+  vi.mocked(getClubActivityById).mockRejectedValue(new Error('retea'))
+  renderPage('/club/activities/act-1/edit')
+  expect(await screen.findByText('Nu am putut încărca activitatea.')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Reîncearcă' })).toBeInTheDocument()
+})
