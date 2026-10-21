@@ -88,7 +88,13 @@ export function accountGroups(role: Role) {
       title: 'Club',
       items: [...clubNavigation, { to: '/club/stripe', label: 'Încasări', icon: CreditCard }],
     })
-  groups.push({ title: 'Familia mea', items: personalNavigation })
+  groups.push({
+    title: 'Familia mea',
+    items:
+      role === 'PARENT'
+        ? [...personalNavigation, { to: '/account/profile', label: 'Profilul meu', icon: UserRound }]
+        : personalNavigation,
+  })
   return groups
 }
 
@@ -134,6 +140,7 @@ const secondaryScreens = [
   ['/auth/callback', 'Contul tău', '/cont'],
   ['/termeni', 'Termeni și condiții', '/cont'],
   ['/confidentialitate', 'Confidențialitate', '/cont'],
+  ['/account/profile', 'Profilul meu', '/cont'],
   ['/admin/profile', 'Profil administrator', '/admin'],
   ['/coach/profile', 'Profil antrenor', '/cont'],
   ['/coach/stripe', 'Încasări', '/cont'],
