@@ -9,6 +9,7 @@ import {
   getMyChildren,
   getMyChildrenCampAttendance,
 } from '@/api/account'
+import { getMyChildrenActivityAttendance } from '@/api/attendance/activity-attendance'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { StatusView } from '@/components/ui/status-view'
@@ -66,21 +67,46 @@ export default function AttendancePage() {
     enabled: idsCopii.length > 0,
   })
 
+  const {
+    data: activitati = [],
+    isPending: seIncarcaActivitati,
+    isError: aEsuatActivitati,
+    refetch: refetchActivitati,
+  } = useQuery({
+    queryKey: ['activity-attendance'],
+    queryFn: getMyChildrenActivityAttendance,
+    enabled: idsCopii.length > 0,
+  })
+
   const numeDupaId = useMemo(() => new Map(children.map((c) => [c.id, c.name])), [children])
 
   const tabereAlese = useMemo(
     () => (totiCopiii ? tabere : tabere.filter((t) => t.child_id === ales)),
     [tabere, totiCopiii, ales],
   )
-  const toate = useMemo(() => attendanceEntries(records, tabereAlese, null), [records, tabereAlese])
+  const activitatiAlese = useMemo(
+    () => activitati.filter((a) => (totiCopiii ? idsCopii.includes(a.child_id) : a.child_id === ales)),
+    [activitati, totiCopiii, idsCopii, ales],
+  )
+  const toate = useMemo(
+    () => attendanceEntries(records, tabereAlese, null, activitatiAlese),
+    [records, tabereAlese, activitatiAlese],
+  )
   const randuri = useMemo(
-    () => attendanceEntries(records, tabereAlese, inceputPerioada(perioada)),
-    [records, tabereAlese, perioada],
+    () => attendanceEntries(records, tabereAlese, inceputPerioada(perioada), activitatiAlese),
+    [records, tabereAlese, perioada, activitatiAlese],
   )
 
   const prezente = randuri.filter((r) => r.present).length
   const filtrulAscundeTot = randuri.length === 0 && toate.length > 0
   const cuTabere = toate.some((r) => r.kind === 'CAMP')
+  const cuActivitati = toate.some((r) => r.kind === 'ACTIVITY')
+  const cuTipuri = cuTabere || cuActivitati
+  const ceSeNumara = [
+    'ședințele pontate de antrenor',
+    cuActivitati && 'activitățile pontate',
+    cuTabere && 'sosirile la tabără',
+  ].filter(Boolean)
 
   const numeAles = numeDupaId.get(ales) ?? 'Copilul ales'
 
@@ -159,7 +185,7 @@ export default function AttendancePage() {
             </Button>
           }
         />
-      ) : aEsuatCitirea || aEsuatTabere ? (
+      ) : aEsuatCitirea || aEsuatTabere || aEsuatActivitati ? (
         <StatusView
           state="error"
           title="Nu am putut încărca prezența."
@@ -167,9 +193,10 @@ export default function AttendancePage() {
           onRetry={() => {
             if (aEsuatCitirea) refetch()
             if (aEsuatTabere) refetchTabere()
+            if (aEsuatActivitati) refetchActivitati()
           }}
         />
-      ) : seIncarcaPrezenta || seIncarcaTabere ? (
+      ) : seIncarcaPrezenta || seIncarcaTabere || seIncarcaActivitati ? (
         <StatusView state="loading" title="Se încarcă prezența" rowHeight={64} />
       ) : (
         <div className="space-y-4">
@@ -177,12 +204,12 @@ export default function AttendancePage() {
             <span className="font-semibold">{prezente}</span>{' '}
             {plural(prezente, 'prezență', 'prezențe', true)} din{' '}
             <span className="font-semibold">{randuri.length}</span>{' '}
-            {cuTabere
+            {cuTipuri
               ? `${plural(randuri.length, 'înregistrare', 'înregistrări', true)}${randuri.length ? `: ${kindBreakdown(randuri)}` : ''}.`
               : `${plural(randuri.length, 'ședință înregistrată', 'ședințe înregistrate', true)}.`}
             <p className="text-muted-foreground mt-1 text-xs">
-              {cuTabere
-                ? 'Se numără ședințele pontate de antrenor și sosirile la tabără.'
+              {cuTipuri
+                ? `Se numără ${ceSeNumara.slice(0, -1).join(', ')} și ${ceSeNumara.at(-1)}.`
                 : 'Se numără doar ședințele pontate de antrenor.'}
             </p>
           </div>
@@ -192,7 +219,7 @@ export default function AttendancePage() {
               randuri={randuri}
               numeDupaId={numeDupaId}
               cuNume={totiCopiii && children.length > 1}
-              cuTip={cuTabere}
+              cuTip={cuTipuri}
             />
           ) : filtrulAscundeTot ? (
             <StatusView

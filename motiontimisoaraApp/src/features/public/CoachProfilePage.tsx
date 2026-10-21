@@ -2,12 +2,12 @@ import { useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { getCoachByUserId, publicUrl } from '@/api/public'
+import { coachClubs, getCoachByUserId, publicUrl } from '@/api/public'
 import { getCoachRatingSummary, getMyCoachRating, submitCoachRating } from '@/api/ratings'
 import { useAuth } from '@/lib/auth-context'
 import { StatusView } from '@/components/ui/status-view'
 import { StarRating } from '@/components/StarRating'
-import { CoachCourses } from './coaches/CoachCourses'
+import { CoachOffer } from './coaches/CoachOffer'
 import { CoachBackLink, CoachHero, CoachHeroSkeleton } from './coaches/CoachHero'
 
 export default function CoachProfilePage() {
@@ -83,6 +83,7 @@ export default function CoachProfilePage() {
         name={name}
         photoUrl={publicUrl('coach-photos', coach.photo_storage_path)}
         sports={sports}
+        clubs={coachClubs(coach)}
         bio={coach.bio}
         rating={rating}
         myRating={
@@ -95,7 +96,7 @@ export default function CoachProfilePage() {
         }
       />
 
-      <CoachCourses coachId={id} />
+      <CoachOffer coachId={id} coachProfileId={coach.id} />
     </div>
   )
 }

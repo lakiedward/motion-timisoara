@@ -10,6 +10,7 @@ import { geocoding, type GeoPlace } from '@/api/geocoding'
 import { markerIcon } from '@/lib/map-marker'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { RequiredMark } from '@/components/FormSection'
 import { Button } from '@/components/ui/button'
 import {
   basemapAttribution,
@@ -40,6 +41,7 @@ type Props = {
   invalid?: boolean
   errorId?: string
   error?: string
+  pointRequired?: boolean
 }
 
 function UrmarestePunctul({ point }: { point: { lat: number; lng: number } | null }) {
@@ -79,6 +81,7 @@ export default function LocationPicker({
   invalid,
   errorId,
   error,
+  pointRequired = false,
 }: Props) {
   const carto = cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY)
   const [cautareAmanata, setCautareAmanata] = useState('')
@@ -299,7 +302,19 @@ export default function LocationPicker({
         </div>
       )}
 
-      <div className="mt-location-picker h-64 w-full overflow-hidden rounded-md border sm:h-80">
+      {pointRequired && (
+        <p
+          id="map-point-label"
+          className="flex items-center gap-2 pt-2 text-sm leading-none font-medium"
+        >
+          Locul pe hartă <RequiredMark />
+        </p>
+      )}
+      <div
+        role={pointRequired ? 'group' : undefined}
+        aria-labelledby={pointRequired ? 'map-point-label' : undefined}
+        className="mt-location-picker h-64 w-full overflow-hidden rounded-md border sm:h-80"
+      >
         <MapContainer
           center={value ? [value.lat, value.lng] : CENTRU_IMPLICIT}
           zoom={value ? ZOOM_PUNCT : ZOOM_ORAS}

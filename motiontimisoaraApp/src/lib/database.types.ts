@@ -127,6 +127,55 @@ export type Database = {
           },
         ]
       }
+      activity_attendance: {
+        Row: {
+          activity_id: string
+          child_id: string
+          id: string
+          recorded_at: string
+          recorded_by: string | null
+          status: string
+        }
+        Insert: {
+          activity_id: string
+          child_id: string
+          id?: string
+          recorded_at?: string
+          recorded_by?: string | null
+          status: string
+        }
+        Update: {
+          activity_id?: string
+          child_id?: string
+          id?: string
+          recorded_at?: string
+          recorded_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_attendance_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_attendance_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_attendance_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcement_attachments: {
         Row: {
           announcement_id: string | null
@@ -1029,6 +1078,8 @@ export type Database = {
       clubs: {
         Row: {
           address: string | null
+          approved_at: string | null
+          approved_by: string | null
           bank_account: string | null
           bank_name: string | null
           city: string | null
@@ -1058,6 +1109,8 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           bank_account?: string | null
           bank_name?: string | null
           city?: string | null
@@ -1087,6 +1140,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           bank_account?: string | null
           bank_name?: string | null
           city?: string | null
@@ -1115,6 +1170,13 @@ export type Database = {
           website?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "clubs_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "clubs_owner_user_id_fkey"
             columns: ["owner_user_id"]
@@ -2880,6 +2942,7 @@ export type Database = {
       admin_clubs: {
         Args: never
         Returns: {
+          approved_at: string
           city: string
           email: string
           id: string
@@ -2921,6 +2984,7 @@ export type Database = {
         }
         Returns: Json
       }
+      approve_club: { Args: { p_club_id: string }; Returns: undefined }
       audience_club_id: {
         Args: { p_id: string; p_kind: string }
         Returns: string
@@ -3109,6 +3173,8 @@ export type Database = {
         Args: never
         Returns: {
           address: string | null
+          approved_at: string | null
+          approved_by: string | null
           bank_account: string | null
           bank_name: string | null
           city: string | null
@@ -3216,6 +3282,15 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      record_activity_attendance: {
+        Args: {
+          p_activity_id: string
+          p_child_ids: string[]
+          p_only_unmarked?: boolean
+          p_status: string
+        }
+        Returns: number
       }
       record_attendance_transaction: {
         Args: { p_actor_id: string; p_payload: Json }

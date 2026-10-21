@@ -15,11 +15,16 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import type { FisierPregatit } from '@/lib/media'
 import AnnouncementMediaPicker from './AnnouncementMediaPicker'
+import { AnnouncementScheduleFields } from './AnnouncementScheduleFields'
+import {
+  PRIORITY_OPTIONS,
+  announcementSchema,
+  selectCls,
+  withScheduleRules,
+} from './announcement-form'
+import { EMPTY_SCHEDULE, scheduleFromFields, scheduleState } from './announcement-schedule'
 
 const WHOLE_CLUB = 'CLUB'
-
-const selectCls =
-  'border-input dark:bg-input/30 flex h-touch-target w-full min-w-0 rounded-md border bg-transparent px-3 text-base shadow-xs transition-[color,box-shadow] outline-none hover:border-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring'
 
 const AUDIENCE_GROUPS: { kind: AudienceKind; label: string }[] = [
   { kind: 'COURSE', label: 'Cursuri' },
@@ -27,12 +32,7 @@ const AUDIENCE_GROUPS: { kind: AudienceKind; label: string }[] = [
   { kind: 'CAMP', label: 'Tabere' },
 ]
 
-const schema = z.object({
-  title: z.string().trim().min(2, 'Scrie un titlu de cel puțin 2 caractere'),
-  content: z.string().trim().min(2, 'Scrie conținutul anunțului'),
-  priority: z.string(),
-  audience: z.string(),
-})
+const schema = withScheduleRules(announcementSchema.extend({ audience: z.string() }))
 type Values = z.infer<typeof schema>
 
 const EMPTY_FORM: Values = {
@@ -40,6 +40,7 @@ const EMPTY_FORM: Values = {
   content: '',
   priority: 'NORMAL',
   audience: WHOLE_CLUB,
+  ...EMPTY_SCHEDULE,
 }
 
 function readAudience(value: string): { kind: AudienceKind; id: string | null } {
@@ -56,6 +57,7 @@ type Props = {
 
 export default function AnnouncementComposeForm({ clubId, audiences, onPublished }: Props) {
   const [files, setFiles] = useState<FisierPregatit[]>([])
+  const [resetari, setResetari] = useState(0)
   const {
     register,
     handleSubmit,
@@ -73,15 +75,21 @@ export default function AnnouncementComposeForm({ clubId, audiences, onPublished
         priority: v.priority,
         audience_kind: audience.kind,
         audience_id: audience.id,
+        ...scheduleFromFields(v),
       })
       if (files.length) await incarcaAtasamente(announcement.id, files)
       return announcement
     },
-    onSuccess: () => {
+    onSuccess: (announcement) => {
       reset(EMPTY_FORM)
       setFiles([])
+      setResetari((n) => n + 1)
       onPublished()
-      toast.success('Anunț publicat.')
+      toast.success(
+        scheduleState(announcement) === 'scheduled'
+          ? 'Anunț programat. Părinții îl văd la data aleasă.'
+          : 'Anunț publicat.',
+      )
     },
     onError: () => toast.error('Nu am putut publica anunțul.'),
   })
@@ -153,14 +161,24 @@ export default function AnnouncementComposeForm({ clubId, audiences, onPublished
             </p>
           </div>
 
+          <AnnouncementScheduleFields
+            key={resetari}
+            idPrefix="compose"
+            collapsible
+            register={register}
+            errors={errors}
+            disabled={create.isPending}
+          />
+
           <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="space-y-1.5 sm:w-56">
               <Label htmlFor="priority">Prioritate</Label>
               <select id="priority" className={selectCls} {...register('priority')}>
-                <option value="LOW">Scăzută</option>
-                <option value="NORMAL">Normală</option>
-                <option value="HIGH">Ridicată</option>
-                <option value="URGENT">Urgentă</option>
+                {PRIORITY_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
               </select>
             </div>
 

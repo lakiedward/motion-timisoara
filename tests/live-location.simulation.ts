@@ -104,7 +104,7 @@ async function simulate(page: Page, role: Role) {
     if (request.method() === 'OPTIONS') return respond(null);
     if (url.pathname === '/rest/v1/rpc/my_profile') return respond([actor]);
     if (url.pathname === '/auth/v1/user') return respond({ ...actor, aud: 'authenticated', user_metadata: {} });
-    if (url.pathname === '/rest/v1/rpc/my_club') return respond([{ id: ids.club, owner_user_id: ids.clubOwner, name: 'Club Simulat' }]);
+    if (url.pathname === '/rest/v1/rpc/my_club') return respond([{ id: ids.club, owner_user_id: ids.clubOwner, name: 'Club Simulat', approved_at: '2026-09-01T00:00:00Z' }]);
     if (url.pathname === '/rest/v1/children') return respond([child]);
     if (url.pathname === '/rest/v1/courses') return respond([course]);
     if (url.pathname === '/rest/v1/course_occurrences') {
@@ -116,6 +116,7 @@ async function simulate(page: Page, role: Role) {
     if (url.pathname === '/rest/v1/attendance') return respond([{ id: 'attendance-simulation', occurrence_id: ids.occurrence,
       child_id: ids.child, status: 'PRESENT', occurrence: { starts_at: occurrence.starts_at, course } }]);
     if (url.pathname === '/rest/v1/rpc/get_my_children_camp_attendance') return respond([]);
+    if (url.pathname === '/rest/v1/activity_attendance') return respond([]);
     if (url.pathname === '/functions/v1/coach-live-location') {
       const body = request.postDataJSON() as LocationAction;
       evidence.actions.push(body);

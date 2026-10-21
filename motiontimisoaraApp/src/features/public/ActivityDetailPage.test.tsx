@@ -38,6 +38,7 @@ const DETALIU: ActivitateDetaliu = {
   photoUrl: 'https://public/sport-photos/ciclism.jpg',
   sport: { code: 'ciclism', name: 'Ciclism' },
   location: {
+    id: 'loc-1',
     name: 'DEMO — Parc de antrenament',
     address: 'Str. Exemplu 1',
     lat: 45.751,
@@ -165,7 +166,7 @@ test('titlul de pe bandă pornește din aceeași coloană ca restul paginii', as
   expect(titlu.parentElement?.className).toContain('max-w-4xl')
   expect(titlu.parentElement?.className).not.toContain('max-w-6xl')
 })
-test('organizatorul stă sub titlu, antrenorul e separat, iar numele locului nu e link', async () => {
+test('organizatorul stă sub titlu, antrenorul e separat, iar locul duce doar la harta site-ului', async () => {
   deseneaza()
   const titlu = await screen.findByRole('heading', { level: 1, name: 'DEMO — Atelier de ciclism' })
   const organizator = screen.getByRole('heading', { name: 'Organizată de' })
@@ -192,9 +193,12 @@ test('organizatorul stă sub titlu, antrenorul e separat, iar numele locului nu 
   expect(ore.parentElement).toHaveTextContent('10:00–12:00')
   expect(locEticheta.parentElement).toHaveTextContent('DEMO — Parc de antrenament')
   expect(locEticheta.closest('a')).toBeNull()
-  for (const nume of screen.getAllByText('DEMO — Parc de antrenament')) {
-    expect(nume.closest('a')).toBeNull()
-  }
+  const linkuriLoc = screen
+    .getAllByText('DEMO — Parc de antrenament')
+    .map((nume) => nume.closest('a'))
+    .filter((link) => link !== null)
+  expect(linkuriLoc.map((link) => link.getAttribute('href'))).toEqual(['/harta?location=loc-1'])
+  expect(locEticheta.parentElement).toContainElement(linkuriLoc[0])
   expect(locuri.parentElement).toHaveTextContent('11 locuri rămase')
   expect(dataEticheta.compareDocumentPosition(ore) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   expect(ore.compareDocumentPosition(locEticheta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
@@ -270,11 +274,29 @@ test('galerie, regulament, hartă și nota de curs stau în ordinea aleasă', as
 test('fără coordonate harta lipsește, iar numele rămâne pe rând', async () => {
   mocked.mockResolvedValue({
     ...DETALIU,
-    location: { name: 'DEMO — Parc de antrenament', address: null, lat: null, lng: null },
+    location: {
+      id: 'loc-1',
+      name: 'DEMO — Parc de antrenament',
+      address: null,
+      lat: null,
+      lng: null,
+    },
   })
   deseneaza()
   expect(await screen.findByText('DEMO — Parc de antrenament')).toBeInTheDocument()
   expect(screen.queryByRole('link', { name: /în hărți/ })).not.toBeInTheDocument()
+  expect(screen.queryByRole('link', { name: /vezi pe hartă/ })).not.toBeInTheDocument()
+})
+
+test('locul de pe rândul Loc duce la harta site-ului, ca pe tabără', async () => {
+  deseneaza()
+  const link = await screen.findByRole('link', {
+    name: 'DEMO — Parc de antrenament — vezi pe hartă',
+  })
+  expect(link).toHaveAttribute('href', '/harta?location=loc-1')
+  expect(link).toHaveTextContent('DEMO — Parc de antrenament')
+  expect(link.className).toContain('underline')
+  expect(link.className).toContain('min-h-touch-target')
 })
 
 test('locația are titlu, adresă, link vizibil și ascunde dalele care nu se încarcă', async () => {

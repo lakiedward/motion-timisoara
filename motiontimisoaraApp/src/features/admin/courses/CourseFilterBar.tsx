@@ -32,6 +32,7 @@ export function CourseFilterBar<S extends string = StatusFilter>({
   selectId = 'admin-course-sport',
   sportLabel = 'Sport',
   allSportsLabel = 'Toate sporturile',
+  statusLabel = 'Status',
 }: {
   status: S
   sport: string
@@ -43,12 +44,13 @@ export function CourseFilterBar<S extends string = StatusFilter>({
   selectId?: string
   sportLabel?: string
   allSportsLabel?: string
+  statusLabel?: string
 }) {
   return (
     <div className="mb-3 space-y-2">
       <div
         role="group"
-        aria-label="Status"
+        aria-label={statusLabel}
         className="-mx-6 flex gap-2 overflow-x-auto px-6 pb-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0"
       >
         {statusOptions.map((o) => {

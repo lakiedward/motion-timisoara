@@ -61,7 +61,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(fetchSports).mockResolvedValue([{ id: SPORT, name: 'Înot' }] as never)
   vi.mocked(getAllClubs).mockResolvedValue([
-    { id: CLUB, name: 'Club Audit Motion', city: 'Timișoara', email: null },
+    { id: CLUB, name: 'Club Audit Motion', city: 'Timișoara', email: null, approved_at: '2026-09-01T00:00:00Z' },
   ])
   vi.mocked(getClubRosterForSelect).mockResolvedValue([
     { user_id: CLUB_COACH, name: 'Dan Pop' },

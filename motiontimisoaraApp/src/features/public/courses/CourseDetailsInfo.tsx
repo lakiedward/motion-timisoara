@@ -36,6 +36,7 @@ export function CourseDetailsInfo({
           icon={<MapPin className="size-4" />}
           label="Locație"
           value={course.location?.name ?? '—'}
+          hint={course.location?.address?.trim() || undefined}
           to={course.location_id ? `/harta?location=${course.location_id}` : undefined}
         />
         <InfoTile

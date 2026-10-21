@@ -91,6 +91,17 @@ export async function getCoachCourses(coachId: string): Promise<CourseCatalogIte
   return withSpotsRemaining(data)
 }
 
+export async function getClubCourses(clubId: string): Promise<CourseCatalogItem[]> {
+  const { data, error } = await supabase
+    .from('courses')
+    .select(COURSE_CATALOG_SELECT)
+    .eq('active', true)
+    .eq('club_id', clubId)
+    .order('name')
+  if (error) throw error
+  return withSpotsRemaining(data)
+}
+
 /** Remaining seats for a public course (SECURITY DEFINER RPC). Null = unlimited / unknown. */
 export async function getCourseSpotsRemaining(courseId: string): Promise<number | null> {
   const { data, error } = await supabase.rpc('course_spots_remaining', {
@@ -158,17 +169,29 @@ export async function getCoaches(): Promise<CoachListItem[]> {
   return (data ?? []) as unknown as CoachListItem[]
 }
 
-export async function getCoachByUserId(userId: string): Promise<CoachListItem | null> {
+export type CoachClub = Pick<Tables<'clubs'>, 'id' | 'name' | 'logo_storage_path'>
+
+export type CoachProfileDetail = CoachListItem & {
+  club_coaches: { club: CoachClub | null }[]
+}
+
+export async function getCoachByUserId(userId: string): Promise<CoachProfileDetail | null> {
   if (!isUuid(userId)) return null
   const { data, error } = await supabase
     .from('coach_profiles')
     .select(
-      'id, user_id, bio, avatar_url, photo_storage_path, profile:profiles(id,name,avatar_url), coach_sports(sport:sports(id,code,name))',
+      'id, user_id, bio, avatar_url, photo_storage_path, profile:profiles(id,name,avatar_url), coach_sports(sport:sports(id,code,name)), club_coaches(club:clubs(id,name,logo_storage_path))',
     )
     .eq('user_id', userId)
     .maybeSingle()
   if (error) throw error
-  return data as unknown as CoachListItem | null
+  return data as unknown as CoachProfileDetail | null
+}
+
+export function coachClubs(coach: Pick<CoachProfileDetail, 'club_coaches'>): CoachClub[] {
+  return (coach.club_coaches ?? [])
+    .flatMap((membership) => (membership.club ? [membership.club] : []))
+    .sort((a, b) => a.name.localeCompare(b.name, 'ro'))
 }
 
 export type ClubListItem = Tables<'clubs'> & {
@@ -344,13 +367,20 @@ type ActivitateBruta = ActivitateProgramata & {
   coach: { name: string } | null
 }
 
-export async function getActivitatiPublice(acum = new Date()): Promise<ActivitateDinLista[]> {
-  const { data, error } = await supabase
+export async function getActivitatiPublice(
+  acum = new Date(),
+  clubId?: string,
+  coachId?: string,
+): Promise<ActivitateDinLista[]> {
+  let q = supabase
     .from('activities')
     .select(
       'id, name, activity_date, start_time, end_time, price, currency, hero_photo_storage_path, sport:sports(id, code, name, default_photo_storage_path), location:locations(name), club:clubs(name), coach:profiles(name)',
     )
     .eq('active', true)
+  if (clubId) q = q.eq('club_id', clubId)
+  if (coachId) q = q.eq('coach_id', coachId)
+  const { data, error } = await q
     .order('activity_date')
     .order('start_time')
   if (error) throw error
@@ -405,7 +435,13 @@ export type ActivitateDetaliu = {
   bandUrl: string | null
   photoUrl: string | null
   sport: { code: string; name: string } | null
-  location: { name: string; address: string | null; lat: number | null; lng: number | null } | null
+  location: {
+    id: string
+    name: string
+    address: string | null
+    lat: number | null
+    lng: number | null
+  } | null
   organizator: OrganizatorActivitate | null
   antrenori: PersoanaActivitate[]
   galerieUrls: string[]
@@ -434,7 +470,13 @@ type ActivitateDetaliuBruta = {
   rules_file_content_type: string | null
   rules_file_size_bytes: number | null
   sport: SportRow | null
-  location: { name: string; address: string | null; lat: number | null; lng: number | null } | null
+  location: {
+    id: string
+    name: string
+    address: string | null
+    lat: number | null
+    lng: number | null
+  } | null
   club: { id: string; name: string; logo_storage_path: string | null } | null
   coach: { id: string; name: string; avatar_url: string | null } | null
 }
@@ -462,7 +504,7 @@ export async function getActivitateDetaliu(id: string): Promise<ActivitateDetali
   const { data, error } = await supabase
     .from('activities')
     .select(
-      'id, name, description, activity_date, start_time, end_time, price, currency, eur_ron_rate_micros, hero_photo_storage_path, rules_file_storage_path, rules_file_name, rules_file_content_type, rules_file_size_bytes, sport:sports(id, code, name, default_photo_storage_path), location:locations(name, address, lat, lng), club:clubs(id, name, logo_storage_path), coach:profiles(id, name, avatar_url)',
+      'id, name, description, activity_date, start_time, end_time, price, currency, eur_ron_rate_micros, hero_photo_storage_path, rules_file_storage_path, rules_file_name, rules_file_content_type, rules_file_size_bytes, sport:sports(id, code, name, default_photo_storage_path), location:locations(id, name, address, lat, lng), club:clubs(id, name, logo_storage_path), coach:profiles(id, name, avatar_url)',
     )
     .eq('id', id)
     .maybeSingle()

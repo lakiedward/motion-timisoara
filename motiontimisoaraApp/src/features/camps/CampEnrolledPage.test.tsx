@@ -72,6 +72,10 @@ function renderPage() {
   )
 }
 
+function waitList() {
+  return screen.findByRole('heading', { name: /Participanți\s*\(3 din 3 locuri\)/ })
+}
+
 function cardFor(name: string) {
   const card = screen.getByText(name).closest('li')
   if (!card) throw new Error(`Lipsește cardul pentru ${name}`)
@@ -109,9 +113,9 @@ beforeEach(() => {
   record.mockResolvedValue(undefined)
 })
 
-test('each person is one card, with arrival on the child and the adult only once', async () => {
+test('each person is one row, with arrival on the child and the adult only once', async () => {
   renderPage()
-  expect(await screen.findByText('3 participanți înscriși din 3 locuri.')).toBeInTheDocument()
+  expect(await waitList()).toBeInTheDocument()
   expect(screen.getAllByText('Copil Spec 520')).toHaveLength(1)
   expect(screen.getAllByText('Copil Audit 152')).toHaveLength(1)
   expect(screen.getAllByText('Parinte Spec 520')).toHaveLength(1)
@@ -121,7 +125,7 @@ test('each person is one card, with arrival on the child and the adult only once
   const adult = cardFor('Parinte Spec 520')
   expect(within(adult).getByText('Adult', { selector: '[data-slot="badge"]' })).toBeInTheDocument()
   expect(within(adult).queryByRole('button', { name: 'Confirmă sosirea' })).not.toBeInTheDocument()
-  expect(within(adult).queryByRole('link', { name: 'Cod QR' })).not.toBeInTheDocument()
+  expect(within(adult).queryByRole('link', { name: /Cod QR/ })).not.toBeInTheDocument()
 
   const child = cardFor('Copil Spec 520')
   expect(await within(child).findByText('Sosire neconfirmată')).toBeInTheDocument()
@@ -130,7 +134,7 @@ test('each person is one card, with arrival on the child and the adult only once
   expect(screen.getAllByText('Copil Spec 520')).toHaveLength(1)
 })
 
-test('departure confirmation stays on the same child card', async () => {
+test('departure confirmation stays on the same child row', async () => {
   participants.mockResolvedValue({
     participants: [
       {
@@ -155,7 +159,7 @@ test('departure confirmation stays on the same child card', async () => {
   await waitFor(() => expect(record).toHaveBeenCalledWith('depart', 'camp-1', 'e-spec', 'club-1'))
 })
 
-test('cardul copilului arată sănătatea, mâncarea, acordul foto, înotul și cine îl poate ridica', async () => {
+test('rândul copilului arată sănătatea, mâncarea, acordul foto, înotul și cine îl poate ridica', async () => {
   enrolled.mockResolvedValue([
     person({
       enrollmentId: 'e-spec',
@@ -179,13 +183,13 @@ test('cardul copilului arată sănătatea, mâncarea, acordul foto, înotul și 
     person({ enrollmentId: 'e-adult', nume: 'Parinte Spec 520', fel: 'adult' }),
   ])
   renderPage()
-  await screen.findByText('3 participanți înscriși din 3 locuri.')
+  await waitList()
 
-  const deStiut = screen.getByRole('region', { name: 'De știut' })
-  expect(within(deStiut).getByRole('button', { name: /Medicație · 1/ })).toBeInTheDocument()
-  expect(within(deStiut).getByRole('button', { name: /Dietă · 1/ })).toBeInTheDocument()
-  expect(within(deStiut).getByRole('button', { name: /Fără poze · 1/ })).toBeInTheDocument()
-  expect(within(deStiut).getByRole('button', { name: /Nu înoată · 1/ })).toBeInTheDocument()
+  const deStiut = screen.getByRole('group', { name: 'De știut' })
+  expect(within(deStiut).getByRole('button', { name: /Medicație\s*1/ })).toBeInTheDocument()
+  expect(within(deStiut).getByRole('button', { name: /Dietă\s*1/ })).toBeInTheDocument()
+  expect(within(deStiut).getByRole('button', { name: /Fără poze\s*1/ })).toBeInTheDocument()
+  expect(within(deStiut).getByRole('button', { name: /Nu înoată\s*1/ })).toBeInTheDocument()
   expect(within(deStiut).queryByRole('button', { name: /Alergii/ })).not.toBeInTheDocument()
 
   const fara = cardFor('Copil Spec 520')
@@ -196,16 +200,11 @@ test('cardul copilului arată sănătatea, mâncarea, acordul foto, înotul și 
   expect(within(fara).getByText('Ridică: Maria Pop, bunica')).toBeInTheDocument()
 
   const cu = cardFor('Copil Audit 152')
-  expect(within(cu).queryByRole('list', { name: 'De știut despre copil' })).not.toBeInTheDocument()
+  expect(within(cu).queryByText('Fără poze')).not.toBeInTheDocument()
   expect(within(cu).queryByText(/Ridică/)).not.toBeInTheDocument()
 
-  const adult = cardFor('Parinte Spec 520')
-  expect(
-    within(adult).queryByRole('list', { name: 'De știut despre copil' }),
-  ).not.toBeInTheDocument()
-
-  fireEvent.click(within(deStiut).getByRole('button', { name: /Nu înoată · 1/ }))
-  expect(within(deStiut).getByRole('button', { name: /Nu înoată · 1/ })).toHaveAttribute(
+  fireEvent.click(within(deStiut).getByRole('button', { name: /Nu înoată\s*1/ }))
+  expect(within(deStiut).getByRole('button', { name: /Nu înoată\s*1/ })).toHaveAttribute(
     'aria-pressed',
     'true',
   )
@@ -213,12 +212,78 @@ test('cardul copilului arată sănătatea, mâncarea, acordul foto, înotul și 
   expect(screen.queryByText('Copil Audit 152')).not.toBeInTheDocument()
   expect(screen.queryByText('Parinte Spec 520')).not.toBeInTheDocument()
 
-  fireEvent.click(within(deStiut).getByRole('button', { name: /Toți · 3/ }))
+  fireEvent.click(within(deStiut).getByRole('button', { name: /Toți\s*3/ }))
   expect(screen.getByText('Copil Audit 152')).toBeInTheDocument()
 })
 
-test('fără nicio alertă nu apare cardul De știut', async () => {
+test('fără nicio alertă, filtrul De știut are doar Toți', async () => {
   renderPage()
-  await screen.findByText('3 participanți înscriși din 3 locuri.')
-  expect(screen.queryByRole('region', { name: 'De știut' })).not.toBeInTheDocument()
+  await waitList()
+  expect(
+    within(screen.getByRole('group', { name: 'De știut' })).getAllByRole('button'),
+  ).toHaveLength(1)
+})
+
+test('căutarea găsește după contact fără diacritice și golul are Șterge filtrele', async () => {
+  enrolled.mockResolvedValue([
+    person({
+      enrollmentId: 'e-spec',
+      nume: 'Copil Spec 520',
+      fel: 'child',
+      contactUrgenta: 'Ștefan Pop',
+      telefonUrgenta: '0722000111',
+    }),
+    person({ enrollmentId: 'e-audit', nume: 'Copil Audit 152', fel: 'child' }),
+    person({ enrollmentId: 'e-adult', nume: 'Parinte Spec 520', fel: 'adult' }),
+  ])
+  renderPage()
+  await waitList()
+  const search = screen.getByRole('searchbox', { name: /Caută participanți/ })
+  fireEvent.change(search, { target: { value: 'stefan' } })
+  expect(screen.getByText('Copil Spec 520')).toBeInTheDocument()
+  expect(screen.queryByText('Copil Audit 152')).not.toBeInTheDocument()
+  fireEvent.change(search, { target: { value: 'nimeni' } })
+  expect(screen.getByText('Niciun participant pentru filtrele alese.')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Șterge filtrele' }))
+  expect(screen.getByText('Copil Audit 152')).toBeInTheDocument()
+})
+
+test('participanții sunt grupați pe vârstă, adulții la final', async () => {
+  enrolled.mockResolvedValue([
+    person({ enrollmentId: 'e-mic', nume: 'Copil Mic', fel: 'child', dataNasterii: '2020-05-01' }),
+    person({
+      enrollmentId: 'e-mare',
+      nume: 'Copil Mare',
+      fel: 'child',
+      dataNasterii: '2012-05-01',
+    }),
+    person({ enrollmentId: 'e-adult', nume: 'Parinte Spec 520', fel: 'adult' }),
+  ])
+  renderPage()
+  await waitList()
+  const groups = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'))
+  expect(groups).toEqual(['Sub 8 ani', '14 ani și peste', 'Adulți'])
+})
+
+test('filtrul Sosire arată doar copiii sosiți', async () => {
+  participants.mockResolvedValue({
+    participants: [
+      {
+        enrollmentId: 'e-spec',
+        childName: 'Copil Spec 520',
+        arrivedAt: '2026-10-01T08:00:00Z',
+        departedAt: null,
+      },
+      { enrollmentId: 'e-audit', childName: 'Copil Audit 152', arrivedAt: null, departedAt: null },
+    ],
+    startsAt: '2026-10-01T00:00:00Z',
+    endsAt: '2026-10-09T00:00:00Z',
+    canShare: false,
+  })
+  renderPage()
+  await waitList()
+  const sosire = await screen.findByRole('group', { name: 'Sosire' })
+  fireEvent.click(within(sosire).getByRole('button', { name: /Sosiți\s*1/ }))
+  expect(screen.getByText('Copil Spec 520')).toBeInTheDocument()
+  expect(screen.queryByText('Copil Audit 152')).not.toBeInTheDocument()
 })

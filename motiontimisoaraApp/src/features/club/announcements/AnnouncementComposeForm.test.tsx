@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import AnnouncementComposeForm from './AnnouncementComposeForm'
 import { createClubAnnouncement } from '@/api/club'
+import { toast } from 'sonner'
 
 vi.mock('@/api/club', () => ({ createClubAnnouncement: vi.fn() }))
 vi.mock('@/api/attachments', () => ({ incarcaAtasamente: vi.fn(async () => []) }))
@@ -53,4 +54,28 @@ test('cât se publică, butonul e dezactivat și scrie „Se publică…”', as
   await user.click(screen.getByRole('button', { name: 'Publică' }))
   const button = await screen.findByRole('button', { name: 'Se publică…' })
   expect(button).toBeDisabled()
+})
+
+test('„Programează publicarea” deschide datele și le trimite la publicare', async () => {
+  const user = userEvent.setup()
+  mockedCreate.mockResolvedValue({
+    id: 'n1',
+    publish_at: '2099-10-24T06:00:00.000Z',
+    expires_at: null,
+  } as never)
+  renderForm()
+  expect(screen.queryByLabelText('Ziua publicării')).not.toBeInTheDocument()
+  await user.type(screen.getByLabelText('Titlu'), 'Program de Crăciun')
+  await user.type(screen.getByLabelText('Conținut'), 'Doar dimineața')
+  await user.click(screen.getByRole('button', { name: 'Programează publicarea' }))
+  await user.type(screen.getByLabelText('Ziua publicării'), '2099-10-24')
+  await user.type(screen.getByLabelText('Ora publicării'), '09:00')
+  await user.click(screen.getByRole('button', { name: 'Publică' }))
+  await waitFor(() =>
+    expect(mockedCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ publish_at: '2099-10-24T06:00:00.000Z', expires_at: null }),
+    ),
+  )
+  expect(toast.success).toHaveBeenCalledWith('Anunț programat. Părinții îl văd la data aleasă.')
+  expect(screen.getByRole('button', { name: 'Programează publicarea' })).toBeInTheDocument()
 })

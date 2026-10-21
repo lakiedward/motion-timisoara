@@ -326,12 +326,17 @@ export async function createCoachAccount(input: {
   return { userId: data.userId, email: data.email, tempPassword: data.tempPassword, clubId }
 }
 
-export type AdminClub = Pick<Tables<'clubs'>, 'id' | 'name' | 'city' | 'email'>
+export type AdminClub = Pick<Tables<'clubs'>, 'id' | 'name' | 'city' | 'email' | 'approved_at'>
 
 export async function getAllClubs(): Promise<AdminClub[]> {
   const { data, error } = await supabase.rpc('admin_clubs')
   if (error) throw error
   return (data as AdminClub[] | null) ?? []
+}
+
+export async function approveClub(id: string) {
+  const { error } = await supabase.rpc('approve_club', { p_club_id: id })
+  if (error) throw error
 }
 
 export type CourseEnrollmentCounts = { active: number; pending: number }
