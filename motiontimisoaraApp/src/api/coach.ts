@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 import { regenerateCourseOccurrences } from '@/api/course-occurrences'
+import type { ClubLocation } from '@/api/club'
 
 export type CoachCourse = Tables<'courses'> & {
   sport: Pick<Tables<'sports'>, 'id' | 'code' | 'name'> | null
@@ -180,15 +181,19 @@ export async function setActivityActive(id: string, active: boolean) {
     .single()
   if (error) throw error
 }
-export async function getMyLocations(): Promise<Tables<'locations'>[]> {
+export async function getMyLocations(): Promise<ClubLocation[]> {
   const coachId = await uid()
   const { data, error } = await supabase
     .from('locations')
-    .select('*')
+    .select('*, courses(count)')
     .eq('created_by_user_id', coachId)
     .order('name')
   if (error) throw error
-  return data ?? []
+  type Row = Tables<'locations'> & { courses?: { count: number }[] }
+  return ((data ?? []) as unknown as Row[]).map(({ courses, ...loc }) => ({
+    ...loc,
+    courseCount: courses?.[0]?.count ?? 0,
+  }))
 }
 
 export async function getLocationById(id: string): Promise<Tables<'locations'> | null> {
