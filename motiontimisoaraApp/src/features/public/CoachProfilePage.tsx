@@ -7,7 +7,7 @@ import { getCoachRatingSummary, getMyCoachRating, submitCoachRating } from '@/ap
 import { useAuth } from '@/lib/auth-context'
 import { StatusView } from '@/components/ui/status-view'
 import { StarRating } from '@/components/StarRating'
-import { CoachCourses } from './coaches/CoachCourses'
+import { CoachOffer } from './coaches/CoachOffer'
 import { CoachBackLink, CoachHero, CoachHeroSkeleton } from './coaches/CoachHero'
 
 export default function CoachProfilePage() {
@@ -96,7 +96,7 @@ export default function CoachProfilePage() {
         }
       />
 
-      <CoachCourses coachId={id} />
+      <CoachOffer coachId={id} coachProfileId={coach.id} />
     </div>
   )
 }

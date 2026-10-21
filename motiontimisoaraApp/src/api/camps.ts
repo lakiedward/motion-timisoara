@@ -86,9 +86,23 @@ export type TabaraDinLista = {
   locuriRamase: number | null
 }
 
+export type CoachCampFilter = { userId: string; profileId: string }
+
+async function coachCampFilter({ userId, profileId }: CoachCampFilter): Promise<string> {
+  const { data, error } = await supabase
+    .from('camp_coaches')
+    .select('camp_id')
+    .eq('coach_profile_id', profileId)
+    .eq('status', 'accepted')
+  if (error) throw error
+  const ids = (data ?? []).map((r) => r.camp_id)
+  return ids.length ? `coach_id.eq.${userId},id.in.(${ids.join(',')})` : `coach_id.eq.${userId}`
+}
+
 export async function getTaberePublice(
   azi = new Date(),
   clubId?: string,
+  coachFilter?: CoachCampFilter,
 ): Promise<TabaraDinLista[]> {
   let q = supabase
     .from('camps')
@@ -96,6 +110,7 @@ export async function getTaberePublice(
       '*, club:clubs(id, name), coach:profiles(id, name), location:locations(id, name, lat, lng, address, city)',
     )
   if (clubId) q = q.eq('club_id', clubId)
+  if (coachFilter) q = q.or(await coachCampFilter(coachFilter))
   const { data, error } = await q.order('period_start')
   if (error) throw error
 
