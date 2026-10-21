@@ -9,6 +9,7 @@ import { locationWriteErrorMessage } from '@/lib/geography/shared-location-guard
 import { toast } from 'sonner'
 
 import { createClubLocation, updateClubLocation } from '@/api/club'
+import { createLocation, updateLocation } from '@/api/coach'
 import { createAdminLocation } from '@/api/locations/admin-locations'
 import LocationPicker from '@/components/LocationPicker'
 import { Button } from '@/components/ui/button'
@@ -25,7 +26,9 @@ import LocationAddressFields, {
   locationSelectClassName,
 } from './location-form/LocationAddressFields'
 import {
+  isOwnLocation,
   locationPointKey,
+  NEARBY_OWNER_COPY,
   type LocationChoice,
   type NearbyLocation,
 } from './location-form/nearby-locations'
@@ -65,8 +68,8 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
   const activePickerVersion = useRef(0)
   const [ownerError, setOwnerError] = useState<string | null>(null)
   const form = useLocationFormOwner(portal, id)
-  const { club, isAdmin, owner, listPath } = form
-  const clubId = form.nearbyScope
+  const { club, isAdmin, isCoach, owner, listPath } = form
+  const ownerScope = form.nearbyScope
   const {
     data: existing,
     isPending: seIncarca,
@@ -109,7 +112,7 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
   const county = useWatch({ control, name: 'county' }) ?? ''
   const city = useWatch({ control, name: 'city' }) ?? ''
   const punct = typeof lat === 'number' && typeof lng === 'number' ? { lat, lng } : null
-  const nearbyQuery = useNearbyLocations(punct, clubId, !isEdit)
+  const nearbyQuery = useNearbyLocations(punct, ownerScope, !isEdit)
   const nearbyLocations = nearbyQuery.data ?? []
   const currentChoice =
     punct && locationChoice?.pointKey === locationPointKey(punct) ? locationChoice : null
@@ -122,7 +125,7 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
       (nearbyLocations.length > 0 && currentChoice === null))
 
   const chooseNearbyLocation = (location: NearbyLocation) => {
-    if (location.club_id === clubId) return
+    if (isOwnLocation(location, ownerScope)) return
     setLocationChoice({ pointKey: locationPointKey(location), sourceId: location.id })
     activePickerVersion.current += 1
     setPickerVersion(activePickerVersion.current)
@@ -146,7 +149,7 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
       setOwnerError('Alege organizatorul')
       return
     }
-    if (!isAdmin && !club) {
+    if (!isAdmin && !isCoach && !club) {
       toast.error('Clubul nu a fost găsit.')
       return
     }
@@ -165,7 +168,9 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
       lng: v.lng,
     }
     try {
-      if (isEdit) await updateClubLocation(id as string, payload)
+      if (isEdit && isCoach) await updateLocation(id as string, payload)
+      else if (isEdit) await updateClubLocation(id as string, payload)
+      else if (isCoach) await createLocation(payload)
       else if (isAdmin && target) await createAdminLocation(target, payload)
       else if (club) await createClubLocation(club.id, payload)
       qc.invalidateQueries({ queryKey: [form.listQueryKey] })
@@ -355,7 +360,8 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
             {!isEdit && punct && (
               <NearbyLocations
                 locations={nearbyLocations}
-                clubId={clubId}
+                ownerId={ownerScope}
+                copy={NEARBY_OWNER_COPY[portal]}
                 isPending={nearbyQuery.isPending || nearbyQuery.isFetching}
                 isError={nearbyQuery.isError}
                 isFetching={nearbyQuery.isFetching}
