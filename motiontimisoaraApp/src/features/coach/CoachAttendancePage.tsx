@@ -22,6 +22,7 @@ import { ClubLocationListSkeleton } from '@/features/club/locations/ClubLocation
 import { CoachLocationPanel } from '@/features/live-location/CoachLocationPanel'
 import { cn } from '@/lib/utils'
 import { AttendanceOfflineQueue } from './attendance/AttendanceScanner'
+import { CoachActivityAttendance } from './attendance/CoachActivityAttendance'
 import { CoachSessionCatalog } from './attendance/CoachSessionCatalog'
 import { SessionDayList } from './attendance/SessionDayList'
 import {
@@ -47,6 +48,7 @@ export default function CoachAttendancePage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [markingOnPhone, setMarkingOnPhone] = useState(false)
   const [showOlder, setShowOlder] = useState(false)
+  const [kind, setKind] = useState<'courses' | 'activities'>('courses')
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['coach-sessions'],
@@ -194,9 +196,41 @@ export default function CoachAttendancePage() {
       </div>
     )
 
+  const kindSwitch = (
+    <div role="group" aria-label="Ce pontezi" className="mb-4 flex gap-2">
+      {(
+        [
+          ['courses', 'Cursuri'],
+          ['activities', 'Activități'],
+        ] as const
+      ).map(([value, label]) => (
+        <Button
+          key={value}
+          type="button"
+          variant={kind === value ? 'default' : 'outline'}
+          aria-pressed={kind === value}
+          className="h-touch-target min-h-touch-target rounded-full lg:h-9 lg:min-h-9"
+          onClick={() => setKind(value)}
+        >
+          {label}
+        </Button>
+      ))}
+    </div>
+  )
+
+  if (kind === 'activities')
+    return (
+      <div>
+        <h1 className="font-display text-foreground mb-4 text-2xl font-bold">Prezență</h1>
+        {kindSwitch}
+        <CoachActivityAttendance />
+      </div>
+    )
+
   return (
     <div>
       {header}
+      {kindSwitch}
       <CoachLocationPanel
         occurrenceId={sel?.id ?? null}
         startsAt={sel?.startsAt}

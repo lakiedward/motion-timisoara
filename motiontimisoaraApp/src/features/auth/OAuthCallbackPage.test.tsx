@@ -2,12 +2,13 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import OAuthCallbackPage from './OAuthCallbackPage'
-import { loadAppUser, type AppUser } from '@/api/auth'
+import { completeProfile, loadAppUser, type AppUser } from '@/api/auth'
 import { useAuth } from '@/lib/auth-context'
 
 vi.mock('@/api/auth', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/auth')>()),
   loadAppUser: vi.fn(),
+  completeProfile: vi.fn(),
 }))
 vi.mock('@/lib/auth-context', () => ({ useAuth: vi.fn() }))
 const refresh = vi.fn()
@@ -32,6 +33,7 @@ function renderCallback(returnUrl?: string) {
         <Route path="/auth/callback" element={<OAuthCallbackPage />} />
         <Route path="/register-coach" element={<p>invitație antrenor</p>} />
         <Route path="/account" element={<p>panou părinte</p>} />
+        <Route path="/account/child/new" element={<p>ecranul copilului</p>} />
         <Route path="/cursuri/abc" element={<p>pagina cursului</p>} />
         <Route path="/register-coach-extra" element={<p>alt traseu</p>} />
       </Routes>
@@ -95,4 +97,13 @@ test('failed handoff can refresh again while retaining its coach continuation', 
   await userEvent.click(screen.getByRole('button', { name: 'Reîncearcă' }))
   expect(await screen.findByText('invitație antrenor')).toBeInTheDocument()
   expect(refresh).toHaveBeenCalledTimes(2)
+})
+
+test('a new Google parent who completes the profile lands on the add-child screen', async () => {
+  vi.mocked(completeProfile).mockResolvedValue({ error: null } as never)
+  const user = userEvent.setup()
+  renderCallback('/cursuri/abc')
+  await user.type(await screen.findByLabelText('Telefon'), '+40722123456')
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  expect(await screen.findByText('ecranul copilului')).toBeInTheDocument()
 })

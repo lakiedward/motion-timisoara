@@ -9,3 +9,8 @@ export function useReturnUrl(): string | undefined {
 export function withReturnUrl(path: string, returnUrl: string | undefined): string {
   return returnUrl ? `${path}?returnUrl=${encodeURIComponent(returnUrl)}` : path
 }
+
+export function welcomeChildPath(returnUrl: string | undefined): string {
+  const path = '/account/child/new?bun-venit=1'
+  return returnUrl ? `${path}&returnUrl=${encodeURIComponent(returnUrl)}` : path
+}
