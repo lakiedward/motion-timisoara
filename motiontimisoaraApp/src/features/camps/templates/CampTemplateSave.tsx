@@ -29,6 +29,7 @@ export default function CampTemplateSave({
   const [eroare, setEroare] = useState<string | null>(null)
   const [confirma, setConfirma] = useState(false)
   const [salveaza, setSalveaza] = useState(false)
+  const [deschis, setDeschis] = useState(false)
   const cheie = ['sabloane-tabara', proprietar.clubId, proprietar.coachUserId] as const
   const sabloane = useQuery({
     queryKey: cheie,
@@ -57,8 +58,9 @@ export default function CampTemplateSave({
     try {
       await salveazaSablonTabara(proprietar, pregatit)
       setConfirma(false)
+      setDeschis(false)
       await qc.invalidateQueries({ queryKey: cheie })
-      toast.success('Șablon salvat.')
+      toast.success('Șablon salvat. Îl găsești când creezi o tabără nouă.')
     } catch (error) {
       const mesaj = error instanceof Error ? error.message : ''
       toast.error(mesaj || 'Nu am putut salva șablonul.')
@@ -67,86 +69,125 @@ export default function CampTemplateSave({
     }
   }
 
+  const salveazaAcum = () => {
+    const numeCurat = nume.trim()
+    if (numeCurat.length < 1 || numeCurat.length > 120) {
+      setEroare(
+        numeCurat.length > 120
+          ? 'Numele poate avea cel mult 120 de caractere'
+          : 'Numele șablonului lipsește',
+      )
+      return
+    }
+    setEroare(null)
+    void scrie(false)
+  }
+
   return (
-    <section className="mb-6 space-y-3" aria-labelledby="salveaza-sablon">
-      <h2 id="salveaza-sablon" className="font-display text-lg font-bold">
-        Șablon
-      </h2>
-      <p className="text-muted-foreground text-sm">
-        Salvează configurația de acum. Titlul, adresa paginii și perioada nu intră în șablon.
-      </p>
-      {sabloane.isError && (
-        <div className="space-y-2" role="alert">
-          <p className="text-sm">Nu am putut încărca șabloanele.</p>
+    <div className="bg-card space-y-3 rounded-xl border p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm">
+          <span className="font-medium">Folosești tabăra și altă dată?</span>{' '}
+          <span className="text-muted-foreground">
+            Salveaz-o ca șablon, cu necesarul, regulamentul și prețurile.
+          </span>
+        </p>
+        {!deschis && (
           <Button
             type="button"
             variant="outline"
-            className="h-11 min-h-11"
-            onClick={() => void sabloane.refetch()}
+            className="h-11 min-h-11 shrink-0"
+            onClick={() => setDeschis(true)}
           >
-            Reîncearcă
+            Salvează ca șablon
           </Button>
-        </div>
+        )}
+      </div>
+      {deschis && (
+        <>
+          {sabloane.isError && (
+            <div className="space-y-2" role="alert">
+              <p className="text-sm">Nu am putut încărca șabloanele.</p>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 min-h-11"
+                onClick={() => void sabloane.refetch()}
+              >
+                Reîncearcă
+              </Button>
+            </div>
+          )}
+          <CampFormField
+            eticheta="Numele șablonului"
+            eroare={eroare ?? undefined}
+            ajutor="Titlul, adresa paginii și perioada nu intră în șablon."
+          >
+            <Input
+              autoFocus
+              value={nume}
+              maxLength={120}
+              aria-invalid={!!eroare}
+              onChange={(event) => {
+                setNumeEditat(event.target.value)
+                setEroare(null)
+                setConfirma(false)
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  salveazaAcum()
+                }
+              }}
+            />
+          </CampFormField>
+          {confirma ? (
+            <div className="bg-muted space-y-3 rounded-2xl p-4">
+              <p className="text-sm">Există deja un șablon „{nume.trim()}”. Îl înlocuiești?</p>
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  type="button"
+                  className="h-11 min-h-11"
+                  disabled={salveaza}
+                  onClick={() => void scrie(true)}
+                >
+                  Înlocuiește
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 min-h-11"
+                  onClick={() => setConfirma(false)}
+                >
+                  Renunță
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-3">
+              <Button
+                type="button"
+                className="h-11 min-h-11"
+                disabled={salveaza}
+                onClick={salveazaAcum}
+              >
+                {salveaza ? 'Se salvează…' : 'Salvează șablonul'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 min-h-11"
+                onClick={() => {
+                  setDeschis(false)
+                  setEroare(null)
+                }}
+              >
+                Renunță
+              </Button>
+            </div>
+          )}
+        </>
       )}
-      <CampFormField eticheta="Numele șablonului" eroare={eroare ?? undefined}>
-        <Input
-          value={nume}
-          className="h-11 lg:h-9"
-          aria-invalid={!!eroare}
-          onChange={(event) => {
-            setNumeEditat(event.target.value)
-            setEroare(null)
-            setConfirma(false)
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') event.preventDefault()
-          }}
-        />
-      </CampFormField>
-      <Button
-        type="button"
-        variant="outline"
-        className="h-11 min-h-11"
-        disabled={salveaza}
-        onClick={() => {
-          const numeCurat = nume.trim()
-          if (numeCurat.length < 1 || numeCurat.length > 120) {
-            setEroare(
-              numeCurat.length > 120
-                ? 'Numele poate avea cel mult 120 de caractere'
-                : 'Numele șablonului lipsește',
-            )
-            return
-          }
-          setEroare(null)
-          void scrie(false)
-        }}
-      >
-        {salveaza ? 'Se salvează…' : 'Salvează ca șablon'}
-      </Button>
-      {confirma && (
-        <div className="bg-muted space-y-3 rounded-2xl p-4">
-          <p className="text-sm">Există deja un șablon cu acest nume. Îl înlocuiești?</p>
-          <div className="flex flex-wrap gap-3">
-            <Button
-              type="button"
-              className="h-11 min-h-11"
-              disabled={salveaza}
-              onClick={() => void scrie(true)}
-            >
-              Înlocuiește
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-11 min-h-11"
-              onClick={() => setConfirma(false)}
-            >
-              Renunță
-            </Button>
-          </div>
-        </div>
-      )}
-    </section>
+    </div>
   )
 }
