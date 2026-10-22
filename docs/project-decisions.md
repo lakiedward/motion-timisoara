@@ -210,3 +210,10 @@ reorganizing this document; correct obsolete facts with current evidence.
 - 2026-10-15 — Team Tracker delivery (evidence, test plan, shipped, Fixed/Gata) is recorded on
   the `master` branch deploy at the merged SHA, not after publishing to motiontimisoara.com —
   owner's rule, so tracker work is not held back by grouped publishes.
+- 2026-10-22 — Rebrand the product from „Motion Timișoara” to „Motion România” after the
+  motiontimisoara.com domain expired; the owner buys the new domain. Visible brand, native
+  display names, contact email, Stripe return origin and the geocoding User-Agent move to
+  motionromania.com. Factual Timișoara content (city, clubs), the GitHub repository, the Netlify
+  site, the Supabase project, `motiontimisoaraApp/` and the native id `com.motiontimisoara.app`
+  stay unchanged: renaming them breaks store identity, deep links, OAuth clients and push.
+  The lost domain is no longer a trusted Stripe return origin.

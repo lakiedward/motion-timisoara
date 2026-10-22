@@ -182,7 +182,7 @@ function ImagineQr({ token, nume }: { token: string; nume: string }) {
     titlu.textContent = nume
     titlu.style.cssText = 'font-size:24px;margin:8px 0 0'
     const nota = d.createElement('p')
-    nota.textContent = 'Motion Timișoara · arată codul antrenorului la intrare'
+    nota.textContent = 'Motion România · arată codul antrenorului la intrare'
     nota.style.cssText = 'font-size:14px;margin:4px 0 0'
     cutie.append(img, titlu, nota)
     d.body.append(cutie)

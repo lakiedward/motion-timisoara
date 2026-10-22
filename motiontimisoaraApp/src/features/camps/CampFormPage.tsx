@@ -477,6 +477,8 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
             values={getValues()}
             locatii={locatii}
             fisierRegulament={fisierRegulament}
+            pozaHero={pozaHero}
+            onModifica={inapoiLaPas}
           />
         )}
 

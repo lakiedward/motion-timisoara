@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 export default function NotFoundPage() {
   return (
     <section className="mx-auto flex max-w-2xl flex-col items-center px-4 py-24 text-center">
-      <title>Pagina nu a fost găsită · Motion Timișoara</title>
+      <title>Pagina nu a fost găsită · Motion România</title>
       <span className="eyebrow mb-3">Eroare 404</span>
       <h1 className="font-display text-foreground text-3xl font-extrabold md:text-4xl">
         Pagina nu a fost găsită

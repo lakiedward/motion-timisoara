@@ -66,7 +66,7 @@ public final class MotionPushPayload {
     }
 
     public String title() {
-        return "Motion Timișoara";
+        return "Motion România";
     }
 
     public String body() {

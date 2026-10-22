@@ -19,7 +19,7 @@ export default function AboutPage() {
             Construim <span className="text-primary">campioni</span>, dezvoltăm caractere
           </h1>
           <p className="text-muted-foreground mt-4 max-w-2xl text-lg">
-            Motion Timișoara este o comunitate dedicată sportului pentru copii — triatlon și
+            Motion România este o comunitate dedicată sportului pentru copii — triatlon și
             multi-sport — unde fiecare copil crește în ritmul lui, alături de antrenori dedicați.
           </p>
         </div>
