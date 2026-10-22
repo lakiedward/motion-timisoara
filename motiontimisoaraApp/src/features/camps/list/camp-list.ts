@@ -1,3 +1,4 @@
+import type { InvitatieDeRaspuns } from '@/api/camp-coaches'
 import type { TabaraDinLista } from '@/api/camps-admin'
 import { sAIncheiat } from '@/api/camps'
 import { fold } from '@/features/admin/courses/course-overview'
@@ -79,4 +80,14 @@ export function campPrice(t: TabaraDinLista) {
   return t.pricing_mode === 'by_age'
     ? rezumatPretPeVarsta(t.preturiPeVarsta, t.currency)
     : formatMoney(t.price, t.currency)
+}
+
+export function pendingInvitations(invitations: InvitatieDeRaspuns[], today = new Date()) {
+  return invitations
+    .filter((i) => i.stare === 'invited' && !sAIncheiat(i.perioadaEnd, today))
+    .sort((a, b) => a.perioadaStart.localeCompare(b.perioadaStart))
+}
+
+export function acceptedInvitations(invitations: InvitatieDeRaspuns[]) {
+  return invitations.filter((i) => i.stare === 'accepted')
 }
