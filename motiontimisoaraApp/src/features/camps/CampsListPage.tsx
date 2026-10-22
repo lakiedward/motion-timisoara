@@ -3,18 +3,20 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
 
-import { getTaberelemele, getToateTaberele } from '@/api/camps-admin'
+import { getTaberelePeId, getTaberelemele, getToateTaberele } from '@/api/camps-admin'
 import { Button } from '@/components/ui/button'
 import { StatusView } from '@/components/ui/status-view'
 import { useAuth } from '@/lib/auth-context'
 import { useProprietarTabere } from './useProprietarTabere'
 import type { CampPortalBaza } from './camp-portal'
 import CampInvitations from './CampInvitations'
+import { useCampInvitations } from './useCampInvitations'
 import { CampFilterBar } from './list/CampFilterBar'
 import { CampListSkeleton } from './list/CampListSkeleton'
 import { CampRows } from './list/CampRows'
 import {
   NO_FILTERS,
+  acceptedInvitations,
   filterCamps,
   hasFilters,
   statusCounts,
@@ -24,10 +26,21 @@ import {
 export default function CampsListPage({ baza }: { baza: CampPortalBaza }) {
   const { proprietar, gata, eroare, reincearca, eClub } = useProprietarTabere()
   const eAdmin = useAuth().user?.role === 'ADMIN'
+  const eAntrenor = !eClub && !eAdmin
   const [filters, setFilters] = useState<CampFilters>(NO_FILTERS)
 
+  const invitations = useCampInvitations(eAntrenor)
+  const accepted = acceptedInvitations(invitations.data ?? [])
+  const invitedBy = Object.fromEntries(accepted.map((i) => [i.campId, i.invitatDe ?? '']))
+  const invitedIds = accepted.map((i) => i.campId).sort()
+  const invitedQuery = useQuery({
+    queryKey: ['tabere-invitat', invitedIds],
+    queryFn: () => getTaberelePeId(invitedIds),
+    enabled: eAntrenor && invitedIds.length > 0,
+  })
+
   const {
-    data: tabere = [],
+    data: proprii = [],
     isLoading,
     isError,
     isFetching,
@@ -39,12 +52,14 @@ export default function CampsListPage({ baza }: { baza: CampPortalBaza }) {
     queryFn: () => (eAdmin ? getToateTaberele() : getTaberelemele(proprietar)),
     enabled: gata,
   })
+  const tabere = [
+    ...proprii,
+    ...(invitedQuery.data ?? []).filter((t) => !proprii.some((p) => p.id === t.id)),
+  ]
   const visible = filterCamps(tabere, filters)
 
   return (
     <div>
-      {!eClub && !eAdmin && <CampInvitations />}
-
       <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="font-display text-foreground text-2xl font-bold">
           Tabere
@@ -61,14 +76,26 @@ export default function CampsListPage({ baza }: { baza: CampPortalBaza }) {
         </Button>
       </div>
 
-      {eroare || (isError && !tabere.length) ? (
+      {eAntrenor && <CampInvitations />}
+
+      {eroare || ((isError || invitedQuery.isError || invitations.isError) && !tabere.length) ? (
         <StatusView
           state="error"
           title="Nu am putut încărca taberele."
           text="Verifică conexiunea și încearcă din nou."
-          onRetry={eroare ? reincearca : isFetching ? undefined : () => void refetch()}
+          onRetry={
+            eroare
+              ? reincearca
+              : isFetching || invitedQuery.isFetching || invitations.isFetching
+                ? undefined
+                : () => {
+                    void refetch()
+                    void invitedQuery.refetch()
+                    void invitations.refetch()
+                  }
+          }
         />
-      ) : !gata || isLoading ? (
+      ) : !gata || isLoading || invitedQuery.isLoading || (eAntrenor && invitations.isLoading) ? (
         <CampListSkeleton />
       ) : !tabere.length ? (
         <StatusView
@@ -109,7 +136,7 @@ export default function CampsListPage({ baza }: { baza: CampPortalBaza }) {
               }
             />
           ) : (
-            <CampRows camps={visible} baza={baza} />
+            <CampRows camps={visible} baza={baza} invitedBy={invitedBy} />
           )}
         </>
       )}

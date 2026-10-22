@@ -1,13 +1,24 @@
 import { Link } from 'react-router-dom'
-import { Pencil, Users } from 'lucide-react'
+import { Building2, ExternalLink, Pencil, Users } from 'lucide-react'
 
 import type { TabaraDinLista } from '@/api/camps-admin'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { campPrice, campStatus, groupByStatus } from './camp-list'
 import { CampBadges, CampStats, CampWhenWhere } from './camp-facts'
 
-function CampRow({ camp, baza }: { key?: string; camp: TabaraDinLista; baza: string }) {
+function CampRow({
+  camp,
+  baza,
+  invitedBy,
+}: {
+  key?: string
+  camp: TabaraDinLista
+  baza: string
+  invitedBy?: string
+}) {
+  const invited = invitedBy !== undefined
   const ended = campStatus(camp) === 'ended'
   return (
     <li
@@ -21,6 +32,12 @@ function CampRow({ camp, baza }: { key?: string; camp: TabaraDinLista; baza: str
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <h3 className="font-display min-w-0 font-semibold wrap-anywhere">{camp.title}</h3>
             <CampBadges camp={camp} />
+            {invited && (
+              <Badge variant="secondary">
+                <Building2 aria-hidden="true" />
+                {invitedBy ? `Invitat · ${invitedBy}` : 'Invitat'}
+              </Badge>
+            )}
           </div>
           <span className="font-display shrink-0 font-bold tabular-nums">{campPrice(camp)}</span>
         </div>
@@ -28,15 +45,17 @@ function CampRow({ camp, baza }: { key?: string; camp: TabaraDinLista; baza: str
         <CampStats camp={camp} />
       </div>
       <div className="flex shrink-0 flex-wrap gap-2">
-        <Button
-          asChild
-          variant="outline"
-          className="h-touch-target min-h-touch-target lg:h-9 lg:min-h-9"
-        >
-          <Link to={`${baza}/${camp.id}/edit`} aria-label={`Editează ${camp.title}`}>
-            <Pencil aria-hidden="true" /> Editează
-          </Link>
-        </Button>
+        {!invited && (
+          <Button
+            asChild
+            variant="outline"
+            className="h-touch-target min-h-touch-target lg:h-9 lg:min-h-9"
+          >
+            <Link to={`${baza}/${camp.id}/edit`} aria-label={`Editează ${camp.title}`}>
+              <Pencil aria-hidden="true" /> Editează
+            </Link>
+          </Button>
+        )}
         <Button
           asChild
           variant="outline"
@@ -46,12 +65,31 @@ function CampRow({ camp, baza }: { key?: string; camp: TabaraDinLista; baza: str
             <Users aria-hidden="true" /> Înscriși
           </Link>
         </Button>
+        {invited && (
+          <Button
+            asChild
+            variant="outline"
+            className="h-touch-target min-h-touch-target lg:h-9 lg:min-h-9"
+          >
+            <Link to={`/tabere/${camp.slug}`} aria-label={`Pagina taberei ${camp.title}`}>
+              <ExternalLink aria-hidden="true" /> Pagina taberei
+            </Link>
+          </Button>
+        )}
       </div>
     </li>
   )
 }
 
-export function CampRows({ camps, baza }: { camps: TabaraDinLista[]; baza: string }) {
+export function CampRows({
+  camps,
+  baza,
+  invitedBy = {},
+}: {
+  camps: TabaraDinLista[]
+  baza: string
+  invitedBy?: Record<string, string>
+}) {
   return (
     <div className="grid gap-8">
       {groupByStatus(camps).map((g) => (
@@ -61,7 +99,7 @@ export function CampRows({ camps, baza }: { camps: TabaraDinLista[]; baza: strin
           </h2>
           <ul className="bg-card divide-y overflow-hidden rounded-xl border">
             {g.items.map((c) => (
-              <CampRow key={c.id} camp={c} baza={baza} />
+              <CampRow key={c.id} camp={c} baza={baza} invitedBy={invitedBy[c.id]} />
             ))}
           </ul>
         </section>

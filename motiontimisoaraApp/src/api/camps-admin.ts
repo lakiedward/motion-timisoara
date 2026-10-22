@@ -102,6 +102,13 @@ export async function getToateTaberele(): Promise<TabaraDinLista[]> {
   return completeazaTaberele(data ?? [])
 }
 
+export async function getTaberelePeId(ids: string[]): Promise<TabaraDinLista[]> {
+  if (!ids.length) return []
+  const { data, error } = await supabase.from('camps').select('*').in('id', ids)
+  if (error) throw error
+  return completeazaTaberele(data ?? [])
+}
+
 async function completeazaTaberele(tabere: Tabara[]): Promise<TabaraDinLista[]> {
   if (!tabere.length) return []
 

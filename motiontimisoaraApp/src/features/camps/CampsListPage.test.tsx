@@ -4,18 +4,28 @@ import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
 
 import CampsListPage from './CampsListPage'
-import { getTaberelemele, getToateTaberele, type TabaraDinLista } from '@/api/camps-admin'
+import {
+  getTaberelePeId,
+  getTaberelemele,
+  getToateTaberele,
+  type TabaraDinLista,
+} from '@/api/camps-admin'
+import { getInvitatiileMele } from '@/api/camp-coaches'
 import { formatMoney } from '@/lib/money'
 
 vi.mock('@/api/camps-admin', async () => {
   const real = await vi.importActual<typeof import('@/api/camps-admin')>('@/api/camps-admin')
-  return { ...real, getTaberelemele: vi.fn(), getToateTaberele: vi.fn() }
+  return { ...real, getTaberelemele: vi.fn(), getToateTaberele: vi.fn(), getTaberelePeId: vi.fn() }
 })
+vi.mock('@/api/camp-coaches', () => ({ getInvitatiileMele: vi.fn() }))
 vi.mock('./useProprietarTabere', () => ({
   useProprietarTabere: () => ({
-    proprietar: { clubId: 'club-1', coachUserId: null },
+    proprietar:
+      auth.role === 'COACH'
+        ? { clubId: null, coachUserId: 'user-1' }
+        : { clubId: 'club-1', coachUserId: null },
     gata: true,
-    eClub: true,
+    eClub: auth.role === 'CLUB',
     eroare: false,
     reincearca: () => {},
   }),
@@ -78,6 +88,8 @@ beforeEach(() => {
   auth.role = 'CLUB'
   vi.mocked(getTaberelemele).mockReset()
   vi.mocked(getToateTaberele).mockReset()
+  vi.mocked(getTaberelePeId).mockReset()
+  vi.mocked(getInvitatiileMele).mockReset()
 })
 
 test('o tabără by_age arată numărul de categorii de vârstă și intervalul de preț', async () => {
@@ -189,4 +201,47 @@ test('adminul vede toate taberele, nu doar pe ale lui', async () => {
   deseneaza()
   expect(await screen.findByRole('heading', { name: 'Tabăra unui club' })).toBeInTheDocument()
   expect(getTaberelemele).not.toHaveBeenCalled()
+})
+
+test('antrenorul vede în listă taberele la care a acceptat invitația, fără Editează', async () => {
+  auth.role = 'COACH'
+  vi.mocked(getTaberelemele).mockResolvedValue([])
+  vi.mocked(getInvitatiileMele).mockResolvedValue([
+    {
+      campId: 'invitata',
+      titlu: 'Tabăra clubului',
+      slug: 'tabara-clubului',
+      perioadaStart: '2099-07-10',
+      perioadaEnd: '2099-07-17',
+      loc: null,
+      invitatDe: 'Motion Kids',
+      stare: 'accepted',
+    },
+  ])
+  vi.mocked(getTaberelePeId).mockResolvedValue([
+    tabara({ id: 'invitata', title: 'Tabăra clubului', slug: 'tabara-clubului' }),
+  ])
+  deseneaza()
+  expect(await screen.findByRole('heading', { name: 'Tabăra clubului' })).toBeInTheDocument()
+  expect(getTaberelePeId).toHaveBeenCalledWith(['invitata'])
+  expect(screen.getByText('Invitat · Motion Kids')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Pagina taberei Tabăra clubului' })).toHaveAttribute(
+    'href',
+    '/tabere/tabara-clubului',
+  )
+  expect(screen.getByRole('link', { name: 'Înscriși la Tabăra clubului' })).toHaveAttribute(
+    'href',
+    '/club/camps/invitata/enrolled',
+  )
+  expect(screen.queryByRole('link', { name: /Editează/ })).not.toBeInTheDocument()
+  expect(screen.queryByText('Nicio tabără încă.')).not.toBeInTheDocument()
+})
+
+test('dacă invitațiile antrenorului nu se încarcă, lista spune eroarea, nu „nicio tabără”', async () => {
+  auth.role = 'COACH'
+  vi.mocked(getTaberelemele).mockResolvedValue([])
+  vi.mocked(getInvitatiileMele).mockRejectedValue(new Error('retea'))
+  deseneaza()
+  expect(await screen.findByRole('alert')).toHaveTextContent('Nu am putut încărca taberele.')
+  expect(screen.queryByText('Nicio tabără încă.')).not.toBeInTheDocument()
 })
