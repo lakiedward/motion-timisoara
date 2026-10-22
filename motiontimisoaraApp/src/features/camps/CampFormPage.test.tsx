@@ -417,20 +417,20 @@ test('componentele adună totalul, iar Înapoi păstrează draftul', async () =>
     { name: 'Masă', lei: '200' },
     { name: 'Antrenamente', lei: '100' },
   ])
-  expect(within(prima).getByText(/Total 700,00 lei/)).toBeInTheDocument()
+  expect(within(prima).getByRole('status')).toHaveTextContent(/Total 700,00 lei/)
   await user.click(screen.getByRole('button', { name: 'Înapoi' }))
   expect(screen.getByLabelText('Titlu')).toHaveValue('Tabără de înot')
   await user.click(screen.getByRole('button', { name: 'Continuă' }))
   expect(screen.getByLabelText('De la (ani)')).toHaveValue(6)
   expect(screen.getByDisplayValue('Cazare')).toBeInTheDocument()
-  expect(screen.getByText(/Total 700,00 lei/)).toBeInTheDocument()
+  expect(screen.getAllByRole('status')[0]).toHaveTextContent(/Total 700,00 lei/)
 })
 
 test('Marchează gratuit pune categoria pe zero', async () => {
   const user = userEvent.setup()
   renderForm()
   await laCosturi(user)
-  expect(screen.getByRole('heading', { name: 'Tarif adult' })).toBeInTheDocument()
+  expect(screen.getByText('Tarif adult')).toBeInTheDocument()
   expect(screen.getByLabelText('Componentă adult')).toHaveValue('Participare')
   expect(screen.getByLabelText(/Sumă adult/)).toHaveValue(0)
   const prima = randuriCategorii()[0]
@@ -438,7 +438,7 @@ test('Marchează gratuit pune categoria pe zero', async () => {
   await user.click(within(prima).getByRole('button', { name: 'Marchează gratuit' }))
   expect(await within(prima).findByDisplayValue('Participare')).toBeInTheDocument()
   expect(within(prima).getByLabelText(/Sumă \(/)).toHaveValue(0)
-  expect(within(prima).getByText(/Total Gratuit/)).toBeInTheDocument()
+  expect(within(prima).getByRole('status')).toHaveTextContent(/Total Gratuit/)
 })
 
 test('două intervale care se suprapun opresc avansul și numesc perechea', async () => {
@@ -614,7 +614,7 @@ test('la editare, categoriile salvate revin ca o componentă, iar copiază din l
   expect(within(lista).getByDisplayValue('Cazare')).toBeInTheDocument()
   expect(within(lista).getByDisplayValue('Masă')).toBeInTheDocument()
   expect(within(lista).getAllByLabelText(/Sumă \(/)[0]).toHaveValue(400)
-  expect(within(lista).getByText(/Total 700,00 lei/)).toBeInTheDocument()
+  expect(within(lista).getAllByRole('status')[0]).toHaveTextContent(/Total 700,00 lei/)
   const select = await screen.findByLabelText('Copiază categoriile din altă tabără')
   expect(
     within(select)
