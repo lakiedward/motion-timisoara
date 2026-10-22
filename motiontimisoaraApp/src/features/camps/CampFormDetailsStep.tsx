@@ -139,6 +139,7 @@ export default function CampFormDetailsStep({
       </FormSection>
 
       <CampRulesSection
+        control={control}
         register={register}
         errors={errors}
         campId={tabara?.id}
