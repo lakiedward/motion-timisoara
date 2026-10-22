@@ -1,12 +1,20 @@
 import { Link } from 'react-router-dom'
+import { Clock, Eye, MapPin, ShieldCheck } from 'lucide-react'
 
-export default function PrivacyPage() {
-  return (
-    <article className="container mx-auto max-w-3xl space-y-6 px-4 py-12">
-      <h1 className="font-display text-3xl font-bold">Confidențialitate și partajarea locației</h1>
-      <p className="text-muted-foreground">Informații despre funcția „Locația antrenorului”.</p>
-      <section className="space-y-3">
-        <h2 className="font-display text-xl font-semibold">Ce se partajează</h2>
+import { LegalPage, type LegalSection } from './legal/LegalPage'
+
+const listClass = 'list-disc space-y-2 pl-5'
+const linkClass =
+  'text-primary underline underline-offset-4 focus-visible:outline-ring focus-visible:outline-2 focus-visible:outline-offset-2'
+
+const SECTIONS: LegalSection[] = [
+  {
+    id: 'ce-se-partajeaza',
+    surfaceKey: 'manual:section:ce-se-partajeaza:f5dcfe06-1479-4ef9-9a87-49014723f58e',
+    title: 'Ce se partajează',
+    icon: MapPin,
+    body: (
+      <>
         <p>
           Antrenorul poate porni explicit partajarea poziției telefonului său pentru o ședință sau
           tabără. Funcția nu urmărește telefoanele copiilor și nu creează un istoric al deplasărilor
@@ -17,62 +25,131 @@ export default function PrivacyPage() {
           de localizare. Indicatorul sistemului și notificarea de pe Android arată când localizarea
           este activă. În browser, partajarea se oprește când fila devine inactivă.
         </p>
-      </section>
-      <section className="space-y-3">
-        <h2 className="font-display text-xl font-semibold">Cine poate vedea poziția</h2>
+      </>
+    ),
+  },
+  {
+    id: 'cine-poate-vedea-pozitia',
+    surfaceKey: 'manual:section:cine-poate-vedea-pozitia:7ecfa678-717e-4aaf-a6fc-22bf228cbc01',
+    title: 'Cine poate vedea poziția',
+    icon: Eye,
+    body: (
+      <>
         <p>
           Antrenorul ședinței și clubul proprietar au acces. Un părinte vede poziția doar după
-          acordul său explicit, dacă propriul copil este înscris activ și este marcat prezent, cu
-          scanare QR confirmată pentru aceeași ședință. Accesul este verificat din nou la fiecare
-          cerere. În tabără, părintele are nevoie de un copil înscris activ, cu sosirea confirmată
-          și fără plecare înregistrată. Prezența se confirmă o singură dată la sosire, fără scanări
-          repetate pentru fiecare pornire. Locația activă apare în Anunțuri, fără a salva coordonate
-          în anunțurile generale. Antrenorul proprietar sau însoțitorul care a acceptat invitația
-          pornește explicit partajarea.
+          acordul său explicit și doar în condițiile de mai jos; accesul este verificat din nou la
+          fiecare cerere.
+        </p>
+        <ul className={listClass}>
+          <li>
+            <strong>La cursuri:</strong> propriul copil este înscris activ și marcat prezent, cu
+            scanare QR confirmată pentru aceeași ședință.
+          </li>
+          <li>
+            <strong>În tabără:</strong> propriul copil este înscris activ, cu sosirea confirmată și
+            fără plecare înregistrată. Prezența se confirmă o singură dată la sosire, fără scanări
+            repetate la fiecare pornire. Partajarea o pornește antrenorul proprietar sau însoțitorul
+            care a acceptat invitația. Locația activă apare în Anunțuri, fără a salva coordonate în
+            anunțurile generale.
+          </li>
+          <li>
+            <strong>Cum oprești:</strong> părintele poate apăsa „Retrage acordul”, iar antrenorul
+            poate apăsa „Oprește locația” din orice ecran al aplicației. Repornirea unei partajări
+            cere un acord nou al părintelui. O poziție deja văzută sau capturată de altă persoană nu
+            poate fi retrasă de pe dispozitivul acelei persoane.
+          </li>
+        </ul>
+      </>
+    ),
+  },
+  {
+    id: 'cat-timp-raman-datele',
+    surfaceKey: 'manual:section:cat-timp-raman-datele:352a1392-bb67-42bc-9c11-b106b70f534f',
+    title: 'Cât timp rămân datele',
+    icon: Clock,
+    body: (
+      <>
+        <ul className={listClass}>
+          <li>
+            <strong>La cursuri</strong>, partajarea se încheie cel târziu la 15 minute după
+            sfârșitul ședinței.
+          </li>
+          <li>
+            <strong>În tabără</strong>, o pornire durează cel mult 8 ore și nu trece de încheierea
+            taberei, după ora României.
+          </li>
+          <li>
+            Antrenorul poate opri oricând și poate porni din nou explicit. Oprirea șterge imediat
+            poziția din aplicație. La expirare, nimeni nu o mai poate vedea, iar poziția se șterge
+            la următoarea curățare automată, care rulează în fiecare minut.
+          </li>
+        </ul>
+        <p>
+          Fiecare poziție nouă o înlocuiește pe cea veche: aplicația nu păstrează trasee și nu
+          salvează poziții în istoricul copilului. Datele tehnice care împiedică trimiterea de două
+          ori a aceleiași poziții se păstrează doar până la sfârșitul ședinței sau al taberei.
         </p>
         <p>
-          Părintele poate apăsa „Retrage acordul”. Antrenorul poate apăsa „Oprește locația” din
-          orice ecran al aplicației. Repornirea unei partajări cere un acord nou al părintelui. O
-          poziție deja văzută sau capturată de altă persoană nu poate fi retrasă de pe dispozitivul
-          acelei persoane.
+          Copiile de siguranță și jurnalele tehnice ale furnizorilor au propriile termene de
+          păstrare, așa că ștergerea din aplicație nu le golește pe loc.
         </p>
-      </section>
-      <section className="space-y-3">
-        <h2 className="font-display text-xl font-semibold">Cât timp rămân datele</h2>
-        <p>
-          Pentru cursuri, partajarea se încheie cel târziu la sfârșitul ședinței plus 15 minute.
-          Pentru tabere, o pornire durează maximum 8 ore și nu depășește încheierea taberei,
-          calculată în fusul Europe/Bucharest. Antrenorul poate opri oricând și poate porni din nou
-          explicit. Oprirea șterge poziția din datele active ale aplicației. La expirare, accesul
-          este refuzat imediat, iar curățarea programată șterge rândurile la următoarea rulare
-          reușită, programată în fiecare minut.
-        </p>
-        <p>
-          Pozițiile succesive înlocuiesc punctul anterior; aplicația nu păstrează trasee și nu
-          salvează poziții în istoricul copilului. Identificatorii necesari protecției împotriva
-          cererilor repetate sunt păstrați până la încheierea intervalului ședinței sau taberei.
-          Copiile de siguranță și jurnalele tehnice ale infrastructurii au propriile reguli de
-          retenție; ștergerea din aplicație nu înseamnă ștergere instantanee din aceste copii.
-        </p>
-      </section>
-      <section className="space-y-3">
-        <h2 className="font-display text-xl font-semibold">Furnizori și control</h2>
-        <p>
-          Supabase procesează autentificarea, datele și notificările de actualizare. Notificările
-          live nu conțin coordonate; infrastructura poate păstra temporar identificatorul canalului
-          și ora evenimentului. Harta folosește CARTO și date OpenStreetMap; încărcarea hărții
-          transmite furnizorului adresa IP și zona de hartă solicitată.
-        </p>
+      </>
+    ),
+  },
+  {
+    id: 'furnizori-si-control',
+    surfaceKey: 'manual:section:furnizori-si-control:aed33303-6848-4493-aaa5-e80de40b862e',
+    title: 'Furnizori și control',
+    icon: ShieldCheck,
+    body: (
+      <>
+        <p>Folosim acești furnizori, fiecare doar pentru ce are nevoie:</p>
+        <ul className={listClass}>
+          <li>
+            <strong>Supabase:</strong> contul, datele aplicației și actualizările live.
+            Actualizările live nu conțin coordonate; infrastructura poate păstra temporar
+            identificatorul canalului și ora evenimentului.
+          </li>
+          <li>
+            <strong>Stripe:</strong> plățile cu cardul. Datele cardului ajung doar la Stripe.
+          </li>
+          <li>
+            <strong>Google:</strong> conectarea cu contul Google, dacă o alegi, și notificările pe
+            telefon (pe iPhone, livrate prin Apple).
+          </li>
+          <li>
+            <strong>Netlify:</strong> găzduirea site-ului, care primește adresa IP la fiecare
+            vizită.
+          </li>
+          <li>
+            <strong>CARTO, OpenStreetMap și Photon:</strong> harta și căutarea adreselor. Încărcarea
+            hărții le transmite adresa IP și zona de hartă cerută; căutarea le transmite textul
+            căutat.
+          </li>
+        </ul>
         <p>
           Poți refuza ori retrage permisiunea de localizare din setările telefonului. Fără ea,
           antrenorul poate folosi celelalte funcții ale aplicației. Pentru întrebări despre datele
           tale, folosește{' '}
-          <Link className="text-primary underline" to="/contact">
+          <Link className={linkClass} to="/contact">
             pagina de contact
           </Link>{' '}
           sau discută cu clubul care organizează ședința.
         </p>
-      </section>
-    </article>
+      </>
+    ),
+  },
+]
+
+export default function PrivacyPage() {
+  return (
+    <LegalPage
+      title="Confidențialitate"
+      intro="Ce date folosește Motion Timișoara, cine le vede și cât timp le păstrăm, începând cu funcția „Locația antrenorului”."
+      version="1.0"
+      updated="22 octombrie 2026"
+      sections={SECTIONS}
+      introSurfaceKey="manual:section:titlu:c4dd45e2-2ea9-411d-b99a-ab791e595ab7"
+    />
   )
 }
