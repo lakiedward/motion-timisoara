@@ -21,7 +21,7 @@ export function HomeBenefits() {
   return (
     <section aria-labelledby="home-benefits-title" className="mx-auto max-w-7xl px-6 py-20 md:py-24">
       <div className="mb-12 max-w-2xl">
-        <span className="eyebrow mb-3">De ce Motion Timișoara</span>
+        <span className="eyebrow mb-3">De ce Motion România</span>
         <h2
           id="home-benefits-title"
           className="font-display text-foreground text-3xl font-extrabold md:text-4xl"

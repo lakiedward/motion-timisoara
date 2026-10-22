@@ -38,7 +38,7 @@ export function Logo({ className, showText = true, tone = 'default' }: LogoProps
       </span>
       {showText && (
         <span className="text-lg leading-none tracking-tight">
-          Motion <span className={onBrand ? undefined : 'text-primary'}>Timișoara</span>
+          Motion <span className={onBrand ? undefined : 'text-primary'}>România</span>
         </span>
       )}
     </span>

@@ -124,7 +124,7 @@ export async function startLocationCapture(
       nativeStarting = BackgroundGeolocation.start(
         {
           expiresAt: deadline,
-          backgroundTitle: 'Motion Timișoara — locație partajată',
+          backgroundTitle: 'Motion România — locație partajată',
           backgroundMessage: 'Locația ta este partajată pentru ședința activă. Poți opri oricând.',
           requestPermissions: false,
           stale: false,
