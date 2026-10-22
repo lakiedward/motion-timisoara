@@ -121,10 +121,10 @@ test('fără șabloane spune de unde se salvează', async () => {
   renderForm('/club/camps/new')
   expect(
     await screen.findByText(
-      'Nu ai șabloane. Le salvezi dintr-o tabără existentă, cu „Salvează ca șablon”.',
+      'Nu ai încă șabloane. După ce creezi tabăra, o poți salva ca șablon la Verificare.',
     ),
   ).toBeInTheDocument()
-  expect(screen.getByRole('radio', { name: 'Formular gol' })).toBeChecked()
+  expect(screen.getByRole('radio', { name: /^Formular gol/ })).toBeChecked()
   expect(screen.queryByText('Se încarcă șabloanele…')).not.toBeInTheDocument()
   expect(screen.queryByText('Nu am putut încărca șabloanele.')).not.toBeInTheDocument()
 })
@@ -133,8 +133,8 @@ test('încărcarea șabloanelor nu e o cutie goală', async () => {
   vi.mocked(listeazaSabloaneTabara).mockReturnValue(new Promise(() => {}))
   renderForm('/club/camps/new')
   expect(await screen.findByRole('status')).toHaveTextContent('Se încarcă șabloanele…')
-  expect(screen.queryByText(/Nu ai șabloane/)).not.toBeInTheDocument()
-  expect(screen.queryByRole('radio', { name: 'Formular gol' })).not.toBeInTheDocument()
+  expect(screen.queryByText(/Nu ai încă șabloane/)).not.toBeInTheDocument()
+  expect(screen.queryByRole('radio', { name: /^Formular gol/ })).not.toBeInTheDocument()
 })
 
 test('eroarea de șabloane e separată de lista goală', async () => {
@@ -142,7 +142,7 @@ test('eroarea de șabloane e separată de lista goală', async () => {
   vi.mocked(listeazaSabloaneTabara).mockRejectedValue(new Error('retea'))
   renderForm('/club/camps/new')
   expect(await screen.findByRole('alert')).toHaveTextContent('Nu am putut încărca șabloanele.')
-  expect(screen.queryByText(/Nu ai șabloane/)).not.toBeInTheDocument()
+  expect(screen.queryByText(/Nu ai încă șabloane/)).not.toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Reîncearcă' }))
   await waitFor(() => expect(listeazaSabloaneTabara).toHaveBeenCalledTimes(2))
 })
@@ -175,7 +175,10 @@ test('tabăra nouă alege șablonul și lasă titlul gol', async () => {
   const user = userEvent.setup()
   renderForm('/club/camps/new')
   expect(screen.queryByRole('button', { name: 'Salvează ca șablon' })).not.toBeInTheDocument()
-  await user.click(await screen.findByRole('radio', { name: 'Vara la munte' }))
+  expect(
+    await screen.findByText('1 categorie de vârstă · regulament · La cabana'),
+  ).toBeInTheDocument()
+  await user.click(await screen.findByRole('radio', { name: /^Vara la munte/ }))
   expect(screen.queryByText(/Înlocuiești câmpurile/)).not.toBeInTheDocument()
   expect(screen.getByLabelText(/^Titlu/)).toHaveValue('')
   expect(screen.getByLabelText('Descriere')).toHaveValue('In fiecare an')
@@ -187,11 +190,11 @@ test('un formular început cere confirmare și păstrează titlul', async () => 
   const user = userEvent.setup()
   renderForm('/club/camps/new')
   await user.type(await screen.findByLabelText(/^Titlu/), 'Ediția 2028')
-  await user.click(await screen.findByRole('radio', { name: 'Vara la munte' }))
+  await user.click(await screen.findByRole('radio', { name: /^Vara la munte/ }))
   expect(screen.getByText(/Înlocuiești câmpurile copiate/)).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Renunță' }))
   expect(screen.getByLabelText('Descriere')).toHaveValue('')
-  await user.click(screen.getByRole('radio', { name: 'Vara la munte' }))
+  await user.click(screen.getByRole('radio', { name: /^Vara la munte/ }))
   await user.click(screen.getByRole('button', { name: 'Înlocuiește' }))
   expect(screen.getByLabelText(/^Titlu/)).toHaveValue('Ediția 2028')
   expect(screen.getByLabelText('Descriere')).toHaveValue('In fiecare an')
@@ -242,9 +245,7 @@ test('editarea salvează șablonul fără perioadă și înlocuiește același n
       components: [{ name: 'Cazare', amount: 40000 }],
     },
   ] as never)
-  vi.mocked(listeazaSabloaneTabara).mockResolvedValue([
-    { ...SABLON, name: 'Tabără de înot' },
-  ])
+  vi.mocked(listeazaSabloaneTabara).mockResolvedValue([{ ...SABLON, name: 'Tabără de înot' }])
   renderForm('/club/camps/tabara-1/edit')
   expect(await screen.findByRole('button', { name: 'Salvează ca șablon' })).toBeInTheDocument()
   expect(screen.queryByText('Pornește de la un șablon')).not.toBeInTheDocument()
