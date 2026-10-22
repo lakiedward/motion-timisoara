@@ -64,4 +64,18 @@ describe('PrivacyPage', () => {
       'Cum oprești:',
     ])
   })
+
+  it('marks the header and every section with its Team Tracker surface key', () => {
+    const { container } = renderPage()
+    const keys = Array.from(container.querySelectorAll('[data-section]')).map(
+      (el) => el.getAttribute('data-section')?.split(':')[2],
+    )
+    expect(keys).toEqual([
+      'titlu',
+      'ce-se-partajeaza',
+      'cine-poate-vedea-pozitia',
+      'cat-timp-raman-datele',
+      'furnizori-si-control',
+    ])
+  })
 })

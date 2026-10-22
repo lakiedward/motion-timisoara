@@ -10,6 +10,7 @@ const linkClass =
 const SECTIONS: LegalSection[] = [
   {
     id: 'ce-se-partajeaza',
+    surfaceKey: 'manual:section:ce-se-partajeaza:f5dcfe06-1479-4ef9-9a87-49014723f58e',
     title: 'Ce se partajează',
     icon: MapPin,
     body: (
@@ -29,6 +30,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'cine-poate-vedea-pozitia',
+    surfaceKey: 'manual:section:cine-poate-vedea-pozitia:7ecfa678-717e-4aaf-a6fc-22bf228cbc01',
     title: 'Cine poate vedea poziția',
     icon: Eye,
     body: (
@@ -62,6 +64,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'cat-timp-raman-datele',
+    surfaceKey: 'manual:section:cat-timp-raman-datele:352a1392-bb67-42bc-9c11-b106b70f534f',
     title: 'Cât timp rămân datele',
     icon: Clock,
     body: (
@@ -95,6 +98,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'furnizori-si-control',
+    surfaceKey: 'manual:section:furnizori-si-control:aed33303-6848-4493-aaa5-e80de40b862e',
     title: 'Furnizori și control',
     icon: ShieldCheck,
     body: (
@@ -145,6 +149,7 @@ export default function PrivacyPage() {
       version="1.0"
       updated="22 octombrie 2026"
       sections={SECTIONS}
+      introSurfaceKey="manual:section:titlu:c4dd45e2-2ea9-411d-b99a-ab791e595ab7"
     />
   )
 }
