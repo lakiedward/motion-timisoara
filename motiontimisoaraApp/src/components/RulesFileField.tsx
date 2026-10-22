@@ -1,9 +1,10 @@
 import { FileText, Trash2 } from 'lucide-react'
-import { useId, useRef, type ComponentProps } from 'react'
+import { useId, useRef, useState, type ComponentProps } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import {
@@ -25,6 +26,7 @@ export default function RulesFileField({
   remove,
   queryKey,
   intro,
+  confirmRemove,
 }: {
   entityId?: string
   saved: CampRulesFileMeta | null
@@ -35,7 +37,9 @@ export default function RulesFileField({
   remove: (id: string) => Promise<void>
   queryKey?: readonly unknown[]
   intro?: string
+  confirmRemove?: boolean
 }) {
+  const [confirmare, setConfirmare] = useState(false)
   const qc = useQueryClient()
   const inputId = useId()
   const input = useRef<HTMLInputElement>(null)
@@ -58,11 +62,15 @@ export default function RulesFileField({
   const scoate = useMutation({
     mutationFn: () => remove(entityId as string),
     onSuccess: () => {
+      setConfirmare(false)
       toast.success('Fișierul regulamentului a fost șters.')
       onSaved?.(null)
       reimprospateaza()
     },
-    onError: () => toast.error('Nu am putut șterge fișierul.'),
+    onError: () => {
+      setConfirmare(false)
+      toast.error('Nu am putut șterge fișierul.')
+    },
   })
 
   const afisat = entityId
@@ -141,8 +149,9 @@ export default function RulesFileField({
             className="h-11 min-h-11"
             disabled={ocupat}
             onClick={() => {
-              if (entityId) scoate.mutate()
-              else onLocalFile(null)
+              if (!entityId) onLocalFile(null)
+              else if (confirmRemove) setConfirmare(true)
+              else scoate.mutate()
             }}
           >
             <Trash2 className="size-4" />
@@ -150,6 +159,18 @@ export default function RulesFileField({
           </Button>
         )}
       </div>
+      {confirmRemove && afisat && (
+        <ConfirmDialog
+          open={confirmare}
+          onOpenChange={setConfirmare}
+          title="Ștergi fișierul regulamentului?"
+          description={`„${afisat.name}” dispare imediat de pe pagina publică. Textul regulamentului rămâne.`}
+          confirmLabel="Șterge fișierul"
+          destructive
+          pending={scoate.isPending}
+          onConfirm={() => scoate.mutate()}
+        />
+      )}
     </div>
   )
 }

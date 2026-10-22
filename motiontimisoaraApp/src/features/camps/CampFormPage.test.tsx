@@ -265,15 +265,63 @@ test('la editare, necesarul salvat poate primi categorii și articole numerotate
   vi.mocked(getPreturilePeVarsta).mockResolvedValue([])
   renderForm('/club/camps/tabara-1/edit')
 
-  await waitFor(() => expect(screen.getByLabelText('Categorie')).toHaveValue('Haine'))
-  expect(screen.getByLabelText('Articol')).toHaveValue('Chiloți')
-  expect(screen.getByLabelText('Număr')).toHaveValue(7)
+  await waitFor(() => expect(screen.getByLabelText(/^Categorie\*?$/)).toHaveValue('Haine'))
+  expect(screen.getByLabelText(/^Articol\*?$/)).toHaveValue('Chiloți')
+  expect(screen.getByLabelText(/^Număr\*?$/)).toHaveValue(7)
+  expect(screen.getByRole('heading', { level: 3, name: /Haine/ })).toHaveTextContent(
+    'Haine · 1 articol',
+  )
   await user.click(screen.getByRole('button', { name: 'Adaugă categorie' }))
-  await user.type(screen.getAllByLabelText('Categorie')[1], 'Ski')
-  await user.click(screen.getAllByRole('button', { name: 'Adaugă articol' })[1])
-  await user.type(screen.getAllByLabelText('Articol')[1], 'Schiuri')
-  await user.type(screen.getAllByLabelText('Număr')[1], '1')
-  expect(screen.getAllByLabelText('Categorie')[1]).toHaveValue('Ski')
+  expect(screen.getAllByLabelText(/^Articol\*?$/)).toHaveLength(2)
+  expect(screen.getAllByLabelText(/^Număr\*?$/)[1]).toHaveValue(1)
+  await user.type(screen.getAllByLabelText(/^Categorie\*?$/)[1], 'Ski')
+  await user.type(screen.getAllByLabelText(/^Articol\*?$/)[1], 'Schiuri')
+  expect(screen.getByRole('heading', { level: 3, name: /Ski/ })).toHaveTextContent(
+    'Ski · 1 articol',
+  )
+  expect(screen.getByRole('button', { name: 'Șterge articolul 1, categoria 2' })).toBeDisabled()
+})
+
+test('ștergerea unei categorii cu articole cere confirmare', async () => {
+  const user = userEvent.setup()
+  vi.mocked(getTabaraDeEditat).mockResolvedValue({
+    ...TABARA,
+    camp_requirements: [{ name: 'Haine', items: [{ name: 'Chiloți', quantity: 7 }] }],
+  } as never)
+  vi.mocked(getCategoriile).mockResolvedValue([])
+  vi.mocked(getPreturilePeVarsta).mockResolvedValue([])
+  renderForm('/club/camps/tabara-1/edit')
+
+  await waitFor(() => expect(screen.getByLabelText(/^Categorie\*?$/)).toHaveValue('Haine'))
+  await user.click(screen.getByRole('button', { name: 'Șterge categoria 1' }))
+  const dialog = await screen.findByRole('alertdialog', { name: 'Ștergi categoria „Haine”?' })
+  await user.click(within(dialog).getByRole('button', { name: 'Anulează' }))
+  expect(screen.getByLabelText(/^Categorie\*?$/)).toHaveValue('Haine')
+  await user.click(screen.getByRole('button', { name: 'Șterge categoria 1' }))
+  await user.click(
+    within(await screen.findByRole('alertdialog')).getByRole('button', {
+      name: 'Șterge categoria',
+    }),
+  )
+  expect(screen.queryByLabelText(/^Categorie\*?$/)).not.toBeInTheDocument()
+  expect(screen.getByText(/Lista e goală/)).toBeInTheDocument()
+})
+
+test('o categorie nouă, încă goală, se șterge fără confirmare', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  await user.click(await screen.findByRole('button', { name: 'Adaugă categorie' }))
+  await user.click(screen.getByRole('button', { name: 'Șterge categoria 1' }))
+  expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+  expect(screen.queryByLabelText(/^Categorie\*?$/)).not.toBeInTheDocument()
+})
+
+test('regulamentul arată câte caractere mai are până la limită', async () => {
+  renderForm()
+  fireEvent.change(await screen.findByLabelText('Regulamentul taberei'), {
+    target: { value: 'Fără telefoane.' },
+  })
+  expect(screen.getByText('15 din 8.000 de caractere')).toBeInTheDocument()
 })
 
 test('regulamentul se păstrează în draft când revii de pe costuri', async () => {
@@ -421,6 +469,9 @@ test('la editare, ștergerea fișierului actualizează rândul fără salvarea f
   renderForm('/club/camps/tabara-1/edit')
   await screen.findByText('regulament-tabara.pdf')
   await user.click(screen.getByRole('button', { name: 'Șterge fișierul' }))
+  expect(stergeRegulamentFisier).not.toHaveBeenCalled()
+  const dialog = await screen.findByRole('alertdialog', { name: 'Ștergi fișierul regulamentului?' })
+  await user.click(within(dialog).getByRole('button', { name: 'Șterge fișierul' }))
   await waitFor(() => expect(stergeRegulamentFisier).toHaveBeenCalledWith('tabara-1'))
   expect(saveCampOffer).not.toHaveBeenCalled()
 })
@@ -769,13 +820,16 @@ test('la editare, Salvează tabăra actualizează oferta existentă', async () =
   expect(toast.success).toHaveBeenCalledWith('Tabără actualizată.')
 })
 
-test.each(PORTALE)('pe %s, un link de tabără inexistent arată „Tabăra nu a fost găsită.”', async (baza) => {
-  vi.mocked(getTabaraDeEditat).mockResolvedValue(null)
-  renderForm(`${baza}/lipsa/edit`)
-  expect(await screen.findByText('Tabăra nu a fost găsită.')).toBeInTheDocument()
-  expect(screen.getByRole('link', { name: /Înapoi la tabere/ })).toHaveAttribute('href', baza)
-  expect(screen.queryByRole('heading', { name: 'Editează tabăra' })).not.toBeInTheDocument()
-})
+test.each(PORTALE)(
+  'pe %s, un link de tabără inexistent arată „Tabăra nu a fost găsită.”',
+  async (baza) => {
+    vi.mocked(getTabaraDeEditat).mockResolvedValue(null)
+    renderForm(`${baza}/lipsa/edit`)
+    expect(await screen.findByText('Tabăra nu a fost găsită.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Înapoi la tabere/ })).toHaveAttribute('href', baza)
+    expect(screen.queryByRole('heading', { name: 'Editează tabăra' })).not.toBeInTheDocument()
+  },
+)
 
 test('dacă tabăra nu se poate citi, Reîncearcă repetă citirea', async () => {
   vi.mocked(getTabaraDeEditat).mockRejectedValueOnce(new Error('retea'))
