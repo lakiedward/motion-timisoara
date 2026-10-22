@@ -7,9 +7,10 @@ import { z } from 'zod'
 import { AuthLayout } from './AuthLayout'
 import { useReturnUrl, welcomeChildPath, withReturnUrl } from './return-url'
 import { isCoachContinuation } from './coach/continuation'
+import { CircleAlert } from 'lucide-react'
+import { AuthFields } from './AuthFields'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Field } from '@/components/ui/field'
 import { toast } from 'sonner'
 import { completeProfile, loadAppUser, roleHome, type AppUser } from '@/api/auth'
 import { useAuth } from '@/lib/auth-context'
@@ -93,9 +94,15 @@ export default function OAuthCallbackPage() {
 
   if (phase === 'loading') {
     return (
-      <div className="grid min-h-dvh place-items-center">
-        <div className="border-primary size-8 animate-spin rounded-full border-2 border-t-transparent" />
-      </div>
+      <AuthLayout title="Te conectăm…" subtitle="Verificăm contul tău. Durează câteva secunde.">
+        <div role="status" className="text-muted-foreground flex items-center gap-3 text-sm">
+          <span
+            aria-hidden="true"
+            className="border-primary size-5 animate-spin rounded-full border-2 border-t-transparent"
+          />
+          Se încarcă
+        </div>
+      </AuthLayout>
     )
   }
 
@@ -112,8 +119,12 @@ export default function OAuthCallbackPage() {
           </Link>
         }
       >
-        <p className="bg-destructive/10 text-destructive rounded-md px-3 py-3 text-sm">
-          Nu am putut finaliza autentificarea. Încearcă din nou.
+        <p
+          className="bg-destructive/10 text-destructive flex items-start gap-2 rounded-md px-3 py-2 text-sm"
+          role="alert"
+        >
+          <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          Nu am putut finaliza autentificarea. Încearcă din nou sau intră cu email și parolă.
         </p>
         <Button
           type="button"
@@ -132,22 +143,24 @@ export default function OAuthCallbackPage() {
   return (
     <AuthLayout title="Completează-ți profilul" subtitle="Mai avem nevoie de câteva detalii">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        <div className="space-y-1.5">
-          <Label htmlFor="name">Nume complet</Label>
-          <Input id="name" {...register('name')} aria-invalid={!!errors.name} />
-          {errors.name && <p className="text-destructive text-xs">{errors.name.message}</p>}
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="phone">Telefon</Label>
-          <Input
-            id="phone"
-            type="tel"
-            placeholder="+40..."
-            {...register('phone')}
-            aria-invalid={!!errors.phone}
+        <AuthFields columns={2}>
+          <Field
+            id="name"
+            label="Nume complet"
+            autoComplete="name"
+            error={errors.name?.message}
+            {...register('name')}
           />
-          {errors.phone && <p className="text-destructive text-xs">{errors.phone.message}</p>}
-        </div>
+          <Field
+            id="phone"
+            label="Telefon"
+            type="tel"
+            autoComplete="tel"
+            placeholder="+40..."
+            error={errors.phone?.message}
+            {...register('phone')}
+          />
+        </AuthFields>
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? 'Se salvează…' : 'Continuă'}
         </Button>
