@@ -19,16 +19,18 @@ export function RequiredFieldsNote() {
 }
 
 export function FormSection({
+  id,
   title,
   description,
   children,
 }: {
+  id?: string
   title: string
   description?: string
   children: ReactNode
 }) {
   return (
-    <Card>
+    <Card id={id} className="scroll-mt-20">
       <CardHeader>
         <CardTitle className="font-display text-lg">{title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}

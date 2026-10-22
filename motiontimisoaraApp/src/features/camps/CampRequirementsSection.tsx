@@ -1,3 +1,4 @@
+import { FormSection } from '@/components/FormSection'
 import { Plus, Trash2 } from 'lucide-react'
 import { useFieldArray, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form'
 
@@ -17,11 +18,10 @@ export default function CampRequirementsSection({ control, register, errors }: P
   const categories = useFieldArray({ control, name: 'necesar' })
 
   return (
-    <fieldset className="rounded-2xl border p-5">
-      <legend className="px-2 font-semibold">Necesar pentru tabără</legend>
-      <p className="text-muted-foreground text-sm">
-        Grupează lucrurile de adus și trece numărul fiecărui articol.
-      </p>
+    <FormSection
+      title="Necesar pentru tabără"
+      description="Grupează lucrurile de adus și trece numărul fiecărui articol."
+    >
 
       <ul className="mt-4 space-y-4" aria-label="Categorii necesar">
         {categories.fields.map((category, categoryIndex) => (
@@ -49,7 +49,7 @@ export default function CampRequirementsSection({ control, register, errors }: P
           {errors.necesar.message}
         </p>
       )}
-    </fieldset>
+    </FormSection>
   )
 }
 
@@ -73,7 +73,7 @@ function CampRequirementCategoryEditor({
           <Input
             id={`necesar-${categoryIndex}-name`}
             {...register(`necesar.${categoryIndex}.name` as const)}
-            className="h-11 lg:h-9"
+           
             aria-invalid={!!categoryError?.name}
             placeholder="Haine"
           />
@@ -105,7 +105,7 @@ function CampRequirementCategoryEditor({
               >
                 <Input
                   {...register(`necesar.${categoryIndex}.items.${itemIndex}.name` as const)}
-                  className="h-11 lg:h-9"
+                 
                   aria-invalid={!!categoryError?.items?.[itemIndex]?.name}
                   placeholder="Chiloți"
                 />
@@ -120,7 +120,7 @@ function CampRequirementCategoryEditor({
                   min={1}
                   max={99}
                   {...register(`necesar.${categoryIndex}.items.${itemIndex}.quantity` as const)}
-                  className="h-11 lg:h-9"
+                 
                   aria-invalid={!!categoryError?.items?.[itemIndex]?.quantity}
                 />
               </CampFormField>

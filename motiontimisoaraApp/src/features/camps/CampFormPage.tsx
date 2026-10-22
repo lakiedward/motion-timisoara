@@ -24,6 +24,7 @@ import {
   getPreturilePeVarsta,
   getTabaraDeEditat,
   saveCampOffer,
+  salveazaSablonTabara,
   stergeTabara,
 } from '@/api/camps-admin'
 import { schimbaPozaHero } from '@/api/camp-photos'
@@ -50,6 +51,7 @@ import CampFormDetailsStep from './CampFormDetailsStep'
 import CampFormReviewStep from './CampFormReviewStep'
 import CampTemplatePicker from './templates/CampTemplatePicker'
 import CampTemplateSave from './templates/CampTemplateSave'
+import CampTemplateOnCreate from './templates/CampTemplateOnCreate'
 import {
   aplicaSablon,
   golesteCampuriCopiate,
@@ -71,6 +73,8 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   const [eroareHero, setEroareHero] = useState<string | null>(null)
   const [sablonSelectat, setSablonSelectat] = useState('')
   const [locatiePastrata, setLocatiePastrata] = useState<string | null>(null)
+  const [siSablon, setSiSablon] = useState(false)
+  const [numeSablon, setNumeSablon] = useState<string | null>(null)
 
   const {
     data: tabara,
@@ -116,8 +120,21 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
     getValues,
     control,
     trigger,
+    subscribe,
     formState: { errors, isSubmitting },
   } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: GOL })
+  const [campuriVerificate, setCampuriVerificate] = useState<readonly string[] | null>(null)
+
+  useEffect(() => {
+    if (!campuriVerificate) return
+    return subscribe({
+      formState: { values: true },
+      callback: ({ name }) => {
+        const camp = campuriVerificate.find((c) => name === c || name?.startsWith(`${c}.`))
+        if (camp) void trigger(camp as keyof Values)
+      },
+    })
+  }, [campuriVerificate, subscribe, trigger])
 
   useEffect(() => {
     if (tabara && categoriiGata && varsteGata && locatiiGata && adultGata) {
@@ -206,12 +223,20 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
 
   const next = async () => {
     if (step === 0) {
-      const detalii = await trigger([...DETALII_FIELDS])
-      if (detalii && !heroLipseste()) setStep(1)
+      const detalii = await trigger([...DETALII_FIELDS], { shouldFocus: true })
+      if (!detalii) setCampuriVerificate(DETALII_FIELDS)
+      const faraHero = heroLipseste()
+      if (detalii && faraHero) {
+        document
+          .getElementById('camp-hero')
+          ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+      if (detalii && !faraHero) setStep(1)
       return
     }
     if (step === 1) {
-      if (await trigger([...COSTURI_FIELDS])) setStep(2)
+      if (await trigger([...COSTURI_FIELDS], { shouldFocus: true })) setStep(2)
+      else setCampuriVerificate(COSTURI_FIELDS)
     }
   }
 
@@ -264,6 +289,16 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
           void qc.invalidateQueries({ queryKey: ['taberele-mele'] })
           navigate(baza)
           return
+        }
+      }
+      if (!eEditare && siSablon) {
+        const sablon = payloadSablon(numeSablon ?? v.title, v)
+        try {
+          if (!sablon) throw new Error()
+          await salveazaSablonTabara(proprietar, sablon)
+          void qc.invalidateQueries({ queryKey: ['sabloane-tabara'] })
+        } catch {
+          toast.error('Tabăra a fost creată, dar șablonul nu s-a salvat. Îl salvezi din editare.')
         }
       }
       void qc.invalidateQueries({ queryKey: ['taberele-mele'] })
@@ -458,6 +493,17 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
             fisierRegulament={fisierRegulament}
             pozaHero={pozaHero}
             onModifica={inapoiLaPas}
+          />
+        )}
+
+        {step === 2 && !eEditare && (
+          <CampTemplateOnCreate
+            proprietar={proprietar}
+            gata={gata}
+            activ={siSablon}
+            onActiv={setSiSablon}
+            nume={numeSablon ?? titluViu ?? ''}
+            onNume={setNumeSablon}
           />
         )}
 

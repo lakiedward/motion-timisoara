@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import type { Control, FieldErrors, UseFormRegister, UseFormSetValue } from 'react-hook-form'
+import { FormSection, RequiredFieldsNote } from '@/components/FormSection'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import CampFormField from './CampFormField'
 import CampPeriodSection from './CampPeriodSection'
 import CampPhotosSection from './CampPhotosSection'
@@ -11,6 +13,9 @@ import { slugDinTitlu } from '@/api/camps-admin'
 import { HeroPhotoField } from '@/components/HeroPhotoField'
 import type { CampRulesFileMeta } from '@/lib/camp-rules'
 import type { Values } from './camp-form-schema'
+
+const selectCls =
+  'border-input dark:bg-input/30 flex h-touch-target w-full min-w-0 rounded-md border bg-transparent px-3 text-base shadow-xs transition-[color,box-shadow] hover:border-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-invalid:border-2 aria-invalid:border-destructive disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
 
 type LocatieOptiune = { id: string; name: string; city: string | null }
 
@@ -51,29 +56,42 @@ export default function CampFormDetailsStep({
 
   return (
     <section className="space-y-5" aria-labelledby="pas-detalii">
-      <h2 id="pas-detalii" className="font-display text-lg font-bold">
-        Detalii
-      </h2>
+      <div>
+        <h2 id="pas-detalii" className="font-display text-lg font-bold">
+          Detalii
+        </h2>
+        <RequiredFieldsNote />
+      </div>
 
-      <CampFormField eticheta="Titlu" eroare={errors.title?.message}>
-        <Input
-          {...titluReg}
-          className="h-11 lg:h-9"
-          aria-invalid={!!errors.title}
-          onBlur={(e) => {
-            titluReg.onBlur(e)
-            if (!eEditare && !slugViu) setValue('slug', slugDinTitlu(e.target.value))
-          }}
-        />
-      </CampFormField>
+      <FormSection title="Despre tabără" description="Numele și textul pe care le vede părintele.">
+        <CampFormField obligatoriu eticheta="Titlu" eroare={errors.title?.message}>
+          <Input
+            {...titluReg}
+            aria-invalid={!!errors.title}
+            onBlur={(e) => {
+              titluReg.onBlur(e)
+              if (!eEditare && !slugViu) setValue('slug', slugDinTitlu(e.target.value))
+            }}
+          />
+        </CampFormField>
 
-      <CampFormField
-        eticheta="Adresa paginii"
-        eroare={errors.slug?.message}
-        ajutor={`/tabere/${slugViu || '...'}`}
-      >
-        <Input {...register('slug')} className="h-11 lg:h-9" aria-invalid={!!errors.slug} />
-      </CampFormField>
+        <CampFormField
+          obligatoriu
+          eticheta="Adresa paginii"
+          eroare={errors.slug?.message}
+          ajutor={`/tabere/${slugViu || '...'}`}
+        >
+          <Input {...register('slug')} aria-invalid={!!errors.slug} />
+        </CampFormField>
+
+        <CampFormField eticheta="Descriere">
+          <Textarea
+            {...register('description')}
+            rows={4}
+            className="[field-sizing:content] max-h-64"
+          />
+        </CampFormField>
+      </FormSection>
 
       <CampPeriodSection
         register={register}
@@ -82,52 +100,43 @@ export default function CampFormDetailsStep({
         errors={errors}
       />
 
-      <CampFormField
-        eticheta="Loc"
-        ajutor={
-          eroareLocatii
-            ? 'Nu am putut încărca locațiile. Poți salva tabăra și alege locul mai târziu.'
-            : 'Un loc din platformă: așa ajunge tabăra pe hartă.'
-        }
-      >
-        <select
-          {...register('location_id')}
-          className="border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] lg:h-9"
+      <FormSection title="Loc și locuri" description="Unde are loc tabăra și câți copii primești.">
+        <CampFormField
+          eticheta="Loc"
+          ajutor={
+            eroareLocatii
+              ? 'Nu am putut încărca locațiile. Poți salva tabăra și alege locul mai târziu.'
+              : 'Un loc din platformă: așa ajunge tabăra pe hartă.'
+          }
         >
-          <option value="">— fără loc ales —</option>
-          {(locatii ?? []).map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.name}
-              {l.city ? ` · ${l.city}` : ''}
-            </option>
-          ))}
-        </select>
-      </CampFormField>
-      <Link
-        to={eClub ? '/club/locations/new' : '/coach/locations/new'}
-        className="text-primary inline-flex min-h-11 items-center text-sm underline-offset-4 hover:underline"
-      >
-        Locul nu e în listă? Adaugă o locație nouă, cu pin pe hartă
-      </Link>
+          <select {...register('location_id')} className={selectCls}>
+            <option value="">— fără loc ales —</option>
+            {(locatii ?? []).map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.name}
+                {l.city ? ` · ${l.city}` : ''}
+              </option>
+            ))}
+          </select>
+        </CampFormField>
+        <Link
+          to={eClub ? '/club/locations/new' : '/coach/locations/new'}
+          className="text-primary -mt-2 inline-flex min-h-11 items-center text-sm underline-offset-4 hover:underline"
+        >
+          Locul nu e în listă? Adaugă o locație nouă, cu pin pe hartă
+        </Link>
 
-      <CampFormField
-        eticheta="Detalii despre loc"
-        ajutor="Text liber, se vede pe pagina publică: cabana, intrarea, punctul de întâlnire."
-      >
-        <Input {...register('location_text')} className="h-11 lg:h-9" />
-      </CampFormField>
+        <CampFormField
+          eticheta="Detalii despre loc"
+          ajutor="Text liber, se vede pe pagina publică: cabana, intrarea, punctul de întâlnire."
+        >
+          <Input {...register('location_text')} />
+        </CampFormField>
 
-      <CampFormField eticheta="Locuri" ajutor="Lasă gol pentru tabără fără limită.">
-        <Input type="number" min={0} {...register('capacity')} className="h-11 lg:h-9" />
-      </CampFormField>
-
-      <CampFormField eticheta="Descriere">
-        <textarea
-          {...register('description')}
-          rows={4}
-          className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent p-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] [field-sizing:content] max-h-64"
-        />
-      </CampFormField>
+        <CampFormField eticheta="Locuri" ajutor="Lasă gol pentru tabără fără limită.">
+          <Input type="number" min={0} {...register('capacity')} />
+        </CampFormField>
+      </FormSection>
 
       <CampRulesSection
         register={register}
@@ -140,15 +149,17 @@ export default function CampFormDetailsStep({
 
       <CampRequirementsSection control={control} register={register} errors={errors} />
 
-      <label className="flex min-h-11 items-center gap-3 text-sm">
-        <input type="checkbox" {...register('allow_cash')} className="size-4" />
-        Acceptă plata cash
-      </label>
+      <FormSection title="Plată" description="Pe lângă plata cu cardul.">
+        <label className="flex min-h-11 items-center gap-3 text-sm">
+          <input type="checkbox" {...register('allow_cash')} className="size-4" />
+          Acceptă plata cash
+        </label>
+      </FormSection>
 
       {eEditare && tabara ? (
         <>
           {eroareHero && (
-            <p className="text-destructive text-sm" role="alert">
+            <p id="camp-hero" className="text-destructive text-sm" role="alert">
               {eroareHero}
             </p>
           )}
@@ -156,13 +167,13 @@ export default function CampFormDetailsStep({
           <CampCoachesSection campId={tabara.id} />
         </>
       ) : (
-        <>
-          <HeroPhotoField savedUrl={null} error={eroareHero} onFile={onPozaHero} />
-          <p className="text-muted-foreground rounded-2xl border border-dashed p-4 text-sm">
-            Galeria și antrenorii se adaugă după ce tabăra există. Poza din cap se alege acum și nu
-            ține locul galeriei.
-          </p>
-        </>
+        <FormSection
+          id="camp-hero"
+          title="Poza din capul paginii"
+          description="Obligatorie. Se vede în banda de deasupra titlului, pe pagina publică. Galeria și antrenorii se adaugă după ce tabăra există."
+        >
+          <HeroPhotoField framed={false} savedUrl={null} error={eroareHero} onFile={onPozaHero} />
+        </FormSection>
       )}
     </section>
   )
