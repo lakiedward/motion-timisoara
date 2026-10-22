@@ -177,7 +177,7 @@ test('tabăra nouă alege șablonul și lasă titlul gol', async () => {
   expect(screen.queryByRole('button', { name: 'Salvează ca șablon' })).not.toBeInTheDocument()
   await user.click(await screen.findByRole('radio', { name: 'Vara la munte' }))
   expect(screen.queryByText(/Înlocuiești câmpurile/)).not.toBeInTheDocument()
-  expect(screen.getByLabelText('Titlu')).toHaveValue('')
+  expect(screen.getByLabelText(/^Titlu/)).toHaveValue('')
   expect(screen.getByLabelText('Descriere')).toHaveValue('In fiecare an')
   expect(screen.getByLabelText('Locuri')).toHaveValue(24)
   expect(screen.getByRole('checkbox', { name: 'Acceptă plata cash' })).toBeChecked()
@@ -186,14 +186,14 @@ test('tabăra nouă alege șablonul și lasă titlul gol', async () => {
 test('un formular început cere confirmare și păstrează titlul', async () => {
   const user = userEvent.setup()
   renderForm('/club/camps/new')
-  await user.type(await screen.findByLabelText('Titlu'), 'Ediția 2028')
+  await user.type(await screen.findByLabelText(/^Titlu/), 'Ediția 2028')
   await user.click(await screen.findByRole('radio', { name: 'Vara la munte' }))
   expect(screen.getByText(/Înlocuiești câmpurile copiate/)).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Renunță' }))
   expect(screen.getByLabelText('Descriere')).toHaveValue('')
   await user.click(screen.getByRole('radio', { name: 'Vara la munte' }))
   await user.click(screen.getByRole('button', { name: 'Înlocuiește' }))
-  expect(screen.getByLabelText('Titlu')).toHaveValue('Ediția 2028')
+  expect(screen.getByLabelText(/^Titlu/)).toHaveValue('Ediția 2028')
   expect(screen.getByLabelText('Descriere')).toHaveValue('In fiecare an')
 })
 
@@ -248,7 +248,7 @@ test('editarea salvează șablonul fără perioadă și înlocuiește același n
   renderForm('/club/camps/tabara-1/edit')
   expect(await screen.findByRole('button', { name: 'Salvează ca șablon' })).toBeInTheDocument()
   expect(screen.queryByText('Pornește de la un șablon')).not.toBeInTheDocument()
-  await waitFor(() => expect(screen.getByLabelText('Titlu')).toHaveValue('Tabără de înot'))
+  await waitFor(() => expect(screen.getByLabelText(/^Titlu/)).toHaveValue('Tabără de înot'))
   await waitFor(() =>
     expect(screen.getByLabelText('Numele șablonului')).toHaveValue('Tabără de înot'),
   )

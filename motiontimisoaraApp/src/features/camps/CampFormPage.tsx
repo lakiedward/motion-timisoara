@@ -116,8 +116,21 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
     getValues,
     control,
     trigger,
+    subscribe,
     formState: { errors, isSubmitting },
   } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: GOL })
+  const [campuriVerificate, setCampuriVerificate] = useState<readonly string[] | null>(null)
+
+  useEffect(() => {
+    if (!campuriVerificate) return
+    return subscribe({
+      formState: { values: true },
+      callback: ({ name }) => {
+        const camp = campuriVerificate.find((c) => name === c || name?.startsWith(`${c}.`))
+        if (camp) void trigger(camp as keyof Values)
+      },
+    })
+  }, [campuriVerificate, subscribe, trigger])
 
   useEffect(() => {
     if (tabara && categoriiGata && varsteGata && locatiiGata && adultGata) {
@@ -206,12 +219,20 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
 
   const next = async () => {
     if (step === 0) {
-      const detalii = await trigger([...DETALII_FIELDS])
-      if (detalii && !heroLipseste()) setStep(1)
+      const detalii = await trigger([...DETALII_FIELDS], { shouldFocus: true })
+      if (!detalii) setCampuriVerificate(DETALII_FIELDS)
+      const faraHero = heroLipseste()
+      if (detalii && faraHero) {
+        document
+          .getElementById('camp-hero')
+          ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+      if (detalii && !faraHero) setStep(1)
       return
     }
     if (step === 1) {
-      if (await trigger([...COSTURI_FIELDS])) setStep(2)
+      if (await trigger([...COSTURI_FIELDS], { shouldFocus: true })) setStep(2)
+      else setCampuriVerificate(COSTURI_FIELDS)
     }
   }
 

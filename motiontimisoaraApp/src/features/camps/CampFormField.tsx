@@ -1,5 +1,6 @@
 import { cloneElement, isValidElement, useId, type ReactNode } from 'react'
 
+import { RequiredMark } from '@/components/FormSection'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 
@@ -8,9 +9,11 @@ export default function CampFormField({
   ajutor,
   eroare,
   rand,
+  obligatoriu,
   children,
 }: {
   eticheta: string
+  obligatoriu?: boolean
   ajutor?: string
   eroare?: string
   rand?: boolean
@@ -34,8 +37,9 @@ export default function CampFormField({
   )
   return (
     <div className={rand ? 'grid grid-rows-subgrid row-span-3 gap-y-1.5' : 'mt-3 first:mt-0'}>
-      <Label htmlFor={id} className={rand ? 'self-end' : 'mb-1.5 block'}>
+      <Label htmlFor={id} className={rand ? 'self-end' : 'mb-1.5'}>
         {eticheta}
+        {obligatoriu && <RequiredMark />}
       </Label>
       {camp}
       {rand ? <div>{mesaj(false)}</div> : mesaj(true)}

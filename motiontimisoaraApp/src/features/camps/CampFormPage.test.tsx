@@ -120,11 +120,11 @@ function renderForm(ruta = '/club/camps/new') {
 }
 
 async function completeazaDetalii(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByLabelText('Titlu'), 'Tabără de înot')
-  await user.type(screen.getByLabelText('Adresa paginii'), 'tabara-inot')
-  fireEvent.change(screen.getByLabelText('Începe'), { target: { value: '2027-07-10' } })
-  fireEvent.change(screen.getByLabelText('Se termină'), { target: { value: '2027-07-17' } })
-  fireEvent.change(screen.getByLabelText('Poza din capul paginii'), {
+  await user.type(screen.getByLabelText(/^Titlu/), 'Tabără de înot')
+  await user.type(screen.getByLabelText(/^Adresa paginii/), 'tabara-inot')
+  fireEvent.change(screen.getByLabelText(/^Începe/), { target: { value: '2027-07-10' } })
+  fireEvent.change(screen.getByLabelText(/^Se termină/), { target: { value: '2027-07-17' } })
+  fireEvent.change(screen.getByLabelText('Poza din capul paginii', { selector: 'input' }), {
     target: { files: [new File(['poza'], 'hero.jpg', { type: 'image/jpeg' })] },
   })
 }
@@ -194,6 +194,29 @@ test('draftul pornește pe Detalii, fără preț global', () => {
   expect(screen.queryByRole('button', { name: 'Creează tabăra' })).not.toBeInTheDocument()
 })
 
+test('Continuă arată deodată erorile din Detalii și poza lipsă, cu focus pe primul câmp', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  expect(screen.getByText(/sunt obligatorii/)).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  const titlu = screen.getByLabelText(/^Titlu/)
+  await waitFor(() => expect(titlu).toHaveFocus())
+  expect(screen.getAllByText('Minim 3 caractere').length).toBeGreaterThan(0)
+  const poza = document.getElementById('camp-hero') as HTMLElement
+  expect(within(poza).getByRole('alert')).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Detalii' })).toBeInTheDocument()
+})
+
+test('după Continuă cu erori, mesajul dispare imediat ce titlul devine corect', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  const titlu = screen.getByLabelText(/^Titlu/)
+  await waitFor(() => expect(titlu).toHaveAttribute('aria-invalid', 'true'))
+  await user.type(titlu, 'Tabăra de vară')
+  await waitFor(() => expect(titlu).toHaveAttribute('aria-invalid', 'false'))
+})
+
 test('tabăra alege locul din locațiile clubului', async () => {
   renderForm()
   const select = await screen.findByLabelText('Loc')
@@ -227,7 +250,7 @@ test('la editare, locul salvat apare selectat chiar dacă lista vine după tabă
   )
 
   renderForm('/club/camps/tabara-1/edit')
-  await waitFor(() => expect(screen.getByLabelText('Titlu')).toHaveValue('Tabără de înot'))
+  await waitFor(() => expect(screen.getByLabelText(/^Titlu/)).toHaveValue('Tabără de înot'))
   await waitFor(() => expect(screen.getByLabelText('Loc')).toHaveValue(BAZIN))
   expect(getClubSelectableLocations).toHaveBeenCalledWith('club-1', BAZIN)
 })
@@ -368,23 +391,23 @@ test.each(PORTALE)(
   async (baza) => {
     const user = userEvent.setup()
     renderForm(`${baza}/new`)
-    expect(screen.getByRole('group', { name: 'Perioada taberei' })).toBeInTheDocument()
+    expect(screen.getByText('Perioada taberei')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '7 zile' })).toBeDisabled()
-    fireEvent.change(screen.getByLabelText('Începe'), { target: { value: '2027-07-10' } })
-    expect(screen.getByLabelText('Se termină')).toHaveValue('2027-07-10')
+    fireEvent.change(screen.getByLabelText(/^Începe/), { target: { value: '2027-07-10' } })
+    expect(screen.getByLabelText(/^Se termină/)).toHaveValue('2027-07-10')
     expect(screen.getByText(/· 1 zi/)).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '7 zile' }))
-    expect(screen.getByLabelText('Se termină')).toHaveValue('2027-07-16')
+    expect(screen.getByLabelText(/^Se termină/)).toHaveValue('2027-07-16')
     expect(screen.getByText(/· 7 zile/)).toBeInTheDocument()
   },
 )
 
 test.each(PORTALE)('un început după sfârșit pe %s mută sfârșitul pe aceeași zi', (baza) => {
   renderForm(`${baza}/new`)
-  fireEvent.change(screen.getByLabelText('Începe'), { target: { value: '2027-07-10' } })
-  fireEvent.change(screen.getByLabelText('Se termină'), { target: { value: '2027-07-12' } })
-  fireEvent.change(screen.getByLabelText('Începe'), { target: { value: '2027-07-18' } })
-  expect(screen.getByLabelText('Se termină')).toHaveValue('2027-07-18')
+  fireEvent.change(screen.getByLabelText(/^Începe/), { target: { value: '2027-07-10' } })
+  fireEvent.change(screen.getByLabelText(/^Se termină/), { target: { value: '2027-07-12' } })
+  fireEvent.change(screen.getByLabelText(/^Începe/), { target: { value: '2027-07-18' } })
+  expect(screen.getByLabelText(/^Se termină/)).toHaveValue('2027-07-18')
   expect(screen.getByText(/· 1 zi/)).toBeInTheDocument()
 })
 
@@ -393,9 +416,9 @@ test.each(PORTALE)('la editare pe %s, intervalul salvat arată durata inclusivă
   vi.mocked(getCategoriile).mockResolvedValue([])
   vi.mocked(getPreturilePeVarsta).mockResolvedValue([])
   renderForm(`${baza}/tabara-1/edit`)
-  await waitFor(() => expect(screen.getByLabelText('Titlu')).toHaveValue('Tabără de înot'))
-  expect(screen.getByLabelText('Începe')).toHaveValue('2026-09-13')
-  expect(screen.getByLabelText('Se termină')).toHaveValue('2026-09-20')
+  await waitFor(() => expect(screen.getByLabelText(/^Titlu/)).toHaveValue('Tabără de înot'))
+  expect(screen.getByLabelText(/^Începe/)).toHaveValue('2026-09-13')
+  expect(screen.getByLabelText(/^Se termină/)).toHaveValue('2026-09-20')
   expect(screen.getByText(/· 8 zile/)).toBeInTheDocument()
 })
 
@@ -419,7 +442,7 @@ test('componentele adună totalul, iar Înapoi păstrează draftul', async () =>
   ])
   expect(within(prima).getByText(/Total 700,00 lei/)).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Înapoi' }))
-  expect(screen.getByLabelText('Titlu')).toHaveValue('Tabără de înot')
+  expect(screen.getByLabelText(/^Titlu/)).toHaveValue('Tabără de înot')
   await user.click(screen.getByRole('button', { name: 'Continuă' }))
   expect(screen.getByLabelText('De la (ani)')).toHaveValue(6)
   expect(screen.getByDisplayValue('Cazare')).toBeInTheDocument()
@@ -551,7 +574,7 @@ test('editing preserves EUR on the cost step', async () => {
   vi.mocked(getPreturilePeVarsta).mockResolvedValue([])
   vi.mocked(getCursBnr).mockResolvedValue({ date: '2026-09-19', eur_ron_millionths: 5073100 })
   renderForm('/club/camps/tabara-1/edit')
-  await waitFor(() => expect(screen.getByLabelText('Titlu')).toHaveValue('Tabără de înot'))
+  await waitFor(() => expect(screen.getByLabelText(/^Titlu/)).toHaveValue('Tabără de înot'))
   await userEvent.setup().click(screen.getByRole('button', { name: 'Continuă' }))
   await screen.findByRole('heading', { name: 'Categorii și costuri' })
   expect(screen.getByRole('radio', { name: 'Euro (EUR)' })).toBeChecked()
@@ -608,7 +631,7 @@ test('la editare, categoriile salvate revin ca o componentă, iar copiază din l
   ] as never)
 
   renderForm('/club/camps/tabara-1/edit')
-  await waitFor(() => expect(screen.getByLabelText('Titlu')).toHaveValue('Tabără de înot'))
+  await waitFor(() => expect(screen.getByLabelText(/^Titlu/)).toHaveValue('Tabără de înot'))
   await user.click(screen.getByRole('button', { name: 'Continuă' }))
   const lista = await screen.findByRole('list', { name: 'Categorii de vârstă' })
   expect(within(lista).getByDisplayValue('Cazare')).toBeInTheDocument()
@@ -696,7 +719,7 @@ test('la editare, Salvează tabăra actualizează oferta existentă', async () =
     },
   ] as never)
   renderForm('/club/camps/tabara-1/edit')
-  await waitFor(() => expect(screen.getByLabelText('Titlu')).toHaveValue('Tabără de înot'))
+  await waitFor(() => expect(screen.getByLabelText(/^Titlu/)).toHaveValue('Tabără de înot'))
   await user.click(screen.getByRole('button', { name: 'Continuă' }))
   await screen.findByRole('heading', { name: 'Categorii și costuri' })
   await user.click(screen.getByRole('button', { name: 'Continuă' }))

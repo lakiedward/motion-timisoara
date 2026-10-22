@@ -1,3 +1,4 @@
+import { FormSection } from '@/components/FormSection'
 import type { Control, FieldErrors, UseFormRegister, UseFormSetValue } from 'react-hook-form'
 import { useWatch } from 'react-hook-form'
 
@@ -37,22 +38,20 @@ export default function CampPeriodSection({
   const poateAlegeDurata = campIsoDate(start)
 
   return (
-    <fieldset className="rounded-2xl border p-5">
-      <legend className="px-2 font-semibold">Perioada taberei</legend>
-      <p className="text-muted-foreground text-sm">
-        Alegi prima și ultima zi. Durata apare imediat, iar sfârșitul nu poate fi înaintea
-        începutului.
-      </p>
+    <FormSection
+      title="Perioada taberei"
+      description="Alegi prima și ultima zi. Durata apare imediat, iar sfârșitul nu poate fi înaintea începutului."
+    >
       {rezumat && (
         <p className="mt-3 text-sm font-medium" aria-live="polite">
           {rezumat}
         </p>
       )}
       <CampFormRand columns="two" className="mt-3 flex-none">
-        <CampFormField rand eticheta="Începe" eroare={errors.period_start?.message}>
+        <CampFormField rand obligatoriu eticheta="Începe" eroare={errors.period_start?.message}>
           <Input
             type="date"
-            className="h-11 lg:h-9"
+           
             aria-invalid={!!errors.period_start}
             {...startReg}
             onChange={(e) => {
@@ -64,11 +63,11 @@ export default function CampPeriodSection({
             }}
           />
         </CampFormField>
-        <CampFormField rand eticheta="Se termină" eroare={errors.period_end?.message}>
+        <CampFormField rand obligatoriu eticheta="Se termină" eroare={errors.period_end?.message}>
           <Input
             type="date"
             min={campIsoDate(start) ? start : undefined}
-            className="h-11 lg:h-9"
+           
             aria-invalid={!!errors.period_end}
             {...register('period_end')}
           />
@@ -93,6 +92,6 @@ export default function CampPeriodSection({
           </Button>
         ))}
       </div>
-    </fieldset>
+    </FormSection>
   )
 }
