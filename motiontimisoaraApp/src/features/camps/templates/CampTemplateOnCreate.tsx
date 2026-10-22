@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { listeazaSabloaneTabara, type Proprietar } from '@/api/camps-admin'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import CampFormField from '../CampFormField'
 
@@ -50,6 +51,22 @@ export default function CampTemplateOnCreate({
         >
           <Input value={nume} maxLength={120} onChange={(e) => onNume(e.target.value)} />
         </CampFormField>
+      )}
+      {activ && sabloane.isError && (
+        <div className="space-y-2" role="alert">
+          <p className="text-sm">
+            Nu am putut verifica șabloanele pe care le ai. Dacă numele există deja, șablonul vechi
+            se înlocuiește.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 min-h-11"
+            onClick={() => void sabloane.refetch()}
+          >
+            Reîncearcă
+          </Button>
+        </div>
       )}
     </div>
   )
