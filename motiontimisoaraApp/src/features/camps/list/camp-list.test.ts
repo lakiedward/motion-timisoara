@@ -1,5 +1,13 @@
+import type { InvitatieDeRaspuns } from '@/api/camp-coaches'
 import type { TabaraDinLista } from '@/api/camps-admin'
-import { campStatus, filterCamps, groupByStatus, statusCounts } from './camp-list'
+import {
+  acceptedInvitations,
+  pendingInvitations,
+  campStatus,
+  filterCamps,
+  groupByStatus,
+  statusCounts,
+} from './camp-list'
 
 const today = new Date(2026, 9, 21, 12)
 
@@ -40,4 +48,18 @@ test('căutarea ignoră diacriticele și caută și în locație', () => {
   expect(filterCamps(camps, { status: 'all', query: 'SOON' }, today).map((c) => c.id)).toEqual([
     'soon',
   ])
+})
+
+test('invitațiile de răspuns exclud taberele încheiate și vin în ordinea perioadei', () => {
+  const inv = (campId: string, start: string, end: string, stare: InvitatieDeRaspuns['stare']) =>
+    ({ campId, perioadaStart: start, perioadaEnd: end, stare }) as InvitatieDeRaspuns
+  const list = [
+    inv('later', '2027-02-01', '2027-02-05', 'invited'),
+    inv('past', '2026-03-01', '2026-03-05', 'invited'),
+    inv('ongoing', '2026-10-18', '2026-10-25', 'invited'),
+    inv('accepted', '2027-01-01', '2027-01-05', 'accepted'),
+    inv('declined', '2027-01-01', '2027-01-05', 'declined'),
+  ]
+  expect(pendingInvitations(list, today).map((i) => i.campId)).toEqual(['ongoing', 'later'])
+  expect(acceptedInvitations(list).map((i) => i.campId)).toEqual(['accepted'])
 })
