@@ -68,3 +68,42 @@ export function varsteDinDateSalvate(input: {
 export function categorieNoua(): Values['varste'][number] {
   return { ...CATEGORIE_GOALA, componente: [{ ...COMPONENTA_GOALA }] }
 }
+
+export function componenteCompletate(componente: { amount_lei?: string }[] | undefined): boolean {
+  const lista = componente ?? []
+  return lista.length > 0 && lista.every((c) => parseScaledDecimal(c?.amount_lei ?? '', 2) !== null)
+}
+
+export function etichetaVarsta(age_from: string | undefined, age_to: string | undefined): string {
+  const de = (age_from ?? '').trim()
+  const pana = (age_to ?? '').trim()
+  if (!de && !pana) return 'Vârstă necompletată'
+  return `${de || '?'}–${pana || '?'} ani`
+}
+
+export function varsteNeacoperite(
+  varste: { age_from?: string; age_to?: string }[] | undefined,
+): number[] {
+  const intervale = (varste ?? [])
+    .map((c) => [Number((c.age_from ?? '').trim() || NaN), Number((c.age_to ?? '').trim() || NaN)])
+    .filter(([de, pana]) => Number.isInteger(de) && Number.isInteger(pana) && de <= pana)
+  if (intervale.length < 2) return []
+  const min = Math.min(...intervale.map(([de]) => de))
+  const max = Math.max(...intervale.map(([, pana]) => pana))
+  const lipsa: number[] = []
+  for (let v = min; v <= max; v++) {
+    if (!intervale.some(([de, pana]) => v >= de && v <= pana)) lipsa.push(v)
+  }
+  return lipsa
+}
+
+export function mesajVarsteNeacoperite(lipsa: number[]): string | null {
+  if (lipsa.length === 0) return null
+  const lista =
+    lipsa.length === 1
+      ? `${lipsa[0]} ani`
+      : `${lipsa.slice(0, -1).join(', ')} și ${lipsa[lipsa.length - 1]} ani`
+  const verb = lipsa.length === 1 ? 'Vârsta de' : 'Vârstele de'
+  const nu = lipsa.length === 1 ? 'nu are preț' : 'nu au preț'
+  return `${verb} ${lista} ${nu}: copiii de ${lista} nu se pot înscrie.`
+}

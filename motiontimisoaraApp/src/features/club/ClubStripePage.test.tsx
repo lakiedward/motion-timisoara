@@ -160,3 +160,97 @@ test('the panel leaves the shared my-club cache holding the full club row', asyn
   expect(cached).not.toHaveProperty('label')
   expect(cached).not.toHaveProperty('complete')
 })
+
+test('return route says it is verifying instead of showing Neconfigurat meanwhile', async () => {
+  mockedGetMyClub.mockResolvedValue(club())
+  mockedRefresh.mockReturnValue(new Promise(() => {}))
+
+  renderPage('/club/stripe/onboarding/complete')
+  expect(await screen.findByText('Verificăm contul la Stripe…')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Configurează Stripe' })).toBeDisabled()
+})
+
+test('return route confirms an active account', async () => {
+  mockedGetMyClub
+    .mockResolvedValueOnce(club())
+    .mockResolvedValue(club({ stripe_onboarding_complete: true }))
+  mockedRefresh.mockResolvedValue({
+    hasAccount: true,
+    onboardingComplete: true,
+    chargesEnabled: true,
+    payoutsEnabled: true,
+    requiresAction: false,
+  })
+
+  renderPage('/club/stripe/onboarding/complete')
+  expect(await screen.findByText('Gata! Plățile cu cardul sunt active.')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Deschide dashboard Stripe' })).toBeEnabled()
+})
+
+test('return route asks to continue when Stripe still needs data', async () => {
+  mockedGetMyClub.mockResolvedValue(club())
+  mockedRefresh.mockResolvedValue({
+    hasAccount: true,
+    onboardingComplete: false,
+    chargesEnabled: false,
+    payoutsEnabled: false,
+    requiresAction: true,
+  })
+
+  renderPage('/club/stripe/onboarding/complete')
+  expect(await screen.findByText('Stripe mai are nevoie de câteva date.')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Continuă configurarea' })).toBeEnabled()
+})
+
+test('a failed verification shows an inline error that retries the verification', async () => {
+  mockedGetMyClub.mockResolvedValue(club())
+  mockedRefresh.mockRejectedValueOnce(new Error('Nu am putut verifica contul Stripe.'))
+  mockedRefresh.mockResolvedValue({
+    hasAccount: true,
+    onboardingComplete: false,
+    chargesEnabled: false,
+    payoutsEnabled: false,
+    requiresAction: true,
+  })
+
+  renderPage('/club/stripe/onboarding/complete')
+  expect(await screen.findByRole('alert')).toHaveTextContent('Nu am putut verifica contul Stripe.')
+  await userEvent.click(screen.getByRole('button', { name: /reîncearcă/i }))
+  await waitFor(() => expect(mockedRefresh).toHaveBeenCalledTimes(2))
+  expect(mockedStart).not.toHaveBeenCalled()
+  expect(await screen.findByText('Stripe mai are nevoie de câteva date.')).toBeInTheDocument()
+})
+
+test('refresh route explains the expired link while it fetches a new one', async () => {
+  mockedGetMyClub.mockResolvedValue(club())
+  mockedStart.mockReturnValue(new Promise(() => {}))
+
+  renderPage('/club/stripe/onboarding/refresh')
+  expect(
+    await screen.findByText('Linkul Stripe a expirat. Te ducem înapoi la Stripe…'),
+  ).toBeInTheDocument()
+})
+
+test('a failed new link on the refresh route shows an inline error with retry', async () => {
+  mockedGetMyClub.mockResolvedValue(club())
+  mockedStart.mockRejectedValueOnce(new Error('Linkul Stripe nu a putut fi generat.'))
+  mockedStart.mockResolvedValue('https://connect.stripe.com/setup/again')
+  const assign = vi.fn()
+  vi.stubGlobal('location', { ...window.location, assign })
+
+  renderPage('/club/stripe/onboarding/refresh')
+  expect(await screen.findByRole('alert')).toHaveTextContent('Linkul Stripe nu a putut fi generat.')
+  await userEvent.click(screen.getByRole('button', { name: /reîncearcă/i }))
+  await waitFor(() => expect(assign).toHaveBeenCalledWith('https://connect.stripe.com/setup/again'))
+  vi.unstubAllGlobals()
+})
+
+test('a club load failure offers a retry', async () => {
+  mockedGetMyClub.mockRejectedValueOnce(new Error('boom'))
+  mockedGetMyClub.mockResolvedValue(club())
+
+  renderPage()
+  expect(await screen.findByRole('alert')).toHaveTextContent('Nu am putut încărca clubul.')
+  await userEvent.click(screen.getByRole('button', { name: /reîncearcă/i }))
+  expect(await screen.findByRole('heading', { name: 'Configurare plăți' })).toBeInTheDocument()
+})

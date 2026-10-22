@@ -36,6 +36,7 @@ export interface InvitatieDeRaspuns {
   perioadaStart: string
   perioadaEnd: string
   loc: string | null
+  invitatDe: string | null
   stare: StareInvitatie
 }
 
@@ -57,7 +58,10 @@ export async function getAntrenoriiTaberei(campId: string): Promise<AntrenorInvi
   if (error) throw error
 
   return (data ?? []).map((r) => {
-    const cp = r.coach_profile as { photo_storage_path: string | null; profile: { name: string } | null } | null
+    const cp = r.coach_profile as {
+      photo_storage_path: string | null
+      profile: { name: string } | null
+    } | null
     return {
       coachProfileId: r.coach_profile_id,
       nume: cp?.profile?.name ?? NUME_DE_REZERVA,
@@ -132,7 +136,9 @@ export async function getInvitatiileMele(userId: string): Promise<InvitatieDeRas
 
   const { data, error } = await supabase
     .from('camp_coaches')
-    .select('camp_id, status, camp:camps(title, slug, period_start, period_end, location_text)')
+    .select(
+      'camp_id, status, camp:camps(title, slug, period_start, period_end, location_text, club:clubs(name))',
+    )
     .eq('coach_profile_id', profil.id)
     .order('invited_at', { ascending: false })
   if (error) throw error
@@ -145,6 +151,7 @@ export async function getInvitatiileMele(userId: string): Promise<InvitatieDeRas
         period_start: string
         period_end: string
         location_text: string | null
+        club?: { name: string } | null
       } | null
       if (!c) return null
       return {
@@ -154,6 +161,7 @@ export async function getInvitatiileMele(userId: string): Promise<InvitatieDeRas
         perioadaStart: c.period_start,
         perioadaEnd: c.period_end,
         loc: c.location_text,
+        invitatDe: c.club?.name ?? null,
         stare: r.status as StareInvitatie,
       }
     })

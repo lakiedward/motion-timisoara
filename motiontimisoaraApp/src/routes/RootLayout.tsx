@@ -5,6 +5,7 @@ import { NativeOAuthListener } from '@/features/auth/native/NativeOAuthListener'
 import { NativePushListener } from '@/features/notifications/NativePushListener'
 import { NativePaymentListener } from '@/features/account/checkout/NativePaymentListener'
 import { NativeAppShell } from '@/layout/native/NativeAppShell'
+import { ScrollToTop } from '@/layout/ScrollToTop'
 import { usesNativeNavigation } from '@/layout/native/native-runtime'
 import { useAuth } from '@/lib/auth-context'
 
@@ -20,7 +21,10 @@ export default function RootLayout() {
           <Outlet />
         </NativeAppShell>
       ) : (
-        <Outlet />
+        <>
+          <ScrollToTop />
+          <Outlet />
+        </>
       )}
       <Toaster richColors position="top-center" />
     </>

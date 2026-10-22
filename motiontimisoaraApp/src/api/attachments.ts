@@ -23,7 +23,7 @@ function extensia(nume: string, contentType: string): string {
   return contentType.split('/')[1] ?? 'bin'
 }
 
-const NUME_DESCARCARE = 'filmare-motiontimisoara'
+const NUME_DESCARCARE = 'filmare-motionromania'
 
 async function linkuriDeDescarcare(cai: string[]): Promise<Map<string, string>> {
   const peExtensie = new Map<string, string[]>()

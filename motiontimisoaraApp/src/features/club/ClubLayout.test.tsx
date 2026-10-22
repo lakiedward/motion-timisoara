@@ -73,7 +73,7 @@ test('club chrome keeps the portal nav links and logo to public home', () => {
   expect(within(nav).getByRole('group', { name: 'Organizare' })).toHaveTextContent(
     'LocațiiAntrenoriAnunțuri',
   )
-  expect(screen.getAllByRole('link', { name: /motion timișoara/i })[0]).toHaveAttribute('href', '/')
+  expect(screen.getAllByRole('link', { name: /motion românia/i })[0]).toHaveAttribute('href', '/')
   expect(screen.getByRole('button', { name: 'Deconectare' })).toBeInTheDocument()
 })
 

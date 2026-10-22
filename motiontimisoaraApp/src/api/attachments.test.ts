@@ -166,7 +166,7 @@ test('linkurile semnate se cer o singură dată, pentru toate fișierele', async
     { apel: 'createSignedUrls', argumente: [['an-1/x.jpg', 'an-1/y.mp4']] },
     {
       apel: 'createSignedUrls',
-      argumente: [['an-1/y.mp4'], { download: 'filmare-motiontimisoara.mp4' }],
+      argumente: [['an-1/y.mp4'], { download: 'filmare-motionromania.mp4' }],
     },
   ])
   expect(pe['an-1']).toHaveLength(2)
@@ -174,7 +174,7 @@ test('linkurile semnate se cer o singură dată, pentru toate fișierele', async
   expect(pe['an-1'][0].linkDescarcare).toBeNull()
   expect(pe['an-1'][1].link).toBe('https://semnat/an-1/y.mp4')
   expect(pe['an-1'][1].linkDescarcare).toBe(
-    'https://descarca/filmare-motiontimisoara.mp4/an-1/y.mp4',
+    'https://descarca/filmare-motionromania.mp4/an-1/y.mp4',
   )
   expect(pe['an-1'][1].expiraLa).toBe('2026-09-25T09:00:00Z')
 })

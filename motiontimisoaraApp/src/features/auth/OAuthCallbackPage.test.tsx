@@ -107,3 +107,31 @@ test('a new Google parent who completes the profile lands on the add-child scree
   await user.click(screen.getByRole('button', { name: 'Continuă' }))
   expect(await screen.findByText('ecranul copilului')).toBeInTheDocument()
 })
+
+test('loading keeps the auth layout and announces the sign-in check', async () => {
+  vi.mocked(loadAppUser).mockReturnValue(new Promise(() => {}))
+  renderCallback()
+  expect(screen.getByRole('heading', { name: 'Te conectăm…' })).toBeInTheDocument()
+  expect(screen.getByRole('status')).toHaveTextContent('Se încarcă')
+})
+
+test('a failed callback shows the shared alert banner with the email fallback', async () => {
+  refresh.mockResolvedValue(null)
+  renderCallback('/register-coach')
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Nu am putut finaliza autentificarea. Încearcă din nou sau intră cu email și parolă.',
+  )
+})
+
+test('profile completion uses the shared fields with described errors', async () => {
+  const user = userEvent.setup()
+  renderCallback()
+  const phone = await screen.findByLabelText('Telefon')
+  expect(phone).toHaveAttribute('autocomplete', 'tel')
+  expect(screen.getByLabelText('Nume complet')).toHaveAttribute('autocomplete', 'name')
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  expect(await screen.findByText('Număr de telefon invalid')).toBeInTheDocument()
+  expect(phone).toHaveAttribute('aria-invalid', 'true')
+  expect(phone).toHaveAttribute('aria-describedby', 'phone-error')
+  expect(completeProfile).not.toHaveBeenCalled()
+})

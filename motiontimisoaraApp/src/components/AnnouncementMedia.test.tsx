@@ -125,7 +125,7 @@ test('preserves playback, expiry information and downloading of videos', () => {
 const savedVideo = attachment({
   fel: 'VIDEO',
   link: 'https://motion.example/training.mp4',
-  linkDescarcare: 'https://motion.example/training.mp4?download=filmare-motiontimisoara.mp4',
+  linkDescarcare: 'https://motion.example/training.mp4?download=filmare-motionromania.mp4',
   expiraLa: '2099-09-25T12:00:00Z',
 })
 
@@ -137,7 +137,7 @@ test('downloads through the signed attachment link that saves the video', () => 
   )
   expect(screen.getByRole('link', { name: 'Descarcă' })).toHaveAttribute(
     'href',
-    'https://motion.example/training.mp4?download=filmare-motiontimisoara.mp4',
+    'https://motion.example/training.mp4?download=filmare-motionromania.mp4',
   )
 })
 
@@ -153,6 +153,6 @@ test('opens the download in the system browser inside the native app', async () 
   render(<AnnouncementMedia atasamente={[savedVideo]} />)
   await user.click(screen.getByRole('link', { name: 'Descarcă' }))
   expect(mocks.open).toHaveBeenCalledWith({
-    url: 'https://motion.example/training.mp4?download=filmare-motiontimisoara.mp4',
+    url: 'https://motion.example/training.mp4?download=filmare-motionromania.mp4',
   })
 })
