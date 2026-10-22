@@ -110,7 +110,7 @@ test('admin drawer announces its purpose and choosing a destination closes it', 
   const warning = vi.spyOn(console, 'warn').mockImplementation(() => {})
   renderPortal()
   await user.click(screen.getByRole('button', { name: 'Meniu' }))
-  const dialog = screen.getByRole('dialog', { name: 'Meniu administrare — Motion Timișoara' })
+  const dialog = screen.getByRole('dialog', { name: 'Meniu administrare — Motion România' })
   expect(dialog.className).toContain('[&>button]:top-20')
   expect(dialog).toHaveAccessibleDescription(
     'Navighează în secțiunea administrare, deschide profilul sau deconectează-te.',
@@ -215,7 +215,7 @@ test.each([
     renderPortal({ path, nav, roleLabel, profileTo: `${path}/profile` })
     await user.click(screen.getByRole('button', { name: 'Meniu' }))
     const dialog = screen.getByRole('dialog', {
-      name: `Meniu ${roleLabel.toLowerCase()} — Motion Timișoara`,
+      name: `Meniu ${roleLabel.toLowerCase()} — Motion România`,
     })
     const navigation = within(dialog).getByRole('navigation')
     expect(

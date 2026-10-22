@@ -62,7 +62,7 @@ export async function lookupAddress(
       headers: {
         Accept: "application/json",
         "User-Agent":
-          "MotionTimisoara/1.0 (https://motiontimisoara-demo.netlify.app)",
+          "MotionRomania/1.0 (https://motionromania.com)",
       },
       redirect: "error",
     });

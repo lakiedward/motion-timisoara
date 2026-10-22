@@ -124,7 +124,7 @@ Deno.test("provider identifies the app and only requests reverse address data", 
     assertEquals(url.searchParams.get("lang"), "default");
     assertEquals(
       new Headers(init?.headers).get("User-Agent"),
-      "MotionTimisoara/1.0 (https://motiontimisoara-demo.netlify.app)",
+      "MotionRomania/1.0 (https://motionromania.com)",
     );
     return Response.json({
       features: [{

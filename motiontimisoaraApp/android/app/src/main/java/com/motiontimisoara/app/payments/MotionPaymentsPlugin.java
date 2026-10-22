@@ -90,7 +90,7 @@ public final class MotionPaymentsPlugin extends Plugin {
             return;
         }
         try {
-            PaymentSheet.Configuration.Builder configuration = new PaymentSheet.Configuration.Builder("Motion Timișoara")
+            PaymentSheet.Configuration.Builder configuration = new PaymentSheet.Configuration.Builder("Motion România")
                 .allowsDelayedPaymentMethods(false)
                 .link(new PaymentSheet.LinkConfiguration(PaymentSheet.LinkConfiguration.Display.Never))
                 .defaultBillingDetails(billing(call.getObject("billing", new JSObject())));

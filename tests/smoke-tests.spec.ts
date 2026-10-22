@@ -72,7 +72,7 @@ test.describe('Smoke — Romanian routes', () => {
 
   test('homepage shows Motion branding', async ({ page }) => {
     await page.goto('/')
-    await expect(page.getByText(/Motion Timișoara/i).first()).toBeVisible()
+    await expect(page.getByText(/Motion România/i).first()).toBeVisible()
   })
 
   test('courses list loads at /cursuri', async ({ page, baseURL }) => {

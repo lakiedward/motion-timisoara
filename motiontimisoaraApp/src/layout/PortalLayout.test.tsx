@@ -60,7 +60,7 @@ test('coach chrome keeps the five nav links in order and logo to public home', (
   ]
   const links = labels.map((label) => screen.getByRole('link', { name: label }))
   links.forEach((link, i) => expect(link).toHaveAttribute('href', hrefs[i]))
-  expect(screen.getAllByRole('link', { name: /motion timișoara/i })[0]).toHaveAttribute('href', '/')
+  expect(screen.getAllByRole('link', { name: /motion românia/i })[0]).toHaveAttribute('href', '/')
   expect(screen.getByRole('button', { name: 'Deconectare' })).toBeInTheDocument()
 })
 

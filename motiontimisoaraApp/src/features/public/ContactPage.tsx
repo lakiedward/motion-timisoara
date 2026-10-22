@@ -53,11 +53,11 @@ export default function ContactPage() {
               </span>
               +40 750 420 455
             </a>
-            <a href="mailto:contact@motiontimisoara.com" className="hover:text-primary min-h-touch-target flex w-fit items-center gap-3 rounded-xl underline-offset-4 transition-colors hover:underline">
+            <a href="mailto:contact@motionromania.com" className="hover:text-primary min-h-touch-target flex w-fit items-center gap-3 rounded-xl underline-offset-4 transition-colors hover:underline">
               <span className="bg-primary/10 text-primary grid size-10 place-items-center rounded-xl">
                 <Mail className="size-4" />
               </span>
-              contact@motiontimisoara.com
+              contact@motionromania.com
             </a>
             <div className="flex items-center gap-3">
               <span className="bg-primary/10 text-primary grid size-10 place-items-center rounded-xl">
@@ -113,7 +113,7 @@ export default function ContactPage() {
                   <div>
                     <p className="text-foreground font-semibold">Nu am putut trimite mesajul.</p>
                     <p className="text-muted-foreground mt-1">
-                      Mesajul tău a rămas în formular. Reîncearcă sau scrie-ne la contact@motiontimisoara.com.
+                      Mesajul tău a rămas în formular. Reîncearcă sau scrie-ne la contact@motionromania.com.
                     </p>
                   </div>
                 </div>

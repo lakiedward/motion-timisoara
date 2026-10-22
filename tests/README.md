@@ -15,10 +15,8 @@ Playwright, run from the repo root. Both suites target the **React app**
 
 ## Choosing a target
 
-`baseURL` comes from `BASE_URL`, defaulting to `https://www.motiontimisoara.com`.
-
-**That default currently returns a 404** — there is no production deploy — so a
-bare `npx playwright test` fails by design. Point it at a running app instead.
+`baseURL` comes from `BASE_URL`, defaulting to a local preview of this repository's app
+that the suite builds and serves itself. A public domain runs only with an explicit `BASE_URL`.
 
 Start the app first (`motion-react` in `.claude/launch.json`, or
 `npm run dev -- --port 3017` in `motiontimisoaraApp/`), then:

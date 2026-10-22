@@ -26,6 +26,6 @@ describe('NotFoundPage', () => {
         <NotFoundPage />
       </MemoryRouter>,
     )
-    expect(document.title).toBe('Pagina nu a fost găsită · Motion Timișoara')
+    expect(document.title).toBe('Pagina nu a fost găsită · Motion România')
   })
 })
