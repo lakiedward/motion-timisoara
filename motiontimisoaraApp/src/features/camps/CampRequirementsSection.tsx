@@ -133,20 +133,22 @@ function CampRequirementCategoryEditor({
                 />
               </CampFormField>
             </div>
-            <CampFormField
-              obligatoriu
-              eticheta="Număr"
-              eroare={categoryError?.items?.[itemIndex]?.quantity?.message}
-            >
-              <Input
-                type="number"
-                inputMode="numeric"
-                min={1}
-                max={99}
-                {...register(`necesar.${categoryIndex}.items.${itemIndex}.quantity` as const)}
-                aria-invalid={!!categoryError?.items?.[itemIndex]?.quantity}
-              />
-            </CampFormField>
+            <div>
+              <CampFormField
+                obligatoriu
+                eticheta="Număr"
+                eroare={categoryError?.items?.[itemIndex]?.quantity?.message}
+              >
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={99}
+                  {...register(`necesar.${categoryIndex}.items.${itemIndex}.quantity` as const)}
+                  aria-invalid={!!categoryError?.items?.[itemIndex]?.quantity}
+                />
+              </CampFormField>
+            </div>
             <Button
               type="button"
               variant="ghost"
