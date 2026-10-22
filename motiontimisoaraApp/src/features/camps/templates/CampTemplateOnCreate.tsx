@@ -30,7 +30,7 @@ export default function CampTemplateOnCreate({
   const inlocuieste = (sabloane.data ?? []).some((s) => s.name === nume.trim())
 
   return (
-    <div className="space-y-3 rounded-xl border p-4">
+    <div className="bg-card space-y-3 rounded-xl border p-4">
       <label className="flex min-h-11 items-center gap-3 text-sm font-medium">
         <input
           type="checkbox"
