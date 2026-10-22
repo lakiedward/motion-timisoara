@@ -210,8 +210,7 @@ test('ștergerea șablonului nu salvează tabăra', async () => {
   expect(toast.success).toHaveBeenCalledWith('Șablon șters.')
 })
 
-test('editarea salvează șablonul fără perioadă și înlocuiește același nume', async () => {
-  const user = userEvent.setup()
+function pregatesteEditarea() {
   vi.mocked(getTabaraDeEditat).mockResolvedValue({
     id: 'tabara-1',
     title: 'Tabără de înot',
@@ -245,16 +244,25 @@ test('editarea salvează șablonul fără perioadă și înlocuiește același n
       components: [{ name: 'Cazare', amount: 40000 }],
     },
   ] as never)
+}
+
+test('editarea salvează șablonul fără perioadă și înlocuiește același nume', async () => {
+  const user = userEvent.setup()
+  pregatesteEditarea()
   vi.mocked(listeazaSabloaneTabara).mockResolvedValue([{ ...SABLON, name: 'Tabără de înot' }])
   renderForm('/club/camps/tabara-1/edit')
   expect(await screen.findByRole('button', { name: 'Salvează ca șablon' })).toBeInTheDocument()
   expect(screen.queryByText('Pornește de la un șablon')).not.toBeInTheDocument()
   await waitFor(() => expect(screen.getByLabelText(/^Titlu/)).toHaveValue('Tabără de înot'))
+  expect(screen.queryByLabelText('Numele șablonului')).not.toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Salvează ca șablon' }))
   await waitFor(() =>
     expect(screen.getByLabelText('Numele șablonului')).toHaveValue('Tabără de înot'),
   )
-  await user.click(screen.getByRole('button', { name: 'Salvează ca șablon' }))
-  expect(await screen.findByText(/Există deja un șablon cu acest nume/)).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Salvează șablonul' }))
+  expect(
+    await screen.findByText('Există deja un șablon „Tabără de înot”. Îl înlocuiești?'),
+  ).toBeInTheDocument()
   expect(salveazaSablonTabara).not.toHaveBeenCalled()
   await user.click(screen.getByRole('button', { name: 'Înlocuiește' }))
   await waitFor(() => expect(salveazaSablonTabara).toHaveBeenCalledOnce())
@@ -264,5 +272,36 @@ test('editarea salvează șablonul fără perioadă și înlocuiește același n
   expect(payload.age_prices[0].components[0]).toEqual({ name: 'Cazare', amount: 40000 })
   expect(payload).not.toHaveProperty('period_start')
   expect(payload).not.toHaveProperty('slug')
-  expect(toast.success).toHaveBeenCalledWith('Șablon salvat.')
+  expect(toast.success).toHaveBeenCalledWith('Șablon salvat. Îl găsești când creezi o tabără nouă.')
+})
+
+test('editarea verifică numele șablonului și salvează la Enter', async () => {
+  const user = userEvent.setup()
+  pregatesteEditarea()
+  vi.mocked(listeazaSabloaneTabara).mockResolvedValue([])
+  renderForm('/club/camps/tabara-1/edit')
+  await waitFor(() => expect(screen.getByLabelText(/^Titlu/)).toHaveValue('Tabără de înot'))
+  await user.click(screen.getByRole('button', { name: 'Salvează ca șablon' }))
+  const nume = screen.getByLabelText('Numele șablonului')
+  await user.clear(nume)
+  await user.click(screen.getByRole('button', { name: 'Salvează șablonul' }))
+  expect(screen.getByText('Numele șablonului lipsește')).toBeInTheDocument()
+  expect(nume).toHaveAttribute('aria-invalid', 'true')
+  expect(salveazaSablonTabara).not.toHaveBeenCalled()
+  await user.type(nume, 'Vara{Enter}')
+  await waitFor(() => expect(salveazaSablonTabara).toHaveBeenCalledOnce())
+  expect(vi.mocked(salveazaSablonTabara).mock.calls[0][1].name).toBe('Vara')
+})
+
+test('Renunță închide salvarea ca șablon fără să salveze', async () => {
+  const user = userEvent.setup()
+  pregatesteEditarea()
+  vi.mocked(listeazaSabloaneTabara).mockResolvedValue([])
+  renderForm('/club/camps/tabara-1/edit')
+  await user.click(await screen.findByRole('button', { name: 'Salvează ca șablon' }))
+  expect(screen.getByLabelText('Numele șablonului')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Renunță' }))
+  expect(screen.queryByLabelText('Numele șablonului')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Salvează ca șablon' })).toBeInTheDocument()
+  expect(salveazaSablonTabara).not.toHaveBeenCalled()
 })
