@@ -24,6 +24,7 @@ import {
   getPreturilePeVarsta,
   getTabaraDeEditat,
   saveCampOffer,
+  salveazaSablonTabara,
   stergeTabara,
 } from '@/api/camps-admin'
 import { schimbaPozaHero } from '@/api/camp-photos'
@@ -50,6 +51,7 @@ import CampFormDetailsStep from './CampFormDetailsStep'
 import CampFormReviewStep from './CampFormReviewStep'
 import CampTemplatePicker from './templates/CampTemplatePicker'
 import CampTemplateSave from './templates/CampTemplateSave'
+import CampTemplateOnCreate from './templates/CampTemplateOnCreate'
 import {
   aplicaSablon,
   golesteCampuriCopiate,
@@ -71,6 +73,8 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   const [eroareHero, setEroareHero] = useState<string | null>(null)
   const [sablonSelectat, setSablonSelectat] = useState('')
   const [locatiePastrata, setLocatiePastrata] = useState<string | null>(null)
+  const [siSablon, setSiSablon] = useState(false)
+  const [numeSablon, setNumeSablon] = useState<string | null>(null)
 
   const {
     data: tabara,
@@ -287,6 +291,16 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
           return
         }
       }
+      if (!eEditare && siSablon) {
+        const sablon = payloadSablon(numeSablon ?? v.title, v)
+        try {
+          if (!sablon) throw new Error()
+          await salveazaSablonTabara(proprietar, sablon)
+          void qc.invalidateQueries({ queryKey: ['sabloane-tabara'] })
+        } catch {
+          toast.error('Tabăra a fost creată, dar șablonul nu s-a salvat. Îl salvezi din editare.')
+        }
+      }
       void qc.invalidateQueries({ queryKey: ['taberele-mele'] })
       void qc.invalidateQueries({ queryKey: ['tabara-de-editat', campId] })
       void qc.invalidateQueries({ queryKey: ['categoriile-taberei', campId] })
@@ -477,6 +491,17 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
             values={getValues()}
             locatii={locatii}
             fisierRegulament={fisierRegulament}
+          />
+        )}
+
+        {step === 2 && !eEditare && (
+          <CampTemplateOnCreate
+            proprietar={proprietar}
+            gata={gata}
+            activ={siSablon}
+            onActiv={setSiSablon}
+            nume={numeSablon ?? titluViu ?? ''}
+            onNume={setNumeSablon}
           />
         )}
 

@@ -339,6 +339,45 @@ test('la creare, fișierul PDF se urcă după salvare cu același id', async () 
   expect(vi.mocked(incarcaRegulamentFisier).mock.calls[0][1]).toBe(pdf)
 })
 
+test('la creare, „Salvează și ca șablon” salvează șablonul după tabără', async () => {
+  vi.mocked(listeazaSabloaneTabara).mockResolvedValue([])
+  vi.mocked(salveazaSablonTabara).mockResolvedValue('sablon-nou')
+  const user = userEvent.setup()
+  renderForm()
+  await laCosturi(user)
+  await completeazaCategorie(user, randuriCategorii()[0], '6', '8', [
+    { name: 'Cazare', lei: '400' },
+  ])
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  await screen.findByRole('heading', { name: 'Verificare' })
+  await user.click(screen.getByRole('checkbox', { name: 'Salvează și ca șablon' }))
+  expect(screen.getByLabelText('Numele șablonului')).toHaveValue('Tabără de înot')
+  await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
+  await waitFor(() => expect(salveazaSablonTabara).toHaveBeenCalled())
+  expect(vi.mocked(saveCampOffer).mock.invocationCallOrder[0]).toBeLessThan(
+    vi.mocked(salveazaSablonTabara).mock.invocationCallOrder[0],
+  )
+  const [owner, sablon] = vi.mocked(salveazaSablonTabara).mock.calls[0]
+  expect(owner).toEqual({ clubId: 'club-1', coachUserId: null })
+  expect(sablon).toMatchObject({ name: 'Tabără de înot' })
+  expect(sablon).not.toHaveProperty('period_start')
+})
+
+test('fără bifă, crearea taberei nu salvează niciun șablon', async () => {
+  vi.mocked(listeazaSabloaneTabara).mockResolvedValue([])
+  const user = userEvent.setup()
+  renderForm()
+  await laCosturi(user)
+  await completeazaCategorie(user, randuriCategorii()[0], '6', '8', [
+    { name: 'Cazare', lei: '400' },
+  ])
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  await screen.findByRole('heading', { name: 'Verificare' })
+  await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
+  await waitFor(() => expect(saveCampOffer).toHaveBeenCalled())
+  expect(salveazaSablonTabara).not.toHaveBeenCalled()
+})
+
 test('la editare, fișierul salvat se vede lângă text', async () => {
   vi.mocked(getTabaraDeEditat).mockResolvedValue({
     ...TABARA,
