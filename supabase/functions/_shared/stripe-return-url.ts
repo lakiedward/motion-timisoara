@@ -1,7 +1,7 @@
-const PRODUCTION_ORIGIN = "https://motiontimisoara.com";
+const PRODUCTION_ORIGIN = "https://motionromania.com";
 
 const ALLOWED_ORIGINS = [
-  /^https:\/\/(www\.)?motiontimisoara\.com$/,
+  /^https:\/\/(www\.)?motionromania\.com$/,
   /^https:\/\/deploy-preview-\d+--motiontimisoara\.netlify\.app$/,
   /^https:\/\/master--motiontimisoara\.netlify\.app$/,
   /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/,

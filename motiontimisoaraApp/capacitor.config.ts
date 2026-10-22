@@ -3,7 +3,7 @@ import { KeyboardResize } from '@capacitor/keyboard'
 
 const config: CapacitorConfig = {
   appId: 'com.motiontimisoara.app',
-  appName: 'Motion Timisoara',
+  appName: 'Motion România',
   webDir: 'dist',
   android: { useLegacyBridge: true, loggingBehavior: 'none' },
   plugins: {

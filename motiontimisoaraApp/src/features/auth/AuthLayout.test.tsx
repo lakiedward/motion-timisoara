@@ -30,7 +30,7 @@ test('desktop brand panel copy is multi-sport, not triathlon', () => {
 
 test('photo-panel and compact brand marks both link home', () => {
   renderLayout()
-  const links = screen.getAllByRole('link', { name: /motion timișoara/i })
+  const links = screen.getAllByRole('link', { name: /motion românia/i })
   expect(links.length).toBe(2)
   for (const link of links) {
     expect(link).toHaveAttribute('href', '/')

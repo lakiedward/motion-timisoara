@@ -90,7 +90,7 @@ public class MotionPushPayloadTest {
         data.put("secret", "Must never reach JS");
         MotionPushPayload payload = MotionPushPayload.parse(data, BINDING, NOW);
         assertNotNull(payload);
-        assertEquals("Motion Timișoara", payload.data().get("title"));
+        assertEquals("Motion România", payload.data().get("title"));
         assertEquals("Ai un anunț nou în Motion.", payload.data().get("body"));
         assertFalse(payload.data().containsKey("secret"));
     }

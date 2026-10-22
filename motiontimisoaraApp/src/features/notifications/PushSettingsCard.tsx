@@ -61,7 +61,7 @@ function AndroidPushSettings() {
             )}
             {state.status === 'denied' && (
               <p className="text-muted-foreground text-sm">
-                Permisiunea este oprită în Android. Deschide Setări → Aplicații → Motion Timișoara →
+                Permisiunea este oprită în Android. Deschide Setări → Aplicații → Motion România →
                 Notificări și permite notificările, apoi apasă „Reîncearcă”.
               </p>
             )}

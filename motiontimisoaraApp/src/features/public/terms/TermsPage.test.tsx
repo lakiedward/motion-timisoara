@@ -61,8 +61,8 @@ test('contactul are email, telefon și formular apăsabile', () => {
   randeaza()
   const contact = screen.getByRole('region', { name: /Contact/ })
   expect(
-    within(contact).getByRole('link', { name: /contact@motiontimisoara\.com/ }),
-  ).toHaveAttribute('href', 'mailto:contact@motiontimisoara.com')
+    within(contact).getByRole('link', { name: /contact@motionromania\.com/ }),
+  ).toHaveAttribute('href', 'mailto:contact@motionromania.com')
   expect(within(contact).getByRole('link', { name: /\+40 750 420 455/ })).toHaveAttribute(
     'href',
     'tel:+40750420455',

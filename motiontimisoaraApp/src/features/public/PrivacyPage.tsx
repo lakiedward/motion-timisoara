@@ -145,7 +145,7 @@ export default function PrivacyPage() {
   return (
     <LegalPage
       title="Confidențialitate"
-      intro="Ce date folosește Motion Timișoara, cine le vede și cât timp le păstrăm, începând cu funcția „Locația antrenorului”."
+      intro="Ce date folosește Motion România, cine le vede și cât timp le păstrăm, începând cu funcția „Locația antrenorului”."
       version="1.0"
       updated="22 octombrie 2026"
       sections={SECTIONS}

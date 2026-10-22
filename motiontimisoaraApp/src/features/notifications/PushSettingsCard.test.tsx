@@ -90,7 +90,7 @@ it('offers global opt-out when this phone is enabled', async () => {
 it('keeps denied permission distinct and tells the parent where to re-enable it', async () => {
   mocks.state = { ...mocks.state, status: 'denied' }
   mount()
-  expect(screen.getByText(/Setări → Aplicații → Motion Timișoara → Notificări/)).toBeInTheDocument()
+  expect(screen.getByText(/Setări → Aplicații → Motion România → Notificări/)).toBeInTheDocument()
   await act(async () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reîncearcă' }))
   })

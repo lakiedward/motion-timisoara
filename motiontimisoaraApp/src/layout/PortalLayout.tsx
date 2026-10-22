@@ -284,7 +284,7 @@ export function PortalLayout({
           >
             <SheetHeader className="shrink-0 border-b">
               <SheetTitle className="sr-only">
-                Meniu {roleLabel.toLowerCase()} — Motion Timișoara
+                Meniu {roleLabel.toLowerCase()} — Motion România
               </SheetTitle>
               <SheetDescription className="sr-only">
                 Navighează în secțiunea {roleLabel.toLowerCase()}, deschide profilul sau

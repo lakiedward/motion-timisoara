@@ -174,7 +174,7 @@ export function nativeScreen(pathname: string, role: Role | null) {
   if (secondary) return { title: secondary[1], backTo: secondary[2] }
   const tab = bottomNavigation(role).find((item) => item.to === pathname)
   if (tab) return { title: tab.label, backTo: null }
-  if (pathname === '/') return { title: 'Motion Timișoara', backTo: role ? '/cont' : null }
+  if (pathname === '/') return { title: 'Motion România', backTo: role ? '/cont' : null }
   if (pathname === '/exploreaza') return { title: 'Explorează', backTo: '/cont' }
   const destination = [
     ...publicNavigation,
@@ -183,7 +183,7 @@ export function nativeScreen(pathname: string, role: Role | null) {
     ...clubNavigation,
     ...adminNavigation,
   ].find((item) => item.to === pathname)
-  return { title: destination?.label ?? 'Motion Timișoara', backTo: '/cont' }
+  return { title: destination?.label ?? 'Motion România', backTo: '/cont' }
 }
 
 export const informationNavigation: PortalNavItem[] = [
@@ -193,6 +193,6 @@ export const informationNavigation: PortalNavItem[] = [
 ]
 
 export const discoveryNavigation: PortalNavItem[] = [
-  { to: '/', label: 'Motion Timișoara', icon: LayoutDashboard, end: true },
+  { to: '/', label: 'Motion România', icon: LayoutDashboard, end: true },
   ...publicNavigation.slice(0, 7),
 ]
