@@ -31,6 +31,7 @@ import { AddChildInline, CheckoutAdultRow, CheckoutChildRow } from './CheckoutFo
 import { CheckoutBillingFields } from './CheckoutBillingFields'
 import { CheckoutRulesConsent } from './CheckoutRulesConsent'
 import { usePaymentAdapter } from './usePaymentAdapter'
+import { TERMS_VERSION, acceptanceResetCode } from './checkout-acceptance'
 import { processEnrollmentPayments, paymentResultMessage } from '@/api/payments/process'
 import { startStripeCheckout } from '@/api/payments/checkout-session'
 import {
@@ -213,6 +214,7 @@ export default function CheckoutWizard({
         priceVersions,
         sessionPackageSize: offering.perSession ? packageSize : undefined,
         billingDetails: isFree || method !== 'CARD' ? undefined : billing,
+        acceptance: { termsVersion: TERMS_VERSION, rulesFingerprint: offering.rulesFingerprint },
       })
 
       createdIds.current = created.enrollmentIds
@@ -256,10 +258,11 @@ export default function CheckoutWizard({
     },
     onError: (e: Error) => {
       if (attempt.current?.signal.aborted) return
-      if (e instanceof EnrollmentRequestError && e.code === 'PRICE_CHANGED') {
+      if (e instanceof EnrollmentRequestError && acceptanceResetCode(e.code)) {
         setAccepted(false)
         setStep(1)
-        void refetchValidation()
+        if (e.code === 'PRICE_CHANGED') void refetchValidation()
+        else void qc.invalidateQueries({ queryKey: ['checkout-offering'] })
       }
       setProgress(null)
       toast.error(e.message)

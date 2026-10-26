@@ -125,6 +125,7 @@ export async function createEnrollment(input: {
   sessionPackageSize?: number
   priceVersions?: Record<string, string>
   billingDetails?: BillingDetails
+  acceptance?: { termsVersion: string; rulesFingerprint?: string }
 }): Promise<CreateEnrollmentResponse> {
   const data = await invokeCheckoutFunction<CreateEnrollmentResponse>('create-enrollment', input)
   const enrollmentIds =

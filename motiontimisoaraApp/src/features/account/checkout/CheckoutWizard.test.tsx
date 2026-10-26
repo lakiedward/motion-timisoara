@@ -4,6 +4,9 @@ import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, expect, test, vi } from 'vitest'
 import CheckoutWizard from './CheckoutWizard'
+import { EnrollmentRequestError } from '@/api/checkout'
+import type { Offering } from '../CheckoutPage'
+import { TERMS_VERSION } from './checkout-acceptance'
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
@@ -35,14 +38,14 @@ vi.mock('react-router-dom', async (importOriginal) => ({
   useNavigate: () => mocks.navigate,
 }))
 
-function renderWizard() {
+function renderWizard(extra: Partial<Offering> = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter>
         <CheckoutWizard
           kind="CAMP"
-          offering={{ id: 'camp-1', title: 'Tabără de munte', perSession: false, packages: [] }}
+          offering={{ id: 'camp-1', title: 'Tabără de munte', perSession: false, packages: [], ...extra }}
           initialMethod="CARD"
         />
       </MemoryRouter>
@@ -195,4 +198,24 @@ test('a paid card order goes to one Stripe Checkout page for every saved enrollm
   await waitFor(() => expect(mocks.checkout).toHaveBeenCalledWith(['enroll-1']))
   expect(await screen.findByRole('button', { name: /Te ducem la Stripe/ })).toBeDisabled()
   expect(mocks.navigate).not.toHaveBeenCalled()
+})
+
+test('the order carries the accepted terms version and rules fingerprint, and changed rules ask for consent again', async () => {
+  mocks.create.mockRejectedValueOnce(
+    new EnrollmentRequestError('Regulamentul ofertei s-a schimbat.', 'RULES_CHANGED'),
+  )
+  const user = userEvent.setup()
+  renderWizard({ rulesFingerprint: 'text:abc' })
+  await user.click(await screen.findByRole('checkbox', { name: /Bebe/ }))
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  await user.click(await screen.findByRole('checkbox', { name: /Confirm suma finală/ }))
+  await user.click(screen.getByRole('button', { name: 'Finalizează' }))
+  await waitFor(() => expect(mocks.create).toHaveBeenCalled())
+  expect(mocks.create.mock.calls[0][0].acceptance).toEqual({
+    termsVersion: TERMS_VERSION,
+    rulesFingerprint: 'text:abc',
+  })
+  await waitFor(() => expect(mocks.toast.error).toHaveBeenCalledWith('Regulamentul ofertei s-a schimbat.'))
+  expect(screen.getByRole('checkbox', { name: /Confirm suma finală/ })).not.toBeChecked()
+  expect(screen.getByRole('button', { name: 'Finalizează' })).toBeDisabled()
 })

@@ -41,6 +41,10 @@ on:
       - 'supabase/functions/_shared/stripe-return-url*.ts'
       - 'supabase/tests/*atomic-enrollment-creation*'
       - 'supabase/tests/*camp-adult*'
+      - 'supabase/migrations/00102_checkout_acceptances.sql'
+      - 'supabase/tests/*checkout-acceptances*'
+      - 'supabase/functions/_shared/checkout-acceptance*.ts'
+      - 'supabase/functions/_shared/terms-version.ts'
   pull_request:
     paths:
       - 'motiontimisoaraApp/**'
@@ -80,6 +84,10 @@ on:
       - 'supabase/functions/_shared/stripe-return-url*.ts'
       - 'supabase/tests/*atomic-enrollment-creation*'
       - 'supabase/tests/*camp-adult*'
+      - 'supabase/migrations/00102_checkout_acceptances.sql'
+      - 'supabase/tests/*checkout-acceptances*'
+      - 'supabase/functions/_shared/checkout-acceptance*.ts'
+      - 'supabase/functions/_shared/terms-version.ts'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -198,6 +206,15 @@ jobs:
       - name: Verify club approval
         shell: pwsh
         run: ./supabase/tests/run-club-approval.ps1
+
+  checkout-acceptances-sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify checkout acceptance log
+        shell: pwsh
+        run: ./supabase/tests/run-checkout-acceptances.ps1
 
   build:
     runs-on: ubuntu-latest

@@ -216,6 +216,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 768, height: 1024
       kind: 'CAMP', entityId: 'camp-simulation', childIds: ['child-a', 'child-b'], includeSelf: false,
       paymentMethod: 'CASH',
       priceVersions: { 'child-a': 'simulated-version-child-a-original', 'child-b': 'simulated-version-child-b-original' },
+      acceptance: { termsVersion: '1.0', rulesFingerprint: 'none' },
     }]);
     await proof(info, state);
   });

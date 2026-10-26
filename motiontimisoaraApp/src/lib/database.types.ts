@@ -827,6 +827,65 @@ export type Database = {
           },
         ]
       }
+      checkout_acceptances: {
+        Row: {
+          accepted_at: string
+          client_terms_version: string | null
+          enrollment_ids: string[]
+          entity_id: string
+          id: string
+          kind: string
+          payment_method: string
+          rules_file_name: string | null
+          rules_file_path: string | null
+          rules_sha256: string | null
+          rules_source: string | null
+          terms_sha256: string
+          terms_version: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          client_terms_version?: string | null
+          enrollment_ids: string[]
+          entity_id: string
+          id?: string
+          kind: string
+          payment_method: string
+          rules_file_name?: string | null
+          rules_file_path?: string | null
+          rules_sha256?: string | null
+          rules_source?: string | null
+          terms_sha256: string
+          terms_version: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          client_terms_version?: string | null
+          enrollment_ids?: string[]
+          entity_id?: string
+          id?: string
+          kind?: string
+          payment_method?: string
+          rules_file_name?: string | null
+          rules_file_path?: string | null
+          rules_sha256?: string | null
+          rules_source?: string | null
+          terms_sha256?: string
+          terms_version?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkout_acceptances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       children: {
         Row: {
           allergies: string | null
@@ -3438,6 +3497,18 @@ export type Database = {
       save_enrollment_batch: {
         Args: {
           p_billing?: Json
+          p_entity_id: string
+          p_kind: string
+          p_method: string
+          p_parent_id: string
+          p_quotes: Json
+        }
+        Returns: Json
+      }
+      save_enrollment_batch_with_acceptance: {
+        Args: {
+          p_acceptance: Json
+          p_billing: Json
           p_entity_id: string
           p_kind: string
           p_method: string

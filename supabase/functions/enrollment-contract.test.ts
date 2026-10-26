@@ -1,3 +1,4 @@
+import { TERMS_SHA256, TERMS_VERSION, rulesFingerprint, sha256Hex } from "./_shared/checkout-acceptance.ts";
 import { createValidationHandler } from "./validate-enrollment/handler.ts";
 import { createEnrollmentHandler } from "./create-enrollment/handler.ts";
 import { withCors } from "./_shared/cors.ts";
@@ -88,6 +89,9 @@ class FakeDatabase {
   capacityError = false;
   beforePaymentUpdate?: () => void;
   batchCalls: Row[] = [];
+  files: Record<string, string> = {};
+  storageError = false;
+  downloads: string[] = [];
   batchError: { code: string; message: string; details?: string } | null = null;
   tables: Record<string, Row[]> = {
     children: [
@@ -103,12 +107,23 @@ class FakeDatabase {
   };
 
   from(table: string) { return new FakeQuery(this, table); }
+  storage = {
+    from: (bucket: string) => ({
+      download: (path: string) => {
+        this.downloads.push(`${bucket}/${path}`);
+        const content = this.files[`${bucket}/${path}`];
+        return Promise.resolve(this.storageError || content === undefined
+          ? { data: null, error: { message: "Object not found" } }
+          : { data: new Blob([content]), error: null });
+      },
+    }),
+  };
   channel(_name: string) { return { send: (_message: unknown) => Promise.resolve() }; }
 
   removeChannel(_channel: unknown) { return Promise.resolve("ok"); }
 
   async rpc(name: string, args: Row) {
-    if (name === "save_enrollment_batch") return this.saveBatch(args);
+    if (name === "save_enrollment_batch_with_acceptance") return this.saveBatch(args);
     if (name === "enrollment_camp_adult_offer") {
       return Promise.resolve({
         data: this.adultPrice,
@@ -668,4 +683,65 @@ Deno.test("atomic persistence failures propagate authorization and price conflic
     equal(context.db.tables.payments, []);
     equal(context.db.attempts, []);
   }
+});
+
+Deno.test("an enrollment without rules records the terms version, its hash and the client's version", async () => {
+  const context = fixture();
+  const quoted = await quote(context);
+  const response = await context.create(undefined, quoted.versions, { acceptance: { termsVersion: TERMS_VERSION, rulesFingerprint: "none" } });
+  equal(response.status, 200);
+  equal(context.db.batchCalls[0].p_acceptance, {
+    termsVersion: TERMS_VERSION, termsSha256: TERMS_SHA256, clientTermsVersion: TERMS_VERSION,
+    rulesSource: null, rulesFilePath: null, rulesFileName: null, rulesSha256: null,
+  });
+});
+
+Deno.test("an older client without acceptance data still gets a server-side acceptance record", async () => {
+  const context = fixture();
+  context.db.tables.camps[0].rules = "  Regulament tabără  ";
+  const quoted = await quote(context);
+  equal((await context.create(undefined, quoted.versions)).status, 200);
+  const acceptance = context.db.batchCalls[0].p_acceptance as Row;
+  equal(acceptance.clientTermsVersion, null);
+  equal(acceptance.rulesSource, "TEXT");
+  equal(acceptance.rulesSha256, await sha256Hex("Regulament tabără"));
+});
+
+Deno.test("a rules file is hashed from its stored bytes and wins over the rules text", async () => {
+  const context = fixture("PARENT", "COURSE");
+  Object.assign(context.db.tables.courses[0], { rules_file_storage_path: "club/curs/regulament.pdf", rules_file_name: "regulament.pdf" });
+  context.db.files["course-rules/club/curs/regulament.pdf"] = "%PDF regulament";
+  const quoted = await quote(context);
+  const response = await context.create(undefined, quoted.versions, {
+    acceptance: { termsVersion: TERMS_VERSION, rulesFingerprint: await rulesFingerprint("club/curs/regulament.pdf", null) },
+  });
+  equal(response.status, 200);
+  const acceptance = context.db.batchCalls[0].p_acceptance as Row;
+  equal(acceptance.rulesSource, "FILE");
+  equal(acceptance.rulesFilePath, "club/curs/regulament.pdf");
+  equal(acceptance.rulesFileName, "regulament.pdf");
+  equal(acceptance.rulesSha256, await sha256Hex("%PDF regulament"));
+  equal(context.db.downloads, ["course-rules/club/curs/regulament.pdf"]);
+});
+
+Deno.test("an outdated terms version or changed rules reject the batch before any write", async () => {
+  const context = fixture();
+  context.db.tables.camps[0].rules = "Regulament nou";
+  const quoted = await quote(context);
+  const terms = await context.create(undefined, quoted.versions, { acceptance: { termsVersion: "0.9", rulesFingerprint: "none" } });
+  equal(terms.status, 409);
+  equal((await terms.json()).code, "TERMS_CHANGED");
+  const rules = await context.create(undefined, quoted.versions, { acceptance: { termsVersion: TERMS_VERSION, rulesFingerprint: "none" } });
+  equal(rules.status, 409);
+  equal((await rules.json()).code, "RULES_CHANGED");
+  equal(context.db.batchCalls, []);
+  equal(context.db.attempts, []);
+});
+
+Deno.test("an unreadable rules file blocks the enrollment instead of recording unverified consent", async () => {
+  const context = fixture("PARENT", "ACTIVITY");
+  Object.assign(context.db.tables.activities[0], { rules_file_storage_path: "club/act/regulament.pdf", rules_file_name: "regulament.pdf" });
+  const quoted = await quote(context);
+  equal((await context.create(undefined, quoted.versions)).status, 503);
+  equal(context.db.batchCalls, []);
 });
