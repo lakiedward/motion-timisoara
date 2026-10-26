@@ -1,50 +1,6 @@
 name: App CI
 
 on:
-  push:
-    branches: [master]
-    paths:
-      - 'motiontimisoaraApp/**'
-      - '.github/workflows/app-ci.yml'
-      - 'tests/native-location/**'
-      - 'supabase/functions/location-reverse/**'
-      - 'supabase/migrations/00084_location_reverse_cache.sql'
-      - 'supabase/migrations/00085_location_reverse_provider.sql'
-      - 'supabase/tests/location-reverse/**'
-      - 'supabase/migrations/00081_restrict_sport_deletion.sql'
-      - 'supabase/tests/sport-deletion/**'
-      - 'supabase/migrations/00055_camp_announcement_audience.sql'
-      - 'supabase/migrations/00056_parent_announcement_feed.sql'
-      - 'supabase/tests/*parent-announcement*'
-      - 'supabase/migrations/00097_club_announcements_course_coach_read.sql'
-      - 'supabase/tests/club-announcement-coach-read.sql'
-      - 'supabase/migrations/00098_shared_location_guard.sql'
-      - 'supabase/tests/*shared-location-guard*'
-      - 'supabase/migrations/00057_android_parent_push.sql'
-      - 'supabase/functions/dispatch-push/**'
-      - 'supabase/functions/dispatch-push-contract.test.ts'
-      - 'supabase/tests/*push*'
-      - 'supabase/migrations/00060_atomic_enrollment_creation.sql'
-      - 'supabase/migrations/00061_free_enrollment_fulfillment.sql'
-      - 'supabase/migrations/00068_camp_adult_enrollment.sql'
-      - 'supabase/functions/create-enrollment/**'
-      - 'supabase/functions/validate-enrollment/**'
-      - 'supabase/functions/create-payment-intent/**'
-      - 'supabase/functions/_shared/payment-*.ts'
-      - 'supabase/functions/_shared/enrollment-pricing.ts'
-      - 'supabase/functions/_shared/price-snapshot.ts'
-      - 'supabase/functions/_shared/price-snapshot.test.ts'
-      - 'supabase/functions/enrollment-contract.test.ts'
-      - 'supabase/functions/bnr-rate/**'
-      - 'supabase/functions/bnr-rate-contract.test.ts'
-      - 'supabase/functions/stripe-connect/**'
-      - 'supabase/functions/_shared/stripe-return-url*.ts'
-      - 'supabase/tests/*atomic-enrollment-creation*'
-      - 'supabase/tests/*camp-adult*'
-      - 'supabase/migrations/00102_checkout_acceptances.sql'
-      - 'supabase/tests/*checkout-acceptances*'
-      - 'supabase/functions/_shared/checkout-acceptance*.ts'
-      - 'supabase/functions/_shared/terms-version.ts'
   pull_request:
     paths:
       - 'motiontimisoaraApp/**'
@@ -88,15 +44,16 @@ on:
       - 'supabase/tests/*checkout-acceptances*'
       - 'supabase/functions/_shared/checkout-acceptance*.ts'
       - 'supabase/functions/_shared/terms-version.ts'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 jobs:
-  native-changes:
+  contracts:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 25
     permissions:
       contents: read
       pull-requests: read
@@ -106,47 +63,16 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
         id: filter
+        if: github.event_name == 'pull_request'
         with:
           filters: |
             native:
               - 'motiontimisoaraApp/android/**'
               - 'motiontimisoaraApp/ios/**'
               - 'motiontimisoaraApp/capacitor.config.ts'
-              - 'motiontimisoaraApp/package.json'
-              - 'motiontimisoaraApp/package-lock.json'
               - 'motiontimisoaraApp/patches/**'
               - 'motiontimisoaraApp/scripts/normalize-capacitor-paths.mjs'
               - 'tests/native-location/**'
-              - '.github/workflows/app-ci.yml'
-
-  location-reverse:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.9.6
-      - run: deno test --no-lock supabase/functions/location-reverse/contract.test.ts
-      - run: deno check --no-lock supabase/functions/location-reverse/index.ts
-      - shell: pwsh
-        run: ./supabase/tests/location-reverse/run.ps1
-
-  sport-deletion:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-      - run: pwsh -NoProfile -File supabase/tests/sport-deletion/run.ps1
-
-  enrollment-payments:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -155,6 +81,16 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.6
+      - name: Verify location reverse contract
+        run: deno test --no-lock supabase/functions/location-reverse/contract.test.ts
+      - name: Type-check location reverse function
+        run: deno check --no-lock supabase/functions/location-reverse/index.ts
+      - name: Verify location reverse SQL
+        shell: pwsh
+        run: ./supabase/tests/location-reverse/run.ps1
+      - name: Verify sport deletion
+        shell: pwsh
+        run: ./supabase/tests/sport-deletion/run.ps1
       - name: Verify atomic enrollment retries and concurrent fulfillment
         shell: pwsh
         run: ./supabase/tests/run-atomic-enrollment-creation.ps1
@@ -165,53 +101,20 @@ jobs:
         run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/price-snapshot.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/bnr-rate-contract.test.ts supabase/functions/_shared/stripe-return-url.test.ts
       - name: Type-check Stripe Connect function
         run: deno check --no-lock supabase/functions/stripe-connect/index.ts
-
-  push-contracts:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
       - name: Verify push audience, delivery and concurrent claims
         shell: pwsh
         run: ./supabase/tests/run-push-delivery.ps1
       - name: Verify dispatcher and FCM contracts
-        run: npx --yes deno test --no-lock supabase/functions/dispatch-push-contract.test.ts
-
-  announcement-sql:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
+        run: deno test --no-lock supabase/functions/dispatch-push-contract.test.ts
       - name: Verify parent announcement feed and audience isolation
         shell: pwsh
         run: ./supabase/tests/run-parent-announcement-feed.ps1
-
-  location-guard-sql:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
       - name: Verify shared location guard
         shell: pwsh
         run: ./supabase/tests/run-shared-location-guard.ps1
-
-  club-approval-sql:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
       - name: Verify club approval
         shell: pwsh
         run: ./supabase/tests/run-club-approval.ps1
-
-  checkout-acceptances-sql:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
       - name: Verify checkout acceptance log
         shell: pwsh
         run: ./supabase/tests/run-checkout-acceptances.ps1
@@ -239,8 +142,8 @@ jobs:
           VITE_STRIPE_PUBLISHABLE_KEY: pk_test_placeholder
 
   android-build:
-    needs: native-changes
-    if: needs.native-changes.outputs.native == 'true'
+    needs: contracts
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.contracts.outputs.native == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:
@@ -270,8 +173,8 @@ jobs:
         run: bash ./gradlew --no-daemon --stacktrace -Dorg.gradle.jvmargs=-Xmx4g :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest
 
   ios-build:
-    needs: native-changes
-    if: needs.native-changes.outputs.native == 'true'
+    needs: contracts
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.contracts.outputs.native == 'true') }}
     runs-on: macos-latest
     timeout-minutes: 25
     defaults:
@@ -298,8 +201,8 @@ jobs:
       - name: Verify synthetic iOS native location lifecycle
         run: node ../tests/native-location/run-ios-location.mjs
       - uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
         with:
           name: ios-live-location-${{ github.event_name }}
           path: test-results/ios-live-location/
-          retention-days: 30
+          retention-days: 3

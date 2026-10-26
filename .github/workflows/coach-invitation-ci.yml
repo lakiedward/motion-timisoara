@@ -11,21 +11,11 @@ on:
       - 'supabase/functions/coach-invitation-contract.test.ts'
       - 'supabase/tests/coach-invitation/**'
       - '.github/workflows/coach-invitation-ci.yml'
-  push:
-    branches: [master]
-    paths:
-      - 'supabase/migrations/00079_atomic_coach_invitation.sql'
-      - 'supabase/migrations/00087_club_invitation_redemption.sql'
-      - 'supabase/functions/redeem-coach-invitation/**'
-      - 'supabase/functions/register-coach/**'
-      - 'supabase/functions/_shared/coach-invitation.ts'
-      - 'supabase/functions/coach-invitation-contract.test.ts'
-      - 'supabase/tests/coach-invitation/**'
-      - '.github/workflows/coach-invitation-ci.yml'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 jobs:
   coach-invitations:
