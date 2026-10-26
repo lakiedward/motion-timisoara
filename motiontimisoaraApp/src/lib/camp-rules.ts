@@ -114,7 +114,11 @@ export function campRulesFileNumePastrat(nume: string): string {
   return curat.slice(0, 255) || 'regulament'
 }
 
-export function respingeRegulamentFisier(file: { name: string; type: string; size: number }): string | null {
+export function respingeRegulamentFisier(file: {
+  name: string
+  type: string
+  size: number
+}): string | null {
   if (file.size <= 0) return 'Fișierul este gol.'
   if (file.size > CAMP_RULES_FILE_MAX_BYTES) return 'Fișierul poate avea cel mult 10 MB.'
   if (!campRulesFileContentType(file)) {
@@ -126,7 +130,8 @@ export function respingeRegulamentFisier(file: { name: string; type: string; siz
 export function campRulesFileKindLabel(contentType: string): string {
   if (contentType === 'application/pdf') return 'PDF'
   if (contentType.startsWith('image/')) return 'Imagine'
-  if (contentType.includes('wordprocessingml') || contentType === 'application/msword') return 'Word'
+  if (contentType.includes('wordprocessingml') || contentType === 'application/msword')
+    return 'Word'
   if (contentType.includes('spreadsheetml') || contentType === 'application/vnd.ms-excel') {
     return 'Excel'
   }
@@ -164,4 +169,13 @@ export function campRulesFileFromRow(row: {
     contentType: row.rules_file_content_type,
     sizeBytes: row.rules_file_size_bytes,
   }
+}
+
+export function campRulesFileDetails(fisier: CampRulesFileLink): string {
+  return `${campRulesFileKindLabel(fisier.contentType)} · ${formatCampRulesFileSize(fisier.sizeBytes)}`
+}
+
+export function campRulesSummary(text: string | null, fisier: CampRulesFileLink | null): string {
+  if (fisier) return text ? `Text și ${campRulesFileDetails(fisier)}` : campRulesFileDetails(fisier)
+  return 'Text scris de organizator'
 }
