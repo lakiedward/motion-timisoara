@@ -1,43 +1,45 @@
-import { MapContainer, Marker, TileLayer } from 'react-leaflet'
-import 'leaflet/dist/leaflet.css'
+import { ExternalLink } from 'lucide-react'
 
-import { markerIcon } from '@/lib/map-marker'
-import {
-  basemapAttribution,
-  cartoTileUrl,
-  openStreetMapAttribution,
-  openStreetMapTileUrl,
-} from './basemap'
+import { platform } from '@/lib/platform'
+import { linkHartaLoc } from './map-link'
+import StaticPlaceMap from './StaticPlaceMap'
 
 export default function ClubLocationMap({
   lat,
   lng,
   label,
+  className,
 }: {
   lat: number
   lng: number
   label: string
+  className?: string
 }) {
-  const carto = cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY)
+  const link = linkHartaLoc(lat, lng, label, platform())
   return (
-    <div
-      role="img"
-      aria-label={`Hartă cu sediul clubului: ${label}`}
-      className="h-48 w-full overflow-hidden rounded-2xl border"
-    >
-      <MapContainer
-        center={[lat, lng]}
-        zoom={15}
-        scrollWheelZoom={false}
-        dragging={false}
-        className="size-full"
-      >
-        <TileLayer
-          url={carto ?? openStreetMapTileUrl}
-          attribution={carto ? basemapAttribution : openStreetMapAttribution}
+    <div className={className}>
+      <div role="img" aria-label={`Hartă cu sediul clubului: ${label}`}>
+        <StaticPlaceMap
+          lat={lat}
+          lng={lng}
+          href={link.href}
+          target={link.target}
+          rel={link.rel}
+          className="h-48 rounded-xl"
         />
-        <Marker position={[lat, lng]} icon={markerIcon} keyboard={false} />
-      </MapContainer>
+      </div>
+      <a
+        href={link.href}
+        target={link.target}
+        rel={link.rel}
+        aria-label={`Deschide sediul clubului în hărți: ${label}`}
+        className="group text-primary focus-visible:outline-ring mt-2 inline-flex min-h-touch-target items-center gap-2 rounded-md text-sm focus-visible:outline-2 focus-visible:outline-offset-2"
+      >
+        <ExternalLink className="size-4 shrink-0" aria-hidden="true" />
+        <span className="font-semibold underline-offset-4 group-hover:underline">
+          Deschide în hărți
+        </span>
+      </a>
     </div>
   )
 }
