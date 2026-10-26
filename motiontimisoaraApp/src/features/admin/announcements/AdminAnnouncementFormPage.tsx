@@ -104,7 +104,7 @@ export default function AdminAnnouncementFormPage() {
     <div className="mx-auto max-w-2xl">
       <Link
         to={LIST_PATH}
-        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
+        className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
       >
         <ArrowLeft className="size-4" /> Înapoi
       </Link>

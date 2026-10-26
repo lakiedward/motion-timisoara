@@ -17,7 +17,7 @@ import {
   requireSerializedProgram,
   validateCourseProgramFields,
 } from '@/lib/course-program/recurrence'
-import { useEffect, useState, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, useState, type MouseEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -43,7 +43,7 @@ import { OfferRulesFieldset } from '@/components/RulesFileField'
 import { campRulesFileFromRow, type CampRulesFileMeta } from '@/lib/camp-rules'
 import { baniToRon } from '@/lib/money'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -53,34 +53,6 @@ import { Textarea } from '@/components/ui/textarea'
 
 const selectCls =
   'border-input dark:bg-input/30 flex h-touch-target w-full min-w-0 rounded-md border bg-transparent px-3 text-base shadow-xs transition-[color,box-shadow] outline-none hover:border-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-invalid:border-2 aria-invalid:border-destructive disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
-
-function Obligatoriu() {
-  return (
-    <span className="text-destructive" aria-hidden="true">
-      *
-    </span>
-  )
-}
-
-function Sectiune({
-  titlu,
-  descriere,
-  children,
-}: {
-  titlu: string
-  descriere: string
-  children: ReactNode
-}) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="font-display text-lg">{titlu}</CardTitle>
-        <CardDescription>{descriere}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">{children}</CardContent>
-    </Card>
-  )
-}
 
 const NOTA_SPORT = 'Sportul rămâne cel salvat: cursul are înscrieri.'
 const NOTA_LOCATIE = 'Locația rămâne cea salvată: cursul are înscrieri.'
@@ -315,9 +287,7 @@ export default function CourseFormPage() {
         {isEdit ? 'Editează curs' : 'Curs nou'}
       </h1>
 
-      <p className="text-muted-foreground mt-2 text-sm">
-        Câmpurile marcate cu <span className="text-destructive">*</span> sunt obligatorii.
-      </p>
+      <RequiredFieldsNote />
 
       <form
         onSubmit={handleSubmit(onSubmit, () =>
@@ -326,10 +296,10 @@ export default function CourseFormPage() {
         className="mt-6 space-y-6"
         noValidate
       >
-        <Sectiune titlu="Despre curs" descriere="Ce vede părintele pe pagina cursului.">
+        <FormSection title="Despre curs" description="Ce vede părintele pe pagina cursului.">
           <div className="space-y-1.5">
             <Label htmlFor="name">
-              Nume curs <Obligatoriu />
+              Nume curs <RequiredMark />
             </Label>
             <Input id="name" required {...register('name')} {...camp('name')} />
             <FieldMessage id="name" error={errors.name?.message} />
@@ -337,7 +307,7 @@ export default function CourseFormPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="sport_id">
-                Sport <Obligatoriu />
+                Sport <RequiredMark />
               </Label>
               <select
                 id="sport_id"
@@ -363,7 +333,7 @@ export default function CourseFormPage() {
             </div>
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="location_id">
-                Locație <Obligatoriu />
+                Locație <RequiredMark />
               </Label>
               <select
                 id="location_id"
@@ -390,7 +360,7 @@ export default function CourseFormPage() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="description">
-              Descriere <Obligatoriu />
+              Descriere <RequiredMark />
             </Label>
             <Textarea
               id="description"
@@ -401,9 +371,9 @@ export default function CourseFormPage() {
             />
             <FieldMessage id="description" error={errors.description?.message} />
           </div>
-        </Sectiune>
+        </FormSection>
 
-        <Sectiune titlu="Copii și locuri" descriere="Pentru cine e cursul și câți copii primești.">
+        <FormSection title="Copii și locuri" description="Pentru cine e cursul și câți copii primești.">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="level">Nivel</Label>
@@ -416,7 +386,7 @@ export default function CourseFormPage() {
             </div>
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="capacity">
-                Capacitate <Obligatoriu />
+                Capacitate <RequiredMark />
               </Label>
               <Input
                 id="capacity"
@@ -449,9 +419,9 @@ export default function CourseFormPage() {
               Lasă gol dacă nu ai limită. Poți completa doar una.
             </p>
           </div>
-        </Sectiune>
+        </FormSection>
 
-        <Sectiune titlu="Preț" descriere="Cât plătește părintele pentru o ședință.">
+        <FormSection title="Preț" description="Cât plătește părintele pentru o ședință.">
           <OfferCurrencyFields
             currency={currency}
             currencyField={register('currency')}
@@ -460,7 +430,7 @@ export default function CourseFormPage() {
           />
           <div className="space-y-1.5 sm:max-w-[calc(50%-0.5rem)]">
             <Label htmlFor="price_per_session_lei">
-              Preț / ședință ({currency === 'EUR' ? 'EUR' : 'lei'}) <Obligatoriu />
+              Preț / ședință ({currency === 'EUR' ? 'EUR' : 'lei'}) <RequiredMark />
             </Label>
             <Input
               id="price_per_session_lei"
@@ -481,7 +451,7 @@ export default function CourseFormPage() {
               error={errors.price_per_session_lei?.message}
             />
           </div>
-        </Sectiune>
+        </FormSection>
 
         <CourseProgramFields
           control={control}

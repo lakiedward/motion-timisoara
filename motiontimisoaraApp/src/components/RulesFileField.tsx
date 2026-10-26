@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
+import { FormSection } from '@/components/FormSection'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
@@ -175,11 +176,10 @@ export default function RulesFileField({
   )
 }
 
-export function OfferRulesFieldset(props: ComponentProps<typeof RulesFileField>) {
+export function OfferRulesFieldset({ intro, ...props }: ComponentProps<typeof RulesFileField>) {
   return (
-    <fieldset className="rounded-2xl border p-5">
-      <legend className="px-2 font-semibold">Regulament</legend>
+    <FormSection title="Regulament" description={intro}>
       <RulesFileField {...props} />
-    </fieldset>
+    </FormSection>
   )
 }

@@ -270,7 +270,7 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
     <Link
       to={listPath}
       onClick={pleaca}
-      className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
+      className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
     >
       <ArrowLeft className="size-4" /> Înapoi
     </Link>
