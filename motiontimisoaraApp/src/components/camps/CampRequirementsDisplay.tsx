@@ -12,8 +12,8 @@ export default function CampRequirementsDisplay({
 }) {
   if (necesar.length === 0) return null
   return (
-    <div className="mt-8">
-      <h2 className="font-display mb-3 text-lg font-bold">{CAMP_REQUIREMENTS_TITLE}</h2>
+    <div className="bg-card mt-8 rounded-xl border p-5 sm:p-6">
+      <h2 className="font-display mb-3 text-xl font-bold">{CAMP_REQUIREMENTS_TITLE}</h2>
       <div className="space-y-5">
         {necesar.map((categorie) => {
           const repetaTitlul =
