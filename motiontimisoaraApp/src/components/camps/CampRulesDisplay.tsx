@@ -2,34 +2,30 @@ import { useId, useState } from 'react'
 import { ExternalLink } from 'lucide-react'
 
 import {
+  campRulesFileDetails,
   campRulesForDisplay,
-  campRulesFileKindLabel,
   campRulesIsLong,
-  formatCampRulesFileSize,
   type CampRulesFileLink,
 } from '@/lib/camp-rules'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
-export default function CampRulesDisplay({
-  rules,
+export function CampRulesBody({
+  text,
   fisier,
+  clamp = true,
 }: {
-  rules: string | null | undefined
+  text: string | null
   fisier?: CampRulesFileLink | null
+  clamp?: boolean
 }) {
   const [extins, setExtins] = useState(false)
   const textId = useId()
-  const text = campRulesForDisplay(rules)
-  if (!text && !fisier) return null
-  const lung = text !== null && campRulesIsLong(text)
+  const lung = clamp && text !== null && campRulesIsLong(text)
   const scurtat = lung && !extins
-  const detalii = fisier
-    ? `${campRulesFileKindLabel(fisier.contentType)} · ${formatCampRulesFileSize(fisier.sizeBytes)}`
-    : ''
+  const detalii = fisier ? campRulesFileDetails(fisier) : ''
   return (
-    <section className="mt-8">
-      <h2 className="font-display mb-3 text-lg font-bold">Regulament</h2>
+    <>
       {text && (
         <p
           id={textId}
@@ -45,7 +41,7 @@ export default function CampRulesDisplay({
         <Button
           type="button"
           variant="link"
-          className="mt-1 h-11 min-h-11 px-0 font-semibold"
+          className="mt-1 flex h-11 min-h-11 w-fit px-0 font-semibold"
           aria-expanded={extins}
           aria-controls={textId}
           onClick={() => setExtins((v) => !v)}
@@ -60,7 +56,7 @@ export default function CampRulesDisplay({
           rel="noopener noreferrer"
           aria-label={`Deschide regulamentul: ${fisier.name}, ${detalii}`}
           title={fisier.name}
-          className="group text-primary focus-visible:outline-ring mt-3 inline-flex min-h-11 items-center gap-2 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="group text-primary focus-visible:outline-ring mt-3 flex min-h-11 w-fit items-center gap-2 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <ExternalLink className="size-4 shrink-0" aria-hidden="true" />
           <span className="flex flex-col">
@@ -71,6 +67,23 @@ export default function CampRulesDisplay({
           </span>
         </a>
       )}
+    </>
+  )
+}
+
+export default function CampRulesDisplay({
+  rules,
+  fisier,
+}: {
+  rules: string | null | undefined
+  fisier?: CampRulesFileLink | null
+}) {
+  const text = campRulesForDisplay(rules)
+  if (!text && !fisier) return null
+  return (
+    <section className="mt-8">
+      <h2 className="font-display mb-3 text-lg font-bold">Regulament</h2>
+      <CampRulesBody text={text} fisier={fisier} />
     </section>
   )
 }

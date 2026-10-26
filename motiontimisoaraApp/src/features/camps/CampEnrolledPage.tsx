@@ -7,7 +7,6 @@ import { getInscrisiiTaberei } from '@/api/camp-enrolled'
 import { campRulesFileAfisabil } from '@/api/camp-rules-file'
 import { getTabaraDeEditat } from '@/api/camps-admin'
 import { formatZi } from '@/api/camps'
-import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
 import { plural } from '@/lib/plural'
 import { Button } from '@/components/ui/button'
 import { StatusView } from '@/components/ui/status-view'
@@ -17,6 +16,7 @@ import {
 } from '@/features/live-location/camps/CampParticipationPanel'
 import { useCampStaffParticipation } from '@/features/live-location/camps/useCampStaffParticipation'
 import type { CampPortalBaza } from './camp-portal'
+import { CampRulesCard } from './enrolled/CampRulesCard'
 import { ParticipantFilterBar } from './enrolled/ParticipantFilterBar'
 import { ParticipantRows } from './enrolled/ParticipantRows'
 import {
@@ -99,7 +99,7 @@ export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
           {tabara.title} · {formatZi(tabara.period_start)} – {formatZi(tabara.period_end)}
         </p>
       )}
-      {tabara && <CampRulesDisplay rules={tabara.rules} fisier={campRulesFileAfisabil(tabara)} />}
+      {tabara && <CampRulesCard rules={tabara.rules} fisier={campRulesFileAfisabil(tabara)} />}
 
       <CampLocationShare
         campId={campId}

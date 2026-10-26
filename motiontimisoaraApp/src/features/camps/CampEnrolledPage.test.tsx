@@ -287,3 +287,24 @@ test('filtrul Sosire arată doar copiii sosiți', async () => {
   expect(screen.getByText('Copil Spec 520')).toBeInTheDocument()
   expect(screen.queryByText('Copil Audit 152')).not.toBeInTheDocument()
 })
+
+test('regulamentul taberei apare ca un card închis deasupra listei', async () => {
+  camp.mockResolvedValue({
+    title: 'Tabără audit 152',
+    period_start: '2026-10-01',
+    period_end: '2026-10-08',
+    capacity: 3,
+    rules: 'Casca e obligatorie.',
+    rules_file_storage_path: null,
+    rules_file_name: null,
+    rules_file_content_type: null,
+    rules_file_size_bytes: null,
+  } as Awaited<ReturnType<typeof getTabaraDeEditat>>)
+  renderPage()
+  expect(await screen.findByRole('heading', { name: 'Regulament' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Citește regulamentul' })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  )
+  expect(screen.queryByText('Casca e obligatorie.')).not.toBeInTheDocument()
+})
