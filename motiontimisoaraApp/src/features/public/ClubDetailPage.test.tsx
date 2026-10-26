@@ -105,7 +105,10 @@ test('without a cover the hero has the back link, the initial and the name, with
   mocks.getPublicClub.mockResolvedValue(club)
   const { container } = renderPage()
   expect(await screen.findByRole('heading', { level: 1, name: 'Clubul Exemplu' })).toBeVisible()
-  expect(screen.getByRole('link', { name: /Înapoi la cluburi/ })).toHaveAttribute('href', '/cluburi')
+  expect(screen.getByRole('link', { name: /Înapoi la cluburi/ })).toHaveAttribute(
+    'href',
+    '/cluburi',
+  )
   expect(screen.getByText('C')).toHaveAttribute('aria-hidden', 'true')
   expect(container.querySelector('img')).toBeNull()
 })
@@ -119,8 +122,14 @@ test('with a cover the hero uses the shared photo band with the logo next to the
   const { container } = renderPage()
   expect(await screen.findByRole('heading', { level: 1, name: 'Clubul Exemplu' })).toBeVisible()
   expect(container.querySelector('img[src="/ui/cover.webp"]')).not.toBeNull()
-  expect(screen.getByRole('img', { name: 'Logo Clubul Exemplu' })).toHaveAttribute('src', '/ui/logo.webp')
-  expect(screen.getByRole('link', { name: /Înapoi la cluburi/ })).toHaveAttribute('href', '/cluburi')
+  expect(screen.getByRole('img', { name: 'Logo Clubul Exemplu' })).toHaveAttribute(
+    'src',
+    '/ui/logo.webp',
+  )
+  expect(screen.getByRole('link', { name: /Înapoi la cluburi/ })).toHaveAttribute(
+    'href',
+    '/cluburi',
+  )
 })
 
 test('a load error shows a retry, not "not found"', async () => {
@@ -136,5 +145,51 @@ test('a missing club says it was not found and links back to the list', async ()
   mocks.getPublicClub.mockResolvedValue(null)
   renderPage()
   expect(await screen.findByText('Clubul nu a fost găsit.')).toBeVisible()
-  expect(screen.getByRole('link', { name: /Înapoi la cluburi/ })).toHaveAttribute('href', '/cluburi')
+  expect(screen.getByRole('link', { name: /Înapoi la cluburi/ })).toHaveAttribute(
+    'href',
+    '/cluburi',
+  )
+})
+
+test('the description keeps its paragraphs and the sports show under it', async () => {
+  mocks.getPublicClub.mockResolvedValue({
+    ...club,
+    description: 'Primul paragraf.\n\nAl doilea paragraf.',
+    club_sports: [{ sport: { id: 's1', code: 'inot', name: 'Înot' } }],
+  })
+  renderPage()
+  expect(await screen.findByRole('heading', { name: 'Despre club' })).toBeVisible()
+  expect(screen.getByText('Primul paragraf.')).toBeVisible()
+  expect(screen.getByText('Al doilea paragraf.')).toBeVisible()
+  expect(screen.getByText('Înot')).toBeVisible()
+})
+
+test('phone, email and website are labelled rows with working links', async () => {
+  mocks.getPublicClub.mockResolvedValue({
+    ...club,
+    phone: '0722 123 456',
+    public_email: 'contact@club.ro',
+    website: 'www.club.ro',
+  })
+  renderPage()
+  expect(await screen.findByRole('link', { name: /Telefon\s*0722 123 456/ })).toHaveAttribute(
+    'href',
+    'tel:0722123456',
+  )
+  const site = screen.getByRole('link', { name: /Website\s*club\.ro/ })
+  expect(site).toHaveAttribute('href', 'https://www.club.ro')
+  expect(site).toHaveAttribute('target', '_blank')
+  expect(screen.getByText('Adresă')).toBeVisible()
+})
+
+test('a club with no contact data says so instead of an empty card', async () => {
+  mocks.getPublicClub.mockResolvedValue({
+    ...club,
+    address: null,
+    city: null,
+    lat: null,
+    lng: null,
+  })
+  renderPage()
+  expect(await screen.findByText('Clubul nu a publicat încă date de contact.')).toBeVisible()
 })
