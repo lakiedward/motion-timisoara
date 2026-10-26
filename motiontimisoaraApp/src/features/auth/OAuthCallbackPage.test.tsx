@@ -135,3 +135,41 @@ test('profile completion uses the shared fields with described errors', async ()
   expect(phone).toHaveAttribute('aria-describedby', 'phone-error')
   expect(completeProfile).not.toHaveBeenCalled()
 })
+
+test('profile completion explains the phone and names the Google account', async () => {
+  renderCallback()
+  expect(
+    await screen.findByText(
+      /Adaugă un număr de telefon ca să te putem contacta despre înscrierile copiilor\./,
+    ),
+  ).toBeInTheDocument()
+  expect(screen.getByText(/Conectat ca/)).toHaveTextContent(`Conectat ca ${parent.email}`)
+})
+
+test('a phone typed with spaces or dashes is accepted and saved without them', async () => {
+  vi.mocked(completeProfile).mockResolvedValue({ error: null } as never)
+  const user = userEvent.setup()
+  renderCallback()
+  await user.type(await screen.findByLabelText('Telefon'), '0722 123-456')
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  expect(await screen.findByText('ecranul copilului')).toBeInTheDocument()
+  expect(completeProfile).toHaveBeenCalledWith(parent.id, {
+    name: parent.name,
+    phone: '0722123456',
+  })
+})
+
+test('a failed save shows the inline alert and keeps the typed values', async () => {
+  vi.mocked(completeProfile).mockResolvedValue({ error: { message: 'x' } } as never)
+  const user = userEvent.setup()
+  renderCallback()
+  const phone = await screen.findByLabelText('Telefon')
+  await user.type(phone, '+40722123456')
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Nu am putut salva profilul. Încearcă din nou.',
+  )
+  expect(phone).toHaveValue('+40722123456')
+  expect(screen.getByLabelText('Nume complet')).toHaveValue(parent.name)
+  expect(refresh).not.toHaveBeenCalled()
+})
