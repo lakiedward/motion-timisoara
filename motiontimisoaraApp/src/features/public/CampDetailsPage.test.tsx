@@ -90,9 +90,26 @@ test('the camp location opens the map and preserves arrival details', async () =
   )
   renderPage()
   expect(
-    await screen.findByRole('link', { name: 'Bazin Olimpic — vezi pe hartă' }),
+    await screen.findByRole('link', { name: /Locație\s*Bazin Olimpic\s*Intrarea din curte/ }),
   ).toHaveAttribute('href', '/harta?location=pool-1')
-  expect(screen.getByText('Intrarea din curte')).toBeInTheDocument()
+})
+
+test('fără coordonate, locația rămâne text în bandă, fără link spre hartă', async () => {
+  mocked.mockResolvedValue(
+    detaliu({
+      location: {
+        id: 'pool-2',
+        name: 'Bazin fără pin',
+        lat: null,
+        lng: null,
+        address: null,
+        city: 'Lugoj',
+      },
+    }) as never,
+  )
+  renderPage()
+  expect(await screen.findByText('Bazin fără pin')).toBeInTheDocument()
+  expect(screen.queryByRole('link', { name: /Bazin fără pin/ })).not.toBeInTheDocument()
 })
 test('„Înscrie-te" duce la checkout cu tabăra aleasă', async () => {
   const user = userEvent.setup()
@@ -452,4 +469,11 @@ test('fără poze, pagina nu arată o secțiune de galerie goală', async () => 
   renderPage()
   await screen.findByRole('button', { name: 'Înscrie-te' })
   expect(screen.queryByText('Din tabără')).not.toBeInTheDocument()
+})
+
+test('fără loc, banda nu arată deloc rubrica „Locație”', async () => {
+  mocked.mockResolvedValue(detaliu({ tabara: { location_text: null } }) as never)
+  renderPage()
+  expect(await screen.findByText('Perioadă')).toBeInTheDocument()
+  expect(screen.queryByText('Locație')).not.toBeInTheDocument()
 })

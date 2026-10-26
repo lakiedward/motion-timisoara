@@ -1,20 +1,18 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, CalendarDays } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 
-import { formatZi, getTabaraDetaliu, sAIncheiat } from '@/api/camps'
-import { plural } from '@/lib/plural'
-import { cn } from '@/lib/utils'
+import { getTabaraDetaliu, sAIncheiat } from '@/api/camps'
+import { descriptionParagraphs } from '@/lib/course-detail'
 import { useAuth } from '@/lib/auth-context'
 import PhotoGallery from '@/components/PhotoGallery'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import CampPricingCard from './camp-pricing/CampPricingCard'
-import CampLocation from '@/components/camps/CampLocation'
 import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
 import CampRequirementsDisplay from '@/components/camps/CampRequirementsDisplay'
 import { PublicHeroBand } from './PublicHeroBand'
+import { CampInfoBand } from './camp-detail/CampInfoBand'
 import { OrganizerCoaches } from './components/OrganizerCoaches'
 
 export default function CampDetailsPage() {
@@ -72,6 +70,8 @@ export default function CampDetailsPage() {
     navigate(`/account/checkout?kind=CAMP&slug=${tabara.slug}`)
   }
 
+  const pricing = <CampPricingCard data={data} ended={incheiata} full={plina} onEnroll={onEnroll} />
+
   return (
     <div>
       <PublicHeroBand
@@ -79,70 +79,61 @@ export default function CampDetailsPage() {
         title={tabara.title}
         backTo="/tabere"
         backLabel="Înapoi la tabere"
-        width="max-w-4xl"
       />
 
-      <div className="mx-auto max-w-4xl px-6 py-8">
-        {!heroUrl && (
+      {!heroUrl && (
+        <div className="mx-auto max-w-6xl px-6 pt-8">
           <Link
             to="/tabere"
             className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
           >
             <ArrowLeft className="size-4" /> Înapoi la tabere
           </Link>
-        )}
-
-        {!heroUrl && (
-          <h1 className="font-display text-foreground mt-4 text-3xl font-extrabold md:text-4xl">
+          <h1 className="font-display text-foreground mt-4 text-3xl font-extrabold tracking-tight md:text-4xl">
             {tabara.title}
           </h1>
-        )}
-
-        <div
-          className={cn(
-            'text-muted-foreground flex flex-wrap items-center gap-x-5 gap-y-2 text-sm',
-            !heroUrl && 'mt-4',
-          )}
-        >
-          <span className="flex items-center gap-1.5">
-            <CalendarDays aria-hidden="true" className="size-4" />
-            {formatZi(tabara.period_start)} – {formatZi(tabara.period_end)}
-            {incheiata && (
-              <Badge variant="secondary" className="ml-1">
-                Încheiată
-              </Badge>
-            )}
-          </span>
-          {!incheiata && plina && <Badge variant="destructive">Locuri epuizate</Badge>}
-          <CampLocation location={data.location} details={tabara.location_text} />
-          {!incheiata && locuriRamase !== null && locuriRamase > 0 && (
-            <span>{plural(locuriRamase, 'loc rămas', 'locuri rămase')}</span>
-          )}
         </div>
+      )}
 
-        {tabara.description && (
-          <p className="text-muted-foreground mt-6 leading-relaxed">{tabara.description}</p>
-        )}
+      <div className="mx-auto max-w-6xl px-6 py-10">
+        <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
+          <div className="min-w-0">
+            <CampInfoBand data={data} ended={incheiata} />
 
-        <CampRulesDisplay rules={tabara.rules} fisier={data.regulamentFisier} />
+            {tabara.description && (
+              <section className="bg-card mt-8 rounded-xl border p-5 sm:p-6">
+                <h2 className="font-display text-xl font-bold">Despre tabără</h2>
+                <div className="text-muted-foreground mt-3 space-y-3 leading-relaxed">
+                  {descriptionParagraphs(tabara.description).map((part, index) => (
+                    <p key={index}>{part}</p>
+                  ))}
+                </div>
+              </section>
+            )}
 
-        <CampRequirementsDisplay necesar={necesar} />
+            <CampRulesDisplay rules={tabara.rules} fisier={data.regulamentFisier} />
 
-        {galerieUrls.length > 0 && (
-          <div className="mt-8">
-            <h2 className="font-display mb-3 text-lg font-bold">Din tabără</h2>
-            <PhotoGallery urls={galerieUrls} alt={tabara.title} />
+            <CampRequirementsDisplay necesar={necesar} />
+
+            {galerieUrls.length > 0 && (
+              <div className="mt-8">
+                <h2 className="font-display mb-3 text-lg font-bold">Din tabără</h2>
+                <PhotoGallery urls={galerieUrls} alt={tabara.title} />
+              </div>
+            )}
+
+            <OrganizerCoaches
+              sectionKey="motion-react:page:/tabere/:slug:section:organizator-si-antrenori"
+              organizator={organizator}
+              antrenori={antrenori}
+              coachesTitle={(n) =>
+                n === 1 ? 'Antrenorul care însoțește' : 'Antrenorii care însoțesc'
+              }
+            />
           </div>
-        )}
 
-        <OrganizerCoaches
-          sectionKey="motion-react:page:/tabere/:slug:section:organizator-si-antrenori"
-          organizator={organizator}
-          antrenori={antrenori}
-          coachesTitle={(n) => (n === 1 ? 'Antrenorul care însoțește' : 'Antrenorii care însoțesc')}
-        />
-
-        <CampPricingCard data={data} ended={incheiata} full={plina} onEnroll={onEnroll} />
+          <aside className="lg:sticky lg:top-24 lg:self-start">{pricing}</aside>
+        </div>
       </div>
     </div>
   )

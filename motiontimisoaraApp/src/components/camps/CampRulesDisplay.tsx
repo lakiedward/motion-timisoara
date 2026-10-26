@@ -81,8 +81,8 @@ export default function CampRulesDisplay({
   const text = campRulesForDisplay(rules)
   if (!text && !fisier) return null
   return (
-    <section className="mt-8">
-      <h2 className="font-display mb-3 text-lg font-bold">Regulament</h2>
+    <section className="bg-card mt-8 rounded-xl border p-5 sm:p-6">
+      <h2 className="font-display mb-3 text-xl font-bold">Regulament</h2>
       <CampRulesBody text={text} fisier={fisier} />
     </section>
   )

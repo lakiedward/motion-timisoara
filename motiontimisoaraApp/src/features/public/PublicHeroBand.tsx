@@ -37,7 +37,7 @@ export function PublicHeroBand({
       />
       <Link
         to={backTo}
-        className="absolute top-6 left-6 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-black/30 px-3.5 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-black/45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className="absolute top-6 left-6 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-black/40 px-4 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-black/55 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
       >
         <ArrowLeft className="size-4" /> {backLabel}
       </Link>
