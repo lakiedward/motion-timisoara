@@ -1,41 +1,10 @@
 name: Playwright Tests
 
-# Suita rula la fiecare push pe master, fără filtru de căi și fără BASE_URL,
-# deci pornea și pe commit-uri care ating doar documentația — și cădea de
-# fiecare dată, fiindcă ținta implicită era un domeniu mort. Acum pornește doar
-# când se schimbă ceva ce testele chiar acoperă.
+# Rulează doar pe PR-uri care ating ce acoperă testele. După merge nu se mai
+# re-rulează pe master: PR-ul a trecut deja pe același cod, iar fiecare rulare
+# în plus costa minute de GitHub Actions. Butonul workflow_dispatch o pornește
+# manual când e nevoie.
 on:
-  push:
-    branches: [ main, master ]
-    paths:
-      - 'motiontimisoaraApp/**'
-      - 'tests/**'
-      - 'supabase/functions/**'
-      - 'supabase/tests/**'
-      - 'supabase/migrations/00037_camp_age_pricing.sql'
-      - 'supabase/migrations/00041_camp_child_price_server_only.sql'
-      - 'supabase/migrations/00042_transactional_attendance.sql'
-      - 'supabase/migrations/00043_coach_live_location.sql'
-      - 'supabase/migrations/00044_coach_live_location_realtime.sql'
-      - 'supabase/migrations/00045_camp_live_location_access.sql'
-      - 'supabase/migrations/00046_camp_live_location_transaction.sql'
-      - 'supabase/migrations/00047_camp_live_location_discovery.sql'
-      - 'supabase/migrations/00048_enrollment_price_snapshots.sql'
-      - 'supabase/migrations/00049_atomic_camp_offer_pricing.sql'
-      - 'supabase/migrations/0005*.sql'
-      - 'supabase/migrations/0006*.sql'
-      - 'supabase/migrations/00070_camp_templates.sql'
-      - 'supabase/migrations/00071_competition_offers_and_coaches.sql'
-      - 'supabase/migrations/00072_competition_registrations.sql'
-      - 'supabase/migrations/00073_competition_podium.sql'
-      - 'supabase/migrations/00089_club_assets_owner_policies.sql'
-      - 'playwright.config.ts'
-      - 'playwright.pricing.config.ts'
-      - 'playwright.location.config.ts'
-      - 'playwright.competition.config.ts'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/playwright.yml'
   pull_request:
     branches: [ main, master ]
     paths:
@@ -67,25 +36,17 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/playwright.yml'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 # Verificările rulau înșiruite într-un singur job de ~12 minute. Sunt
 # independente (fiecare simulare își construiește și își pornește propria
 # previzualizare, fiecare test SQL își pornește propriul PostgreSQL), deci rulează
 # acum în joburi paralele; durata totală e dată de cel mai lung dintre ele.
 jobs:
-  competition-sql:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-    - uses: actions/checkout@v4
-    - name: Test isolated competition SQL
-      shell: pwsh
-      run: ./supabase/tests/run-competition-offers-and-coaches.ps1
-
   test:
     # ~6 minute măsurate pentru suita principală pe chromium cu un singur
     # worker. 20 lasă loc de instalări și de o rulare lentă.
@@ -121,11 +82,11 @@ jobs:
         VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder' }}
         E2E_PLACEHOLDER_BACKEND: ${{ secrets.VITE_SUPABASE_URL && '0' || '1' }}
     - uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
+      if: ${{ failure() }}
       with:
         name: playwright-report
         path: playwright-report/
-        retention-days: 30
+        retention-days: 3
 
   browser-simulations:
     timeout-minutes: 15
@@ -154,14 +115,14 @@ jobs:
     - name: Run isolated competition browser simulations
       run: npm run test:competition
     - uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
+      if: ${{ failure() }}
       with:
         name: browser-simulations
         path: |
           test-results/checkout-pricing/
           test-results/live-location/
           test-results/competition/
-        retention-days: 30
+        retention-days: 3
 
   function-contracts:
     timeout-minutes: 15
@@ -189,6 +150,9 @@ jobs:
       run: deno check --no-lock supabase/functions/create-competition-registration/index.ts supabase/functions/validate-competition-registration/index.ts && deno test --no-lock supabase/functions/competition-registration-contract.test.ts supabase/functions/_shared/competition-payment-recipient.test.ts
     - name: Check payment confirmation functions
       run: deno check --no-lock supabase/functions/mark-cash-paid/index.ts supabase/functions/stripe-webhook/index.ts supabase/functions/cancel-draft-enrollment/index.ts supabase/functions/create-checkout-session/index.ts
+    - name: Test isolated competition SQL
+      shell: pwsh
+      run: ./supabase/tests/run-competition-offers-and-coaches.ps1
     - name: Test isolated camp pricing SQL
       shell: pwsh
       run: ./supabase/tests/run-camp-child-pricing.ps1
