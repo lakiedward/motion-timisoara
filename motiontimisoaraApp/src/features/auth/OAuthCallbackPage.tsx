@@ -11,15 +11,19 @@ import { CircleAlert } from 'lucide-react'
 import { AuthFields } from './AuthFields'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
-import { toast } from 'sonner'
 import { completeProfile, loadAppUser, roleHome, type AppUser } from '@/api/auth'
 import { useAuth } from '@/lib/auth-context'
 
 type Phase = 'loading' | 'complete-profile' | 'error'
 
+const PHONE_PATTERN = /^\+?[0-9]{8,15}$/
+const normalizePhone = (value: string) => value.replace(/[\s-]+/g, '')
+
 const schema = z.object({
   name: z.string().min(3, 'Minim 3 caractere'),
-  phone: z.string().regex(/^\+?[0-9]{8,15}$/, 'Număr de telefon invalid'),
+  phone: z
+    .string()
+    .refine((value) => PHONE_PATTERN.test(normalizePhone(value)), 'Număr de telefon invalid'),
 })
 type Values = z.infer<typeof schema>
 
@@ -29,6 +33,7 @@ export default function OAuthCallbackPage() {
   const [phase, setPhase] = useState<Phase>('loading')
   const [pending, setPending] = useState<AppUser | null>(null)
   const [attempt, setAttempt] = useState(0)
+  const [serverError, setServerError] = useState<string | null>(null)
   const returnUrl = useReturnUrl()
 
   const {
@@ -80,9 +85,10 @@ export default function OAuthCallbackPage() {
 
   const onSubmit = async (v: Values) => {
     if (!pending) return
-    const { error } = await completeProfile(pending.id, v)
+    setServerError(null)
+    const { error } = await completeProfile(pending.id, { ...v, phone: normalizePhone(v.phone) })
     if (error) {
-      toast.error('Nu am putut salva profilul. Încearcă din nou.')
+      setServerError('Nu am putut salva profilul. Încearcă din nou.')
       return
     }
     await refresh()
@@ -141,8 +147,29 @@ export default function OAuthCallbackPage() {
   }
 
   return (
-    <AuthLayout title="Completează-ți profilul" subtitle="Mai avem nevoie de câteva detalii">
+    <AuthLayout
+      title="Completează-ți profilul"
+      subtitle={
+        <>
+          Adaugă un număr de telefon ca să te putem contacta despre înscrierile copiilor.
+          {pending?.email && (
+            <span className="mt-1 block">
+              Conectat ca <span className="text-foreground font-medium break-all">{pending.email}</span>
+            </span>
+          )}
+        </>
+      }
+    >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+        {serverError && (
+          <p
+            className="bg-destructive/10 text-destructive flex items-start gap-2 rounded-md px-3 py-2 text-sm"
+            role="alert"
+          >
+            <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            {serverError}
+          </p>
+        )}
         <AuthFields columns={2}>
           <Field
             id="name"
