@@ -14,6 +14,7 @@ import {
   rulesFileAfisabil,
 } from '@/api/camp-rules-file'
 import { campRulesForDisplay } from '@/lib/camp-rules'
+import { rulesFingerprint } from './checkout/checkout-acceptance'
 
 const DEFAULT_PACKAGES = [5, 10, 20]
 
@@ -23,6 +24,7 @@ export interface Offering {
   perSession: boolean
   packages: number[]
   rules?: OfferingRules
+  rulesFingerprint?: string
 }
 
 function parsePackages(raw: string | null): number[] {
@@ -66,6 +68,7 @@ export default function CheckoutPage() {
                 text: campRulesForDisplay(camp.rules),
                 file: rulesFileAfisabil(CAMP_RULES_FILE_BUCKET, camp),
               },
+              rulesFingerprint: await rulesFingerprint(camp.rules_file_storage_path, camp.rules),
             }
           : null
       }
@@ -78,6 +81,7 @@ export default function CheckoutPage() {
               perSession: false,
               packages: [],
               rules: { text: null, file: rulesFileAfisabil(ACTIVITY_RULES_FILE_BUCKET, activity) },
+              rulesFingerprint: await rulesFingerprint(activity.rules_file_storage_path, null),
             }
           : null
       }
@@ -90,6 +94,7 @@ export default function CheckoutPage() {
               perSession: true,
               packages: parsePackages(course.package_options),
               rules: { text: null, file: rulesFileAfisabil(COURSE_RULES_FILE_BUCKET, course) },
+              rulesFingerprint: await rulesFingerprint(course.rules_file_storage_path, null),
             }
           : null
       }

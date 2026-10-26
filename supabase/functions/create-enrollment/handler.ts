@@ -1,6 +1,7 @@
 import { getEnrollmentAdultPrice, getEnrollmentChildPrices, quoteSubjectKey, validSelection, enrollmentJson, type EnrollmentServices, type EnrollmentOffer, type ExistingEnrollment } from "../_shared/enrollment-pricing.ts";
 import { completedEnrollmentPrices, notifyCashEnrollments, saveEnrollmentBatch } from "./persistence.ts";
 import { validQuantity } from "../_shared/price-snapshot.ts";
+import { buildCheckoutAcceptance, type ClientAcceptance } from "../_shared/checkout-acceptance.ts";
 
 interface EnrollmentRequest {
   kind: "COURSE" | "CAMP" | "ACTIVITY";
@@ -17,6 +18,7 @@ interface EnrollmentRequest {
     city: string;
     postalCode: string;
   };
+  acceptance?: ClientAcceptance;
 }
 
 function ageOf(birthDate: string): number {
@@ -303,8 +305,9 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
       return enrollmentJson({ error: "Prețul s-a schimbat. Revino la Detalii și verifică din nou suma.", code: "PRICE_CHANGED" }, 409);
     }
 
+    const acceptance = await buildCheckoutAcceptance(supabaseAdmin, kind, entityId, body.acceptance);
     const batch = await saveEnrollmentBatch(supabaseAdmin, {
-      parentId: user.id, kind, entityId, paymentMethod, quotes, billingDetails,
+      parentId: user.id, kind, entityId, paymentMethod, quotes, billingDetails, acceptance,
     });
     if (paymentMethod === "CASH" && batch.prices.some((price) => price.amount > 0)) {
       await notifyCashEnrollments(supabaseAdmin, batch, { kind, entityId, sessionPackageSize, children });

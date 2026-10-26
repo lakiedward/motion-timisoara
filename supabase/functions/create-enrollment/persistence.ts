@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enrollmentJson, type EnrollmentChildPrice, type ExistingEnrollment } from "../_shared/enrollment-pricing.ts";
 import { readPriceSnapshot, type PriceSnapshot } from "../_shared/price-snapshot.ts";
+import type { CheckoutAcceptance } from "../_shared/checkout-acceptance.ts";
 
 export async function completedEnrollmentPrices(
   db: SupabaseClient, kind: PriceSnapshot["kind"], entityId: string,
@@ -45,6 +46,7 @@ interface SaveBatchInput {
   paymentMethod: "CARD" | "CASH";
   quotes: EnrollmentChildPrice[];
   billingDetails?: Record<string, string>;
+  acceptance: CheckoutAcceptance;
 }
 
 interface SavedBatch {
@@ -56,7 +58,7 @@ interface SavedBatch {
 }
 
 export async function saveEnrollmentBatch(db: SupabaseClient, input: SaveBatchInput): Promise<SavedBatch> {
-  const { data, error } = await db.rpc("save_enrollment_batch", {
+  const { data, error } = await db.rpc("save_enrollment_batch_with_acceptance", {
     p_parent_id: input.parentId, p_kind: input.kind, p_entity_id: input.entityId, p_method: input.paymentMethod,
     p_quotes: input.quotes.map((quote) => ({
       childId: quote.childId ?? null,
@@ -67,6 +69,7 @@ export async function saveEnrollmentBatch(db: SupabaseClient, input: SaveBatchIn
       snapshot: quote.snapshot ?? null,
     })),
     p_billing: input.billingDetails ?? null,
+    p_acceptance: input.acceptance,
   });
   if (error) {
     const status = error.code === "42501" ? 403 : error.code === "22023" ? 400 : ["23514", "P0002"].includes(error.code) ? 409 : 500;
