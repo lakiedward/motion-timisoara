@@ -5,6 +5,7 @@ import { alegeDinGalerie, galeriaSeDeschideNativ } from '@/lib/galerie'
 import { esteImagine } from '@/lib/media'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { FormSection } from '@/components/FormSection'
 
 export function HeroPhotoField({
   savedUrl,
@@ -53,7 +54,6 @@ export function HeroPhotoField({
 
   const continut = (
     <>
-      {framed && <p className="text-muted-foreground text-sm">{hint}</p>}
       {afisat && <img src={afisat} alt="" className="mt-3 h-40 w-full rounded-xl object-cover" />}
       <div className="mt-3">
         {galeriaSeDeschideNativ() ? (
@@ -92,9 +92,8 @@ export function HeroPhotoField({
   if (!framed) return <div>{continut}</div>
 
   return (
-    <fieldset className="rounded-2xl border p-5">
-      <legend className="px-2 font-semibold">Poza din capul paginii</legend>
-      {continut}
-    </fieldset>
+    <FormSection title="Poza din capul paginii" description={hint}>
+      <div>{continut}</div>
+    </FormSection>
   )
 }
