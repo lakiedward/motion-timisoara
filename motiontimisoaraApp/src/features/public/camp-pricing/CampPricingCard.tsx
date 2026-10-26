@@ -18,11 +18,13 @@ export default function CampPricingCard({
   ended,
   full,
   onEnroll,
+  className,
 }: {
   data: TabaraDetaliu
   ended: boolean
   full: boolean
   onEnroll: () => void
+  className?: string
 }) {
   const { tabara, categorii, agePrices, adultPrice } = data
   const { user } = useAuth()
@@ -54,7 +56,7 @@ export default function CampPricingCard({
   const breakdownTotal = sumaCategoriilor(categorii)
 
   return (
-    <div className="bg-card mt-8 rounded-xl border p-6">
+    <div className={cn('bg-card rounded-xl border p-6', className)}>
       {byAge && (
         <div>
           <h2 className="font-display mb-1 text-lg font-bold">Preț pe categorii de vârstă</h2>
