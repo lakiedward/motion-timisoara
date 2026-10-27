@@ -9,6 +9,7 @@ import { linkClass, listClass } from './privacy-styles'
 export const GDPR_SECTIONS: LegalSection[] = [
   {
     id: 'operator',
+    surfaceKey: 'manual:section:cine-raspunde-de-datele-tale:5fc8f60c-8192-400e-b205-9db26f2fb0c2',
     title: 'Cine răspunde de datele tale',
     icon: Building2,
     body: (
@@ -28,6 +29,7 @@ export const GDPR_SECTIONS: LegalSection[] = [
   },
   {
     id: 'date-colectate',
+    surfaceKey: 'manual:section:ce-date-colectam:4a5d3f5e-7ddf-48ca-880b-a4a2ef696842',
     title: 'Ce date colectăm',
     icon: Database,
     body: (
@@ -66,6 +68,8 @@ export const GDPR_SECTIONS: LegalSection[] = [
   },
   {
     id: 'scop-si-temei',
+    surfaceKey:
+      'manual:section:de-ce-le-folosim-si-pe-ce-temei:8b18dfc5-abf3-4a95-b34f-48db10699f07',
     title: 'De ce le folosim și pe ce temei',
     icon: Scale,
     body: (
@@ -100,6 +104,7 @@ export const GDPR_SECTIONS: LegalSection[] = [
   },
   {
     id: 'datele-copiilor',
+    surfaceKey: 'manual:section:datele-copiilor:1520e5fc-5335-4ff8-b47b-9479894f0d44',
     title: 'Datele copiilor',
     icon: Baby,
     body: (
@@ -171,6 +176,7 @@ export const GDPR_SECTIONS: LegalSection[] = [
   },
   {
     id: 'durata-pastrarii',
+    surfaceKey: 'manual:section:cat-timp-pastram-datele:badb15fa-bf1e-4d70-a0ef-e0b6b74f01b3',
     title: 'Cât timp păstrăm datele',
     icon: Archive,
     body: (
@@ -201,6 +207,7 @@ export const GDPR_SECTIONS: LegalSection[] = [
   },
   {
     id: 'drepturile-tale',
+    surfaceKey: 'manual:section:drepturile-tale:c1523f4b-9f6e-4b58-8cd2-c7c65a851030',
     title: 'Drepturile tale',
     icon: UserCheck,
     body: (
