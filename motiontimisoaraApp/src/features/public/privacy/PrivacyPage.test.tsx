@@ -126,7 +126,13 @@ describe('PrivacyPage', () => {
     )
     expect(keys).toEqual([
       'titlu',
+      'cine-raspunde-de-datele-tale',
+      'ce-date-colectam',
+      'de-ce-le-folosim-si-pe-ce-temei',
+      'datele-copiilor',
       'furnizori-si-control',
+      'cat-timp-pastram-datele',
+      'drepturile-tale',
       'ce-se-partajeaza',
       'cine-poate-vedea-pozitia',
       'cat-timp-raman-datele',
