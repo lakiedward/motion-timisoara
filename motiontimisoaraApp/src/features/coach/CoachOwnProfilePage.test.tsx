@@ -21,6 +21,12 @@ vi.mock('@/api/coach-registration/club-membership', () => ({
   joinClubByInvitation: vi.fn(),
 }))
 
+vi.mock('@/api/coach-profile/coach-photo', () => ({
+  getMyCoachPhotoPath: vi.fn().mockResolvedValue(null),
+  setMyCoachPhoto: vi.fn(),
+  clearMyCoachPhoto: vi.fn(),
+}))
+
 vi.mock('@/api/coach', () => ({
   getMyCoachProfile: vi.fn(),
   updateMyCoachProfile: vi.fn(),
