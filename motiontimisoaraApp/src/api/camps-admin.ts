@@ -93,10 +93,15 @@ export async function getTaberelemele(p: Proprietar): Promise<TabaraDinLista[]> 
   return completeazaTaberele(data ?? [])
 }
 
-export async function getToateTaberele(): Promise<TabaraDinLista[]> {
+export type TabaraAdmin = TabaraDinLista & {
+  club: { name: string } | null
+  coach: { name: string } | null
+}
+
+export async function getToateTaberele(): Promise<TabaraAdmin[]> {
   const { data, error } = await supabase
     .from('camps')
-    .select('*')
+    .select('*, club:clubs(name), coach:profiles!camps_coach_id_fkey(name)')
     .order('period_start', { ascending: false })
   if (error) throw error
   return completeazaTaberele(data ?? [])
@@ -109,7 +114,9 @@ export async function getTaberelePeId(ids: string[]): Promise<TabaraDinLista[]> 
   return completeazaTaberele(data ?? [])
 }
 
-async function completeazaTaberele(tabere: Tabara[]): Promise<TabaraDinLista[]> {
+async function completeazaTaberele<T extends Tabara>(
+  tabere: T[],
+): Promise<(T & Omit<TabaraDinLista, keyof Tabara>)[]> {
   if (!tabere.length) return []
 
   const ids = tabere.map((t) => t.id)

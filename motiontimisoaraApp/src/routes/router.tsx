@@ -39,6 +39,7 @@ import ClubActivitiesPage from '@/features/club/ClubActivitiesPage'
 import ClubLocationsPage from '@/features/club/ClubLocationsPage'
 import ClubLocationFormPage from '@/features/club/ClubLocationFormPage'
 import CampsListPage from '@/features/camps/CampsListPage'
+import AdminCampsPage from '@/features/admin/camps/AdminCampsPage'
 import CampFormPage from '@/features/camps/CampFormPage'
 import CampEnrolledPage from '@/features/camps/CampEnrolledPage'
 import ClubStripePage from '@/features/club/ClubStripePage'
@@ -254,7 +255,7 @@ export const router = createBrowserRouter([
                 path: '/admin/competitions/:id/results',
                 element: <CompetitionPodiumPage baza="/admin/competitions" />,
               },
-              { path: '/admin/camps', element: <CampsListPage baza="/admin/camps" /> },
+              { path: '/admin/camps', element: <AdminCampsPage /> },
               { path: '/admin/camps/new', element: <CampFormPage baza="/admin/camps" /> },
               { path: '/admin/camps/:id/edit', element: <CampFormPage baza="/admin/camps" /> },
               {

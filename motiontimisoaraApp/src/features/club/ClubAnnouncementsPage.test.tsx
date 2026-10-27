@@ -51,6 +51,9 @@ async function confirmaStergerea(user: ReturnType<typeof userEvent.setup>) {
   const dialog = await screen.findByRole('alertdialog')
   await user.click(within(dialog).getByRole('button', { name: 'Șterge' }))
 }
+async function deschideFormularul(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(await screen.findByRole('button', { name: 'Anunț nou' }))
+}
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
@@ -72,7 +75,9 @@ beforeEach(() => {
   mockedSterge.mockResolvedValue(undefined as never)
 })
 test('formularul oferă tot clubul, cursurile și activitățile active', async () => {
+  const user = userEvent.setup()
   renderPage()
+  await deschideFormularul(user)
   await screen.findByRole('option', { name: 'Înot începători' })
   const select = screen.getByLabelText('Cine primește')
   const optiuni = [...select.querySelectorAll('option')].map((o) => o.textContent)
@@ -90,6 +95,7 @@ test('formularul oferă tot clubul, cursurile și activitățile active', async 
 test('publicarea către un curs trimite ținta la server', async () => {
   const user = userEvent.setup()
   renderPage()
+  await deschideFormularul(user)
   await screen.findByLabelText('Cine primește')
   await user.type(screen.getByLabelText('Titlu'), 'Doar pentru înot')
   await user.type(screen.getByLabelText('Conținut'), 'Vineri nu avem ședință.')
@@ -104,6 +110,7 @@ test('publicarea către un curs trimite ținta la server', async () => {
 test('publicarea către o activitate trimite ținta la server', async () => {
   const user = userEvent.setup()
   renderPage()
+  await deschideFormularul(user)
   await screen.findByLabelText('Cine primește')
   await user.type(screen.getByLabelText('Titlu'), 'Doar pentru cros')
   await user.type(screen.getByLabelText('Conținut'), 'Ne vedem la start.')
@@ -118,6 +125,7 @@ test('publicarea către o activitate trimite ținta la server', async () => {
 test('publicarea către o tabără trimite ținta la server', async () => {
   const user = userEvent.setup()
   renderPage()
+  await deschideFormularul(user)
   await screen.findByLabelText('Cine primește')
   await user.type(screen.getByLabelText('Titlu'), 'Detalii de plecare')
   await user.type(screen.getByLabelText('Conținut'), 'Ne vedem la ora opt.')
@@ -132,12 +140,15 @@ test('publicarea către o tabără trimite ținta la server', async () => {
 test('după publicare ținta revine la tot clubul', async () => {
   const user = userEvent.setup()
   renderPage()
+  await deschideFormularul(user)
   await screen.findByLabelText('Cine primește')
   await user.type(screen.getByLabelText('Titlu'), 'Doar pentru înot')
   await user.type(screen.getByLabelText('Conținut'), 'Vineri nu avem ședință.')
   await user.selectOptions(screen.getByLabelText('Cine primește'), 'COURSE:curs-1')
   await user.click(screen.getByRole('button', { name: 'Publică' }))
-  await waitFor(() => expect(screen.getByLabelText('Cine primește')).toHaveValue('CLUB'))
+  await waitFor(() => expect(screen.queryByLabelText('Cine primește')).not.toBeInTheDocument())
+  await deschideFormularul(user)
+  expect(screen.getByLabelText('Cine primește')).toHaveValue('CLUB')
 })
 test('fiecare card spune cui i-a fost trimis anunțul', async () => {
   mockedLista.mockResolvedValue([
@@ -178,7 +189,7 @@ test('filtrul restrânge lista la ținta aleasă și spune câte a lăsat', asyn
   ] as never)
   renderPage()
   await screen.findByText('Către tot clubul')
-  await user.selectOptions(screen.getByLabelText('Arată'), 'COURSE:curs-1')
+  await user.selectOptions(screen.getByRole('combobox', { name: 'Către' }), 'COURSE:curs-1')
   expect(screen.getByText('Către curs')).toBeInTheDocument()
   expect(screen.queryByText('Către tot clubul')).not.toBeInTheDocument()
   expect(screen.getByText('1 din 2')).toBeInTheDocument()
@@ -191,15 +202,15 @@ test('un filtru fără potriviri nu arată mesajul de listă goală', async () =
   ] as never)
   renderPage()
   await screen.findByText('Către tot clubul')
-  await user.selectOptions(screen.getByLabelText('Arată'), 'COURSE:curs-1')
-  expect(screen.getByText('Niciun anunț către ținta aleasă.')).toBeInTheDocument()
+  await user.type(screen.getByRole('searchbox'), 'nimic de găsit')
+  expect(screen.getByText('Niciun anunț pentru filtrele alese.')).toBeInTheDocument()
   expect(screen.queryByText('Niciun anunț încă.')).not.toBeInTheDocument()
 })
 test('filtrul nu apare pentru un singur anunț', async () => {
   mockedLista.mockResolvedValue([anunt('a', 'Singurul')] as never)
   renderPage()
   await screen.findByText('Singurul')
-  expect(screen.queryByLabelText('Arată')).not.toBeInTheDocument()
+  expect(screen.queryByRole('searchbox')).not.toBeInTheDocument()
 })
 test('când filtrul dispare, anunțul rămas se vede totuși', async () => {
   const user = userEvent.setup()
@@ -209,13 +220,13 @@ test('când filtrul dispare, anunțul rămas se vede totuși', async () => {
   ] as never)
   const { rerender } = renderPage()
   await screen.findByText('Către tot clubul')
-  await user.selectOptions(screen.getByLabelText('Arată'), 'COURSE:curs-1')
+  await user.selectOptions(screen.getByRole('combobox', { name: 'Către' }), 'COURSE:curs-1')
   expect(screen.queryByText('Către tot clubul')).not.toBeInTheDocument()
   mockedLista.mockResolvedValue([anunt('a', 'Către tot clubul')] as never)
   rerender(<div />)
   renderPage()
   expect(await screen.findByText('Către tot clubul')).toBeInTheDocument()
-  expect(screen.queryByText('Niciun anunț către ținta aleasă.')).not.toBeInTheDocument()
+  expect(screen.queryByText('Niciun anunț pentru filtrele alese.')).not.toBeInTheDocument()
 })
 test('dacă țintele nu se pot încărca, eticheta nu minte că ținta a dispărut', async () => {
   mockedTinte.mockRejectedValue(new Error('network'))
@@ -297,13 +308,16 @@ test('ascunderea nu cere confirmare', async () => {
   const user = userEvent.setup()
   renderPage()
   await screen.findByText('Cantonament de vară')
-  await user.click(screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }))
+  await user.click(
+    screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }),
+  )
   await waitFor(() => expect(mockedComuta).toHaveBeenCalledWith('a', false))
   expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
 })
 test('publicarea cu formularul gol spune ce lipsește, pe câmp', async () => {
   const user = userEvent.setup()
   renderPage()
+  await deschideFormularul(user)
   await user.click(screen.getByRole('button', { name: 'Publică' }))
   expect(await screen.findByText('Scrie un titlu de cel puțin 2 caractere')).toBeInTheDocument()
   expect(screen.getByText('Scrie conținutul anunțului')).toBeInTheDocument()
@@ -312,6 +326,7 @@ test('publicarea cu formularul gol spune ce lipsește, pe câmp', async () => {
 test('un titlu doar din spații nu trece drept titlu', async () => {
   const user = userEvent.setup()
   renderPage()
+  await deschideFormularul(user)
   await user.type(screen.getByLabelText('Titlu'), '   ')
   await user.type(screen.getByLabelText('Conținut'), 'Text destul de lung')
   await user.click(screen.getByRole('button', { name: 'Publică' }))
@@ -321,6 +336,7 @@ test('un titlu doar din spații nu trece drept titlu', async () => {
 test('publicarea reușită golește formularul și anunță', async () => {
   const user = userEvent.setup()
   renderPage()
+  await deschideFormularul(user)
   await user.type(screen.getByLabelText('Titlu'), 'Ședință cu părinții')
   await user.type(screen.getByLabelText('Conținut'), 'Vineri la ora 18.')
   await user.click(screen.getByRole('button', { name: 'Publică' }))
@@ -336,8 +352,9 @@ test('publicarea reușită golește formularul și anunță', async () => {
       expires_at: null,
     }),
   )
-  await waitFor(() => expect(screen.getByLabelText('Titlu')).toHaveValue(''))
+  await waitFor(() => expect(screen.queryByLabelText('Titlu')).not.toBeInTheDocument())
   expect(toast.success).toHaveBeenCalledWith('Anunț publicat.')
+  expect(screen.getByRole('button', { name: 'Anunț nou' })).toBeInTheDocument()
 })
 test('o încărcare căzută arată eroare cu reîncercare, nu mesajul de listă goală', async () => {
   mockedLista.mockRejectedValue(new Error('network'))
@@ -352,10 +369,13 @@ test('cât timp se încarcă clubul se vede scheletul, nu mesajul de listă goal
   expect(screen.queryByText('Niciun anunț încă.')).not.toBeInTheDocument()
   expect(container.querySelector('[data-slot="skeleton"]')).toBeInTheDocument()
 })
-test('un club fără anunțuri vede mesajul de listă goală', async () => {
+test('un club fără anunțuri vede mesajul de listă goală și poate scrie primul anunț', async () => {
+  const user = userEvent.setup()
   mockedLista.mockResolvedValue([] as never)
   renderPage()
   expect(await screen.findByText('Niciun anunț încă.')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Scrie primul anunț' }))
+  expect(screen.getByLabelText('Titlu')).toBeInTheDocument()
 })
 test('un eșec la încărcarea clubului arată eroarea, nu mesajul de listă goală', async () => {
   mockedClub.mockRejectedValue(new Error('network'))
@@ -380,10 +400,10 @@ test('un cont de club fără club asociat nu e invitat să scrie primul anunț',
   expect(await screen.findByText('Niciun club asociat contului.')).toBeInTheDocument()
   expect(screen.queryByText('Niciun anunț încă.')).not.toBeInTheDocument()
 })
-test('publicarea e blocată cât timp clubul nu e cunoscut', () => {
+test('butonul de anunț nou apare abia după ce clubul e cunoscut', async () => {
   mockedClub.mockReturnValue(new Promise(() => {}) as never)
   renderPage()
-  expect(screen.getByRole('button', { name: 'Publică' })).toBeDisabled()
+  expect(screen.queryByRole('button', { name: 'Anunț nou' })).not.toBeInTheDocument()
 })
 test('conținutul își păstrează rândurile așa cum le-a scris clubul', async () => {
   mockedLista.mockResolvedValue([
@@ -423,7 +443,9 @@ test('o ascundere refuzată de bază se vede pe ecran', async () => {
   mockedComuta.mockRejectedValue(new Error('RLS'))
   renderPage()
   await screen.findByText('Cantonament de vară')
-  await user.click(screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }))
+  await user.click(
+    screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }),
+  )
   await waitFor(() =>
     expect(toast.error).toHaveBeenCalledWith('Nu am putut schimba vizibilitatea anunțului.'),
   )
@@ -442,13 +464,17 @@ test('cât timp o ascundere e în curs se blochează doar butonul apăsat', asyn
   mockedComuta.mockReturnValue(new Promise(() => {}) as never)
   renderPage()
   await screen.findByText('Cantonament de vară')
-  await user.click(screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }))
+  await user.click(
+    screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }),
+  )
   await waitFor(() =>
     expect(
       screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }),
     ).toBeDisabled(),
   )
-  expect(screen.getByRole('button', { name: 'Arată părinților anunțul „Bazinul închis”' })).toBeEnabled()
+  expect(
+    screen.getByRole('button', { name: 'Arată părinților anunțul „Bazinul închis”' }),
+  ).toBeEnabled()
   expect(screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”' })).toBeEnabled()
 })
 test('o apăsare pe alt rând nu redeschide butonul rândului încă în lucru', async () => {
@@ -456,17 +482,23 @@ test('o apăsare pe alt rând nu redeschide butonul rândului încă în lucru',
   mockedComuta.mockReturnValue(new Promise(() => {}) as never)
   renderPage()
   await screen.findByText('Cantonament de vară')
-  await user.click(screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }))
+  await user.click(
+    screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }),
+  )
   await waitFor(() =>
     expect(
       screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }),
     ).toBeDisabled(),
   )
-  await user.click(screen.getByRole('button', { name: 'Arată părinților anunțul „Bazinul închis”' }))
+  await user.click(
+    screen.getByRole('button', { name: 'Arată părinților anunțul „Bazinul închis”' }),
+  )
   expect(
     screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }),
   ).toBeDisabled()
-  expect(screen.getByRole('button', { name: 'Arată părinților anunțul „Bazinul închis”' })).toBeDisabled()
+  expect(
+    screen.getByRole('button', { name: 'Arată părinților anunțul „Bazinul închis”' }),
+  ).toBeDisabled()
   expect(mockedComuta).toHaveBeenCalledTimes(2)
 })
 test('ștergerea în curs blochează confirmarea și butonul rândului ei', async () => {
@@ -477,9 +509,7 @@ test('ștergerea în curs blochează confirmarea și butonul rândului ei', asyn
   await user.click(screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”' }))
   await confirmaStergerea(user)
   const dialog = screen.getByRole('alertdialog')
-  await waitFor(() =>
-    expect(within(dialog).getByRole('button', { name: 'Șterge' })).toBeDisabled(),
-  )
+  await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Șterge' })).toBeDisabled())
   await user.click(within(dialog).getByRole('button', { name: 'Șterge' }))
   expect(mockedSterge).toHaveBeenCalledTimes(1)
   expect(
@@ -490,8 +520,11 @@ test('ștergerea în curs blochează confirmarea și butonul rândului ei', asyn
   ).toBeEnabled()
 })
 test('controalele poartă tiparul de atingere al casei', async () => {
+  const user = userEvent.setup()
   renderPage()
   await screen.findByText('Cantonament de vară')
+  expect(screen.getByRole('button', { name: 'Anunț nou' }).className).toContain('h-touch-target')
+  await deschideFormularul(user)
   const formular = [
     screen.getByLabelText('Titlu'),
     screen.getByLabelText('Cine primește'),
@@ -510,6 +543,7 @@ test('controalele poartă tiparul de atingere al casei', async () => {
 test('mesajul de lipsă e legat de câmpul lui', async () => {
   const user = userEvent.setup()
   renderPage()
+  await deschideFormularul(user)
   await user.click(screen.getByRole('button', { name: 'Publică' }))
   const titlu = await screen.findByLabelText('Titlu')
   const idMesaj = titlu.getAttribute('aria-describedby')
@@ -536,4 +570,31 @@ test('prioritatea rămâne pe card, iar cele ascunse poartă ambele etichete', a
   const card = (await screen.findByRole('listitem')) as HTMLElement
   expect(within(card).getByText('Urgentă')).toBeInTheDocument()
   expect(within(card).getByText('Ascuns')).toBeInTheDocument()
+})
+test('formularul stă închis până la „Anunț nou”, iar „Renunță” îl închide', async () => {
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByText('Cantonament de vară')
+  expect(screen.queryByLabelText('Titlu')).not.toBeInTheDocument()
+  await deschideFormularul(user)
+  expect(screen.queryByRole('button', { name: 'Anunț nou' })).not.toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Renunță' }))
+  expect(screen.queryByLabelText('Titlu')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Anunț nou' })).toBeInTheDocument()
+})
+test('căutarea găsește după text și după numele țintei, fără diacritice', async () => {
+  const user = userEvent.setup()
+  mockedLista.mockResolvedValue([
+    anunt('a', 'Ședință cu părinții', true, 'Joi la ora 18'),
+    anunt('b', 'Program nou', true, 'x', 'NORMAL', '2026-08-26T09:00:00Z', 'COURSE', 'curs-1'),
+  ] as never)
+  renderPage()
+  await screen.findByText('Program nou')
+  await user.type(screen.getByRole('searchbox'), 'sedinta')
+  expect(screen.getByText('Ședință cu părinții')).toBeInTheDocument()
+  expect(screen.queryByText('Program nou')).not.toBeInTheDocument()
+  await user.clear(screen.getByRole('searchbox'))
+  await user.type(screen.getByRole('searchbox'), 'inot')
+  expect(screen.getByText('Program nou')).toBeInTheDocument()
+  expect(screen.getByText('1 din 2')).toBeInTheDocument()
 })

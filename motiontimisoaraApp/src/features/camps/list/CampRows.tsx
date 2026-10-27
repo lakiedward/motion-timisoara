@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import { campPrice, campStatus, groupByStatus } from './camp-list'
 import { CampBadges, CampStats, CampWhenWhere } from './camp-facts'
 
-function CampRow({
+export function CampRow({
   camp,
   baza,
   invitedBy,
