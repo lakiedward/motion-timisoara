@@ -21,7 +21,7 @@ test('antetul are eyebrow, titlu, intermediarul și versiunea', () => {
       /contractul pentru curs, activitate sau tabără se încheie între tine și organizatorul/i,
     ),
   ).toBeInTheDocument()
-  expect(screen.getByText(/^Versiunea 1\.0 · ultima actualizare: /)).toBeInTheDocument()
+  expect(screen.getByText(/^Versiunea 1\.1 · ultima actualizare: /)).toBeInTheDocument()
 })
 
 test('cuprinsul are câte o ancoră spre fiecare secțiune', () => {
@@ -44,7 +44,7 @@ test('înscrieri și plăți spune lipsa dreptului de retragere și rambursarea 
   expect(sectiune).toHaveTextContent('Stripe')
 })
 
-test('participare și date personale au textele cerute, fără fraza despre jurnalul acceptării', () => {
+test('participare și date personale au textele cerute, inclusiv dovada acceptării', () => {
   randeaza()
   expect(screen.getByRole('region', { name: /Participare în siguranță/ })).toHaveTextContent(
     'avizul epidemiologic',
@@ -54,15 +54,18 @@ test('participare și date personale au textele cerute, fără fraza despre jurn
     'href',
     '/confidentialitate',
   )
-  expect(date).not.toHaveTextContent('păstrăm')
+  expect(date).toHaveTextContent(
+    'păstrăm dovada că ai acceptat acești termeni și regulamentul ofertei: contul tău, versiunea termenilor, data și ora',
+  )
 })
 
 test('contactul are email, telefon și formular apăsabile', () => {
   randeaza()
   const contact = screen.getByRole('region', { name: /Contact/ })
-  expect(
-    within(contact).getByRole('link', { name: /contact@motionromania\.com/ }),
-  ).toHaveAttribute('href', 'mailto:contact@motionromania.com')
+  expect(within(contact).getByRole('link', { name: /contact@motionromania\.com/ })).toHaveAttribute(
+    'href',
+    'mailto:contact@motionromania.com',
+  )
   expect(within(contact).getByRole('link', { name: /\+40 750 420 455/ })).toHaveAttribute(
     'href',
     'tel:+40750420455',
