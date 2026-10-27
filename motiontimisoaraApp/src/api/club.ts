@@ -459,6 +459,8 @@ export interface ClubActivityFormInput {
   end_time: string
   price: number
   capacity: number | null
+  age_from: number | null
+  age_to: number | null
 }
 
 export async function createClubActivity(clubId: string, input: ClubActivityFormInput) {

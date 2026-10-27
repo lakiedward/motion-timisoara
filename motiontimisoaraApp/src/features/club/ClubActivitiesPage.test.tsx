@@ -112,14 +112,15 @@ test('formularul nou cere un antrenor din club și salvează regulamentul pe for
   renderPage('/club/activities/new')
   expect(await screen.findByRole('option', { name: 'Audit Antrenor' })).toBeInTheDocument()
   expect(screen.getByText('Fișierul regulamentului')).toBeInTheDocument()
-  await user.type(screen.getByLabelText('Nume'), 'Atelier club')
-  await user.selectOptions(screen.getByLabelText('Antrenor'), ANTRENOR)
-  await user.selectOptions(screen.getByLabelText('Sport'), SPORT)
-  await user.selectOptions(screen.getByLabelText('Locație'), LOC)
-  fireEvent.change(screen.getByLabelText('Data'), { target: { value: '2026-10-20' } })
-  fireEvent.change(screen.getByLabelText('Ora început'), { target: { value: '10:00' } })
-  fireEvent.change(screen.getByLabelText('Ora final'), { target: { value: '11:00' } })
-  await user.type(screen.getByLabelText('Preț (lei)'), '40')
+  await user.type(screen.getByLabelText(/^Nume/), 'Atelier club')
+  await user.selectOptions(screen.getByLabelText(/^Antrenor/), ANTRENOR)
+  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
+  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC)
+  fireEvent.change(screen.getByLabelText(/^Data/), { target: { value: '2026-10-20' } })
+  fireEvent.change(screen.getByLabelText(/^Ora început/), { target: { value: '10:00' } })
+  fireEvent.change(screen.getByLabelText(/^Ora final/), { target: { value: '11:00' } })
+  await user.type(screen.getByLabelText(/^Preț \(lei\)/), '40')
+  await user.type(screen.getByLabelText(/^Descriere/), 'Atelier pentru copii')
   fireEvent.change(screen.getByLabelText('Poza din capul paginii'), {
     target: { files: [new File(['poza'], 'hero.jpg', { type: 'image/jpeg' })] },
   })
@@ -133,6 +134,9 @@ test('formularul nou cere un antrenor din club și salvează regulamentul pe for
     location_id: LOC,
     price: 4000,
     currency: 'RON',
+    description: 'Atelier pentru copii',
+    age_from: null,
+    age_to: null,
   })
 })
 
@@ -159,7 +163,7 @@ test('editarea încarcă activitatea clubului', async () => {
   } as never)
   renderPage('/club/activities/act-1/edit')
   expect(await screen.findByDisplayValue('Atelier de înot')).toBeInTheDocument()
-  expect(screen.getByLabelText('Antrenor')).toHaveValue(ANTRENOR)
+  expect(screen.getByLabelText(/^Antrenor/)).toHaveValue(ANTRENOR)
   expect(screen.getByRole('link', { name: 'Vezi pagina publică' })).toHaveAttribute(
     'href',
     '/activitati/act-1',
@@ -185,4 +189,36 @@ test('dacă activitatea nu se poate citi, apare Reîncearcă', async () => {
   renderPage('/club/activities/act-1/edit')
   expect(await screen.findByText('Nu am putut încărca activitatea.')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Reîncearcă' })).toBeInTheDocument()
+})
+
+test('formularul are cardurile pe grupe și spune ce lipsește la fiecare câmp', async () => {
+  const user = userEvent.setup()
+  renderPage('/club/activities/new')
+  expect(await screen.findByRole('option', { name: 'Audit Antrenor' })).toBeInTheDocument()
+  for (const titlu of [
+    'Cine o organizează',
+    'Despre activitate',
+    'Când are loc',
+    'Copii și locuri',
+    'Preț',
+  ])
+    expect(screen.getByText(titlu)).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  expect(await screen.findByText('Alege data.')).toBeInTheDocument()
+  expect(screen.getByText('Alege ora de început.')).toBeInTheDocument()
+  expect(screen.getByText('Descrierea este obligatorie.')).toBeInTheDocument()
+  expect(screen.getByLabelText(/^Antrenor/)).toHaveAttribute('aria-describedby', 'coach_id-error')
+  expect(mockedCreate).not.toHaveBeenCalled()
+})
+
+test('ora de final trebuie să fie după ora de început', async () => {
+  const user = userEvent.setup()
+  renderPage('/club/activities/new')
+  await screen.findByRole('option', { name: 'Audit Antrenor' })
+  fireEvent.change(screen.getByLabelText(/^Ora început/), { target: { value: '11:00' } })
+  fireEvent.change(screen.getByLabelText(/^Ora final/), { target: { value: '10:00' } })
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  expect(
+    await screen.findByText('Ora final trebuie să fie după ora de început.'),
+  ).toBeInTheDocument()
 })
