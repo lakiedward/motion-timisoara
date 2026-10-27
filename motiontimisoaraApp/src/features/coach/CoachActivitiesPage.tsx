@@ -85,7 +85,7 @@ export default function CoachActivitiesPage() {
           className="grid gap-4 sm:grid-cols-2"
         >
           {[0, 1].map((i) => (
-            <Skeleton key={i} className="h-52 rounded-3xl" />
+            <Skeleton key={i} className="h-52 rounded-xl" />
           ))}
         </div>
       ) : isError && activities.length === 0 ? (

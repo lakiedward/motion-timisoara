@@ -19,8 +19,8 @@ import { useAuth } from '@/lib/auth-context'
 import { cn } from '@/lib/utils'
 
 const statCardClass = cn(
-  'bg-card shadow-card group flex h-full min-h-[11.5rem] cursor-pointer flex-col rounded-xl border p-6 transition-all',
-  'hover:-translate-y-1 hover:shadow-card-hover [&:hover]:-translate-y-1 [&:hover]:shadow-card-hover',
+  'bg-card group flex h-full min-h-[11.5rem] cursor-pointer flex-col rounded-xl border p-6 transition-[border-color,box-shadow] duration-200 motion-reduce:transition-none',
+  'hover:border-foreground/20 hover:shadow-card',
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
 )
 

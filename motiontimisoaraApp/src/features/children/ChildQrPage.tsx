@@ -55,7 +55,7 @@ export default function ChildQrPage({ inapoi }: { inapoi: string }) {
   if (isError) {
     return (
       <Cadru inapoi={inapoi}>
-        <div role="alert" className="mt-6 rounded-3xl border border-dashed py-16 text-center">
+        <div role="alert" className="mt-6 rounded-xl border border-dashed py-16 text-center">
           <p className="text-foreground font-medium">Nu am putut încărca copilul.</p>
           <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetch()}>
             Reîncearcă
@@ -69,7 +69,7 @@ export default function ChildQrPage({ inapoi }: { inapoi: string }) {
     return (
       <Cadru inapoi={inapoi}>
         <Skeleton className="mt-6 h-8 w-48 rounded-lg" />
-        <Skeleton className="mx-auto mt-6 size-64 rounded-3xl" />
+        <Skeleton className="mx-auto mt-6 size-64 rounded-xl" />
       </Cadru>
     )
   }

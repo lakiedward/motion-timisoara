@@ -116,11 +116,11 @@ function Lista() {
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {[0, 1].map((i) => (
-            <Skeleton key={i} className="h-44 rounded-3xl" />
+            <Skeleton key={i} className="h-44 rounded-xl" />
           ))}
         </div>
       ) : isError ? (
-        <div role="alert" className="rounded-3xl border border-dashed py-16 text-center">
+        <div role="alert" className="rounded-xl border border-dashed py-16 text-center">
           <p className="text-foreground font-medium">Nu am putut încărca activitățile.</p>
           <Button
             className="mt-4 h-11 min-h-11"
@@ -136,7 +136,7 @@ function Lista() {
       ) : activities.length ? (
         <div className="grid gap-4 sm:auto-rows-fr sm:grid-cols-2">
           {activities.map((activity) => (
-            <div key={activity.id} className="bg-card shadow-card rounded-3xl p-5">
+            <div key={activity.id} className="bg-card rounded-xl border p-5">
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <h3 className="font-display text-lg font-bold">{activity.name}</h3>
@@ -175,7 +175,7 @@ function Lista() {
           ))}
         </div>
       ) : (
-        <div className="text-muted-foreground rounded-3xl border border-dashed py-16 text-center">
+        <div className="text-muted-foreground rounded-xl border border-dashed py-16 text-center">
           Nicio activitate încă.{' '}
           <Link to="/club/activities/new" className="text-primary font-semibold">
             Creează prima activitate

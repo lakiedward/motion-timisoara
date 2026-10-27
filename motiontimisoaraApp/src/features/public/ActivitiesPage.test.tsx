@@ -116,7 +116,8 @@ test('cardul arată poza, sportul pe poză, data, orele, locul, prețul, locuril
   deseneaza()
   const card = await screen.findByRole('link', { name: /DEMO — Atelier de ciclism/ })
   expect(card).toHaveAttribute('href', '/activitati/viitoare')
-  expect(card).toHaveClass('rounded-xl', 'border', 'shadow-card', 'hover:shadow-card-hover')
+  expect(card).toHaveClass('rounded-xl', 'border', 'hover:shadow-card')
+  expect(card.className).not.toMatch(/(^| )shadow-card( |$)|shadow-card-hover/)
   expect(card.className).not.toMatch(/outline-none|ring-\[3px\]|translate-y/)
   expect(card.querySelector('img')).toHaveAttribute(
     'src',

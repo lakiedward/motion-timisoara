@@ -49,14 +49,14 @@ export default function CourseDetailsPage() {
     return (
       <div className="mx-auto max-w-5xl space-y-4 px-6 py-12">
         <Skeleton className="h-8 w-1/2" />
-        <Skeleton className="h-64 w-full rounded-3xl" />
+        <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     )
   }
   if (!course) {
     return (
       <div className="mx-auto flex min-h-[55vh] max-w-lg flex-col items-center justify-center px-6 py-20 text-center">
-        <div className="from-primary/15 to-sky/10 w-full rounded-3xl border bg-gradient-to-br p-10 shadow-sm">
+        <div className="from-primary/15 to-sky/10 w-full rounded-xl border bg-gradient-to-br p-10">
           <p className="font-display text-foreground text-2xl font-extrabold">
             Cursul nu a fost găsit.
           </p>

@@ -52,7 +52,7 @@ export default function CompetitionDetailsPage() {
   if (isLoading) {
     return (
       <div className="mx-auto max-w-4xl px-6 py-12">
-        <Skeleton className="h-64 w-full rounded-3xl" />
+        <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     )
   }
@@ -122,7 +122,7 @@ export default function CompetitionDetailsPage() {
 
         {data.startAt && data.endAt && data.registrationDeadlineAt && (
           <section
-            className="bg-card shadow-card mt-8 rounded-3xl p-5"
+            className="bg-card mt-8 rounded-xl border p-5"
             aria-label="Program și locație"
           >
             <h2 className="font-display text-xl font-bold">Program și locație</h2>
@@ -152,9 +152,9 @@ export default function CompetitionDetailsPage() {
         <section className="mt-8" aria-label="Antrenorii concursului">
           <h2 className="font-display text-xl font-bold">Antrenorii concursului</h2>
           {coaches.isLoading ? (
-            <Skeleton className="mt-4 h-20 rounded-2xl" />
+            <Skeleton className="mt-4 h-20 rounded-xl" />
           ) : coaches.isError ? (
-            <div role="alert" className="mt-4 space-y-2 rounded-2xl border p-4">
+            <div role="alert" className="mt-4 space-y-2 rounded-xl border p-4">
               <p>Nu am putut încărca antrenorii.</p>
               <Button variant="outline" onClick={() => void coaches.refetch()}>
                 Reîncearcă
@@ -165,7 +165,7 @@ export default function CompetitionDetailsPage() {
               {coaches.data.map((coach) => (
                 <li
                   key={coach.coachProfileId}
-                  className="bg-card shadow-card flex items-center gap-3 rounded-2xl p-3"
+                  className="bg-card flex items-center gap-3 rounded-xl border p-3"
                 >
                   {coach.photoUrl ? (
                     <img
@@ -193,11 +193,11 @@ export default function CompetitionDetailsPage() {
           <h2 className="font-display text-2xl font-bold">Trasee și categorii</h2>
           {offers.isLoading ? (
             <div className="mt-5 space-y-4">
-              <Skeleton className="h-48 rounded-3xl" />
-              <Skeleton className="h-32 rounded-3xl" />
+              <Skeleton className="h-48 rounded-xl" />
+              <Skeleton className="h-32 rounded-xl" />
             </div>
           ) : offers.isError ? (
-            <div role="alert" className="mt-5 space-y-3 rounded-3xl border p-5">
+            <div role="alert" className="mt-5 space-y-3 rounded-xl border p-5">
               <p>Nu am putut încărca traseele și categoriile.</p>
               <Button variant="outline" onClick={() => void offers.refetch()}>
                 Reîncearcă
@@ -206,7 +206,7 @@ export default function CompetitionDetailsPage() {
           ) : offers.data?.routes.length ? (
             <div className="mt-5 space-y-6">
               {offers.data.routes.map((route) => (
-                <article key={route.id} className="bg-card shadow-card rounded-3xl p-5">
+                <article key={route.id} className="bg-card rounded-xl border p-5">
                   <h3 className="font-display text-xl font-bold">{route.name}</h3>
                   <p className="text-muted-foreground mt-2 whitespace-pre-wrap text-sm">
                     {route.description}
@@ -270,7 +270,7 @@ export default function CompetitionDetailsPage() {
               ))}
             </div>
           ) : (
-            <p className="text-muted-foreground mt-5 rounded-3xl border border-dashed p-6 text-sm">
+            <p className="text-muted-foreground mt-5 rounded-xl border border-dashed p-6 text-sm">
               Traseele vor apărea aici după ce organizatorul le adaugă.
             </p>
           )}
@@ -280,9 +280,9 @@ export default function CompetitionDetailsPage() {
           <section className="mt-10" aria-label="Rezultate">
             <h2 className="font-display text-2xl font-bold">Rezultate</h2>
             {podium.isLoading ? (
-              <Skeleton className="mt-5 h-32 rounded-3xl" />
+              <Skeleton className="mt-5 h-32 rounded-xl" />
             ) : podium.isError ? (
-              <div role="alert" className="mt-5 space-y-3 rounded-3xl border p-5">
+              <div role="alert" className="mt-5 space-y-3 rounded-xl border p-5">
                 <p>Nu am putut încărca rezultatele.</p>
                 <Button variant="outline" onClick={() => void podium.refetch()}>
                   Reîncearcă
@@ -295,7 +295,7 @@ export default function CompetitionDetailsPage() {
                     podium.data?.some((result) => result.category_id === category.id),
                   )
                   .map((category) => (
-                    <div key={category.id} className="bg-card shadow-card rounded-3xl p-5">
+                    <div key={category.id} className="bg-card rounded-xl border p-5">
                       <h3 className="font-display text-lg font-bold">{category.name}</h3>
                       <ol className="mt-3 space-y-2">
                         {podium.data
@@ -315,7 +315,7 @@ export default function CompetitionDetailsPage() {
                   ))}
               </div>
             ) : (
-              <p className="text-muted-foreground mt-5 rounded-3xl border border-dashed p-5 text-sm">
+              <p className="text-muted-foreground mt-5 rounded-xl border border-dashed p-5 text-sm">
                 Podiumul nu a fost publicat încă.
               </p>
             )}

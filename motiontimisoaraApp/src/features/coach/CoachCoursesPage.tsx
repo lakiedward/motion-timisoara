@@ -58,7 +58,7 @@ export default function CoachCoursesPage() {
       {isLoading ? (
         <div role="status" aria-label="Se încarcă cursurile" className="grid gap-4 sm:grid-cols-2">
           {[0, 1].map((i) => (
-            <Skeleton key={i} className="h-52 rounded-3xl" />
+            <Skeleton key={i} className="h-52 rounded-xl" />
           ))}
         </div>
       ) : isError && courses.length === 0 ? (
