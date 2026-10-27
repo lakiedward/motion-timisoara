@@ -275,7 +275,7 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
         <>
           {user.role === 'PARENT' &&
             (children.isLoading ? (
-              <Skeleton className="h-48 rounded-3xl" />
+              <Skeleton className="h-48 rounded-xl" />
             ) : children.isError ? (
               <div role="alert" className="space-y-2 rounded-2xl border p-5">
                 <p>Nu am putut încărca lista de copii.</p>
@@ -295,7 +295,7 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
                 {children.data?.map((child) => {
                   const verdict = verdictFor(child.id)
                   return (
-                    <div key={child.id} className="bg-card shadow-card rounded-2xl p-5">
+                    <div key={child.id} className="bg-card rounded-xl border p-5">
                       <Label htmlFor={`competition-category-${child.id}`} className="font-semibold">
                         {child.name}
                       </Label>
@@ -333,7 +333,7 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
             ))}
 
           <section
-            className="bg-card shadow-card space-y-4 rounded-2xl p-5"
+            className="bg-card space-y-4 rounded-xl border p-5"
             aria-label="Înscriere proprie"
           >
             <label className="flex min-h-11 items-center gap-3 font-semibold">
@@ -419,7 +419,7 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
               )}
               {validation.isSuccess && (
                 <>
-                  <div className="bg-card shadow-card rounded-2xl p-5">
+                  <div className="bg-card rounded-xl border p-5">
                     <h2 className="font-display text-lg font-bold">Prețul înscrierii</h2>
                     {selections.map((selection) => (
                       <div

@@ -30,7 +30,7 @@ export default function ClubCoachList({ clubId }: { clubId: string | undefined }
   if (query.isPending)
     return (
       <div role="status" aria-label="Se încarcă antrenorii">
-        <Skeleton className="h-32 rounded-3xl" />
+        <Skeleton className="h-32 rounded-xl" />
       </div>
     )
   if (query.isError)
@@ -50,7 +50,7 @@ export default function ClubCoachList({ clubId }: { clubId: string | undefined }
     )
   if (!coaches.length)
     return (
-      <div className="text-muted-foreground rounded-3xl border border-dashed py-12 text-center">
+      <div className="text-muted-foreground rounded-xl border border-dashed py-12 text-center">
         Niciun antrenor în club. Adaugă unul mai jos sau generează un cod de invitație.
       </div>
     )
@@ -60,7 +60,7 @@ export default function ClubCoachList({ clubId }: { clubId: string | undefined }
         {coaches.map((c) => (
           <li
             key={c.coach_profile_id}
-            className="bg-card shadow-card flex min-w-0 items-center gap-3 rounded-2xl p-4"
+            className="bg-card flex min-w-0 items-center gap-3 rounded-xl border p-4"
           >
             <span
               aria-hidden="true"

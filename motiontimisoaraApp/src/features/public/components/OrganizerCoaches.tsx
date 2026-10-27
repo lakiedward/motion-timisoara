@@ -20,7 +20,7 @@ export type CoachCard = {
 
 const CARD = 'bg-card flex min-h-touch-target items-center gap-4 rounded-xl border p-4'
 
-const LINK_CARD = `${CARD} shadow-card hover:shadow-card-hover hover:border-foreground/20 transition-[box-shadow,border-color] duration-200 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring`
+const LINK_CARD = `${CARD} hover:border-foreground/20 hover:shadow-card transition-[border-color,box-shadow] duration-200 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring`
 
 export function OrganizerCoaches({
   sectionKey,

@@ -46,7 +46,7 @@ function toValues(club: Club): ClubProfileValues {
   }
 }
 
-const cardClass = 'bg-card shadow-card space-y-4 rounded-3xl border p-6'
+const cardClass = 'bg-card space-y-4 rounded-xl border p-6'
 const headingClass = 'font-display text-xl font-bold text-foreground'
 
 export default function ClubProfilePage() {
@@ -70,7 +70,7 @@ export default function ClubProfilePage() {
   if (query.isPending)
     return (
       <div role="status" aria-label="Se încarcă profilul clubului">
-        <Skeleton className="h-96 rounded-3xl" />
+        <Skeleton className="h-96 rounded-xl" />
       </div>
     )
   if (query.isError)

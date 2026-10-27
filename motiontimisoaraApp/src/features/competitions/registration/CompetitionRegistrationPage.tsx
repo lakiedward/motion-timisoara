@@ -21,7 +21,7 @@ export default function CompetitionRegistrationPage() {
   })
 
   if (competition.isLoading || (competition.data && categories.isLoading)) {
-    return <Skeleton className="h-72 w-full rounded-3xl" />
+    return <Skeleton className="h-72 w-full rounded-xl" />
   }
 
   if (competition.isError || categories.isError) {

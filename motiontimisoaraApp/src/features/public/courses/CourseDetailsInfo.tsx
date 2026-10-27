@@ -112,7 +112,7 @@ export function CourseDetailsInfo({
           <h2 className="font-display text-xl font-bold">Antrenor</h2>
           <Link
             to={`/antrenori/${course.coach.id}`}
-            className={`bg-card shadow-card hover:shadow-card-hover hover:border-foreground/20 mt-4 flex items-center gap-4 rounded-xl border p-4 transition-[box-shadow,border-color] duration-200 motion-reduce:transition-none ${FOCUS_RING}`}
+            className={`bg-card hover:border-foreground/20 hover:shadow-card mt-4 flex items-center gap-4 rounded-xl border p-4 transition-[border-color,box-shadow] duration-200 motion-reduce:transition-none ${FOCUS_RING}`}
           >
             {course.coach.avatar_url ? (
               <img

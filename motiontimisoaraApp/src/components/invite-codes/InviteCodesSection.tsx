@@ -258,7 +258,7 @@ export default function InviteCodesSection({
           )}
           {query.isPending ? (
             <div role="status" aria-label="Se încarcă codurile">
-              <Skeleton className="h-40 rounded-3xl" />
+              <Skeleton className="h-40 rounded-xl" />
             </div>
           ) : query.isError ? (
             <div role="alert" className="space-y-3 rounded-2xl border p-4">
@@ -283,7 +283,7 @@ export default function InviteCodesSection({
               onDelete={(id) => void onDelete(id)}
             />
           ) : (
-            <div className="text-muted-foreground rounded-3xl border border-dashed py-16 text-center">
+            <div className="text-muted-foreground rounded-xl border border-dashed py-16 text-center">
               Niciun cod. Generează unul pentru a invita un antrenor.
             </div>
           )}

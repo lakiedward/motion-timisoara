@@ -30,7 +30,7 @@ export default function AdminProfilePage() {
     if (user) reset({ name: user.name, phone: user.phone ?? '' })
   }, [user, reset])
 
-  if (loading || !user) return <Skeleton className="h-96 rounded-3xl" />
+  if (loading || !user) return <Skeleton className="h-96 rounded-xl" />
 
   const onSubmit = async (v: Values) => {
     const { error } = await completeProfile(user.id, { name: v.name, phone: v.phone || null })
@@ -48,7 +48,7 @@ export default function AdminProfilePage() {
         Profil administrator
       </h1>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
-        <section className="bg-card shadow-card space-y-4 rounded-3xl border p-6">
+        <section className="bg-card space-y-4 rounded-xl border p-6">
           <div className="space-y-1.5">
             <Label htmlFor="name">Nume</Label>
             <Input id="name" {...register('name')} aria-invalid={!!errors.name} />

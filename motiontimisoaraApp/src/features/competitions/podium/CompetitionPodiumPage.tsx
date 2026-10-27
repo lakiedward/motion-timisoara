@@ -74,7 +74,7 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
   })
 
   if (competition.isLoading || categories.isLoading || podium.isLoading) {
-    return <Skeleton className="h-80 rounded-3xl" />
+    return <Skeleton className="h-80 rounded-xl" />
   }
   if (competition.isError || categories.isError || podium.isError) {
     return (
@@ -172,7 +172,7 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
                   results.filter((row) => row.place !== place).map((row) => row.registration_id),
                 )
                 return (
-                  <div key={place} className="bg-card shadow-card space-y-2 rounded-2xl p-5">
+                  <div key={place} className="bg-card space-y-2 rounded-xl border p-5">
                     <Label htmlFor={`podium-place-${place}`}>Locul {place}</Label>
                     <select
                       id={`podium-place-${place}`}

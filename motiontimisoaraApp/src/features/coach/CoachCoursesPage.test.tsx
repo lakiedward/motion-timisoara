@@ -122,7 +122,7 @@ test('loading keeps the header and two rounded skeletons', () => {
   expect(skeletons).toHaveLength(2)
   skeletons.forEach((el) => {
     expect(el.className).toMatch(/h-52/)
-    expect(el.className).toMatch(/rounded-3xl/)
+    expect(el.className).toMatch(/rounded-xl/)
     expect(el.className).toMatch(/animate-pulse/)
   })
 })

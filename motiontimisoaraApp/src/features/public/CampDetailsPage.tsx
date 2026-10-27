@@ -29,7 +29,7 @@ export default function CampDetailsPage() {
   if (isLoading) {
     return (
       <div className="mx-auto max-w-4xl px-6 py-12">
-        <Skeleton className="h-64 w-full rounded-3xl" />
+        <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     )
   }

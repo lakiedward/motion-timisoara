@@ -28,7 +28,7 @@ export default function CompetitionsPage() {
 
       <div className="mx-auto max-w-7xl px-6 py-10">
         {isError ? (
-          <div className="rounded-3xl border border-dashed py-20 text-center" role="alert">
+          <div className="rounded-xl border border-dashed py-20 text-center" role="alert">
             <p className="text-foreground font-medium">Nu am putut încărca concursurile.</p>
             <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => void refetch()}>
               Reîncearcă
@@ -37,7 +37,7 @@ export default function CompetitionsPage() {
         ) : isLoading ? (
           <div className="grid gap-7 md:grid-cols-2">
             {[0, 1].map((i) => (
-              <Skeleton key={i} className="h-72 rounded-3xl" />
+              <Skeleton key={i} className="h-72 rounded-xl" />
             ))}
           </div>
         ) : concursuri.length ? (
@@ -47,7 +47,7 @@ export default function CompetitionsPage() {
             ))}
           </div>
         ) : (
-          <div className="text-muted-foreground rounded-3xl border border-dashed py-20 text-center">
+          <div className="text-muted-foreground rounded-xl border border-dashed py-20 text-center">
             Niciun concurs publicat momentan.
           </div>
         )}
@@ -58,7 +58,7 @@ export default function CompetitionsPage() {
 
 function CardConcurs({ concurs }: { concurs: PublicCompetition }) {
   return (
-    <article className="bg-card shadow-card hover:shadow-card-hover relative flex h-full flex-col overflow-hidden rounded-3xl transition-all duration-300 hover:-translate-y-1">
+    <article className="bg-card text-card-foreground hover:border-foreground/20 hover:shadow-card relative flex h-full flex-col overflow-hidden rounded-xl border transition-[border-color,box-shadow] duration-200 motion-reduce:transition-none">
       {concurs.heroUrl && (
         <img src={concurs.heroUrl} alt="" loading="lazy" className="h-44 w-full object-cover" />
       )}

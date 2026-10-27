@@ -25,7 +25,7 @@ export default function ClubDetailPage() {
   if (isLoading) {
     return (
       <div className="mx-auto max-w-5xl px-6 py-12">
-        <Skeleton className="h-48 w-full rounded-3xl" />
+        <Skeleton className="h-48 w-full rounded-xl" />
       </div>
     )
   }

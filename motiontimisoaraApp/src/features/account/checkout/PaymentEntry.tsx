@@ -31,7 +31,7 @@ export function PaymentEntry({
   }
   const Title = framed ? 'h2' : 'h3'
   return (
-    <div className={framed ? 'bg-card shadow-card space-y-3 rounded-3xl p-5' : 'space-y-2'}>
+    <div className={framed ? 'bg-card space-y-3 rounded-xl border p-5' : 'space-y-2'}>
       <Title className={framed ? 'font-semibold' : 'text-sm font-medium'}>Card sau Google Pay</Title>
       <p className="text-muted-foreground text-sm">
         Datele cardului și confirmarea băncii se deschid în ecranul securizat de plată.

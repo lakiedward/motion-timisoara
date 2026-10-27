@@ -20,7 +20,7 @@ export function CardActivitate({ activitate }: { activitate: ActivitateDinLista 
   return (
     <Link
       to={`/activitati/${activitate.id}`}
-      className="group bg-card shadow-card hover:shadow-card-hover hover:border-primary/40 flex h-full flex-col overflow-hidden rounded-xl border transition-[box-shadow,border-color] duration-300 motion-reduce:transition-none"
+      className="group bg-card text-card-foreground hover:border-foreground/20 hover:shadow-card flex h-full flex-col overflow-hidden rounded-xl border transition-[border-color,box-shadow] duration-200 motion-reduce:transition-none"
     >
       <div className="relative h-32 shrink-0 overflow-hidden">
         {activitate.heroUrl && !photoFailed ? (
