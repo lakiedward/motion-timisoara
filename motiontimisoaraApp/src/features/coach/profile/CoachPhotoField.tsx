@@ -62,7 +62,7 @@ export default function CoachPhotoField({ name }: { name: string }) {
   const avatar = photo.isLoading ? (
     <Skeleton className="size-24 shrink-0 rounded-full" />
   ) : (
-    <Avatar className="size-24">
+    <Avatar key={url ?? 'initials'} className="size-24">
       {url && <AvatarImage src={url} alt={name} className="object-cover" />}
       <AvatarFallback className="text-3xl">{initials(name)}</AvatarFallback>
     </Avatar>
