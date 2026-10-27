@@ -8,17 +8,21 @@ import {
   type ClubAudience,
 } from '@/api/club'
 import { stergeFisiereleAnuntului, type AtasamentAfisabil } from '@/api/attachments'
+import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { Label } from '@/components/ui/label'
 import { StatusView } from '@/components/ui/status-view'
 import { plural } from '@/lib/plural'
 import { ClubAnnouncementCard } from './ClubAnnouncementCard'
-import { ETICHETA_TINTA, grupeazaPeStare, numeleTintei } from './announcement-list'
-
-const TOATE = 'TOATE'
-const TOT_CLUBUL = 'CLUB'
-const campCls =
-  'border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] sm:w-64 lg:h-9'
+import { ClubAnnouncementFilterBar } from './ClubAnnouncementFilterBar'
+import { grupeazaPeStare, numeleTintei } from './announcement-list'
+import {
+  NO_FILTERS,
+  filterClubAnnouncements,
+  hasFilters,
+  statusCounts,
+  targetCounts,
+  type ClubAnnouncementFilters,
+} from './club-announcement-filters'
 
 type Props = {
   items: ClubAnnouncement[]
@@ -35,7 +39,7 @@ export function ClubAnnouncementList({
   atasamente,
   onChanged,
 }: Props) {
-  const [filtru, setFiltru] = useState(TOATE)
+  const [filters, setFilters] = useState<ClubAnnouncementFilters>(NO_FILTERS)
   const [deSters, setDeSters] = useState<ClubAnnouncement | null>(null)
   const [seAscund, setSeAscund] = useState<string[]>([])
   const [deEditat, setDeEditat] = useState<string | null>(null)
@@ -43,14 +47,9 @@ export function ClubAnnouncementList({
     setDeEditat(null)
     if (saved) onChanged()
   }
-  const filtruVizibil = items.length > 1
-  const filtruActiv = filtruVizibil ? filtru : TOATE
-  const randuri =
-    filtruActiv === TOATE
-      ? items
-      : filtruActiv === TOT_CLUBUL
-        ? items.filter((a) => a.audience_kind === 'CLUB')
-        : items.filter((a) => `${a.audience_kind}:${a.audience_id}` === filtruActiv)
+  const tinta = (a: ClubAnnouncement) => numeleTintei(a, tinte, tinteNecunoscute)
+  const filtreVizibile = items.length > 1
+  const randuri = filtreVizibile ? filterClubAnnouncements(items, filters, tinta) : items
 
   const toggle = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) =>
@@ -80,7 +79,7 @@ export function ClubAnnouncementList({
 
   const props = (a: ClubAnnouncement) => ({
     anunt: a,
-    tinta: numeleTintei(a, tinte, tinteNecunoscute),
+    tinta: tinta(a),
     atasamente: atasamente[a.id] ?? [],
     seAscunde: seAscund.includes(a.id),
     seSterge: del.isPending && del.variables === a.id,
@@ -93,33 +92,18 @@ export function ClubAnnouncementList({
 
   return (
     <section aria-labelledby="anunturi-publicate" className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <h2 id="anunturi-publicate" className="font-display text-lg font-semibold">
-          Anunțuri publicate
-        </h2>
-        {filtruVizibil && (
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="filtru" className="text-muted-foreground text-sm font-normal">
-              Arată
-            </Label>
-            <select
-              id="filtru"
-              className={campCls}
-              value={filtru}
-              onChange={(e) => setFiltru(e.target.value)}
-            >
-              <option value={TOATE}>Toate anunțurile</option>
-              <option value={TOT_CLUBUL}>Doar către tot clubul</option>
-              {tinte.map((t) => (
-                <option key={t.id} value={`${t.kind}:${t.id}`}>
-                  {ETICHETA_TINTA[t.kind]}: {t.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-      </div>
-      {filtruActiv !== TOATE && (
+      <h2 id="anunturi-publicate" className="font-display text-lg font-semibold">
+        Anunțuri publicate
+      </h2>
+      {filtreVizibile && (
+        <ClubAnnouncementFilterBar
+          filters={filters}
+          statusCounts={statusCounts(items)}
+          targets={targetCounts(items, tinte)}
+          onChange={setFilters}
+        />
+      )}
+      {filtreVizibile && hasFilters(filters) && (
         <p className="text-muted-foreground text-sm" role="status">
           {randuri.length} din {items.length}
         </p>
@@ -128,8 +112,18 @@ export function ClubAnnouncementList({
       {randuri.length === 0 ? (
         <StatusView
           state="empty"
-          title="Niciun anunț către ținta aleasă."
-          text="Alege altă țintă sau vezi toate anunțurile."
+          title="Niciun anunț pentru filtrele alese."
+          text="Schimbă căutarea sau filtrele."
+          action={
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-3 h-touch-target min-h-touch-target"
+              onClick={() => setFilters(NO_FILTERS)}
+            >
+              Șterge filtrele
+            </Button>
+          }
         />
       ) : (
         <div className="space-y-6">

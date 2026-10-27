@@ -3,10 +3,9 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
 
-import { getTaberelePeId, getTaberelemele, getToateTaberele } from '@/api/camps-admin'
+import { getTaberelePeId, getTaberelemele } from '@/api/camps-admin'
 import { Button } from '@/components/ui/button'
 import { StatusView } from '@/components/ui/status-view'
-import { useAuth } from '@/lib/auth-context'
 import { useProprietarTabere } from './useProprietarTabere'
 import type { CampPortalBaza } from './camp-portal'
 import CampInvitations from './CampInvitations'
@@ -25,8 +24,7 @@ import {
 
 export default function CampsListPage({ baza }: { baza: CampPortalBaza }) {
   const { proprietar, gata, eroare, reincearca, eClub } = useProprietarTabere()
-  const eAdmin = useAuth().user?.role === 'ADMIN'
-  const eAntrenor = !eClub && !eAdmin
+  const eAntrenor = !eClub
   const [filters, setFilters] = useState<CampFilters>(NO_FILTERS)
 
   const invitations = useCampInvitations(eAntrenor)
@@ -46,10 +44,8 @@ export default function CampsListPage({ baza }: { baza: CampPortalBaza }) {
     isFetching,
     refetch,
   } = useQuery({
-    queryKey: eAdmin
-      ? ['taberele-toate']
-      : ['taberele-mele', proprietar.clubId, proprietar.coachUserId],
-    queryFn: () => (eAdmin ? getToateTaberele() : getTaberelemele(proprietar)),
+    queryKey: ['taberele-mele', proprietar.clubId, proprietar.coachUserId],
+    queryFn: () => getTaberelemele(proprietar),
     enabled: gata,
   })
   const tabere = [

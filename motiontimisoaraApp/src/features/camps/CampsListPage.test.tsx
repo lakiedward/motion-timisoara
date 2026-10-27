@@ -4,18 +4,13 @@ import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
 
 import CampsListPage from './CampsListPage'
-import {
-  getTaberelePeId,
-  getTaberelemele,
-  getToateTaberele,
-  type TabaraDinLista,
-} from '@/api/camps-admin'
+import { getTaberelePeId, getTaberelemele, type TabaraDinLista } from '@/api/camps-admin'
 import { getInvitatiileMele } from '@/api/camp-coaches'
 import { formatMoney } from '@/lib/money'
 
 vi.mock('@/api/camps-admin', async () => {
   const real = await vi.importActual<typeof import('@/api/camps-admin')>('@/api/camps-admin')
-  return { ...real, getTaberelemele: vi.fn(), getToateTaberele: vi.fn(), getTaberelePeId: vi.fn() }
+  return { ...real, getTaberelemele: vi.fn(), getTaberelePeId: vi.fn() }
 })
 vi.mock('@/api/camp-coaches', () => ({ getInvitatiileMele: vi.fn() }))
 vi.mock('./useProprietarTabere', () => ({
@@ -87,7 +82,6 @@ function deseneaza() {
 beforeEach(() => {
   auth.role = 'CLUB'
   vi.mocked(getTaberelemele).mockReset()
-  vi.mocked(getToateTaberele).mockReset()
   vi.mocked(getTaberelePeId).mockReset()
   vi.mocked(getInvitatiileMele).mockReset()
 })
@@ -193,14 +187,6 @@ test('fără tabere, mesajul e altul decât cel de eroare', async () => {
     '/club/camps/new',
   )
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
-})
-
-test('adminul vede toate taberele, nu doar pe ale lui', async () => {
-  auth.role = 'ADMIN'
-  vi.mocked(getToateTaberele).mockResolvedValue([tabara({ title: 'Tabăra unui club' })])
-  deseneaza()
-  expect(await screen.findByRole('heading', { name: 'Tabăra unui club' })).toBeInTheDocument()
-  expect(getTaberelemele).not.toHaveBeenCalled()
 })
 
 test('antrenorul vede în listă taberele la care a acceptat invitația, fără Editează', async () => {

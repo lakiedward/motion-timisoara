@@ -53,9 +53,15 @@ type Props = {
   clubId: string
   audiences: ClubAudience[]
   onPublished: () => void
+  onCancel?: () => void
 }
 
-export default function AnnouncementComposeForm({ clubId, audiences, onPublished }: Props) {
+export default function AnnouncementComposeForm({
+  clubId,
+  audiences,
+  onPublished,
+  onCancel,
+}: Props) {
   const [files, setFiles] = useState<FisierPregatit[]>([])
   const [resetari, setResetari] = useState(0)
   const {
@@ -182,9 +188,21 @@ export default function AnnouncementComposeForm({ clubId, audiences, onPublished
               </select>
             </div>
 
-            <Button type="submit" disabled={create.isPending || !clubId}>
-              {create.isPending ? 'Se publică…' : 'Publică'}
-            </Button>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row">
+              {onCancel && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={onCancel}
+                  disabled={create.isPending}
+                >
+                  Renunță
+                </Button>
+              )}
+              <Button type="submit" disabled={create.isPending || !clubId}>
+                {create.isPending ? 'Se publică…' : 'Publică'}
+              </Button>
+            </div>
           </div>
         </form>
       </CardContent>
