@@ -133,7 +133,7 @@ test('fără poza activității, pagina nu pune degradeul gol, iar titlul stă s
   expect(titlu.className).toContain('text-foreground')
   expect(screen.queryByText('Ciclism')).not.toBeInTheDocument()
   expect(screen.queryByText('Încheiată')).not.toBeInTheDocument()
-  expect(screen.getByRole('heading', { name: 'Poze' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Din activitate' })).toBeInTheDocument()
 })
 
 test('poza activității umple banda, iar poza sportului rămâne în galerie', async () => {
@@ -163,65 +163,58 @@ test('titlul de pe bandă pornește din aceeași coloană ca restul paginii', as
   })
   deseneaza()
   const titlu = await screen.findByRole('heading', { level: 1, name: 'DEMO — Atelier de ciclism' })
-  expect(titlu.parentElement?.className).toContain('max-w-4xl')
-  expect(titlu.parentElement?.className).not.toContain('max-w-6xl')
+  expect(titlu.parentElement?.className).toContain('max-w-6xl')
+  expect(titlu.parentElement?.className).not.toContain('max-w-4xl')
 })
-test('organizatorul stă sub titlu, antrenorul e separat, iar locul duce doar la harta site-ului', async () => {
+test('banda Data, Ore și Loc stă sus, iar organizatorul și antrenorul vin după conținut', async () => {
   deseneaza()
   const titlu = await screen.findByRole('heading', { level: 1, name: 'DEMO — Atelier de ciclism' })
-  const organizator = screen.getByRole('heading', { name: 'Organizată de' })
-  const antrenor = screen.getByRole('heading', { name: /^Antrenor$/ })
-  const data = screen.getByText('26.09.2099')
-  expect(titlu.compareDocumentPosition(organizator) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-  expect(
-    organizator.compareDocumentPosition(antrenor) & Node.DOCUMENT_POSITION_FOLLOWING,
-  ).toBeTruthy()
-  expect(antrenor.compareDocumentPosition(data) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-  const club = screen.getByRole('link', { name: /DEMO — Club Sportiv Motion/ })
-  expect(club).toHaveAttribute('href', '/cluburi/club-1')
-  expect(club).toHaveTextContent('Club · Vezi pagina clubului')
-  expect(club.querySelector('img')).toBeNull()
-  expect(club.querySelector('svg')).not.toBeNull()
-  const coach = screen.getByRole('link', { name: /Antrenor Demo/ })
-  expect(coach).toHaveAttribute('href', '/antrenori/coach-1')
-  expect(coach).toHaveTextContent('Vezi profilul antrenorului')
   const dataEticheta = screen.getByText('Data')
   const ore = screen.getByText('Ore')
   const locEticheta = screen.getByText('Loc')
-  const locuri = screen.getByText('Locuri')
-  expect(dataEticheta.parentElement).toHaveTextContent('26.09.2099')
-  expect(ore.parentElement).toHaveTextContent('10:00–12:00')
-  expect(locEticheta.parentElement).toHaveTextContent('DEMO — Parc de antrenament')
-  expect(locEticheta.closest('a')).toBeNull()
-  const linkuriLoc = screen
-    .getAllByText('DEMO — Parc de antrenament')
-    .map((nume) => nume.closest('a'))
-    .filter((link) => link !== null)
-  expect(linkuriLoc.map((link) => link.getAttribute('href'))).toEqual(['/harta?location=loc-1'])
-  expect(locEticheta.parentElement).toContainElement(linkuriLoc[0])
-  expect(locuri.parentElement).toHaveTextContent('11 locuri rămase')
+  const organizator = screen.getByRole('heading', { name: 'Organizată de' })
+  const antrenor = screen.getByRole('heading', { name: /^Antrenor$/ })
+  expect(
+    titlu.compareDocumentPosition(dataEticheta) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy()
   expect(dataEticheta.compareDocumentPosition(ore) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   expect(ore.compareDocumentPosition(locEticheta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   expect(
-    locEticheta.compareDocumentPosition(locuri) & Node.DOCUMENT_POSITION_FOLLOWING,
+    locEticheta.compareDocumentPosition(organizator) & Node.DOCUMENT_POSITION_FOLLOWING,
   ).toBeTruthy()
-  expect(dataEticheta.parentElement?.parentElement?.className).toContain('flex-col')
+  expect(
+    organizator.compareDocumentPosition(antrenor) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy()
+  expect(dataEticheta.parentElement).toHaveTextContent('26.09.2099')
+  expect(ore.parentElement).toHaveTextContent('10:00–12:00')
+  expect(locEticheta.closest('a')).toHaveAttribute('href', '/harta?location=loc-1')
+  expect(locEticheta.closest('a')).toHaveTextContent('DEMO — Parc de antrenament')
+  const banda = dataEticheta.closest('.grid-cols-3')
+  expect(banda).toHaveClass('bg-card', 'rounded-xl', 'border')
+  expect(banda).toContainElement(ore)
+  expect(banda).toContainElement(locEticheta)
+  const club = screen.getByRole('link', { name: /DEMO — Club Sportiv Motion/ })
+  expect(club).toHaveAttribute('href', '/cluburi/club-1')
+  expect(club).toHaveTextContent('Club · Vezi pagina clubului')
+  const coach = screen.getByRole('link', { name: /Antrenor Demo/ })
+  expect(coach).toHaveAttribute('href', '/antrenori/coach-1')
+  expect(screen.getByText('11 locuri rămase')).toBeInTheDocument()
   expect(screen.queryByRole('heading', { name: 'Regulament' })).not.toBeInTheDocument()
 })
 
-test('descrierea cu mai multe paragrafe stă sub eticheta Descriere', async () => {
+test('descrierea cu mai multe paragrafe stă în cardul Despre activitate', async () => {
   mocked.mockResolvedValue({
     ...DETALIU,
     description: 'Primul paragraf despre traseu.\n\nAl doilea paragraf despre echipament.',
   })
   deseneaza()
-  const eticheta = await screen.findByText('Descriere')
+  const titlu = await screen.findByRole('heading', { name: 'Despre activitate' })
   const primul = screen.getByText('Primul paragraf despre traseu.')
   const alDoilea = screen.getByText('Al doilea paragraf despre echipament.')
-  expect(eticheta.compareDocumentPosition(primul) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  const card = titlu.closest('section')
+  expect(card).toHaveClass('bg-card', 'rounded-xl', 'border')
+  expect(card).toContainElement(primul)
   expect(primul.compareDocumentPosition(alDoilea) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-  expect(eticheta.className).toContain('text-sm')
-  expect(eticheta.className).toContain('font-medium')
 })
 
 test('galerie, regulament, hartă și nota de curs stau în ordinea aleasă', async () => {
@@ -237,19 +230,12 @@ test('galerie, regulament, hartă și nota de curs stau în ordinea aleasă', as
   })
   deseneaza()
   const descriere = await screen.findByText('Atelier de mecanică și traseu scurt.')
-  const eticheta = screen.getByText('Descriere')
-  const data = screen.getByText('Data')
-  expect(eticheta.className).toContain('text-foreground')
-  expect(eticheta.className).toContain('font-medium')
-  expect(eticheta.className).toContain('text-sm')
-  expect(data.className).toContain('text-foreground')
-  expect(data.className).toContain('font-medium')
-  expect(data.parentElement?.parentElement?.className).toContain('text-sm')
+  const eticheta = screen.getByRole('heading', { name: 'Despre activitate' })
   expect(
     eticheta.compareDocumentPosition(descriere) & Node.DOCUMENT_POSITION_FOLLOWING,
   ).toBeTruthy()
-  expect(screen.queryByRole('heading', { name: 'Din activitate' })).not.toBeInTheDocument()
-  const galerie = screen.getByRole('heading', { name: 'Poze' })
+  expect(screen.queryByRole('heading', { name: 'Poze' })).not.toBeInTheDocument()
+  const galerie = screen.getByRole('heading', { name: 'Din activitate' })
   const regulament = screen.getByRole('heading', { name: 'Regulament' })
   const harta = screen.getByRole('link', { name: 'Deschide DEMO — Parc de antrenament în hărți' })
   expect(descriere.compareDocumentPosition(galerie) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
@@ -285,18 +271,16 @@ test('fără coordonate harta lipsește, iar numele rămâne pe rând', async ()
   deseneaza()
   expect(await screen.findByText('DEMO — Parc de antrenament')).toBeInTheDocument()
   expect(screen.queryByRole('link', { name: /în hărți/ })).not.toBeInTheDocument()
-  expect(screen.queryByRole('link', { name: /vezi pe hartă/ })).not.toBeInTheDocument()
+  expect(screen.getByText('Loc').closest('a')).toBeNull()
 })
 
-test('locul de pe rândul Loc duce la harta site-ului, ca pe tabără', async () => {
+test('locul din bandă duce la harta site-ului, ca pe tabără și curs', async () => {
   deseneaza()
-  const link = await screen.findByRole('link', {
-    name: 'DEMO — Parc de antrenament — vezi pe hartă',
-  })
+  const eticheta = await screen.findByText('Loc')
+  const link = eticheta.closest('a')
   expect(link).toHaveAttribute('href', '/harta?location=loc-1')
   expect(link).toHaveTextContent('DEMO — Parc de antrenament')
-  expect(link.className).toContain('underline')
-  expect(link.className).toContain('min-h-touch-target')
+  expect(link).toHaveTextContent('Str. Exemplu 1')
 })
 
 test('locația are titlu, adresă, link vizibil și ascunde dalele care nu se încarcă', async () => {

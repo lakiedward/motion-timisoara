@@ -1,56 +1,21 @@
-import type { ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, CalendarDays, Clock, MapPin, Users, type LucideIcon } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 
 import { ACTIVITY_RULES_FILE_BUCKET, rulesFileAfisabil } from '@/api/camp-rules-file'
 import { activitateSAincheiat, getActivitateDetaliu } from '@/api/public'
 import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
-import { OfferExchangeNote } from '@/components/OfferExchangeNote'
 import PhotoGallery from '@/components/PhotoGallery'
 import ActivityPlaceMap from '@/features/public/map/ActivityPlaceMap'
 import { useAuth } from '@/lib/auth-context'
-import { formatOfferPrice } from '@/lib/money'
-import { plural } from '@/lib/plural'
+import { descriptionParagraphs } from '@/lib/course-detail'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SportIllustration } from '@/components/sport/SportIllustration'
 import { OrganizerCoaches } from './components/OrganizerCoaches'
 import { PublicHeroBand } from './PublicHeroBand'
-
-const LINK_HARTA =
-  'text-primary -my-2.5 inline-flex min-h-touch-target items-center rounded-md font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring'
-
-function ziActivitate(data: string): string {
-  const [an, luna, zi] = data.split('-').map(Number)
-  return new Date(an, (luna ?? 1) - 1, zi ?? 1).toLocaleDateString('ro-RO')
-}
-
-function paragrafeDescriere(text: string): string[] {
-  const parti = text
-    .split(/\n\s*\n/)
-    .map((parte) => parte.trim())
-    .filter(Boolean)
-  return parti.length > 0 ? parti : [text]
-}
-
-function Fapt({
-  icon: Icon,
-  eticheta,
-  children,
-}: {
-  icon: LucideIcon
-  eticheta: string
-  children: ReactNode
-}) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <Icon className="size-4 shrink-0" aria-hidden />
-      <span className="text-foreground font-medium">{eticheta}</span>
-      <span>{children}</span>
-    </div>
-  )
-}
+import { ActivityEnrollCard } from './activity-detail/ActivityEnrollCard'
+import { ActivityInfoBand } from './activity-detail/ActivityInfoBand'
 
 export default function ActivityDetailPage() {
   const { id = '' } = useParams()
@@ -69,7 +34,7 @@ export default function ActivityDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-4xl px-6 py-12">
+      <div className="mx-auto max-w-6xl px-6 py-12">
         <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     )
@@ -88,7 +53,10 @@ export default function ActivityDetailPage() {
     return (
       <div className="mx-auto max-w-4xl px-6 py-20 text-center">
         <p className="text-muted-foreground">Activitatea nu a fost găsită.</p>
-        <Link to="/activitati" className="text-primary mt-4 inline-block font-semibold">
+        <Link
+          to="/activitati"
+          className="text-primary mt-4 inline-flex h-11 items-center font-semibold"
+        >
           ← Înapoi la activități
         </Link>
       </div>
@@ -109,125 +77,83 @@ export default function ActivityDetailPage() {
         title={a.name}
         backTo="/activitati"
         backLabel="Înapoi la activități"
-        width="max-w-4xl"
       />
-      <div className="mx-auto max-w-4xl px-6 py-10">
-        {!a.bandUrl && (
-          <>
-            <Link
-              to="/activitati"
-              className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
-            >
-              <ArrowLeft className="size-4" /> Înapoi la activități
-            </Link>
-            <h1 className="font-display text-foreground mt-4 text-3xl font-extrabold md:text-4xl">
-              {a.name}
-            </h1>
-            {!a.photoUrl && (
-              <SportIllustration
-                code={a.sport?.code}
-                name={a.sport?.name}
-                className="mt-6 h-44 rounded-xl border md:h-56"
-              />
-            )}
-          </>
-        )}
 
-        <OrganizerCoaches
-          sectionKey="manual:section:organizator-si-antrenori:71654660-6441-4081-9c30-6fbbc6d679f4"
-          className="mt-6"
-          organizator={a.organizator}
-          antrenori={a.antrenori}
-          coachesTitle={() => 'Antrenor'}
-        />
-
-        <div className="text-muted-foreground mt-5 flex flex-col gap-2 text-sm">
-          <Fapt icon={CalendarDays} eticheta="Data">
-            {ziActivitate(a.activityDate)}
-          </Fapt>
-          <Fapt icon={Clock} eticheta="Ore">
-            {`${a.startTime.slice(0, 5)}–${a.endTime.slice(0, 5)}`}
-          </Fapt>
-          {a.location && (
-            <Fapt icon={MapPin} eticheta="Loc">
-              {a.location.lat != null && a.location.lng != null ? (
-                <Link
-                  to={`/harta?location=${encodeURIComponent(a.location.id)}`}
-                  className={LINK_HARTA}
-                  aria-label={`${a.location.name} — vezi pe hartă`}
-                >
-                  {a.location.name}
-                </Link>
-              ) : (
-                a.location.name
-              )}
-            </Fapt>
-          )}
-          {!incheiata && a.locuriRamase !== null && a.locuriRamase > 0 && (
-            <Fapt icon={Users} eticheta="Locuri">
-              {plural(a.locuriRamase, 'loc rămas', 'locuri rămase')}
-            </Fapt>
+      {!a.bandUrl && (
+        <div className="mx-auto max-w-6xl px-6 pt-8">
+          <Link
+            to="/activitati"
+            className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
+          >
+            <ArrowLeft className="size-4" /> Înapoi la activități
+          </Link>
+          <h1 className="font-display text-foreground mt-4 text-3xl font-extrabold tracking-tight md:text-4xl">
+            {a.name}
+          </h1>
+          {!a.photoUrl && (
+            <SportIllustration
+              code={a.sport?.code}
+              name={a.sport?.name}
+              className="mt-6 h-44 rounded-xl border md:h-56"
+            />
           )}
         </div>
+      )}
 
-        {a.description && (
-          <div className="mt-6">
-            <p className="text-foreground text-sm font-medium">Descriere</p>
-            <div className="mt-2 space-y-3">
-              {paragrafeDescriere(a.description).map((parte) => (
-                <p key={parte} className="text-muted-foreground leading-relaxed">
-                  {parte}
-                </p>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {a.galerieUrls.length > 0 && (
-          <div className="mt-8">
-            <h2 className="font-display mb-3 text-lg font-bold">Poze</h2>
-            <PhotoGallery urls={a.galerieUrls} alt={a.name} />
-          </div>
-        )}
-
-        <CampRulesDisplay
-          rules={null}
-          fisier={rulesFileAfisabil(ACTIVITY_RULES_FILE_BUCKET, a.regulament)}
-        />
-
-        {a.location?.lat != null && a.location.lng != null && (
-          <ActivityPlaceMap
-            lat={a.location.lat}
-            lng={a.location.lng}
-            name={a.location.name}
-            address={a.location.address}
-          />
-        )}
-
-        <div className="bg-card mt-8 flex flex-col items-start gap-4 rounded-xl border p-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mx-auto max-w-6xl px-6 py-10">
+        <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
           <div className="min-w-0">
-            <div className="font-display whitespace-nowrap text-2xl font-extrabold">
-              {formatOfferPrice(a.price, a.currency)}
-            </div>
-            <OfferExchangeNote offer={a} className="text-xs" />
+            <ActivityInfoBand activity={a} />
+
+            {a.description && (
+              <section className="bg-card mt-8 rounded-xl border p-5 sm:p-6">
+                <h2 className="font-display text-xl font-bold">Despre activitate</h2>
+                <div className="text-muted-foreground mt-3 space-y-3 leading-relaxed">
+                  {descriptionParagraphs(a.description).map((part, index) => (
+                    <p key={index}>{part}</p>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {a.galerieUrls.length > 0 && (
+              <div className="mt-8">
+                <h2 className="font-display mb-3 text-lg font-bold">Din activitate</h2>
+                <PhotoGallery urls={a.galerieUrls} alt={a.name} />
+              </div>
+            )}
+
+            <CampRulesDisplay
+              rules={null}
+              fisier={rulesFileAfisabil(ACTIVITY_RULES_FILE_BUCKET, a.regulament)}
+            />
+
+            {a.location?.lat != null && a.location.lng != null && (
+              <ActivityPlaceMap
+                lat={a.location.lat}
+                lng={a.location.lng}
+                name={a.location.name}
+                address={a.location.address}
+              />
+            )}
+
+            <OrganizerCoaches
+              sectionKey="manual:section:organizator-si-antrenori:71654660-6441-4081-9c30-6fbbc6d679f4"
+              organizator={a.organizator}
+              antrenori={a.antrenori}
+              coachesTitle={() => 'Antrenor'}
+            />
           </div>
-          {incheiata ? (
-            <p className="text-muted-foreground text-sm font-medium">
-              Activitatea s-a încheiat, înscrierile sunt închise.
-            </p>
-          ) : plina ? (
-            <p className="text-muted-foreground text-sm font-medium">
-              Toate locurile sunt ocupate.
-            </p>
-          ) : (
-            <button
-              type="button"
-              onClick={onEnroll}
-              className="btn-cta btn-cta--primary shrink-0 whitespace-nowrap"
-            >
-              Înscrie-te
-            </button>
-          )}
+
+          <aside className="lg:sticky lg:top-24 lg:self-start">
+            <ActivityEnrollCard
+              offer={a}
+              spotsLeft={a.locuriRamase}
+              ended={incheiata}
+              full={plina}
+              onEnroll={onEnroll}
+            />
+          </aside>
         </div>
       </div>
     </div>
