@@ -8,19 +8,11 @@ import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StarRating } from '@/components/StarRating'
 import type { CoachClub } from '@/api/public'
+import { initials } from '@/lib/initials'
 import { CoachClubs } from './CoachClubs'
 
 const CARD_LAYOUT =
   'mt-4 flex-col items-center gap-5 p-6 text-center sm:flex-row sm:items-center sm:p-8 sm:text-left'
-
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toLocaleUpperCase('ro'))
-    .join('')
-}
 
 export function CoachBackLink() {
   return (

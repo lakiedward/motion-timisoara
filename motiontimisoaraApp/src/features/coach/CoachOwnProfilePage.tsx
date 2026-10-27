@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { Textarea } from '@/components/ui/textarea'
 import CoachClubsSection from './profile/CoachClubsSection'
+import CoachPhotoField from './profile/CoachPhotoField'
 
 const schema = z.object({
   name: z.string().min(2, 'Minim 2 caractere'),
@@ -87,6 +88,7 @@ export default function CoachOwnProfilePage() {
   return (
     <div className="max-w-2xl space-y-6">
       <h1 className="font-display text-2xl font-bold text-foreground">Profil antrenor</h1>
+      <CoachPhotoField name={data.name} />
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
         <Card>
           <CardContent className="space-y-4">
