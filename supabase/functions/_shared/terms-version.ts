@@ -1,2 +1,2 @@
-export const TERMS_VERSION = "1.0";
-export const TERMS_SHA256 = "6e129c382fcc7045b09740f8be6efce2107db17f4ef127551c41a8389ffbd670";
+export const TERMS_VERSION = "1.1";
+export const TERMS_SHA256 = "04d24fd1d6d5f8111195cf88be7b4669ba6a297e19f1fc2733e17f34466cc750";

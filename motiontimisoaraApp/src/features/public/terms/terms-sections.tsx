@@ -3,8 +3,8 @@ import { CreditCard, Lock, Mail, MessageSquare, Phone, ShieldCheck } from 'lucid
 
 import type { LegalSection } from '../legal/LegalPage'
 
-export const TERMS_VERSION = '1.0'
-export const TERMS_UPDATED = '22 octombrie 2026'
+export const TERMS_VERSION = '1.1'
+export const TERMS_UPDATED = '27 octombrie 2026'
 
 const linkClass = 'text-primary underline underline-offset-4'
 const rowClass =
@@ -77,6 +77,10 @@ export const TERMS_SECTIONS: LegalSection[] = [
           Folosim doar datele necesare contului, înscrierilor și plăților: numele, datele de contact
           și datele copiilor pe care îi înscrii. Organizatorul vede doar copiii înscriși la oferta
           lui. Datele cardului sunt procesate de Stripe; noi nu le vedem.
+        </p>
+        <p>
+          La fiecare înscriere păstrăm dovada că ai acceptat acești termeni și regulamentul ofertei:
+          contul tău, versiunea termenilor, data și ora.
         </p>
         <p>
           Detaliile despre date sunt în{' '}
