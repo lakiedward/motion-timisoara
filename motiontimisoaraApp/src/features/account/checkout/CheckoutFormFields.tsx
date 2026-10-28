@@ -1,9 +1,8 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { AlertCircle, Loader2, Plus } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Field as FormField } from '@/components/ui/field'
 import { cn } from '@/lib/utils'
 import type { AdultValidation, ChildValidation } from '@/api/checkout'
 import { childAge, type Child } from '@/api/account'
@@ -16,17 +15,24 @@ export function Field({
   value,
   onChange,
   type = 'text',
+  autoComplete,
 }: {
   label: string
   value: string
   onChange: (v: string) => void
   type?: string
+  autoComplete?: string
 }) {
+  const id = useId()
   return (
-    <div>
-      <Label className="mb-1.5 block">{label}</Label>
-      <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} />
-    </div>
+    <FormField
+      id={id}
+      label={label}
+      type={type}
+      autoComplete={autoComplete}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
   )
 }
 
@@ -52,10 +58,7 @@ export function AddChildInline({
   return (
     <div className="bg-card space-y-3 rounded-xl border p-5">
       <Field label="Nume" value={name} onChange={setName} />
-      <div>
-        <Label className="mb-1.5 block">Data nașterii</Label>
-        <Input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
-      </div>
+      <Field label="Data nașterii" type="date" value={birthDate} onChange={setBirthDate} />
       <div className="flex gap-2">
         <Button
           disabled={pending || name.trim().length < 2 || !birthDate}
