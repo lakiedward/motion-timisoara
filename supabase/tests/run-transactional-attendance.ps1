@@ -1,5 +1,6 @@
 $ErrorActionPreference = 'Stop'
 $migrationFile = Join-Path $PSScriptRoot '../migrations/00042_transactional_attendance.sql'
+$startGuardFile = Join-Path $PSScriptRoot '../migrations/00105_attendance_after_session_start.sql'
 $containerName = 'motion-attendance-' + [Guid]::NewGuid().ToString('N')
 $image = 'supabase/postgres:17.6.1.063@sha256:178f0976b54a39237096bfa310c1a352dbc82fb1b08dda45cdb8acb5d40c1426'
 $jobs = @()
@@ -44,6 +45,7 @@ try {
     }
     if (-not $ready) { throw 'Isolated PostgreSQL did not become ready within 30 seconds.' }
     Invoke-TestDocker -DockerArguments @('cp', $migrationFile, "${containerName}:/tmp/transactional-attendance-migration.sql")
+    Invoke-TestDocker -DockerArguments @('cp', $startGuardFile, "${containerName}:/tmp/attendance-after-session-start-migration.sql")
     Invoke-TestDocker -DockerArguments @('cp', (Join-Path $PSScriptRoot 'transactional-attendance.sql'), "${containerName}:/tmp/transactional-attendance.sql")
     Invoke-TestDocker -DockerArguments @('exec', $containerName, 'psql', '-X', '-U', 'supabase_admin', '-d', 'attendance_test', '-v', 'ON_ERROR_STOP=1', '-f', '/tmp/transactional-attendance.sql')
 

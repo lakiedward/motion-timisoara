@@ -7,8 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Highlight } from '@/features/admin/courses/CourseParts'
 import { plural } from '@/lib/plural'
 import { cn } from '@/lib/utils'
+import { SessionOpensNotice } from './SessionOpensNotice'
 import { SessionRoster } from './SessionRoster'
 import { formatDay, formatTime, isStarted, isUnmarked } from './attendance-overview'
+import { useSessionStarted } from './use-session-started'
 
 export function MarkBadge({ s }: { s: AdminSession }) {
   if (!isStarted(s)) return <Badge variant="outline">Urmează</Badge>
@@ -24,6 +26,7 @@ export function MarkBadge({ s }: { s: AdminSession }) {
 
 export function AdminSessionRow({ session: s, query }: { session: AdminSession; query: string }) {
   const [open, setOpen] = useState(false)
+  const started = useSessionStarted(s.startsAt)
   const panelId = `prezenta-${s.id}`
 
   return (
@@ -77,8 +80,14 @@ export function AdminSessionRow({ session: s, query }: { session: AdminSession; 
         </Button>
       </div>
       {open && (
-        <div id={panelId} className="mt-3">
-          <SessionRoster courseId={s.courseId} occurrenceId={s.id} listKey="admin-sessions" />
+        <div id={panelId} className="mt-3 space-y-3">
+          {!started && <SessionOpensNotice startsAt={s.startsAt} />}
+          <SessionRoster
+            courseId={s.courseId}
+            occurrenceId={s.id}
+            listKey="admin-sessions"
+            locked={!started}
+          />
         </div>
       )}
     </li>
