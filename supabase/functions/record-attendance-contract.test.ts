@@ -162,6 +162,7 @@ Deno.test("definitive business rejections and duplicates have stable response co
       "AMBIGUOUS_ENROLLMENT",
       "NO_REMAINING_SESSIONS",
       "REQUEST_CONFLICT",
+      "TOO_EARLY",
     ]
   ) {
     const response = attendanceResponse({ success: false, code });

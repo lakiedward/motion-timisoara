@@ -39,10 +39,12 @@ function ScannerControls({
   queue,
   occurrenceId,
   label,
+  locked = false,
 }: {
   queue: AttendanceQueue
   occurrenceId: string
   label: string
+  locked?: boolean
 }) {
   const { snapshot, pending, rejected } = useQueueState(queue)
   const [scanning, setScanning] = useState(false)
@@ -80,7 +82,7 @@ function ScannerControls({
         <h2 className="font-semibold">Scanează prezența</h2>
         <p className="text-muted-foreground mt-1 text-sm">{label}</p>
       </div>
-      <Button className="w-full" disabled={scanning || !snapshot.ready} onClick={() => void scan()}>
+      <Button className="w-full" disabled={scanning || locked || !snapshot.ready} onClick={() => void scan()}>
         <ScanLine aria-hidden="true" /> {scanning ? 'Camera este deschisă…' : 'Scanează cod QR'}
       </Button>
       <p className="text-muted-foreground text-xs">
@@ -100,7 +102,11 @@ function ScannerControls({
   )
 }
 
-export function AttendanceScanner(props: { occurrenceId: string; label: string }) {
+export function AttendanceScanner(props: {
+  occurrenceId: string
+  label: string
+  locked?: boolean
+}) {
   const queue = useAttendanceQueue()
   return queue ? <ScannerControls {...props} queue={queue} /> : null
 }

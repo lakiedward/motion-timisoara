@@ -23,6 +23,7 @@ export function RosterList({
   error,
   onRetry,
   busy,
+  locked = false,
   qrLinks = false,
   emptyText,
   onMark,
@@ -33,6 +34,7 @@ export function RosterList({
   error: boolean
   onRetry: () => void
   busy: boolean
+  locked?: boolean
   qrLinks?: boolean
   emptyText: string
   onMark: (row: RosterEntry, status: RosterEntry['status']) => void
@@ -89,7 +91,7 @@ export function RosterList({
           type="button"
           variant="outline"
           className="h-touch-target min-h-touch-target lg:h-9 lg:min-h-9"
-          disabled={busy || !unmarked.length}
+          disabled={busy || locked || !unmarked.length}
           onClick={() => onMarkAll(unmarked.map((r) => r.child_id))}
         >
           Toți prezenți
@@ -139,7 +141,7 @@ export function RosterList({
                       }
                       aria-pressed={active}
                       aria-label={`${status === 'PRESENT' ? 'Prezent' : 'Absent'}: ${r.child_name}`}
-                      disabled={busy}
+                      disabled={busy || (locked && !active)}
                       className="h-touch-target min-h-touch-target flex-1 lg:h-9 lg:min-h-9 lg:flex-none"
                       onClick={() => onMark(r, active ? null : status)}
                     >
