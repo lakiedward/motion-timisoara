@@ -54,7 +54,7 @@ export function LocationViewer({
               <p className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                 <span className="text-foreground flex items-center gap-1.5 font-medium">
                   <Clock aria-hidden="true" className="text-muted-foreground size-4" />
-                  Actualizată la {new Date(current.point.capturedAt).toLocaleTimeString('ro-RO')}
+                  Actualizată la {new Date(current.point.capturedAt).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
                 </span>
                 <span>Precizie aproximativă {Math.round(current.point.accuracy)} m</span>
               </p>

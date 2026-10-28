@@ -70,7 +70,7 @@ function CoachRow({
           <>
             <p className="flex items-center gap-1.5 font-medium sm:justify-end">
               <Clock aria-hidden="true" className="text-muted-foreground size-4" />
-              Actualizată la {new Date(point.capturedAt).toLocaleTimeString('ro-RO')}
+              Actualizată la {new Date(point.capturedAt).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
             </p>
             <p className="text-muted-foreground">
               Precizie aproximativă {Math.round(point.accuracy)} m
