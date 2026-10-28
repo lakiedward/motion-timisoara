@@ -1,9 +1,10 @@
 import { z } from 'zod'
 
 import { EMPTY_SCHEDULE, scheduleIssues, type ScheduleFields } from './announcement-schedule'
+import { selectClassName } from '@/components/ui/field-styles'
+import { cn } from '@/lib/utils'
 
-export const selectCls =
-  'border-input dark:bg-input/30 flex h-touch-target w-full min-w-0 rounded-md border bg-transparent px-3 text-base shadow-xs transition-[color,box-shadow] outline-none hover:border-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring'
+export const announcementSelectClassName = cn(selectClassName, 'md:text-base')
 
 export const PRIORITY_OPTIONS = [
   { value: 'LOW', label: 'Scăzută' },

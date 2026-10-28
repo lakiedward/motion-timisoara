@@ -21,11 +21,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { selectClassName } from '@/components/ui/field-styles'
 import { CheckoutBillingFields } from '@/features/account/checkout/CheckoutBillingFields'
 import { CheckoutPaymentStep } from '@/features/account/checkout/CheckoutPaymentStep'
 import { CheckoutOrderSummary } from '@/features/account/checkout/CheckoutOrderSummary'
 import { usePaymentAdapter } from '@/features/account/checkout/usePaymentAdapter'
 import { useCompetitionClock } from '../useCompetitionClock'
+import { cn } from '@/lib/utils'
 
 type Props = { competition: PublicCompetition; categories: CompetitionCategory[] }
 
@@ -306,7 +308,7 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
                           setChoice((previous) => ({ ...previous, [child.id]: event.target.value }))
                           setAcceptedKey(null)
                         }}
-                        className="border-input focus-visible:border-ring focus-visible:ring-ring/50 mt-3 h-11 w-full rounded-md border bg-transparent px-3 text-sm outline-none focus-visible:ring-[3px]"
+                        className={cn(selectClassName, 'mt-3')}
                       >
                         <option value="">Nu înscrie acest copil</option>
                         {categories.map((category) => (
@@ -376,7 +378,7 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
                       setSelfCategoryId(event.target.value)
                       setAcceptedKey(null)
                     }}
-                    className="border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-md border bg-transparent px-3 text-sm outline-none focus-visible:ring-[3px]"
+                    className={selectClassName}
                   >
                     <option value="">Alege categoria</option>
                     {categories.map((category) => (

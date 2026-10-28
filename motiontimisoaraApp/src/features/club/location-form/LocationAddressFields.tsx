@@ -1,8 +1,6 @@
 import { Label } from '@/components/ui/label'
+import { selectClassName } from '@/components/ui/field-styles'
 import { citiesForCounty, romanianCounties } from '@/lib/geography/romanian-places'
-
-export const locationSelectClassName =
-  'border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] disabled:opacity-50 lg:h-9'
 
 type Props = {
   county: string
@@ -25,7 +23,7 @@ export default function LocationAddressFields({
         <Label htmlFor="county">Județ / regiune</Label>
         <select
           id="county"
-          className={locationSelectClassName}
+          className={selectClassName}
           value={county}
           onChange={(event) => onCountyChange(event.target.value)}
         >
@@ -41,7 +39,7 @@ export default function LocationAddressFields({
         <Label htmlFor="city">Oraș</Label>
         <select
           id="city"
-          className={locationSelectClassName}
+          className={selectClassName}
           value={city}
           disabled={!county && !city}
           onChange={(event) => onCityChange(event.target.value)}

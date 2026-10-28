@@ -39,12 +39,10 @@ import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { Textarea } from '@/components/ui/textarea'
+import { selectClassName } from '@/components/ui/field-styles'
 import { campRulesFileFromRow, type CampRulesFileMeta } from '@/lib/camp-rules'
 import { mesajHeroLipsa } from '@/lib/hero-photo'
 import { baniToRon } from '@/lib/money'
-
-const selectCls =
-  'border-input dark:bg-input/30 flex h-touch-target w-full min-w-0 rounded-md border bg-transparent px-3 text-base shadow-xs transition-[color,box-shadow] hover:border-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-invalid:border-2 aria-invalid:border-destructive disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
 
 function minuteDinOra(ora: string) {
   const [ore, minute] = ora.split(':')
@@ -306,7 +304,7 @@ export function ClubActivityForm() {
             </Label>
             <select
               id="coach_id"
-              className={selectCls}
+              className={selectClassName}
               {...register('coach_id')}
               {...camp('coach_id')}
             >
@@ -347,7 +345,7 @@ export function ClubActivityForm() {
               </Label>
               <select
                 id="sport_id"
-                className={selectCls}
+                className={selectClassName}
                 {...register('sport_id')}
                 {...camp('sport_id')}
               >
@@ -366,7 +364,7 @@ export function ClubActivityForm() {
               </Label>
               <select
                 id="location_id"
-                className={selectCls}
+                className={selectClassName}
                 {...register('location_id')}
                 {...camp('location_id')}
               >

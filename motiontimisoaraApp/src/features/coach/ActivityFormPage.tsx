@@ -41,13 +41,11 @@ import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { Textarea } from '@/components/ui/textarea'
+import { selectClassName } from '@/components/ui/field-styles'
 import { INDEPENDENT_OWNER } from '@/features/club/course-form/useCourseFormOwner'
 import { ActivityOwnerFields } from './activity-form/ActivityOwnerFields'
 import { LeaveFormDialog } from './activity-form/LeaveFormDialog'
 import { useActivityFormOwner, type ActivityFormPortal } from './activity-form/useActivityFormOwner'
-
-const selectCls =
-  'border-input dark:bg-input/30 flex h-touch-target w-full min-w-0 rounded-md border bg-transparent px-3 text-base shadow-xs transition-[color,box-shadow] outline-none hover:border-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-invalid:border-2 aria-invalid:border-destructive disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
 
 const NOTA_SPORT = 'Sportul rămâne cel salvat: activitatea are înscrieri.'
 const NOTA_LOCATIE = 'Locația rămâne cea salvată: activitatea are înscrieri.'
@@ -342,7 +340,7 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
               coachError={errors.coach_id?.message}
               noCoaches={noCoaches}
               noLocations={noLocations}
-              selectClassName={selectCls}
+              selectClassName={selectClassName}
               onOwner={schimbaOrganizator}
             />
           </FormSection>
@@ -365,7 +363,7 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
               </Label>
               <select
                 id="sport_id"
-                className={selectCls}
+                className={selectClassName}
                 {...register('sport_id')}
                 {...camp('sport_id', campuriBlocate ? 'sport-blocat' : undefined)}
                 disabled={campuriBlocate}
@@ -390,7 +388,7 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
               </Label>
               <select
                 id="location_id"
-                className={selectCls}
+                className={selectClassName}
                 {...register('location_id')}
                 {...camp('location_id', campuriBlocate ? 'locatie-blocata' : undefined)}
                 disabled={campuriBlocate}

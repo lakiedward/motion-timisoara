@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Textarea } from '@/components/ui/textarea'
 import { countyForCity, normalizeCounty } from '@/lib/geography/romanian-places'
 import ClubAddressFields from './ClubAddressFields'
 import ClubImageField from './ClubImageField'
@@ -155,12 +156,11 @@ export default function ClubProfilePage() {
           {field('name', 'Nume club')}
           <div className="space-y-1.5">
             <Label htmlFor="description">Descriere</Label>
-            <textarea
+            <Textarea
               id="description"
               rows={3}
               aria-describedby="description-hint"
               {...register('description')}
-              className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
             />
             <p id="description-hint" className="text-muted-foreground text-xs">
               Apare pe pagina publică a clubului.

@@ -65,7 +65,7 @@ export default function CompetitionsListPage({ baza }: { baza: CompetitionPortal
               <li key={concurs.id}>
                 <Link
                   to={`${baza}/${concurs.id}/edit`}
-                  className="focus-visible:ring-ring/50 block h-full overflow-hidden rounded-2xl border outline-none transition-colors hover:border-foreground/20 focus-visible:ring-[3px]"
+                  className="block h-full overflow-hidden rounded-2xl border transition-colors hover:border-foreground/20"
                 >
                   {hero && <img src={hero} alt="" className="h-36 w-full object-cover" />}
                   <div className="p-5">
