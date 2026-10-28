@@ -24,6 +24,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import type { CompetitionPortalBaza } from './competition-portal'
 import { useCompetitionOwner } from './useCompetitionOwner'
 import {
@@ -206,12 +207,7 @@ export default function CompetitionFormPage({ baza }: { baza: CompetitionPortalB
 
           <div className="space-y-2">
             <Label htmlFor="descriere-concurs">Descriere</Label>
-            <textarea
-              id="descriere-concurs"
-              rows={6}
-              className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent p-3 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
-              {...register('description')}
-            />
+            <Textarea id="descriere-concurs" rows={6} {...register('description')} />
             {errors.description && (
               <p className="text-destructive text-sm">{errors.description.message}</p>
             )}

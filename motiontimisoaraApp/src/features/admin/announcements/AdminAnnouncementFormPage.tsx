@@ -9,15 +9,13 @@ import { getClubAudiences } from '@/api/club'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { StatusView } from '@/components/ui/status-view'
+import { selectClassName } from '@/components/ui/field-styles'
 import AnnouncementComposeForm from '@/features/club/announcements/AnnouncementComposeForm'
 import { CourseOwnerField } from '@/features/club/course-form/CourseOwnerField'
 import { INDEPENDENT_OWNER } from '@/features/club/course-form/useCourseFormOwner'
 import CoachAnnouncementForm from '@/features/coach/announcements/CoachAnnouncementForm'
 
 const LIST_PATH = '/admin/announcements'
-
-const selectCls =
-  'border-input dark:bg-input/30 flex h-touch-target w-full min-w-0 rounded-md border bg-transparent px-3 text-base shadow-xs transition-[color,box-shadow] outline-none hover:border-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50 lg:h-9 lg:text-sm'
 
 export default function AdminAnnouncementFormPage() {
   const qc = useQueryClient()
@@ -131,7 +129,7 @@ export default function AdminAnnouncementFormPage() {
               clubs={clubs.data ?? []}
               locked={false}
               error={null}
-              selectClassName={selectCls}
+              selectClassName={selectClassName}
               onChange={chooseOwner}
             />
           )}
@@ -140,7 +138,7 @@ export default function AdminAnnouncementFormPage() {
               <Label htmlFor="coach">Antrenor</Label>
               <select
                 id="coach"
-                className={selectCls}
+                className={selectClassName}
                 value={coachId}
                 disabled={!coaches.isSuccess}
                 onChange={(e) => setCoachId(e.target.value)}

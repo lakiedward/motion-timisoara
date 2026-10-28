@@ -19,6 +19,7 @@ import {
 import { FormSection } from '@/components/FormSection'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { selectClassName } from '@/components/ui/field-styles'
 import { OfferCurrencyFields } from '@/components/OfferCurrencyFields'
 import { spreAdult, spreCamp, type Values } from './camp-form-schema'
 import {
@@ -29,9 +30,6 @@ import {
 } from './camp-form-totals'
 import CampFormField from './CampFormField'
 import { CampPriceComponents } from './CampPriceComponents'
-
-const selectCls =
-  'border-input dark:bg-input/30 flex h-touch-target w-full min-w-0 rounded-md border bg-transparent px-3 text-base shadow-xs outline-none hover:border-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:text-sm'
 
 type Props = {
   control: Control<Values>
@@ -110,7 +108,7 @@ export default function CampAgePricesSection({
                 void copiazaDin(e.target.value)
                 e.target.value = ''
               }}
-              className={selectCls}
+              className={selectClassName}
             >
               <option value="">alege o tabără…</option>
               {surseDeCopiat.map((t) => (

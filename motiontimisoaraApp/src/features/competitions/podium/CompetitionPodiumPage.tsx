@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { selectClassName } from '@/components/ui/field-styles'
 import type { CompetitionPortalBaza } from '../competition-portal'
 import { useCompetitionOwner } from '../useCompetitionOwner'
 import { useState } from 'react'
@@ -134,7 +135,7 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
               id="podium-category"
               value={selectedCategoryId}
               onChange={(event) => setCategoryId(event.target.value)}
-              className="border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-md border bg-transparent px-3 text-sm outline-none focus-visible:ring-[3px]"
+              className={selectClassName}
             >
               {categories.data.map((category) => (
                 <option key={category.id} value={category.id}>
@@ -187,7 +188,7 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
                           currentId: current?.id ?? null,
                         })
                       }
-                      className="border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-md border bg-transparent px-3 text-sm outline-none focus-visible:ring-[3px]"
+                      className={selectClassName}
                     >
                       <option value="">Loc necompletat</option>
                       {candidates.data

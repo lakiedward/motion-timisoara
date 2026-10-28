@@ -22,6 +22,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { selectClassName } from '@/components/ui/field-styles'
+import { Textarea } from '@/components/ui/textarea'
 import { baniToRon, formatRonOffer, ronToBani } from '@/lib/money'
 import { CompetitionRouteGalleryEditor } from './CompetitionRouteGalleryEditor'
 
@@ -349,13 +351,12 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
             </div>
             <div className="space-y-2">
               <Label htmlFor="competition-route-description">Descriere traseu</Label>
-              <textarea
+              <Textarea
                 id="competition-route-description"
                 value={routeDraft.description}
                 maxLength={4000}
                 required
                 rows={3}
-                className="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent p-3 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
                 onChange={(event) =>
                   setRouteDraft({ ...routeDraft, description: event.target.value })
                 }
@@ -534,7 +535,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
                 id="competition-category-route"
                 value={categoryDraft.routeId}
                 required
-                className="border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] lg:h-9"
+                className={selectClassName}
                 onChange={(event) =>
                   setCategoryDraft({ ...categoryDraft, routeId: event.target.value })
                 }
