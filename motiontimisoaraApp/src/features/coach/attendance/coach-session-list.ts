@@ -1,6 +1,6 @@
 import type { AdminSession } from '@/api/attendance/admin-sessions'
 import { PAST_VISIBLE_DAYS, type CoachSession, type CoachSessionGroups } from '@/api/coach'
-import { formatDay, formatTime, isStarted } from '@/features/admin/attendance/attendance-overview'
+import { dayKey, formatDay, formatTime, isStarted } from '@/features/admin/attendance/attendance-overview'
 
 export type DayGroup = { key: string; label: string; items: AdminSession[] }
 
@@ -28,13 +28,11 @@ export function toSessionList(groups: CoachSessionGroups | undefined): AdminSess
   return [...groups.upcoming, ...groups.past].map(toSession)
 }
 
-const localDay = (iso: string) => new Date(iso).toDateString()
-
 export function nearestSession(items: AdminSession[], now = Date.now()) {
-  const today = new Date(now).toDateString()
+  const today = dayKey(now)
   const byTime = [...items].sort((x, y) => x.startsAt.localeCompare(y.startsAt))
   return (
-    byTime.find((s) => localDay(s.startsAt) === today) ??
+    byTime.find((s) => dayKey(s.startsAt) === today) ??
     byTime.find((s) => !isStarted(s, now)) ??
     byTime.at(-1) ??
     null
@@ -59,7 +57,7 @@ export function splitByTime(items: AdminSession[], now = Date.now()) {
 export function groupByDay(items: AdminSession[]): DayGroup[] {
   const groups = new Map<string, DayGroup>()
   for (const s of items) {
-    const key = localDay(s.startsAt)
+    const key = dayKey(s.startsAt)
     const g = groups.get(key) ?? { key, label: formatDay(s.startsAt), items: [] }
     g.items.push(s)
     groups.set(key, g)

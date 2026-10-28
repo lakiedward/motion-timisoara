@@ -37,9 +37,9 @@ describe('offline scan queue grouping', () => {
   })
 
   it('adds the day only for scans from another day', () => {
-    const now = new Date(2026, 9, 20, 18, 0)
-    expect(formatScanTime(new Date(2026, 9, 20, 17, 5).toISOString(), now)).toBe('la 17:05')
-    expect(formatScanTime(new Date(2026, 9, 19, 9, 30).toISOString(), now)).toBe(
+    const now = new Date('2026-10-20T18:00:00+03:00')
+    expect(formatScanTime('2026-10-20T14:05:00Z', now)).toBe('la 17:05')
+    expect(formatScanTime('2026-10-19T06:30:00Z', now)).toBe(
       'pe 19.10 la 09:30',
     )
   })

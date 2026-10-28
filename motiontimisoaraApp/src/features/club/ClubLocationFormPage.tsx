@@ -20,12 +20,11 @@ import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { Textarea } from '@/components/ui/textarea'
+import { selectClassName } from '@/components/ui/field-styles'
 import LocationTypeOptions from '@/components/location-form/LocationTypeOptions'
 import { cityForCounty, countyForCity, normalizeCounty } from '@/lib/geography/romanian-places'
 import NearbyLocations from './location-form/NearbyLocations'
-import LocationAddressFields, {
-  locationSelectClassName,
-} from './location-form/LocationAddressFields'
+import LocationAddressFields from './location-form/LocationAddressFields'
 import {
   isOwnLocation,
   locationPointKey,
@@ -258,7 +257,7 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
                 locked={isEdit}
                 lockedName={existing?.club?.name ?? existing?.creator?.name ?? '—'}
                 error={ownerError}
-                selectClassName={locationSelectClassName}
+                selectClassName={selectClassName}
                 onChange={(next) => {
                   form.setOwner(next)
                   setOwnerError(null)
@@ -287,7 +286,7 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
                 <Label htmlFor="type">
                   Tip <RequiredMark />
                 </Label>
-                <select id="type" className={locationSelectClassName} {...register('type')}>
+                <select id="type" className={selectClassName} {...register('type')}>
                   <LocationTypeOptions />
                 </select>
               </div>

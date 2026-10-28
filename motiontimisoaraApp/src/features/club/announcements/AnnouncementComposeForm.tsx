@@ -19,8 +19,8 @@ import { AnnouncementScheduleFields } from './AnnouncementScheduleFields'
 import {
   PRIORITY_OPTIONS,
   announcementSchema,
-  selectCls,
   withScheduleRules,
+  announcementSelectClassName,
 } from './announcement-form'
 import { EMPTY_SCHEDULE, scheduleFromFields, scheduleState } from './announcement-schedule'
 
@@ -146,7 +146,7 @@ export default function AnnouncementComposeForm({
 
           <div className="space-y-1.5">
             <Label htmlFor="audience">Cine primește</Label>
-            <select id="audience" className={selectCls} {...register('audience')}>
+            <select id="audience" className={announcementSelectClassName} {...register('audience')}>
               <option value={WHOLE_CLUB}>Toți părinții clubului</option>
               {AUDIENCE_GROUPS.map(({ kind, label }) => {
                 const options = audiences.filter((a) => a.kind === kind)
@@ -179,7 +179,11 @@ export default function AnnouncementComposeForm({
           <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="space-y-1.5 sm:w-56">
               <Label htmlFor="priority">Prioritate</Label>
-              <select id="priority" className={selectCls} {...register('priority')}>
+              <select
+                id="priority"
+                className={announcementSelectClassName}
+                {...register('priority')}
+              >
                 {PRIORITY_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}

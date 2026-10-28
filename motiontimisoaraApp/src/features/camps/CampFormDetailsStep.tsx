@@ -3,6 +3,7 @@ import type { Control, FieldErrors, UseFormRegister, UseFormSetValue } from 'rea
 import { FormSection, RequiredFieldsNote } from '@/components/FormSection'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { selectClassName } from '@/components/ui/field-styles'
 import CampFormField from './CampFormField'
 import CampPeriodSection from './CampPeriodSection'
 import CampPhotosSection from './CampPhotosSection'
@@ -13,9 +14,6 @@ import { slugDinTitlu } from '@/api/camps-admin'
 import { HeroPhotoField } from '@/components/HeroPhotoField'
 import type { CampRulesFileMeta } from '@/lib/camp-rules'
 import type { Values } from './camp-form-schema'
-
-const selectCls =
-  'border-input dark:bg-input/30 flex h-touch-target w-full min-w-0 rounded-md border bg-transparent px-3 text-base shadow-xs transition-[color,box-shadow] hover:border-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-invalid:border-2 aria-invalid:border-destructive disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
 
 type LocatieOptiune = { id: string; name: string; city: string | null }
 
@@ -109,7 +107,7 @@ export default function CampFormDetailsStep({
               : 'Un loc din platformă: așa ajunge tabăra pe hartă.'
           }
         >
-          <select {...register('location_id')} className={selectCls}>
+          <select {...register('location_id')} className={selectClassName}>
             <option value="">— fără loc ales —</option>
             {(locatii ?? []).map((l) => (
               <option key={l.id} value={l.id}>

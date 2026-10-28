@@ -22,9 +22,7 @@ import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { Textarea } from '@/components/ui/textarea'
-
-const selectCls =
-  'border-input dark:bg-input/30 flex h-touch-target w-full min-w-0 rounded-md border bg-transparent px-3 text-base shadow-xs transition-[color,box-shadow] outline-none hover:border-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:text-sm'
+import { selectClassName } from '@/components/ui/field-styles'
 
 const TELEFON = /^\+?[0-9]{8,15}$/
 const doarNumarul = (s: string) => s.replace(/[\s().-]/g, '')
@@ -274,7 +272,7 @@ export default function ChildFormPage() {
               </div>
               <div className="min-w-0 space-y-1.5">
                 <Label htmlFor="level">Nivel</Label>
-                <select id="level" className={selectCls} {...register('level')}>
+                <select id="level" className={selectClassName} {...register('level')}>
                   <option value="">—</option>
                   <option value="incepator">Începător</option>
                   <option value="intermediar">Intermediar</option>
@@ -284,7 +282,7 @@ export default function ChildFormPage() {
               </div>
               <div className="min-w-0 space-y-1.5">
                 <Label htmlFor="tshirt_size">Mărime tricou</Label>
-                <select id="tshirt_size" className={selectCls} {...register('tshirt_size')}>
+                <select id="tshirt_size" className={selectClassName} {...register('tshirt_size')}>
                   <option value="">—</option>
                   {['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL'].map((s) => (
                     <option key={s} value={s}>
@@ -330,7 +328,7 @@ export default function ChildFormPage() {
             />
             <div className="space-y-1.5 sm:max-w-[calc(50%-0.5rem)]">
               <Label htmlFor="swim_level">Știe să înoate?</Label>
-              <select id="swim_level" className={selectCls} {...register('swim_level')}>
+              <select id="swim_level" className={selectClassName} {...register('swim_level')}>
                 <option value="">—</option>
                 <option value="no">Nu</option>
                 <option value="basic">Puțin</option>

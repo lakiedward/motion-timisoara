@@ -42,12 +42,10 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
+import { selectClassName } from '@/components/ui/field-styles'
 import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
 import { CourseOwnerField } from './course-form/CourseOwnerField'
 import { useCourseFormOwner, type CourseFormPortal } from './course-form/useCourseFormOwner'
-
-const selectCls =
-  'border-input dark:bg-input/30 flex h-touch-target w-full min-w-0 rounded-md border bg-transparent px-3 text-base shadow-xs transition-[color,box-shadow] outline-none hover:border-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-invalid:border-2 aria-invalid:border-destructive disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
 
 const schema = z
   .object({
@@ -331,7 +329,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
               clubs={clubs}
               locked={isEdit}
               error={eroareOrganizator}
-              selectClassName={selectCls}
+              selectClassName={selectClassName}
               required
               onChange={schimbaOrganizator}
             />
@@ -356,7 +354,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
               </Label>
               <select
                 id="coach_id"
-                className={selectCls}
+                className={selectClassName}
                 required
                 {...register('coach_id')}
                 {...camp('coach_id')}
@@ -376,7 +374,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
               </Label>
               <select
                 id="sport_id"
-                className={selectCls}
+                className={selectClassName}
                 required
                 {...register('sport_id')}
                 {...camp('sport_id')}
@@ -396,7 +394,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
               </Label>
               <select
                 id="location_id"
-                className={selectCls}
+                className={selectClassName}
                 required
                 {...register('location_id')}
                 {...camp('location_id')}
@@ -412,7 +410,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
             </div>
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="level">Nivel</Label>
-              <select id="level" className={selectCls} {...register('level')}>
+              <select id="level" className={selectClassName} {...register('level')}>
                 <option value="">—</option>
                 <option value="incepator">Începător</option>
                 <option value="intermediar">Intermediar</option>
