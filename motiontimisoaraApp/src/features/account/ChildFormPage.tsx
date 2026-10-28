@@ -8,6 +8,8 @@ import { ArrowLeft, QrCode } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { createChild, getChild, updateChild } from '@/api/account'
+import { LeaveFormDialog } from '@/components/leave-form/LeaveFormDialog'
+import { useLeaveGuard } from '@/components/leave-form/useLeaveGuard'
 import { useAuth } from '@/lib/auth-context'
 import { validReturnPath } from '@/lib/auth/return-path'
 import { toIso } from '@/lib/camp-period'
@@ -99,13 +101,15 @@ export default function ChildFormPage() {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: bunVenit
       ? { emergency_contact_name: user?.name ?? '', emergency_phone: user?.phone ?? '' }
       : undefined,
   })
+
+  const plecare = useLeaveGuard(isEdit && isDirty)
 
   const nivelSalvat = existing?.level ?? ''
   const nivelCunoscut = toLevelSlug(nivelSalvat)
@@ -154,6 +158,7 @@ export default function ChildFormPage() {
       else await createChild(date)
       qc.invalidateQueries({ queryKey: ['children'] })
       toast.success(isEdit ? 'Copil actualizat.' : 'Copil adăugat.')
+      plecare.allowLeave()
       navigate(dupaSalvare)
     } catch {
       toast.error('Nu am putut salva. Încearcă din nou.')
@@ -458,6 +463,7 @@ export default function ChildFormPage() {
           </Button>
         </div>
       </form>
+      <LeaveFormDialog {...plecare.dialog} />
     </div>
   )
 }
