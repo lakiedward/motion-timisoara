@@ -9,11 +9,13 @@ export function SessionRoster({
   courseId,
   occurrenceId,
   listKey,
+  locked = false,
   qrLinks = false,
 }: {
   courseId: string
   occurrenceId: string
   listKey: string
+  locked?: boolean
   qrLinks?: boolean
 }) {
   const qc = useQueryClient()
@@ -56,6 +58,7 @@ export function SessionRoster({
       error={roster.isError}
       onRetry={() => roster.refetch()}
       busy={mark.isPending || markAll.isPending}
+      locked={locked}
       qrLinks={qrLinks}
       emptyText="Niciun copil înscris la acest curs încă. Înscrierile le fac părinții din contul lor."
       onMark={(r, status) =>

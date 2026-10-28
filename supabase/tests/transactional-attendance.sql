@@ -46,6 +46,7 @@ CREATE POLICY attendance_update ON public.attendance FOR UPDATE TO authenticated
 CREATE POLICY attendance_delete ON public.attendance FOR DELETE TO authenticated USING (true);
 
 \i /tmp/transactional-attendance-migration.sql
+\i /tmp/attendance-after-session-start-migration.sql
 
 CREATE FUNCTION public.test_uuid(n INTEGER) RETURNS UUID LANGUAGE sql IMMUTABLE AS $$
     SELECT ('00000000-0000-0000-0000-' || lpad(n::TEXT, 12, '0'))::UUID
@@ -187,4 +188,24 @@ SELECT public.test_assert(NOT EXISTS (SELECT FROM public.children WHERE id = pub
     AND NOT EXISTS (SELECT FROM public.enrollments WHERE child_id = public.test_uuid(231))
     AND NOT EXISTS (SELECT FROM public.attendance WHERE child_id = public.test_uuid(231))
     AND NOT EXISTS (SELECT FROM public.attendance_accounting WHERE child_id = public.test_uuid(231)), 'account deletion cascades with an active attendance debit');
+INSERT INTO public.course_occurrences (id, course_id, starts_at, ends_at) VALUES
+    (public.test_uuid(104), public.test_uuid(11), now() + INTERVAL '7 days', now() + INTERVAL '7 days 1 hour');
+SELECT public.test_assert(public.test_record(50, 218, 'PRESENT', false, 104)->>'code' = 'TOO_EARLY', 'future session rejects present');
+SELECT public.test_assert(public.test_record(51, 218, 'ABSENT', false, 104)->>'code' = 'TOO_EARLY', 'future session rejects absent');
+SELECT public.test_assert(public.test_record(52, 218, 'PRESENT', true, 104)->>'code' = 'TOO_EARLY', 'future session rejects QR');
+SELECT public.test_assert(public.record_attendance_transaction(public.test_uuid(1), jsonb_build_object(
+    'requestId', public.test_uuid(10053), 'occurrenceId', public.test_uuid(104),
+    'childIds', jsonb_build_array(public.test_uuid(218)), 'status', 'PRESENT', 'onlyUnmarked', true))->>'code' = 'TOO_EARLY', 'future session rejects bulk');
+SELECT public.test_assert(public.test_record(54, 218, 'PRESENT', false, 104, 4)->>'code' = 'TOO_EARLY', 'future session rejects admin');
+SELECT public.test_assert((SELECT remaining_sessions = 3 AND sessions_used = 0 FROM public.enrollments WHERE id = public.test_uuid(1218))
+    AND NOT EXISTS (SELECT FROM public.attendance WHERE occurrence_id = public.test_uuid(104))
+    AND NOT EXISTS (SELECT FROM public.attendance_accounting WHERE occurrence_id = public.test_uuid(104))
+    AND NOT EXISTS (SELECT FROM public.attendance_operations WHERE request_id BETWEEN public.test_uuid(10050) AND public.test_uuid(10054)), 'rejected future marks leave no trace');
+UPDATE public.course_occurrences SET starts_at = now() - INTERVAL '1 minute' WHERE id = public.test_uuid(104);
+SELECT public.test_assert(public.test_record(55, 219, 'PRESENT', false, 104)->>'outcome' = 'recorded', 'started session accepts present');
+UPDATE public.course_occurrences SET starts_at = now() + INTERVAL '7 days' WHERE id = public.test_uuid(104);
+SELECT public.test_assert(public.test_record(55, 219, 'PRESENT', false, 104)->>'outcome' = 'recorded', 'receipt replay survives a moved session');
+SELECT public.test_assert(public.test_record(56, 219, null, false, 104)->>'outcome' = 'recorded', 'mark on a moved future session can be cleared');
+SELECT public.test_assert((SELECT remaining_sessions = 3 AND sessions_used = 0 FROM public.enrollments WHERE id = public.test_uuid(1219))
+    AND NOT EXISTS (SELECT FROM public.attendance WHERE occurrence_id = public.test_uuid(104)), 'clearing a future mark refunds the session');
 SELECT 'Transactional attendance assertions passed' AS result;

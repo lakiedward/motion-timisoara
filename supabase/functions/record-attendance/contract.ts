@@ -78,6 +78,7 @@ const rejectionMessages: Record<string, string> = {
   AMBIGUOUS_ENROLLMENT:
     "Copilul are mai multe înscrieri active. Contactează administratorul.",
   NO_REMAINING_SESSIONS: "Copilul nu mai are ședințe disponibile.",
+  TOO_EARLY: "Pontajul se deschide la începutul ședinței.",
   INVALID_BALANCE: "Soldul ședințelor trebuie verificat de administrator.",
   UNAUTHORIZED: "Sesiunea a expirat. Autentifică-te din nou.",
   SERVER_ERROR: "Prezența nu a putut fi sincronizată. Vom reîncerca.",
