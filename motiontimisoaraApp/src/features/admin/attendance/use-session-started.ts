@@ -8,7 +8,7 @@ export function useSessionStarted(startsAt: string) {
   const started = now >= start
 
   useEffect(() => {
-    if (started) return
+    if (started || Number.isNaN(start)) return
     const timer = setTimeout(() => setNow(Date.now()), Math.min(start - Date.now(), MAX_TIMEOUT))
     return () => clearTimeout(timer)
   }, [start, started, now])
