@@ -78,12 +78,12 @@ test('a failed load shows an error with retry instead of "Niciun club asociat."'
   expect(await screen.findByText('Nu am putut încărca profilul clubului.')).toBeVisible()
   expect(screen.queryByText('Niciun club asociat.')).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: 'Reîncearcă' }))
-  expect(await screen.findByLabelText('Nume club')).toHaveValue('Clubul Exemplu')
+  expect(await screen.findByLabelText(/^Nume club/)).toHaveValue('Clubul Exemplu')
 })
 
 test('invalid website and email are rejected under their fields and nothing is saved', async () => {
   renderPage()
-  await screen.findByLabelText('Nume club')
+  await screen.findByLabelText(/^Nume club/)
   fireEvent.change(screen.getByLabelText('Website (opțional)'), { target: { value: 'exemplu' } })
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'nu-e-email' } })
   fireEvent.click(screen.getByRole('button', { name: 'Salvează' }))
@@ -97,7 +97,7 @@ test('invalid website and email are rejected under their fields and nothing is s
 
 test('saving normalizes the website and sends no billing fields', async () => {
   renderPage()
-  await screen.findByLabelText('Nume club')
+  await screen.findByLabelText(/^Nume club/)
   fireEvent.change(screen.getByLabelText('Website (opțional)'), {
     target: { value: 'clubul-tau.ro' },
   })
@@ -131,7 +131,7 @@ test('the address uses county, city and a map point that is saved but never show
     lng: 21.22,
   })
   renderPage()
-  await screen.findByLabelText('Nume club')
+  await screen.findByLabelText(/^Nume club/)
   expect(screen.getByLabelText('Adresă')).toHaveValue('Str. Exemplu 10')
   expect(screen.getByLabelText('Județ / regiune')).toHaveValue('Timiș')
   expect(document.body.textContent).not.toContain('45.75')
@@ -154,7 +154,7 @@ test('a club row without point columns still saves', async () => {
   delete legacy.county
   mocks.getMyClub.mockResolvedValue(legacy)
   renderPage()
-  await screen.findByLabelText('Nume club')
+  await screen.findByLabelText(/^Nume club/)
   fireEvent.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() => expect(mocks.updateClub).toHaveBeenCalled())
   expect(mocks.updateClub.mock.calls[0][1]).toMatchObject({ lat: null, lng: null })
@@ -163,7 +163,7 @@ test('a club row without point columns still saves', async () => {
 test('a failed save keeps what was typed', async () => {
   mocks.updateClub.mockRejectedValueOnce(new Error('boom'))
   renderPage()
-  const name = await screen.findByLabelText('Nume club')
+  const name = await screen.findByLabelText(/^Nume club/)
   fireEvent.change(name, { target: { value: 'Nume nou' } })
   fireEvent.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() => expect(mocks.updateClub).toHaveBeenCalled())
@@ -172,8 +172,11 @@ test('a failed save keeps what was typed', async () => {
 
 test('touch targets, hints, public link and consent row', async () => {
   renderPage()
-  await screen.findByLabelText('Nume club')
-  expect(screen.getByLabelText('Nume club').className).toContain('min-h-11')
+  await screen.findByLabelText(/^Nume club/)
+  expect(screen.getByLabelText(/^Nume club/).className).toContain('min-h-11')
+  expect(screen.getByLabelText(/^Nume club/)).toHaveAttribute('aria-required', 'true')
+  expect(screen.getByText(/sunt obligatorii/)).toBeVisible()
+  expect(screen.getByRole('group', { name: 'Logo' })).toBeVisible()
   expect(screen.getByRole('button', { name: 'Salvează' }).className).toContain('min-h-11')
   expect(screen.getByText('Apare pe pagina publică a clubului.')).toBeVisible()
   expect(screen.getByRole('link', { name: /Vezi pagina publică/ })).toHaveAttribute(

@@ -74,8 +74,8 @@ export default function ClubImageField({
   const pickLabel = upload.isPending ? 'Se încarcă…' : url ? 'Schimbă' : 'Alege o poză'
 
   return (
-    <fieldset className="space-y-3 rounded-2xl border p-4" aria-busy={busy}>
-      <legend className="px-2 font-semibold">{copy.title}</legend>
+    <fieldset className="min-w-0 space-y-3" aria-busy={busy}>
+      <legend className="text-foreground mb-1 font-semibold">{copy.title}</legend>
       <p className="text-muted-foreground text-sm">{copy.hint}</p>
       {url ? (
         <img
