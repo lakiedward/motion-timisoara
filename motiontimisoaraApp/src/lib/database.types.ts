@@ -3155,6 +3155,24 @@ export type Database = {
         Args: { p_params: Json; p_payment_id: string }
         Returns: Json
       }
+      get_cash_payments: {
+        Args: never
+        Returns: {
+          amount: number
+          created_at: string
+          currency: string
+          enrollment_id: string
+          entity_id: string
+          is_adult: boolean
+          kind: string
+          offer_title: string
+          paid_at: string
+          participant_name: string
+          payment_id: string
+          sessions: number
+          status: string
+        }[]
+      }
       get_competition_cash_payments: {
         Args: { p_competition_id: string }
         Returns: {

@@ -102,6 +102,7 @@ test('coach navigation groups offers and organisation under labelled groups', ()
     'Concursuri',
     'Locații',
     'Prezență',
+    'Încasări cash',
     'Anunțuri',
   ])
   const offers = within(nav).getByRole('group', { name: 'Oferte' })
@@ -111,7 +112,7 @@ test('coach navigation groups offers and organisation under labelled groups', ()
     within(organisation)
       .getAllByRole('link')
       .map((link) => link.textContent),
-  ).toEqual(['Locații', 'Prezență', 'Anunțuri'])
+  ).toEqual(['Locații', 'Prezență', 'Încasări cash', 'Anunțuri'])
   expect(screen.getByRole('link', { name: 'Panou' })).toHaveAttribute('aria-current', 'page')
 })
 

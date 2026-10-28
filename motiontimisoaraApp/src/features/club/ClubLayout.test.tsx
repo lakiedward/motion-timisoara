@@ -50,6 +50,7 @@ test('club chrome keeps the portal nav links and logo to public home', () => {
     'Concursuri',
     'Locații',
     'Antrenori',
+    'Încasări cash',
     'Anunțuri',
   ]
   const hrefs = [
@@ -61,6 +62,7 @@ test('club chrome keeps the portal nav links and logo to public home', () => {
     '/club/competitions',
     '/club/locations',
     '/club/coaches',
+    '/club/payments',
     '/club/announcements',
   ]
   const nav = screen.getByRole('navigation', { name: 'Navigare club' })
@@ -71,7 +73,7 @@ test('club chrome keeps the portal nav links and logo to public home', () => {
     'CursuriActivitățiTabereConcursuri',
   )
   expect(within(nav).getByRole('group', { name: 'Organizare' })).toHaveTextContent(
-    'LocațiiAntrenoriAnunțuri',
+    'LocațiiAntrenoriÎncasări cashAnunțuri',
   )
   expect(screen.getAllByRole('link', { name: /motion românia/i })[0]).toHaveAttribute('href', '/')
   expect(screen.getByRole('button', { name: 'Deconectare' })).toBeInTheDocument()

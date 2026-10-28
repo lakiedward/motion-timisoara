@@ -20,6 +20,7 @@ import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { cn } from '@/lib/utils'
+import { CashPaymentsNotice } from '@/features/payments/CashPaymentsNotice'
 
 const linkCardClass = cn(
   'bg-card flex items-center gap-4 rounded-xl border p-6 transition-colors',
@@ -117,6 +118,7 @@ export default function CoachDashboard() {
             text="Adaugă primul curs cu „Curs nou”."
           />
         ) : null}
+        <CashPaymentsNotice to="/coach/payments" />
         <Link
           to="/coach/stripe"
           data-testid="coach-stat-stripe"
