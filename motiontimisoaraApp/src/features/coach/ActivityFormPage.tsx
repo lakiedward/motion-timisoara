@@ -43,7 +43,7 @@ import { StatusView } from '@/components/ui/status-view'
 import { Textarea } from '@/components/ui/textarea'
 import { INDEPENDENT_OWNER } from '@/features/club/course-form/useCourseFormOwner'
 import { ActivityOwnerFields } from './activity-form/ActivityOwnerFields'
-import { LeaveFormDialog } from './activity-form/LeaveFormDialog'
+import { LeaveFormDialog } from '@/components/leave-form/LeaveFormDialog'
 import { useActivityFormOwner, type ActivityFormPortal } from './activity-form/useActivityFormOwner'
 
 const selectCls =

@@ -2,7 +2,7 @@ import { vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 
 import ChildFormPage from './ChildFormPage'
 import { createChild, getChild, updateChild } from '@/api/account'
@@ -45,17 +45,20 @@ const copil = {
 
 function renderForm(ruta = `/account/child/${COPIL_ID}`) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const router = createMemoryRouter(
+    [
+      { path: '/account', element: <p>Panoul părintelui</p> },
+      { path: '/cursuri/42', element: <p>Cursul ales</p> },
+      { path: '/account/children', element: <p>Lista de copii</p> },
+      { path: '/account/child/:id/qr', element: <p>Codul QR</p> },
+      { path: '/account/child/new', element: <ChildFormPage /> },
+      { path: '/account/child/:id', element: <ChildFormPage /> },
+    ],
+    { initialEntries: [ruta] },
+  )
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[ruta]}>
-        <Routes>
-          <Route path="/account" element={<p>Panoul părintelui</p>} />
-          <Route path="/cursuri/42" element={<p>Cursul ales</p>} />
-          <Route path="/account/children" element={<p>Lista de copii</p>} />
-          <Route path="/account/child/new" element={<ChildFormPage />} />
-          <Route path="/account/child/:id" element={<ChildFormPage />} />
-        </Routes>
-      </MemoryRouter>
+      <RouterProvider router={router} />
     </QueryClientProvider>,
   )
 }
@@ -371,4 +374,39 @@ test('formularul obișnuit din Copiii mei rămâne neschimbat', async () => {
     '/account/children',
   )
   expect(screen.queryByRole('link', { name: 'Mai târziu' })).not.toBeInTheDocument()
+})
+
+test('fără modificări, linkul Cod QR pleacă direct', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  await screen.findByDisplayValue('Andrei Popescu')
+  await user.click(screen.getByRole('link', { name: 'Cod QR' }))
+  expect(await screen.findByText('Codul QR')).toBeInTheDocument()
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+})
+
+test('cu modificări nesalvate, Cod QR întreabă, „Rămân” păstrează textul, „Renunț” pleacă', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  const nume = await screen.findByDisplayValue('Andrei Popescu')
+  await user.type(nume, ' Jr')
+  await user.click(screen.getByRole('link', { name: 'Cod QR' }))
+  expect(await screen.findByRole('dialog', { name: 'Renunți la modificări?' })).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Rămân' }))
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  expect(screen.getByDisplayValue('Andrei Popescu Jr')).toBeInTheDocument()
+
+  await user.click(screen.getByRole('link', { name: 'Înapoi' }))
+  await user.click(await screen.findByRole('button', { name: 'Renunț' }))
+  expect(await screen.findByText('Lista de copii')).toBeInTheDocument()
+})
+
+test('după salvare, plecarea spre listă nu mai întreabă', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  const nume = await screen.findByDisplayValue('Andrei Popescu')
+  await user.type(nume, ' Jr')
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  expect(await screen.findByText('Lista de copii')).toBeInTheDocument()
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
