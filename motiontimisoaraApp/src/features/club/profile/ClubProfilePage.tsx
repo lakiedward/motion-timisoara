@@ -7,6 +7,7 @@ import { ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { getMyClub, updateClub, type Club } from '@/api/club'
+import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -46,9 +47,6 @@ function toValues(club: Club): ClubProfileValues {
     public_email_consent: club.public_email_consent,
   }
 }
-
-const cardClass = 'bg-card space-y-4 rounded-xl border p-6'
-const headingClass = 'font-display text-xl font-bold text-foreground'
 
 export default function ClubProfilePage() {
   const qc = useQueryClient()
@@ -115,15 +113,18 @@ export default function ClubProfilePage() {
     }
   }
 
-  const field = (id: keyof ClubProfileValues, label: string, type = 'text') => {
+  const field = (id: keyof ClubProfileValues, label: string, type = 'text', required = false) => {
     const message = errors[id]?.message
     return (
       <div className="space-y-1.5">
-        <Label htmlFor={id}>{label}</Label>
+        <Label htmlFor={id}>
+          {label} {required && <RequiredMark />}
+        </Label>
         <Input
           id={id}
           type={type}
           className="min-h-11"
+          aria-required={required || undefined}
           {...register(id)}
           aria-invalid={!!message}
           aria-describedby={message ? `${id}-error` : undefined}
@@ -139,8 +140,11 @@ export default function ClubProfilePage() {
 
   return (
     <div className="max-w-2xl">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-bold text-foreground">Profil club</h1>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">Profil club</h1>
+          <RequiredFieldsNote />
+        </div>
         <Link
           to={`/cluburi/${club.id}`}
           className="text-primary inline-flex min-h-11 items-center gap-2 text-sm font-semibold"
@@ -149,11 +153,8 @@ export default function ClubProfilePage() {
         </Link>
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
-        <section aria-labelledby="club-public-heading" className={cardClass}>
-          <h2 id="club-public-heading" className={headingClass}>
-            Date publice
-          </h2>
-          {field('name', 'Nume club')}
+        <FormSection title="Date publice">
+          {field('name', 'Nume club', 'text', true)}
           <div className="space-y-1.5">
             <Label htmlFor="description">Descriere</Label>
             <Textarea
@@ -167,16 +168,16 @@ export default function ClubProfilePage() {
             </p>
           </div>
           {field('website', 'Website (opțional)', 'url')}
-          <div className="grid gap-4 sm:grid-cols-2">
+        </FormSection>
+
+        <FormSection title="Logo și copertă" description="Opționale; le poți schimba oricând.">
+          <div className="grid gap-6 sm:grid-cols-2">
             <ClubImageField clubId={club.id} kind="logo" path={club.logo_storage_path} />
             <ClubImageField clubId={club.id} kind="hero" path={club.hero_photo_storage_path} />
           </div>
-        </section>
+        </FormSection>
 
-        <section aria-labelledby="club-contact-heading" className={cardClass}>
-          <h2 id="club-contact-heading" className={headingClass}>
-            Contact
-          </h2>
+        <FormSection title="Contact">
           <div className="grid gap-4 sm:grid-cols-2">
             {field('email', 'Email', 'email')}
             {field('phone', 'Telefon', 'tel')}
@@ -192,7 +193,7 @@ export default function ClubProfilePage() {
             <input type="checkbox" {...register('public_email_consent')} className="size-4" />
             Afișează emailul public pe pagina clubului
           </label>
-        </section>
+        </FormSection>
 
         <Button type="submit" className="min-h-11" disabled={isSubmitting}>
           {isSubmitting ? 'Se salvează…' : 'Salvează'}

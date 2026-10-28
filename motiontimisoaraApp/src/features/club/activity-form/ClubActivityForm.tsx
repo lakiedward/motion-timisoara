@@ -35,6 +35,8 @@ import { OfferRulesFieldset } from '@/components/RulesFileField'
 import { Button } from '@/components/ui/button'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { LeaveFormDialog } from '@/components/leave-form/LeaveFormDialog'
+import { useLeaveGuard } from '@/components/leave-form/useLeaveGuard'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
@@ -121,10 +123,25 @@ export function ClubActivityForm() {
     handleSubmit,
     reset,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { currency: 'RON', eur_ron_rate: '' },
+    defaultValues: {
+      currency: 'RON',
+      eur_ron_rate: '',
+      name: '',
+      sport_id: '',
+      location_id: '',
+      coach_id: '',
+      activity_date: '',
+      start_time: '',
+      end_time: '',
+      price_lei: '',
+      capacity: '',
+      age_from: '',
+      age_to: '',
+      description: '',
+    },
   })
   const [fisierLocal, setFisierLocal] = useState<File | null>(null)
   const [pozaHero, setPozaHero] = useState<File | null>(null)
@@ -141,6 +158,7 @@ export function ClubActivityForm() {
   const currency = useWatch({ control, name: 'currency' })
   const cursEur = useWatch({ control, name: 'eur_ron_rate' })
   const faraCurs = eurFaraCurs(currency, cursEur)
+  const plecare = useLeaveGuard(isDirty || pozaHero !== null || fisierLocal !== null)
 
   useEffect(() => {
     if (existing && coachesReady && locationsReady) {
@@ -207,6 +225,7 @@ export function ClubActivityForm() {
               'Activitatea a fost creată, dar fișierul regulamentului nu a putut fi urcat.',
             )
             qc.invalidateQueries({ queryKey: ['club-activities'] })
+            plecare.allowLeave()
             navigate('/club/activities')
             return
           }
@@ -214,6 +233,7 @@ export function ClubActivityForm() {
       }
       qc.invalidateQueries({ queryKey: ['club-activities'] })
       toast.success(isEdit ? 'Activitate actualizată.' : 'Activitate creată.')
+      plecare.allowLeave()
       navigate('/club/activities')
     } catch {
       toast.error('Nu am putut salva activitatea.')
@@ -543,6 +563,7 @@ export function ClubActivityForm() {
           )}
         </div>
       </form>
+      <LeaveFormDialog {...plecare.dialog} />
     </div>
   )
 }

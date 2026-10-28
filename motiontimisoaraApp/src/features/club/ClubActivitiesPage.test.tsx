@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { vi } from 'vitest'
 
@@ -42,15 +42,17 @@ const SPORT = '4c7a30c1-42a4-4bad-839c-f03d2b90e88a'
 
 function renderPage(ruta = '/club/activities') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const router = createMemoryRouter(
+    [
+      { path: '/club/activities', element: <ClubActivitiesPage /> },
+      { path: '/club/activities/new', element: <ClubActivitiesPage /> },
+      { path: '/club/activities/:id/edit', element: <ClubActivitiesPage /> },
+    ],
+    { initialEntries: [ruta] },
+  )
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[ruta]}>
-        <Routes>
-          <Route path="/club/activities" element={<ClubActivitiesPage />} />
-          <Route path="/club/activities/new" element={<ClubActivitiesPage />} />
-          <Route path="/club/activities/:id/edit" element={<ClubActivitiesPage />} />
-        </Routes>
-      </MemoryRouter>
+      <RouterProvider router={router} />
     </QueryClientProvider>,
   )
 }
