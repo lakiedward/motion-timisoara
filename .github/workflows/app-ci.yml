@@ -44,6 +44,8 @@ on:
       - 'supabase/tests/*checkout-acceptances*'
       - 'supabase/functions/_shared/checkout-acceptance*.ts'
       - 'supabase/functions/_shared/terms-version.ts'
+      - 'supabase/migrations/00104_cash_payments_list.sql'
+      - 'supabase/tests/*cash-payments-list*'
   workflow_dispatch:
 
 concurrency:
@@ -118,6 +120,9 @@ jobs:
       - name: Verify checkout acceptance log
         shell: pwsh
         run: ./supabase/tests/run-checkout-acceptances.ps1
+      - name: Verify cash payments list access
+        shell: pwsh
+        run: ./supabase/tests/run-cash-payments-list.ps1
 
   build:
     runs-on: ubuntu-latest

@@ -44,6 +44,7 @@ import CampFormPage from '@/features/camps/CampFormPage'
 import CampEnrolledPage from '@/features/camps/CampEnrolledPage'
 import ClubStripePage from '@/features/club/ClubStripePage'
 import CoachStripePage from '@/features/coach/CoachStripePage'
+import CashPaymentsPage from '@/features/payments/CashPaymentsPage'
 import HomePage from '@/features/public/HomePage'
 import ProgramPage from '@/features/public/ProgramPage'
 import CourseDetailsPage from '@/features/public/CourseDetailsPage'
@@ -204,6 +205,7 @@ export const router = createBrowserRouter([
                 element: <CampEnrolledPage baza="/coach/camps" />,
               },
               { path: '/coach/attendance', element: <CoachAttendancePage /> },
+              { path: '/coach/payments', element: <CashPaymentsPage /> },
               {
                 path: '/coach/children/:id/qr',
                 element: <ChildQrPage inapoi="/coach/attendance" />,
@@ -271,6 +273,7 @@ export const router = createBrowserRouter([
               { path: '/admin/announcements', element: <AdminAnnouncementsPage /> },
               { path: '/admin/announcements/new', element: <AdminAnnouncementFormPage /> },
               { path: '/admin/attendance', element: <AdminAttendancePage /> },
+              { path: '/admin/payments', element: <CashPaymentsPage /> },
               { path: '/admin/locations', element: <AdminLocationsPage /> },
               { path: '/admin/locations/new', element: <ClubLocationFormPage portal="admin" /> },
               {
@@ -299,6 +302,7 @@ export const router = createBrowserRouter([
                   { path: '/club/stripe/onboarding/refresh', element: <ClubStripePage /> },
                   { path: '/club/coaches', element: <ClubCoachesPage /> },
                   { path: '/club/announcements', element: <ClubAnnouncementsPage /> },
+                  { path: '/club/payments', element: <CashPaymentsPage /> },
                   { path: '/club/courses', element: <ClubCoursesPage /> },
                   { path: '/club/courses/new', element: <ClubCourseFormPage /> },
                   { path: '/club/courses/:id/edit', element: <ClubCourseFormPage /> },

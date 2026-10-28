@@ -1,4 +1,5 @@
 import {
+  Banknote,
   Building2,
   CalendarRange,
   ClipboardCheck,
@@ -32,6 +33,7 @@ export const coachNavigation: PortalNavItem[] = [
   { to: '/coach/competitions', label: 'Concursuri', icon: Trophy, group: 'Oferte' },
   { to: '/coach/locations', label: 'Locații', icon: MapPin, group: 'Organizare' },
   { to: '/coach/attendance', label: 'Prezență', icon: ClipboardCheck, group: 'Organizare' },
+  { to: '/coach/payments', label: 'Încasări cash', icon: Banknote, group: 'Organizare' },
   { to: '/coach/announcements', label: 'Anunțuri', icon: Megaphone, group: 'Organizare' },
 ]
 
@@ -44,6 +46,7 @@ export const clubNavigation: PortalNavItem[] = [
   { to: '/club/competitions', label: 'Concursuri', icon: Trophy, group: 'Oferte' },
   { to: '/club/locations', label: 'Locații', icon: MapPin, group: 'Organizare' },
   { to: '/club/coaches', label: 'Antrenori', icon: Users, group: 'Organizare' },
+  { to: '/club/payments', label: 'Încasări cash', icon: Banknote, group: 'Organizare' },
   { to: '/club/announcements', label: 'Anunțuri', icon: Megaphone, group: 'Organizare' },
 ]
 
@@ -58,6 +61,7 @@ export const adminNavigation: PortalNavItem[] = [
   { to: '/admin/competitions', label: 'Concursuri', icon: Trophy },
   { to: '/admin/announcements', label: 'Anunțuri', icon: Megaphone },
   { to: '/admin/attendance', label: 'Prezență', icon: ClipboardCheck },
+  { to: '/admin/payments', label: 'Încasări cash', icon: Banknote },
   { to: '/admin/sports', label: 'Sporturi', icon: Dumbbell },
   { to: '/admin/codes', label: 'Coduri invitație', icon: Ticket },
 ]
