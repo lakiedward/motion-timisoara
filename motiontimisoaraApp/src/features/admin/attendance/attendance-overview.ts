@@ -19,24 +19,30 @@ export const NO_SESSION_FILTERS: SessionFilters = { status: 'unmarked', sport: '
 
 export const countSessions = (n: number) => plural(n, 'ședință', 'ședințe')
 
-const WEEKDAYS = ['duminică', 'luni', 'marți', 'miercuri', 'joi', 'vineri', 'sâmbătă']
+const TZ = 'Europe/Bucharest'
+const dayKeyFormat = new Intl.DateTimeFormat('en-CA', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  timeZone: TZ,
+})
+const timeFormat = new Intl.DateTimeFormat('ro-RO', { hour: '2-digit', minute: '2-digit', timeZone: TZ })
+const dateFormat = new Intl.DateTimeFormat('ro-RO', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  timeZone: TZ,
+})
 
-function dayKey(iso: string) {
-  const d = new Date(iso)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
+export const dayKey = (iso: string | number) => dayKeyFormat.format(new Date(iso))
 
-export function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })
-}
+export const formatTime = (iso: string) => timeFormat.format(new Date(iso))
 
 export function formatDay(iso: string, now = Date.now()) {
-  const d = new Date(iso)
   const diff = Math.round(
-    (new Date(dayKey(iso)).getTime() - new Date(dayKey(new Date(now).toISOString())).getTime()) /
-      86_400_000,
+    (Date.parse(`${dayKey(iso)}T00:00:00Z`) - Date.parse(`${dayKey(now)}T00:00:00Z`)) / 86_400_000,
   )
-  const date = `${WEEKDAYS[d.getDay()]} ${d.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' })}`
+  const date = dateFormat.format(new Date(iso)).replace(',', '')
   if (diff === 0) return `Azi, ${date}`
   if (diff === -1) return `Ieri, ${date}`
   if (diff === 1) return `Mâine, ${date}`
@@ -50,7 +56,7 @@ export const isUnmarked = (s: AdminSession, now = Date.now()) =>
   isStarted(s, now) && s.enrolledCount > 0 && s.markedCount < s.enrolledCount
 
 export function matchesStatus(s: AdminSession, status: SessionStatus, now = Date.now()) {
-  if (status === 'today') return dayKey(s.startsAt) === dayKey(new Date(now).toISOString())
+  if (status === 'today') return dayKey(s.startsAt) === dayKey(now)
   if (status === 'unmarked') return isUnmarked(s, now)
   if (status === 'upcoming') return !isStarted(s, now)
   if (status === 'past') return isStarted(s, now)

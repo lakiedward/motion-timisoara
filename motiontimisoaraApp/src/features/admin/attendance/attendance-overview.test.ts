@@ -2,13 +2,14 @@ import type { AdminSession } from '@/api/attendance/admin-sessions'
 import {
   filterSessions,
   formatDay,
+  formatTime,
   groupSessionsByOrganizer,
   isUnmarked,
   sessionStatusCounts,
   sportCounts,
 } from './attendance-overview'
 
-const NOW = new Date('2026-10-20T12:00:00').getTime()
+const NOW = new Date('2026-10-20T12:00:00+03:00').getTime()
 
 function session(p: Partial<AdminSession> & { id: string; startsAt: string }): AdminSession {
   return {
@@ -28,7 +29,7 @@ function session(p: Partial<AdminSession> & { id: string; startsAt: string }): A
   }
 }
 
-const at = (d: string) => new Date(d).toISOString()
+const at = (d: string) => new Date(`${d}+03:00`).toISOString()
 
 const items = [
   session({ id: 'past-unmarked', startsAt: at('2026-10-18T17:00:00') }),
@@ -111,5 +112,11 @@ describe('attendance overview', () => {
     expect(formatDay(at('2026-10-19T18:00:00'), NOW)).toBe('Ieri, luni 19 octombrie')
     expect(formatDay(at('2026-10-21T18:00:00'), NOW)).toBe('Mâine, miercuri 21 octombrie')
     expect(formatDay(at('2026-10-15T18:00:00'), NOW)).toBe('Joi 15 octombrie')
+  })
+
+  it('shows Romanian time whatever the device time zone', () => {
+    expect(formatTime('2026-10-27T15:00:00Z')).toBe('17:00')
+    expect(formatTime('2026-10-20T14:00:00Z')).toBe('17:00')
+    expect(formatDay('2026-10-20T22:30:00Z', NOW)).toBe('Mâine, miercuri 21 octombrie')
   })
 })
