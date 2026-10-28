@@ -1,3 +1,4 @@
+import { dayKey, formatTime } from '@/features/admin/attendance/attendance-overview'
 import { plural } from '@/lib/plural'
 import type { ScanEntry } from './attendance-queue'
 
@@ -37,10 +38,13 @@ export function groupScans(entries: ScanEntry[]): ScanGroup[] {
 }
 
 export function formatScanTime(iso: string, now = new Date()) {
-  const date = new Date(iso)
-  const time = date.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })
-  if (date.toDateString() === now.toDateString()) return `la ${time}`
-  const day = date.toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })
+  const time = formatTime(iso)
+  if (dayKey(iso) === dayKey(now.getTime())) return `la ${time}`
+  const day = new Intl.DateTimeFormat('ro-RO', {
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: 'Europe/Bucharest',
+  }).format(new Date(iso))
   return `pe ${day} la ${time}`
 }
 

@@ -13,9 +13,9 @@ import { AnnouncementScheduleFields } from './AnnouncementScheduleFields'
 import {
   PRIORITY_OPTIONS,
   announcementSchema,
-  selectCls,
   withScheduleRules,
   type AnnouncementValues,
+  announcementSelectClassName,
 } from './announcement-form'
 import { scheduleFromFields, scheduleState, scheduleToFields } from './announcement-schedule'
 
@@ -103,7 +103,11 @@ export function AnnouncementEditForm({ anunt, onSaved, onCancel }: Props) {
       <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1.5 sm:w-56">
           <Label htmlFor={ids.priority}>Prioritate</Label>
-          <select id={ids.priority} className={selectCls} {...register('priority')}>
+          <select
+            id={ids.priority}
+            className={announcementSelectClassName}
+            {...register('priority')}
+          >
             {PRIORITY_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}

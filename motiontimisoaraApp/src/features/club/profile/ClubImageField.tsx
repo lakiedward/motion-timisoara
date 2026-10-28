@@ -8,6 +8,7 @@ import { esteImagine } from '@/lib/media'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { fieldFocusWithinClassName } from '@/components/ui/field-styles'
 
 const COPY = {
   logo: {
@@ -103,7 +104,8 @@ export default function ClubImageField({
         ) : (
           <Label
             className={cn(
-              'border-input inline-flex min-h-11 cursor-pointer items-center rounded-md border px-4 text-sm font-medium focus-within:ring-[3px] focus-within:ring-ring/50',
+              'border-input inline-flex min-h-11 cursor-pointer items-center rounded-md border px-4 text-sm font-medium',
+              fieldFocusWithinClassName,
               busy && 'pointer-events-none opacity-50',
             )}
           >

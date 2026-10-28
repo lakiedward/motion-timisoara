@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { fieldFocusWithinClassName } from '@/components/ui/field-styles'
 import { initials } from '@/lib/initials'
 
 const QUERY_KEY = ['my-coach-photo']
@@ -82,7 +83,8 @@ export default function CoachPhotoField({ name }: { name: string }) {
   ) : (
     <Label
       className={cn(
-        'border-input inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-md border px-4 text-sm font-medium focus-within:ring-[3px] focus-within:ring-ring/50',
+        'border-input inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-md border px-4 text-sm font-medium',
+        fieldFocusWithinClassName,
         busy && 'pointer-events-none opacity-50',
       )}
     >

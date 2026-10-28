@@ -14,9 +14,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import AnnouncementMediaPicker from '@/features/club/announcements/AnnouncementMediaPicker'
 import type { FisierPregatit } from '@/lib/media'
-
-const selectCls =
-  'border-input dark:bg-input/30 flex h-touch-target w-full min-w-0 rounded-md border bg-transparent px-3 text-base shadow-xs transition-[color,box-shadow] outline-none hover:border-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring'
+import { announcementSelectClassName } from '@/features/club/announcements/announcement-form'
 
 const CHECKBOX =
   'accent-primary focus-visible:outline-ring size-5 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2'
@@ -81,7 +79,7 @@ export default function CoachAnnouncementForm({ courses, onPublished, onCancel }
             <Label htmlFor="courseId">Cursul</Label>
             <select
               id="courseId"
-              className={selectCls}
+              className={announcementSelectClassName}
               aria-invalid={!!errors.courseId}
               aria-describedby={fieldDescription('courseId', undefined, errors.courseId?.message)}
               {...register('courseId')}

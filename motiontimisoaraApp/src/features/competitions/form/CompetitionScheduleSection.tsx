@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { selectClassName } from '@/components/ui/field-styles'
 import type { CompetitionFormValues } from './competition-form-schema'
 
 type LocationOption = { id: string; name: string; city: string | null }
@@ -118,7 +119,7 @@ export function CompetitionScheduleSection({
         <Label htmlFor="competition-location-map">Locație pe hartă (opțional)</Label>
         <select
           id="competition-location-map"
-          className="border-input focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] lg:h-9"
+          className={selectClassName}
           {...register('locationId')}
         >
           <option value="">Fără pin pe hartă</option>

@@ -50,9 +50,7 @@ import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { Textarea } from '@/components/ui/textarea'
-
-const selectCls =
-  'border-input dark:bg-input/30 flex h-touch-target w-full min-w-0 rounded-md border bg-transparent px-3 text-base shadow-xs transition-[color,box-shadow] outline-none hover:border-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-invalid:border-2 aria-invalid:border-destructive disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
+import { selectClassName } from '@/components/ui/field-styles'
 
 const NOTA_SPORT = 'Sportul rămâne cel salvat: cursul are înscrieri.'
 const NOTA_LOCATIE = 'Locația rămâne cea salvată: cursul are înscrieri.'
@@ -312,7 +310,7 @@ export default function CourseFormPage() {
               <select
                 id="sport_id"
                 key={cheieSport}
-                className={selectCls}
+                className={selectClassName}
                 {...register('sport_id')}
                 {...camp('sport_id', campuriBlocate ? 'sport-blocat' : undefined)}
                 disabled={campuriBlocate}
@@ -338,7 +336,7 @@ export default function CourseFormPage() {
               <select
                 id="location_id"
                 key={cheieLocatie}
-                className={selectCls}
+                className={selectClassName}
                 {...register('location_id')}
                 {...camp('location_id', campuriBlocate ? 'locatie-blocata' : undefined)}
                 disabled={campuriBlocate}
@@ -377,7 +375,7 @@ export default function CourseFormPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="level">Nivel</Label>
-              <select id="level" className={selectCls} {...register('level')}>
+              <select id="level" className={selectClassName} {...register('level')}>
                 <option value="">—</option>
                 <option value="incepator">Începător</option>
                 <option value="intermediar">Intermediar</option>
