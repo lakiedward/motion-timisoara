@@ -340,7 +340,7 @@ test('cu modificări nesalvate, Anulează întreabă înainte de plecare', async
   await waitFor(() => expect(nume).toHaveValue('Activitate salvată'))
   await user.type(nume, ' nouă')
   await user.click(screen.getByRole('link', { name: 'Anulează' }))
-  expect(await screen.findByRole('dialog', { name: 'Renunți la modificări?' })).toBeInTheDocument()
+  expect(await screen.findByRole('alertdialog', { name: 'Renunți la modificări?' })).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Rămân' }))
   expect(screen.getByLabelText(/^Nume/)).toHaveValue('Activitate salvată nouă')
   await user.click(screen.getByRole('link', { name: /Înapoi/ }))

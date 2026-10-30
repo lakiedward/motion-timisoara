@@ -391,7 +391,7 @@ test('cu modificări nesalvate, Cod QR întreabă, „Rămân” păstrează tex
   const nume = await screen.findByDisplayValue('Andrei Popescu')
   await user.type(nume, ' Jr')
   await user.click(screen.getByRole('link', { name: 'Cod QR' }))
-  expect(await screen.findByRole('dialog', { name: 'Renunți la modificări?' })).toBeInTheDocument()
+  expect(await screen.findByRole('alertdialog', { name: 'Renunți la modificări?' })).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Rămân' }))
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   expect(screen.getByDisplayValue('Andrei Popescu Jr')).toBeInTheDocument()

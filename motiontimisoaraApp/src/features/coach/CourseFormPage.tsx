@@ -1,4 +1,3 @@
-import * as Dialog from '@radix-ui/react-dialog'
 import { OfferCurrencyFields } from '@/components/OfferCurrencyFields'
 import CourseProgramFields from '@/components/CourseProgramFields'
 import {
@@ -26,6 +25,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { LeaveFormDialog } from '@/components/leave-form/LeaveFormDialog'
 import { incarcaRegulamentCurs, stergeRegulamentCurs } from '@/api/camp-rules-file'
 import { renuntaLaOfertaFaraHero, schimbaPozaOferta } from '@/api/offer-hero'
 import {
@@ -487,27 +487,11 @@ export default function CourseFormPage() {
           </Button>
         </div>
       </form>
-      <Dialog.Root open={intrebarePlecare} onOpenChange={setIntrebarePlecare}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
-          <Dialog.Content
-            aria-describedby={undefined}
-            className="bg-background text-foreground fixed top-1/2 right-4 left-4 z-50 mx-auto max-w-md -translate-y-1/2 rounded-lg border p-6 shadow-lg outline-none"
-          >
-            <Dialog.Title className="font-display text-lg font-semibold">
-              Renunți la modificări?
-            </Dialog.Title>
-            <div className="mt-6 flex flex-wrap gap-2">
-              <Button type="button" onClick={() => setIntrebarePlecare(false)}>
-                Rămân
-              </Button>
-              <Button type="button" variant="outline" onClick={() => navigate('/coach/courses')}>
-                Renunț
-              </Button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+      <LeaveFormDialog
+        open={intrebarePlecare}
+        onOpenChange={setIntrebarePlecare}
+        onLeave={() => navigate('/coach/courses')}
+      />
     </div>
   )
 }
