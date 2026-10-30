@@ -1,10 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { KeyRound } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { completeProfile } from '@/api/auth'
+import { completeProfile, requestPasswordReset } from '@/api/auth'
 import { useAuth } from '@/lib/auth-context'
 import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
 import { Button } from '@/components/ui/button'
@@ -25,6 +26,7 @@ type Parsed = z.output<typeof parentProfileSchema>
 
 export default function ParentProfilePage() {
   const { user, loading, refresh } = useAuth()
+  const [sendingReset, setSendingReset] = useState(false)
   const {
     register,
     handleSubmit,
@@ -52,6 +54,22 @@ export default function ParentProfilePage() {
     }
     await refresh()
     toast.success('Profil actualizat.')
+  }
+
+  const onPasswordReset = async () => {
+    setSendingReset(true)
+    try {
+      const { error } = await requestPasswordReset(
+        user.email,
+        `${window.location.origin}/reset-password`,
+      )
+      if (error) throw error
+      toast.success('Ți-am trimis pe email linkul pentru parola nouă.')
+    } catch {
+      toast.error('Nu am putut trimite linkul. Verifică conexiunea și încearcă din nou.')
+    } finally {
+      setSendingReset(false)
+    }
   }
 
   return (
@@ -112,6 +130,21 @@ export default function ParentProfilePage() {
               readOnly
               className="bg-muted"
             />
+          </div>
+          <div className="space-y-1.5">
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-touch-target"
+              disabled={sendingReset}
+              onClick={() => void onPasswordReset()}
+            >
+              <KeyRound aria-hidden="true" />
+              {sendingReset ? 'Se trimite…' : 'Schimbă parola'}
+            </Button>
+            <p className="text-muted-foreground text-xs">
+              Îți trimitem pe email un link pentru parola nouă.
+            </p>
           </div>
         </FormSection>
         <Button type="submit" disabled={isSubmitting} className="h-11 min-h-11">

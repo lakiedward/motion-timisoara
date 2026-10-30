@@ -12,10 +12,12 @@ const state = vi.hoisted(() => ({
   profileError: null as string | null,
   refresh: vi.fn(),
 }))
-const api = vi.hoisted(() => ({ completeProfile: vi.fn() }))
+const api = vi.hoisted(() => ({ completeProfile: vi.fn(), requestPasswordReset: vi.fn() }))
+const toasts = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }))
 
 vi.mock('@/lib/auth-context', () => ({ useAuth: () => state }))
 vi.mock('@/api/auth', () => api)
+vi.mock('sonner', () => ({ toast: toasts }))
 
 const parent: AppUser = {
   id: 'parent-1',
@@ -41,6 +43,10 @@ beforeEach(() => {
   state.refresh.mockReset()
   api.completeProfile.mockReset()
   api.completeProfile.mockResolvedValue({ error: null })
+  api.requestPasswordReset.mockReset()
+  api.requestPasswordReset.mockResolvedValue({ error: null })
+  toasts.success.mockReset()
+  toasts.error.mockReset()
 })
 
 test('afișează numele, telefonul și emailul doar de citit', () => {
@@ -85,4 +91,31 @@ test('cât se încarcă userul se vede skeleton', () => {
   state.loading = true
   renderPage()
   expect(screen.getByRole('status', { name: 'Se încarcă profilul' })).toBeInTheDocument()
+})
+
+test('Schimbă parola trimite linkul de resetare pe emailul contului, fără să salveze profilul', async () => {
+  const user = userEvent.setup()
+  renderPage()
+  await user.click(screen.getByRole('button', { name: 'Schimbă parola' }))
+  await waitFor(() =>
+    expect(api.requestPasswordReset).toHaveBeenCalledWith(
+      'parinte@example.com',
+      `${window.location.origin}/reset-password`,
+    ),
+  )
+  expect(toasts.success).toHaveBeenCalledWith('Ți-am trimis pe email linkul pentru parola nouă.')
+  expect(api.completeProfile).not.toHaveBeenCalled()
+})
+
+test('Schimbă parola arată eroarea când linkul nu poate fi trimis', async () => {
+  api.requestPasswordReset.mockResolvedValue({ error: new Error('rețea') })
+  const user = userEvent.setup()
+  renderPage()
+  await user.click(screen.getByRole('button', { name: 'Schimbă parola' }))
+  await waitFor(() =>
+    expect(toasts.error).toHaveBeenCalledWith(
+      'Nu am putut trimite linkul. Verifică conexiunea și încearcă din nou.',
+    ),
+  )
+  expect(screen.getByRole('button', { name: 'Schimbă parola' })).toBeEnabled()
 })
