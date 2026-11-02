@@ -4,6 +4,7 @@ import {
   ACCOUNT_DELETION_ERROR,
   ACCOUNT_DELETION_PARENT_ONLY,
   deleteMyAccount,
+  signOutDeletedAccount,
 } from './account-deletion'
 import { supabase } from '@/lib/supabase'
 import { clearPushBeforeSignOut } from './notifications'
@@ -31,7 +32,7 @@ beforeEach(() => {
   vi.mocked(clearPushBeforeSignOut).mockResolvedValue(undefined)
 })
 
-test('șterge contul, pozele copiilor și deconectează doar local', async () => {
+test('șterge contul și pozele copiilor fără să deconecteze încă', async () => {
   rpc.mockResolvedValue({ data: { mode: 'anonymized' }, error: null } as never)
   storage.list.mockResolvedValue({
     data: [
@@ -44,8 +45,10 @@ test('șterge contul, pozele copiilor și deconectează doar local', async () =>
   expect(rpc).toHaveBeenCalledWith('delete_my_account')
   expect(storage.list).toHaveBeenCalledWith('u1', { limit: 1000 })
   expect(storage.remove).toHaveBeenCalledWith(['u1/ana.jpg'])
-  expect(signOut).toHaveBeenCalledWith({ scope: 'local' })
+  expect(signOut).not.toHaveBeenCalled()
   expect(clearPushBeforeSignOut).toHaveBeenCalled()
+  await signOutDeletedAccount()
+  expect(signOut).toHaveBeenCalledWith({ scope: 'local' })
 })
 
 test('un cont fără plăți se șterge complet', async () => {

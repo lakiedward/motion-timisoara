@@ -8,6 +8,7 @@ import {
   ACCOUNT_DELETION_ERROR,
   AccountDeletionError,
   deleteMyAccount,
+  signOutDeletedAccount,
 } from '@/api/account-deletion'
 import { FormSection } from '@/components/FormSection'
 import { Button } from '@/components/ui/button'
@@ -27,9 +28,10 @@ export function DeleteAccountSection({ userId }: { userId: string }) {
     setPending(true)
     try {
       await deleteMyAccount(userId)
+      navigate('/', { replace: true })
+      await signOutDeletedAccount()
       queryClient.clear()
       toast.success('Contul tău a fost șters.')
-      navigate('/', { replace: true })
     } catch (error) {
       toast.error(error instanceof AccountDeletionError ? error.message : ACCOUNT_DELETION_ERROR)
       setPending(false)

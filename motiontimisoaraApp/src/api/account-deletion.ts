@@ -28,7 +28,10 @@ export async function deleteMyAccount(userId: string): Promise<AccountDeletionMo
     )
   }
   await removeChildPhotos(userId).catch(() => undefined)
-  await supabase.auth.signOut({ scope: 'local' })
   const mode = (data as { mode?: string } | null)?.mode
   return mode === 'anonymized' ? 'anonymized' : 'deleted'
+}
+
+export async function signOutDeletedAccount() {
+  await supabase.auth.signOut({ scope: 'local' })
 }

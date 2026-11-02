@@ -13,6 +13,7 @@ const deletion = vi.hoisted(() => {
     AccountDeletionError,
     ACCOUNT_DELETION_ERROR: 'eroare generală',
     deleteMyAccount: vi.fn(),
+    signOutDeletedAccount: vi.fn(),
   }
 })
 const toasts = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }))
@@ -43,6 +44,7 @@ beforeEach(() => {
     { id: 'e3', status: 'CANCELLED' },
   ])
   deletion.deleteMyAccount.mockReset()
+  deletion.signOutDeletedAccount.mockReset()
   toasts.success.mockReset()
   toasts.error.mockReset()
 })
@@ -79,6 +81,7 @@ test('după bifă șterge contul, anunță și duce pe pagina principală', asyn
   await waitFor(() => expect(deletion.deleteMyAccount).toHaveBeenCalledWith('parent-1'))
   expect(await screen.findByText('pagina principală')).toBeInTheDocument()
   expect(toasts.success).toHaveBeenCalledWith('Contul tău a fost șters.')
+  expect(deletion.signOutDeletedAccount).toHaveBeenCalled()
 })
 
 test('o eroare lasă dialogul deschis și arată mesajul', async () => {
@@ -95,4 +98,5 @@ test('o eroare lasă dialogul deschis și arată mesajul', async () => {
   await waitFor(() => expect(toasts.error).toHaveBeenCalledWith('doar părinte'))
   expect(screen.getByRole('alertdialog')).toBeInTheDocument()
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  expect(deletion.signOutDeletedAccount).not.toHaveBeenCalled()
 })
