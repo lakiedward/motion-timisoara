@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 
 import AttendancePage from './AttendancePage'
+import { pickFilter } from '@/test/pick-filter'
 vi.mock('@/features/live-location/parent/LiveLocationBanner', () => ({
   LiveLocationBanner: () => null,
 }))
@@ -161,11 +162,10 @@ test('rezumatul respectă acordul la număr', async () => {
 
 // Criteriul 2: filtrul de perioadă taie lista, iar rezumatul se recalculează.
 test('filtrul de perioadă taie ședințele din afara intervalului', async () => {
-  const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
   renderPage()
   expect(await screen.findAllByRole('listitem')).toHaveLength(3)
 
-  await user.selectOptions(screen.getByLabelText('Perioadă'), 'luna')
+  await pickFilter('Perioadă', 'Luna curentă')
   await waitFor(() => expect(screen.getAllByRole('listitem')).toHaveLength(1))
   expect(screen.getByText(/ședință înregistrată/).textContent).toContain('1 prezență din 1')
 })
@@ -179,7 +179,7 @@ test('când filtrul goleste lista, mesajul spune că e vorba de perioadă', asyn
   renderPage()
   await screen.findAllByRole('listitem')
 
-  await user.selectOptions(screen.getByLabelText('Perioadă'), 'luna')
+  await pickFilter('Perioadă', 'Luna curentă')
   expect(await screen.findByText('Nicio prezență în perioada aleasă.')).toBeInTheDocument()
   expect(screen.queryByText('Nicio prezență înregistrată încă.')).not.toBeInTheDocument()
 

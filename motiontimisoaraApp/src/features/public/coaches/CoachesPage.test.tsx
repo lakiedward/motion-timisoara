@@ -5,6 +5,9 @@ import { vi } from 'vitest'
 
 import { getCoaches, type CoachListItem } from '@/api/public'
 import CoachesPage from '../CoachesPage'
+import { pickFilter } from '@/test/pick-filter'
+
+const sportFilter = () => screen.getByRole('button', { name: /^Sport / })
 
 vi.mock('@/api/public', () => ({
   getCoaches: vi.fn(),
@@ -74,10 +77,9 @@ test('the public directory preserves the header and single-link photo/name/sport
   expect(within(initialCard).getByText('MP')).toBeInTheDocument()
   expect(within(initialCard).queryByRole('img')).not.toBeInTheDocument()
   expect(screen.getByLabelText('Caută după nume')).toHaveValue('')
-  expect(screen.getByLabelText('Sport')).toHaveValue('')
-  expect(
-    within(screen.getByRole('combobox', { name: 'Sport' })).getAllByRole('option'),
-  ).toHaveLength(3)
+  expect(sportFilter()).toHaveTextContent('Toate sporturile')
+  fireEvent.keyDown(sportFilter(), { key: 'Enter' })
+  expect(await screen.findAllByRole('menuitemradio')).toHaveLength(3)
 })
 
 test('name search matches a case-insensitive partial name without refetching the directory', async () => {
@@ -96,21 +98,22 @@ test('name and sport filters combine with AND and retain the full sport option l
   renderDirectory()
   await screen.findByRole('link', { name: /Ana Pop/ })
 
-  fireEvent.change(screen.getByLabelText('Sport'), { target: { value: cycling.id } })
+  await pickFilter('Sport', 'Ciclism')
   expect(screen.getAllByRole('link')).toHaveLength(2)
   fireEvent.change(screen.getByLabelText('Caută după nume'), { target: { value: 'ANA' } })
 
   expect(screen.getAllByRole('link')).toHaveLength(1)
   expect(screen.getByRole('link', { name: /Ana Ionescu/ })).toBeInTheDocument()
   expect(screen.queryByRole('link', { name: /Ana Pop/ })).not.toBeInTheDocument()
-  expect(screen.getByRole('option', { name: 'Înot' })).toBeInTheDocument()
-  expect(screen.getByRole('option', { name: 'Toate sporturile' })).toBeInTheDocument()
+  fireEvent.keyDown(sportFilter(), { key: 'Enter' })
+  expect(await screen.findByRole('menuitemradio', { name: 'Înot' })).toBeInTheDocument()
+  expect(screen.getByRole('menuitemradio', { name: 'Toate sporturile' })).toBeInTheDocument()
 })
 
 test('a filtered empty result has its own message and resetting clears both filters', async () => {
   renderDirectory()
   await screen.findByRole('link', { name: /Ana Pop/ })
-  fireEvent.change(screen.getByLabelText('Sport'), { target: { value: swimming.id } })
+  await pickFilter('Sport', 'Înot')
   fireEvent.change(screen.getByLabelText('Caută după nume'), { target: { value: 'Mihai' } })
 
   expect(
@@ -121,7 +124,7 @@ test('a filtered empty result has its own message and resetting clears both filt
   fireEvent.click(screen.getByRole('button', { name: 'Resetează filtrele' }))
 
   expect(screen.getByLabelText('Caută după nume')).toHaveValue('')
-  expect(screen.getByLabelText('Sport')).toHaveValue('')
+  expect(sportFilter()).toHaveTextContent('Toate sporturile')
   expect(screen.getAllByRole('link')).toHaveLength(4)
   expect(screen.queryByRole('button', { name: 'Resetează filtrele' })).not.toBeInTheDocument()
   expect(coachesRequest).toHaveBeenCalledTimes(1)
@@ -182,7 +185,7 @@ test('a failed refresh hides stale cards and recovery preserves the name and spo
   coachesRequest.mockResolvedValueOnce(coaches).mockRejectedValueOnce(new Error('Refresh failed'))
   const client = renderDirectory()
   await screen.findByRole('link', { name: /Ana Pop/ })
-  fireEvent.change(screen.getByLabelText('Sport'), { target: { value: cycling.id } })
+  await pickFilter('Sport', 'Ciclism')
   fireEvent.change(screen.getByLabelText('Caută după nume'), { target: { value: 'Ana' } })
   await act(async () => {
     await client.invalidateQueries({ queryKey: ['coaches'] })
@@ -199,6 +202,6 @@ test('a failed refresh hides stale cards and recovery preserves the name and spo
   expect(await screen.findByRole('link', { name: /Ana Ionescu/ })).toBeInTheDocument()
   expect(screen.getAllByRole('link')).toHaveLength(1)
   expect(screen.getByLabelText('Caută după nume')).toHaveValue('Ana')
-  expect(screen.getByLabelText('Sport')).toHaveValue(cycling.id)
+  expect(sportFilter()).toHaveTextContent('Ciclism')
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 })

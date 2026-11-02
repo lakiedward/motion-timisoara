@@ -14,6 +14,9 @@ import {
   type FeedPage,
 } from '@/api/announcements/parent'
 import AnnouncementsPage from './AnnouncementsPage'
+import { pickFilter } from '@/test/pick-filter'
+
+const courseFilter = () => screen.getByRole('button', { name: /^Filtrează după curs / })
 
 const auth = vi.hoisted(() => ({ userId: 'parent-1' as string | null }))
 vi.mock('@/lib/auth-context', () => ({
@@ -219,7 +222,7 @@ test('requests additional server pages only on demand and keeps the original new
   })
   expect(screen.getAllByText('Nou')).toHaveLength(21)
   expect(screen.queryByRole('button', { name: 'Încarcă mai multe' })).not.toBeInTheDocument()
-  await userEvent.selectOptions(await screen.findByLabelText('Filtrează după curs'), 'course-2')
+  await pickFilter('Filtrează după curs', 'Alergare')
   expect(await screen.findByText('Mesaj 30')).toBeInTheDocument()
   expect(screen.queryByText('Mesaj 1')).not.toBeInTheDocument()
   expect(screen.getByText('Nou')).toBeInTheDocument()
@@ -229,7 +232,7 @@ test('requests additional server pages only on demand and keeps the original new
     asOf: visitStartedAt,
   })
   expect(visitRequest).toHaveBeenCalledTimes(1)
-  await userEvent.selectOptions(await screen.findByLabelText('Filtrează după curs'), '')
+  await pickFilter('Filtrează după curs', 'Toate anunțurile')
   expect(await screen.findByText('20 de anunțuri afișate')).toBeInTheDocument()
   expect(screen.queryByText('Mesaj 21')).not.toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Încarcă mai multe' }))
@@ -266,13 +269,14 @@ test('changing course resets pagination and an empty filtered result can return 
   feedRequest.mockImplementation(async (request) => (request?.courseId ? page([]) : page()))
   renderPage()
   await screen.findByText('Mesaj 1')
-  await userEvent.selectOptions(await screen.findByLabelText('Filtrează după curs'), 'course-2')
+  await screen.findByRole('button', { name: /^Filtrează după curs / })
+  await pickFilter('Filtrează după curs', 'Alergare')
   expect(await screen.findByText('Niciun anunț pentru cursul ales.')).toBeInTheDocument()
   expect(screen.queryByText('Mesaj 1')).not.toBeInTheDocument()
   expect(screen.queryByText(/Niciun anunț încă/)).not.toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Arată toate anunțurile' }))
   expect(await screen.findByText('Mesaj 1')).toBeInTheDocument()
-  expect(screen.getByLabelText('Filtrează după curs')).toHaveValue('')
+  expect(courseFilter()).toHaveTextContent('Toate anunțurile')
   expect(visitRequest).toHaveBeenCalledTimes(1)
 })
 
@@ -283,10 +287,11 @@ test('a filtered request error keeps the selected course and retries that filter
     .mockResolvedValueOnce(page([announcement(2)]))
   renderPage()
   await screen.findByText('Mesaj 1')
-  await userEvent.selectOptions(await screen.findByLabelText('Filtrează după curs'), 'course-2')
+  await screen.findByRole('button', { name: /^Filtrează după curs / })
+  await pickFilter('Filtrează după curs', 'Alergare')
   await userEvent.click(await screen.findByRole('button', { name: 'Reîncearcă' }))
   expect(await screen.findByText('Mesaj 2')).toBeInTheDocument()
-  expect(screen.getByLabelText('Filtrează după curs')).toHaveValue('course-2')
+  expect(courseFilter()).toHaveTextContent('Alergare')
   expect(feedRequest.mock.calls[1]).toEqual(feedRequest.mock.calls[2])
 })
 
@@ -405,7 +410,7 @@ test('a course-list failure does not hide announcements and retries independentl
   const retry = await screen.findByRole('button', { name: 'Reîncearcă lista cursurilor' })
   expect(screen.getByText('Mesaj 1')).toBeInTheDocument()
   await userEvent.click(retry)
-  expect(await screen.findByLabelText('Filtrează după curs')).toBeInTheDocument()
+  expect(await screen.findByRole('button', { name: /^Filtrează după curs / })).toBeInTheDocument()
   expect(screen.queryByText('Nu am putut încărca lista cursurilor.')).not.toBeInTheDocument()
   expect(feedRequest).toHaveBeenCalledTimes(1)
   expect(visitRequest).toHaveBeenCalledTimes(1)

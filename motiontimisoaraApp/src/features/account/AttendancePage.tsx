@@ -1,3 +1,4 @@
+import { SelectMenu } from '@/components/ui/select-menu'
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
@@ -19,9 +20,6 @@ import { cn } from '@/lib/utils'
 import { AttendanceMonths } from '@/features/account/attendance/AttendanceMonths'
 import { attendanceEntries, kindBreakdown } from '@/features/account/attendance/attendance-entries'
 import { LiveLocationBanner } from '@/features/live-location/parent/LiveLocationBanner'
-
-const selectCls =
-  'border-input bg-background hover:border-muted-foreground focus-visible:outline-ring h-touch-target w-full min-w-0 rounded-md border px-3 text-base shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 md:text-sm'
 
 const PONTAJ_VIITOR = 'Apare aici după ce antrenorul pontează prima ședință.'
 
@@ -85,7 +83,8 @@ export default function AttendancePage() {
     [tabere, totiCopiii, ales],
   )
   const activitatiAlese = useMemo(
-    () => activitati.filter((a) => (totiCopiii ? idsCopii.includes(a.child_id) : a.child_id === ales)),
+    () =>
+      activitati.filter((a) => (totiCopiii ? idsCopii.includes(a.child_id) : a.child_id === ales)),
     [activitati, totiCopiii, idsCopii, ales],
   )
   const toate = useMemo(
@@ -116,19 +115,14 @@ export default function AttendancePage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <h1 className="font-display text-2xl font-bold">Prezență</h1>
           <div className="min-w-0 space-y-1.5 sm:w-44">
-            <Label htmlFor="filtru-perioada">Perioadă</Label>
-            <select
+            <Label id="filtru-perioada-label">Perioadă</Label>
+            <SelectMenu
               id="filtru-perioada"
+              aria-labelledby="filtru-perioada-label filtru-perioada"
               value={perioada}
-              onChange={(e) => setPerioada(e.target.value as Perioada)}
-              className={selectCls}
-            >
-              {PERIOADE.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
+              onValueChange={(v) => setPerioada(v as Perioada)}
+              options={PERIOADE.map((p) => ({ value: p.value, label: p.label }))}
+            />
           </div>
         </div>
         {children.length > 1 && (
