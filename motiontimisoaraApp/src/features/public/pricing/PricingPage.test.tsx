@@ -14,9 +14,10 @@ function renderAt(url: string) {
 test('pagina arată antrenorul, cele trei pachete de club, promoția și nota fără TVA', () => {
   renderAt('/preturi')
   expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Un abonament simplu')
-  for (const price of ['100', '199', '349', '599']) expect(screen.getByText(price)).toBeInTheDocument()
-  expect(screen.getByText('Până la 3 antrenori')).toBeInTheDocument()
-  expect(screen.getByText('Antrenori nelimitați')).toBeInTheDocument()
+  for (const price of ['100', '199', '349', '599']) expect(screen.getAllByText(price).length).toBeGreaterThan(0)
+  expect(screen.getAllByText('Până la 3 antrenori')).toHaveLength(2)
+  expect(screen.getAllByText('Antrenori nelimitați')).toHaveLength(2)
+  expect(screen.getByRole('heading', { name: 'Pachete pentru cluburi' })).toBeInTheDocument()
   expect(screen.getByRole('heading', { name: '3 luni gratuite la lansare' })).toBeInTheDocument()
   expect(screen.getByText(/nu este plătitor de TVA/)).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Creează cont' })).toHaveAttribute('href', '/register-coach')

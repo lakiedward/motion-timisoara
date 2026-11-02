@@ -4,6 +4,8 @@ import { ChevronDown, Gift } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { SectionHeader } from '@/components/SectionHeader'
+import { cn } from '@/lib/utils'
+import { ClubPlansCompact } from './ClubPlansCompact'
 import { PlanFeatureList, PlanPrice } from './PlanFeatureList'
 import {
   CLUB_FEATURES,
@@ -21,16 +23,18 @@ function PlanCard({
   group,
   to,
   cta,
+  className,
 }: {
   plan: PricingPlan
-  features: string[]
+  features?: string[]
   group: string
   to: string
   cta: string
+  className?: string
   key?: string
 }) {
   return (
-    <Card className="gap-5 px-6" data-plan={plan.code}>
+    <Card className={cn('gap-5 px-6', className)} data-plan={plan.code}>
       <div className="space-y-1">
         <Badge variant={group === 'Antrenor' ? 'success' : 'secondary'}>{group}</Badge>
         <h3 className="font-display pt-2 text-xl font-bold text-foreground">{plan.name}</h3>
@@ -38,8 +42,8 @@ function PlanCard({
       </div>
       <PlanPrice priceBani={plan.priceBani} />
       <p className="text-sm font-semibold text-foreground">{plan.coaches}</p>
-      <PlanFeatureList items={features} className="flex-1" />
-      <Link to={to} className="btn-cta btn-cta--outline w-full">
+      {features && <PlanFeatureList items={features} className="flex-1" />}
+      <Link to={to} className="btn-cta btn-cta--outline mt-auto w-full">
         {cta}
       </Link>
     </Card>
@@ -62,7 +66,7 @@ export function PricingContent() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 pt-12">
+      <section className="mx-auto max-w-7xl px-6 pt-8 md:pt-12">
         <div
           className="flex flex-col gap-4 rounded-3xl px-6 py-6 text-white md:flex-row md:items-center md:px-8"
           style={{ background: 'var(--gradient-primary)' }}
@@ -77,7 +81,7 @@ export function PricingContent() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 py-12">
+      <section className="mx-auto max-w-7xl px-6 py-8 md:py-12">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <PlanCard
             plan={COACH_PLAN}
@@ -94,8 +98,10 @@ export function PricingContent() {
               group="Club"
               to="/register-club"
               cta="Înregistrează clubul"
+              className="hidden md:flex"
             />
           ))}
+          <ClubPlansCompact className="md:hidden" />
         </div>
         <p className="text-muted-foreground mt-6 max-w-3xl text-sm">{PRICE_NOTE}</p>
       </section>
