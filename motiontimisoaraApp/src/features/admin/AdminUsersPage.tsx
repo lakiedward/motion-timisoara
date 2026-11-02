@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { getAllUsers, setUserEnabled } from '@/api/admin'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Input } from '@/components/ui/input'
 import { CourseFilterBar, type FilterOption } from './courses/CourseFilterBar'
 import { RoleGroupCard } from './users/RoleGroupCard'
@@ -49,6 +50,7 @@ export default function AdminUsersPage() {
   const [status, setStatus] = useState<UserStatus>('all')
   const [toggled, setToggled] = useState<Partial<Record<UserRole, boolean>>>({})
   const [expanded, setExpanded] = useState<Set<UserRole>>(new Set())
+  const [toDeactivate, setToDeactivate] = useState<ToggleArgs | null>(null)
   const role = asRole(params.get('role'))
 
   const {
@@ -61,6 +63,7 @@ export default function AdminUsersPage() {
   const toggle = useMutation({
     mutationFn: ({ id, enabled }: ToggleArgs) => setUserEnabled(id, enabled),
     onSuccess: (_res, { name, enabled }) => {
+      setToDeactivate(null)
       qc.invalidateQueries({ queryKey: ['admin-users'] })
       toast.success(`Contul lui ${name} a fost ${enabled ? 'activat' : 'dezactivat'}.`)
     },
@@ -72,7 +75,8 @@ export default function AdminUsersPage() {
   const visible = useMemo(() => filterUsers(users, { status, query: q }), [users, status, q])
   const groups = useMemo(() => groupByRole(visible), [visible])
 
-  const onToggle = (args: ToggleArgs) => toggle.mutate(args)
+  const onToggle = (args: ToggleArgs) =>
+    args.enabled ? toggle.mutate(args) : setToDeactivate(args)
   const isOpen = (r: UserRole) => toggled[r] ?? (searching || !role || r === role)
 
   const rowProps = { query: q, pending: toggle.isPending, onToggle }
@@ -160,6 +164,16 @@ export default function AdminUsersPage() {
           )}
         </>
       )}
+      <ConfirmDialog
+        open={!!toDeactivate}
+        onOpenChange={(open) => !open && setToDeactivate(null)}
+        title={`Dezactivezi contul lui ${toDeactivate?.name ?? ''}?`}
+        description="Nu se mai poate conecta până nu îi activezi contul din nou. Datele contului rămân."
+        confirmLabel="Dezactivează"
+        destructive
+        pending={toggle.isPending}
+        onConfirm={() => toDeactivate && toggle.mutate(toDeactivate)}
+      />
     </div>
   )
 }

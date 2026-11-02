@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { getAllCourses, setCourseActiveAdmin } from '@/api/admin'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CourseFilterBar } from './courses/CourseFilterBar'
@@ -77,6 +78,7 @@ export default function AdminCoursesPage({
   const [sport, setSport] = useState('')
   const [toggled, setToggled] = useState<Record<string, boolean>>({})
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [toDeactivate, setToDeactivate] = useState<ToggleArgs | null>(null)
 
   const {
     data: courses = [],
@@ -88,6 +90,7 @@ export default function AdminCoursesPage({
   const toggle = useMutation({
     mutationFn: ({ id, active }: ToggleArgs) => setCourseActiveAdmin(id, active),
     onSuccess: (_res, { name, active }) => {
+      setToDeactivate(null)
       qc.invalidateQueries({ queryKey: ['admin-courses'] })
       toast.success(`Cursul ${name} a fost ${active ? 'activat' : 'dezactivat'}.`)
     },
@@ -126,7 +129,7 @@ export default function AdminCoursesPage({
       <ToggleAction
         course={course}
         pending={toggle.isPending}
-        onToggle={(args) => toggle.mutate(args)}
+        onToggle={(args) => (args.active ? toggle.mutate(args) : setToDeactivate(args))}
         className={
           layout === 'table'
             ? 'h-touch-target min-h-touch-target lg:h-8 lg:min-h-8'
@@ -267,6 +270,16 @@ export default function AdminCoursesPage({
           )}
         </>
       )}
+      <ConfirmDialog
+        open={!!toDeactivate}
+        onOpenChange={(open) => !open && setToDeactivate(null)}
+        title={`Dezactivezi „${toDeactivate?.name ?? ''}”?`}
+        description="Cursul nu mai apare public și nu mai primește înscrieri noi. Înscrierile existente rămân."
+        confirmLabel="Dezactivează"
+        destructive
+        pending={toggle.isPending}
+        onConfirm={() => toDeactivate && toggle.mutate(toDeactivate)}
+      />
     </div>
   )
 }

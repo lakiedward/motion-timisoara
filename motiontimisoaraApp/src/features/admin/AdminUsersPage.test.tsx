@@ -221,7 +221,13 @@ test('o comutare reusita confirma cu numele contului', async () => {
   renderPage()
   await asteaptaLista()
 
-  await userEvent.click(within(rand('Audit Părinte')!).getByRole('button', { name: 'Dezactivează' }))
+  await userEvent.click(
+    within(rand('Audit Părinte')!).getByRole('button', { name: 'Dezactivează' }),
+  )
+  expect(mockedToggle).not.toHaveBeenCalled()
+  await userEvent.click(
+    within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Dezactivează' }),
+  )
 
   await waitFor(() =>
     expect(toast.success).toHaveBeenCalledWith('Contul lui Audit Părinte a fost dezactivat.'),
@@ -235,7 +241,13 @@ test('o comutare esuata pastreaza mesajul de eroare si nu confirma nimic', async
   renderPage()
   await asteaptaLista()
 
-  await userEvent.click(within(rand('Audit Părinte')!).getByRole('button', { name: 'Dezactivează' }))
+  await userEvent.click(
+    within(rand('Audit Părinte')!).getByRole('button', { name: 'Dezactivează' }),
+  )
+  expect(mockedToggle).not.toHaveBeenCalled()
+  await userEvent.click(
+    within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Dezactivează' }),
+  )
 
   await waitFor(() =>
     expect(toast.error).toHaveBeenCalledWith('Nu am putut actualiza utilizatorul.'),
