@@ -108,6 +108,7 @@ export async function getConcursuriPublice(): Promise<PublicCompetition[]> {
   const { data, error } = await supabase
     .from('competitions')
     .select('*, club:clubs(id, name), coach:profiles(id, name)')
+    .filter('hidden_from_public', 'is', false)
     .order('start_at', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false })
   if (error) throw error

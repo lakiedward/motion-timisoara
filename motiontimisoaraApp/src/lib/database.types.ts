@@ -2767,6 +2767,7 @@ export type Database = {
           email: string
           enabled: boolean
           id: string
+          is_test_account: boolean
           name: string
           oauth_provider: string | null
           oauth_provider_id: string | null
@@ -2780,6 +2781,7 @@ export type Database = {
           email: string
           enabled?: boolean
           id: string
+          is_test_account?: boolean
           name: string
           oauth_provider?: string | null
           oauth_provider_id?: string | null
@@ -2793,6 +2795,7 @@ export type Database = {
           email?: string
           enabled?: boolean
           id?: string
+          is_test_account?: boolean
           name?: string
           oauth_provider?: string | null
           oauth_provider_id?: string | null
@@ -3500,6 +3503,31 @@ export type Database = {
           updated_at: string
         }[]
       }
+      hidden_from_public:
+        | {
+            Args: { "": Database["public"]["Tables"]["activities"]["Row"] }
+            Returns: boolean
+          }
+        | {
+            Args: { "": Database["public"]["Tables"]["camps"]["Row"] }
+            Returns: boolean
+          }
+        | {
+            Args: { "": Database["public"]["Tables"]["clubs"]["Row"] }
+            Returns: boolean
+          }
+        | {
+            Args: { "": Database["public"]["Tables"]["coach_profiles"]["Row"] }
+            Returns: boolean
+          }
+        | {
+            Args: { "": Database["public"]["Tables"]["competitions"]["Row"] }
+            Returns: boolean
+          }
+        | {
+            Args: { "": Database["public"]["Tables"]["courses"]["Row"] }
+            Returns: boolean
+          }
       join_club_by_invitation: { Args: { p_code: string }; Returns: Json }
       mark_parent_announcements_seen: {
         Args: { p_as_of: string; p_expected_user_id: string }
