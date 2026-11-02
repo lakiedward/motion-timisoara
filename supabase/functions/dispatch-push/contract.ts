@@ -9,10 +9,16 @@ export type PushData = {
   body: string;
   expiresAt: string;
 };
+export type PushPlatform = "android" | "web";
 export type PushDelivery = {
   token: string;
+  platform: PushPlatform;
   data: PushData;
   ttlSeconds: number;
+};
+export type WebSubscription = {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
 };
 export type PushOutcome = {
   outcome: "sent" | "retry" | "invalid_token" | "failed";
@@ -27,6 +33,36 @@ export type Dispatcher = {
   finish: (claim: PushClaim, outcome: PushOutcome) => Promise<void>;
   send: (delivery: PushDelivery, accessToken: string) => Promise<PushOutcome>;
 };
+
+const WEB_PUSH_HOST =
+  /^(fcm\.googleapis\.com|updates\.push\.services\.mozilla\.com|([a-z0-9-]+\.)*push\.apple\.com|[a-z0-9-]+\.notify\.windows\.com)$/;
+
+export function webSubscription(token: string): WebSubscription | null {
+  try {
+    const value = JSON.parse(token);
+    if (
+      !value || typeof value !== "object" || Array.isArray(value) ||
+      Object.keys(value).sort().join() !== "endpoint,keys" ||
+      !value.keys || typeof value.keys !== "object" ||
+      Object.keys(value.keys).sort().join() !== "auth,p256dh" ||
+      typeof value.endpoint !== "string" || value.endpoint.length > 2048 ||
+      !/^[A-Za-z0-9_-]{87}$/.test(value.keys.p256dh) ||
+      !/^[A-Za-z0-9_-]{22}$/.test(value.keys.auth)
+    ) return null;
+    const url = new URL(value.endpoint);
+    if (
+      url.protocol !== "https:" || url.username || url.password || url.port ||
+      !WEB_PUSH_HOST.test(url.hostname) ||
+      !value.endpoint.startsWith(`https://${url.hostname}/`)
+    ) return null;
+    return {
+      endpoint: value.endpoint,
+      keys: { p256dh: value.keys.p256dh, auth: value.keys.auth },
+    };
+  } catch {
+    return null;
+  }
+}
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const DATA_KEYS = [
@@ -50,6 +86,9 @@ export function parsePushDelivery(
     typeof row.token !== "string" || row.token.length < 20 ||
     row.token.length > 4096 || /\s/.test(row.token)
   ) return null;
+  const platform = row.platform ?? "android";
+  if (platform !== "android" && platform !== "web") return null;
+  if (platform === "web" && !webSubscription(row.token)) return null;
   if (
     !Number.isInteger(row.ttlSeconds) || (row.ttlSeconds as number) < 1 ||
     (row.ttlSeconds as number) > 3600
@@ -88,6 +127,7 @@ export function parsePushDelivery(
   if (new TextEncoder().encode(JSON.stringify(data)).length > 3500) return null;
   return {
     token: row.token,
+    platform,
     data: data as PushData,
     ttlSeconds: Math.min(
       row.ttlSeconds as number,

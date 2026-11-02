@@ -6,6 +6,10 @@ import { PushSettingsCard } from './PushSettingsCard'
 
 const mocks = vi.hoisted(() => ({
   supported: true,
+  web: false,
+  homeScreen: false,
+  prompt: vi.fn(),
+  toast: vi.fn(),
   state: { status: 'disabled', busy: false, error: null, pendingDisable: false } as PushSnapshot,
   enable: vi.fn(),
   disable: vi.fn(),
@@ -13,11 +17,15 @@ const mocks = vi.hoisted(() => ({
   listeners: new Set<() => void>(),
 }))
 
+vi.mock('sonner', () => ({ toast: { success: mocks.toast } }))
 vi.mock('@/lib/auth-context', () => ({
   useAuth: () => ({ user: { id: 'parent', role: 'PARENT' }, loading: false }),
 }))
 vi.mock('@/api/notifications', () => ({
   supportsPush: () => mocks.supported,
+  supportsWebPush: () => mocks.web,
+  needsHomeScreenForPush: () => mocks.homeScreen,
+  promptWebPushPermission: mocks.prompt,
   pushNotifications: {
     getSnapshot: () => mocks.state,
     subscribe: (fn: () => void) => {
@@ -30,13 +38,13 @@ vi.mock('@/api/notifications', () => ({
   },
 }))
 
-function mount() {
+function mount(hideWhenEnabled = false) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
   return render(
     <QueryClientProvider client={client}>
-      <PushSettingsCard />
+      <PushSettingsCard hideWhenEnabled={hideWhenEnabled} />
     </QueryClientProvider>,
   )
 }
@@ -44,6 +52,8 @@ function mount() {
 beforeEach(() => {
   vi.clearAllMocks()
   mocks.supported = true
+  mocks.web = false
+  mocks.homeScreen = false
   mocks.state = { status: 'disabled', busy: false, error: null, pendingDisable: false }
 })
 afterEach(cleanup)
@@ -112,4 +122,65 @@ it('shows the offline opt-out failure and retries disabling, not activation', as
   })
   expect(mocks.disable).toHaveBeenCalledExactlyOnceWith('parent')
   expect(mocks.enable).not.toHaveBeenCalled()
+})
+
+it('uses browser wording on the website and asks permission inside the click', async () => {
+  mocks.web = true
+  mount()
+  expect(screen.getByRole('heading', { name: 'Notificări în browser' })).toBeInTheDocument()
+  expect(screen.getByRole('status')).toHaveTextContent('Notificările sunt oprite în acest browser.')
+  expect(screen.getByText(/browserul îți va cere permisiunea/)).toBeInTheDocument()
+  expect(screen.queryByText(/Android/)).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Activează notificările' }))
+  expect(mocks.prompt).toHaveBeenCalledOnce()
+  await act(async () => undefined)
+  expect(mocks.enable).toHaveBeenCalledWith('parent')
+})
+
+it('explains how to unblock a browser that denied notifications', () => {
+  mocks.web = true
+  mocks.state = { status: 'denied', busy: false, error: null, pendingDisable: false }
+  mount()
+  expect(screen.getByText(/Browserul blochează notificările/)).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Reîncearcă' })).toBeInTheDocument()
+})
+
+it('tells iPhone visitors in Safari to add Motion to the home screen first', () => {
+  mocks.supported = false
+  mocks.homeScreen = true
+  mount()
+  expect(screen.getByRole('heading', { name: 'Notificări pe iPhone' })).toBeInTheDocument()
+  expect(screen.getByText(/Adaugă pe ecranul principal/)).toBeInTheDocument()
+  expect(screen.queryByRole('button')).not.toBeInTheDocument()
+})
+
+it('leaves the dashboard once notifications are on and confirms where to turn them off', async () => {
+  mocks.web = true
+  mocks.enable.mockImplementation(async () => {
+    mocks.state = { status: 'enabled', busy: false, error: null, pendingDisable: false }
+    mocks.listeners.forEach((fn) => fn())
+  })
+  const view = mount(true)
+  fireEvent.click(screen.getByRole('button', { name: 'Activează notificările' }))
+  await act(async () => undefined)
+  expect(view.container).toBeEmptyDOMElement()
+  expect(mocks.toast).toHaveBeenCalledWith('Notificările sunt active.', {
+    description: 'Le poți opri oricând din Profilul meu.',
+  })
+})
+
+it('keeps the dashboard quiet while loading or enabled but shows it when off or blocked', () => {
+  mocks.state = { status: 'loading', busy: false, error: null, pendingDisable: false }
+  expect(mount(true).container).toBeEmptyDOMElement()
+  cleanup()
+  mocks.state = { status: 'enabled', busy: false, error: null, pendingDisable: false }
+  expect(mount(true).container).toBeEmptyDOMElement()
+  cleanup()
+  mocks.state = { status: 'denied', busy: false, error: null, pendingDisable: false }
+  mount(true)
+  expect(screen.getByRole('button', { name: 'Reîncearcă' })).toBeInTheDocument()
+  cleanup()
+  mocks.state = { status: 'enabled', busy: false, error: null, pendingDisable: false }
+  mount()
+  expect(screen.getByRole('button', { name: 'Dezactivează notificările' })).toBeInTheDocument()
 })

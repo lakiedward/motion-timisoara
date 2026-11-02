@@ -40,3 +40,7 @@ Tracker: Team Tracker project 16, feature #613, plan v40 item 1290.
 - `supabase/functions/stripe-subscription-webhook/contract.test.ts`: signature, duplicates, out-of-order deliveries, grace, cancellation, incomplete, downgrade, concurrent write retry, storage failure and redelivery, unknown subscriber.
 - CI job `function-contracts` runs both and type-checks `index.ts`.
 - Live verification (`stripe trigger` in TEST updating the row) needs #610 applied, the function deployed and the TEST endpoint secret set, each on the owner's card.
+
+## Creating the Stripe endpoint without the dashboard
+
+The Stripe connector is not bound to the Motion account, and the only Motion Stripe key is the `STRIPE_SECRET_KEY` secret in Supabase. `setup-subscription-webhook` (ADMIN only) uses that key to create the endpoint with the six events and returns the signing secret once. `node scripts/setup-subscription-webhook.mjs` signs in with the admin account, calls it and writes the secret straight into `STRIPE_SUBSCRIPTION_WEBHOOK_SECRET` with the Supabase CLI, without printing it. An existing endpoint is never duplicated; `--replace` deletes it and creates a new one with a new secret. A LIVE key needs `--live`, and a TEST key refuses it, like `sync-subscription-prices`.

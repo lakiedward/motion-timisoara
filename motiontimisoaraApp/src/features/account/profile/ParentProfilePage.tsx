@@ -13,6 +13,7 @@ import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PushSettingsCard } from '@/features/notifications/PushSettingsCard'
 import { DeleteAccountSection } from './DeleteAccountSection'
 
 const parentProfileSchema = z.object({
@@ -152,6 +153,7 @@ export default function ParentProfilePage() {
           {isSubmitting ? 'Se salvează…' : 'Salvează'}
         </Button>
       </form>
+      <PushSettingsCard />
       <DeleteAccountSection userId={user.id} />
     </div>
   )

@@ -12,7 +12,7 @@ vi.mock('./backend', () => ({
   revokePushDevice: vi.fn(),
 }))
 vi.mock('./native', () => ({
-  supportsPush: () => true,
+  supportsNativePush: () => true,
   MotionPush: { status: async () => ({ permission: 'granted' }) },
   clearNativePush: mocks.clear,
   readPushState: async () => ({ binding: null, pendingDisableUserId: null }),

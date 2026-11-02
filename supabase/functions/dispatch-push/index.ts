@@ -1,5 +1,6 @@
 import { type PushClaim, pushDispatcher } from "./contract.ts";
 import { firebaseMessaging } from "./firebase.ts";
+import { webPushMessaging } from "./webpush.ts";
 
 const url = Deno.env.get("SUPABASE_URL");
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -26,6 +27,7 @@ const identity = (claim: PushClaim) => ({
   p_lease_id: claim.leaseId,
 });
 const firebase = firebaseMessaging(Deno.env.get("FCM_SERVICE_ACCOUNT_JSON"));
+const webPush = webPushMessaging(Deno.env.get("WEB_PUSH_VAPID_JWK"));
 
 Deno.serve(pushDispatcher({
   secret: Deno.env.get("PUSH_DISPATCH_SECRET"),
@@ -40,5 +42,8 @@ Deno.serve(pushDispatcher({
       p_retry_after: outcome.retryAfter ?? 0,
     });
   },
-  send: firebase.send,
+  send: (delivery, accessToken) =>
+    delivery.platform === "web"
+      ? webPush.send(delivery)
+      : firebase.send(delivery, accessToken),
 }));

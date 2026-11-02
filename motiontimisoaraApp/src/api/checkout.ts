@@ -73,6 +73,9 @@ export class EnrollmentRequestError extends Error {
   }
 }
 
+export const CHECKOUT_SERVER_UNREACHABLE =
+  'Nu am putut contacta serverul. Verifică conexiunea și încearcă din nou.'
+
 export async function invokeCheckoutFunction<T>(
   name: string,
   body: Record<string, unknown>,
@@ -82,7 +85,7 @@ export async function invokeCheckoutFunction<T>(
     const details = (data as FunctionErrorBody | null)?.error
       ? (data as FunctionErrorBody)
       : await readFunctionError(error)
-    throw new EnrollmentRequestError(details?.error ?? error.message, details?.code)
+    throw new EnrollmentRequestError(details?.error ?? CHECKOUT_SERVER_UNREACHABLE, details?.code)
   }
   if ((data as { error?: string } | null)?.error) {
     const details = data as FunctionErrorBody

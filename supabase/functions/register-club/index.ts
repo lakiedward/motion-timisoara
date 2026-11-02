@@ -6,7 +6,22 @@ import { lookupAnafCompany } from "../_shared/company-cui.ts";
 import { registerClubHandler } from "./contract.ts";
 
 serve(withCors(registerClubHandler({
-  lookupCompany: (cui) => lookupAnafCompany(cui),
+  lookupCompany: async (cui) => {
+    const result = await lookupAnafCompany(cui, async (url, init) => {
+      try {
+        const response = await fetch(url, init);
+        if (!response.ok) {
+          console.warn("register-club: ANAF HTTP", response.status);
+        }
+        return response;
+      } catch (error) {
+        console.error("register-club: ANAF fetch failed:", String(error));
+        throw error;
+      }
+    });
+    console.log("register-club: ANAF lookup", result.status);
+    return result;
+  },
   createUser: async (payload) => {
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email: payload.email,

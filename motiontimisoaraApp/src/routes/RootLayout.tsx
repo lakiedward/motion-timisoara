@@ -2,7 +2,7 @@ import { Outlet } from 'react-router-dom'
 
 import { Toaster } from '@/components/ui/sonner'
 import { NativeOAuthListener } from '@/features/auth/native/NativeOAuthListener'
-import { NativePushListener } from '@/features/notifications/NativePushListener'
+import { PushListener } from '@/features/notifications/PushListener'
 import { NativePaymentListener } from '@/features/account/checkout/NativePaymentListener'
 import { NativeAppShell } from '@/layout/native/NativeAppShell'
 import { ScrollToTop } from '@/layout/ScrollToTop'
@@ -14,7 +14,7 @@ export default function RootLayout() {
   return (
     <>
       <NativeOAuthListener />
-      <NativePushListener />
+      <PushListener />
       <NativePaymentListener />
       {usesNativeNavigation() ? (
         <NativeAppShell role={user?.role ?? null}>

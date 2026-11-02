@@ -64,3 +64,4 @@ INSERT INTO public.enrollments(child_id,kind,entity_id,status) VALUES
 INSERT INTO public.course_occurrences VALUES(public.test_uuid(40),public.test_uuid(11));
 INSERT INTO public.course_announcements(id,course_id) VALUES(public.test_uuid(50),public.test_uuid(11));
 \i /tmp/00057_android_parent_push.sql
+\i /tmp/00110_web_push.sql
