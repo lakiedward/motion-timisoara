@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { alegeDinGalerie, galeriaSeDeschideNativ } from '@/lib/galerie'
 import { plural } from '@/lib/plural'
 import { CoursePhotoCaption } from './CoursePhotoCaption'
+import { Checkbox } from '@/components/ui/checkbox'
 
 const GRID = 'grid grid-cols-2 gap-3 sm:grid-cols-3'
 
@@ -180,10 +181,8 @@ export default function CoursePhotosSection({ courseId }: { courseId: string | n
       {lista}
       <div className="bg-muted/50 space-y-3 rounded-xl border p-4">
         <label htmlFor={consentId} className="flex cursor-pointer items-start gap-3 text-sm">
-          <input
+          <Checkbox
             id={consentId}
-            type="checkbox"
-            className="accent-primary focus-visible:outline-ring mt-0.5 size-4 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2"
             checked={acord}
             onChange={(e) => setAcord(e.target.checked)}
           />

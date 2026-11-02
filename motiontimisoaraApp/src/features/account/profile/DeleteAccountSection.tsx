@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DeletionLists } from './DeletionLists'
 import { useDeletionSummary } from './useDeletionSummary'
+import { Checkbox } from '@/components/ui/checkbox'
 
 export function DeleteAccountSection({ userId }: { userId: string }) {
   const navigate = useNavigate()
@@ -77,9 +78,7 @@ export function DeleteAccountSection({ userId }: { userId: string }) {
           </p>
         ) : null}
         <label className="flex cursor-pointer items-start gap-3 text-sm">
-          <input
-            type="checkbox"
-            className="accent-primary focus-visible:outline-ring mt-0.5 size-4 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2"
+          <Checkbox
             checked={understood}
             disabled={pending}
             onChange={(e) => setUnderstood(e.target.checked)}

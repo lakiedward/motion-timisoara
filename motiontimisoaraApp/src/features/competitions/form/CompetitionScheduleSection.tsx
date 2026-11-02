@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { selectClassName } from '@/components/ui/field-styles'
 import type { CompetitionFormValues } from './competition-form-schema'
+import { Checkbox } from '@/components/ui/checkbox'
 
 type LocationOption = { id: string; name: string; city: string | null }
 
@@ -142,7 +143,7 @@ export function CompetitionScheduleSection({
       </div>
 
       <label className="flex min-h-11 items-center gap-3 text-sm">
-        <input type="checkbox" {...register('allowCash')} className="size-4" />
+        <Checkbox {...register('allowCash')} />
         Acceptă plata cash pentru categoriile cu taxă
       </label>
     </fieldset>
