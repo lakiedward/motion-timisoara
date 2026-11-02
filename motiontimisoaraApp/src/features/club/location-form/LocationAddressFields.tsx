@@ -1,4 +1,5 @@
 import { Label } from '@/components/ui/label'
+import { formSelectMenuClassName } from '@/components/ui/field-styles'
 import { SelectMenu } from '@/components/ui/select-menu'
 import { citiesForCounty, romanianCounties } from '@/lib/geography/romanian-places'
 
@@ -22,6 +23,7 @@ export default function LocationAddressFields({
       <div className="space-y-1.5">
         <Label htmlFor="county">Județ / regiune</Label>
         <SelectMenu
+          className={formSelectMenuClassName}
           id="county"
           value={county}
           onValueChange={onCountyChange}
@@ -34,6 +36,7 @@ export default function LocationAddressFields({
       <div className="space-y-1.5">
         <Label htmlFor="city">Oraș</Label>
         <SelectMenu
+          className={formSelectMenuClassName}
           id="city"
           value={city}
           disabled={!county && !city}

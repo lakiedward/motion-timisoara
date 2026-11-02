@@ -1,5 +1,6 @@
 import { RequiredMark } from '@/components/FormSection'
 import { Label } from '@/components/ui/label'
+import { formSelectMenuClassName } from '@/components/ui/field-styles'
 import { SelectMenu } from '@/components/ui/select-menu'
 import type { AdminClub } from '@/api/admin'
 import { SHARED_OWNER } from './useLocationFormOwner'
@@ -27,6 +28,7 @@ export function LocationOwnerField({
       <Label htmlFor="owner">Organizator {!locked && <RequiredMark />}</Label>
       {locked ? (
         <SelectMenu
+          className={formSelectMenuClassName}
           id="owner"
           value={value}
           disabled
@@ -36,6 +38,7 @@ export function LocationOwnerField({
         />
       ) : (
         <SelectMenu
+          className={formSelectMenuClassName}
           id="owner"
           value={value}
           onValueChange={onChange}
