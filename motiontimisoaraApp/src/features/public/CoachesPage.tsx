@@ -1,16 +1,17 @@
-import { FilterMenu } from '@/components/catalog-filters/FilterMenu'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 
+import { FilterMenu } from '@/components/catalog-filters/FilterMenu'
+import { SearchField } from '@/components/catalog-filters/SearchField'
+import { plural } from '@/lib/plural'
 import { getCoaches, publicUrl, type CoachListItem } from '@/api/public'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
+import { PublicPageHeader } from './components/PublicPageHeader'
 
 export default function CoachesPage() {
   const [nameSearch, setNameSearch] = useState('')
@@ -34,18 +35,13 @@ export default function CoachesPage() {
 
   return (
     <div>
-      <section
-        data-section="motion-react:page:/antrenori:section:toata-pagina"
-        className="from-primary/8 to-transparent border-b bg-gradient-to-b"
-      >
-        <div className="mx-auto max-w-7xl px-6 py-14">
-          <span className="eyebrow mb-3">Echipă</span>
-          <h1 className="font-display text-4xl font-extrabold text-foreground">Antrenori</h1>
-          <p className="text-foreground/80 dark:text-muted-foreground mt-2">
-            Antrenori dedicați sportului și copiilor
-          </p>
-        </div>
-      </section>
+      <PublicPageHeader
+        id="coaches-page-title"
+        section="motion-react:page:/antrenori:section:toata-pagina"
+        eyebrow="Echipă"
+        title="Antrenori"
+        text="Antrenori dedicați sportului și copiilor."
+      />
 
       <section
         data-section="motion-react:page:/antrenori:section:lista-antrenori"
@@ -53,15 +49,13 @@ export default function CoachesPage() {
         className="mx-auto max-w-7xl px-6 py-10"
       >
         <div className="mb-8 grid gap-4 sm:grid-cols-2">
-          <div className="min-w-0 space-y-2">
-            <Label htmlFor="coach-name-search">Caută după nume</Label>
-            <Input
-              id="coach-name-search"
-              type="search"
-              value={nameSearch}
-              onChange={(event) => setNameSearch(event.target.value)}
-            />
-          </div>
+          <SearchField
+            id="coach-name-search"
+            label="Caută după nume"
+            placeholder="Numele antrenorului"
+            value={nameSearch}
+            onChange={setNameSearch}
+          />
           <FilterMenu
             id="coach-sport-filter"
             label="Sport"
@@ -105,13 +99,18 @@ export default function CoachesPage() {
             }
           />
         ) : filteredCoaches.length ? (
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredCoaches.map((coach) => (
-              <li key={coach.id} className="min-w-0">
-                <CoachCard coach={coach} />
-              </li>
-            ))}
-          </ul>
+          <>
+            <p className="text-muted-foreground mb-4 text-sm" aria-live="polite">
+              {plural(filteredCoaches.length, 'antrenor găsit', 'antrenori găsiți')}
+            </p>
+            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredCoaches.map((coach) => (
+                <li key={coach.id} className="min-w-0">
+                  <CoachCard coach={coach} />
+                </li>
+              ))}
+            </ul>
+          </>
         ) : (
           <StatusView
             state="empty"

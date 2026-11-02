@@ -11,6 +11,7 @@ export function PublicHeroBand({
   backLabel,
   width = 'max-w-6xl',
   media,
+  badges,
   children,
 }: {
   url: string | null
@@ -19,11 +20,15 @@ export function PublicHeroBand({
   backLabel: string
   width?: 'max-w-4xl' | 'max-w-5xl' | 'max-w-6xl'
   media?: ReactNode
+  badges?: ReactNode
   children?: ReactNode
 }) {
   if (!url) return null
   const heading = (
-    <h1 className="font-display text-4xl font-extrabold text-white md:text-5xl">{title}</h1>
+    <>
+      {badges && <div className="mb-3 flex flex-wrap items-center gap-2">{badges}</div>}
+      <h1 className="font-display text-4xl font-extrabold text-white md:text-5xl">{title}</h1>
+    </>
   )
   return (
     <section className="relative h-[46vh] min-h-[320px] overflow-hidden md:h-[52vh]">

@@ -24,7 +24,6 @@ import { CourseCatalogCardSkeleton } from '../courses/CourseCatalogCardSkeleton'
 
 const SECTION_KEY = 'motion-react:page:/antrenori/:id:section:cursuri-predate'
 const GRID = 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3'
-const CAMP_GRID = 'grid gap-4 sm:grid-cols-2'
 
 function OfferCards({ offer, kind }: { offer: Offer; kind: OfferKind }) {
   if (kind === 'courses')
@@ -58,7 +57,7 @@ function KindGroup({ offer, kind }: { offer: Offer; kind: OfferKind }) {
           {offer[kind].length}
         </span>
       </h3>
-      <ul className={kind === 'camps' ? CAMP_GRID : GRID}>
+      <ul className={GRID}>
         <OfferCards offer={offer} kind={kind} />
       </ul>
     </section>

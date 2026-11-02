@@ -382,7 +382,7 @@ for (const viewport of [
     await expect(page.locator(".leaflet-tile-loaded").first()).toBeVisible();
     await expect(page.getByText("Fundalul hărții nu este disponibil momentan")).toHaveCount(0);
     await expect(
-      page.getByRole("link", { name: "Înscriere la concurs" }),
+      page.getByRole("link", { name: "Înscrie-te" }),
     ).toBeVisible();
     await capture(page, info, "public-competition");
     expect(state.errors).toEqual([]);

@@ -58,7 +58,8 @@ test('the title band and the club cards keep their content and links', async () 
   const initialCard = screen.getByRole('link', { name: /Bike Club/ })
   expect(initialCard).toHaveAttribute('href', '/cluburi/b')
   expect(initialCard.querySelector('img')).toBeNull()
-  expect(initialCard.children).toHaveLength(1)
+  expect(within(initialCard).getByText('B')).toBeInTheDocument()
+  expect(screen.getByText('2 cluburi găsite')).toBeInTheDocument()
 })
 
 test('a failed request shows an error with retry, separate from the empty list', async () => {

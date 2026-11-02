@@ -1,6 +1,5 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
 
 import { getTabaraDetaliu, sAIncheiat } from '@/api/camps'
 import { descriptionParagraphs } from '@/lib/course-detail'
@@ -9,11 +8,13 @@ import { PhotoMosaic } from '@/components/photo-gallery/PhotoMosaic'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import CampPricingCard from './camp-pricing/CampPricingCard'
+import ActivityPlaceMap from '@/features/public/map/ActivityPlaceMap'
 import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
 import CampRequirementsDisplay from '@/components/camps/CampRequirementsDisplay'
 import { PublicHeroBand } from './PublicHeroBand'
 import { CampInfoBand } from './camp-detail/CampInfoBand'
 import { OrganizerCoaches } from './components/OrganizerCoaches'
+import { DetailBackLink } from '@/features/public/components/DetailBackLink'
 
 export default function CampDetailsPage() {
   const { slug = '' } = useParams()
@@ -83,12 +84,7 @@ export default function CampDetailsPage() {
 
       {!heroUrl && (
         <div className="mx-auto max-w-6xl px-6 pt-8">
-          <Link
-            to="/tabere"
-            className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
-          >
-            <ArrowLeft className="size-4" /> Înapoi la tabere
-          </Link>
+          <DetailBackLink to="/tabere" label="Înapoi la tabere" />
           <h1 className="font-display text-foreground mt-4 text-3xl font-extrabold tracking-tight md:text-4xl">
             {tabara.title}
           </h1>
@@ -122,6 +118,15 @@ export default function CampDetailsPage() {
               subtitle="Cum arată o zi în tabără, de dimineață până seara."
               sectionKey="camp-gallery"
             />
+
+            {data.location?.lat != null && data.location.lng != null && (
+              <ActivityPlaceMap
+                lat={data.location.lat}
+                lng={data.location.lng}
+                name={data.location.name}
+                address={data.location.address}
+              />
+            )}
 
             <OrganizerCoaches
               sectionKey="motion-react:page:/tabere/:slug:section:organizator-si-antrenori"

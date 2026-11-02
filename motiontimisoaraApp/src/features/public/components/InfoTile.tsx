@@ -37,8 +37,7 @@ export function InfoTile({
       </div>
     </>
   )
-  const layout =
-    'flex min-w-0 flex-1 flex-col gap-1 p-3 sm:flex-row sm:items-center sm:gap-2.5 sm:p-4'
+  const layout = 'flex min-w-0 flex-1 flex-row items-center gap-2.5 p-3 sm:p-4'
 
   if (to) {
     return (
@@ -49,4 +48,12 @@ export function InfoTile({
   }
 
   return <div className={layout}>{body}</div>
+}
+
+export function InfoBand({ children }: { children: ReactNode }) {
+  return (
+    <div className="bg-card divide-border grid divide-y rounded-xl border sm:auto-cols-fr sm:grid-flow-col sm:divide-x sm:divide-y-0">
+      {children}
+    </div>
+  )
 }

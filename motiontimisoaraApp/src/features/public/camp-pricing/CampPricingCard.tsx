@@ -221,11 +221,11 @@ export default function CampPricingCard({
 
       <div
         className={cn(
-          'flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between',
+          'flex flex-col gap-4',
           (byAge || categorii.length > 0 || adultPrice) && 'border-border mt-4 border-t pt-4',
         )}
       >
-        <div className="min-w-0 sm:flex-1">
+        <div className="min-w-0">
           {byAge ? (
             <p className="text-muted-foreground text-sm">
               Prețul fiecărui participant se confirmă la înscriere.
@@ -243,15 +243,15 @@ export default function CampPricingCard({
           <OfferExchangeNote offer={tabara} className="text-xs" />
         </div>
         {canEnroll && !parentAccount ? (
-          <p className="text-muted-foreground bg-muted w-full rounded-lg px-4 py-3 text-sm sm:w-auto">
+          <p className="text-muted-foreground bg-muted w-full rounded-lg px-4 py-3 text-sm">
             Înscrierile se fac dintr-un cont de părinte.
           </p>
         ) : canEnroll ? (
-          <button type="button" className="btn-cta btn-cta--primary w-full shrink-0 sm:w-auto" onClick={onEnroll}>
+          <button type="button" className="btn-cta btn-cta--primary w-full" onClick={onEnroll}>
             Înscrie-te
           </button>
         ) : ended || full ? (
-          <div className="flex flex-col items-start gap-1 sm:items-end">
+          <div className="flex flex-col items-start gap-1">
             <p className="text-muted-foreground text-sm font-medium">
               {ended
                 ? 'Tabăra s-a încheiat, înscrierile sunt închise.'

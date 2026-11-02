@@ -1,20 +1,14 @@
 import { CalendarDays, Clock, MapPin } from 'lucide-react'
 
 import type { ActivitateDetaliu } from '@/api/public'
-import { cn } from '@/lib/utils'
-import { InfoTile } from '@/features/public/components/InfoTile'
+import { InfoBand, InfoTile } from '@/features/public/components/InfoTile'
 import { activityDay, activityHours, activityMapLink } from './activity-facts'
 
 export function ActivityInfoBand({ activity }: { activity: ActivitateDetaliu }) {
   const { location } = activity
 
   return (
-    <div
-      className={cn(
-        'bg-card divide-border grid divide-x rounded-xl border',
-        location ? 'grid-cols-3' : 'grid-cols-2',
-      )}
-    >
+    <InfoBand>
       <InfoTile
         icon={<CalendarDays className="size-4" />}
         label="Data"
@@ -30,6 +24,6 @@ export function ActivityInfoBand({ activity }: { activity: ActivitateDetaliu }) 
           to={activityMapLink(location)}
         />
       )}
-    </div>
+    </InfoBand>
   )
 }
