@@ -5,7 +5,7 @@ import { ArrowLeft } from 'lucide-react'
 import { ACTIVITY_RULES_FILE_BUCKET, rulesFileAfisabil } from '@/api/camp-rules-file'
 import { activitateSAincheiat, getActivitateDetaliu } from '@/api/public'
 import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
-import PhotoGallery from '@/components/photo-gallery/PhotoGallery'
+import { PhotoMosaic } from '@/components/photo-gallery/PhotoMosaic'
 import ActivityPlaceMap from '@/features/public/map/ActivityPlaceMap'
 import { useAuth } from '@/lib/auth-context'
 import { descriptionParagraphs } from '@/lib/course-detail'
@@ -116,12 +116,13 @@ export default function ActivityDetailPage() {
               </section>
             )}
 
-            {a.galerieUrls.length > 0 && (
-              <div className="mt-8">
-                <h2 className="font-display mb-3 text-lg font-bold">Din activitate</h2>
-                <PhotoGallery urls={a.galerieUrls} alt={a.name} />
-              </div>
-            )}
+            <PhotoMosaic
+              photos={a.galerie}
+              alt={a.name}
+              title="Din activitate"
+              subtitle="Momente de la activitate, în poze."
+              sectionKey="activity-gallery"
+            />
 
             <CampRulesDisplay
               rules={null}

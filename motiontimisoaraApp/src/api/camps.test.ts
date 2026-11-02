@@ -178,7 +178,9 @@ test('detaliul adună categoriile, antrenorii, pozele și locurile rămase', asy
       link: '/antrenori/user-cp1',
     },
   ])
-  expect(d!.galerieUrls).toEqual(['https://public/camp-photos/camp-1/gallery/a.jpg'])
+  expect(d!.galerie).toEqual([
+    { url: 'https://public/camp-photos/camp-1/gallery/a.jpg', caption: null },
+  ])
   expect(d!.locuriRamase).toBe(12)
 })
 test('fișierul regulamentului primește URL-ul public din bucketul camp-rules', async () => {
@@ -215,7 +217,7 @@ test('galeria nu ține locul pozei din cap', async () => {
   }
   const d = await getTabaraDetaliu('tabara-inot')
   expect(d!.heroUrl).toBeNull()
-  expect(d!.galerieUrls[0]).toBe('https://public/camp-photos/camp-1/gallery/prima.jpg')
+  expect(d!.galerie[0]?.url).toBe('https://public/camp-photos/camp-1/gallery/prima.jpg')
 })
 
 test('poza hero aleasă are întâietate față de galerie', async () => {

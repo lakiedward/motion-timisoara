@@ -51,7 +51,7 @@ const detaliu = (peste: Record<string, unknown> = {}) => ({
   agePrices: [],
   antrenori: [],
   heroUrl: null,
-  galerieUrls: [],
+  galerie: [],
   locuriRamase: 20,
   ...peste,
   tabara: { ...TABARA_IMPLICITA, ...((peste.tabara as object) ?? {}) },
@@ -452,7 +452,10 @@ test('poza mare și galeria apar când există', async () => {
   mocked.mockResolvedValue(
     detaliu({
       heroUrl: 'https://public/camp-photos/hero.jpg',
-      galerieUrls: ['https://public/camp-photos/g1.jpg', 'https://public/camp-photos/g2.jpg'],
+      galerie: [
+        { url: 'https://public/camp-photos/g1.jpg', caption: 'Drumeția' },
+        { url: 'https://public/camp-photos/g2.jpg', caption: null },
+      ],
     }) as never,
   )
   const { container } = renderPage()
@@ -462,13 +465,16 @@ test('poza mare și galeria apar când există', async () => {
     'src',
     'https://public/camp-photos/hero.jpg',
   )
-  expect(screen.getByRole('button', { name: 'Deschide poza 1 din 2' })).toBeInTheDocument()
+  expect(screen.getByRole('region', { name: 'O zi la tabără' })).toBeInTheDocument()
+  expect(
+    screen.getByRole('button', { name: 'Deschide poza 1 din 2: Drumeția' }),
+  ).toBeInTheDocument()
 })
 
 test('fără poze, pagina nu arată o secțiune de galerie goală', async () => {
   renderPage()
   await screen.findByRole('button', { name: 'Înscrie-te' })
-  expect(screen.queryByText('Din tabără')).not.toBeInTheDocument()
+  expect(screen.queryByText('O zi la tabără')).not.toBeInTheDocument()
 })
 
 test('fără loc, banda nu arată deloc rubrica „Locație”', async () => {

@@ -59,7 +59,9 @@ const DETALIU: ActivitateDetaliu = {
       pozaUrl: 'https://public/coach-photos/demo.jpg',
     },
   ],
-  galerieUrls: ['https://public/sport-photos/ciclism.jpg'],
+  galerie: [
+    { url: 'https://public/activity-photos/a/gallery/1.jpg', caption: 'Traseul cu jaloane' },
+  ],
   locuriRamase: 11,
   regulament: {
     rules_file_storage_path: null,
@@ -136,7 +138,7 @@ test('fără poza activității, pagina nu pune degradeul gol, iar titlul stă s
   expect(screen.getByRole('heading', { name: 'Din activitate' })).toBeInTheDocument()
 })
 
-test('poza activității umple banda, iar poza sportului rămâne în galerie', async () => {
+test('poza activității umple banda, iar galeria rămâne sub descriere', async () => {
   mocked.mockResolvedValue({
     ...DETALIU,
     bandUrl: 'https://public/activity-photos/a/hero.jpg',
@@ -152,7 +154,9 @@ test('poza activității umple banda, iar poza sportului rămâne în galerie', 
   expect(titlu.className).toContain('text-4xl')
   expect(document.querySelector('.from-primary\\/20')).not.toBeInTheDocument()
   expect(document.querySelector('.md\\:h-96')).not.toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Deschide poza 1 din 1' })).toBeInTheDocument()
+  expect(
+    screen.getByRole('button', { name: 'Deschide poza 1 din 1: Traseul cu jaloane' }),
+  ).toBeInTheDocument()
   expect(screen.queryByText('Ciclism')).not.toBeInTheDocument()
 })
 
@@ -253,7 +257,9 @@ test('galerie, regulament, hartă și nota de curs stau în ordinea aleasă', as
   const nota = screen.getByText(/Plata se face în lei, la cursul organizatorului: 1 EUR = 5,1 lei/)
   expect(nota.className).toContain('text-xs')
   expect(nota.className).toContain('text-muted-foreground')
-  await user.click(screen.getByRole('button', { name: 'Deschide poza 1 din 1' }))
+  await user.click(
+    screen.getByRole('button', { name: 'Deschide poza 1 din 1: Traseul cu jaloane' }),
+  )
   expect(screen.getByRole('dialog')).toBeInTheDocument()
 })
 
@@ -390,7 +396,7 @@ test('fără alți antrenori, blocul lor nu apare', async () => {
 })
 
 test('fără poza activității și fără poza sportului apare ilustrația sportului', async () => {
-  mocked.mockResolvedValue({ ...DETALIU, photoUrl: null, galerieUrls: [] })
+  mocked.mockResolvedValue({ ...DETALIU, photoUrl: null, galerie: [] })
   deseneaza()
   expect(await screen.findByRole('img', { name: 'Ilustrație Ciclism' })).toBeVisible()
   expect(screen.getByText('Ciclism')).toBeVisible()

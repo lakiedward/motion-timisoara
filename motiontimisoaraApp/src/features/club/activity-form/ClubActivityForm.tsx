@@ -31,6 +31,7 @@ import { publicUrl } from '@/api/public'
 import { fetchSports } from '@/api/sports'
 import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
 import { HeroPhotoField } from '@/components/HeroPhotoField'
+import GalleryPhotosSection from '@/features/photo-gallery/GalleryPhotosSection'
 import { OfferRulesFieldset } from '@/components/RulesFileField'
 import { Button } from '@/components/ui/button'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
@@ -535,6 +536,11 @@ export function ClubActivityForm() {
             setPozaHero(fisier)
             setEroareHero(null)
           }}
+        />
+        <GalleryPhotosSection
+          fel="activitate"
+          id={isEdit ? (id as string) : null}
+          invalidate={[['activitate-detaliu', id]]}
         />
         <OfferRulesFieldset
           entityId={isEdit ? id : undefined}

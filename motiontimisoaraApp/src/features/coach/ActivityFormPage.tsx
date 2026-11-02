@@ -27,6 +27,7 @@ import {
 } from '@/api/coach'
 import { createAdminActivity, updateAdminActivity } from '@/api/activities/admin-activities'
 import { HeroPhotoField } from '@/components/HeroPhotoField'
+import GalleryPhotosSection from '@/features/photo-gallery/GalleryPhotosSection'
 import { MESAJ_POZA_HERO, mesajHeroLipsa } from '@/lib/hero-photo'
 import { publicUrl } from '@/api/public'
 import { fetchSports } from '@/api/sports'
@@ -544,6 +545,11 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
             setPozaHero(fisier)
             setEroareHero(null)
           }}
+        />
+        <GalleryPhotosSection
+          fel="activitate"
+          id={isEdit ? (id as string) : null}
+          invalidate={[['activitate-detaliu', id]]}
         />
         <OfferRulesFieldset
           entityId={isEdit ? id : undefined}

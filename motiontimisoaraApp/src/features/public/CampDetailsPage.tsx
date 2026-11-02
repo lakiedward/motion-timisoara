@@ -5,7 +5,7 @@ import { ArrowLeft } from 'lucide-react'
 import { getTabaraDetaliu, sAIncheiat } from '@/api/camps'
 import { descriptionParagraphs } from '@/lib/course-detail'
 import { useAuth } from '@/lib/auth-context'
-import PhotoGallery from '@/components/photo-gallery/PhotoGallery'
+import { PhotoMosaic } from '@/components/photo-gallery/PhotoMosaic'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import CampPricingCard from './camp-pricing/CampPricingCard'
@@ -58,7 +58,7 @@ export default function CampDetailsPage() {
     )
   }
 
-  const { tabara, necesar, organizator, antrenori, heroUrl, galerieUrls, locuriRamase } = data
+  const { tabara, necesar, organizator, antrenori, heroUrl, galerie, locuriRamase } = data
   const incheiata = sAIncheiat(tabara.period_end)
   const plina = locuriRamase !== null && locuriRamase <= 0
 
@@ -115,12 +115,13 @@ export default function CampDetailsPage() {
 
             <CampRequirementsDisplay necesar={necesar} />
 
-            {galerieUrls.length > 0 && (
-              <div className="mt-8">
-                <h2 className="font-display mb-3 text-lg font-bold">Din tabără</h2>
-                <PhotoGallery urls={galerieUrls} alt={tabara.title} />
-              </div>
-            )}
+            <PhotoMosaic
+              photos={galerie}
+              alt={tabara.title}
+              title="O zi la tabără"
+              subtitle="Cum arată o zi în tabără, de dimineață până seara."
+              sectionKey="camp-gallery"
+            />
 
             <OrganizerCoaches
               sectionKey="motion-react:page:/tabere/:slug:section:organizator-si-antrenori"

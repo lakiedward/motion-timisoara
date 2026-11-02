@@ -255,7 +255,7 @@ test('clubul e organizatorul, antrenorul stă separat, iar galeria ia poza sport
       pozaUrl: 'https://public/coach-photos/demo.jpg',
     },
   ])
-  expect(detaliu?.galerieUrls).toEqual(['https://public/sport-photos/ciclism.jpg'])
+  expect(detaliu?.galerie).toEqual([])
   expect(detaliu?.bandUrl).toBeNull()
   expect(detaliu?.locuriRamase).toBe(11)
   expect(apeluriRpc).toEqual([
@@ -272,17 +272,26 @@ test('fără club, antrenorul e organizatorul și nu mai apare la ceilalți', as
   expect(detaliu?.antrenori).toEqual([])
 })
 
-test('poza din bandă nu se repetă în galerie', async () => {
+test('galeria vine din activity_photos, în ordine și cu descrieri', async () => {
   raspuns.activities = {
-    data: randDetaliu({ hero_photo_storage_path: 'a/hero.jpg' }),
+    data: randDetaliu({
+      hero_photo_storage_path: 'a/hero.jpg',
+      activity_photos: [
+        { storage_path: 'a/gallery/2.jpg', display_order: 1, caption: null },
+        { storage_path: 'a/gallery/1.jpg', display_order: 0, caption: 'Jaloanele' },
+      ],
+    }),
     error: null,
   }
   const detaliu = await getActivitateDetaliu('viitoare')
   expect(detaliu?.bandUrl).toBe('https://public/activity-photos/a/hero.jpg')
-  expect(detaliu?.galerieUrls).toEqual([])
+  expect(detaliu?.galerie).toEqual([
+    { url: 'https://public/activity-photos/a/gallery/1.jpg', caption: 'Jaloanele' },
+    { url: 'https://public/activity-photos/a/gallery/2.jpg', caption: null },
+  ])
 })
 
-test('activitatea din preview fără bandă primește descrierea lungă, poza sportului și poza de ciclism', async () => {
+test('activitatea din preview fără bandă și fără galerie primește descrierea lungă și poza de ciclism', async () => {
   raspuns.activities = {
     data: randDetaliu({
       id: '74a9d327-fb4e-450f-866f-f24575edc204',
@@ -301,7 +310,7 @@ test('activitatea din preview fără bandă primește descrierea lungă, poza sp
   expect(paragrafe.length).toBeGreaterThanOrEqual(3)
   expect(paragrafe[0]).toBe('Siguranță și îndemânare pe bicicletă.')
   expect(detaliu?.bandUrl).toBeNull()
-  expect(detaliu?.galerieUrls).toEqual(['/ui/20221013_183129.webp', '/ui/20210405_152345.webp'])
+  expect(detaliu?.galerie).toEqual([{ url: '/ui/20210405_152345.webp', caption: null }])
 })
 
 test('locurile rămase pot fi zero sau necunoscute, fără să fie inventate', async () => {
@@ -324,5 +333,5 @@ test('activitatea din preview cu bandă arată doar poza de ciclism, fără dubl
   }
   const detaliu = await getActivitateDetaliu('74a9d327-fb4e-450f-866f-f24575edc204')
   expect(detaliu?.bandUrl).toBe('https://public/activity-photos/demo/hero.jpg')
-  expect(detaliu?.galerieUrls).toEqual(['/ui/20210405_152345.webp'])
+  expect(detaliu?.galerie).toEqual([{ url: '/ui/20210405_152345.webp', caption: null }])
 })

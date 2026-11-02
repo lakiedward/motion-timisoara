@@ -5,23 +5,39 @@ import userEvent from '@testing-library/user-event'
 import CampPhotosSection from './CampPhotosSection'
 
 const api = vi.hoisted(() => ({
-  getPozeleTaberei: vi.fn(),
-  stergeDinGalerie: vi.fn(),
+  getPozeGalerie: vi.fn(),
+  stergePozaGalerie: vi.fn(),
 }))
 
 vi.mock('@/api/camp-photos', () => ({
-  MAX_POZE_GALERIE: 12,
-  adaugaInGalerie: vi.fn(),
-  getPozeleTaberei: api.getPozeleTaberei,
-  mutaInGalerie: vi.fn(),
   schimbaPozaHero: vi.fn(),
-  stergeDinGalerie: api.stergeDinGalerie,
   urlPublic: (cale: string) => `https://cdn.test/${cale}`,
 }))
 
+vi.mock('@/api/photo-gallery', async (orig) => ({
+  ...(await orig<typeof import('@/api/photo-gallery')>()),
+  adaugaPozeGalerie: vi.fn(),
+  getPozeGalerie: api.getPozeGalerie,
+  mutaPozaGalerie: vi.fn(),
+  schimbaDescrierePoza: vi.fn(),
+  stergePozaGalerie: api.stergePozaGalerie,
+}))
+
 const poze = [
-  { id: 'a', url: 'https://cdn.test/a.jpg', storage_path: 'a.jpg', position: 0 },
-  { id: 'b', url: 'https://cdn.test/b.jpg', storage_path: 'b.jpg', position: 1 },
+  {
+    id: 'a',
+    url: 'https://cdn.test/a.jpg',
+    storage_path: 'a.jpg',
+    display_order: 0,
+    caption: null,
+  },
+  {
+    id: 'b',
+    url: 'https://cdn.test/b.jpg',
+    storage_path: 'b.jpg',
+    display_order: 1,
+    caption: 'Focul de tabără',
+  },
 ]
 
 function afiseaza() {
@@ -34,24 +50,27 @@ function afiseaza() {
 }
 
 beforeEach(() => {
-  api.getPozeleTaberei.mockReset()
-  api.stergeDinGalerie.mockReset()
+  api.getPozeGalerie.mockReset()
+  api.stergePozaGalerie.mockReset()
 })
 
 test('ștergerea cere confirmare înainte să scoată poza', async () => {
-  api.getPozeleTaberei.mockResolvedValue(poze)
-  api.stergeDinGalerie.mockResolvedValue(undefined)
+  api.getPozeGalerie.mockResolvedValue(poze)
+  api.stergePozaGalerie.mockResolvedValue(undefined)
   const user = userEvent.setup()
   afiseaza()
   await user.click(await screen.findByRole('button', { name: 'Șterge poza 2' }))
-  expect(api.stergeDinGalerie).not.toHaveBeenCalled()
+  expect(api.stergePozaGalerie).not.toHaveBeenCalled()
   const dialog = screen.getByRole('alertdialog', { name: 'Ștergi poza 2?' })
   await user.click(within(dialog).getByRole('button', { name: 'Șterge poza' }))
-  expect(api.stergeDinGalerie).toHaveBeenCalledWith(poze[1])
+  expect(api.stergePozaGalerie).toHaveBeenCalledWith(
+    expect.objectContaining({ tabel: 'camp_photos', id: 'c1' }),
+    poze[1],
+  )
 })
 
 test('arată contorul, poza din cap și săgețile dezactivate la capete', async () => {
-  api.getPozeleTaberei.mockResolvedValue(poze)
+  api.getPozeGalerie.mockResolvedValue(poze)
   afiseaza()
   expect(await screen.findByText('2 din 12 poze')).toBeInTheDocument()
   expect(screen.getByRole('img', { name: 'Poza din capul paginii' })).toHaveAttribute(
@@ -65,17 +84,30 @@ test('arată contorul, poza din cap și săgețile dezactivate la capete', async
 })
 
 test('galeria goală spune că nu există poze', async () => {
-  api.getPozeleTaberei.mockResolvedValue([])
+  api.getPozeGalerie.mockResolvedValue([])
   afiseaza()
   expect(await screen.findByText('Nu există încă poze în galerie.')).toBeInTheDocument()
 })
 
 test('o eroare la încărcare arată Reîncearcă', async () => {
-  api.getPozeleTaberei.mockRejectedValueOnce(new Error('x')).mockResolvedValue(poze)
+  api.getPozeGalerie.mockRejectedValueOnce(new Error('x')).mockResolvedValue(poze)
   const user = userEvent.setup()
   afiseaza()
   const alerta = await screen.findByRole('alert')
   expect(alerta).toHaveTextContent('Nu am putut încărca pozele.')
   await user.click(within(alerta).getByRole('button', { name: 'Reîncearcă' }))
   expect(await screen.findByText('2 din 12 poze')).toBeInTheDocument()
+})
+
+test('tabăra are descrieri și cere acordul părinților înainte de încărcare', async () => {
+  api.getPozeGalerie.mockResolvedValue(poze)
+  const user = userEvent.setup()
+  afiseaza()
+  expect(await screen.findByRole('textbox', { name: 'Descrierea pozei 2' })).toHaveValue(
+    'Focul de tabără',
+  )
+  const buton = screen.getByRole('button', { name: 'Adaugă poze' })
+  expect(buton).toBeDisabled()
+  await user.click(screen.getByRole('checkbox', { name: /acordul scris al părinților/ }))
+  expect(buton).toBeEnabled()
 })
