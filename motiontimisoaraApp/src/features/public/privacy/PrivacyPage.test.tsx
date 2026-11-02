@@ -50,7 +50,7 @@ describe('PrivacyPage', () => {
       expect(within(row).getByText('De completat')).toBeInTheDocument()
     }
     const emailRow = within(operator).getByText('Email pentru date personale').parentElement!
-    expect(emailRow).toHaveTextContent('contact@motionromania.com')
+    expect(emailRow).toHaveTextContent('contact@motionromania.ro')
   })
 
   it('states a legal basis for each purpose, including health data and photos', () => {
@@ -98,9 +98,9 @@ describe('PrivacyPage', () => {
       'href',
       '/contact',
     )
-    expect(within(rights).getByRole('link', { name: 'contact@motionromania.com' })).toHaveAttribute(
+    expect(within(rights).getByRole('link', { name: 'contact@motionromania.ro' })).toHaveAttribute(
       'href',
-      'mailto:contact@motionromania.com',
+      'mailto:contact@motionromania.ro',
     )
     expect(within(rights).getByRole('link', { name: 'dataprotection.ro' })).toHaveAttribute(
       'href',

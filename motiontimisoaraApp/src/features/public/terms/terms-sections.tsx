@@ -3,8 +3,8 @@ import { CreditCard, Lock, Mail, MessageSquare, Phone, ShieldCheck } from 'lucid
 
 import type { LegalSection } from '../legal/LegalPage'
 
-export const TERMS_VERSION = '1.1'
-export const TERMS_UPDATED = '27 octombrie 2026'
+export const TERMS_VERSION = '1.2'
+export const TERMS_UPDATED = '2 noiembrie 2026'
 
 const linkClass = 'text-primary underline underline-offset-4'
 const rowClass =
@@ -101,8 +101,8 @@ export const TERMS_SECTIONS: LegalSection[] = [
       <>
         <p>Pentru întrebări despre o înscriere sau despre acești termeni:</p>
         <div className="space-y-1 text-sm">
-          <a href="mailto:contact@motionromania.com" className={rowClass}>
-            <Mail className="text-primary size-4" /> contact@motionromania.com
+          <a href="mailto:contact@motionromania.ro" className={rowClass}>
+            <Mail className="text-primary size-4" /> contact@motionromania.ro
           </a>
           <a href="tel:+40750420455" className={rowClass}>
             <Phone className="text-primary size-4" /> +40 750 420 455
