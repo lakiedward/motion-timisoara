@@ -217,3 +217,14 @@ reorganizing this document; correct obsolete facts with current evidence.
   site, the Supabase project, `motiontimisoaraApp/` and the native id `com.motiontimisoara.app`
   stay unchanged: renaming them breaks store identity, deep links, OAuth clients and push.
   The lost domain is no longer a trusted Stripe return origin.
+- 2026-11-02 — The card platform fee is 1.00 RON + 3.5% of the amount with no VAT
+  (`PLATFORM_FEE_VAT_RATE = 0` in `supabase/functions/_shared/stripe.ts`), replacing the
+  19% VAT added on top since the backend migration — ANAF shows the operator, TITUS CLUB
+  SWIM&FUN S.R.L. (CUI 49252540), is not VAT registered, so it may not charge VAT. The fixed
+  leu cancels Stripe's own fixed leu (~1 RON + 1.5% on a standard EEA card), leaving a
+  constant ~2% margin at every price; premium and non-EEA cards (up to ~3.15% + 1 RON) stay
+  positive. The fee does not cover Connect's monthly per-account fee, payout fees or
+  chargebacks. If the operator registers for VAT, set the constant to the standard rate
+  (21% since 2025-08-01), which is added on top of the fee and capped so the fee never
+  exceeds the charge, and redeploy create-payment-intent and create-checkout-session.
+  Confirm with the accountant (To-Do #227).
