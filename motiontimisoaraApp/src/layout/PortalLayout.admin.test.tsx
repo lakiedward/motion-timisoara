@@ -133,13 +133,14 @@ test('drawer traps focus in the accepted order and Escape restores the trigger',
   const links = within(dialog).getAllByRole('link')
   const logout = within(dialog).getByRole('button', { name: 'Deconectare' })
   const close = within(dialog).getByRole('button', { name: 'Închide' })
+  const theme = within(dialog).getByRole('button', { name: 'Treci la tema întunecată' })
   expect(links.map((link) => link.getAttribute('href'))).toEqual([
     '/',
     ...adminNavigation.map((item) => item.to),
     '/admin/profile',
   ])
   await waitFor(() => expect(links[0]).toHaveFocus())
-  for (const control of [...links.slice(1), logout, close, links[0]]) {
+  for (const control of [...links.slice(1), theme, logout, close, links[0]]) {
     await user.tab()
     expect(control).toHaveFocus()
   }
