@@ -23,6 +23,7 @@ export type SubscriptionCheckoutParams = {
   mode: "subscription";
   locale: "ro";
   currency: "ron";
+  adaptive_pricing: { enabled: false };
   customer: string;
   client_reference_id: string;
   line_items: { price: string; quantity: number }[];
@@ -67,6 +68,8 @@ export type SubscriptionCheckoutDependencies = BillingLookup & {
   termsVersion: string;
   now: () => number;
 };
+
+export const CHECKOUT_REVISION = "1";
 
 const planCodePattern = /^[A-Z][A-Z_]{1,31}$/;
 
@@ -163,11 +166,13 @@ export function subscriptionCheckoutHandler(
         ...metadata,
         plan_code: plan.code,
         terms_version: dependencies.termsVersion,
+        checkout_revision: CHECKOUT_REVISION,
       };
       const params: SubscriptionCheckoutParams = {
         mode: "subscription",
         locale: "ro",
         currency: "ron",
+        adaptive_pricing: { enabled: false },
         customer: customerId,
         client_reference_id: subscription.id,
         line_items: [{ price: plan.stripe_price_id, quantity: 1 }],
@@ -198,7 +203,8 @@ export function subscriptionCheckoutHandler(
         const same = open.url && open.successUrl === params.success_url &&
           open.metadata.plan_code === plan.code &&
           open.metadata.subscription_id === subscription.id &&
-          open.metadata.terms_version === dependencies.termsVersion;
+          open.metadata.terms_version === dependencies.termsVersion &&
+          open.metadata.checkout_revision === CHECKOUT_REVISION;
         if (same) return Response.json({ url: open.url, sessionId: open.id });
         await dependencies.expireSession(open.id);
       }

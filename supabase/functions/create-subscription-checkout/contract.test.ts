@@ -138,7 +138,7 @@ Deno.test("a new subscriber gets one Stripe customer and a subscription Checkout
   assert(key.startsWith("subscription-checkout-"));
   assert(
     params.mode === "subscription" && params.locale === "ro" &&
-      params.currency === "ron",
+      params.currency === "ron" && params.adaptive_pricing.enabled === false,
   );
   assert(
     params.customer === "cus_new" &&
@@ -201,6 +201,7 @@ Deno.test("an open Checkout for the same plan is reused and any other is expired
     subscription_id: subscriptionId,
     plan_code: "CLUB",
     terms_version: "1.2",
+    checkout_revision: "1",
   };
   const successUrl =
     `${site}/club/abonament?abonament=reusit&session_id={CHECKOUT_SESSION_ID}`;
@@ -243,6 +244,13 @@ Deno.test("an open Checkout for the same plan is reused and any other is expired
         metadata: { ...metadata, terms_version: "1.1" },
       },
       {
+        id: "cs_old_revision",
+        url: "https://checkout.stripe.com/w",
+        mode: "subscription",
+        successUrl,
+        metadata: { ...metadata, checkout_revision: "0" },
+      },
+      {
         id: "cs_enrollment",
         url: "https://checkout.stripe.com/z",
         mode: "payment",
@@ -254,7 +262,8 @@ Deno.test("an open Checkout for the same plan is reused and any other is expired
   assert((await replace.handler(post({ planCode: "CLUB" }))).status === 200);
   assert(
     replace.calls.includes("expire:cs_other_plan") &&
-      replace.calls.includes("expire:cs_old_terms"),
+      replace.calls.includes("expire:cs_old_terms") &&
+      replace.calls.includes("expire:cs_old_revision"),
   );
   assert(
     !replace.calls.includes("expire:cs_enrollment") &&
