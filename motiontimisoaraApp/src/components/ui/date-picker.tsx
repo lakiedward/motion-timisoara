@@ -46,6 +46,7 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(functio
   const current = parseIsoDate(value) ? (value as string) : ''
   const today = todayIso()
   const todayAllowed = (!min || today >= min) && (!max || today <= max)
+  const narrow = open && !!window.matchMedia?.('(max-width: 639px)').matches
 
   const pick = (iso: string) => {
     onValueChange(iso)
@@ -79,7 +80,7 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(functio
       {name ? <input type="hidden" name={name} value={current} /> : null}
       <PopoverPrimitive.Portal>
         <PopoverPrimitive.Content
-          align="start"
+          align={narrow ? 'center' : 'start'}
           sideOffset={6}
           collisionPadding={16}
           aria-label="Alege data"
