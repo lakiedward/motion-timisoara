@@ -37,6 +37,7 @@ on:
       - 'supabase/functions/bnr-rate/**'
       - 'supabase/functions/bnr-rate-contract.test.ts'
       - 'supabase/functions/stripe-connect/**'
+      - 'supabase/functions/sync-subscription-prices/**'
       - 'supabase/functions/_shared/stripe-return-url*.ts'
       - 'supabase/tests/*atomic-enrollment-creation*'
       - 'supabase/tests/*camp-adult*'
@@ -105,6 +106,10 @@ jobs:
         run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/price-snapshot.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/bnr-rate-contract.test.ts supabase/functions/_shared/stripe-return-url.test.ts supabase/functions/_shared/stripe.test.ts supabase/functions/_shared/checkout-session.test.ts
       - name: Type-check Stripe Connect function
         run: deno check --no-lock supabase/functions/stripe-connect/index.ts
+      - name: Verify subscription price sync contract
+        run: deno test --no-lock --allow-read=motiontimisoaraApp/src supabase/functions/sync-subscription-prices/contract.test.ts
+      - name: Type-check subscription price sync function
+        run: deno check --no-lock supabase/functions/sync-subscription-prices/index.ts
       - name: Verify push audience, delivery and concurrent claims
         shell: pwsh
         run: ./supabase/tests/run-push-delivery.ps1
