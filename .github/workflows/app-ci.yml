@@ -37,6 +37,7 @@ on:
       - 'supabase/functions/bnr-rate/**'
       - 'supabase/functions/bnr-rate-contract.test.ts'
       - 'supabase/functions/stripe-connect/**'
+      - 'supabase/functions/sync-subscription-prices/**'
       - 'supabase/functions/_shared/stripe-return-url*.ts'
       - 'supabase/tests/*atomic-enrollment-creation*'
       - 'supabase/tests/*camp-adult*'
@@ -48,6 +49,8 @@ on:
       - 'supabase/tests/*cash-payments-list*'
       - 'supabase/migrations/00106_parent_account_deletion.sql'
       - 'supabase/tests/*parent-account-deletion*'
+      - 'supabase/migrations/00107_subscriptions.sql'
+      - 'supabase/tests/*subscriptions*'
   workflow_dispatch:
 
 concurrency:
@@ -102,9 +105,13 @@ jobs:
         shell: pwsh
         run: ./supabase/tests/run-camp-adult-enrollment.ps1
       - name: Verify enrollment and payment-intent contracts
-        run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/price-snapshot.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/bnr-rate-contract.test.ts supabase/functions/_shared/stripe-return-url.test.ts
+        run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/price-snapshot.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/bnr-rate-contract.test.ts supabase/functions/_shared/stripe-return-url.test.ts supabase/functions/_shared/stripe.test.ts supabase/functions/_shared/checkout-session.test.ts
       - name: Type-check Stripe Connect function
         run: deno check --no-lock supabase/functions/stripe-connect/index.ts
+      - name: Verify subscription price sync contract
+        run: deno test --no-lock --allow-read=motiontimisoaraApp/src supabase/functions/sync-subscription-prices/contract.test.ts
+      - name: Type-check subscription price sync function
+        run: deno check --no-lock supabase/functions/sync-subscription-prices/index.ts
       - name: Verify push audience, delivery and concurrent claims
         shell: pwsh
         run: ./supabase/tests/run-push-delivery.ps1
@@ -128,6 +135,9 @@ jobs:
       - name: Verify parent account deletion
         shell: pwsh
         run: ./supabase/tests/run-parent-account-deletion.ps1
+      - name: Verify subscription schema and access
+        shell: pwsh
+        run: ./supabase/tests/run-subscriptions.ps1
 
   build:
     runs-on: ubuntu-latest
@@ -146,6 +156,12 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: placeholder
+          VITE_STRIPE_PUBLISHABLE_KEY: pk_test_placeholder
+      - name: Build native bundle and check it sells no subscriptions
+        run: npm run build:native
         env:
           VITE_SUPABASE_URL: https://placeholder.supabase.co
           VITE_SUPABASE_ANON_KEY: placeholder
@@ -172,7 +188,7 @@ jobs:
           java-version: 21
           cache: gradle
       - run: npm ci
-      - run: npm run build
+      - run: npm run build:native
         env:
           VITE_SUPABASE_URL: https://placeholder.supabase.co
           VITE_SUPABASE_ANON_KEY: placeholder
@@ -200,7 +216,7 @@ jobs:
       - name: Point stalled simulator location hosts at loopback
         run: node ../tests/native-location/run-ios-location.mjs --prepare-hosts
       - run: npm ci
-      - run: npm run build
+      - run: npm run build:native
         env:
           VITE_SUPABASE_URL: https://placeholder.supabase.co
           VITE_SUPABASE_ANON_KEY: placeholder
