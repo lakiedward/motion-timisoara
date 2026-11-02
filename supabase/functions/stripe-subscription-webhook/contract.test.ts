@@ -64,8 +64,9 @@ function world(rows: SubscriptionRow[] = [baseRow()]) {
       events.set(id, { ...events.get(id)!, processed, note });
       return Promise.resolve();
     },
-    findRow({ subscriptionId, customerId, subscriberType, subscriberId }) {
+    findRow({ subscriptionId, customerId, rowId, subscriberType, subscriberId }) {
       const found = rows.find((row) => row.stripe_subscription_id === subscriptionId) ??
+        rows.find((row) => rowId && row.id === rowId) ??
         rows.find((row) =>
           subscriberType && row.subscriber_type === subscriberType &&
           (subscriberType === "COACH" ? row.coach_user_id : row.club_id) === subscriberId
@@ -137,7 +138,7 @@ function world(rows: SubscriptionRow[] = [baseRow()]) {
   };
 }
 
-const metadata = { subscriber_type: "COACH", subscriber_id: "coach_1" };
+const metadata = { subscription_id: "row_coach", subscriber_type: "COACH", subscriber_id: "coach_1", plan_code: "COACH" };
 
 function event(id: string, type: string, object: Record<string, unknown>) {
   return { id, type, created: T0, data: { object } };
@@ -149,6 +150,7 @@ const checkoutCompleted = (id = "evt_checkout", extra: Record<string, unknown> =
     mode: "subscription",
     subscription: "sub_1",
     customer: "cus_1",
+    client_reference_id: "row_coach",
     metadata: { ...metadata, terms_version: "2026-11-05" },
     consent: { terms_of_service: "accepted" },
     ...extra,
@@ -355,4 +357,13 @@ Deno.test("an event with no known subscriber is recorded and not retried", async
     processed: true,
     note: "skipped: subscriber unknown",
   });
+});
+
+Deno.test("checkout finds the row by client_reference_id even without a customer match", async () => {
+  const w = world([baseRow({ stripe_customer_id: null, coach_user_id: "someone_else" })]);
+  const response = await send(w.handler, checkoutCompleted("evt_ref", { customer: "cus_new", metadata: { terms_version: "2026-11-05" } }));
+  assertEquals(response.status, 200);
+  assertEquals(w.rows.length, 1);
+  assertEquals(w.rows[0].stripe_subscription_id, "sub_1");
+  assertEquals(w.rows[0].stripe_customer_id, "cus_1");
 });

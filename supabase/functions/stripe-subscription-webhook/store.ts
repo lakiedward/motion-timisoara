@@ -21,6 +21,8 @@ const ROW_COLUMNS = [
   "updated_at",
 ].join(",");
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function fail(action: string, error: { message: string } | null) {
   if (error) throw new Error(`${action}: ${error.message}`);
 }
@@ -55,9 +57,13 @@ export function supabaseSubscriptionStore(db: SupabaseClient): SubscriptionStore
       fail("subscription_events update", error);
     },
 
-    async findRow({ subscriptionId, customerId, subscriberType, subscriberId }) {
+    async findRow({ subscriptionId, customerId, rowId, subscriberType, subscriberId }) {
       const bySubscription = await rowBy("stripe_subscription_id", subscriptionId);
       if (bySubscription) return bySubscription;
+      if (rowId && UUID.test(rowId)) {
+        const byId = await rowBy("id", rowId);
+        if (byId) return byId;
+      }
       if (subscriberType && subscriberId) {
         const column = subscriberType === "COACH" ? "coach_user_id" : "club_id";
         const bySubscriber = await rowBy(column, subscriberId, subscriberType);

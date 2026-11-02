@@ -25,6 +25,7 @@ const MAX_ATTEMPTS = 3;
 export interface SubscriberKeys {
   subscriptionId: string;
   customerId: string | null;
+  rowId: string | null;
   subscriberType: SubscriberType | null;
   subscriberId: string | null;
 }
@@ -53,11 +54,14 @@ interface EventTarget {
 const idOf = (value: string | { id: string } | null | undefined) =>
   typeof value === "string" ? value : value?.id ?? null;
 
-function subscriberFromMetadata(metadata: Record<string, string> | null | undefined) {
+function subscriberFromMetadata(metadata: Record<string, string> | null | undefined, rowId?: string | null) {
   const type = metadata?.subscriber_type;
   const id = metadata?.subscriber_id;
-  if ((type === "COACH" || type === "CLUB") && id) return { subscriberType: type as SubscriberType, subscriberId: id };
-  return { subscriberType: null, subscriberId: null };
+  const row = { rowId: rowId || metadata?.subscription_id || null };
+  if ((type === "COACH" || type === "CLUB") && id) {
+    return { ...row, subscriberType: type as SubscriberType, subscriberId: id };
+  }
+  return { ...row, subscriberType: null, subscriberId: null };
 }
 
 export function eventTarget(event: Stripe.Event): EventTarget | null {
@@ -70,7 +74,7 @@ export function eventTarget(event: Stripe.Event): EventTarget | null {
       ? { terms_version: version, terms_accepted_at: iso(event.created) }
       : {};
     return {
-      keys: { subscriptionId, customerId: idOf(session.customer), ...subscriberFromMetadata(session.metadata) },
+      keys: { subscriptionId, customerId: idOf(session.customer), ...subscriberFromMetadata(session.metadata, session.client_reference_id) },
       terms,
     };
   }

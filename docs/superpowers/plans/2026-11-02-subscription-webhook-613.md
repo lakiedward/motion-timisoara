@@ -10,7 +10,7 @@ Tracker: Team Tracker project 16, feature #613, plan v40 item 1290.
 1. Verifies the Stripe signature on the raw body. A missing or invalid signature returns 400 before anything is read or written.
 2. Handles `checkout.session.completed` (only `mode=subscription`), `customer.subscription.created|updated|deleted`, `invoice.paid`, `invoice.payment_failed`. Every other event, and invoices without a subscription, return 200 without writes.
 3. Records the event id in `subscription_events`. An event already marked processed returns `duplicate: true` without calling Stripe or writing.
-4. Finds the subscription row by `stripe_subscription_id`, then by the `subscriber_type` / `subscriber_id` metadata, then by `stripe_customer_id`.
+4. Finds the subscription row by `stripe_subscription_id`, then by the row id (`client_reference_id` or `metadata.subscription_id`), then by the `subscriber_type` / `subscriber_id` metadata, then by `stripe_customer_id`.
 5. Re-reads the subscription from the Stripe API (`expand: latest_invoice`) and computes the row from Stripe's current state, so repeated and out-of-order events converge.
 6. Writes only the fields that changed, with a compare-and-set on `updated_at`. If another writer changed the row in between, it re-reads the row and Stripe and tries again (3 attempts).
 7. On failure it stores the error on the event, leaves it unprocessed and returns 500, so Stripe redelivers.
@@ -30,7 +30,7 @@ Tracker: Team Tracker project 16, feature #613, plan v40 item 1290.
 
 - #610 schema: uses the columns listed in the spec's data model. `subscriptions.updated_at` must be returned exactly as stored (the compare-and-set filters on it). `subscription_events` needs `stripe_event_id` unique, `type`, `processed_at`, `error`.
 - #611 prices: `subscription_plans.stripe_price_id` must hold the TEST price ids, otherwise events fail with "No plan for Stripe price".
-- #612 Checkout: put `subscriber_type` (`COACH` / `CLUB`), `subscriber_id` (the coach's profile id or the club id) and `terms_version` in the session `metadata`, and `subscriber_type` / `subscriber_id` in `subscription_data.metadata`. Refuse a new Checkout when the subscriber already has a live Stripe subscription, so two live subscriptions never alternate on one row.
+- #612 Checkout (PR #345): session and `subscription_data` metadata carry `subscription_id` (the row id), `subscriber_type`, `subscriber_id`, `plan_code` and `terms_version`; `client_reference_id` is the row id. The webhook relies on these keys. Checkout should refuse a new session when the subscriber already has a live Stripe subscription, so two live subscriptions never alternate on one row.
 - #618 plan changes: schedule a downgrade with a Stripe subscription schedule whose next phase starts at `current_period_end` with the smaller price, and set `scheduled_plan_code`. Stripe switches the price at the new period and the webhook applies it locally.
 - #229 / #232 Stripe dashboard: endpoint `https://ehdzafadshbaaghzdzdo.supabase.co/functions/v1/stripe-subscription-webhook`, platform account events (not Connect), the six events above. Its signing secret goes into `STRIPE_SUBSCRIPTION_WEBHOOK_SECRET`.
 
