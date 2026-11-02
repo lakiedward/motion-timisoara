@@ -15,6 +15,7 @@ import {
 } from '@/api/club'
 import { fetchSports } from '@/api/sports'
 import { findSelectMenuOption, pickSelectMenuValue } from '@/test/select-menu'
+import { setPickerValue } from '@/test/pickers'
 
 vi.mock('@/api/offer-hero', () => ({
   schimbaPozaOferta: vi.fn().mockResolvedValue('a/hero/a.jpg'),
@@ -119,9 +120,9 @@ test('formularul nou cere un antrenor din club și salvează regulamentul pe for
   await pickSelectMenuValue(screen.getByLabelText(/^Antrenor/), ANTRENOR)
   await pickSelectMenuValue(screen.getByLabelText(/^Sport/), SPORT)
   await pickSelectMenuValue(screen.getByLabelText(/^Locație/), LOC)
-  fireEvent.change(screen.getByLabelText(/^Data/), { target: { value: '2026-10-20' } })
-  fireEvent.change(screen.getByLabelText(/^Ora început/), { target: { value: '10:00' } })
-  fireEvent.change(screen.getByLabelText(/^Ora final/), { target: { value: '11:00' } })
+  setPickerValue(screen.getByLabelText(/^Data/), '2026-10-20')
+  setPickerValue(screen.getByLabelText(/^Ora început/), '10:00')
+  setPickerValue(screen.getByLabelText(/^Ora final/), '11:00')
   await user.type(screen.getByLabelText(/^Preț \(lei\)/), '40')
   await user.type(screen.getByLabelText(/^Descriere/), 'Atelier pentru copii')
   fireEvent.change(screen.getByLabelText('Poza din capul paginii'), {
@@ -218,8 +219,8 @@ test('ora de final trebuie să fie după ora de început', async () => {
   const user = userEvent.setup()
   renderPage('/club/activities/new')
   await findSelectMenuOption(await screen.findByLabelText(/^Antrenor/), 'Audit Antrenor')
-  fireEvent.change(screen.getByLabelText(/^Ora început/), { target: { value: '11:00' } })
-  fireEvent.change(screen.getByLabelText(/^Ora final/), { target: { value: '10:00' } })
+  setPickerValue(screen.getByLabelText(/^Ora început/), '11:00')
+  setPickerValue(screen.getByLabelText(/^Ora final/), '10:00')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   expect(
     await screen.findByText('Ora final trebuie să fie după ora de început.'),

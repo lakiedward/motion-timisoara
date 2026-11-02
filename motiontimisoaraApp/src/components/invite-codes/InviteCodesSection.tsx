@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -7,9 +7,11 @@ import { Plus } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { DateTimePicker } from '@/components/ui/date-time-picker'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { todayIso } from '@/lib/date-picker'
 import CopyInviteValueButton from './CopyInviteValueButton'
 import InviteCodeList, { type InviteListLayout } from './InviteCodeList'
 
@@ -70,8 +72,8 @@ export default function InviteCodesSection({
   const codes = query.data ?? []
   const {
     register,
+    control,
     handleSubmit,
-    setError,
     setFocus,
     formState: { errors },
   } = useForm<InviteValues>({
@@ -109,15 +111,6 @@ export default function InviteCodesSection({
     }
   }
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
-    const expiryInput = event.currentTarget.elements.namedItem('expiresAt')
-    if (expiryInput instanceof HTMLInputElement && expiryInput.validity.badInput) {
-      event.preventDefault()
-      setError('expiresAt', {
-        type: 'manual',
-        message: 'Completează data și ora expirării sau golește câmpul.',
-      })
-      return
-    }
     void handleSubmit(onGenerate)(event)
   }
   const onDelete = async (id: string) => {
@@ -192,18 +185,27 @@ export default function InviteCodesSection({
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="invite-expires">Expiră la (opțional)</Label>
-                <Input
-                  id="invite-expires"
-                  type="datetime-local"
-                  className="min-h-11"
-                  {...register('expiresAt')}
-                  disabled={gen.isPending}
-                  aria-invalid={!!errors.expiresAt}
-                  aria-describedby={
-                    errors.expiresAt
-                      ? 'invite-expires-zone invite-expires-error'
-                      : 'invite-expires-zone'
-                  }
+                <Controller
+                  control={control}
+                  name="expiresAt"
+                  render={({ field }) => (
+                    <DateTimePicker
+                      id="invite-expires"
+                      name={field.name}
+                      ref={field.ref}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      min={todayIso()}
+                      disabled={gen.isPending}
+                      aria-invalid={!!errors.expiresAt}
+                      aria-describedby={
+                        errors.expiresAt
+                          ? 'invite-expires-zone invite-expires-error'
+                          : 'invite-expires-zone'
+                      }
+                    />
+                  )}
                 />
                 <p id="invite-expires-zone" className="text-muted-foreground text-xs">
                   Fus local: {timezone}. Lasă gol pentru un cod fără expirare.

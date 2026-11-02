@@ -6,6 +6,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
 import CompetitionFormPage from './CompetitionFormPage'
 import { createConcurs } from '@/api/competition/competitions'
+import { setPickerValue } from '@/test/pickers'
 
 const owner = { role: 'CLUB' as const, clubId: 'club-1', coachUserId: null }
 
@@ -94,16 +95,12 @@ test('un concurs nou se salvează cu proprietarul clubului', async () => {
   deseneaza()
   await user.type(screen.getByLabelText('Titlu'), 'Cupa')
   await user.type(screen.getByLabelText('Descriere'), 'Descriere suficientă.')
-  fireEvent.change(screen.getByLabelText('Data de început'), { target: { value: '2026-10-01' } })
-  fireEvent.change(screen.getByLabelText('Ora de început'), { target: { value: '10:00' } })
-  fireEvent.change(screen.getByLabelText('Data de final'), { target: { value: '2026-10-01' } })
-  fireEvent.change(screen.getByLabelText('Ora de final'), { target: { value: '12:00' } })
-  fireEvent.change(screen.getByLabelText('Ultima zi de înscriere'), {
-    target: { value: '2026-09-30' },
-  })
-  fireEvent.change(screen.getByLabelText('Ora închiderii înscrierilor'), {
-    target: { value: '23:59' },
-  })
+  setPickerValue(screen.getByLabelText('Data de început'), '2026-10-01')
+  setPickerValue(screen.getByLabelText('Ora de început'), '10:00')
+  setPickerValue(screen.getByLabelText('Data de final'), '2026-10-01')
+  setPickerValue(screen.getByLabelText('Ora de final'), '12:00')
+  setPickerValue(screen.getByLabelText('Ultima zi de înscriere'), '2026-09-30')
+  setPickerValue(screen.getByLabelText('Ora închiderii înscrierilor'), '23:59')
   await user.type(screen.getByLabelText('Locația concursului'), 'Timișoara')
   fireEvent.change(screen.getByLabelText('Poza din capul paginii'), {
     target: { files: [new File(['poza'], 'hero.jpg', { type: 'image/jpeg' })] },
