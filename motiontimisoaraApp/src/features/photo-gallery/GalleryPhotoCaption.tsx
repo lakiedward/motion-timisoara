@@ -2,23 +2,32 @@ import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { MAX_DESCRIERE_POZA, schimbaDescrierePoza, type PozaCurs } from '@/api/course-photos'
+import {
+  MAX_DESCRIERE_POZA,
+  schimbaDescrierePoza,
+  type PozaGalerie,
+  type TabelGalerie,
+} from '@/api/photo-gallery'
 import { Input } from '@/components/ui/input'
 
-export function CoursePhotoCaption({
+export function GalleryPhotoCaption({
+  tabel,
   poza,
   index,
+  placeholder,
   onSaved,
 }: {
-  poza: PozaCurs
+  tabel: TabelGalerie
+  poza: PozaGalerie
   index: number
+  placeholder: string
   onSaved: () => void
 }) {
   const salvata = poza.caption ?? ''
   const [text, setText] = useState(salvata)
 
   const salveaza = useMutation({
-    mutationFn: (valoare: string) => schimbaDescrierePoza(poza.id, valoare),
+    mutationFn: (valoare: string) => schimbaDescrierePoza(tabel, poza.id, valoare),
     onSuccess: () => {
       toast.success('Descriere salvată.')
       onSaved()
@@ -37,7 +46,7 @@ export function CoursePhotoCaption({
     <Input
       value={text}
       maxLength={MAX_DESCRIERE_POZA}
-      placeholder="Ex.: Încălzirea pe mal"
+      placeholder={placeholder}
       aria-label={`Descrierea pozei ${index + 1}`}
       disabled={salveaza.isPending}
       onChange={(e) => setText(e.target.value)}

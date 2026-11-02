@@ -176,6 +176,54 @@ export type Database = {
           },
         ]
       }
+      activity_photos: {
+        Row: {
+          activity_id: string
+          caption: string | null
+          consent_confirmed_at: string | null
+          created_at: string
+          display_order: number
+          id: string
+          storage_path: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          activity_id: string
+          caption?: string | null
+          consent_confirmed_at?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          storage_path: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          activity_id?: string
+          caption?: string | null
+          consent_confirmed_at?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          storage_path?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_photos_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_photos_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcement_attachments: {
         Row: {
           announcement_id: string | null
@@ -581,24 +629,33 @@ export type Database = {
       camp_photos: {
         Row: {
           camp_id: string
+          caption: string | null
+          consent_confirmed_at: string | null
           created_at: string
           display_order: number
           id: string
           storage_path: string
+          uploaded_by: string | null
         }
         Insert: {
           camp_id: string
+          caption?: string | null
+          consent_confirmed_at?: string | null
           created_at?: string
           display_order?: number
           id?: string
           storage_path: string
+          uploaded_by?: string | null
         }
         Update: {
           camp_id?: string
+          caption?: string | null
+          consent_confirmed_at?: string | null
           created_at?: string
           display_order?: number
           id?: string
           storage_path?: string
+          uploaded_by?: string | null
         }
         Relationships: [
           {
@@ -606,6 +663,13 @@ export type Database = {
             columns: ["camp_id"]
             isOneToOne: false
             referencedRelation: "camps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "camp_photos_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Building2, CalendarDays, MapPin, Users } from 'lucide-react'
 
 import { COURSE_RULES_FILE_BUCKET, rulesFileAfisabil } from '@/api/camp-rules-file'
-import { galeriaPublicaCurs } from '@/api/course-photos'
+import { galeriePublica } from '@/api/photo-gallery'
 import type { CourseDetail } from '@/api/public'
 import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
 import {
@@ -12,7 +12,7 @@ import {
   weeklyProgram,
 } from '@/lib/course-detail'
 import { FOCUS_RING, InfoTile } from '@/features/public/components/InfoTile'
-import { CourseGalleryMosaic } from './CourseGalleryMosaic'
+import { PhotoMosaic } from '@/components/photo-gallery/PhotoMosaic'
 
 export function CourseDetailsInfo({
   course,
@@ -60,9 +60,16 @@ export function CourseDetailsInfo({
         </p>
       )}
 
-      <CourseGalleryMosaic
-        photos={galeriaPublicaCurs(course.course_photos, course.hero_photo_storage_path)}
-        courseName={course.name}
+      <PhotoMosaic
+        photos={galeriePublica(
+          'course-photos',
+          course.course_photos,
+          course.hero_photo_storage_path,
+        )}
+        alt={course.name}
+        title="O zi la curs"
+        subtitle="Ce face copilul tău la antrenament, pas cu pas."
+        sectionKey="course-gallery"
       />
 
       {course.description && (

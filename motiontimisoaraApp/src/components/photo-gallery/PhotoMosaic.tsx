@@ -1,10 +1,9 @@
-import { useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 
-import { PhotoLightbox } from '@/components/photo-gallery/PhotoLightbox'
+import type { PozaPublica } from '@/api/photo-gallery'
+import { PhotoLightbox } from './PhotoLightbox'
 import { cn } from '@/lib/utils'
 import { plural } from '@/lib/plural'
-
-export type CourseGalleryPhoto = { url: string; caption: string | null }
 
 const WIDE_TILES = 5
 const PHONE_TILES = 3
@@ -26,17 +25,28 @@ function tileClass(i: number, n: number) {
         ? 'aspect-square'
         : 'max-sm:hidden'
   const wide =
-    i === 0 && n >= 3 ? 'sm:col-span-1 sm:row-span-2' : n === 4 && i === 3 ? 'sm:col-span-2' : 'sm:col-span-1'
+    i === 0 && n >= 3
+      ? 'sm:col-span-1 sm:row-span-2'
+      : n === 4 && i === 3
+        ? 'sm:col-span-2'
+        : 'sm:col-span-1'
   return cn(phone, 'sm:aspect-auto', wide)
 }
 
-export function CourseGalleryMosaic({
+export function PhotoMosaic({
   photos,
-  courseName,
+  alt,
+  title,
+  subtitle,
+  sectionKey,
 }: {
-  photos: CourseGalleryPhoto[]
-  courseName: string
+  photos: PozaPublica[]
+  alt: string
+  title: string
+  subtitle: string
+  sectionKey: string
 }) {
+  const titleId = useId()
   const [openIndex, setOpenIndex] = useState<number | null>(null)
   const openerRef = useRef<HTMLElement | null>(null)
   const n = photos.length
@@ -50,18 +60,16 @@ export function CourseGalleryMosaic({
 
   return (
     <section
-      data-section="course-gallery"
-      aria-labelledby="course-gallery-title"
+      data-section={sectionKey}
+      aria-labelledby={titleId}
       className="bg-card mt-8 rounded-xl border p-5 sm:p-6"
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 id="course-gallery-title" className="font-display text-xl font-bold">
-            O zi la curs
+          <h2 id={titleId} className="font-display text-xl font-bold">
+            {title}
           </h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Ce face copilul tău la antrenament, pas cu pas.
-          </p>
+          <p className="text-muted-foreground mt-1 text-sm">{subtitle}</p>
         </div>
         <span className="bg-secondary text-secondary-foreground shrink-0 rounded-full px-3 py-1 text-sm font-medium">
           {plural(n, 'poză', 'poze')}
@@ -123,7 +131,7 @@ export function CourseGalleryMosaic({
       <PhotoLightbox
         urls={urls}
         captions={captions}
-        alt={courseName}
+        alt={alt}
         index={openIndex}
         onIndexChange={setOpenIndex}
         returnFocusRef={openerRef}

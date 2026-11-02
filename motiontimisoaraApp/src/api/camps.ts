@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 import { publicUrl } from '@/api/public'
+import { galeriePublica, type PozaPublica } from '@/api/photo-gallery'
 import {
   getPretulAdult,
   getPreturilePeVarsta,
@@ -46,7 +47,7 @@ export type TabaraDetaliu = {
   adultPrice: PretAdult | null
   antrenori: AntrenorTabara[]
   heroUrl: string | null
-  galerieUrls: string[]
+  galerie: PozaPublica[]
   locuriRamase: number | null
   regulamentFisier: CampRulesFileLink | null
 }
@@ -202,7 +203,7 @@ export async function getTabaraDetaliu(slug: string): Promise<TabaraDetaliu | nu
       .eq('status', 'accepted'),
     supabase
       .from('camp_photos')
-      .select('storage_path, display_order')
+      .select('storage_path, display_order, caption')
       .eq('camp_id', tabara.id)
       .order('display_order'),
     supabase.rpc('camp_spots_remaining', { p_camp_id: tabara.id }),
@@ -224,9 +225,7 @@ export async function getTabaraDetaliu(slug: string): Promise<TabaraDetaliu | nu
     } | null
   }
 
-  const galerieUrls = (poze.data ?? [])
-    .map((p) => publicUrl(BUCKET, p.storage_path))
-    .filter((u): u is string => !!u)
+  const galerie = galeriePublica(BUCKET, poze.data, tabara.hero_photo_storage_path)
 
   return {
     tabara,
@@ -245,7 +244,7 @@ export async function getTabaraDetaliu(slug: string): Promise<TabaraDetaliu | nu
         link: r.coach_profile!.user_id ? `/antrenori/${r.coach_profile!.user_id}` : null,
       })),
     heroUrl: publicUrl(BUCKET, tabara.hero_photo_storage_path),
-    galerieUrls,
+    galerie,
     locuriRamase: locuri.data as number | null,
     regulamentFisier: campRulesFileAfisabil(tabara),
   }

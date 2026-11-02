@@ -30,7 +30,7 @@ import { incarcaRegulamentCurs, stergeRegulamentCurs } from '@/api/camp-rules-fi
 import { renuntaLaOfertaFaraHero, schimbaPozaOferta } from '@/api/offer-hero'
 import { publicUrl } from '@/api/public'
 import { HeroPhotoField } from '@/components/HeroPhotoField'
-import CoursePhotosSection from '@/features/course-photos/CoursePhotosSection'
+import GalleryPhotosSection from '@/features/photo-gallery/GalleryPhotosSection'
 import { mesajHeroLipsa } from '@/lib/hero-photo'
 import { fetchSports } from '@/api/sports'
 import { OfferRulesFieldset } from '@/components/RulesFileField'
@@ -482,7 +482,11 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
             setEroareHero(null)
           }}
         />
-        <CoursePhotosSection courseId={isEdit ? (id as string) : null} />
+        <GalleryPhotosSection
+          fel="curs"
+          id={isEdit ? (id as string) : null}
+          invalidate={[['course', id]]}
+        />
         <OfferRulesFieldset
           entityId={isEdit ? id : undefined}
           saved={fisierSalvat}

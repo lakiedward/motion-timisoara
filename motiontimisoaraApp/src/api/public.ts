@@ -1,5 +1,6 @@
 import { descriereActivitatePreview, pozeActivitatePreview } from '@/api/preview-activity'
 import { isUuid } from '@/api/notifications/types'
+import { galeriePublica, type PozaPublica } from '@/api/photo-gallery'
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 
@@ -452,7 +453,7 @@ export type ActivitateDetaliu = {
   } | null
   organizator: OrganizatorActivitate | null
   antrenori: PersoanaActivitate[]
-  galerieUrls: string[]
+  galerie: PozaPublica[]
   locuriRamase: number | null
   regulament: {
     rules_file_storage_path: string | null
@@ -487,6 +488,7 @@ type ActivitateDetaliuBruta = {
   } | null
   club: { id: string; name: string; logo_storage_path: string | null } | null
   coach: { id: string; name: string; avatar_url: string | null } | null
+  activity_photos: { storage_path: string; display_order: number; caption: string | null }[] | null
 }
 
 function pozaAntrenor(cale: string | null | undefined, avatar: string | null | undefined) {
@@ -494,6 +496,16 @@ function pozaAntrenor(cale: string | null | undefined, avatar: string | null | u
   if (dinDosar) return dinDosar
   if (avatar && (avatar.startsWith('http') || avatar.startsWith('/'))) return avatar
   return null
+}
+
+function galeriaActivitatii(rand: ActivitateDetaliuBruta): PozaPublica[] {
+  const reale = galeriePublica(
+    'activity-photos',
+    rand.activity_photos,
+    rand.hero_photo_storage_path,
+  )
+  if (reale.length) return reale
+  return pozeActivitatePreview(rand.id, []).map((url) => ({ url, caption: null }))
 }
 
 function persoanaAntrenor(
@@ -512,7 +524,7 @@ export async function getActivitateDetaliu(id: string): Promise<ActivitateDetali
   const { data, error } = await supabase
     .from('activities')
     .select(
-      'id, name, description, activity_date, start_time, end_time, price, currency, eur_ron_rate_micros, hero_photo_storage_path, rules_file_storage_path, rules_file_name, rules_file_content_type, rules_file_size_bytes, sport:sports(id, code, name, default_photo_storage_path), location:locations(id, name, address, lat, lng), club:clubs(id, name, logo_storage_path), coach:profiles(id, name, avatar_url)',
+      'id, name, description, activity_date, start_time, end_time, price, currency, eur_ron_rate_micros, hero_photo_storage_path, rules_file_storage_path, rules_file_name, rules_file_content_type, rules_file_size_bytes, sport:sports(id, code, name, default_photo_storage_path), location:locations(id, name, address, lat, lng), club:clubs(id, name, logo_storage_path), coach:profiles(id, name, avatar_url), activity_photos(storage_path, display_order, caption)',
     )
     .eq('id', id)
     .maybeSingle()
@@ -566,7 +578,7 @@ export async function getActivitateDetaliu(id: string): Promise<ActivitateDetali
     location: rand.location,
     organizator,
     antrenori: rand.club && antrenor ? [antrenor] : [],
-    galerieUrls: pozeActivitatePreview(rand.id, !bandUrl && poza ? [poza] : []),
+    galerie: galeriaActivitatii(rand),
     locuriRamase: typeof ramase === 'number' ? ramase : null,
     regulament: {
       rules_file_storage_path: rand.rules_file_storage_path,

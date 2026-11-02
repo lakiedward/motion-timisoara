@@ -1,33 +1,43 @@
 import { useId, useRef, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight, ImagePlus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
-  MAX_POZE_CURS,
-  adaugaPozeCurs,
-  getPozeleCursului,
-  mutaPozaCurs,
-  stergePozaCurs,
-  type PozaCursCuUrl,
-} from '@/api/course-photos'
-import { FormSection } from '@/components/FormSection'
+  MAX_POZE_GALERIE,
+  adaugaPozeGalerie,
+  galleryQueryKey,
+  getPozeGalerie,
+  mutaPozaGalerie,
+  stergePozaGalerie,
+  type GalerieTinta,
+  type PozaGalerie,
+} from '@/api/photo-gallery'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { alegeDinGalerie, galeriaSeDeschideNativ } from '@/lib/galerie'
 import { plural } from '@/lib/plural'
-import { CoursePhotoCaption } from './CoursePhotoCaption'
 import { Checkbox } from '@/components/ui/checkbox'
+import { GalleryPhotoCaption } from './GalleryPhotoCaption'
 
 const GRID = 'grid grid-cols-2 gap-3 sm:grid-cols-3'
 
-export default function CoursePhotosSection({ courseId }: { courseId: string | null }) {
-  const qc = useQueryClient()
+export function GalleryPhotosEditor({
+  tinta,
+  placeholder,
+  stergereDescriere,
+  onChanged,
+}: {
+  tinta: GalerieTinta
+  placeholder: string
+  stergereDescriere: string
+  onChanged: () => void
+}) {
   const consentId = useId()
   const [acord, setAcord] = useState(false)
   const [seLucreaza, setSeLucreaza] = useState(false)
-  const [deSters, setDeSters] = useState<{ poza: PozaCursCuUrl; index: number } | null>(null)
+  const [deSters, setDeSters] = useState<{ poza: PozaGalerie; index: number } | null>(null)
   const input = useRef<HTMLInputElement>(null)
 
   const {
@@ -36,55 +46,35 @@ export default function CoursePhotosSection({ courseId }: { courseId: string | n
     isError,
     refetch,
   } = useQuery({
-    queryKey: ['pozele-cursului', courseId],
-    queryFn: () => getPozeleCursului(courseId as string),
-    enabled: !!courseId,
+    queryKey: galleryQueryKey(tinta),
+    queryFn: () => getPozeGalerie(tinta),
   })
 
-  const reimprospateaza = () => {
-    qc.invalidateQueries({ queryKey: ['pozele-cursului', courseId] })
-    qc.invalidateQueries({ queryKey: ['course', courseId] })
-  }
-
   const sterge = useMutation({
-    mutationFn: (poza: PozaCursCuUrl) => stergePozaCurs(poza),
+    mutationFn: (poza: PozaGalerie) => stergePozaGalerie(tinta, poza),
     onSuccess: () => {
       toast.success('Poză ștearsă.')
       setDeSters(null)
-      reimprospateaza()
+      onChanged()
     },
     onError: () => toast.error('Nu am putut șterge poza.'),
   })
 
   const muta = useMutation({
     mutationFn: ({ index, directie }: { index: number; directie: -1 | 1 }) =>
-      mutaPozaCurs(poze, index, directie),
-    onSuccess: reimprospateaza,
+      mutaPozaGalerie(tinta.tabel, poze, index, directie),
+    onSuccess: onChanged,
     onError: () => toast.error('Nu am putut schimba ordinea.'),
   })
-
-  const titlu = 'Galeria „O zi la curs”'
-  const descriere =
-    'Poze de la antrenament, cu o descriere scurtă. Apar pe pagina cursului, în ordinea de aici.'
-
-  if (!courseId) {
-    return (
-      <FormSection title={titlu} description={descriere}>
-        <p className="text-muted-foreground text-sm">
-          Salvează cursul, apoi revino aici ca să adaugi poze în galerie.
-        </p>
-      </FormSection>
-    )
-  }
 
   const adauga = async (fisiere: File[]) => {
     if (!fisiere.length) return
     setSeLucreaza(true)
     try {
-      const { adaugate, refuzate } = await adaugaPozeCurs(courseId, fisiere, poze.length)
+      const { adaugate, refuzate } = await adaugaPozeGalerie(tinta, fisiere, poze.length)
       if (adaugate) toast.success(`${plural(adaugate, 'poză adăugată', 'poze adăugate')}.`)
       for (const motiv of refuzate) toast.error(motiv)
-      reimprospateaza()
+      onChanged()
     } finally {
       setSeLucreaza(false)
     }
@@ -93,7 +83,7 @@ export default function CoursePhotosSection({ courseId }: { courseId: string | n
   const dinGalerieNativa = async () => {
     setSeLucreaza(true)
     try {
-      const alese = await alegeDinGalerie(MAX_POZE_CURS - poze.length)
+      const alese = await alegeDinGalerie(MAX_POZE_GALERIE - poze.length)
       setSeLucreaza(false)
       await adauga(alese)
     } catch {
@@ -102,7 +92,7 @@ export default function CoursePhotosSection({ courseId }: { courseId: string | n
     }
   }
 
-  const plina = poze.length >= MAX_POZE_CURS
+  const plina = poze.length >= MAX_POZE_GALERIE
   const ocupat = seLucreaza || muta.isPending || sterge.isPending
 
   const lista = isError ? (
@@ -133,7 +123,13 @@ export default function CoursePhotosSection({ courseId }: { courseId: string | n
             className="aspect-square w-full object-cover"
           />
           <div className="space-y-1 p-2">
-            <CoursePhotoCaption poza={p} index={i} onSaved={reimprospateaza} />
+            <GalleryPhotoCaption
+              tabel={tinta.tabel}
+              poza={p}
+              index={i}
+              placeholder={placeholder}
+              onSaved={onChanged}
+            />
             <div className="flex items-center justify-between">
               <Button
                 type="button"
@@ -177,15 +173,11 @@ export default function CoursePhotosSection({ courseId }: { courseId: string | n
   )
 
   return (
-    <FormSection title={titlu} description={descriere}>
+    <>
       {lista}
       <div className="bg-muted/50 space-y-3 rounded-xl border p-4">
         <label htmlFor={consentId} className="flex cursor-pointer items-start gap-3 text-sm">
-          <Checkbox
-            id={consentId}
-            checked={acord}
-            onChange={(e) => setAcord(e.target.checked)}
-          />
+          <Checkbox id={consentId} checked={acord} onChange={(e) => setAcord(e.target.checked)} />
           <span>
             Am acordul scris al părinților pentru fiecare copil care apare în pozele pe care le
             încarc acum.
@@ -205,7 +197,7 @@ export default function CoursePhotosSection({ courseId }: { courseId: string | n
             {plina ? 'Galeria e plină' : seLucreaza ? 'Se urcă…' : 'Adaugă poze'}
           </Button>
           <span className="text-muted-foreground text-sm">
-            {poze.length} din {MAX_POZE_CURS} poze
+            {poze.length} din {MAX_POZE_GALERIE} poze
           </span>
         </div>
       </div>
@@ -225,12 +217,12 @@ export default function CoursePhotosSection({ courseId }: { courseId: string | n
         open={!!deSters}
         onOpenChange={(open) => !open && setDeSters(null)}
         title={`Ștergi poza ${(deSters?.index ?? 0) + 1}?`}
-        description="Poza dispare din galeria cursului. Dacă o vrei înapoi, trebuie s-o încarci din nou."
+        description={stergereDescriere}
         confirmLabel="Șterge poza"
         destructive
         pending={sterge.isPending}
         onConfirm={() => deSters && sterge.mutate(deSters.poza)}
       />
-    </FormSection>
+    </>
   )
 }
