@@ -51,16 +51,23 @@ function renderPage(route = '/register-club') {
 async function fillUntilConfirmation(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText('Nume administrator'), 'Ana Spec')
   await user.type(screen.getByLabelText('Email'), 'ana@example.test')
+  await user.type(screen.getByLabelText('Telefon'), '0712 345 678')
   await user.type(screen.getByLabelText('Parolă'), 'parola123')
   await user.click(screen.getByRole('button', { name: 'Continuă' }))
 
   await user.type(screen.getByLabelText('Nume club'), 'Club Spec Motion')
+  await user.type(screen.getByLabelText('CUI'), 'RO49252540')
   await user.click(screen.getByRole('button', { name: 'Continuă' }))
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mockedUseAuth.mockReturnValue({ user: null, loading: false, profileError: null, refresh: vi.fn() })
+  mockedUseAuth.mockReturnValue({
+    user: null,
+    loading: false,
+    profileError: null,
+    refresh: vi.fn(),
+  })
 })
 
 test('reaching the confirmation step does not register anything on its own', async () => {
@@ -82,18 +89,61 @@ test('reaching the confirmation step does not register anything on its own', asy
 
 test('the club is registered only once Finalizează is pressed', async () => {
   const user = userEvent.setup()
-  mockedRegisterClub.mockResolvedValue({ error: { message: 'Există deja un cont cu acest email.' } })
+  mockedRegisterClub.mockResolvedValue({
+    error: { message: 'Există deja un cont cu acest email.' },
+  })
   renderPage()
 
   await fillUntilConfirmation(user)
   await user.click(screen.getByRole('button', { name: 'Finalizează' }))
 
   await waitFor(() => expect(mockedRegisterClub).toHaveBeenCalledTimes(1))
+  expect(mockedRegisterClub).toHaveBeenCalledWith({
+    email: 'ana@example.test',
+    password: 'parola123',
+    name: 'Ana Spec',
+    phone: '0712345678',
+    clubName: 'Club Spec Motion',
+    companyCui: '49252540',
+    clubCity: undefined,
+    sportIds: [],
+  })
+})
+
+test('a CUI refused by ANAF brings the owner back to the club step', async () => {
+  const user = userEvent.setup()
+  mockedRegisterClub.mockResolvedValue({
+    error: { message: 'ANAF nu găsește acest CUI. Verifică cifrele.', code: 'CUI_NOT_FOUND' },
+  })
+  renderPage()
+
+  await fillUntilConfirmation(user)
+  await user.click(screen.getByRole('button', { name: 'Finalizează' }))
+
+  expect(
+    await screen.findByText('ANAF nu găsește acest CUI. Verifică cifrele.'),
+  ).toBeInTheDocument()
+  expect(screen.getByLabelText('CUI')).toHaveValue('RO49252540')
+})
+
+test('the phone is required on the first step', async () => {
+  const user = userEvent.setup()
+  renderPage()
+
+  await user.type(screen.getByLabelText('Nume administrator'), 'Ana Spec')
+  await user.type(screen.getByLabelText('Email'), 'ana@example.test')
+  await user.type(screen.getByLabelText('Parolă'), 'parola123')
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+
+  expect(await screen.findByText('Număr de telefon invalid')).toBeInTheDocument()
+  expect(screen.queryByLabelText('Nume club')).not.toBeInTheDocument()
 })
 
 test('a rejected email sends the owner back to the first step, message in Romanian', async () => {
   const user = userEvent.setup()
-  mockedRegisterClub.mockResolvedValue({ error: { message: 'Există deja un cont cu acest email.' } })
+  mockedRegisterClub.mockResolvedValue({
+    error: { message: 'Există deja un cont cu acest email.' },
+  })
   renderPage()
 
   await fillUntilConfirmation(user)
@@ -103,23 +153,21 @@ test('a rejected email sends the owner back to the first step, message in Romani
   expect(screen.getByLabelText('Email')).toHaveValue('ana@example.test')
 })
 
-test('a malformed club email is caught on its own step, never as a silent dead end', async () => {
+test('a CUI with a wrong control digit is caught on its own step', async () => {
   const user = userEvent.setup()
   renderPage()
 
   await user.type(screen.getByLabelText('Nume administrator'), 'Ana Spec')
   await user.type(screen.getByLabelText('Email'), 'ana@example.test')
+  await user.type(screen.getByLabelText('Telefon'), '0712345678')
   await user.type(screen.getByLabelText('Parolă'), 'parola123')
   await user.click(screen.getByRole('button', { name: 'Continuă' }))
 
   await user.type(screen.getByLabelText('Nume club'), 'Club Spec Motion')
-  await user.type(screen.getByLabelText('Email club (opțional)'), 'abc')
+  await user.type(screen.getByLabelText('CUI'), '49252541')
   await user.click(screen.getByRole('button', { name: 'Continuă' }))
 
-  // Fără clubEmail în STEP_FIELDS, pasul trecea și „Finalizează” nu făcea
-  // absolut nimic: schema întreagă pica pe un câmp al cărui mesaj nu se
-  // randează pe pasul de confirmare.
-  expect(await screen.findByText('Email invalid')).toBeInTheDocument()
+  expect(await screen.findByText('CUI invalid. Verifică cifrele.')).toBeInTheDocument()
   expect(screen.queryByText('Verifică datele înainte de finalizare:')).not.toBeInTheDocument()
 })
 
@@ -197,7 +245,9 @@ test('field errors carry an icon and are linked to their input', async () => {
 })
 
 test('the server error is announced and carries an icon', async () => {
-  mockedRegisterClub.mockResolvedValue({ error: { message: 'Există deja un cont cu acest email.' } })
+  mockedRegisterClub.mockResolvedValue({
+    error: { message: 'Există deja un cont cu acest email.' },
+  })
   const user = userEvent.setup()
   renderPage()
 
@@ -217,6 +267,7 @@ test('a failed sports request offers a retry instead of loading forever', async 
 
   await user.type(screen.getByLabelText('Nume administrator'), 'Ana Spec')
   await user.type(screen.getByLabelText('Email'), 'ana@example.test')
+  await user.type(screen.getByLabelText('Telefon'), '0712345678')
   await user.type(screen.getByLabelText('Parolă'), 'parola123')
   await user.click(screen.getByRole('button', { name: 'Continuă' }))
 

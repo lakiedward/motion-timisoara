@@ -68,6 +68,11 @@ beforeEach(() => {
       name: 'Club Audit Motion',
       city: 'Timișoara',
       email: null,
+      phone: null,
+      company_cui: null,
+      company_name: null,
+      company_address: null,
+      company_reg_number: null,
       approved_at: '2026-09-01T00:00:00Z',
     },
   ])

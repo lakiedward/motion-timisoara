@@ -14,27 +14,26 @@ import { Field } from '@/components/ui/field'
 import { fetchSports } from '@/api/sports'
 import { registerClub, roleHome } from '@/api/auth'
 import { useAuth } from '@/lib/auth-context'
+import { isValidCui, normalizeCui } from '../../../../supabase/functions/_shared/company-cui'
+
+const compactPhone = (value: string) => value.replace(/[\s.-]/g, '')
 
 const schema = z.object({
   name: z.string().min(3, 'Minim 3 caractere'),
   email: z.string().email('Email invalid'),
   phone: z
     .string()
-    .regex(/^\+?[0-9]{8,15}$/, 'Număr de telefon invalid')
-    .optional()
-    .or(z.literal('')),
+    .refine((value) => /^\+?[0-9]{8,15}$/.test(compactPhone(value)), 'Număr de telefon invalid'),
   password: z.string().min(6, 'Minim 6 caractere'),
   clubName: z.string().min(2, 'Minim 2 caractere'),
-  clubDescription: z.string().optional(),
+  companyCui: z.string().refine(isValidCui, 'CUI invalid. Verifică cifrele.'),
   clubCity: z.string().optional(),
-  clubEmail: z.string().email('Email invalid').optional().or(z.literal('')),
-  clubPhone: z.string().optional(),
 })
 type Values = z.infer<typeof schema>
 
 const STEP_FIELDS: (keyof Values)[][] = [
   ['name', 'email', 'phone', 'password'],
-  ['clubName', 'clubEmail'],
+  ['clubName', 'companyCui'],
 ]
 const CONFIRM_STEP = 2
 
@@ -65,17 +64,15 @@ export default function ClubSignupPage() {
       email: v.email,
       password: v.password,
       name: v.name,
-      phone: v.phone || undefined,
+      phone: compactPhone(v.phone),
       clubName: v.clubName,
-      clubDescription: v.clubDescription || undefined,
-      clubCity: v.clubCity || undefined,
-      clubEmail: v.clubEmail || undefined,
-      clubPhone: v.clubPhone || undefined,
+      companyCui: normalizeCui(v.companyCui),
+      clubCity: v.clubCity?.trim() || undefined,
       sportIds,
     })
     if ('error' in res && res.error) {
       setServerError(res.error.message)
-      setStep(0)
+      setStep('code' in res.error && res.error.code?.startsWith('CUI_') ? 1 : 0)
       return
     }
     await refresh()
@@ -150,7 +147,7 @@ export default function ClubSignupPage() {
             />
             <Field
               id="phone"
-              label="Telefon (opțional)"
+              label="Telefon"
               type="tel"
               autoComplete="tel"
               placeholder="+40..."
@@ -178,17 +175,18 @@ export default function ClubSignupPage() {
               {...register('clubName')}
             />
             <Field
+              id="companyCui"
+              label="CUI"
+              inputMode="numeric"
+              hint="Codul fiscal al firmei, PFA-ului sau asociației. Denumirea și sediul le luăm de la ANAF."
+              error={errors.companyCui?.message}
+              {...register('companyCui')}
+            />
+            <Field
               id="clubCity"
               label="Oraș (opțional)"
               autoComplete="address-level2"
               {...register('clubCity')}
-            />
-            <Field
-              id="clubEmail"
-              label="Email club (opțional)"
-              type="email"
-              error={errors.clubEmail?.message}
-              {...register('clubEmail')}
             />
             <SportsField
               sports={sportsQuery.data ?? []}
@@ -212,11 +210,19 @@ export default function ClubSignupPage() {
                 <span className="text-muted-foreground">Club:</span> {getValues('clubName')}
               </div>
               <div>
+                <span className="text-muted-foreground">CUI:</span>{' '}
+                {normalizeCui(getValues('companyCui') ?? '')}
+              </div>
+              <div>
+                <span className="text-muted-foreground">Telefon:</span> {getValues('phone')}
+              </div>
+              <div>
                 <span className="text-muted-foreground">Oraș:</span> {getValues('clubCity') || '—'}
               </div>
             </div>
             <p className="text-muted-foreground text-xs">
-              Configurarea Stripe pentru încasări se face din panoul de club, după înregistrare.
+              Verificăm CUI-ul la ANAF, apoi un administrator aprobă clubul. Configurarea Stripe
+              pentru încasări cu cardul se face din panoul de club, după înregistrare.
             </p>
           </div>
         )}

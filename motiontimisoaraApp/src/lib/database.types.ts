@@ -3006,9 +3006,14 @@ export type Database = {
         Returns: {
           approved_at: string
           city: string
+          company_address: string
+          company_cui: string
+          company_name: string
+          company_reg_number: string
           email: string
           id: string
           name: string
+          phone: string
         }[]
       }
       admin_stats: {
