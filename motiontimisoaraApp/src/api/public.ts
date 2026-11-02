@@ -13,7 +13,7 @@ export type CourseListItem = Tables<'courses'> & {
   coach: CoachMini | null
   location: LocationRow | null
   occurrences: Pick<Tables<'course_occurrences'>, 'id' | 'starts_at' | 'ends_at'>[]
-  course_photos: Pick<Tables<'course_photos'>, 'storage_path' | 'display_order'>[]
+  course_photos: Pick<Tables<'course_photos'>, 'storage_path' | 'display_order' | 'caption'>[]
 }
 
 export interface CourseFilters {
@@ -26,7 +26,7 @@ export async function getCourses(filters: CourseFilters = {}): Promise<CourseLis
   let q = supabase
     .from('courses')
     .select(
-      '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order)',
+      '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order,caption)',
     )
     .eq('active', true)
   if (filters.level) q = q.eq('level', filters.level)
@@ -46,7 +46,7 @@ export async function getCourse(id: string): Promise<CourseDetail | null> {
   const { data, error } = await supabase
     .from('courses')
     .select(
-      '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), club:clubs(id,name), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order)',
+      '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), club:clubs(id,name), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order,caption)',
     )
     .eq('id', id)
     .single()
@@ -60,7 +60,7 @@ export type CourseCatalogItem = CourseListItem & {
 }
 
 const COURSE_CATALOG_SELECT =
-  '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), club:clubs(id,name), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order)'
+  '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), club:clubs(id,name), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order,caption)'
 
 async function withSpotsRemaining(data: unknown): Promise<CourseCatalogItem[]> {
   const rows = (data ?? []) as Omit<CourseCatalogItem, 'spotsRemaining'>[]

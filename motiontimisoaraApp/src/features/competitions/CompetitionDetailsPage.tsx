@@ -17,7 +17,7 @@ import { getPublishedCompetitionPodium } from '@/api/competition/competition-pod
 import { getPublicCompetitionCoaches } from '@/api/competition/competition-coaches'
 import { listCompetitionRoutePhotos } from '@/api/competition/competition-route-photos'
 import { useCompetitionClock } from './useCompetitionClock'
-import PhotoGallery from '@/components/PhotoGallery'
+import PhotoGallery from '@/components/photo-gallery/PhotoGallery'
 import { PublicHeroBand } from '@/features/public/PublicHeroBand'
 
 export default function CompetitionDetailsPage() {
