@@ -14,6 +14,7 @@ interface ConfirmDialogProps {
   cancelLabel?: string
   destructive?: boolean
   pending?: boolean
+  confirmDisabled?: boolean
   onConfirm: () => void
 }
 
@@ -27,6 +28,7 @@ function ConfirmDialog({
   cancelLabel = 'Anulează',
   destructive = false,
   pending = false,
+  confirmDisabled = false,
   onConfirm,
 }: ConfirmDialogProps) {
   const cancelRef = React.useRef<HTMLButtonElement>(null)
@@ -78,7 +80,7 @@ function ConfirmDialog({
             <Button
               type="button"
               variant={destructive ? 'destructive' : 'default'}
-              disabled={pending}
+              disabled={pending || confirmDisabled}
               onClick={onConfirm}
             >
               {confirmLabel}
