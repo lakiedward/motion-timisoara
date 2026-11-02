@@ -48,6 +48,8 @@ on:
       - 'supabase/tests/*cash-payments-list*'
       - 'supabase/migrations/00106_parent_account_deletion.sql'
       - 'supabase/tests/*parent-account-deletion*'
+      - 'supabase/migrations/00107_subscriptions.sql'
+      - 'supabase/tests/*subscriptions*'
   workflow_dispatch:
 
 concurrency:
@@ -128,6 +130,9 @@ jobs:
       - name: Verify parent account deletion
         shell: pwsh
         run: ./supabase/tests/run-parent-account-deletion.ps1
+      - name: Verify subscription schema and access
+        shell: pwsh
+        run: ./supabase/tests/run-subscriptions.ps1
 
   build:
     runs-on: ubuntu-latest

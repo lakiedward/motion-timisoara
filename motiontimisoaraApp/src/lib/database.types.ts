@@ -2882,6 +2882,230 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_adjustments: {
+        Row: {
+          admin_user_id: string | null
+          created_at: string
+          days: number
+          id: string
+          reason: string
+          subscription_id: string
+        }
+        Insert: {
+          admin_user_id?: string | null
+          created_at?: string
+          days: number
+          id?: string
+          reason: string
+          subscription_id: string
+        }
+        Update: {
+          admin_user_id?: string | null
+          created_at?: string
+          days?: number
+          id?: string
+          reason?: string
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_adjustments_admin_user_id_fkey"
+            columns: ["admin_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_adjustments_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_events: {
+        Row: {
+          error: string | null
+          id: string
+          processed_at: string | null
+          received_at: string
+          stripe_event_id: string
+          type: string
+        }
+        Insert: {
+          error?: string | null
+          id?: string
+          processed_at?: string | null
+          received_at?: string
+          stripe_event_id: string
+          type: string
+        }
+        Update: {
+          error?: string | null
+          id?: string
+          processed_at?: string | null
+          received_at?: string
+          stripe_event_id?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      subscription_plans: {
+        Row: {
+          active: boolean
+          coach_limit: number | null
+          code: string
+          created_at: string
+          id: string
+          name: string
+          price_bani: number
+          stripe_price_id: string | null
+          subscriber_type: string
+        }
+        Insert: {
+          active?: boolean
+          coach_limit?: number | null
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          price_bani: number
+          stripe_price_id?: string | null
+          subscriber_type: string
+        }
+        Update: {
+          active?: boolean
+          coach_limit?: number | null
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          price_bani?: number
+          stripe_price_id?: string | null
+          subscriber_type?: string
+        }
+        Relationships: []
+      }
+      subscription_settings: {
+        Row: {
+          created_at: string
+          id: string
+          launch_at: string | null
+          launch_trial_days: number
+          signup_trial_days: number
+          singleton: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          launch_at?: string | null
+          launch_trial_days?: number
+          signup_trial_days?: number
+          singleton?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          launch_at?: string | null
+          launch_trial_days?: number
+          signup_trial_days?: number
+          singleton?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          club_id: string | null
+          coach_user_id: string | null
+          created_at: string
+          current_period_end: string | null
+          id: string
+          past_due_since: string | null
+          plan_code: string | null
+          scheduled_plan_code: string | null
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscriber_type: string
+          terms_accepted_at: string | null
+          terms_version: string | null
+          trial_end: string | null
+          updated_at: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          club_id?: string | null
+          coach_user_id?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          past_due_since?: string | null
+          plan_code?: string | null
+          scheduled_plan_code?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscriber_type: string
+          terms_accepted_at?: string | null
+          terms_version?: string | null
+          trial_end?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          club_id?: string | null
+          coach_user_id?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          past_due_since?: string | null
+          plan_code?: string | null
+          scheduled_plan_code?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscriber_type?: string
+          terms_accepted_at?: string | null
+          terms_version?: string | null
+          trial_end?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: true
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_coach_user_id_fkey"
+            columns: ["coach_user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_plan_fk"
+            columns: ["plan_code", "subscriber_type"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["code", "subscriber_type"]
+          },
+          {
+            foreignKeyName: "subscriptions_scheduled_plan_fk"
+            columns: ["scheduled_plan_code", "subscriber_type"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["code", "subscriber_type"]
+          },
+        ]
+      }
       tt_demo_source_receipts: {
         Row: {
           adapter: string
@@ -3091,6 +3315,7 @@ export type Database = {
       }
       club_enrolled_child_ids: { Args: never; Returns: string[] }
       coach_enrolled_child_ids: { Args: never; Returns: string[] }
+      coach_has_access: { Args: { p_coach_user_id: string }; Returns: boolean }
       coach_live_location_transaction: {
         Args: { p_actor_id: string; p_payload: Json }
         Returns: Json
@@ -3317,6 +3542,10 @@ export type Database = {
         Args: { p_requirements: Json }
         Returns: boolean
       }
+      offer_has_access: {
+        Args: { p_club_id: string; p_coach_id: string }
+        Returns: boolean
+      }
       pot_administra_activitate: {
         Args: { p_activity_id: string }
         Returns: boolean
@@ -3540,6 +3769,10 @@ export type Database = {
         Returns: Json
       }
       set_my_push_enabled: { Args: { p_enabled: boolean }; Returns: Json }
+      subscriber_has_access: {
+        Args: { p_club_id: string; p_coach_user_id: string }
+        Returns: boolean
+      }
       suma_componentelor_categoriei: {
         Args: { p_components: Json }
         Returns: number
