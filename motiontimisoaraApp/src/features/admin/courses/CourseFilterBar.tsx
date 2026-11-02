@@ -2,7 +2,7 @@ import { CircleAlert } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { FILTER_SELECT_CLASS } from '@/components/catalog-filters/FilterSelect'
+import { SelectMenu } from '@/components/ui/select-menu'
 import { cn } from '@/lib/utils'
 import type { StatusFilter } from './course-overview'
 
@@ -78,19 +78,13 @@ export function CourseFilterBar<S extends string = StatusFilter>({
           <Label htmlFor={selectId} className="shrink-0">
             {sportLabel}
           </Label>
-          <select
+          <SelectMenu
             id={selectId}
             value={sport}
-            onChange={(e) => onSport(e.target.value)}
-            className={FILTER_SELECT_CLASS}
-          >
-            <option value="">{allSportsLabel}</option>
-            {sports.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name} ({s.count})
-              </option>
-            ))}
-          </select>
+            onValueChange={onSport}
+            emptyLabel={allSportsLabel}
+            options={sports.map((s) => ({ value: s.id, label: `${s.name} (${s.count})` }))}
+          />
         </div>
       )}
       {sports.length > 1 && (

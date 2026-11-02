@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus, Search } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { fetchSports, type Sport } from '@/api/sports'
@@ -31,6 +31,7 @@ import {
   photoCounts,
   type PhotoFilter,
 } from './sports/sport-overview'
+import { FilterSearch } from '@/components/catalog-filters/FilterSearch'
 
 const TOUCH = 'h-touch-target min-h-touch-target lg:h-9 lg:min-h-9'
 
@@ -162,20 +163,13 @@ export default function AdminSportsPage() {
       <div className="mb-2 flex flex-wrap items-center gap-3">
         <h1 className="font-display text-foreground mr-auto text-2xl font-bold">Sporturi</h1>
         {sports.length > 0 && (
-          <div className="relative order-last w-full md:order-none md:w-80">
-            <Search
-              aria-hidden="true"
-              className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-            />
-            <Input
-              type="search"
-              value={query}
-              onChange={(e) => set({ query: e.target.value })}
-              placeholder="Caută după nume sau cod"
-              aria-label="Caută sporturi după nume sau cod"
-              className={`${TOUCH} pl-9`}
-            />
-          </div>
+          <FilterSearch
+            className="order-last w-full md:order-none md:w-80"
+            value={query}
+            onChange={(e) => set({ query: e.target.value })}
+            placeholder="Caută după nume sau cod"
+            aria-label="Caută sporturi după nume sau cod"
+          />
         )}
       </div>
       <p className="text-muted-foreground mb-4 max-w-2xl text-sm">

@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Plus, Search } from 'lucide-react'
+import { Plus } from 'lucide-react'
 
 import { getToateTaberele } from '@/api/camps-admin'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { StatusView } from '@/components/ui/status-view'
 import { CourseFilterBar, type FilterOption } from '@/features/admin/courses/CourseFilterBar'
 import { CampListSkeleton } from '@/features/camps/list/CampListSkeleton'
@@ -22,6 +21,7 @@ import {
   type AdminCampFilters,
   type CampOrganizerGroup,
 } from './admin-camp-list'
+import { FilterSearch } from '@/components/catalog-filters/FilterSearch'
 
 const BAZA = '/admin/camps'
 
@@ -79,20 +79,13 @@ export default function AdminCampsPage() {
             </span>
           )}
         </h1>
-        <div className="relative order-last w-full md:order-none md:w-80">
-          <Search
-            aria-hidden="true"
-            className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-          />
-          <Input
-            type="search"
-            value={query}
-            onChange={(e) => set({ query: e.target.value })}
-            placeholder="Caută tabără sau organizator"
-            aria-label="Caută tabere după nume, locație, club sau antrenor"
-            className="h-touch-target min-h-touch-target pl-9 lg:h-9 lg:min-h-9"
-          />
-        </div>
+        <FilterSearch
+          className="order-last w-full md:order-none md:w-80"
+          value={query}
+          onChange={(e) => set({ query: e.target.value })}
+          placeholder="Caută tabără sau organizator"
+          aria-label="Caută tabere după nume, locație, club sau antrenor"
+        />
         <Button asChild className="h-touch-target min-h-touch-target lg:h-9 lg:min-h-9">
           <Link to={`${BAZA}/new`}>
             <Plus aria-hidden="true" /> Tabără nouă

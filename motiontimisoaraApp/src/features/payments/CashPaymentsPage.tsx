@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Search } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -12,7 +11,6 @@ import {
 } from '@/api/payments/cash-payments'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { Input } from '@/components/ui/input'
 import { StatusView } from '@/components/ui/status-view'
 import { CourseFilterBar, type FilterOption } from '@/features/admin/courses/CourseFilterBar'
 import { KIND_LABEL } from '@/features/account/enrollments/enrollment-display'
@@ -29,6 +27,7 @@ import {
   type CashFilters,
   type CashStatusFilter,
 } from './cash-payment-list'
+import { FilterSearch } from '@/components/catalog-filters/FilterSearch'
 
 const TOUCH = 'h-touch-target min-h-touch-target lg:h-9 lg:min-h-9'
 
@@ -80,20 +79,13 @@ export default function CashPaymentsPage() {
       <div className="mb-2 flex flex-wrap items-center gap-3">
         <h1 className="font-display text-foreground mr-auto text-2xl font-bold">Încasări cash</h1>
         {payments.length > 0 && (
-          <div className="relative order-last w-full md:order-none md:w-80">
-            <Search
-              aria-hidden="true"
-              className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-            />
-            <Input
-              type="search"
-              value={filters.query}
-              onChange={(e) => set({ query: e.target.value })}
-              placeholder="Caută participant sau ofertă"
-              aria-label="Caută plăți cash după participant sau ofertă"
-              className={`${TOUCH} pl-9`}
-            />
-          </div>
+          <FilterSearch
+            className="order-last w-full md:order-none md:w-80"
+            value={filters.query}
+            onChange={(e) => set({ query: e.target.value })}
+            placeholder="Caută participant sau ofertă"
+            aria-label="Caută plăți cash după participant sau ofertă"
+          />
         )}
       </div>
       <p className="text-muted-foreground mb-4 max-w-2xl text-sm">

@@ -1,10 +1,9 @@
-import { Search } from 'lucide-react'
 
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { CourseFilterBar, type FilterOption } from '@/features/admin/courses/CourseFilterBar'
-import { FILTER_SELECT_CLASS } from '@/components/catalog-filters/FilterSelect'
+import { SelectMenu } from '@/components/ui/select-menu'
 import type { ClubCourseFilters, ClubStatusFilter } from './club-course-filters'
+import { FilterSearch } from '@/components/catalog-filters/FilterSearch'
 
 const STATUS_OPTIONS: FilterOption<ClubStatusFilter>[] = [
   { value: 'active', label: 'Active' },
@@ -30,35 +29,25 @@ export function ClubCourseFilterBar({
   return (
     <div className="mb-4 space-y-2">
       <div className="flex flex-col gap-2 md:flex-row">
-        <div className="relative flex-1">
-          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-          <Input
-            type="search"
-            value={filters.query}
-            onChange={(e) => onChange({ ...filters, query: e.target.value })}
-            placeholder="Caută curs, locație sau antrenor"
-            aria-label="Caută cursuri după nume, locație sau antrenor"
-            className="h-touch-target pl-9"
-          />
-        </div>
+        <FilterSearch
+          className="flex-1"
+          value={filters.query}
+          onChange={(e) => onChange({ ...filters, query: e.target.value })}
+          placeholder="Caută curs, locație sau antrenor"
+          aria-label="Caută cursuri după nume, locație sau antrenor"
+        />
         {coaches.length > 1 && (
           <div className="flex items-center gap-3 md:w-72">
             <Label htmlFor="club-course-coach" className="shrink-0">
               Antrenor
             </Label>
-            <select
+            <SelectMenu
               id="club-course-coach"
               value={filters.coach}
-              onChange={(e) => onChange({ ...filters, coach: e.target.value })}
-              className={FILTER_SELECT_CLASS}
-            >
-              <option value="">Toți antrenorii</option>
-              {coaches.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} ({c.count})
-                </option>
-              ))}
-            </select>
+              onValueChange={(coach) => onChange({ ...filters, coach })}
+              emptyLabel="Toți antrenorii"
+              options={coaches.map((c) => ({ value: c.id, label: `${c.name} (${c.count})` }))}
+            />
           </div>
         )}
       </div>
