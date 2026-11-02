@@ -26,6 +26,7 @@ Run these from `motiontimisoaraApp/`, unless the table says repository root:
 | Regenerate UI conventions | `npm run conventions` |
 | Build and sync native projects | `npm run cap:sync` |
 | Build, sync and open Android Studio | `npm run android` |
+| Signed Play bundle (owner machine; see [release runbook](docs/releases/google-play-android.md)) | `npm run android:bundle` |
 | Root E2E dependencies | `npm ci` from repository root |
 | Root Playwright suite | `npm run test:e2e` from repository root |
 
