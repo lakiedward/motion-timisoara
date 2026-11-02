@@ -1,6 +1,6 @@
 import { useId } from 'react'
 import { Link } from 'react-router-dom'
-import { Pencil } from 'lucide-react'
+import { Pencil, Power } from 'lucide-react'
 
 import type { AdminUser } from '@/api/admin'
 import { Badge } from '@/components/ui/badge'
@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { Highlight } from '../courses/CourseParts'
 import { asRole, ROLE_LABEL } from './user-overview'
+import { formatShortDate } from '@/lib/panel-date'
 
 export type ToggleArgs = { id: string; name: string; enabled: boolean }
 
@@ -20,12 +21,6 @@ const ROLE_VARIANT: Record<string, 'default' | 'secondary' | 'success' | 'highli
   COACH: 'success',
   PARENT: 'secondary',
 }
-
-const DATE_FMT = new Intl.DateTimeFormat('ro-RO', {
-  day: '2-digit',
-  month: 'short',
-  year: 'numeric',
-})
 
 const TABLE_ACTION = 'h-touch-target min-h-touch-target lg:h-8 lg:min-h-8'
 const CARD_ACTION = 'h-touch-target min-h-touch-target'
@@ -58,13 +53,14 @@ export function ToggleAction({
       <>
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
           aria-disabled="true"
           aria-describedby={reasonId}
           title={ADMIN_LOCK}
           className={cn('cursor-not-allowed opacity-50 hover:bg-transparent', className)}
         >
+          <Power aria-hidden="true" />
           Dezactivează
         </Button>
         <span id={reasonId} className="sr-only">
@@ -76,12 +72,13 @@ export function ToggleAction({
   return (
     <Button
       type="button"
-      variant="outline"
+      variant="ghost"
       size="sm"
       className={className}
       disabled={pending}
       onClick={() => onToggle({ id: user.id, name: user.name, enabled: !user.enabled })}
     >
+      <Power aria-hidden="true" />
       {user.enabled ? 'Dezactivează' : 'Activează'}
     </Button>
   )
@@ -150,7 +147,7 @@ export function UserTable({ users, query, pending, onToggle, showRole = true }: 
               <StatusBadge enabled={u.enabled} />
             </td>
             <td className="text-muted-foreground hidden px-4 py-3 whitespace-nowrap lg:table-cell">
-              {DATE_FMT.format(new Date(u.created_at))}
+              {formatShortDate(u.created_at)}
             </td>
             <td className="px-4 py-3 text-right">
               <span className="inline-flex flex-wrap justify-end gap-2">

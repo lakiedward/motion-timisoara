@@ -3,16 +3,9 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { AttentionNote } from '@/features/admin/courses/CourseParts'
 import { formatMoney } from '@/lib/money'
+import { formatShortDate } from '@/lib/panel-date'
 import { plural } from '@/lib/plural'
 import { OVERDUE_DAYS, pendingDays } from './cash-payment-list'
-
-function cashDay(iso: string) {
-  return new Date(iso).toLocaleDateString('ro-RO', {
-    day: 'numeric',
-    month: 'long',
-    timeZone: 'Europe/Bucharest',
-  })
-}
 
 export function CashPaymentRow({
   payment,
@@ -30,9 +23,9 @@ export function CashPaymentRow({
     formatMoney(payment.amount, payment.currency),
     payment.sessions ? plural(payment.sessions, 'ședință', 'ședințe') : null,
     pending
-      ? `înscris pe ${cashDay(payment.created_at)}`
+      ? `înscris pe ${formatShortDate(payment.created_at)}`
       : payment.paid_at
-        ? `confirmată pe ${cashDay(payment.paid_at)}`
+        ? `confirmată pe ${formatShortDate(payment.paid_at)}`
         : null,
   ].filter(Boolean)
 

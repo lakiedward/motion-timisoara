@@ -415,16 +415,10 @@ test('conținutul își păstrează rândurile așa cum le-a scris clubul', asyn
   expect(text.className).toContain('whitespace-pre-wrap')
   expect(text.textContent).toBe('Primul rând.\nAl doilea rând.')
 })
-test('fiecare anunț își arată data publicării, în română', async () => {
-  const asteptata = new Date('2026-08-26T09:00:00Z').toLocaleDateString('ro-RO', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
+test('fiecare anunț își arată data publicării în formatul scurt al panourilor', async () => {
   renderPage()
   await screen.findByText('Cantonament de vară')
-  expect(screen.getAllByText(asteptata).length).toBe(2)
-  expect(asteptata).toMatch(/[a-zăâîșț]{3,}/i)
+  expect(screen.getAllByText('26.08.2026').length).toBe(2)
 })
 test('numele butoanelor spun despre ce anunț e vorba', async () => {
   renderPage()

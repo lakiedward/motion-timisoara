@@ -5,10 +5,11 @@ import { toast } from 'sonner'
 
 import { getMyCourses, setCourseActive } from '@/api/coach'
 import { PageHeader, PageNewLink } from '@/components/page-header/PageHeader'
+import { CourseListRow } from '@/components/panel-list/CourseListRow'
+import { PanelEditAction, PanelToggleAction } from '@/components/panel-list/PanelRowActions'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
-import { CoachCourseCard } from './courses/CoachCourseCard'
 import { CoachCourseFilterBar } from './courses/CoachCourseFilterBar'
 import {
   NO_FILTERS,
@@ -51,9 +52,9 @@ export default function CoachCoursesPage() {
       </PageHeader>
 
       {isLoading ? (
-        <div role="status" aria-label="Se încarcă cursurile" className="grid gap-4 sm:grid-cols-2">
-          {[0, 1].map((i) => (
-            <Skeleton key={i} className="h-52 rounded-xl" />
+        <div role="status" aria-label="Se încarcă cursurile" className="grid gap-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-20 rounded-xl" />
           ))}
         </div>
       ) : isError && courses.length === 0 ? (
@@ -72,16 +73,26 @@ export default function CoachCoursesPage() {
             onChange={setFilters}
           />
           {visible.length ? (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <ul className="bg-card divide-y overflow-hidden rounded-xl border">
               {visible.map((c) => (
-                <CoachCourseCard
+                <CourseListRow
                   key={c.id}
                   course={c}
-                  pending={toggle.isPending && toggle.variables?.id === c.id}
-                  onToggle={() => toggle.mutate({ id: c.id, active: !c.active })}
+                  query={filters.query}
+                  actions={
+                    <>
+                      <PanelEditAction to={`/coach/courses/${c.id}/edit`} name={c.name} />
+                      <PanelToggleAction
+                        active={c.active}
+                        name={c.name}
+                        pending={toggle.isPending && toggle.variables?.id === c.id}
+                        onToggle={() => toggle.mutate({ id: c.id, active: !c.active })}
+                      />
+                    </>
+                  }
                 />
               ))}
-            </div>
+            </ul>
           ) : (
             <StatusView
               state="empty"

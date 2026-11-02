@@ -6,12 +6,13 @@ import { toast } from 'sonner'
 
 import { getAllCourses, setCourseActiveAdmin } from '@/api/admin'
 import { PageHeader } from '@/components/page-header/PageHeader'
+import { PanelToggleAction } from '@/components/panel-list/PanelRowActions'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CourseFilterBar } from './courses/CourseFilterBar'
-import { ToggleAction, type RenderCourseActions, type ToggleArgs } from './courses/CourseParts'
+import { type RenderCourseActions, type ToggleArgs } from './courses/CourseParts'
 import { OrganizerCard } from './courses/OrganizerCard'
 import {
   countCourses,
@@ -124,18 +125,18 @@ export default function AdminCoursesPage({
   const isOpen = (g: OrganizerGroup) =>
     toggled[toggleKey(g)] ?? (searching || defaultOpen.has(g.key))
 
-  const actions: RenderCourseActions = (course, layout) => (
+  const actions: RenderCourseActions = (course) => (
     <>
-      {renderRowActions?.(course, layout)}
-      <ToggleAction
-        course={course}
+      {renderRowActions?.(course)}
+      <PanelToggleAction
+        active={course.active}
+        name={course.name}
         pending={toggle.isPending}
-        onToggle={(args) => (args.active ? toggle.mutate(args) : setToDeactivate(args))}
-        className={
-          layout === 'table'
-            ? 'h-touch-target min-h-touch-target lg:h-8 lg:min-h-8'
-            : 'h-touch-target min-h-touch-target'
-        }
+        onToggle={() => {
+          const args = { id: course.id, name: course.name, active: !course.active }
+          if (args.active) toggle.mutate(args)
+          else setToDeactivate(args)
+        }}
       />
     </>
   )

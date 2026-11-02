@@ -1,58 +1,28 @@
 import type { ReactNode } from 'react'
-import { CircleAlert } from 'lucide-react'
+import { CircleAlert, Users } from 'lucide-react'
 
 import type { AdminCourse } from '@/api/admin'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { fold } from './course-overview'
 
 export type ToggleArgs = { id: string; name: string; active: boolean }
-export type RenderCourseActions = (course: AdminCourse, layout: 'table' | 'card') => ReactNode
-
-export function StatusBadge({ active }: { active: boolean }) {
-  return <Badge variant={active ? 'success' : 'outline'}>{active ? 'Activ' : 'Inactiv'}</Badge>
-}
-
-export function ToggleAction({
-  course,
-  pending,
-  onToggle,
-  className,
-}: {
-  course: AdminCourse
-  pending: boolean
-  onToggle: (args: ToggleArgs) => void
-  className?: string
-}) {
-  return (
-    <Button
-      variant="outline"
-      size="sm"
-      className={className}
-      disabled={pending}
-      onClick={() => onToggle({ id: course.id, name: course.name, active: !course.active })}
-    >
-      {course.active ? 'Dezactivează' : 'Activează'}
-    </Button>
-  )
-}
+export type RenderCourseActions = (course: AdminCourse) => ReactNode
 
 export function EnrollmentMeter({ course }: { course: AdminCourse }) {
   const enrolled = course.enrollments.active
   const capacity = course.capacity && course.capacity > 0 ? course.capacity : null
   const fill = capacity ? Math.min(100, Math.round((enrolled / capacity) * 100)) : 0
   return (
-    <span className="inline-flex items-center gap-2 text-sm tabular-nums">
-      <span>{capacity ? `${enrolled}/${capacity}` : enrolled}</span>
+    <span className="inline-flex items-center gap-1 text-sm tabular-nums">
+      <Users aria-hidden="true" className="size-4 shrink-0" />
+      <span>{capacity ? `${enrolled}/${capacity}` : enrolled} înscriși</span>
       {capacity && (
         <span
           aria-hidden="true"
-          className="bg-secondary block h-1.5 w-14 overflow-hidden rounded-full"
+          className="bg-secondary ml-1 block h-1.5 w-14 overflow-hidden rounded-full"
         >
           <span className="bg-primary block h-full rounded-full" style={{ width: `${fill}%` }} />
         </span>
       )}
-      <span className="sr-only">{capacity ? `înscriși din ${capacity} locuri` : 'înscriși'}</span>
     </span>
   )
 }

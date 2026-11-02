@@ -181,13 +181,14 @@ test('actiunile au 44px pana la 1024px si coboara la 32px abia pe desktop', asyn
   }
 })
 
-test('actiunea are contur in repaus si randul primeste fundal la hover', async () => {
+test('comutarea e fara contur, cu iconita, ca in celelalte liste, iar randul primeste fundal la hover', async () => {
   mockedUsers.mockResolvedValue(lista())
   renderPage()
   await asteaptaLista()
 
   const buton = within(tabel()).getByRole('button', { name: 'Activează' })
-  expect(buton.className).toMatch(/\bborder\b/)
+  expect(buton.className).not.toMatch(/(^|\s)border(\s|$)/)
+  expect(buton.querySelector('svg')).not.toBeNull()
   expect(rand('Laki Admin')!.className).toMatch(/hover:bg-accent/)
 })
 
@@ -333,7 +334,7 @@ test('tabelul are coloana Înregistrat, ascunsa sub 1024px', async () => {
     .find((th) => th.textContent === 'Înregistrat')!
   expect(antet.className).toMatch(/(^|\s)hidden(\s|$)/)
   expect(antet.className).toMatch(/lg:table-cell/)
-  expect(within(tabel()).getAllByText('11 aug. 2026').length).toBeGreaterThan(0)
+  expect(within(tabel()).getAllByText('11.08.2026').length).toBeGreaterThan(0)
 })
 
 test('?role=COACH deschide doar grupul de antrenori', async () => {

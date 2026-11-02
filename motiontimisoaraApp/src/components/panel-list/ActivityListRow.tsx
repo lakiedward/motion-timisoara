@@ -1,26 +1,46 @@
-import { Link } from 'react-router-dom'
-import { CalendarClock, CircleOff, MapPin, Pencil, Power, Users } from 'lucide-react'
+import { CalendarClock, CircleOff, MapPin, Users } from 'lucide-react'
 
-import type { AdminActivity } from '@/api/activities/admin-activities'
+import type { Tables } from '@/lib/database.types'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Highlight } from '@/features/admin/courses/CourseParts'
-import { formatMoney } from '@/lib/money'
+import { formatOfferPrice } from '@/lib/money'
+import { activityWhen } from '@/lib/panel-date'
 import { cn } from '@/lib/utils'
-import { activityWhen } from './activity-overview'
+import { PanelEditAction, PanelToggleAction } from './PanelRowActions'
 
-export function AdminActivityRow({
+export type ActivityListItem = Pick<
+  Tables<'activities'>,
+  | 'id'
+  | 'name'
+  | 'active'
+  | 'activity_date'
+  | 'start_time'
+  | 'end_time'
+  | 'capacity'
+  | 'price'
+  | 'currency'
+> & {
+  sport: { name: string } | null
+  location: { name: string } | null
+  coach?: { name: string | null } | null
+  enrolled?: number
+}
+
+export function ActivityListRow({
   activity: a,
-  query,
+  editTo,
   past,
-  showCoach,
+  showCoach = false,
+  query = '',
   pending,
   onToggle,
 }: {
-  activity: AdminActivity
-  query: string
+  key?: string
+  activity: ActivityListItem
+  editTo: string
   past: boolean
-  showCoach: boolean
+  showCoach?: boolean
+  query?: string
   pending: boolean
   onToggle: () => void
 }) {
@@ -57,11 +77,15 @@ export function AdminActivityRow({
             <MapPin aria-hidden="true" className="size-4 shrink-0" />
             <Highlight text={a.location?.name ?? '—'} query={query} />
           </span>
-          <span className="inline-flex items-center gap-1 tabular-nums">
-            <Users aria-hidden="true" className="size-4 shrink-0" />
-            {capacity ? `${a.enrolled}/${capacity}` : a.enrolled} înscriși
+          {a.enrolled !== undefined && (
+            <span className="inline-flex items-center gap-1 tabular-nums">
+              <Users aria-hidden="true" className="size-4 shrink-0" />
+              {capacity ? `${a.enrolled}/${capacity}` : a.enrolled} înscriși
+            </span>
+          )}
+          <span className="text-foreground font-semibold">
+            {formatOfferPrice(a.price, a.currency)}
           </span>
-          <span className="text-foreground font-semibold">{formatMoney(a.price, a.currency)}</span>
         </p>
         {showCoach && (
           <p className="text-muted-foreground mt-1 text-sm wrap-anywhere">
@@ -70,22 +94,8 @@ export function AdminActivityRow({
         )}
       </div>
       <div className="flex shrink-0 gap-2">
-        <Button asChild variant="outline" className="h-11 lg:h-9">
-          <Link to={`/admin/activities/${a.id}/edit`} aria-label={`Editează ${a.name}`}>
-            <Pencil aria-hidden="true" /> Editează
-          </Link>
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          className="h-11 lg:h-9"
-          disabled={pending}
-          aria-label={`${a.active ? 'Dezactivează' : 'Activează'} ${a.name}`}
-          onClick={onToggle}
-        >
-          <Power aria-hidden="true" />
-          {a.active ? 'Dezactivează' : 'Activează'}
-        </Button>
+        <PanelEditAction to={editTo} name={a.name} />
+        <PanelToggleAction active={a.active} name={a.name} pending={pending} onToggle={onToggle} />
       </div>
     </li>
   )

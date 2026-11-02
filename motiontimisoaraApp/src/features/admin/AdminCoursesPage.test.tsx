@@ -71,10 +71,9 @@ const lista = (): AdminCourse[] => [
 const asteaptaLista = () => screen.findByRole('status')
 const pastila = (nume: RegExp) => screen.getByRole('button', { name: nume })
 const card = (nume: string) => screen.getByRole('region', { name: nume })
-const tabelDin = (nume: string) => within(card(nume)).getByRole('table')
+const listaDin = (nume: string) => within(card(nume)).getByRole('list')
 const rand = (nume: string, curs: string) =>
-  within(tabelDin(nume)).getAllByText(curs)[0].closest('tr')!
-const fiseDin = (nume: string) => card(nume).querySelector<HTMLElement>('ul')!
+  within(listaDin(nume)).getAllByText(curs)[0].closest('li')!
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -120,14 +119,16 @@ test('un refetch picat nu sterge de pe ecran cursurile deja incarcate', async ()
   await asteaptaLista()
 
   await userEvent.click(
-    within(rand('Audit Antrenor', 'Înot — audit UI')).getByRole('button', { name: 'Dezactivează' }),
+    within(rand('Audit Antrenor', 'Înot — audit UI')).getByRole('button', {
+      name: 'Dezactivează Înot — audit UI',
+    }),
   )
   await userEvent.click(
     within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Dezactivează' }),
   )
 
   await waitFor(() => expect(mockedCourses).toHaveBeenCalledTimes(2))
-  expect(within(tabelDin('Audit Antrenor')).getByText('Înot — audit UI')).toBeInTheDocument()
+  expect(within(listaDin('Audit Antrenor')).getByText('Înot — audit UI')).toBeInTheDocument()
   expect(screen.queryByText('Nu am putut încărca cursurile.')).not.toBeInTheDocument()
 })
 
@@ -204,7 +205,7 @@ test('„De verificat" aduna cursurile cu probleme si spune motivul pe rand', as
   expect(card('Audit Antrenor')).toHaveTextContent('3 de verificat')
   await userEvent.click(pastila(/^De verificat/))
 
-  const tabel = tabelDin('Audit Antrenor')
+  const tabel = listaDin('Audit Antrenor')
   expect(within(tabel).getByText('Inactiv, dar are 6 înscrieri active')).toBeInTheDocument()
   expect(within(tabel).getByText('2 înscrieri în așteptare')).toBeInTheDocument()
   expect(within(tabel).getByText('Locuri epuizate')).toBeInTheDocument()
@@ -216,7 +217,7 @@ test('coloana Înscriși arata ocuparea fata de capacitate', async () => {
   renderPage()
   await asteaptaLista()
 
-  expect(within(rand('Audit Antrenor', 'Înot — audit UI')).getByText('3/12')).toBeInTheDocument()
+  expect(within(rand('Audit Antrenor', 'Înot — audit UI')).getByText('3/12 înscriși')).toBeInTheDocument()
 })
 
 test('cautarea merge si dupa club, deschide cardul pliat si marcheaza potrivirea', async () => {
@@ -232,7 +233,7 @@ test('cautarea merge si dupa club, deschide cardul pliat si marcheaza potrivirea
 
   await userEvent.type(screen.getByLabelText(/Caută cursuri/), 'ioana')
   await waitFor(() => expect(antet).toHaveAttribute('aria-expanded', 'true'))
-  expect(within(tabelDin('Ioana Marin')).getByText('Ciclism juniori')).toBeInTheDocument()
+  expect(within(listaDin('Ioana Marin')).getByText('Ciclism juniori')).toBeInTheDocument()
   expect(screen.getAllByText('Ioana')[0].tagName).toBe('MARK')
   expect(screen.getByRole('status')).toHaveTextContent('1 din 4 cursuri')
 
@@ -275,36 +276,26 @@ test('un organizator cu multe cursuri arata primele 4 si „Vezi toate"', async 
   renderPage()
   await asteaptaLista()
 
-  expect(within(tabelDin('Audit Antrenor')).getAllByRole('row')).toHaveLength(5)
+  expect(within(listaDin('Audit Antrenor')).getAllByRole('listitem')).toHaveLength(4)
   await userEvent.click(screen.getByRole('button', { name: 'Vezi toate cele 6 cursuri' }))
-  expect(within(tabelDin('Audit Antrenor')).getAllByRole('row')).toHaveLength(7)
+  expect(within(listaDin('Audit Antrenor')).getAllByRole('listitem')).toHaveLength(6)
 })
 
-test('tabelul apare de la 1280px in sus, iar fisele sub 1280px', async () => {
+test('fiecare curs e un rand cu nume, locatie, sport, stare, ocupare si pret, la orice latime', async () => {
   mockedCourses.mockResolvedValue(lista())
   renderPage()
   await asteaptaLista()
 
-  const tabel = tabelDin('Audit Antrenor')
-  expect(tabel.className).toMatch(/(^|\s)hidden(\s|$)/)
-  expect(tabel.className).toMatch(/xl:table/)
-  expect(fiseDin('Audit Antrenor').className).toMatch(/xl:hidden/)
-  expect(within(fiseDin('Audit Antrenor')).getAllByRole('listitem')).toHaveLength(1)
-})
-
-test('fisa de telefon are nume plus locatie, linia gri si pretul langa actiune', async () => {
-  mockedCourses.mockResolvedValue(lista())
-  renderPage()
-  await asteaptaLista()
-
-  const fisa = within(fiseDin('Club Audit Motion')).getAllByRole('listitem')[0]
-  expect(within(fisa).getByText('Bazin Audit Motion')).toBeInTheDocument()
+  expect(within(card('Audit Antrenor')).queryByRole('table')).not.toBeInTheDocument()
+  const r = rand('Club Audit Motion', 'Înot — audit UI')
+  expect(within(r).getByText('Bazin Audit Motion')).toBeInTheDocument()
+  expect(within(r).getByText('Înot').getAttribute('data-slot')).toBe('badge')
+  expect(within(r).getByText('Activ').getAttribute('data-slot')).toBe('badge')
+  expect(r).toHaveTextContent('Antrenor: Audit Antrenor')
+  expect(r).toHaveTextContent(/400,00\slei/)
   expect(
-    within(fisa).getByText(/Înot · .*Audit Antrenor.* · Club Audit Motion/),
+    within(r).getByRole('button', { name: 'Dezactivează Înot — audit UI' }),
   ).toBeInTheDocument()
-  expect(within(fisa).getByText('Activ')).toBeInTheDocument()
-  expect(fisa).toHaveTextContent(/400,00\slei/)
-  expect(within(fisa).getByRole('button', { name: 'Dezactivează' })).toBeInTheDocument()
 })
 
 test('actiunile si pastilele au 44px pana la 1024px', async () => {
@@ -312,52 +303,23 @@ test('actiunile si pastilele au 44px pana la 1024px', async () => {
   renderPage()
   await asteaptaLista()
 
-  const dinTabel = within(rand('Audit Antrenor', 'Înot — audit UI')).getByRole('button', {
-    name: 'Dezactivează',
+  const comutare = within(rand('Audit Antrenor', 'Înot — audit UI')).getByRole('button', {
+    name: 'Dezactivează Înot — audit UI',
   })
-  expect(dinTabel.className).toMatch(/min-h-touch-target/)
-  expect(dinTabel.className).toMatch(/lg:min-h-8/)
-  const dinFisa = within(fiseDin('Audit Antrenor')).getByRole('button', { name: 'Dezactivează' })
-  expect(dinFisa.className).toMatch(/min-h-touch-target/)
-  expect(dinFisa.className).not.toMatch(/lg:min-h-8/)
+  expect(comutare.className).toMatch(/min-h-touch-target/)
+  expect(comutare.className).toMatch(/lg:min-h-9/)
   expect(pastila(/^Active/).className).toMatch(/min-h-touch-target/)
   expect(within(card('Audit Antrenor')).getAllByRole('button')[0].className).toMatch(/min-h-16/)
   expect(screen.getByLabelText(/Caută cursuri/).className).toMatch(/min-h-touch-target/)
 })
 
-test('actiunea are contur in repaus si randul primeste fundal la hover', async () => {
+test('locatia apare langa numele cursului, deci doua cursuri omonime nu arata identic', async () => {
   mockedCourses.mockResolvedValue(lista())
   renderPage()
   await asteaptaLista()
 
-  const r = rand('Audit Antrenor', 'Înot — audit UI')
-  expect(within(r).getByRole('button', { name: 'Dezactivează' }).className).toMatch(/\bborder\b/)
-  expect(r.className).toMatch(/hover:bg-accent/)
-})
-
-test('locatia apare sub numele cursului, deci doua cursuri omonime nu arata identic', async () => {
-  mockedCourses.mockResolvedValue(lista())
-  renderPage()
-  await asteaptaLista()
-
-  const locatii = ['Club Audit Motion', 'Audit Antrenor'].map(
-    (nume) => within(tabelDin(nume)).getByText('Înot — audit UI').nextElementSibling?.textContent,
-  )
-  expect(locatii).toEqual(['Bazin Audit Motion', 'Bazin Olimpic Timișoara'])
-})
-
-test('pretul e aliniat la dreapta si statusul ramane badge', async () => {
-  mockedCourses.mockResolvedValue(lista())
-  renderPage()
-  await asteaptaLista()
-
-  const tabel = tabelDin('Audit Antrenor')
-  const antetPret = within(tabel)
-    .getAllByRole('columnheader')
-    .find((th) => th.textContent === 'Preț')!
-  expect(antetPret.className).toMatch(/text-right/)
-  expect(rand('Audit Antrenor', 'Înot — audit UI').cells[3].className).toMatch(/text-right/)
-  expect(within(tabel).getByText('Activ').getAttribute('data-slot')).toBe('badge')
+  expect(rand('Club Audit Motion', 'Înot — audit UI')).toHaveTextContent('Bazin Audit Motion')
+  expect(rand('Audit Antrenor', 'Înot — audit UI')).toHaveTextContent('Bazin Olimpic Timișoara')
 })
 
 test('o comutare reusita confirma cu numele cursului', async () => {
@@ -367,7 +329,9 @@ test('o comutare reusita confirma cu numele cursului', async () => {
   await asteaptaLista()
 
   await userEvent.click(
-    within(rand('Audit Antrenor', 'Înot — audit UI')).getByRole('button', { name: 'Dezactivează' }),
+    within(rand('Audit Antrenor', 'Înot — audit UI')).getByRole('button', {
+      name: 'Dezactivează Înot — audit UI',
+    }),
   )
   await userEvent.click(
     within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Dezactivează' }),
@@ -386,7 +350,9 @@ test('o comutare esuata pastreaza eroarea si nu confirma nimic', async () => {
   await asteaptaLista()
 
   await userEvent.click(
-    within(rand('Audit Antrenor', 'Înot — audit UI')).getByRole('button', { name: 'Dezactivează' }),
+    within(rand('Audit Antrenor', 'Înot — audit UI')).getByRole('button', {
+      name: 'Dezactivează Înot — audit UI',
+    }),
   )
   await userEvent.click(
     within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Dezactivează' }),
@@ -400,27 +366,20 @@ test('antetul si randurile primesc actiuni suplimentare din afara', async () => 
   mockedCourses.mockResolvedValue(lista())
   renderPage({
     headerActions: <button type="button">Curs nou</button>,
-    renderRowActions: (c, layout) => (
-      <button type="button">
-        Editează {c.id} {layout}
-      </button>
-    ),
+    renderRowActions: (c) => <button type="button">Editează {c.id}</button>,
   })
   await asteaptaLista()
 
   expect(screen.getByRole('button', { name: 'Curs nou' })).toBeInTheDocument()
   const r = rand('Audit Antrenor', 'Înot — audit UI')
-  expect(within(r).getByRole('button', { name: 'Editează 2 table' })).toBeInTheDocument()
-  expect(
-    within(fiseDin('Audit Antrenor')).getByRole('button', { name: 'Editează 2 card' }),
-  ).toBeInTheDocument()
+  expect(within(r).getByRole('button', { name: 'Editează 2' })).toBeInTheDocument()
 })
 
 test('„Curs nou" și „Editează" din admin duc la formularele de curs', async () => {
   mockedCourses.mockResolvedValue(lista())
   renderPage({
     headerActions: <NewCourseButton />,
-    renderRowActions: (course, layout) => <EditCourseAction course={course} layout={layout} />,
+    renderRowActions: (course) => <EditCourseAction course={course} />,
   })
   await asteaptaLista()
 
@@ -428,16 +387,10 @@ test('„Curs nou" și „Editează" din admin duc la formularele de curs', asyn
     'href',
     '/admin/courses/new',
   )
-  const dinTabel = within(rand('Audit Antrenor', 'Înot — audit UI')).getByRole('link', {
+  const editeaza = within(rand('Audit Antrenor', 'Înot — audit UI')).getByRole('link', {
     name: 'Editează Înot — audit UI',
   })
-  expect(dinTabel).toHaveAttribute('href', '/admin/courses/2/edit')
-  expect(dinTabel.className).toMatch(/lg:min-h-8/)
-  const dinFisa = within(fiseDin('Audit Antrenor')).getByRole('link', {
-    name: 'Editează Înot — audit UI',
-  })
-  expect(dinFisa).toHaveAttribute('href', '/admin/courses/2/edit')
-  expect(dinFisa.className).not.toMatch(/lg:min-h-8/)
+  expect(editeaza).toHaveAttribute('href', '/admin/courses/2/edit')
 })
 
 test('pe telefon sportul se alege dintr-o lista, iar starile stau pe un singur rand', async () => {

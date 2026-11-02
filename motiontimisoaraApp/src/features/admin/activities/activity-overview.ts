@@ -138,15 +138,3 @@ export function groupActivitiesByOrganizer(
       (x.kind === y.kind ? 0 : x.kind === 'club' ? -1 : 1) || x.name.localeCompare(y.name, 'ro'),
   )
 }
-
-const dayFormat = new Intl.DateTimeFormat('ro-RO', {
-  weekday: 'short',
-  day: 'numeric',
-  month: 'short',
-  timeZone: 'UTC',
-})
-
-export function activityWhen(a: AdminActivity) {
-  const day = dayFormat.format(new Date(`${a.activity_date}T00:00:00Z`))
-  return `${day} · ${a.start_time.slice(0, 5)}–${a.end_time.slice(0, 5)}`
-}

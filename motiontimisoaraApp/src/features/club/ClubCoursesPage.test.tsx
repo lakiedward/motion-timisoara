@@ -84,7 +84,12 @@ test('locația apare în zona titlului, deci două cursuri omonime nu mai arată
   mockedCourses.mockResolvedValue(omonime())
   renderPage()
   const titluri = await screen.findAllByText('Înot — audit UI')
-  const zone = titluri.map((t) => t.nextElementSibling?.textContent)
+  const zone = titluri.map((t) => {
+    const rand = t.closest('li')!
+    return ['Bazin Olimpic Timișoara', 'Bazin Audit Motion'].find((loc) =>
+      rand.textContent!.includes(loc),
+    )
+  })
   expect(zone).toEqual(['Bazin Olimpic Timișoara', 'Bazin Audit Motion'])
   expect(new Set(zone).size).toBe(2)
 })
@@ -93,7 +98,8 @@ test('linia gri are antrenorul și vârsta, iar locația apare o singură dată 
   mockedCourses.mockResolvedValue([curs({ id: '1', name: 'Atletism juniori' })])
   renderPage()
   const card = (await screen.findByText('Atletism juniori')).closest('li') as HTMLElement
-  expect(within(card).getByText(/Audit Antrenor · 8–13 ani/)).toBeInTheDocument()
+  expect(card).toHaveTextContent('Antrenor: Audit Antrenor')
+  expect(card).toHaveTextContent('8–13 ani')
   const aparitii = card.textContent!.split('Stadion Atletism').length - 1
   expect(aparitii).toBe(1)
 })
@@ -120,7 +126,7 @@ test('un refetch eșuat după comutare păstrează cursurile, fără să arate e
   renderPage()
   expect(await screen.findByText('Atletism juniori')).toBeInTheDocument()
 
-  await user.click(screen.getByRole('button', { name: 'Activează' }))
+  await user.click(screen.getByRole('button', { name: /^Activează/ }))
   await waitFor(() => expect(mockedCourses).toHaveBeenCalledTimes(2))
 
   expect(screen.getByText('Atletism juniori')).toBeInTheDocument()
@@ -228,7 +234,7 @@ test('lista grupează cursurile Active/Inactive fără să taie numele lung', as
   ])
   renderPage()
   const titlu = await screen.findByRole('heading', { name: lung })
-  expect(titlu.className).toMatch(/break-words/)
+  expect(titlu.className).toMatch(/wrap-anywhere/)
   expect(titlu.className).not.toMatch(/truncate|line-clamp/)
   expect(screen.getByRole('region', { name: 'Active' })).toHaveTextContent(lung)
   expect(screen.getByRole('region', { name: 'Inactive' })).toHaveTextContent('Atletism juniori')
@@ -258,7 +264,7 @@ test('comutarea reușită nu afișează niciun mesaj', async () => {
   mockedCourses.mockResolvedValue([curs({ id: '1', name: 'Atletism juniori', active: false })])
   mockedToggle.mockResolvedValue(undefined)
   renderPage()
-  await user.click(await screen.findByRole('button', { name: 'Activează' }))
+  await user.click(await screen.findByRole('button', { name: /^Activează/ }))
   await waitFor(() => expect(mockedToggle).toHaveBeenCalledWith('1', true))
   expect(toast.success).not.toHaveBeenCalled()
   expect(toast.error).not.toHaveBeenCalled()
@@ -269,7 +275,7 @@ test('refuzul pe 42501 spune că antrenorul nu e din club; alte erori rămân ge
   mockedCourses.mockResolvedValue([curs({ id: '1', name: 'Atletism juniori', active: false })])
   mockedToggle.mockRejectedValue({ code: '42501', message: 'permission denied' })
   renderPage()
-  await user.click(await screen.findByRole('button', { name: 'Activează' }))
+  await user.click(await screen.findByRole('button', { name: /^Activează/ }))
   await waitFor(() =>
     expect(toast.error).toHaveBeenCalledWith(
       'Nu poți modifica acest curs: antrenorul lui nu face parte din club.',
@@ -278,6 +284,6 @@ test('refuzul pe 42501 spune că antrenorul nu e din club; alte erori rămân ge
 
   vi.mocked(toast.error).mockClear()
   mockedToggle.mockRejectedValue(new Error('retea picata'))
-  await user.click(screen.getByRole('button', { name: 'Activează' }))
+  await user.click(screen.getByRole('button', { name: /^Activează/ }))
   await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Nu am putut actualiza cursul.'))
 })

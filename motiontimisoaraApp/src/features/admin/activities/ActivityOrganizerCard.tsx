@@ -1,10 +1,10 @@
 import { ChevronDown } from 'lucide-react'
 
 import type { AdminActivity } from '@/api/activities/admin-activities'
+import { ActivityListRow } from '@/components/panel-list/ActivityListRow'
 import { Highlight } from '@/features/admin/courses/CourseParts'
 import { ORGANIZER_ICON } from '@/features/admin/locations/organizer-icon'
 import { cn } from '@/lib/utils'
-import { AdminActivityRow } from './AdminActivityRow'
 import { countActivities, type ActivityGroup } from './activity-overview'
 
 export const ACTIVITY_PREVIEW_LIMIT = 4
@@ -85,9 +85,10 @@ export function ActivityOrganizerCard({
         <div id={panelId}>
           <ul className="divide-y border-t">
             {shown.map((a) => (
-              <AdminActivityRow
+              <ActivityListRow
                 key={a.id}
                 activity={a}
+                editTo={`/admin/activities/${a.id}/edit`}
                 query={query}
                 past={a.activity_date < today}
                 showCoach={group.kind === 'club'}

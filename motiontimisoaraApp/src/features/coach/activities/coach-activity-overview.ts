@@ -108,15 +108,6 @@ export function groupByMonth(sorted: CoachActivity[]): ActivityMonth[] {
   }))
 }
 
-const weekdayFormat = new Intl.DateTimeFormat('ro-RO', { weekday: 'long', timeZone: 'UTC' })
-
-export function activityDateLine(a: CoachActivity) {
-  const date = new Date(`${a.activity_date}T00:00:00Z`)
-  const [y, m, d] = a.activity_date.split('-')
-  const time = `${a.start_time.slice(0, 5)}–${a.end_time.slice(0, 5)}`
-  return `${capitalize(weekdayFormat.format(date))}, ${d}.${m}.${y} · ${time}`
-}
-
 const tileDay = new Intl.DateTimeFormat('ro-RO', { day: 'numeric', timeZone: 'UTC' })
 const tileMonth = new Intl.DateTimeFormat('ro-RO', { month: 'short', timeZone: 'UTC' })
 

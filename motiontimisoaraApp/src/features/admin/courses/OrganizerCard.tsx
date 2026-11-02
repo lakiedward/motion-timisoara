@@ -1,13 +1,12 @@
 import { Building2, ChevronDown, CircleAlert, UserRound } from 'lucide-react'
 
-import { formatMoney } from '@/lib/money'
+import { CourseListRow } from '@/components/panel-list/CourseListRow'
 import { cn } from '@/lib/utils'
 import { attentionReason, countCourses, type OrganizerGroup } from './course-overview'
 import {
   AttentionNote,
   EnrollmentMeter,
   Highlight,
-  StatusBadge,
   type RenderCourseActions,
 } from './CourseParts'
 
@@ -96,98 +95,17 @@ export function OrganizerCard({
 
       {open && (
         <div id={panelId}>
-          <table className="hidden w-full border-t text-sm xl:table">
-            <thead className="bg-muted/50 text-muted-foreground text-left text-xs uppercase">
-              <tr>
-                <th scope="col" className="px-4 py-3 font-semibold md:pl-5">
-                  Curs
-                </th>
-                <th scope="col" className="px-4 py-3 font-semibold">
-                  Sport
-                </th>
-                {showCoach && (
-                  <th scope="col" className="px-4 py-3 font-semibold">
-                    Antrenor
-                  </th>
-                )}
-                <th scope="col" className="px-4 py-3 font-semibold">
-                  Înscriși
-                </th>
-                <th scope="col" className="px-4 py-3 text-right font-semibold">
-                  Preț
-                </th>
-                <th scope="col" className="px-4 py-3 font-semibold">
-                  Status
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  <span className="sr-only">Acțiuni</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {shown.map((c) => (
-                <tr key={c.id} className="hover:bg-accent border-t transition-colors">
-                  <td className="px-4 py-3 md:pl-5">
-                    <span className="font-medium">
-                      <Highlight text={c.name} query={query} />
-                    </span>
-                    <span className="text-muted-foreground block text-xs">
-                      {c.location?.name ?? '—'}
-                    </span>
-                    <AttentionNote reason={attentionReason(c)} />
-                  </td>
-                  <td className="text-muted-foreground px-4 py-3">{c.sport?.name ?? '—'}</td>
-                  {showCoach && (
-                    <td className="text-muted-foreground px-4 py-3">
-                      <Highlight text={c.coach?.name ?? '—'} query={query} />
-                    </td>
-                  )}
-                  <td className="px-4 py-3">
-                    <EnrollmentMeter course={c} />
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    {formatMoney(c.price, c.currency)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge active={c.active} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end gap-2">{renderActions(c, 'table')}</div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <ul className="list-none border-t xl:hidden">
+          <ul className="divide-y border-t">
             {shown.map((c) => (
-              <li key={c.id} className="border-t p-4 first:border-t-0">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <span className="font-medium">
-                      <Highlight text={c.name} query={query} />
-                    </span>
-                    <span className="text-muted-foreground block text-sm">
-                      {c.location?.name ?? '—'}
-                    </span>
-                  </div>
-                  <StatusBadge active={c.active} />
-                </div>
-                <p className="text-muted-foreground mt-1 text-sm">
-                  {c.sport?.name ?? '—'} · <Highlight text={c.coach?.name ?? '—'} query={query} /> ·{' '}
-                  {c.club?.name ?? 'Antrenor independent'}
-                </p>
-                <AttentionNote reason={attentionReason(c)} />
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                  <span className="flex items-center gap-3">
-                    <span className="font-display font-bold">
-                      {formatMoney(c.price, c.currency)}
-                    </span>
-                    <EnrollmentMeter course={c} />
-                  </span>
-                  <div className="flex gap-2">{renderActions(c, 'card')}</div>
-                </div>
-              </li>
+              <CourseListRow
+                key={c.id}
+                course={c}
+                showCoach={showCoach}
+                query={query}
+                enrollment={<EnrollmentMeter course={c} />}
+                note={<AttentionNote reason={attentionReason(c)} />}
+                actions={renderActions(c)}
+              />
             ))}
           </ul>
 

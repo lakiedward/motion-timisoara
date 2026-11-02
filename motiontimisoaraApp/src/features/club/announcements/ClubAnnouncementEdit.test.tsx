@@ -176,12 +176,12 @@ test('cardul spune când un anunț e programat sau a expirat', () => {
     </QueryClientProvider>,
   )
   const programat = screen.getByRole('heading', { name: 'Programat' }).closest('article')!
-  expect(programat).toHaveTextContent('Apare pe 24 octombrie 2099')
+  expect(programat).toHaveTextContent('Apare pe 24.10.2099, 09:00')
   expect(
     within(programat).getByText(
       'Părinții încă nu văd anunțul. Notificarea pleacă la data publicării.',
     ),
   ).toBeInTheDocument()
   const expirat = screen.getByRole('heading', { name: 'Expirat' }).closest('article')!
-  expect(expirat).toHaveTextContent('A expirat pe 24 octombrie 2020')
+  expect(expirat).toHaveTextContent('A expirat pe 24.10.2020, 09:00')
 })

@@ -5,13 +5,13 @@ import { toast } from 'sonner'
 
 import { getMyActivities, setActivityActive, type CoachActivity } from '@/api/coach'
 import { PageHeader, PageNewLink } from '@/components/page-header/PageHeader'
+import { ActivityListRow } from '@/components/panel-list/ActivityListRow'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { todayInBucharest } from '@/features/admin/activities/activity-overview'
 import { plural } from '@/lib/plural'
-import { CoachActivityCard } from './activities/CoachActivityCard'
 import { CoachActivityFilterBar } from './activities/CoachActivityFilterBar'
 import {
   CLEARED_COACH_ACTIVITY_FILTERS,
@@ -74,13 +74,9 @@ export default function CoachActivitiesPage() {
       </PageHeader>
 
       {isLoading ? (
-        <div
-          role="status"
-          aria-label="Se încarcă activitățile"
-          className="grid gap-4 sm:grid-cols-2"
-        >
-          {[0, 1].map((i) => (
-            <Skeleton key={i} className="h-52 rounded-xl" />
+        <div role="status" aria-label="Se încarcă activitățile" className="grid gap-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-20 rounded-xl" />
           ))}
         </div>
       ) : isError && activities.length === 0 ? (
@@ -133,17 +129,19 @@ export default function CoachActivitiesPage() {
                 <h2 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
                   {m.title}
                 </h2>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <ul className="bg-card divide-y overflow-hidden rounded-xl border">
                   {m.activities.map((a) => (
-                    <CoachActivityCard
+                    <ActivityListRow
                       key={a.id}
                       activity={a}
+                      editTo={`/coach/activities/${a.id}/edit`}
                       past={isPast(a, today)}
+                      query={filters.query}
                       pending={pendingIds.includes(a.id)}
                       onToggle={() => onToggle(a)}
                     />
                   ))}
-                </div>
+                </ul>
               </section>
             ))
           )}
