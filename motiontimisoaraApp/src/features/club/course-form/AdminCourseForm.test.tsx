@@ -143,6 +143,7 @@ test('un curs creat pentru antrenor independent pleacă fără club și duce în
   fireEvent.change(screen.getByLabelText('Poza din capul paginii'), {
     target: { files: [new File(['poza'], 'hero.jpg', { type: 'image/jpeg' })] },
   })
+  await user.type(screen.getByLabelText(/^Descriere/), 'Înot pentru începători.')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
 
   await waitFor(() => expect(createClubCourse).toHaveBeenCalled())
@@ -169,7 +170,7 @@ test('la editare organizatorul rămâne blocat pe cel salvat, iar antrenorul se 
     age_to: null,
     capacity: null,
     price_per_session: 7500,
-    description: '',
+    description: 'Descriere salvată.',
     hero_photo_storage_path: 'c1/hero.jpg',
     currency: 'RON',
     eur_ron_rate_micros: null,
