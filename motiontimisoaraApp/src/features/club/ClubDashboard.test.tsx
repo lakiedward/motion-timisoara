@@ -78,6 +78,7 @@ function club(overrides: Partial<Club> = {}): Club {
     description: null,
     email: null,
     hero_photo_storage_path: null,
+    hidden_from_public: false,
     logo_storage_path: null,
     phone: null,
     public_email: null,

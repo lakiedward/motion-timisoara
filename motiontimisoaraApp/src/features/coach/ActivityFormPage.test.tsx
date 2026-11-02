@@ -14,6 +14,7 @@ import {
 } from '@/api/coach'
 import { fetchSports } from '@/api/sports'
 import { getCursBnr } from '@/api/bnr-rate'
+import { pickSelectMenuValue } from '@/test/select-menu'
 
 vi.mock('@/api/coach', () => ({
   activitateaAreInscrieri: vi.fn().mockResolvedValue(false),
@@ -67,8 +68,8 @@ test('EUR citește cursul BNR și îl îngheață pe activitate', async () => {
   mockedCreate.mockResolvedValue({ id: 'a-eur' } as never)
   renderForm()
   await user.type(await screen.findByLabelText(/^Nume/), 'Open water euro')
-  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
-  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC)
+  await pickSelectMenuValue(screen.getByLabelText(/^Sport/), SPORT)
+  await pickSelectMenuValue(screen.getByLabelText(/^Locație/), LOC)
   fireEvent.change(screen.getByLabelText(/^Data/), { target: { value: '2027-07-10' } })
   fireEvent.change(screen.getByLabelText(/^Ora început/), { target: { value: '09:00' } })
   fireEvent.change(screen.getByLabelText(/^Ora final/), { target: { value: '11:00' } })
@@ -93,8 +94,8 @@ test('fără poza din cap, activitatea nu se salvează', async () => {
   const user = userEvent.setup()
   renderForm()
   await user.type(await screen.findByLabelText(/^Nume/), 'Fără poză')
-  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
-  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC)
+  await pickSelectMenuValue(screen.getByLabelText(/^Sport/), SPORT)
+  await pickSelectMenuValue(screen.getByLabelText(/^Locație/), LOC)
   fireEvent.change(screen.getByLabelText(/^Data/), { target: { value: '2027-07-10' } })
   fireEvent.change(screen.getByLabelText(/^Ora început/), { target: { value: '09:00' } })
   fireEvent.change(screen.getByLabelText(/^Ora final/), { target: { value: '11:00' } })
@@ -118,8 +119,8 @@ test('fără curs BNR, EUR blochează salvarea activității', async () => {
 
 async function completeaza(user: ReturnType<typeof userEvent.setup>, descriere = 'Ieșire pe lac.') {
   await user.type(await screen.findByLabelText(/^Nume/), 'Open water')
-  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
-  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC)
+  await pickSelectMenuValue(screen.getByLabelText(/^Sport/), SPORT)
+  await pickSelectMenuValue(screen.getByLabelText(/^Locație/), LOC)
   fireEvent.change(screen.getByLabelText(/^Data/), { target: { value: '2027-07-10' } })
   fireEvent.change(screen.getByLabelText(/^Ora început/), { target: { value: '09:00' } })
   fireEvent.change(screen.getByLabelText(/^Ora final/), { target: { value: '11:00' } })
@@ -340,7 +341,9 @@ test('cu modificări nesalvate, Anulează întreabă înainte de plecare', async
   await waitFor(() => expect(nume).toHaveValue('Activitate salvată'))
   await user.type(nume, ' nouă')
   await user.click(screen.getByRole('link', { name: 'Anulează' }))
-  expect(await screen.findByRole('alertdialog', { name: 'Renunți la modificări?' })).toBeInTheDocument()
+  expect(
+    await screen.findByRole('alertdialog', { name: 'Renunți la modificări?' }),
+  ).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Rămân' }))
   expect(screen.getByLabelText(/^Nume/)).toHaveValue('Activitate salvată nouă')
   await user.click(screen.getByRole('link', { name: /Înapoi/ }))

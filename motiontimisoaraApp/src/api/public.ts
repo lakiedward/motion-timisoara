@@ -30,6 +30,7 @@ export async function getCourses(filters: CourseFilters = {}): Promise<CourseLis
       '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order,caption)',
     )
     .eq('active', true)
+    .filter('hidden_from_public', 'is', false)
   if (filters.level) q = q.eq('level', filters.level)
   const { data, error } = await q.order('name')
   if (error) throw error
@@ -76,6 +77,7 @@ export async function getCourseCatalog(): Promise<CourseCatalogItem[]> {
     .from('courses')
     .select(COURSE_CATALOG_SELECT)
     .eq('active', true)
+    .filter('hidden_from_public', 'is', false)
     .order('name')
   if (error) throw error
   return withSpotsRemaining(data)
@@ -122,6 +124,7 @@ export async function getActivities(): Promise<ActivityListItem[]> {
     .from('activities')
     .select('*, sport:sports(id,code,name), location:locations(*)')
     .eq('active', true)
+    .filter('hidden_from_public', 'is', false)
     .order('activity_date')
   if (error) throw error
   return (data ?? []) as unknown as ActivityListItem[]
@@ -166,6 +169,7 @@ export async function getCoaches(): Promise<CoachListItem[]> {
     .select(
       'id, user_id, bio, avatar_url, photo_storage_path, profile:profiles(id,name,avatar_url), coach_sports(sport:sports(id,code,name))',
     )
+    .filter('hidden_from_public', 'is', false)
   if (error) throw error
   return (data ?? []) as unknown as CoachListItem[]
 }
@@ -205,6 +209,7 @@ export async function getPublicClubs(): Promise<ClubListItem[]> {
     .select(
       'id, owner_user_id, name, description, logo_storage_path, hero_photo_storage_path, website, phone, public_email, address, city, county, lat, lng, created_at, club_sports(sport:sports(id,code,name))',
     )
+    .filter('hidden_from_public', 'is', false)
     .order('name')
   if (error) throw error
   return (data ?? []) as unknown as ClubListItem[]
@@ -225,6 +230,7 @@ export async function getClubHeadquarters(): Promise<ClubHeadquarters[]> {
     .select('id, name, address, city, lat, lng')
     .not('lat', 'is', null)
     .not('lng', 'is', null)
+    .filter('hidden_from_public', 'is', false)
     .order('name')
   if (error) throw error
   return (data ?? []).flatMap((club) =>
@@ -383,9 +389,8 @@ export async function getActivitatiPublice(
     .eq('active', true)
   if (clubId) q = q.eq('club_id', clubId)
   if (coachId) q = q.eq('coach_id', coachId)
-  const { data, error } = await q
-    .order('activity_date')
-    .order('start_time')
+  if (!clubId && !coachId) q = q.filter('hidden_from_public', 'is', false)
+  const { data, error } = await q.order('activity_date').order('start_time')
   if (error) throw error
 
   const vizibile = activitatiVizibile((data ?? []) as unknown as ActivitateBruta[], acum)

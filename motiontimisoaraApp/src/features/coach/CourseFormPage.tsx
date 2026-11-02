@@ -51,20 +51,12 @@ import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { Textarea } from '@/components/ui/textarea'
-import { selectClassName } from '@/components/ui/field-styles'
+import { FormSelectMenu } from '@/components/ui/form-select-menu'
+import { levelOptions } from '@/lib/level'
 
 const NOTA_SPORT = 'Sportul rămâne cel salvat: cursul are înscrieri.'
 const NOTA_LOCATIE = 'Locația rămâne cea salvată: cursul are înscrieri.'
 const NOTA_PRET = 'Prețul rămâne cel salvat: cursul are înscrieri.'
-
-function cheieOptiuneSalvata(
-  idSalvat: string | null | undefined,
-  optiuni: { id: string }[],
-  asteptare: string,
-) {
-  if (idSalvat && optiuni.some((optiune) => optiune.id === idSalvat)) return idSalvat
-  return asteptare
-}
 
 const schema = z
   .object({
@@ -149,8 +141,6 @@ export default function CourseFormPage() {
   const cursEur = useWatch({ control, name: 'eur_ron_rate' })
   const faraCurs = eurFaraCurs(currency, cursEur)
   const areModificari = isEdit && (isDirty || pozaHero !== null)
-  const cheieSport = cheieOptiuneSalvata(existing?.sport_id, sports, 'sport-in-asteptare')
-  const cheieLocatie = cheieOptiuneSalvata(existing?.location_id, locations, 'locatie-in-asteptare')
 
   const camp = (nume: keyof Values, nota?: string) => ({
     'aria-invalid': !!errors[nume],
@@ -308,21 +298,15 @@ export default function CourseFormPage() {
               <Label htmlFor="sport_id">
                 Sport <RequiredMark />
               </Label>
-              <select
+              <FormSelectMenu
+                control={control}
+                name="sport_id"
                 id="sport_id"
-                key={cheieSport}
-                className={selectClassName}
-                {...register('sport_id')}
                 {...camp('sport_id', campuriBlocate ? 'sport-blocat' : undefined)}
                 disabled={campuriBlocate}
-              >
-                <option value="">—</option>
-                {sports.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                emptyLabel="—"
+                options={sports.map((s) => ({ value: s.id, label: s.name }))}
+              />
               {campuriBlocate && (
                 <p id="sport-blocat" className="text-muted-foreground text-sm">
                   {NOTA_SPORT}
@@ -334,21 +318,16 @@ export default function CourseFormPage() {
               <Label htmlFor="location_id">
                 Locație <RequiredMark />
               </Label>
-              <select
+              <FormSelectMenu
+                control={control}
+                name="location_id"
                 id="location_id"
-                key={cheieLocatie}
-                className={selectClassName}
-                {...register('location_id')}
                 {...camp('location_id', campuriBlocate ? 'locatie-blocata' : undefined)}
                 disabled={campuriBlocate}
-              >
-                <option value="">—</option>
-                {locations.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
+                searchable={locations.length > 8}
+                emptyLabel="—"
+                options={locations.map((l) => ({ value: l.id, label: l.name }))}
+              />
               {campuriBlocate && (
                 <p id="locatie-blocata" className="text-muted-foreground text-sm">
                   {NOTA_LOCATIE}
@@ -376,12 +355,13 @@ export default function CourseFormPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="level">Nivel</Label>
-              <select id="level" className={selectClassName} {...register('level')}>
-                <option value="">—</option>
-                <option value="incepator">Începător</option>
-                <option value="intermediar">Intermediar</option>
-                <option value="avansat">Avansat</option>
-              </select>
+              <FormSelectMenu
+                control={control}
+                name="level"
+                id="level"
+                emptyLabel="—"
+                options={levelOptions}
+              />
             </div>
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="capacity">

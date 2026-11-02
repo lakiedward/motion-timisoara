@@ -16,6 +16,11 @@ import {
 import { getAllClubs, getCoachesForSelect } from '@/api/admin'
 import { getSelectableLocations } from '@/api/coach'
 import { fetchSports } from '@/api/sports'
+import {
+  findSelectMenuOption,
+  pickSelectMenuValue,
+  selectMenuOptionLabels,
+} from '@/test/select-menu'
 
 vi.mock('@/api/offer-hero', () => ({
   schimbaPozaOferta: vi.fn().mockResolvedValue('c/hero/a.jpg'),
@@ -90,7 +95,7 @@ beforeEach(() => {
 test('adminul nu citește „clubul meu" și trebuie să aleagă organizatorul', async () => {
   const user = userEvent.setup()
   renderForm()
-  await screen.findByRole('option', { name: 'Club Audit Motion' })
+  await findSelectMenuOption(await screen.findByLabelText(/^Organizator/), 'Club Audit Motion')
   expect(getMyClub).not.toHaveBeenCalled()
 
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
@@ -100,37 +105,35 @@ test('adminul nu citește „clubul meu" și trebuie să aleagă organizatorul',
 })
 
 test('antrenorii și locațiile urmează organizatorul ales', async () => {
-  const user = userEvent.setup()
   renderForm()
   const organizator = await screen.findByLabelText(/^Organizator/)
-  await screen.findByRole('option', { name: 'Club Audit Motion' })
-
-  await user.selectOptions(organizator, CLUB)
-  expect(await screen.findByRole('option', { name: 'Antrenor de club' })).toBeInTheDocument()
-  expect(await screen.findByRole('option', { name: 'Bazinul clubului' })).toBeInTheDocument()
+  await findSelectMenuOption(await screen.findByLabelText(/^Organizator/), 'Club Audit Motion')
+  await pickSelectMenuValue(organizator, CLUB)
+  await findSelectMenuOption(await screen.findByLabelText(/^Antrenor/), 'Antrenor de club')
+  await findSelectMenuOption(await screen.findByLabelText(/^Locație/), 'Bazinul clubului')
   expect(getClubRosterForSelect).toHaveBeenCalledWith(CLUB)
 
-  await user.selectOptions(screen.getByLabelText(/^Antrenor/), ANTRENOR_CLUB)
-  await user.selectOptions(organizator, 'independent')
-  expect(
-    await screen.findByRole('option', { name: 'Antrenor independent Ana' }),
-  ).toBeInTheDocument()
-  expect(await screen.findByRole('option', { name: 'Stadion public' })).toBeInTheDocument()
-  expect(screen.queryByRole('option', { name: 'Antrenor de club' })).not.toBeInTheDocument()
-  expect(screen.getByLabelText(/^Antrenor/)).toHaveValue('')
+  await pickSelectMenuValue(screen.getByLabelText(/^Antrenor/), ANTRENOR_CLUB)
+  await pickSelectMenuValue(organizator, 'independent')
+  await findSelectMenuOption(await screen.findByLabelText(/^Antrenor/), 'Antrenor independent Ana')
+  await findSelectMenuOption(await screen.findByLabelText(/^Locație/), 'Stadion public')
+  expect(await selectMenuOptionLabels(screen.getByLabelText(/^Antrenor/))).not.toContain(
+    'Antrenor de club',
+  )
+  expect(screen.getByLabelText(/^Antrenor/)).toHaveAttribute('data-value', '')
 })
 
 test('un curs creat pentru antrenor independent pleacă fără club și duce în lista admin', async () => {
   const user = userEvent.setup()
   vi.mocked(createClubCourse).mockResolvedValue({ id: 'c-nou' } as never)
   renderForm()
-  await screen.findByRole('option', { name: 'Club Audit Motion' })
-  await user.selectOptions(screen.getByLabelText(/^Organizator/), 'independent')
-  await screen.findByRole('option', { name: 'Antrenor independent Ana' })
+  await findSelectMenuOption(await screen.findByLabelText(/^Organizator/), 'Club Audit Motion')
+  await pickSelectMenuValue(screen.getByLabelText(/^Organizator/), 'independent')
+  await findSelectMenuOption(await screen.findByLabelText(/^Antrenor/), 'Antrenor independent Ana')
   await user.type(screen.getByLabelText(/^Nume curs/), 'Atletism independent')
-  await user.selectOptions(screen.getByLabelText(/^Antrenor/), ANTRENOR_INDEPENDENT)
-  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
-  await user.selectOptions(await screen.findByLabelText(/^Locație/), LOC_PUBLICA)
+  await pickSelectMenuValue(screen.getByLabelText(/^Antrenor/), ANTRENOR_INDEPENDENT)
+  await pickSelectMenuValue(screen.getByLabelText(/^Sport/), SPORT)
+  await pickSelectMenuValue(await screen.findByLabelText(/^Locație/), LOC_PUBLICA)
   await user.type(screen.getByLabelText(/^Preț \/ ședință \(lei\)/), '60')
   await user.click(screen.getByRole('button', { name: 'Luni' }))
   const luni = screen.getByRole('group', { name: 'Luni' })
@@ -174,10 +177,12 @@ test('la editare organizatorul rămâne blocat pe cel salvat, iar antrenorul se 
   renderForm('/admin/courses/c1/edit')
 
   const organizator = await screen.findByLabelText(/^Organizator/)
-  await waitFor(() => expect(organizator).toHaveValue(CLUB))
+  await waitFor(() => expect(organizator).toHaveAttribute('data-value', CLUB))
   expect(organizator).toBeDisabled()
   expect(screen.getByText(/Organizatorul rămâne cel de la creare/)).toBeInTheDocument()
-  await waitFor(() => expect(screen.getByLabelText(/^Antrenor/)).toHaveValue(ANTRENOR_CLUB))
+  await waitFor(() =>
+    expect(screen.getByLabelText(/^Antrenor/)).toHaveAttribute('data-value', ANTRENOR_CLUB),
+  )
   expect(screen.getByRole('link', { name: 'Anulează' })).toHaveAttribute('href', '/admin/courses')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() => expect(updateClubCourse).toHaveBeenCalled())

@@ -1,6 +1,5 @@
 import { vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
@@ -12,6 +11,7 @@ import {
   getCompetitionPodiumManagement,
   saveCompetitionPodiumPlace,
 } from '@/api/competition/competition-podium'
+import { findSelectMenuOption, pickSelectMenuValue } from '@/test/select-menu'
 
 vi.mock('@/api/competition/competitions', () => ({ getConcurs: vi.fn() }))
 vi.mock('@/api/competition/competition-offers', () => ({ getCompetitionCategories: vi.fn() }))
@@ -29,7 +29,6 @@ vi.mock('../useCompetitionOwner', () => ({
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
 test('antrenorul asociat corectează podiumul după publicare', async () => {
-  const user = userEvent.setup()
   vi.mocked(getConcurs).mockResolvedValue({
     id: 'competition-1',
     title: 'Cupa',
@@ -93,10 +92,11 @@ test('antrenorul asociat corectează podiumul după publicare', async () => {
     </QueryClientProvider>,
   )
   expect(await screen.findByText(/Publicat. Corecțiile/)).toBeInTheDocument()
-  expect(
-    (await screen.findAllByRole('option', { name: 'Adult Audit · 36 ani la înscriere' })).length,
-  ).toBeGreaterThan(0)
-  await user.selectOptions(await screen.findByLabelText('Locul 1'), 'registration-2')
+  await findSelectMenuOption(
+    await screen.findByLabelText('Locul 1'),
+    'Adult Audit · 36 ani la înscriere',
+  )
+  await pickSelectMenuValue(await screen.findByLabelText('Locul 1'), 'registration-2')
   await waitFor(() =>
     expect(vi.mocked(saveCompetitionPodiumPlace).mock.calls[0]?.[0]).toEqual({
       competitionId: 'competition-1',

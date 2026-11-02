@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { expect, test } from 'vitest'
+import { openSelectMenu, pickSelectMenuOption, selectMenuTrigger } from '@/test/select-menu'
 import LocationAddressFields from './LocationAddressFields'
 
 function Fields() {
@@ -22,7 +22,7 @@ function Fields() {
 
 test.each(['Zell am See', 'Radstadt'])(
   'foreign locality %s and its region remain selectable',
-  (city) => {
+  async (city) => {
     render(
       <LocationAddressFields
         county="Salzburg"
@@ -31,20 +31,21 @@ test.each(['Zell am See', 'Radstadt'])(
         onCityChange={() => undefined}
       />,
     )
-    expect(screen.getByRole('combobox', { name: 'Județ / regiune' })).toHaveValue('Salzburg')
-    expect(screen.getByRole('combobox', { name: 'Oraș' })).toHaveValue(city)
-    expect(screen.getByRole('option', { name: city })).toBeInTheDocument()
+    expect(selectMenuTrigger('Județ / regiune')).toHaveTextContent('Salzburg')
+    expect(selectMenuTrigger('Oraș')).toHaveTextContent(city)
+    await openSelectMenu('Oraș')
+    expect(screen.getByRole('menuitemradio', { name: city })).toHaveAttribute('aria-checked', 'true')
   },
 )
 
 test('county change clears city and offers only the new county localities', async () => {
-  const user = userEvent.setup()
   render(<Fields />)
-  expect(screen.getByRole('combobox', { name: 'Oraș' })).toHaveValue('Timișoara')
-  await user.selectOptions(screen.getByRole('combobox', { name: 'Județ / regiune' }), 'Arad')
-  const city = screen.getByRole('combobox', { name: 'Oraș' })
-  expect(city).toHaveValue('')
-  expect(screen.queryByRole('option', { name: 'Timișoara' })).not.toBeInTheDocument()
-  await user.selectOptions(city, 'Arad')
-  expect(city).toHaveValue('Arad')
+  expect(selectMenuTrigger('Oraș')).toHaveTextContent('Timișoara')
+  await pickSelectMenuOption('Județ / regiune', 'Arad')
+  expect(selectMenuTrigger('Oraș')).toHaveTextContent('Alege orașul sau localitatea')
+  const user = await openSelectMenu('Oraș')
+  expect(screen.queryByRole('menuitemradio', { name: 'Timișoara' })).not.toBeInTheDocument()
+  await user.type(screen.getByRole('searchbox'), 'arad')
+  await user.click(screen.getByRole('menuitemradio', { name: 'Arad' }))
+  expect(selectMenuTrigger('Oraș')).toHaveTextContent('Arad')
 })

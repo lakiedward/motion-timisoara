@@ -1,20 +1,20 @@
-import type { UseFormRegisterReturn } from 'react-hook-form'
+import type { Control, FieldPath, FieldValues } from 'react-hook-form'
 
 import type { AdminClub } from '@/api/admin'
+import { FormSelectMenu } from '@/components/ui/form-select-menu'
 import { Label } from '@/components/ui/label'
 import { CourseOwnerField } from '@/features/club/course-form/CourseOwnerField'
 
-export function ActivityOwnerFields({
+export function ActivityOwnerFields<TValues extends FieldValues & { coach_id?: string }>({
   owner,
   clubs,
   locked,
   ownerError,
   coaches,
-  coachField,
+  control,
   coachError,
   noCoaches,
   noLocations,
-  selectClassName,
   onOwner,
 }: {
   owner: string
@@ -22,11 +22,10 @@ export function ActivityOwnerFields({
   locked: boolean
   ownerError: string | null
   coaches: { user_id: string; name: string }[]
-  coachField: UseFormRegisterReturn<'coach_id'>
+  control: Control<TValues>
   coachError?: string
   noCoaches: boolean
   noLocations: boolean
-  selectClassName: string
   onOwner: (owner: string) => void
 }) {
   return (
@@ -37,26 +36,21 @@ export function ActivityOwnerFields({
           clubs={clubs}
           locked={locked}
           error={ownerError}
-          selectClassName={selectClassName}
           onChange={onOwner}
         />
         <div className="space-y-1.5">
           <Label htmlFor="coach_id">Antrenor</Label>
-          <select
+          <FormSelectMenu
+            control={control}
+            name={'coach_id' as FieldPath<TValues>}
             id="coach_id"
-            className={selectClassName}
             disabled={!owner}
-            {...coachField}
             aria-invalid={!!coachError}
             aria-describedby={coachError ? 'coach_id-error' : undefined}
-          >
-            <option value="">{owner ? '—' : 'Alege întâi organizatorul'}</option>
-            {coaches.map((c) => (
-              <option key={c.user_id} value={c.user_id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            searchable={coaches.length > 8}
+            emptyLabel={owner ? '—' : 'Alege întâi organizatorul'}
+            options={coaches.map((c) => ({ value: c.user_id, label: c.name }))}
+          />
           {coachError && (
             <p id="coach_id-error" className="text-destructive text-xs">
               {coachError}

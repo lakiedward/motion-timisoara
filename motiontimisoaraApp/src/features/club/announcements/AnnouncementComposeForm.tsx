@@ -11,17 +11,13 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { FormSelectMenu } from '@/components/ui/form-select-menu'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import type { FisierPregatit } from '@/lib/media'
 import AnnouncementMediaPicker from './AnnouncementMediaPicker'
 import { AnnouncementScheduleFields } from './AnnouncementScheduleFields'
-import {
-  PRIORITY_OPTIONS,
-  announcementSchema,
-  withScheduleRules,
-  announcementSelectClassName,
-} from './announcement-form'
+import { PRIORITY_OPTIONS, announcementSchema, withScheduleRules } from './announcement-form'
 import { EMPTY_SCHEDULE, scheduleFromFields, scheduleState } from './announcement-schedule'
 
 const WHOLE_CLUB = 'CLUB'
@@ -65,6 +61,7 @@ export default function AnnouncementComposeForm({
   const [files, setFiles] = useState<FisierPregatit[]>([])
   const [resetari, setResetari] = useState(0)
   const {
+    control,
     register,
     handleSubmit,
     reset,
@@ -146,22 +143,20 @@ export default function AnnouncementComposeForm({
 
           <div className="space-y-1.5">
             <Label htmlFor="audience">Cine primește</Label>
-            <select id="audience" className={announcementSelectClassName} {...register('audience')}>
-              <option value={WHOLE_CLUB}>Toți părinții clubului</option>
-              {AUDIENCE_GROUPS.map(({ kind, label }) => {
-                const options = audiences.filter((a) => a.kind === kind)
-                if (!options.length) return null
-                return (
-                  <optgroup key={kind} label={label}>
-                    {options.map((a) => (
-                      <option key={a.id} value={`${a.kind}:${a.id}`}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                )
-              })}
-            </select>
+            <FormSelectMenu
+              control={control}
+              className="md:text-base"
+              name="audience"
+              id="audience"
+              searchable={audiences.length > 8}
+              options={[{ value: WHOLE_CLUB, label: 'Toți părinții clubului' }]}
+              groups={AUDIENCE_GROUPS.map(({ kind, label }) => ({
+                label,
+                options: audiences
+                  .filter((a) => a.kind === kind)
+                  .map((a) => ({ value: `${a.kind}:${a.id}`, label: a.name })),
+              })).filter((group) => group.options.length > 0)}
+            />
             <p className="text-muted-foreground text-xs">
               Anunțul ajunge doar la părinții cu un copil înscris activ.
             </p>
@@ -179,17 +174,13 @@ export default function AnnouncementComposeForm({
           <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="space-y-1.5 sm:w-56">
               <Label htmlFor="priority">Prioritate</Label>
-              <select
+              <FormSelectMenu
+                control={control}
+                className="md:text-base"
+                name="priority"
                 id="priority"
-                className={announcementSelectClassName}
-                {...register('priority')}
-              >
-                {PRIORITY_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
+                options={PRIORITY_OPTIONS}
+              />
             </div>
 
             <div className="flex flex-col-reverse gap-2 sm:flex-row">

@@ -59,3 +59,48 @@ test('works from the keyboard', async () => {
   expect(screen.getByRole('button', { name: /^Club / })).toHaveTextContent(/Club/)
   await user.keyboard('{Escape}')
 })
+
+function SearchHarness() {
+  const [value, setValue] = useState('')
+  return (
+    <>
+      <label htmlFor="county">Județ</label>
+      <SelectMenu
+        id="county"
+        searchable
+        value={value}
+        onValueChange={setValue}
+        placeholder="Alege județul"
+        options={[
+          { value: 'Arad', label: 'Arad' },
+          { value: 'Timiș', label: 'Timiș' },
+          { value: 'Bistrița-Năsăud', label: 'Bistrița-Năsăud' },
+        ]}
+      />
+    </>
+  )
+}
+
+test('filters long lists by typing without diacritics and picks a match', async () => {
+  const user = userEvent.setup()
+  render(<SearchHarness />)
+  await user.click(screen.getByRole('button', { name: 'Județ' }))
+  const search = screen.getByRole('searchbox', { name: 'Caută…' })
+  await user.type(search, 'timis')
+  expect(search).toHaveValue('timis')
+  expect(screen.queryByRole('menuitemradio', { name: 'Arad' })).not.toBeInTheDocument()
+  await user.click(screen.getByRole('menuitemradio', { name: 'Timiș' }))
+  expect(screen.getByRole('button', { name: 'Județ' })).toHaveTextContent('Timiș')
+})
+
+test('shows a no-results message and clears the search when reopened', async () => {
+  const user = userEvent.setup()
+  render(<SearchHarness />)
+  await user.click(screen.getByRole('button', { name: 'Județ' }))
+  await user.type(screen.getByRole('searchbox'), 'zzz')
+  expect(screen.getByRole('status')).toHaveTextContent('Niciun rezultat')
+  await user.keyboard('{Escape}')
+  await user.click(screen.getByRole('button', { name: 'Județ' }))
+  expect(screen.getByRole('searchbox')).toHaveValue('')
+  expect(screen.getAllByRole('menuitemradio')).toHaveLength(3)
+})

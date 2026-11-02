@@ -244,3 +244,13 @@ reorganizing this document; correct obsolete facts with current evidence.
   to the major push services' HTTPS hosts. The VAPID private key lives only in the
   Supabase secret `WEB_PUSH_VAPID_JWK`. iPhone needs Motion on the home screen. See
   `docs/superpowers/specs/2026-11-02-web-push-parinti.md`.
+
+- 2026-11-02 — QA and demo accounts are hidden from public lists, not deleted (bug #1312).
+  `profiles.is_test_account` is a flag that clients cannot read or change. The
+  computed field `hidden_from_public(row)` (a derived column on `clubs` and
+  `coach_profiles`, because those tables grant SELECT per column) lets the public lists for courses, camps,
+  activities, competitions, coaches, clubs and the home counters filter out offers of
+  flagged coaches and clubs. RLS, detail pages, owner pages and enrollments are
+  unchanged, so QA flows keep working. The owner chose to flag the accounts only at
+  launch, because hiding them now would empty the catalog. See
+  `docs/superpowers/specs/2026-11-02-test-account-visibility.md`.

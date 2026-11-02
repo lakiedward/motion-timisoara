@@ -113,6 +113,7 @@ export async function getTaberePublice(
     )
   if (clubId) q = q.eq('club_id', clubId)
   if (coachFilter) q = q.or(await coachCampFilter(coachFilter))
+  if (!clubId && !coachFilter) q = q.filter('hidden_from_public', 'is', false)
   const { data, error } = await q.order('period_start')
   if (error) throw error
 

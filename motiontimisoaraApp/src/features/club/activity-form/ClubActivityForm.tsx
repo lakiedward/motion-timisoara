@@ -42,7 +42,7 @@ import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { Textarea } from '@/components/ui/textarea'
-import { selectClassName } from '@/components/ui/field-styles'
+import { FormSelectMenu } from '@/components/ui/form-select-menu'
 import { campRulesFileFromRow, type CampRulesFileMeta } from '@/lib/camp-rules'
 import { mesajHeroLipsa } from '@/lib/hero-photo'
 import { baniToRon } from '@/lib/money'
@@ -323,19 +323,15 @@ export function ClubActivityForm() {
             <Label htmlFor="coach_id">
               Antrenor <RequiredMark />
             </Label>
-            <select
+            <FormSelectMenu
+              control={control}
+              name="coach_id"
               id="coach_id"
-              className={selectClassName}
-              {...register('coach_id')}
               {...camp('coach_id')}
-            >
-              <option value="">—</option>
-              {coaches.map((c) => (
-                <option key={c.user_id} value={c.user_id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              searchable={coaches.length > 8}
+              emptyLabel="—"
+              options={coaches.map((c) => ({ value: c.user_id, label: c.name }))}
+            />
             <FieldMessage id="coach_id" error={errors.coach_id?.message} />
           </div>
           {noCoaches && !isEdit && (
@@ -364,38 +360,30 @@ export function ClubActivityForm() {
               <Label htmlFor="sport_id">
                 Sport <RequiredMark />
               </Label>
-              <select
+              <FormSelectMenu
+                control={control}
+                name="sport_id"
                 id="sport_id"
-                className={selectClassName}
-                {...register('sport_id')}
                 {...camp('sport_id')}
-              >
-                <option value="">—</option>
-                {sports.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                searchable={sports.length > 8}
+                emptyLabel="—"
+                options={sports.map((c) => ({ value: c.id, label: c.name }))}
+              />
               <FieldMessage id="sport_id" error={errors.sport_id?.message} />
             </div>
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="location_id">
                 Locație <RequiredMark />
               </Label>
-              <select
+              <FormSelectMenu
+                control={control}
+                name="location_id"
                 id="location_id"
-                className={selectClassName}
-                {...register('location_id')}
                 {...camp('location_id')}
-              >
-                <option value="">—</option>
-                {locations.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
+                searchable={locations.length > 8}
+                emptyLabel="—"
+                options={locations.map((c) => ({ value: c.id, label: c.name }))}
+              />
               <FieldMessage id="location_id" error={errors.location_id?.message} />
             </div>
           </div>

@@ -42,7 +42,7 @@ import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { Textarea } from '@/components/ui/textarea'
-import { selectClassName } from '@/components/ui/field-styles'
+import { FormSelectMenu } from '@/components/ui/form-select-menu'
 import { INDEPENDENT_OWNER } from '@/features/club/course-form/useCourseFormOwner'
 import { ActivityOwnerFields } from './activity-form/ActivityOwnerFields'
 import { LeaveFormDialog } from '@/components/leave-form/LeaveFormDialog'
@@ -337,11 +337,10 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
               locked={isEdit}
               ownerError={eroareOrganizator}
               coaches={form.coaches}
-              coachField={register('coach_id')}
+              control={control}
               coachError={errors.coach_id?.message}
               noCoaches={noCoaches}
               noLocations={noLocations}
-              selectClassName={selectClassName}
               onOwner={schimbaOrganizator}
             />
           </FormSection>
@@ -362,20 +361,15 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
               <Label htmlFor="sport_id">
                 Sport <RequiredMark />
               </Label>
-              <select
+              <FormSelectMenu
+                control={control}
+                name="sport_id"
                 id="sport_id"
-                className={selectClassName}
-                {...register('sport_id')}
                 {...camp('sport_id', campuriBlocate ? 'sport-blocat' : undefined)}
                 disabled={campuriBlocate}
-              >
-                <option value="">—</option>
-                {sports.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                emptyLabel="—"
+                options={sports.map((s) => ({ value: s.id, label: s.name }))}
+              />
               {campuriBlocate && (
                 <p id="sport-blocat" className="text-muted-foreground text-sm">
                   {NOTA_SPORT}
@@ -387,20 +381,16 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
               <Label htmlFor="location_id">
                 Locație <RequiredMark />
               </Label>
-              <select
+              <FormSelectMenu
+                control={control}
+                name="location_id"
                 id="location_id"
-                className={selectClassName}
-                {...register('location_id')}
                 {...camp('location_id', campuriBlocate ? 'locatie-blocata' : undefined)}
                 disabled={campuriBlocate}
-              >
-                <option value="">—</option>
-                {locations.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
+                searchable={locations.length > 8}
+                emptyLabel="—"
+                options={locations.map((l) => ({ value: l.id, label: l.name }))}
+              />
               {campuriBlocate && (
                 <p id="locatie-blocata" className="text-muted-foreground text-sm">
                   {NOTA_LOCATIE}

@@ -10,6 +10,7 @@ import { getAllClubs, getCoachesForSelect } from '@/api/admin'
 import { getClubRosterForSelect, getClubSelectableLocations } from '@/api/club'
 import { createAdminActivity, updateAdminActivity } from '@/api/activities/admin-activities'
 import { fetchSports } from '@/api/sports'
+import { findSelectMenuOption, pickSelectMenuValue } from '@/test/select-menu'
 
 vi.mock('@/api/coach', () => ({
   activitateaAreInscrieri: vi.fn().mockResolvedValue(false),
@@ -90,8 +91,8 @@ beforeEach(() => {
 
 async function completeaza(user: ReturnType<typeof userEvent.setup>, locatie: string) {
   await user.type(screen.getByLabelText(/^Nume/), 'Atelier ciclism')
-  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
-  await user.selectOptions(screen.getByLabelText(/^Locație/), locatie)
+  await pickSelectMenuValue(screen.getByLabelText(/^Sport/), SPORT)
+  await pickSelectMenuValue(screen.getByLabelText(/^Locație/), locatie)
   fireEvent.change(screen.getByLabelText(/^Data/), { target: { value: '2027-07-10' } })
   fireEvent.change(screen.getByLabelText(/^Ora început/), { target: { value: '09:00' } })
   fireEvent.change(screen.getByLabelText(/^Ora final/), { target: { value: '11:00' } })
@@ -107,10 +108,10 @@ test('admin creates a club activity with the chosen club coach and location', as
   renderForm('/admin/activities/new')
   const antrenor = await screen.findByLabelText('Antrenor')
   expect(antrenor).toBeDisabled()
-  await screen.findByRole('option', { name: 'Club Audit Motion' })
-  await user.selectOptions(screen.getByRole('combobox', { name: 'Organizator' }), CLUB)
-  await waitFor(() => expect(screen.getByRole('option', { name: 'Dan Pop' })).toBeInTheDocument())
-  await user.selectOptions(antrenor, CLUB_COACH)
+  await findSelectMenuOption(await screen.findByLabelText(/^Organizator/), 'Club Audit Motion')
+  await pickSelectMenuValue(screen.getByRole('button', { name: /^Organizator/ }), CLUB)
+  await findSelectMenuOption(await screen.findByLabelText(/^Antrenor/), 'Dan Pop')
+  await pickSelectMenuValue(antrenor, CLUB_COACH)
   await completeaza(user, CLUB_LOC)
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() => expect(createAdminActivity).toHaveBeenCalled())
@@ -128,13 +129,13 @@ test('admin creates a club activity with the chosen club coach and location', as
 test('switching to an independent coach offers that coach list and locations', async () => {
   const user = userEvent.setup()
   renderForm('/admin/activities/new')
-  await user.selectOptions(
-    await screen.findByRole('combobox', { name: 'Organizator' }),
+  await pickSelectMenuValue(
+    await screen.findByRole('button', { name: /^Organizator/ }),
     'independent',
   )
-  await waitFor(() => expect(screen.getByRole('option', { name: 'Ana Rusu' })).toBeInTheDocument())
-  expect(screen.getByRole('option', { name: 'Parcul Rozelor' })).toBeInTheDocument()
-  await user.selectOptions(screen.getByLabelText('Antrenor'), SOLO_COACH)
+  await findSelectMenuOption(await screen.findByLabelText(/^Antrenor/), 'Ana Rusu')
+  await findSelectMenuOption(await screen.findByLabelText(/^Locație/), 'Parcul Rozelor')
+  await pickSelectMenuValue(screen.getByLabelText('Antrenor'), SOLO_COACH)
   await completeaza(user, SOLO_LOC)
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() => expect(createAdminActivity).toHaveBeenCalled())
@@ -147,11 +148,11 @@ test('switching to an independent coach offers that coach list and locations', a
 test('saving without organizer or coach shows the errors next to the fields', async () => {
   const user = userEvent.setup()
   renderForm('/admin/activities/new')
-  await screen.findByRole('option', { name: 'Club Audit Motion' })
+  await findSelectMenuOption(await screen.findByLabelText(/^Organizator/), 'Club Audit Motion')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   expect(await screen.findByText('Alege organizatorul')).toBeInTheDocument()
-  await user.selectOptions(screen.getByRole('combobox', { name: 'Organizator' }), CLUB)
-  await waitFor(() => expect(screen.getByRole('option', { name: 'Dan Pop' })).toBeInTheDocument())
+  await pickSelectMenuValue(screen.getByRole('button', { name: /^Organizator/ }), CLUB)
+  await findSelectMenuOption(await screen.findByLabelText(/^Antrenor/), 'Dan Pop')
   await completeaza(user, CLUB_LOC)
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   expect(await screen.findByText('Alege un antrenor')).toBeInTheDocument()
@@ -185,9 +186,9 @@ test('editing keeps the organizer locked and saves a new coach', async () => {
   ] as never)
   renderForm('/admin/activities/a1/edit')
   await waitFor(() => expect(screen.getByLabelText(/^Nume/)).toHaveValue('Atelier existent'))
-  expect(screen.getByRole('combobox', { name: 'Organizator' })).toBeDisabled()
-  expect(screen.getByLabelText('Antrenor')).toHaveValue(CLUB_COACH)
-  await user.selectOptions(screen.getByLabelText('Antrenor'), SOLO_COACH)
+  expect(screen.getByRole('button', { name: /^Organizator/ })).toBeDisabled()
+  expect(screen.getByLabelText('Antrenor')).toHaveAttribute('data-value', CLUB_COACH)
+  await pickSelectMenuValue(screen.getByLabelText('Antrenor'), SOLO_COACH)
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() => expect(updateAdminActivity).toHaveBeenCalled())
   expect(vi.mocked(updateAdminActivity).mock.calls[0].slice(0, 2)).toEqual(['a1', SOLO_COACH])

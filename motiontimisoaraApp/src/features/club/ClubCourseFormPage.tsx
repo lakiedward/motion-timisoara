@@ -43,7 +43,8 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
-import { selectClassName } from '@/components/ui/field-styles'
+import { FormSelectMenu } from '@/components/ui/form-select-menu'
+import { levelOptions } from '@/lib/level'
 import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
 import { CourseOwnerField } from './course-form/CourseOwnerField'
 import { useCourseFormOwner, type CourseFormPortal } from './course-form/useCourseFormOwner'
@@ -231,7 +232,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
     'aria-invalid': !!errors[nume],
     'aria-describedby': fieldDescription(nume, undefined, errors[nume]?.message),
   })
-  const optiuneGoala = (gata: boolean) => <option value="">{gata ? '—' : 'Se încarcă…'}</option>
+  const etichetaGoala = (gata: boolean) => (gata ? '—' : 'Se încarcă…')
 
   const backLink = (
     <Link
@@ -330,7 +331,6 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
               clubs={clubs}
               locked={isEdit}
               error={eroareOrganizator}
-              selectClassName={selectClassName}
               required
               onChange={schimbaOrganizator}
             />
@@ -353,70 +353,56 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
               <Label htmlFor="coach_id">
                 Antrenor <RequiredMark />
               </Label>
-              <select
+              <FormSelectMenu
+                control={control}
+                name="coach_id"
                 id="coach_id"
-                className={selectClassName}
-                required
-                {...register('coach_id')}
                 {...camp('coach_id')}
-              >
-                {optiuneGoala(!hasOwner || coachesReady)}
-                {coaches.map((c) => (
-                  <option key={c.user_id} value={c.user_id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                searchable={coaches.length > 8}
+                emptyLabel={etichetaGoala(!hasOwner || coachesReady)}
+                options={coaches.map((c) => ({ value: c.user_id, label: c.name }))}
+              />
               <FieldMessage id="coach_id" error={errors.coach_id?.message} />
             </div>
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="sport_id">
                 Sport <RequiredMark />
               </Label>
-              <select
+              <FormSelectMenu
+                control={control}
+                name="sport_id"
                 id="sport_id"
-                className={selectClassName}
-                required
-                {...register('sport_id')}
                 {...camp('sport_id')}
-              >
-                {optiuneGoala(sportsReady)}
-                {sports.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                searchable={sports.length > 8}
+                emptyLabel={etichetaGoala(sportsReady)}
+                options={sports.map((c) => ({ value: c.id, label: c.name }))}
+              />
               <FieldMessage id="sport_id" error={errors.sport_id?.message} />
             </div>
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="location_id">
                 Locație <RequiredMark />
               </Label>
-              <select
+              <FormSelectMenu
+                control={control}
+                name="location_id"
                 id="location_id"
-                className={selectClassName}
-                required
-                {...register('location_id')}
                 {...camp('location_id')}
-              >
-                {optiuneGoala(!hasOwner || locationsReady)}
-                {locations.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
+                searchable={locations.length > 8}
+                emptyLabel={etichetaGoala(!hasOwner || locationsReady)}
+                options={locations.map((c) => ({ value: c.id, label: c.name }))}
+              />
               <FieldMessage id="location_id" error={errors.location_id?.message} />
             </div>
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="level">Nivel</Label>
-              <select id="level" className={selectClassName} {...register('level')}>
-                <option value="">—</option>
-                <option value="incepator">Începător</option>
-                <option value="intermediar">Intermediar</option>
-                <option value="avansat">Avansat</option>
-              </select>
+              <FormSelectMenu
+                control={control}
+                name="level"
+                id="level"
+                emptyLabel="—"
+                options={levelOptions}
+              />
             </div>
           </div>
         </FormSection>
