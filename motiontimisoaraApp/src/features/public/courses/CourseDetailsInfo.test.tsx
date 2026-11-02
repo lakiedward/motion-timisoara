@@ -58,15 +58,17 @@ test('keeps description paragraphs and hides the block without a description', (
   expect(screen.queryByRole('heading', { name: 'Despre curs' })).not.toBeInTheDocument()
 })
 
-test('links the organizing club only when the course has one', () => {
+test('the organizer is the club when there is one, otherwise the coach', () => {
   const { unmount } = renderInfo()
-  expect(screen.queryByText('Organizat de')).not.toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Organizat de' })).toBeInTheDocument()
+  expect(screen.queryByRole('link', { name: /Club Delfinul/ })).not.toBeInTheDocument()
   unmount()
   renderInfo({ club: { id: 'club-1', name: 'Club Delfinul' } })
-  expect(screen.getByRole('link', { name: 'Club Delfinul' })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: /Club Delfinul/ })).toHaveAttribute(
     'href',
     '/cluburi/club-1',
   )
+  expect(screen.getByRole('heading', { name: 'Antrenor' })).toBeInTheDocument()
 })
 
 test('keeps the location link to the map and the coach link', () => {

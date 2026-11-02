@@ -79,7 +79,7 @@ test('pagina arată titlul, descrierea, organizatorul și poza', async () => {
     expect(screen.getByRole('heading', { name: 'Cupa Timișoara' })).toBeInTheDocument(),
   )
   expect(screen.getByText(/Linie unu/)).toBeInTheDocument()
-  expect(screen.getByRole('link', { name: 'Club Audit' })).toHaveAttribute('href', '/cluburi/c1')
+  expect(screen.getByRole('link', { name: /Club Audit/ })).toHaveAttribute('href', '/cluburi/c1')
   expect(document.querySelector('img[src="https://public/hero.jpg"]')).toBeInTheDocument()
 })
 

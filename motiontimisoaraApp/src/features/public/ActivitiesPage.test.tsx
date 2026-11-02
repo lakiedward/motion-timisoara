@@ -51,8 +51,7 @@ test('banda de titlu păstrează sprânceana, titlul și propoziția, pe banda d
   mocked.mockResolvedValue([])
   deseneaza()
   const titlu = screen.getByRole('heading', { level: 1, name: 'Activități' })
-  expect(titlu).toHaveClass('text-4xl')
-  expect(titlu.className).not.toMatch(/\b(?:sm:|md:|lg:|xl:)?text-(?:5xl|6xl)\b/)
+  expect(titlu).toHaveClass('text-4xl', 'lg:text-5xl')
   const banda = titlu.closest('section')
   expect(banda).toHaveAttribute(
     'data-section',
@@ -102,13 +101,13 @@ test('lista goală reușită rămâne separată de eroare', async () => {
   expect(screen.getByRole('link', { name: 'Vezi taberele' })).toHaveAttribute('href', '/tabere')
 })
 
-test('cât se încarcă, stau trei forme în grila de trei coloane', async () => {
+test('cât se încarcă, stau trei forme în grila comună a ofertelor', async () => {
   mocked.mockReturnValue(new Promise(() => {}))
   deseneaza()
   await waitFor(() => {
     expect(document.querySelectorAll('[data-slot="skeleton"]').length).toBe(3)
   })
-  expect(document.querySelector('.grid.md\\:grid-cols-3')).toBeInTheDocument()
+  expect(document.querySelector('.grid.lg\\:grid-cols-3')).toBeInTheDocument()
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   expect(screen.queryByText(/Nicio activitate programată/)).not.toBeInTheDocument()
 })
@@ -116,8 +115,9 @@ test('cât se încarcă, stau trei forme în grila de trei coloane', async () =>
 test('cardul arată poza, sportul pe poză, data, orele, locul, prețul, locurile și organizatorul', async () => {
   mocked.mockResolvedValue([ACTIVITATE])
   deseneaza()
-  const card = await screen.findByRole('link', { name: /DEMO — Atelier de ciclism/ })
-  expect(card).toHaveAttribute('href', '/activitati/viitoare')
+  const link = await screen.findByRole('link', { name: /DEMO — Atelier de ciclism/ })
+  expect(link).toHaveAttribute('href', '/activitati/viitoare')
+  const card = link.closest('article')!
   expect(card).toHaveClass('rounded-xl', 'border', 'hover:shadow-card')
   expect(card.className).not.toMatch(/(^| )shadow-card( |$)|shadow-card-hover/)
   expect(card.className).not.toMatch(/outline-none|ring-\[3px\]|translate-y/)
@@ -127,9 +127,9 @@ test('cardul arată poza, sportul pe poză, data, orele, locul, prețul, locuril
   )
   const sport = within(card).getByText('Ciclism')
   expect(card.querySelector('.relative')?.contains(sport)).toBe(true)
-  expect(card.querySelector('h3')?.textContent).toBe('DEMO — Atelier de ciclism')
+  expect(card.querySelector('h2')?.textContent).toBe('DEMO — Atelier de ciclism')
   expect(
-    sport.compareDocumentPosition(screen.getByRole('heading', { level: 3 })) &
+    sport.compareDocumentPosition(screen.getByRole('heading', { level: 2 })) &
       Node.DOCUMENT_POSITION_FOLLOWING,
   ).toBeTruthy()
   expect(screen.getByText('26.09.2026')).toBeInTheDocument()
@@ -145,7 +145,9 @@ test('cardul arată poza, sportul pe poză, data, orele, locul, prețul, locuril
 test('fără poză, cardul pune o iconiță, nu un emoji', async () => {
   mocked.mockResolvedValue([{ ...ACTIVITATE, heroUrl: null }])
   deseneaza()
-  const card = await screen.findByRole('link', { name: /DEMO — Atelier de ciclism/ })
+  const card = (await screen.findByRole('link', { name: /DEMO — Atelier de ciclism/ })).closest(
+    'article',
+  )!
   expect(card.querySelector('img')).toBeNull()
   expect(card.querySelector('svg')).toBeInTheDocument()
   expect(card.textContent).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u)
@@ -155,7 +157,9 @@ test('fără poză, cardul pune o iconiță, nu un emoji', async () => {
 test('dacă poza nu se încarcă, cardul trece pe ilustrația sportului', async () => {
   mocked.mockResolvedValue([ACTIVITATE])
   deseneaza()
-  const card = await screen.findByRole('link', { name: /DEMO — Atelier de ciclism/ })
+  const card = (await screen.findByRole('link', { name: /DEMO — Atelier de ciclism/ })).closest(
+    'article',
+  )!
   fireEvent.error(card.querySelector('img')!)
   expect(card.querySelector('img')).toBeNull()
   expect(card.querySelector('[data-sport-illustration="ciclism"]')).toBeInTheDocument()

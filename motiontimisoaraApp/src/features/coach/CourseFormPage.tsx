@@ -37,7 +37,7 @@ import {
 import { publicUrl } from '@/api/public'
 import { HeroPhotoField } from '@/components/HeroPhotoField'
 import GalleryPhotosSection from '@/features/photo-gallery/GalleryPhotosSection'
-import { MESAJ_POZA_HERO, mesajHeroLipsa } from '@/lib/hero-photo'
+import { mesajHeroLipsa } from '@/lib/hero-photo'
 import { fetchSports } from '@/api/sports'
 import { OfferRulesFieldset } from '@/components/RulesFileField'
 import { campRulesFileFromRow, type CampRulesFileMeta } from '@/lib/camp-rules'
@@ -67,7 +67,7 @@ const schema = z
     level: z.string().optional(),
     age_from: z.string().optional(),
     age_to: z.string().optional(),
-    capacity: z.string().trim().min(1, 'Capacitatea este obligatorie.'),
+    capacity: z.string().optional(),
     price_per_session_lei: offerAmountSchema,
     description: z.string().trim().min(1, 'Descrierea este obligatorie.'),
     program: courseProgramSchema,
@@ -185,7 +185,7 @@ export default function CourseFormPage() {
       level: v.level || null,
       age_from: num(v.age_from),
       age_to: num(v.age_to),
-      capacity: Number(v.capacity),
+      capacity: num(v.capacity),
       price_per_session: parseScaledDecimal(v.price_per_session_lei, 2)!,
       description: v.description,
       recurrence_rule: requireSerializedProgram(v.program),
@@ -351,6 +351,8 @@ export default function CourseFormPage() {
           </div>
         </FormSection>
 
+        <CourseProgramFields control={control} setValue={setValue} errors={errors} />
+
         <FormSection
           title="Copii și locuri"
           description="Pentru cine e cursul și câți copii primești."
@@ -367,17 +369,16 @@ export default function CourseFormPage() {
               />
             </div>
             <div className="min-w-0 space-y-1.5">
-              <Label htmlFor="capacity">
-                Capacitate <RequiredMark />
-              </Label>
+              <Label htmlFor="capacity">Capacitate</Label>
               <Input
                 id="capacity"
                 type="number"
-                required
+                aria-describedby="capacitate-hint"
                 {...register('capacity')}
-                {...camp('capacity')}
               />
-              <FieldMessage id="capacity" error={errors.capacity?.message} />
+              <p id="capacitate-hint" className="text-muted-foreground text-sm">
+                Lasă gol dacă nu ai limită.
+              </p>
             </div>
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="age_from">Vârstă minimă</Label>
@@ -435,9 +436,7 @@ export default function CourseFormPage() {
           </div>
         </FormSection>
 
-        <CourseProgramFields control={control} setValue={setValue} errors={errors} />
         <HeroPhotoField
-          hint={MESAJ_POZA_HERO}
           savedUrl={publicUrl('course-photos', existing?.hero_photo_storage_path)}
           error={eroareHero}
           onFile={(fisier) => {

@@ -27,7 +27,7 @@ import {
 import { createAdminActivity, updateAdminActivity } from '@/api/activities/admin-activities'
 import { HeroPhotoField } from '@/components/HeroPhotoField'
 import GalleryPhotosSection from '@/features/photo-gallery/GalleryPhotosSection'
-import { MESAJ_POZA_HERO, mesajHeroLipsa } from '@/lib/hero-photo'
+import { mesajHeroLipsa } from '@/lib/hero-photo'
 import { publicUrl } from '@/api/public'
 import { fetchSports } from '@/api/sports'
 import { OfferRulesFieldset } from '@/components/RulesFileField'
@@ -486,7 +486,6 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
           </div>
         </FormSection>
         <HeroPhotoField
-          hint={MESAJ_POZA_HERO}
           savedUrl={publicUrl('activity-photos', existing?.hero_photo_storage_path)}
           error={eroareHero}
           onFile={(fisier) => {

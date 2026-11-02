@@ -1,6 +1,4 @@
 import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -10,26 +8,20 @@ import { StarRating } from '@/components/StarRating'
 import type { CoachClub } from '@/api/public'
 import { initials } from '@/lib/initials'
 import { CoachClubs } from './CoachClubs'
+import { DetailBackLink } from '../components/DetailBackLink'
 
-const CARD_LAYOUT =
+export const PROFILE_CARD_LAYOUT =
   'mt-4 flex-col items-center gap-5 p-6 text-center sm:flex-row sm:items-center sm:p-8 sm:text-left'
 
 export function CoachBackLink() {
-  return (
-    <Link
-      to="/antrenori"
-      className="text-muted-foreground hover:text-foreground focus-visible:outline-ring inline-flex h-11 items-center gap-1 rounded-md text-sm focus-visible:outline-2 focus-visible:outline-offset-2"
-    >
-      <ArrowLeft className="size-4" /> Înapoi la antrenori
-    </Link>
-  )
+  return <DetailBackLink to="/antrenori" label="Înapoi la antrenori" />
 }
 
 export function CoachHeroSkeleton() {
   return (
     <section data-section="coach-hero" role="status" aria-label="Se încarcă antrenorul">
       <CoachBackLink />
-      <Card className={CARD_LAYOUT}>
+      <Card className={PROFILE_CARD_LAYOUT}>
         <Skeleton className="size-24 shrink-0 rounded-full" />
         <div className="flex w-full max-w-md flex-col items-center gap-3 sm:items-start">
           <Skeleton className="h-9 w-56" />
@@ -61,7 +53,7 @@ export function CoachHero({
   return (
     <section data-section="coach-hero">
       <CoachBackLink />
-      <Card className={CARD_LAYOUT}>
+      <Card className={PROFILE_CARD_LAYOUT}>
         <Avatar className="size-24">
           {photoUrl && <AvatarImage src={photoUrl} alt={name} className="object-cover" />}
           <AvatarFallback className="text-3xl">{initials(name)}</AvatarFallback>

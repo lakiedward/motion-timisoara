@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
+import { CalendarDays, Clock, MapPin } from 'lucide-react'
 
 import { getConcursPublic } from '@/api/competition/competitions'
 import {
@@ -10,7 +10,7 @@ import {
 } from '@/api/competition/competition-offers'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatCompetitionDateTime } from '@/lib/competition-schedule'
+import { formatCompetitionDay, formatCompetitionTime } from '@/lib/competition-schedule'
 import { formatRonOffer } from '@/lib/money'
 import { CompetitionRouteMap } from './CompetitionRouteMap'
 import { getPublishedCompetitionPodium } from '@/api/competition/competition-podium'
@@ -19,6 +19,10 @@ import { listCompetitionRoutePhotos } from '@/api/competition/competition-route-
 import { useCompetitionClock } from './useCompetitionClock'
 import PhotoGallery from '@/components/photo-gallery/PhotoGallery'
 import { PublicHeroBand } from '@/features/public/PublicHeroBand'
+import { InfoBand, InfoTile } from '@/features/public/components/InfoTile'
+import { OrganizerCoaches } from '@/features/public/components/OrganizerCoaches'
+import { CompetitionEnrollCard } from './registration/CompetitionEnrollCard'
+import { DetailBackLink } from '@/features/public/components/DetailBackLink'
 
 export default function CompetitionDetailsPage() {
   const { slug = '' } = useParams()
@@ -51,7 +55,7 @@ export default function CompetitionDetailsPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-4xl px-6 py-12">
+      <div className="mx-auto max-w-6xl px-6 py-12">
         <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     )
@@ -82,6 +86,15 @@ export default function CompetitionDetailsPage() {
     )
   }
 
+  const startDay = data.startAt ? formatCompetitionDay(data.startAt) : null
+  const endDay = data.endAt ? formatCompetitionDay(data.endAt) : null
+  const hours =
+    data.startAt && data.endAt
+      ? startDay === endDay
+        ? `${formatCompetitionTime(data.startAt)}–${formatCompetitionTime(data.endAt)}`
+        : `${formatCompetitionTime(data.startAt)} – ${endDay}, ${formatCompetitionTime(data.endAt)}`
+      : null
+
   return (
     <div>
       <PublicHeroBand
@@ -91,63 +104,40 @@ export default function CompetitionDetailsPage() {
         backLabel="Înapoi la concursuri"
       />
 
-      <div className="mx-auto max-w-4xl px-6 py-8">
-        {!data.heroUrl && (
-          <>
-            <Link
-              to="/concursuri"
-              className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
-            >
-              <ArrowLeft className="size-4" /> Înapoi la concursuri
-            </Link>
-            <h1 className="font-display text-foreground mt-4 text-3xl font-extrabold md:text-4xl">
-              {data.title}
-            </h1>
-          </>
-        )}
-        {data.organizator && (
-          <p className="text-muted-foreground mt-4 text-sm">
-            Organizat de{' '}
-            <Link
-              to={data.organizator.link}
-              className="text-foreground font-medium underline-offset-4 hover:underline"
-            >
-              {data.organizator.nume}
-            </Link>
-          </p>
-        )}
-        <p className="text-muted-foreground mt-6 leading-relaxed whitespace-pre-wrap">
-          {data.description}
-        </p>
+      {!data.heroUrl && (
+        <div className="mx-auto max-w-6xl px-6 pt-8">
+          <DetailBackLink to="/concursuri" label="Înapoi la concursuri" />
+          <h1 className="font-display text-foreground mt-4 text-3xl font-extrabold tracking-tight md:text-4xl">
+            {data.title}
+          </h1>
+        </div>
+      )}
 
-        {data.startAt && data.endAt && data.registrationDeadlineAt && (
-          <section
-            className="bg-card mt-8 rounded-xl border p-5"
-            aria-label="Program și locație"
-          >
-            <h2 className="font-display text-xl font-bold">Program și locație</h2>
-            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-              <div>
-                <dt className="text-muted-foreground">Început</dt>
-                <dd className="font-medium">{formatCompetitionDateTime(data.startAt)}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Final</dt>
-                <dd className="font-medium">{formatCompetitionDateTime(data.endAt)}</dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Ultima înscriere</dt>
-                <dd className="font-medium">
-                  {formatCompetitionDateTime(data.registrationDeadlineAt)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted-foreground">Locație</dt>
-                <dd className="font-medium">{data.locationText ?? 'În curs de stabilire'}</dd>
-              </div>
-            </dl>
-          </section>
-        )}
+      <div className="mx-auto max-w-6xl px-6 py-10">
+        <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
+          <div className="min-w-0">
+            <InfoBand>
+              <InfoTile
+                icon={<CalendarDays className="size-4" />}
+                label="Data"
+                value={startDay ?? 'În curs de stabilire'}
+              />
+              {hours && <InfoTile icon={<Clock className="size-4" />} label="Ore" value={hours} />}
+              <InfoTile
+                icon={<MapPin className="size-4" />}
+                label="Loc"
+                value={data.locationText ?? 'În curs de stabilire'}
+              />
+            </InfoBand>
+
+            {data.description && (
+              <section className="bg-card mt-8 rounded-xl border p-5 sm:p-6">
+                <h2 className="font-display text-xl font-bold">Despre concurs</h2>
+                <p className="text-muted-foreground mt-3 leading-relaxed whitespace-pre-wrap">
+                  {data.description}
+                </p>
+              </section>
+            )}
 
         <section className="mt-8" aria-label="Antrenorii concursului">
           <h2 className="font-display text-xl font-bold">Antrenorii concursului</h2>
@@ -322,17 +312,25 @@ export default function CompetitionDetailsPage() {
           </section>
         )}
 
-        {data.registrationDeadlineAt && offers.data?.categories.length ? (
-          Date.parse(data.registrationDeadlineAt) > now ? (
-            <Button asChild className="mt-8 h-11 min-h-11">
-              <Link to={`/account/competitions/${data.slug}/register`}>Înscriere la concurs</Link>
-            </Button>
-          ) : (
-            <p className="text-muted-foreground mt-8 text-sm">
-              Înscrierile la acest concurs s-au încheiat.
-            </p>
-          )
-        ) : null}
+            <OrganizerCoaches
+              sectionKey="competition-organizer"
+              organizerTitle="Organizat de"
+              organizator={data.organizator}
+              antrenori={[]}
+              coachesTitle={() => 'Antrenori'}
+            />
+          </div>
+
+          <aside className="lg:sticky lg:top-24 lg:self-start">
+            <CompetitionEnrollCard
+              slug={data.slug}
+              deadlineAt={data.registrationDeadlineAt}
+              prices={offers.data?.categories.map((category) => category.price_bani) ?? []}
+              loading={offers.isLoading}
+              now={now}
+            />
+          </aside>
+        </div>
       </div>
     </div>
   )

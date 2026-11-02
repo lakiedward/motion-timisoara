@@ -168,7 +168,7 @@ test('validarea marchează toate câmpurile greșite și leagă fiecare mesaj de
   await screen.findByLabelText(/^Nume curs/)
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
 
-  for (const eticheta of ['Nume curs', 'Antrenor', 'Sport', 'Locație', 'Preț / ședință (lei)']) {
+  for (const eticheta of ['Nume curs', 'Antrenor', 'Sport', 'Locație', 'Descriere', 'Preț / ședință (lei)']) {
     const camp = screen.getByLabelText(new RegExp(`^${eticheta.replace(/[()/]/g, '\\$&')}`))
     await waitFor(() => expect(camp).toHaveAttribute('aria-invalid', 'true'))
     const id = camp.getAttribute('aria-describedby')
@@ -219,6 +219,7 @@ test('salvarea reușită creează cursul și duce înapoi în listă', async () 
   await user.type(screen.getByLabelText(/^Preț \/ ședință \(lei\)/), '80')
   await completeazaProgram(user)
   punePozaHero()
+  await user.type(screen.getByLabelText(/^Descriere/), 'Înot pentru începători.')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
 
   await waitFor(() => expect(createClubCourse).toHaveBeenCalled())
@@ -243,6 +244,7 @@ test('salvarea eșuată păstrează valorile completate și anunță eroarea', a
   await user.type(screen.getByLabelText(/^Preț \/ ședință \(lei\)/), '80')
   await completeazaProgram(user)
   punePozaHero()
+  await user.type(screen.getByLabelText(/^Descriere/), 'Înot pentru începători.')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
 
   const { toast } = await import('sonner')
@@ -290,6 +292,7 @@ test('EUR citește cursul BNR și îl îngheață pe cursul de club', async () =
   await user.type(screen.getByLabelText(/^Preț \/ ședință \(EUR\)/), '25')
   await completeazaProgram(user)
   punePozaHero()
+  await user.type(screen.getByLabelText(/^Descriere/), 'Înot pentru începători.')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() => expect(createClubCourse).toHaveBeenCalled())
   expect(vi.mocked(createClubCourse).mock.calls[0][1]).toMatchObject({
@@ -334,4 +337,19 @@ test('dacă cursul nu se poate citi, Reîncearcă repetă citirea', async () => 
   mockedExisting.mockResolvedValue({ id: 'c1', club_id: 'club-1', name: 'Înot avansat' } as never)
   await userEvent.setup().click(screen.getByRole('button', { name: 'Reîncearcă' }))
   expect(await screen.findByRole('heading', { name: 'Editează cursul' })).toBeInTheDocument()
+})
+
+test('secțiunile cursului au aceeași ordine ca la antrenor', async () => {
+  renderForm()
+  await screen.findByLabelText(/^Nume curs/)
+  const titluri = ['Cine îl organizează', 'Despre curs', 'Program', 'Copii și locuri', 'Preț', 'Poza din capul paginii']
+  const noduri = titluri.map((t) => screen.getByText(t, { selector: '[data-slot="card-title"]' }))
+  for (let i = 1; i < noduri.length; i += 1) {
+    expect(
+      noduri[i - 1].compareDocumentPosition(noduri[i]) & Node.DOCUMENT_POSITION_FOLLOWING,
+      `${titluri[i - 1]} înainte de ${titluri[i]}`,
+    ).toBeTruthy()
+  }
+  expect(screen.getByLabelText(/^Descriere/)).toBeRequired()
+  expect(screen.getByLabelText('Capacitate')).not.toBeRequired()
 })

@@ -21,6 +21,8 @@ import { StatusView } from '@/components/ui/status-view'
 import { EventFilters } from '@/components/catalog-filters/EventFilters'
 import { FilteredEmptyState } from '@/components/catalog-filters/FilteredEmptyState'
 import { CardActivitate } from './components/ActivityListCard'
+import { PublicPageHeader } from './components/PublicPageHeader'
+import { OFFER_GRID } from './components/OfferCard'
 
 const PRICE_OPTIONS = priceLimitOptions(ACTIVITY_PRICE_LIMITS, (bani) =>
   formatRon(bani).replace(',00', ''),
@@ -65,22 +67,13 @@ export default function ActivitiesPage() {
 
   return (
     <div>
-      <section
-        aria-labelledby="activities-page-title"
-        data-section="motion-react:page:/activitati:section:toata-pagina"
-        className="from-primary/8 to-transparent border-b bg-gradient-to-b"
-      >
-        <div className="mx-auto max-w-7xl px-6 py-14">
-          <span className="eyebrow mb-3">Evenimente</span>
-          <h1
-            id="activities-page-title"
-            className="font-display text-4xl font-extrabold text-foreground"
-          >
-            Activități
-          </h1>
-          <p className="text-muted-foreground mt-2">Evenimente și workshop-uri punctuale.</p>
-        </div>
-      </section>
+      <PublicPageHeader
+        id="activities-page-title"
+        section="motion-react:page:/activitati:section:toata-pagina"
+        eyebrow="Evenimente"
+        title="Activități"
+        text="Evenimente și workshop-uri punctuale."
+      />
 
       <div className="mx-auto max-w-7xl px-6 py-10">
         {isError ? (
@@ -91,7 +84,7 @@ export default function ActivitiesPage() {
             onRetry={() => void refetch()}
           />
         ) : isLoading ? (
-          <div role="status" aria-label="Se încarcă activitățile" className="grid gap-4 md:grid-cols-3">
+          <div role="status" aria-label="Se încarcă activitățile" className={OFFER_GRID}>
             {[0, 1, 2].map((i) => (
               <Skeleton key={i} className="h-72 rounded-xl" />
             ))}
@@ -113,7 +106,7 @@ export default function ActivitiesPage() {
                 <p className="text-muted-foreground mb-4 text-sm" aria-live="polite">
                   {plural(filtered.length, 'activitate găsită', 'activități găsite')}
                 </p>
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className={OFFER_GRID}>
                   {filtered.map((activitate) => (
                     <CardActivitate key={activitate.id} activitate={activitate} />
                   ))}

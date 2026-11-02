@@ -128,7 +128,7 @@ export function CourseFilters({
           id="course-location-filter"
           label="Unde?"
           value={filters.location}
-          allLabel="Oriunde în Timișoara"
+          allLabel="Oriunde"
           options={locationOptions}
           onChange={set('location')}
         />

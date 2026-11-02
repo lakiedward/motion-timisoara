@@ -18,6 +18,7 @@ import { StatusView } from '@/components/ui/status-view'
 import { CourseCatalogCard } from './courses/CourseCatalogCard'
 import { CourseCatalogCardSkeleton } from './courses/CourseCatalogCardSkeleton'
 import { CourseFilters } from './courses/CourseFilters'
+import { PublicPageHeader } from './components/PublicPageHeader'
 
 export default function ProgramPage() {
   const [params, setParams] = useSearchParams()
@@ -47,22 +48,13 @@ export default function ProgramPage() {
 
   return (
     <div>
-      <section
-        aria-labelledby="courses-page-title"
-        data-section="motion-react:page:/cursuri:section:toata-pagina"
-        className="from-primary/8 to-transparent border-b bg-gradient-to-b"
-      >
-        <div className="mx-auto max-w-7xl px-6 py-14">
-          <span className="eyebrow mb-3">Programe</span>
-          <h1
-            id="courses-page-title"
-            className="font-display text-foreground text-4xl font-extrabold lg:text-5xl"
-          >
-            Cursuri
-          </h1>
-          <p className="text-muted-foreground mt-2">Găsește cursul potrivit pentru copilul tău.</p>
-        </div>
-      </section>
+      <PublicPageHeader
+        id="courses-page-title"
+        section="motion-react:page:/cursuri:section:toata-pagina"
+        eyebrow="Programe"
+        title="Cursuri"
+        text="Găsește cursul potrivit pentru copilul tău."
+      />
 
       <section aria-label="Listă cursuri" className="mx-auto max-w-7xl px-6 py-10">
         <CourseFilters

@@ -2,17 +2,30 @@ import { zonedCivilTimeToUtc } from '@/lib/course-program/occurrences'
 
 export const COMPETITION_TIME_ZONE = 'Europe/Bucharest'
 
-const publicDateTime = new Intl.DateTimeFormat('ro-RO', {
+const publicDay = new Intl.DateTimeFormat('ro-RO', {
   timeZone: COMPETITION_TIME_ZONE,
-  day: 'numeric',
-  month: 'long',
+  day: '2-digit',
+  month: '2-digit',
   year: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
 })
 
+const publicTime = new Intl.DateTimeFormat('ro-RO', {
+  timeZone: COMPETITION_TIME_ZONE,
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+})
+
+export function formatCompetitionDay(value: string): string {
+  return publicDay.format(new Date(value))
+}
+
+export function formatCompetitionTime(value: string): string {
+  return publicTime.format(new Date(value))
+}
+
 export function formatCompetitionDateTime(value: string): string {
-  return publicDateTime.format(new Date(value))
+  return `${formatCompetitionDay(value)}, ${formatCompetitionTime(value)}`
 }
 
 export type CompetitionScheduleFields = {

@@ -27,12 +27,14 @@ export function OrganizerCoaches({
   organizator,
   antrenori,
   coachesTitle,
+  organizerTitle = 'Organizată de',
   className = 'mt-8',
 }: {
   sectionKey: string
   organizator: OrganizerCard | null
   antrenori: CoachCard[]
   coachesTitle: (count: number) => string
+  organizerTitle?: string
   className?: string
 }) {
   if (!organizator && antrenori.length === 0) return null
@@ -41,7 +43,7 @@ export function OrganizerCoaches({
     <div data-section={sectionKey} className={`${className} space-y-8`}>
       {organizator && (
         <section>
-          <h2 className="font-display mb-3 text-lg font-bold">Organizată de</h2>
+          <h2 className="font-display mb-3 text-lg font-bold">{organizerTitle}</h2>
           <Link to={organizator.link} className={LINK_CARD}>
             {organizator.fel === 'club' ? (
               <span className="bg-primary/12 text-primary grid size-14 shrink-0 place-items-center rounded-full">

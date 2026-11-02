@@ -208,8 +208,9 @@ test('fără descriere, salvarea cursului se oprește', async () => {
   expect(mockedCreate).not.toHaveBeenCalled()
 })
 
-test('fără capacitate, salvarea cursului se oprește', async () => {
+test('fără capacitate, cursul se salvează fără limită de locuri', async () => {
   const user = userEvent.setup()
+  mockedCreate.mockResolvedValue({ id: 'c-fara-limita' } as never)
   renderForm()
   await user.type(await screen.findByLabelText(/^Nume curs/), 'Curs fără capacitate')
   await pickSelectMenuValue(screen.getByLabelText(/^Sport/), SPORT)
@@ -218,12 +219,12 @@ test('fără capacitate, salvarea cursului se oprește', async () => {
   await user.type(screen.getByLabelText(/^Descriere/), 'Înot pentru începători.')
   await completeazaProgram(user)
   punePozaHero()
+  expect(screen.getByLabelText('Capacitate')).toHaveAccessibleDescription(
+    'Lasă gol dacă nu ai limită.',
+  )
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
-  expect(await screen.findByText('Capacitatea este obligatorie.')).toBeInTheDocument()
-  expect(mockedCreate).not.toHaveBeenCalled()
-  const capacitate = screen.getByLabelText(/^Capacitate/)
-  expect(capacitate).toHaveAttribute('aria-invalid', 'true')
-  expect(capacitate).toHaveAccessibleDescription('Capacitatea este obligatorie.')
+  await waitFor(() => expect(mockedCreate).toHaveBeenCalled())
+  expect(mockedCreate.mock.calls[0][0]).toMatchObject({ capacity: null })
 })
 
 test('câmpurile sunt grupate în Despre curs, Copii și locuri și Preț', async () => {
@@ -244,9 +245,13 @@ test('sub vârste stă fraza despre limita opțională, fără toggle', async ()
   expect(screen.queryByRole('switch')).not.toBeInTheDocument()
 })
 
-test('fraza de la poza din cap este cea obligatorie, iar butonul rămâne Alege o poză', async () => {
+test('fraza de la poza din cap este cea comună tuturor panourilor, iar butonul rămâne Alege o poză', async () => {
   renderForm()
-  expect(await screen.findByText('Poza din capul paginii este obligatorie.')).toBeInTheDocument()
+  expect(
+    await screen.findByText(
+      'Obligatorie. Se vede în banda de deasupra titlului, pe pagina publică. Galeria rămâne separată.',
+    ),
+  ).toBeInTheDocument()
   expect(screen.getByText('Alege o poză')).toBeInTheDocument()
 })
 
@@ -423,4 +428,19 @@ test('dacă citirea cursului eșuează, Reîncearcă îl încarcă din nou', asy
   expect(await screen.findByText('Nu am putut încărca cursul.')).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Reîncearcă' }))
   expect(await screen.findByDisplayValue('Înot avansat')).toBeInTheDocument()
+})
+
+test('secțiunile cursului au aceeași ordine ca la club și admin', async () => {
+  renderForm()
+  await screen.findByLabelText(/^Nume curs/)
+  const titluri = ['Despre curs', 'Program', 'Copii și locuri', 'Preț', 'Poza din capul paginii']
+  const noduri = titluri.map((t) => screen.getByText(t, { selector: '[data-slot="card-title"]' }))
+  for (let i = 1; i < noduri.length; i += 1) {
+    expect(
+      noduri[i - 1].compareDocumentPosition(noduri[i]) & Node.DOCUMENT_POSITION_FOLLOWING,
+      `${titluri[i - 1]} înainte de ${titluri[i]}`,
+    ).toBeTruthy()
+  }
+  expect(screen.getByLabelText(/^Descriere/)).toBeRequired()
+  expect(screen.getByLabelText('Capacitate')).not.toBeRequired()
 })

@@ -2,8 +2,7 @@ import { CalendarDays, MapPin, Users } from 'lucide-react'
 
 import { formatZi, type TabaraDetaliu } from '@/api/camps'
 import { plural } from '@/lib/plural'
-import { cn } from '@/lib/utils'
-import { InfoTile } from '@/features/public/components/InfoTile'
+import { InfoBand, InfoTile } from '@/features/public/components/InfoTile'
 
 export function CampInfoBand({ data, ended }: { data: TabaraDetaliu; ended: boolean }) {
   const { tabara, location, locuriRamase } = data
@@ -19,12 +18,7 @@ export function CampInfoBand({ data, ended }: { data: TabaraDetaliu; ended: bool
       : undefined
 
   return (
-    <div
-      className={cn(
-        'bg-card divide-border grid divide-x rounded-xl border',
-        locationName ? 'grid-cols-3' : 'grid-cols-2',
-      )}
-    >
+    <InfoBand>
       <InfoTile
         icon={<CalendarDays className="size-4" />}
         label="Perioadă"
@@ -52,6 +46,6 @@ export function CampInfoBand({ data, ended }: { data: TabaraDetaliu; ended: bool
         }
         hint={tabara.capacity != null ? `din ${tabara.capacity}` : undefined}
       />
-    </div>
+    </InfoBand>
   )
 }

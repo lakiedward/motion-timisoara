@@ -67,7 +67,7 @@ test('the public directory preserves the header and single-link photo/name/sport
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
   expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Antrenori')
   expect(screen.getByText('Echipă')).toBeInTheDocument()
-  expect(screen.getByText('Antrenori dedicați sportului și copiilor')).toBeInTheDocument()
+  expect(screen.getByText('Antrenori dedicați sportului și copiilor.')).toBeInTheDocument()
   expect(card).toHaveAttribute('href', '/antrenori/user-ana-pop')
   expect(within(card).getByRole('img', { name: 'Ana Pop' })).toHaveAttribute('src', '/ana.jpg')
   expect(within(card).getByText('Înot')).toBeInTheDocument()

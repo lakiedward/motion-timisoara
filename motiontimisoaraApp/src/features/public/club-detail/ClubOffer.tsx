@@ -24,7 +24,6 @@ import {
 
 const SECTION_KEY = 'motion-react:page:/cluburi/:id:section:ce-ofera-clubul'
 const GRID = 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3'
-const CAMP_GRID = 'grid gap-4 sm:grid-cols-2'
 
 function OfferCards({ offer, kind }: { offer: Offer; kind: OfferKind }) {
   if (kind === 'courses')
@@ -139,7 +138,7 @@ export function ClubOffer({ clubId }: { clubId: string }) {
                     {shown[kind].length}
                   </span>
                 </h3>
-                <ul className={kind === 'camps' ? CAMP_GRID : GRID}>
+                <ul className={GRID}>
                   <OfferCards offer={shown} kind={kind} />
                 </ul>
               </section>
@@ -151,9 +150,9 @@ export function ClubOffer({ clubId }: { clubId: string }) {
   }
 
   return (
-    <section data-section={SECTION_KEY} aria-labelledby="club-offer-title" className="pb-16">
+    <section data-section={SECTION_KEY} aria-labelledby="club-offer-title" className="mt-10 pb-16">
       <h2 id="club-offer-title" className="font-display mb-4 text-xl font-bold">
-        Ce oferă clubul
+        Cursuri, tabere și activități
       </h2>
       {body}
     </section>
