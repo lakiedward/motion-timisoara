@@ -471,7 +471,6 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
 
         <CourseProgramFields
           control={control}
-          register={register}
           setValue={setValue}
           errors={errors}
         />

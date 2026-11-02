@@ -496,8 +496,14 @@ test("SIMULATED coach configures competition on native viewport", async ({
   await expect(
     page.getByRole("heading", { name: "Editează concursul" }),
   ).toBeVisible();
-  await expect(page.getByLabel("Data de început")).toHaveValue("2026-09-30");
-  await expect(page.getByLabel("Ora închiderii înscrierilor")).toHaveValue(
+  await expect(page.locator('input[name="startDate"]')).toHaveValue(
+    "2026-09-30",
+  );
+  await expect(page.getByLabel("Data de început")).toContainText("30 sept. 2026");
+  await expect(
+    page.locator('input[name="registrationDeadlineTime"]'),
+  ).toHaveValue("11:00");
+  await expect(page.getByLabel("Ora închiderii înscrierilor")).toHaveText(
     "11:00",
   );
   await expect(

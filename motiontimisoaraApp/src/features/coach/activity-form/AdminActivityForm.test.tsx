@@ -11,6 +11,7 @@ import { getClubRosterForSelect, getClubSelectableLocations } from '@/api/club'
 import { createAdminActivity, updateAdminActivity } from '@/api/activities/admin-activities'
 import { fetchSports } from '@/api/sports'
 import { findSelectMenuOption, pickSelectMenuValue } from '@/test/select-menu'
+import { setPickerValue } from '@/test/pickers'
 
 vi.mock('@/api/coach', () => ({
   activitateaAreInscrieri: vi.fn().mockResolvedValue(false),
@@ -93,9 +94,9 @@ async function completeaza(user: ReturnType<typeof userEvent.setup>, locatie: st
   await user.type(screen.getByLabelText(/^Nume/), 'Atelier ciclism')
   await pickSelectMenuValue(screen.getByLabelText(/^Sport/), SPORT)
   await pickSelectMenuValue(screen.getByLabelText(/^Locație/), locatie)
-  fireEvent.change(screen.getByLabelText(/^Data/), { target: { value: '2027-07-10' } })
-  fireEvent.change(screen.getByLabelText(/^Ora început/), { target: { value: '09:00' } })
-  fireEvent.change(screen.getByLabelText(/^Ora final/), { target: { value: '11:00' } })
+  setPickerValue(screen.getByLabelText(/^Data/), '2027-07-10')
+  setPickerValue(screen.getByLabelText(/^Ora început/), '09:00')
+  setPickerValue(screen.getByLabelText(/^Ora final/), '11:00')
   await user.type(screen.getByLabelText(/^Preț \(lei\)/), '20')
   await user.type(screen.getByLabelText(/^Descriere/), 'Atelier pentru copii.')
   fireEvent.change(screen.getByLabelText('Poza din capul paginii'), {

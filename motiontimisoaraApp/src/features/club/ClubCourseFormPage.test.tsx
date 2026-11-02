@@ -15,6 +15,7 @@ import {
 import { fetchSports } from '@/api/sports'
 import { getCursBnr } from '@/api/bnr-rate'
 import { findSelectMenuOption, pickSelectMenuValue } from '@/test/select-menu'
+import { setPickerValue } from '@/test/pickers'
 
 vi.mock('@/api/offer-hero', () => ({
   schimbaPozaOferta: vi.fn().mockResolvedValue('c/hero/a.jpg'),
@@ -69,8 +70,8 @@ function punePozaHero() {
 async function completeazaProgram(user: ReturnType<typeof userEvent.setup>, zi = 'Luni') {
   await user.click(screen.getByRole('button', { name: zi }))
   const grup = screen.getByRole('group', { name: zi })
-  fireEvent.change(within(grup).getByLabelText('Ora start'), { target: { value: '18:00' } })
-  fireEvent.change(within(grup).getByLabelText('Ora final'), { target: { value: '19:00' } })
+  setPickerValue(within(grup).getByLabelText('Ora start'), '18:00')
+  setPickerValue(within(grup).getByLabelText('Ora final'), '19:00')
 }
 
 beforeEach(() => {

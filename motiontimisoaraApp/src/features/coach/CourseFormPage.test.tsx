@@ -15,6 +15,7 @@ import {
 import { fetchSports } from '@/api/sports'
 import { getCursBnr } from '@/api/bnr-rate'
 import { findSelectMenuOption, pickSelectMenuValue } from '@/test/select-menu'
+import { setPickerValue, pickerValue } from '@/test/pickers'
 
 vi.mock('@/api/coach', () => ({
   getSelectableLocations: vi.fn(),
@@ -68,8 +69,8 @@ function punePozaHero() {
 async function completeazaProgram(user: ReturnType<typeof userEvent.setup>, zi = 'Luni') {
   await user.click(screen.getByRole('button', { name: zi }))
   const grup = screen.getByRole('group', { name: zi })
-  fireEvent.change(within(grup).getByLabelText('Ora start'), { target: { value: '18:00' } })
-  fireEvent.change(within(grup).getByLabelText('Ora final'), { target: { value: '19:30' } })
+  setPickerValue(within(grup).getByLabelText('Ora start'), '18:00')
+  setPickerValue(within(grup).getByLabelText('Ora final'), '19:30')
 }
 
 function cursSalvat(extra: Record<string, unknown> = {}) {
@@ -164,8 +165,8 @@ test('la editare, programul salvat apare selectat', async () => {
   await screen.findByDisplayValue('Înot avansat')
   expect(screen.getByRole('button', { name: 'Miercuri' })).toHaveAttribute('aria-pressed', 'true')
   const grup = screen.getByRole('group', { name: 'Miercuri' })
-  expect(within(grup).getByLabelText('Ora start')).toHaveValue('16:00')
-  expect(within(grup).getByLabelText('Ora final')).toHaveValue('17:00')
+  expect(pickerValue(within(grup).getByLabelText('Ora start'))).toBe('16:00')
+  expect(pickerValue(within(grup).getByLabelText('Ora final'))).toBe('17:00')
 })
 
 test('EUR citește cursul BNR și îl îngheață pe curs', async () => {
@@ -324,8 +325,8 @@ test('înscrierea activă blochează sportul, locația și prețul, iar restul s
   await user.click(screen.getByRole('button', { name: 'Luni' }))
   expect(screen.getByRole('button', { name: 'Luni' })).toHaveAttribute('aria-pressed', 'true')
   const luni = screen.getByRole('group', { name: 'Luni' })
-  fireEvent.change(within(luni).getByLabelText('Ora start'), { target: { value: '10:00' } })
-  fireEvent.change(within(luni).getByLabelText('Ora final'), { target: { value: '11:00' } })
+  setPickerValue(within(luni).getByLabelText('Ora start'), '10:00')
+  setPickerValue(within(luni).getByLabelText('Ora final'), '11:00')
   await user.type(screen.getByLabelText(/^Descriere/), ' Actualizat.')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() => expect(mockedUpdate).toHaveBeenCalled())

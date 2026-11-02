@@ -21,6 +21,7 @@ import {
   pickSelectMenuValue,
   selectMenuOptionLabels,
 } from '@/test/select-menu'
+import { setPickerValue } from '@/test/pickers'
 
 vi.mock('@/api/offer-hero', () => ({
   schimbaPozaOferta: vi.fn().mockResolvedValue('c/hero/a.jpg'),
@@ -137,8 +138,8 @@ test('un curs creat pentru antrenor independent pleacă fără club și duce în
   await user.type(screen.getByLabelText(/^Preț \/ ședință \(lei\)/), '60')
   await user.click(screen.getByRole('button', { name: 'Luni' }))
   const luni = screen.getByRole('group', { name: 'Luni' })
-  fireEvent.change(within(luni).getByLabelText('Ora start'), { target: { value: '18:00' } })
-  fireEvent.change(within(luni).getByLabelText('Ora final'), { target: { value: '19:00' } })
+  setPickerValue(within(luni).getByLabelText('Ora start'), '18:00')
+  setPickerValue(within(luni).getByLabelText('Ora final'), '19:00')
   fireEvent.change(screen.getByLabelText('Poza din capul paginii'), {
     target: { files: [new File(['poza'], 'hero.jpg', { type: 'image/jpeg' })] },
   })

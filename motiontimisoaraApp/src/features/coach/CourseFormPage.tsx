@@ -434,7 +434,6 @@ export default function CourseFormPage() {
 
         <CourseProgramFields
           control={control}
-          register={register}
           setValue={setValue}
           errors={errors}
         />

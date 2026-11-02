@@ -23,6 +23,7 @@ import { getCursBnr } from '@/api/bnr-rate'
 import { getClubSelectableLocations } from '@/api/club'
 import { getSelectableLocations } from '@/api/coach'
 import { pickSelectMenuValue, selectMenuOptionLabels } from '@/test/select-menu'
+import { setPickerValue, pickerValue } from '@/test/pickers'
 
 vi.mock('@/api/camps-admin', async () => {
   const real = await vi.importActual<typeof import('@/api/camps-admin')>('@/api/camps-admin')
@@ -123,8 +124,8 @@ function renderForm(ruta = '/club/camps/new') {
 async function completeazaDetalii(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText(/^Titlu/), 'Tabără de înot')
   await user.type(screen.getByLabelText(/^Adresa paginii/), 'tabara-inot')
-  fireEvent.change(screen.getByLabelText(/^Începe/), { target: { value: '2027-07-10' } })
-  fireEvent.change(screen.getByLabelText(/^Se termină/), { target: { value: '2027-07-17' } })
+  setPickerValue(screen.getByLabelText(/^Începe/), '2027-07-10')
+  setPickerValue(screen.getByLabelText(/^Se termină/), '2027-07-17')
   fireEvent.change(screen.getByLabelText('Poza din capul paginii', { selector: 'input' }), {
     target: { files: [new File(['poza'], 'hero.jpg', { type: 'image/jpeg' })] },
   })
@@ -483,21 +484,21 @@ test.each(PORTALE)(
     renderForm(`${baza}/new`)
     expect(screen.getByText('Perioada taberei')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '7 zile' })).toBeDisabled()
-    fireEvent.change(screen.getByLabelText(/^Începe/), { target: { value: '2027-07-10' } })
-    expect(screen.getByLabelText(/^Se termină/)).toHaveValue('2027-07-10')
+    setPickerValue(screen.getByLabelText(/^Începe/), '2027-07-10')
+    expect(pickerValue(screen.getByLabelText(/^Se termină/))).toBe('2027-07-10')
     expect(screen.getByText(/· 1 zi/)).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '7 zile' }))
-    expect(screen.getByLabelText(/^Se termină/)).toHaveValue('2027-07-16')
+    expect(pickerValue(screen.getByLabelText(/^Se termină/))).toBe('2027-07-16')
     expect(screen.getByText(/· 7 zile/)).toBeInTheDocument()
   },
 )
 
 test.each(PORTALE)('un început după sfârșit pe %s mută sfârșitul pe aceeași zi', (baza) => {
   renderForm(`${baza}/new`)
-  fireEvent.change(screen.getByLabelText(/^Începe/), { target: { value: '2027-07-10' } })
-  fireEvent.change(screen.getByLabelText(/^Se termină/), { target: { value: '2027-07-12' } })
-  fireEvent.change(screen.getByLabelText(/^Începe/), { target: { value: '2027-07-18' } })
-  expect(screen.getByLabelText(/^Se termină/)).toHaveValue('2027-07-18')
+  setPickerValue(screen.getByLabelText(/^Începe/), '2027-07-10')
+  setPickerValue(screen.getByLabelText(/^Se termină/), '2027-07-12')
+  setPickerValue(screen.getByLabelText(/^Începe/), '2027-07-18')
+  expect(pickerValue(screen.getByLabelText(/^Se termină/))).toBe('2027-07-18')
   expect(screen.getByText(/· 1 zi/)).toBeInTheDocument()
 })
 
@@ -507,8 +508,8 @@ test.each(PORTALE)('la editare pe %s, intervalul salvat arată durata inclusivă
   vi.mocked(getPreturilePeVarsta).mockResolvedValue([])
   renderForm(`${baza}/tabara-1/edit`)
   await waitFor(() => expect(screen.getByLabelText(/^Titlu/)).toHaveValue('Tabără de înot'))
-  expect(screen.getByLabelText(/^Începe/)).toHaveValue('2026-09-13')
-  expect(screen.getByLabelText(/^Se termină/)).toHaveValue('2026-09-20')
+  expect(pickerValue(screen.getByLabelText(/^Începe/))).toBe('2026-09-13')
+  expect(pickerValue(screen.getByLabelText(/^Se termină/))).toBe('2026-09-20')
   expect(screen.getByText(/· 8 zile/)).toBeInTheDocument()
 })
 

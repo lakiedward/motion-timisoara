@@ -29,6 +29,7 @@ import { incarcaRegulamentActivitate, stergeRegulamentActivitate } from '@/api/c
 import { renuntaLaOfertaFaraHero, schimbaPozaOferta } from '@/api/offer-hero'
 import { publicUrl } from '@/api/public'
 import { fetchSports } from '@/api/sports'
+import { ActivityScheduleFields } from '@/components/ActivityScheduleFields'
 import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
 import { HeroPhotoField } from '@/components/HeroPhotoField'
 import GalleryPhotosSection from '@/features/photo-gallery/GalleryPhotosSection'
@@ -410,52 +411,7 @@ export function ClubActivityForm() {
             <FieldMessage id="description" error={errors.description?.message} />
           </div>
         </FormSection>
-        <FormSection title="Când are loc" description="Ziua și intervalul orar al activității.">
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="min-w-0 space-y-1.5">
-              <Label htmlFor="activity_date">
-                Data <RequiredMark />
-              </Label>
-              <Input
-                id="activity_date"
-                type="date"
-                required
-                {...register('activity_date')}
-                {...camp('activity_date')}
-              />
-              <FieldMessage id="activity_date" error={errors.activity_date?.message} />
-            </div>
-            <div className="min-w-0 space-y-1.5">
-              <Label htmlFor="start_time">
-                Ora început <RequiredMark />
-              </Label>
-              <Input
-                id="start_time"
-                type="time"
-                required
-                {...register('start_time')}
-                {...camp('start_time', 'ore-hint')}
-              />
-              <FieldMessage id="start_time" error={errors.start_time?.message} />
-            </div>
-            <div className="min-w-0 space-y-1.5">
-              <Label htmlFor="end_time">
-                Ora final <RequiredMark />
-              </Label>
-              <Input
-                id="end_time"
-                type="time"
-                required
-                {...register('end_time')}
-                {...camp('end_time', 'ore-hint')}
-              />
-              <FieldMessage id="end_time" error={errors.end_time?.message} />
-            </div>
-          </div>
-          <p id="ore-hint" className="text-muted-foreground text-sm">
-            Orele sunt în fusul României.
-          </p>
-        </FormSection>
+        <ActivityScheduleFields control={control} errors={errors} describe={camp} />
         <FormSection
           title="Copii și locuri"
           description="Pentru cine e activitatea și câți copii primești."
