@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
@@ -10,10 +10,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { SelectMenu } from '@/components/ui/select-menu'
 import CopyInviteValueButton from '@/components/invite-codes/CopyInviteValueButton'
-
-const selectClass =
-  'border-input min-h-11 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-50'
 
 const coachSchema = z.object({
   firstName: z.string().trim().min(2, 'Minim 2 caractere'),
@@ -33,6 +31,7 @@ export default function CreateCoachForm() {
   const [expanded, setExpanded] = useState(false)
   const {
     register,
+    control,
     handleSubmit,
     reset,
     setFocus,
@@ -196,20 +195,27 @@ export default function CreateCoachForm() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="coach-club">Club (opțional)</Label>
-              <select
-                id="coach-club"
-                className={selectClass}
-                {...register('clubId')}
-                disabled={isCreating}
-                aria-describedby={clubs.isError ? 'coach-club-error' : undefined}
-              >
-                <option value="">Fără club — antrenor independent</option>
-                {(clubs.data ?? []).map((club) => (
-                  <option key={club.id} value={club.id}>
-                    {club.city ? `${club.name} (${club.city})` : club.name}
-                  </option>
-                ))}
-              </select>
+              <Controller
+                control={control}
+                name="clubId"
+                render={({ field }) => (
+                  <SelectMenu
+                    ref={field.ref}
+                    id="coach-club"
+                    name={field.name}
+                    value={field.value ?? ''}
+                    onValueChange={field.onChange}
+                    onBlur={field.onBlur}
+                    disabled={isCreating}
+                    aria-describedby={clubs.isError ? 'coach-club-error' : undefined}
+                    emptyLabel="Fără club — antrenor independent"
+                    options={(clubs.data ?? []).map((club) => ({
+                      value: club.id,
+                      label: club.city ? `${club.name} (${club.city})` : club.name,
+                    }))}
+                  />
+                )}
+              />
               {clubs.isPending && (
                 <p className="text-muted-foreground text-xs">Se încarcă cluburile…</p>
               )}
