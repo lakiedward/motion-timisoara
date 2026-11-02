@@ -1,9 +1,10 @@
 import * as React from 'react'
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
-import { Check, ChevronDown } from 'lucide-react'
+import { Check, ChevronDown, Search } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { fieldFocusClassName } from '@/components/ui/field-styles'
+import { filterBySearch } from '@/lib/select-search'
 
 export type SelectMenuOption = { value: string; label: string; disabled?: boolean }
 export type SelectMenuGroup = { label: string; options: SelectMenuOption[] }
@@ -20,6 +21,9 @@ type SelectMenuProps = {
   placeholder?: string
   disabled?: boolean
   className?: string
+  searchable?: boolean
+  searchPlaceholder?: string
+  noResultsLabel?: string
   'aria-label'?: string
   'aria-labelledby'?: string
   'aria-describedby'?: string
@@ -57,16 +61,45 @@ const SelectMenu = React.forwardRef<HTMLButtonElement, SelectMenuProps>(function
     placeholder,
     disabled,
     className,
+    searchable = false,
+    searchPlaceholder = 'Caută…',
+    noResultsLabel = 'Niciun rezultat',
     ...aria
   },
   ref,
 ) {
+  const [open, setOpen] = React.useState(false)
+  const [query, setQuery] = React.useState('')
+  const searchRef = React.useRef<HTMLInputElement>(null)
+  const contentRef = React.useRef<HTMLDivElement>(null)
   const all = [...options, ...groups.flatMap((group) => group.options)]
+  const term = searchable ? query : ''
+  const shownOptions = filterBySearch(options, term)
+  const shownGroups = groups
+    .map((group) => ({ ...group, options: filterBySearch(group.options, term) }))
+    .filter((group) => group.options.length > 0)
+  const showEmpty = emptyLabel !== undefined && term.trim() === ''
+  const noResults = !showEmpty && shownOptions.length === 0 && shownGroups.length === 0
+
+  function handleOpenChange(next: boolean) {
+    setOpen(next)
+    if (!next) setQuery('')
+  }
+
+  function handleSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'Escape') return
+    event.stopPropagation()
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      contentRef.current?.querySelector<HTMLElement>('[role="menuitemradio"]:not([data-disabled])')?.focus()
+    }
+  }
+
   const selected = all.find((option) => option.value === value)
   const shown = selected?.label ?? (value === '' ? (emptyLabel ?? placeholder) : undefined)
 
   return (
-    <DropdownMenuPrimitive.Root modal={false}>
+    <DropdownMenuPrimitive.Root modal={false} open={open} onOpenChange={handleOpenChange}>
       <DropdownMenuPrimitive.Trigger
         ref={ref}
         id={id}
@@ -93,16 +126,49 @@ const SelectMenu = React.forwardRef<HTMLButtonElement, SelectMenuProps>(function
       {name ? <input type="hidden" name={name} value={value} /> : null}
       <DropdownMenuPrimitive.Portal>
         <DropdownMenuPrimitive.Content
+          ref={contentRef}
+          onFocus={(event) => {
+            if (searchable && event.target === contentRef.current) searchRef.current?.focus()
+          }}
           align="start"
           sideOffset={6}
           className="bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 z-50 max-h-(--radix-dropdown-menu-content-available-height) w-(--radix-dropdown-menu-trigger-width) min-w-48 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border p-1.5 shadow-lg"
         >
+          {searchable ? (
+            <div className="bg-popover sticky -top-1.5 z-10 -mx-1.5 -mt-1.5 mb-1 border-b p-1.5">
+              <div className="relative">
+                <Search
+                  aria-hidden="true"
+                  className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+                />
+                <input
+                  ref={searchRef}
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder={searchPlaceholder}
+                  aria-label={searchPlaceholder}
+                  autoComplete="off"
+                  className={cn(
+                    'border-input bg-background h-touch-target w-full rounded-lg border pr-3 pl-9 text-base md:text-sm',
+                    fieldFocusClassName,
+                  )}
+                />
+              </div>
+            </div>
+          ) : null}
           <DropdownMenuPrimitive.RadioGroup value={value} onValueChange={onValueChange}>
-            {emptyLabel !== undefined ? <Item option={{ value: '', label: emptyLabel }} /> : null}
-            {options.map((option) => (
+            {showEmpty ? <Item option={{ value: '', label: emptyLabel ?? '' }} /> : null}
+            {noResults ? (
+              <p role="status" className="text-muted-foreground px-3 py-3 text-sm">
+                {noResultsLabel}
+              </p>
+            ) : null}
+            {shownOptions.map((option) => (
               <Item key={option.value} option={option} />
             ))}
-            {groups.map((group) => (
+            {shownGroups.map((group) => (
               <DropdownMenuPrimitive.Group key={group.label}>
                 <DropdownMenuPrimitive.Label className="text-muted-foreground px-3 pt-3 pb-1 text-xs font-semibold tracking-wide uppercase">
                   {group.label}
