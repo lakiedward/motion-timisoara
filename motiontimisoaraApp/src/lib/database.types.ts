@@ -2103,6 +2103,8 @@ export type Database = {
       }
       course_photos: {
         Row: {
+          caption: string | null
+          consent_confirmed_at: string | null
           content_type: string
           course_id: string
           created_at: string
@@ -2110,8 +2112,11 @@ export type Database = {
           id: string
           storage_path: string
           updated_at: string
+          uploaded_by: string | null
         }
         Insert: {
+          caption?: string | null
+          consent_confirmed_at?: string | null
           content_type: string
           course_id: string
           created_at?: string
@@ -2119,8 +2124,11 @@ export type Database = {
           id?: string
           storage_path: string
           updated_at?: string
+          uploaded_by?: string | null
         }
         Update: {
+          caption?: string | null
+          consent_confirmed_at?: string | null
           content_type?: string
           course_id?: string
           created_at?: string
@@ -2128,6 +2136,7 @@ export type Database = {
           id?: string
           storage_path?: string
           updated_at?: string
+          uploaded_by?: string | null
         }
         Relationships: [
           {
@@ -2135,6 +2144,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_photos_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

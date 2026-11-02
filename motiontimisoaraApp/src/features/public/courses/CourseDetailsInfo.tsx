@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Building2, CalendarDays, MapPin, Users } from 'lucide-react'
 
 import { COURSE_RULES_FILE_BUCKET, rulesFileAfisabil } from '@/api/camp-rules-file'
+import { galeriaPublicaCurs } from '@/api/course-photos'
 import type { CourseDetail } from '@/api/public'
 import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
 import {
@@ -11,6 +12,7 @@ import {
   weeklyProgram,
 } from '@/lib/course-detail'
 import { FOCUS_RING, InfoTile } from '@/features/public/components/InfoTile'
+import { CourseGalleryMosaic } from './CourseGalleryMosaic'
 
 export function CourseDetailsInfo({
   course,
@@ -57,6 +59,11 @@ export function CourseDetailsInfo({
           </Link>
         </p>
       )}
+
+      <CourseGalleryMosaic
+        photos={galeriaPublicaCurs(course.course_photos, course.hero_photo_storage_path)}
+        courseName={course.name}
+      />
 
       {course.description && (
         <section className="bg-card mt-8 rounded-xl border p-5 sm:p-6">

@@ -37,6 +37,7 @@ import {
 } from '@/api/coach'
 import { publicUrl } from '@/api/public'
 import { HeroPhotoField } from '@/components/HeroPhotoField'
+import CoursePhotosSection from '@/features/course-photos/CoursePhotosSection'
 import { MESAJ_POZA_HERO, mesajHeroLipsa } from '@/lib/hero-photo'
 import { fetchSports } from '@/api/sports'
 import { OfferRulesFieldset } from '@/components/RulesFileField'
@@ -466,6 +467,7 @@ export default function CourseFormPage() {
             setEroareHero(null)
           }}
         />
+        <CoursePhotosSection courseId={isEdit ? (id as string) : null} />
         <OfferRulesFieldset
           entityId={isEdit ? id : undefined}
           saved={fisierSalvat}
