@@ -92,6 +92,8 @@ import AccountDeletionPage from '@/features/public/account-deletion/AccountDelet
 import NativeExplorePage from '@/layout/native/NativeExplorePage'
 import NativeAccountPage from '@/layout/native/NativeAccountPage'
 import { usesNativeNavigation } from '@/layout/native/native-runtime'
+import PricingPage from '@/features/public/pricing/PricingPage'
+import { isNative } from '@/lib/platform'
 
 export const router = createBrowserRouter([
   {
@@ -125,6 +127,7 @@ export const router = createBrowserRouter([
           { path: '/termeni', element: <TermsPage /> },
           { path: '/confidentialitate', element: <PrivacyPage /> },
           { path: '/stergere-cont', element: <AccountDeletionPage /> },
+          ...(isNative() ? [] : [{ path: '/preturi', element: <PricingPage /> }]),
           ...(import.meta.env.DEV
             ? [
                 { path: '/dev/ui', element: <UiGalleryPage /> },

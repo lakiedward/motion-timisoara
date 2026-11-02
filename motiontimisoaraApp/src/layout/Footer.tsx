@@ -24,6 +24,7 @@ const GROUPS = [
     title: 'Companie',
     links: [
       { to: '/despre', label: 'Despre noi' },
+      { to: '/preturi', label: 'Prețuri' },
       { to: '/contact', label: 'Contact' },
     ],
   },
