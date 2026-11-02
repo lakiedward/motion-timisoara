@@ -7,8 +7,8 @@ export default function PrivacyPage() {
     <LegalPage
       title="Confidențialitate"
       intro="Ce date folosește Motion România, de ce, cine le vede, cât timp le păstrăm și ce drepturi ai, inclusiv pentru funcția „Locația antrenorului”."
-      version="1.1"
-      updated="26 octombrie 2026"
+      version="1.2"
+      updated="2 noiembrie 2026"
       sections={[...GDPR_SECTIONS, ...LOCATION_SECTIONS]}
       introSurfaceKey="manual:section:titlu:c4dd45e2-2ea9-411d-b99a-ab791e595ab7"
     />

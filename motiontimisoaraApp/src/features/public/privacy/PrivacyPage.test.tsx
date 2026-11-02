@@ -30,7 +30,7 @@ describe('PrivacyPage', () => {
     renderPage()
     expect(screen.getByRole('heading', { level: 1, name: 'Confidențialitate' })).toBeInTheDocument()
     expect(
-      screen.getByText(/Versiunea 1\.1 · ultima actualizare: 26 octombrie 2026/),
+      screen.getByText(/Versiunea 1\.2 · ultima actualizare: 2 noiembrie 2026/),
     ).toBeInTheDocument()
   })
 
@@ -65,6 +65,13 @@ describe('PrivacyPage', () => {
     ]) {
       expect(text).toContain(basis)
     }
+  })
+
+  it('names the Google Play publisher and keeps the operator as controller', () => {
+    renderPage()
+    const text = document.getElementById('operator')!.textContent
+    expect(text).toContain('publicată în Google Play de Romcad Design Inc. (New York, SUA)')
+    expect(text).toContain('în numele operatorului de mai sus')
   })
 
   it('explains parental consent for children', () => {
