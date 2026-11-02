@@ -8,13 +8,16 @@ import {
   confirmCashPayment,
   getCashPayments,
   type CashOfferKind,
+  type CashPayment,
 } from '@/api/payments/cash-payments'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Input } from '@/components/ui/input'
 import { StatusView } from '@/components/ui/status-view'
 import { CourseFilterBar, type FilterOption } from '@/features/admin/courses/CourseFilterBar'
 import { KIND_LABEL } from '@/features/account/enrollments/enrollment-display'
 import { plural } from '@/lib/plural'
+import { formatMoney } from '@/lib/money'
 import { CashPaymentRow } from './CashPaymentRow'
 import {
   NO_CASH_FILTERS,
@@ -44,7 +47,7 @@ const EMPTY_TEXT: Record<CashStatusFilter, string> = {
 export default function CashPaymentsPage() {
   const queryClient = useQueryClient()
   const [filters, setFilters] = useState<CashFilters>(NO_CASH_FILTERS)
-  const [armedId, setArmedId] = useState<string | null>(null)
+  const [toConfirm, setToConfirm] = useState<CashPayment | null>(null)
   const {
     data: payments = [],
     isLoading,
@@ -56,7 +59,7 @@ export default function CashPaymentsPage() {
   const confirm = useMutation({
     mutationFn: confirmCashPayment,
     onSuccess: () => {
-      setArmedId(null)
+      setToConfirm(null)
       toast.success('Încasarea a fost confirmată. Înscrierea este activă.')
     },
     onError: (error: Error) => toast.error(error.message || 'Nu am putut confirma încasarea.'),
@@ -167,13 +170,8 @@ export default function CashPaymentsPage() {
                       <CashPaymentRow
                         key={payment.payment_id}
                         payment={payment}
-                        armed={armedId === payment.payment_id}
                         busy={confirm.isPending}
-                        onConfirm={() =>
-                          armedId === payment.payment_id
-                            ? confirm.mutate(payment.payment_id)
-                            : setArmedId(payment.payment_id)
-                        }
+                        onConfirm={() => setToConfirm(payment)}
                       />
                     ))}
                   </ul>
@@ -183,6 +181,23 @@ export default function CashPaymentsPage() {
           )}
         </>
       )}
+      <ConfirmDialog
+        open={!!toConfirm}
+        onOpenChange={(open) => !open && setToConfirm(null)}
+        title={
+          toConfirm
+            ? `Ai primit ${formatMoney(toConfirm.amount, toConfirm.currency)} de la ${toConfirm.participant_name}?`
+            : ''
+        }
+        description={
+          toConfirm
+            ? `${KIND_LABEL[toConfirm.kind]} · ${toConfirm.offer_title}. Confirmă numai după ce ai banii în mână. Înscrierea devine activă imediat.`
+            : undefined
+        }
+        confirmLabel="Da, am primit banii"
+        pending={confirm.isPending}
+        onConfirm={() => toConfirm && confirm.mutate(toConfirm.payment_id)}
+      />
     </div>
   )
 }
