@@ -42,6 +42,11 @@ function club(over: Partial<AdminClub> & { id: string; name: string }): AdminClu
   return {
     city: 'Timișoara',
     email: `${over.id}@club.test`,
+    phone: null,
+    company_cui: null,
+    company_name: null,
+    company_address: null,
+    company_reg_number: null,
     approved_at: '2026-09-01T00:00:00Z',
     ...over,
   }
@@ -296,6 +301,36 @@ test('cluburile în așteptare apar în cardul De aprobat, nu în grupuri', asyn
   expect(within(deAprobat).getByText('Club Nou')).toBeInTheDocument()
   expect(deAprobat).toHaveTextContent('1 club nou, ascuns de pe site până îl aprobi')
   expect(within(grup('Fără cursuri')).queryByText('Club Nou')).not.toBeInTheDocument()
+})
+
+test('De aprobat arată firma verificată la ANAF și telefonul', async () => {
+  mockedClubs.mockResolvedValue([
+    ...listaNesortata(),
+    club({
+      id: 'n',
+      name: 'Club Nou',
+      approved_at: null,
+      phone: '0712345678',
+      company_cui: '49252540',
+      company_name: 'CLUB NOU S.R.L.',
+      company_address: 'JUD. TIMIȘ, TIMIȘOARA',
+      company_reg_number: 'J2023004752357',
+    }),
+    club({ id: 'm', name: 'Club Fără Răspuns', approved_at: null, company_cui: '12345674' }),
+  ])
+  renderPage()
+  await asteaptaLista()
+  const deAprobat = screen.getByRole('region', { name: 'De aprobat' })
+  expect(within(deAprobat).getByText('Verificat la ANAF')).toBeInTheDocument()
+  expect(within(deAprobat).getByText('CLUB NOU S.R.L.')).toBeInTheDocument()
+  expect(within(deAprobat).getByText('CUI 49252540 · J2023004752357')).toBeInTheDocument()
+  expect(within(deAprobat).getByText('JUD. TIMIȘ, TIMIȘOARA')).toBeInTheDocument()
+  expect(within(deAprobat).getByRole('link', { name: '0712345678' })).toHaveAttribute(
+    'href',
+    'tel:0712345678',
+  )
+  expect(within(deAprobat).getByText('Neverificat la ANAF')).toBeInTheDocument()
+  expect(deAprobat).toHaveTextContent('CUI 12345674. ANAF nu a răspuns la înscriere')
 })
 
 test('fără cluburi în așteptare nu apare cardul De aprobat', async () => {

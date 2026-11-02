@@ -32,11 +32,13 @@ export function ClubRow({
   query,
   coursesKnown,
   action,
+  details,
 }: {
   club: ClubSummary
   query: string
   coursesKnown: boolean
   action?: ReactNode
+  details?: ReactNode
 }) {
   return (
     <li className="flex min-h-16 min-w-0 flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 md:px-5">
@@ -56,6 +58,7 @@ export function ClubRow({
             <Highlight text={dashIfMissing(club.email)} query={query} />
           </span>
         </span>
+        {details}
       </span>
       {coursesKnown && (
         <span className="w-full pl-13 md:w-auto md:pl-0">

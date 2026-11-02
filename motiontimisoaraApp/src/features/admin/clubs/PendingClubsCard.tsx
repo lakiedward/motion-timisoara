@@ -7,6 +7,7 @@ import { approveClub } from '@/api/admin'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { plural } from '@/lib/plural'
+import { ClubCompanyDetails } from './ClubCompanyDetails'
 import { ClubRow } from './ClubGroupCard'
 import type { ClubSummary } from './club-overview'
 
@@ -61,6 +62,7 @@ export function PendingClubsCard({
             club={club}
             query={query}
             coursesKnown={coursesKnown}
+            details={<ClubCompanyDetails club={club} />}
             action={
               <Button
                 type="button"

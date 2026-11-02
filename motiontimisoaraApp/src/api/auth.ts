@@ -160,12 +160,10 @@ export interface RegisterClubInput {
   email: string
   password: string
   name: string
-  phone?: string
+  phone: string
   clubName: string
-  clubDescription?: string
+  companyCui: string
   clubCity?: string
-  clubEmail?: string
-  clubPhone?: string
   sportIds?: string[]
 }
 
@@ -198,15 +196,16 @@ function coachRegisterMessage(raw: string, code?: string): string {
   return sharedRegisterMessage(m)
 }
 
-function clubRegisterMessage(raw: string): string {
-  const m = raw.toLowerCase()
-  if (m.includes('failed to create club')) {
-    return 'Contul a fost creat, dar clubul nu. Scrie-ne ca să-l legăm de contul tău.'
-  }
-  if (m.includes('could not finish club registration')) {
-    return 'Nu am putut finaliza înregistrarea clubului. Încearcă din nou.'
-  }
-  return sharedRegisterMessage(m)
+const CLUB_REGISTER_MESSAGES: Record<string, string> = {
+  CUI_NOT_FOUND: 'ANAF nu găsește acest CUI. Verifică cifrele.',
+  CUI_DEREGISTERED: 'Firma cu acest CUI este radiată la ANAF.',
+  CUI_INACTIVE: 'Firma cu acest CUI este declarată inactivă la ANAF.',
+  ACCOUNT_EXISTS: 'Există deja un cont cu acest email.',
+  SERVER_ERROR: 'Nu am putut finaliza înregistrarea clubului. Încearcă din nou.',
+}
+
+function clubRegisterMessage(raw: string, code?: string): string {
+  return (code && CLUB_REGISTER_MESSAGES[code]) || sharedRegisterMessage(raw.toLowerCase())
 }
 
 function sharedRegisterMessage(lowered: string): string {
@@ -219,8 +218,12 @@ function sharedRegisterMessage(lowered: string): string {
 export async function registerClub(input: RegisterClubInput) {
   const { error } = await supabase.functions.invoke('register-club', { body: input })
   if (error) {
-    const { message } = await edgeError(error)
-    return { error: { message: clubRegisterMessage(message) } }
+    const { message, code } = await edgeError(error)
+    const failure: { message: string; code?: string } = {
+      message: clubRegisterMessage(message, code),
+      code,
+    }
+    return { error: failure }
   }
   return signInWithPassword(input.email, input.password)
 }
