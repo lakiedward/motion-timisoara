@@ -22,10 +22,12 @@ import {
   activitySportCounts,
   activityStatusCounts,
   countActivities,
+  defaultActivityFilters,
   filterActivities,
   groupActivitiesByOrganizer,
   hasActivityFilters,
   todayInBucharest,
+  type ActivityFilters,
   type ActivityGroup,
   type ActivityStatus,
 } from './activities/activity-overview'
@@ -42,7 +44,7 @@ const SECTION_LABEL = { club: 'Cluburi', coach: 'Antrenori independenți' } as c
 export default function AdminActivitiesPage() {
   const qc = useQueryClient()
   const today = todayInBucharest()
-  const [filters, setFilters] = useState(NO_ACTIVITY_FILTERS)
+  const [chosen, setFilters] = useState<ActivityFilters | null>(null)
   const [toggled, setToggled] = useState<Record<string, boolean>>({})
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [pendingIds, setPendingIds] = useState<string[]>([])
@@ -68,10 +70,11 @@ export default function AdminActivitiesPage() {
     onError: () => toast.error('Nu am putut actualiza activitatea.'),
   })
 
+  const counts = useMemo(() => activityStatusCounts(activities, today), [activities, today])
+  const filters = chosen ?? defaultActivityFilters(counts)
   const { query, status } = filters
   const searching = query.trim().length > 0
   const upcomingFirst = status === 'upcoming'
-  const counts = useMemo(() => activityStatusCounts(activities, today), [activities, today])
   const sports = useMemo(
     () =>
       activitySportCounts(filterActivities(activities, { status, sport: '', query: '' }, today)),
@@ -103,7 +106,7 @@ export default function AdminActivitiesPage() {
     a.active && a.enrolled > 0
       ? setToDeactivate(a)
       : toggle.mutate({ id: a.id, active: !a.active, name: a.name })
-  const set = (patch: Partial<typeof filters>) => setFilters((f) => ({ ...f, ...patch }))
+  const set = (patch: Partial<ActivityFilters>) => setFilters({ ...filters, ...patch })
   const clear = () => setFilters({ ...NO_ACTIVITY_FILTERS, status: 'all' })
 
   return (

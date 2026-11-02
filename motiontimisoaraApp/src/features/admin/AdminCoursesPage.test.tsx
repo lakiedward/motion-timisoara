@@ -122,6 +122,9 @@ test('un refetch picat nu sterge de pe ecran cursurile deja incarcate', async ()
   await userEvent.click(
     within(rand('Audit Antrenor', 'Înot — audit UI')).getByRole('button', { name: 'Dezactivează' }),
   )
+  await userEvent.click(
+    within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Dezactivează' }),
+  )
 
   await waitFor(() => expect(mockedCourses).toHaveBeenCalledTimes(2))
   expect(within(tabelDin('Audit Antrenor')).getByText('Înot — audit UI')).toBeInTheDocument()
@@ -366,6 +369,9 @@ test('o comutare reusita confirma cu numele cursului', async () => {
   await userEvent.click(
     within(rand('Audit Antrenor', 'Înot — audit UI')).getByRole('button', { name: 'Dezactivează' }),
   )
+  await userEvent.click(
+    within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Dezactivează' }),
+  )
 
   await waitFor(() =>
     expect(toast.success).toHaveBeenCalledWith('Cursul Înot — audit UI a fost dezactivat.'),
@@ -381,6 +387,9 @@ test('o comutare esuata pastreaza eroarea si nu confirma nimic', async () => {
 
   await userEvent.click(
     within(rand('Audit Antrenor', 'Înot — audit UI')).getByRole('button', { name: 'Dezactivează' }),
+  )
+  await userEvent.click(
+    within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Dezactivează' }),
   )
 
   await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Nu am putut actualiza cursul.'))
