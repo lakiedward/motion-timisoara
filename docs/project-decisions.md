@@ -217,3 +217,12 @@ reorganizing this document; correct obsolete facts with current evidence.
   site, the Supabase project, `motiontimisoaraApp/` and the native id `com.motiontimisoara.app`
   stay unchanged: renaming them breaks store identity, deep links, OAuth clients and push.
   The lost domain is no longer a trusted Stripe return origin.
+- 2026-11-02 — Feature #612: `create-subscription-checkout` and `billing-portal` derive
+  the subscriber only from the caller's live role (COACH: own row; CLUB: owned club),
+  never from request ids, and accept only the website origins of spec #609. Both
+  return to `/coach/abonament` or `/club/abonament`. A launch-promotion trial
+  (`trial_end` NULL) cannot start Checkout while `launch_at` is NULL (409
+  `LAUNCH_PENDING`), because its free period has no end date and Stripe could
+  charge too early. An open subscription Checkout for the same plan and terms is
+  reused; any other open subscription Checkout is expired first, so two tabs cannot
+  create two Stripe subscriptions.

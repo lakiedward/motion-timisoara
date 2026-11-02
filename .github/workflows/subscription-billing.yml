@@ -1,0 +1,32 @@
+name: Subscription billing contracts
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/create-subscription-checkout/**'
+      - 'supabase/functions/billing-portal/**'
+      - 'supabase/functions/_shared/subscription-billing*.ts'
+      - 'supabase/functions/_shared/cors.ts'
+      - 'supabase/functions/_shared/stripe.ts'
+      - 'supabase/functions/_shared/supabase.ts'
+      - 'supabase/functions/_shared/terms-version.ts'
+      - '.github/workflows/subscription-billing.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  subscription-billing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.6
+      - name: Verify Checkout and Customer Portal role, plan, limit and origin rules
+        run: deno test --no-lock supabase/functions/create-subscription-checkout/contract.test.ts supabase/functions/billing-portal/contract.test.ts
+      - name: Typecheck the subscription billing entrypoints
+        run: deno check --no-lock --node-modules-dir=none supabase/functions/create-subscription-checkout/index.ts supabase/functions/billing-portal/index.ts
