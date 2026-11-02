@@ -1,6 +1,6 @@
 # Coach and club subscriptions (feature #609)
 
-Status: proposed 2026-11-02, waiting for the owner's approval on a decision card.
+Status: approved by the owner on a decision card, 2026-11-02 11:38:31Z ("Aprob specificația").
 Tracker: Team Tracker project 16, feature #609, plan v40 item 1284. Downstream items #610–#624, bug #1304, To-Dos #227–#232.
 Analysis: https://claude.ai/artifact/D2B3yrW9XDYd7uRjBM7sTR (model A chosen by the owner on a card, 2026-11-02 10:57:36Z).
 
@@ -256,7 +256,7 @@ Each item is done only when its own criteria pass and are recorded in Team Track
 4. #622–#624 and the end-to-end test #230, #231.
 5. #232 sets `launch_at`, which turns enforcement on.
 
-## Decisions made in this spec (owner to confirm on the card)
+## Decisions made in this spec (confirmed by the owner, 2026-11-02 11:38:31Z)
 
 - Grace period after a failed renewal: 7 days.
 - After launch, new accounts get 30 days free (the launch promotion is 3 months).
