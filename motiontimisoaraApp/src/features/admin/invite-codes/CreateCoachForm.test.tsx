@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, expect, test, vi } from 'vitest'
 
@@ -36,6 +37,16 @@ function renderForm() {
   fireEvent.click(screen.getByRole('button', { name: 'Adaugă antrenor' }))
 }
 
+async function clubsLoaded() {
+  await waitFor(() => expect(screen.queryByText('Se încarcă cluburile…')).toBeNull())
+}
+
+async function chooseClub(name: string) {
+  const user = userEvent.setup()
+  await user.click(screen.getByLabelText('Club (opțional)'))
+  await user.click(await screen.findByRole('menuitemradio', { name }))
+}
+
 function fillCoach() {
   fireEvent.change(screen.getByLabelText('Prenume'), { target: { value: 'Antrenor' } })
   fireEvent.change(screen.getByLabelText('Nume'), { target: { value: 'Test' } })
@@ -50,10 +61,14 @@ beforeEach(() => {
 test('club defaults to an independent coach and lists existing clubs', async () => {
   renderForm()
   const club = screen.getByLabelText('Club (opțional)')
-  expect(club).toHaveValue('')
-  expect(screen.getByRole('option', { name: 'Fără club — antrenor independent' })).toBeVisible()
-  expect(await screen.findByRole('option', { name: 'Club Sintetic (Timișoara)' })).toBeVisible()
-  expect(screen.getByRole('option', { name: 'Alt Club' })).toBeVisible()
+  expect(club).toHaveTextContent('Fără club — antrenor independent')
+  await clubsLoaded()
+  await userEvent.click(club)
+  expect(
+    screen.getByRole('menuitemradio', { name: 'Fără club — antrenor independent' }),
+  ).toHaveAttribute('aria-checked', 'true')
+  expect(screen.getByRole('menuitemradio', { name: 'Club Sintetic (Timișoara)' })).toBeVisible()
+  expect(screen.getByRole('menuitemradio', { name: 'Alt Club' })).toBeVisible()
 })
 
 test('selected club is sent and named in the confirmation', async () => {
@@ -64,9 +79,10 @@ test('selected club is sent and named in the confirmation', async () => {
     clubId: clubs[0].id,
   })
   renderForm()
-  await screen.findByRole('option', { name: 'Club Sintetic (Timișoara)' })
+  await clubsLoaded()
   fillCoach()
-  fireEvent.change(screen.getByLabelText('Club (opțional)'), { target: { value: clubs[0].id } })
+  await chooseClub('Club Sintetic (Timișoara)')
+  expect(screen.getByLabelText('Club (opțional)')).toHaveTextContent('Club Sintetic (Timișoara)')
   fireEvent.click(screen.getByRole('button', { name: 'Creează antrenor' }))
   expect(await screen.findByText('Adăugat în clubul Club Sintetic.')).toBeVisible()
   expect(mocks.createCoach).toHaveBeenCalledWith({
@@ -75,7 +91,9 @@ test('selected club is sent and named in the confirmation', async () => {
     phone: undefined,
     clubId: clubs[0].id,
   })
-  expect(screen.getByLabelText('Club (opțional)')).toHaveValue('')
+  expect(screen.getByLabelText('Club (opțional)')).toHaveTextContent(
+    'Fără club — antrenor independent',
+  )
 })
 
 test('without a club the request omits it and the confirmation says independent', async () => {
@@ -111,8 +129,10 @@ test('failed club list keeps independent creation available with a retry', async
   fireEvent.click(screen.getByRole('button', { name: 'Creează antrenor' }))
   expect(await screen.findByText('Antrenor independent, fără club.')).toBeVisible()
   fireEvent.click(screen.getByRole('button', { name: 'Reîncearcă' }))
-  expect(await screen.findByRole('option', { name: 'Alt Club' })).toBeVisible()
   await waitFor(() => expect(screen.queryByText(/Lista cluburilor nu s-a încărcat/)).toBeNull())
+  await clubsLoaded()
+  await userEvent.click(screen.getByLabelText('Club (opțional)'))
+  expect(screen.getByRole('menuitemradio', { name: 'Alt Club' })).toBeVisible()
 })
 
 test('first and last name are validated separately and sent as one full name', async () => {

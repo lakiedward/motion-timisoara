@@ -8,6 +8,7 @@ import { getIndependentCoachCourses } from '@/api/announcements/admin-announceme
 import { getClubAudiences } from '@/api/club'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
+import { SelectMenu } from '@/components/ui/select-menu'
 import { StatusView } from '@/components/ui/status-view'
 import { selectClassName } from '@/components/ui/field-styles'
 import AnnouncementComposeForm from '@/features/club/announcements/AnnouncementComposeForm'
@@ -136,20 +137,14 @@ export default function AdminAnnouncementFormPage() {
           {independent && (
             <div className="space-y-1.5">
               <Label htmlFor="coach">Antrenor</Label>
-              <select
+              <SelectMenu
                 id="coach"
-                className={selectClassName}
                 value={coachId}
                 disabled={!coaches.isSuccess}
-                onChange={(e) => setCoachId(e.target.value)}
-              >
-                <option value="">{coaches.isError ? 'Nu am putut încărca' : '—'}</option>
-                {(coaches.data ?? []).map((c) => (
-                  <option key={c.user_id} value={c.user_id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                onValueChange={setCoachId}
+                emptyLabel={coaches.isError ? 'Nu am putut încărca' : '—'}
+                options={(coaches.data ?? []).map((c) => ({ value: c.user_id, label: c.name }))}
+              />
             </div>
           )}
         </CardContent>
