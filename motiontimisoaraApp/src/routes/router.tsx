@@ -2,6 +2,8 @@ import { createBrowserRouter } from 'react-router-dom'
 import RootLayout from '@/routes/RootLayout'
 import CoreLayout from '@/layout/CoreLayout'
 import { RequireAuth, RequireRole } from '@/routes/guards'
+import { SUBSCRIPTION_ROUTES } from '@/routes/subscription-routes'
+import { NATIVE_BUILD, webOnly } from '@/lib/store-compliance'
 import CoachLayout from '@/features/coach/CoachLayout'
 import CoachDashboard from '@/features/coach/CoachDashboard'
 import CoachCoursesPage from '@/features/coach/CoachCoursesPage'
@@ -92,8 +94,6 @@ import AccountDeletionPage from '@/features/public/account-deletion/AccountDelet
 import NativeExplorePage from '@/layout/native/NativeExplorePage'
 import NativeAccountPage from '@/layout/native/NativeAccountPage'
 import { usesNativeNavigation } from '@/layout/native/native-runtime'
-import PricingPage from '@/features/public/pricing/PricingPage'
-import { isNative } from '@/lib/platform'
 
 export const router = createBrowserRouter([
   {
@@ -127,7 +127,7 @@ export const router = createBrowserRouter([
           { path: '/termeni', element: <TermsPage /> },
           { path: '/confidentialitate', element: <PrivacyPage /> },
           { path: '/stergere-cont', element: <AccountDeletionPage /> },
-          ...(isNative() ? [] : [{ path: '/preturi', element: <PricingPage /> }]),
+          ...(NATIVE_BUILD ? [] : webOnly(SUBSCRIPTION_ROUTES)),
           ...(import.meta.env.DEV
             ? [
                 { path: '/dev/ui', element: <UiGalleryPage /> },

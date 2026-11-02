@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom'
 
-import { isNative } from '@/lib/platform'
+import { NATIVE_BUILD, subscriptionSalesAllowed } from '@/lib/store-compliance'
 
 export function PricingSignupLink() {
-  if (isNative()) return null
+  if (NATIVE_BUILD || !subscriptionSalesAllowed()) return null
   return (
     <p className="mt-2">
       <Link

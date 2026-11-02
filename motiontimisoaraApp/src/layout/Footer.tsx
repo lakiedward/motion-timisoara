@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 
 import { Logo } from '@/components/Logo'
+import { NATIVE_BUILD, subscriptionSalesAllowed } from '@/lib/store-compliance'
 
 const GROUPS = [
   {
@@ -24,7 +25,7 @@ const GROUPS = [
     title: 'Companie',
     links: [
       { to: '/despre', label: 'Despre noi' },
-      { to: '/preturi', label: 'Prețuri' },
+      ...(!NATIVE_BUILD && subscriptionSalesAllowed() ? [{ to: '/preturi', label: 'Prețuri' }] : []),
       { to: '/contact', label: 'Contact' },
     ],
   },

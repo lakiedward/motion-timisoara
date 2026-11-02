@@ -104,8 +104,14 @@ if (!existsSync(join(androidDir, 'app', 'google-services.json'))) {
 checkSigning()
 if (!skipWeb) {
   checkWebConfig()
-  run('npm', ['run', 'build'], appDir)
+  run('npm', ['run', 'build:native'], appDir)
   run('npx', ['cap', 'sync', 'android'], appDir)
+} else {
+  run(
+    'node',
+    ['scripts/native-bundle-scan.mjs', join('android', 'app', 'src', 'main', 'assets', 'public')],
+    appDir,
+  )
 }
 run(
   windows ? `"${join(androidDir, 'gradlew.bat')}"` : 'sh',
