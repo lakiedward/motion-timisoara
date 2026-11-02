@@ -53,6 +53,8 @@ jobs:
     # worker. 20 lasă loc de instalări și de o rulare lentă.
     timeout-minutes: 20
     runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -68,8 +70,6 @@ jobs:
     # playwright.config.ts), deci are nevoie și de dependențele ei.
     - name: Install app dependencies
       run: npm ci --prefix motiontimisoaraApp
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps chromium
     - name: Run Playwright tests
       run: npx playwright test
       env:
@@ -92,6 +92,8 @@ jobs:
   browser-simulations:
     timeout-minutes: 15
     runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -107,8 +109,6 @@ jobs:
     # playwright.config.ts), deci are nevoie și de dependențele ei.
     - name: Install app dependencies
       run: npm ci --prefix motiontimisoaraApp
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps chromium
     - name: Run isolated checkout pricing simulations
       run: npm run test:checkout-pricing
     - name: Run isolated coach location browser simulations
