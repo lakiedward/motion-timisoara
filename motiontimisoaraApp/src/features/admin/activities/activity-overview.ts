@@ -69,6 +69,12 @@ export function hasActivityFilters(f: ActivityFilters) {
   return f.status !== 'all' || !!f.sport || f.query.trim().length > 0
 }
 
+export function defaultActivityFilters(counts: Record<ActivityStatus, number>): ActivityFilters {
+  return counts.upcoming === 0 && counts.all > 0
+    ? { ...NO_ACTIVITY_FILTERS, status: 'all' }
+    : NO_ACTIVITY_FILTERS
+}
+
 export function activityStatusCounts(
   activities: AdminActivity[],
   today: string,

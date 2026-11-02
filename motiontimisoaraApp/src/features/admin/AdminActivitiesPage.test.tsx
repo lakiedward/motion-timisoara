@@ -124,6 +124,17 @@ test('deactivation asks for confirmation only when there are enrollments', async
   expect(toast.success).toHaveBeenCalledWith('Atelier 1 a fost dezactivată.')
 })
 
+test('opens on all activities when none is upcoming', async () => {
+  mockedList.mockResolvedValueOnce([
+    act({ id: 'p1', name: 'Tură trecută', activity_date: '2000-01-01' }),
+    act({ id: 'i1', name: 'Tură inactivă', active: false }),
+  ])
+  renderPage()
+  expect(await screen.findByText('Tură trecută')).toBeInTheDocument()
+  expect(screen.queryByText('Nicio activitate pentru filtrele alese.')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /Toate/ })).toHaveAttribute('aria-pressed', 'true')
+})
+
 test('shows empty and error states', async () => {
   mockedList.mockResolvedValueOnce([])
   const { unmount } = renderPage()
