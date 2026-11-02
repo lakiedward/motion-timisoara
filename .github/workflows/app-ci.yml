@@ -150,6 +150,12 @@ jobs:
           VITE_SUPABASE_URL: https://placeholder.supabase.co
           VITE_SUPABASE_ANON_KEY: placeholder
           VITE_STRIPE_PUBLISHABLE_KEY: pk_test_placeholder
+      - name: Build native bundle and check it sells no subscriptions
+        run: npm run build:native
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: placeholder
+          VITE_STRIPE_PUBLISHABLE_KEY: pk_test_placeholder
 
   android-build:
     needs: contracts
@@ -172,7 +178,7 @@ jobs:
           java-version: 21
           cache: gradle
       - run: npm ci
-      - run: npm run build
+      - run: npm run build:native
         env:
           VITE_SUPABASE_URL: https://placeholder.supabase.co
           VITE_SUPABASE_ANON_KEY: placeholder
@@ -200,7 +206,7 @@ jobs:
       - name: Point stalled simulator location hosts at loopback
         run: node ../tests/native-location/run-ios-location.mjs --prepare-hosts
       - run: npm ci
-      - run: npm run build
+      - run: npm run build:native
         env:
           VITE_SUPABASE_URL: https://placeholder.supabase.co
           VITE_SUPABASE_ANON_KEY: placeholder
