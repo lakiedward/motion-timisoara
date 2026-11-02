@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Search } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 
 import type { AdminSession } from '@/api/attendance/admin-sessions'
 import { getCoachSessions, SESSION_GROUP_LIMIT } from '@/api/coach'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { StatusView } from '@/components/ui/status-view'
 import {
   NO_SESSION_FILTERS,
@@ -32,6 +31,7 @@ import {
   splitByTime,
   toSessionList,
 } from './attendance/coach-session-list'
+import { FilterSearch } from '@/components/catalog-filters/FilterSearch'
 
 const STATUS_OPTIONS: FilterOption<SessionStatus>[] = [
   { value: 'all', label: 'Toate' },
@@ -90,20 +90,13 @@ export default function CoachAttendancePage() {
           </span>
         )}
       </h1>
-      <div className="relative order-last w-full md:order-none md:w-80">
-        <Search
-          aria-hidden="true"
-          className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-        />
-        <Input
-          type="search"
-          value={query}
-          onChange={(e) => set({ query: e.target.value })}
-          placeholder="Caută curs sau locație"
-          aria-label="Caută ședințe după curs sau locație"
-          className="h-touch-target min-h-touch-target pl-9 lg:h-9 lg:min-h-9"
-        />
-      </div>
+      <FilterSearch
+        className="order-last w-full md:order-none md:w-80"
+        value={query}
+        onChange={(e) => set({ query: e.target.value })}
+        placeholder="Caută curs sau locație"
+        aria-label="Caută ședințe după curs sau locație"
+      />
     </div>
   )
 

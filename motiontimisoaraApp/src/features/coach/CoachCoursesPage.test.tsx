@@ -273,5 +273,5 @@ test('search, status pills and sport pills narrow the list and can be cleared', 
 
   await user.click(screen.getByRole('button', { name: /^Alergare\s*1$/ }))
   expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(1)
-  expect(screen.getByRole('combobox', { name: 'Sport' })).toHaveValue('s2')
+  expect(screen.getByLabelText('Sport', { selector: 'button' })).toHaveTextContent(/^Alergare/)
 })

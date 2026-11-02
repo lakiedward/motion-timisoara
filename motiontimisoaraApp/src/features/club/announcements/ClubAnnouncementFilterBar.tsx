@@ -1,8 +1,7 @@
-import { Search } from 'lucide-react'
 
-import { Input } from '@/components/ui/input'
 import { CourseFilterBar, type FilterOption } from '@/features/admin/courses/CourseFilterBar'
 import type { ClubAnnouncementFilters, ClubAnnouncementStatus } from './club-announcement-filters'
+import { FilterSearch } from '@/components/catalog-filters/FilterSearch'
 
 const STATUS_OPTIONS: FilterOption<ClubAnnouncementStatus>[] = [
   { value: 'all', label: 'Toate' },
@@ -25,20 +24,12 @@ export function ClubAnnouncementFilterBar({
 }) {
   return (
     <div className="mb-4 space-y-2">
-      <div className="relative">
-        <Search
-          aria-hidden="true"
-          className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-        />
-        <Input
-          type="search"
-          value={filters.query}
-          onChange={(e) => onChange({ ...filters, query: e.target.value })}
-          placeholder="Caută în anunțuri"
-          aria-label="Caută anunțuri după titlu, text sau țintă"
-          className="pl-9"
-        />
-      </div>
+      <FilterSearch
+        value={filters.query}
+        onChange={(e) => onChange({ ...filters, query: e.target.value })}
+        placeholder="Caută în anunțuri"
+        aria-label="Caută anunțuri după titlu, text sau țintă"
+      />
       <CourseFilterBar
         status={filters.status}
         sport={filters.target}

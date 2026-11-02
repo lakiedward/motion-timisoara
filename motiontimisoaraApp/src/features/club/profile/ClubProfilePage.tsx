@@ -18,6 +18,7 @@ import { countyForCity, normalizeCounty } from '@/lib/geography/romanian-places'
 import ClubAddressFields from './ClubAddressFields'
 import ClubImageField from './ClubImageField'
 import { clubProfileSchema, normalizeWebsite, type ClubProfileValues } from './clubProfileSchema'
+import { Checkbox } from '@/components/ui/checkbox'
 
 const EMPTY: ClubProfileValues = {
   name: '',
@@ -220,7 +221,7 @@ export default function ClubProfilePage({ portal = 'club' }: { portal?: 'club' |
           </div>
           <ClubAddressFields control={control} setValue={setValue} />
           <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
-            <input type="checkbox" {...register('public_email_consent')} className="size-4" />
+            <Checkbox {...register('public_email_consent')} />
             Afișează emailul public pe pagina clubului
           </label>
         </FormSection>

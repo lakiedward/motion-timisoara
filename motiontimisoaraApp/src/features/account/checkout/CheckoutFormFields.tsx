@@ -6,9 +6,8 @@ import { Field as FormField } from '@/components/ui/field'
 import { cn } from '@/lib/utils'
 import type { AdultValidation, ChildValidation } from '@/api/checkout'
 import { childAge, type Child } from '@/api/account'
+import { Checkbox } from '@/components/ui/checkbox'
 
-const CHECKBOX =
-  'accent-primary focus-visible:outline-ring size-5 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2'
 
 export function Field({
   label,
@@ -98,9 +97,7 @@ export function CheckoutAdultRow({
         blocked && 'cursor-not-allowed opacity-60',
       )}
     >
-      <input
-        type="checkbox"
-        className={CHECKBOX}
+      <Checkbox
         checked={includeSelf && !blocked}
         disabled={blocked}
         onChange={(e) => onToggle(e.target.checked)}
@@ -145,9 +142,7 @@ export function CheckoutChildRow({
         blocked && 'cursor-not-allowed opacity-60',
       )}
     >
-      <input
-        type="checkbox"
-        className={CHECKBOX}
+      <Checkbox
         checked={checked}
         disabled={blocked}
         onChange={(e) => onToggle(e.target.checked)}

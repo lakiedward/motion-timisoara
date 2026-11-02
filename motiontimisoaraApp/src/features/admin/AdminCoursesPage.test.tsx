@@ -448,10 +448,11 @@ test('pe telefon sportul se alege dintr-o lista, iar starile stau pe un singur r
 
   expect(screen.getByRole('group', { name: 'Status' }).className).toMatch(/overflow-x-auto/)
   expect(screen.getByRole('group', { name: 'Sport' }).className).toMatch(/hidden.*md:flex/)
-  const select = screen.getByRole('combobox', { name: 'Sport' })
+  const select = screen.getByLabelText('Sport', { selector: 'button' })
   expect(select.closest('div')!.className).toMatch(/md:hidden/)
 
-  await userEvent.selectOptions(select, 'alergare')
+  await userEvent.click(select)
+  await userEvent.click(await screen.findByRole('menuitemradio', { name: /^Alergare/ }))
   expect(screen.queryByText('Înot — audit UI')).not.toBeInTheDocument()
   expect(pastila(/^Alergare/)).toHaveAttribute('aria-pressed', 'true')
 })

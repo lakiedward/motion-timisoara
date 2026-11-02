@@ -19,6 +19,7 @@ import {
   type CompetitionRoute,
 } from '@/api/competition/competition-offers'
 import { Button } from '@/components/ui/button'
+import { FilePicker } from '@/components/ui/file-picker'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -362,23 +363,20 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
                 }
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="competition-route-file">
-                Fișier GPX (obligatoriu pentru un traseu nou, maximum 12 MB)
-              </Label>
-              <Input
-                id="competition-route-file"
-                type="file"
-                accept=".gpx,application/gpx+xml,application/xml,text/xml"
-                className="h-11"
-                onChange={(event) =>
-                  setRouteDraft({
-                    ...routeDraft,
-                    file: event.target.files?.[0] ?? null,
-                  })
-                }
-              />
-            </div>
+            <FilePicker
+              id="competition-route-file"
+              label="Fișier GPX"
+              hint={
+                routeDraft.id
+                  ? 'Opțional: alege un fișier nou doar dacă schimbi traseul. Maximum 12 MB.'
+                  : 'Obligatoriu pentru un traseu nou. Maximum 12 MB.'
+              }
+              accept=".gpx,application/gpx+xml,application/xml,text/xml"
+              file={routeDraft.file}
+              chooseLabel="Alege fișierul GPX"
+              disabled={busy !== null}
+              onFileChange={(file) => setRouteDraft({ ...routeDraft, file })}
+            />
             <div className="flex flex-wrap gap-2">
               <Button type="submit" className="min-h-11" disabled={busy !== null}>
                 Salvează traseul

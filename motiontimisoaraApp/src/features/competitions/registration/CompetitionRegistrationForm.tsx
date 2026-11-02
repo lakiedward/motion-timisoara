@@ -28,6 +28,7 @@ import { CheckoutOrderSummary } from '@/features/account/checkout/CheckoutOrderS
 import { usePaymentAdapter } from '@/features/account/checkout/usePaymentAdapter'
 import { useCompetitionClock } from '../useCompetitionClock'
 import { cn } from '@/lib/utils'
+import { Checkbox } from '@/components/ui/checkbox'
 
 type Props = { competition: PublicCompetition; categories: CompetitionCategory[] }
 
@@ -339,9 +340,7 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
             aria-label="Înscriere proprie"
           >
             <label className="flex min-h-11 items-center gap-3 font-semibold">
-              <input
-                type="checkbox"
-                className="size-4"
+              <Checkbox
                 checked={includeSelf}
                 onChange={(event) => {
                   setIncludeSelf(event.target.checked)
@@ -452,9 +451,7 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
                   </div>
 
                   <label className="flex min-h-11 items-start gap-3 text-sm">
-                    <input
-                      type="checkbox"
-                      className="mt-1 size-4"
+                    <Checkbox
                       checked={accepted}
                       disabled={!pricesReady}
                       onChange={(event) => setAcceptedKey(event.target.checked ? currentKey : null)}

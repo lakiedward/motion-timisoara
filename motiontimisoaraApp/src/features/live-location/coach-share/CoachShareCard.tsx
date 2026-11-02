@@ -20,6 +20,7 @@ import {
   windowText,
   type CoachShareView,
 } from './types'
+import { Checkbox } from '@/components/ui/checkbox'
 
 function line(view: CoachShareView) {
   const { sharing, occurrenceId, eligibleTime, camp } = view
@@ -115,10 +116,9 @@ export function CoachShareCard(view: CoachShareView) {
               </Link>
             </p>
             <div className="flex items-start gap-3">
-              <input
+              <Checkbox
                 id={consentId}
-                type="checkbox"
-                className="accent-primary mt-1 size-5 shrink-0"
+                className="mt-0.5"
                 checked={checked}
                 disabled={sharing.busy || sharing.needsStopRetry}
                 onChange={(event) => view.onConsent(event.target.checked)}

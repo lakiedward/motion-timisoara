@@ -15,9 +15,8 @@ import { Textarea } from '@/components/ui/textarea'
 import AnnouncementMediaPicker from '@/features/club/announcements/AnnouncementMediaPicker'
 import type { FisierPregatit } from '@/lib/media'
 import { announcementSelectClassName } from '@/features/club/announcements/announcement-form'
+import { Checkbox } from '@/components/ui/checkbox'
 
-const CHECKBOX =
-  'accent-primary focus-visible:outline-ring size-5 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2'
 
 const schema = z.object({
   courseId: z.string().min(1, 'Alege cursul'),
@@ -120,7 +119,7 @@ export default function CoachAnnouncementForm({ courses, onPublished, onCancel }
 
           <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between">
             <label className="flex min-h-touch-target cursor-pointer items-center gap-3 text-sm">
-              <input type="checkbox" className={CHECKBOX} {...register('pinned')} />
+              <Checkbox {...register('pinned')} />
               Fixează sus la părinți
             </label>
             <div className="flex flex-col-reverse gap-2 sm:flex-row">
