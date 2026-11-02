@@ -5,9 +5,9 @@ import '@fontsource-variable/manrope/index.css'
 import './index.css'
 import App from './App.tsx'
 import { initializeNativeKeyboard } from './layout/native/native-keyboard'
-import { syncSystemTheme } from './lib/theme/system-theme'
+import { syncTheme } from './lib/theme/theme-preference'
 
-syncSystemTheme()
+syncTheme()
 
 void initializeNativeKeyboard()
   .catch((error) => console.error('Native keyboard initialization failed', error))

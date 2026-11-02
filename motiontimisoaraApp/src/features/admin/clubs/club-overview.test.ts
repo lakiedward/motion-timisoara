@@ -15,6 +15,11 @@ const club = (id: string, name: string, city: string | null, email: string | nul
   approved_at: '2026-09-01T00:00:00Z',
   city,
   email,
+  phone: null,
+  company_cui: null,
+  company_name: null,
+  company_address: null,
+  company_reg_number: null,
 })
 
 const course = (club_id: string | null, active: boolean) => ({ club_id, active }) as AdminCourse

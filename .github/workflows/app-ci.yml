@@ -51,6 +51,10 @@ on:
       - 'supabase/tests/*parent-account-deletion*'
       - 'supabase/migrations/00107_subscriptions.sql'
       - 'supabase/tests/*subscriptions*'
+      - 'supabase/functions/register-club/**'
+      - 'supabase/functions/register-club-contract.test.ts'
+      - 'supabase/functions/_shared/company-cui.ts'
+      - 'supabase/migrations/00109_admin_clubs_company.sql'
   workflow_dispatch:
 
 concurrency:
@@ -92,6 +96,10 @@ jobs:
         run: deno test --no-lock supabase/functions/location-reverse/contract.test.ts
       - name: Type-check location reverse function
         run: deno check --no-lock supabase/functions/location-reverse/index.ts
+      - name: Verify club registration and ANAF CUI contract
+        run: deno test --no-lock supabase/functions/register-club-contract.test.ts
+      - name: Type-check club registration function
+        run: deno check --no-lock supabase/functions/register-club/index.ts
       - name: Verify location reverse SQL
         shell: pwsh
         run: ./supabase/tests/location-reverse/run.ps1

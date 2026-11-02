@@ -29,6 +29,11 @@ CREATE TABLE public.clubs (
     name TEXT NOT NULL,
     city TEXT,
     email TEXT,
+    phone TEXT,
+    company_cui TEXT,
+    company_name TEXT,
+    company_address TEXT,
+    company_reg_number TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.clubs ENABLE ROW LEVEL SECURITY;
@@ -81,8 +86,11 @@ BEGIN
 END;
 $$;
 
-INSERT INTO public.clubs (id, owner_user_id, name, approved_at) VALUES
-    ('00000000-0000-0000-0000-00000000c200', '00000000-0000-0000-0000-0000000000c2', 'Club Nou', NULL);
+INSERT INTO public.clubs (id, owner_user_id, name, approved_at, phone, company_cui, company_name, company_address, company_reg_number) VALUES
+    ('00000000-0000-0000-0000-00000000c200', '00000000-0000-0000-0000-0000000000c2', 'Club Nou', NULL,
+     '0712345678', '49252540', 'CLUB NOU S.R.L.', 'JUD. TIMIŞ, TIMIŞOARA', 'J2023004752357');
+
+\i /tmp/migrations/00109_admin_clubs_company.sql
 
 CREATE FUNCTION pg_temp.expect_denied(p_sql text, p_hint text DEFAULT NULL)
 RETURNS void
@@ -152,6 +160,14 @@ DO $$
 BEGIN
     IF (SELECT count(*) FROM public.admin_clubs() WHERE approved_at IS NULL) <> 1 THEN
         RAISE EXCEPTION 'Admin list does not show the pending club';
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM public.admin_clubs()
+        WHERE approved_at IS NULL AND phone = '0712345678' AND company_cui = '49252540'
+          AND company_name = 'CLUB NOU S.R.L.' AND company_address = 'JUD. TIMIŞ, TIMIŞOARA'
+          AND company_reg_number = 'J2023004752357'
+    ) THEN
+        RAISE EXCEPTION 'Admin list does not show the pending club company data';
     END IF;
     PERFORM public.approve_club('00000000-0000-0000-0000-00000000c200');
     PERFORM public.approve_club('00000000-0000-0000-0000-00000000c200');
