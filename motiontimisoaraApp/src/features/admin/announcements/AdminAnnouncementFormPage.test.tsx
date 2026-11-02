@@ -8,6 +8,7 @@ import AdminAnnouncementFormPage from './AdminAnnouncementFormPage'
 import { getAllClubs, getCoachesForSelect } from '@/api/admin'
 import { getIndependentCoachCourses } from '@/api/announcements/admin-announcements'
 import { getClubAudiences } from '@/api/club'
+import { pickSelectMenuValue, selectMenuOptionLabels } from '@/test/select-menu'
 
 vi.mock('@/api/admin', () => ({ getAllClubs: vi.fn(), getCoachesForSelect: vi.fn() }))
 vi.mock('@/api/announcements/admin-announcements', () => ({
@@ -45,27 +46,25 @@ beforeEach(() => {
 })
 
 test('a club organizer shows the club form with only active audiences', async () => {
-  const user = userEvent.setup()
   renderPage()
-  await screen.findByRole('option', { name: 'Clubul Delfinul' })
-  await user.selectOptions(screen.getByLabelText('Organizator'), 'c1')
+  await pickSelectMenuValue(screen.getByLabelText('Organizator'), 'c1')
   expect(await screen.findByLabelText('Titlu')).toBeInTheDocument()
-  expect(screen.getByRole('option', { name: 'Înot mic' })).toBeInTheDocument()
-  expect(screen.queryByRole('option', { name: 'Curs vechi' })).not.toBeInTheDocument()
+  const audiences = await selectMenuOptionLabels(screen.getByLabelText('Cine primește'))
+  expect(audiences).toContain('Înot mic')
+  expect(audiences).not.toContain('Curs vechi')
   expect(getClubAudiences).toHaveBeenCalledWith('c1')
 })
 
 test('an independent coach shows the coach form or a message without courses', async () => {
   const user = userEvent.setup()
   renderPage()
-  await screen.findByRole('option', { name: 'Clubul Delfinul' })
-  await user.selectOptions(screen.getByLabelText('Organizator'), 'independent')
+  await pickSelectMenuValue(screen.getByLabelText('Organizator'), 'independent')
   const coach = screen.getByLabelText('Antrenor')
   await waitFor(() => expect(coach).toBeEnabled())
   await user.click(coach)
   await user.click(await screen.findByRole('menuitemradio', { name: 'Ana Rusu' }))
   expect(coach).toHaveTextContent('Ana Rusu')
-  expect(await screen.findByLabelText('Cursul')).toHaveValue('k9')
+  expect(await screen.findByLabelText('Cursul')).toHaveAttribute('data-value', 'k9')
   await user.click(coach)
   await user.click(await screen.findByRole('menuitemradio', { name: 'Dan Pop' }))
   expect(await screen.findByText('Antrenorul nu are cursuri active.')).toBeInTheDocument()

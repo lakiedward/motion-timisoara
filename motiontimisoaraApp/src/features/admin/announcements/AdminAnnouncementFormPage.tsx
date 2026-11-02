@@ -10,7 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label'
 import { SelectMenu } from '@/components/ui/select-menu'
 import { StatusView } from '@/components/ui/status-view'
-import { selectClassName } from '@/components/ui/field-styles'
 import AnnouncementComposeForm from '@/features/club/announcements/AnnouncementComposeForm'
 import { CourseOwnerField } from '@/features/club/course-form/CourseOwnerField'
 import { INDEPENDENT_OWNER } from '@/features/club/course-form/useCourseFormOwner'
@@ -130,7 +129,6 @@ export default function AdminAnnouncementFormPage() {
               clubs={clubs.data ?? []}
               locked={false}
               error={null}
-              selectClassName={selectClassName}
               onChange={chooseOwner}
             />
           )}

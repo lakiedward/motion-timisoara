@@ -4,6 +4,8 @@ const LEVEL_RO: Record<string, string> = {
   avansat: 'Avansat',
 }
 
+export const levelOptions = Object.entries(LEVEL_RO).map(([value, label]) => ({ value, label }))
+
 /** Display label for a course level slug (diacritics). Falls back to the raw value. */
 export function formatLevel(level: string | null | undefined): string | null {
   if (!level) return null

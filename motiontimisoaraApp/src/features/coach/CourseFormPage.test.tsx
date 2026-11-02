@@ -14,6 +14,7 @@ import {
 } from '@/api/coach'
 import { fetchSports } from '@/api/sports'
 import { getCursBnr } from '@/api/bnr-rate'
+import { findSelectMenuOption, pickSelectMenuValue } from '@/test/select-menu'
 
 vi.mock('@/api/coach', () => ({
   getSelectableLocations: vi.fn(),
@@ -106,8 +107,8 @@ test('fără program, salvarea e blocată și cursul nu se creează', async () =
   const user = userEvent.setup()
   renderForm()
   await user.type(await screen.findByLabelText(/^Nume curs/), 'Curs fără program')
-  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
-  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC)
+  await pickSelectMenuValue(screen.getByLabelText(/^Sport/), SPORT)
+  await pickSelectMenuValue(screen.getByLabelText(/^Locație/), LOC)
   await user.type(screen.getByLabelText(/^Preț \/ ședință \(lei\)/), '80')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   expect(
@@ -121,8 +122,8 @@ test('crearea trimite regula și anunță generarea ședințelor', async () => {
   mockedCreate.mockResolvedValue({ id: 'c-new' } as never)
   renderForm()
   await user.type(await screen.findByLabelText(/^Nume curs/), 'Înot de seară')
-  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
-  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC)
+  await pickSelectMenuValue(screen.getByLabelText(/^Sport/), SPORT)
+  await pickSelectMenuValue(screen.getByLabelText(/^Locație/), LOC)
   await user.type(screen.getByLabelText(/^Preț \/ ședință \(lei\)/), '80')
   await user.type(screen.getByLabelText(/^Capacitate/), '12')
   await user.type(screen.getByLabelText(/^Descriere/), 'Înot pentru începători.')
@@ -172,8 +173,8 @@ test('EUR citește cursul BNR și îl îngheață pe curs', async () => {
   mockedCreate.mockResolvedValue({ id: 'c-eur' } as never)
   renderForm()
   await user.type(await screen.findByLabelText(/^Nume curs/), 'Înot euro')
-  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
-  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC)
+  await pickSelectMenuValue(screen.getByLabelText(/^Sport/), SPORT)
+  await pickSelectMenuValue(screen.getByLabelText(/^Locație/), LOC)
   await user.click(screen.getByRole('radio', { name: 'Euro (EUR)' }))
   expect(await screen.findByText('Curs BNR din 19.09.2026: 5,123456 lei/EUR')).toBeInTheDocument()
   expect(screen.queryByLabelText('Cursul tău: 1 EUR în lei')).not.toBeInTheDocument()
@@ -195,8 +196,8 @@ test('fără descriere, salvarea cursului se oprește', async () => {
   const user = userEvent.setup()
   renderForm()
   await user.type(await screen.findByLabelText(/^Nume curs/), 'Curs fără descriere')
-  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
-  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC)
+  await pickSelectMenuValue(screen.getByLabelText(/^Sport/), SPORT)
+  await pickSelectMenuValue(screen.getByLabelText(/^Locație/), LOC)
   await user.type(screen.getByLabelText(/^Preț \/ ședință \(lei\)/), '80')
   await user.type(screen.getByLabelText(/^Capacitate/), '12')
   await completeazaProgram(user)
@@ -210,8 +211,8 @@ test('fără capacitate, salvarea cursului se oprește', async () => {
   const user = userEvent.setup()
   renderForm()
   await user.type(await screen.findByLabelText(/^Nume curs/), 'Curs fără capacitate')
-  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
-  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC)
+  await pickSelectMenuValue(screen.getByLabelText(/^Sport/), SPORT)
+  await pickSelectMenuValue(screen.getByLabelText(/^Locație/), LOC)
   await user.type(screen.getByLabelText(/^Preț \/ ședință \(lei\)/), '80')
   await user.type(screen.getByLabelText(/^Descriere/), 'Înot pentru începători.')
   await completeazaProgram(user)
@@ -260,9 +261,9 @@ test('fără curs BNR, EUR blochează salvarea cursului', async () => {
 
 test('la curs nou, sportul și locația rămân pe linie până alegi', async () => {
   renderForm()
-  expect(await screen.findByRole('option', { name: 'Înot' })).toBeInTheDocument()
-  expect(screen.getByLabelText(/^Sport/)).toHaveValue('')
-  expect(screen.getByLabelText(/^Locație/)).toHaveValue('')
+  await findSelectMenuOption(await screen.findByLabelText(/^Sport/), 'Înot')
+  expect(screen.getByLabelText(/^Sport/)).toHaveAttribute('data-value', '')
+  expect(screen.getByLabelText(/^Locație/)).toHaveAttribute('data-value', '')
   expect(
     screen.queryByText('Sportul rămâne cel salvat: cursul are înscrieri.'),
   ).not.toBeInTheDocument()
@@ -284,15 +285,13 @@ test('sportul și locația salvate rămân după ce listele ajung târziu', asyn
   mockedExisting.mockResolvedValue(cursSalvat() as never)
   renderForm('/coach/courses/c1/edit')
   await screen.findByDisplayValue('Înot avansat')
-  const sportInainte = screen.getByLabelText(/^Sport/) as HTMLSelectElement
-  const locatieInainte = screen.getByLabelText(/^Locație/) as HTMLSelectElement
-  expect(sportInainte.value).toBe('')
-  expect(locatieInainte.value).toBe('')
+  expect(screen.getByLabelText(/^Sport/)).toHaveTextContent('')
+  expect(screen.getByLabelText(/^Locație/)).toHaveTextContent('')
   rezolvaSporturi([{ id: SPORT, name: 'Înot' }])
   rezolvaLocatii([{ id: LOC, name: 'Bazin Olimpic Timișoara', city: 'Timișoara' }])
   await waitFor(() => {
-    expect(screen.getByLabelText(/^Sport/)).toHaveValue(SPORT)
-    expect(screen.getByLabelText(/^Locație/)).toHaveValue(LOC)
+    expect(screen.getByLabelText(/^Sport/)).toHaveAttribute('data-value', SPORT)
+    expect(screen.getByLabelText(/^Locație/)).toHaveAttribute('data-value', LOC)
   })
 })
 
@@ -304,9 +303,9 @@ test('înscrierea activă blochează sportul, locația și prețul, iar restul s
   renderForm('/coach/courses/c1/edit')
   await screen.findByDisplayValue('Înot avansat')
   await waitFor(() => expect(screen.getByLabelText(/^Sport/)).toBeDisabled())
-  expect(screen.getByLabelText(/^Sport/)).toHaveValue(SPORT)
+  expect(screen.getByLabelText(/^Sport/)).toHaveAttribute('data-value', SPORT)
   expect(screen.getByLabelText(/^Locație/)).toBeDisabled()
-  expect(screen.getByLabelText(/^Locație/)).toHaveValue(LOC)
+  expect(screen.getByLabelText(/^Locație/)).toHaveAttribute('data-value', LOC)
   expect(screen.getByLabelText(/^Preț \/ ședință \(lei\)/)).toBeDisabled()
   expect(screen.getByLabelText(/^Preț \/ ședință \(lei\)/)).toHaveValue(12)
   expect(screen.getByRole('radio', { name: 'Lei (RON)' })).toBeDisabled()
@@ -372,14 +371,18 @@ test('Anulează și Înapoi întreabă când editarea are modificări', async ()
   await screen.findByDisplayValue('Înot avansat')
   await user.type(screen.getByLabelText(/^Nume curs/), ' x')
   await user.click(screen.getByRole('link', { name: 'Anulează' }))
-  expect(await screen.findByRole('alertdialog', { name: 'Renunți la modificări?' })).toBeInTheDocument()
+  expect(
+    await screen.findByRole('alertdialog', { name: 'Renunți la modificări?' }),
+  ).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Rămân' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Renunț' })).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Rămân' }))
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   expect(screen.getByLabelText(/^Nume curs/)).toHaveValue('Înot avansat x')
   await user.click(screen.getByRole('link', { name: 'Înapoi' }))
-  expect(await screen.findByRole('alertdialog', { name: 'Renunți la modificări?' })).toBeInTheDocument()
+  expect(
+    await screen.findByRole('alertdialog', { name: 'Renunți la modificări?' }),
+  ).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Renunț' }))
   expect(await screen.findByText('Lista cursuri')).toBeInTheDocument()
 })

@@ -13,6 +13,7 @@ import {
 } from '@/api/club'
 import { stergeFisiereleAnuntului } from '@/api/attachments'
 import { toast } from 'sonner'
+import { findSelectMenuOption, pickSelectMenuValue } from '@/test/select-menu'
 vi.mock('@/api/club', () => ({
   getMyClub: vi.fn(),
   getClubAnnouncements: vi.fn(),
@@ -78,19 +79,17 @@ test('formularul oferă tot clubul, cursurile și activitățile active', async 
   const user = userEvent.setup()
   renderPage()
   await deschideFormularul(user)
-  await screen.findByRole('option', { name: 'Înot începători' })
-  const select = screen.getByLabelText('Cine primește')
-  const optiuni = [...select.querySelectorAll('option')].map((o) => o.textContent)
+  const select = await screen.findByLabelText('Cine primește')
+  await findSelectMenuOption(select, 'Înot începători')
+  await user.click(select)
+  const optiuni = screen.getAllByRole('menuitemradio').map((o) => o.textContent)
   expect(optiuni).toContain('Toți părinții clubului')
   expect(optiuni).toContain('Înot începători')
   expect(optiuni).toContain('Cros de toamnă')
   expect(optiuni).toContain('Tabără de vară')
   expect(optiuni).not.toContain('Schi 2025')
-  expect([...select.querySelectorAll('optgroup')].map((g) => g.getAttribute('label'))).toEqual([
-    'Cursuri',
-    'Activități',
-    'Tabere',
-  ])
+  for (const eticheta of ['Cursuri', 'Activități', 'Tabere'])
+    expect(screen.getByText(eticheta, { selector: '[role="group"] > *' })).toBeInTheDocument()
 })
 test('publicarea către un curs trimite ținta la server', async () => {
   const user = userEvent.setup()
@@ -99,7 +98,7 @@ test('publicarea către un curs trimite ținta la server', async () => {
   await screen.findByLabelText('Cine primește')
   await user.type(screen.getByLabelText('Titlu'), 'Doar pentru înot')
   await user.type(screen.getByLabelText('Conținut'), 'Vineri nu avem ședință.')
-  await user.selectOptions(screen.getByLabelText('Cine primește'), 'COURSE:curs-1')
+  await pickSelectMenuValue(screen.getByLabelText('Cine primește'), 'COURSE:curs-1')
   await user.click(screen.getByRole('button', { name: 'Publică' }))
   await waitFor(() =>
     expect(mockedCreeaza).toHaveBeenCalledWith(
@@ -114,7 +113,7 @@ test('publicarea către o activitate trimite ținta la server', async () => {
   await screen.findByLabelText('Cine primește')
   await user.type(screen.getByLabelText('Titlu'), 'Doar pentru cros')
   await user.type(screen.getByLabelText('Conținut'), 'Ne vedem la start.')
-  await user.selectOptions(screen.getByLabelText('Cine primește'), 'ACTIVITY:act-1')
+  await pickSelectMenuValue(screen.getByLabelText('Cine primește'), 'ACTIVITY:act-1')
   await user.click(screen.getByRole('button', { name: 'Publică' }))
   await waitFor(() =>
     expect(mockedCreeaza).toHaveBeenCalledWith(
@@ -129,7 +128,7 @@ test('publicarea către o tabără trimite ținta la server', async () => {
   await screen.findByLabelText('Cine primește')
   await user.type(screen.getByLabelText('Titlu'), 'Detalii de plecare')
   await user.type(screen.getByLabelText('Conținut'), 'Ne vedem la ora opt.')
-  await user.selectOptions(screen.getByLabelText('Cine primește'), 'CAMP:tabara-1')
+  await pickSelectMenuValue(screen.getByLabelText('Cine primește'), 'CAMP:tabara-1')
   await user.click(screen.getByRole('button', { name: 'Publică' }))
   await waitFor(() =>
     expect(mockedCreeaza).toHaveBeenCalledWith(
@@ -144,11 +143,11 @@ test('după publicare ținta revine la tot clubul', async () => {
   await screen.findByLabelText('Cine primește')
   await user.type(screen.getByLabelText('Titlu'), 'Doar pentru înot')
   await user.type(screen.getByLabelText('Conținut'), 'Vineri nu avem ședință.')
-  await user.selectOptions(screen.getByLabelText('Cine primește'), 'COURSE:curs-1')
+  await pickSelectMenuValue(screen.getByLabelText('Cine primește'), 'COURSE:curs-1')
   await user.click(screen.getByRole('button', { name: 'Publică' }))
   await waitFor(() => expect(screen.queryByLabelText('Cine primește')).not.toBeInTheDocument())
   await deschideFormularul(user)
-  expect(screen.getByLabelText('Cine primește')).toHaveValue('CLUB')
+  expect(screen.getByLabelText('Cine primește')).toHaveAttribute('data-value', 'CLUB')
 })
 test('fiecare card spune cui i-a fost trimis anunțul', async () => {
   mockedLista.mockResolvedValue([

@@ -22,8 +22,9 @@ import { Button } from '@/components/ui/button'
 import { FilePicker } from '@/components/ui/file-picker'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { formSelectMenuClassName } from '@/components/ui/field-styles'
+import { SelectMenu } from '@/components/ui/select-menu'
 import { Skeleton } from '@/components/ui/skeleton'
-import { selectClassName } from '@/components/ui/field-styles'
 import { Textarea } from '@/components/ui/textarea'
 import { baniToRon, formatRonOffer, ronToBani } from '@/lib/money'
 import { CompetitionRouteGalleryEditor } from './CompetitionRouteGalleryEditor'
@@ -529,21 +530,13 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
             </div>
             <div className="space-y-2">
               <Label htmlFor="competition-category-route">Traseu</Label>
-              <select
+              <SelectMenu
+                className={formSelectMenuClassName}
                 id="competition-category-route"
                 value={categoryDraft.routeId}
-                required
-                className={selectClassName}
-                onChange={(event) =>
-                  setCategoryDraft({ ...categoryDraft, routeId: event.target.value })
-                }
-              >
-                {completeRoutes.map((route) => (
-                  <option key={route.id} value={route.id}>
-                    {route.name}
-                  </option>
-                ))}
-              </select>
+                onValueChange={(routeId) => setCategoryDraft({ ...categoryDraft, routeId })}
+                options={completeRoutes.map((route) => ({ value: route.id, label: route.name }))}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="competition-category-price">Taxa de înscriere (lei)</Label>

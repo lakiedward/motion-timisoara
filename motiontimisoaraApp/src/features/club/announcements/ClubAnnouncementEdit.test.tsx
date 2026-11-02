@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { updateClubAnnouncement, type ClubAnnouncement } from '@/api/club'
 import { ClubAnnouncementList } from './ClubAnnouncementList'
+import { pickSelectMenuValue } from '@/test/select-menu'
 
 vi.mock('@/api/club', () => ({
   updateClubAnnouncement: vi.fn(),
@@ -54,7 +55,7 @@ test('„Editează” deschide formularul în card, completat cu anunțul existe
   const form = screen.getByRole('form', { name: 'Editezi anunțul „Antrenament mutat”' })
   expect(within(form).getByLabelText('Titlu')).toHaveValue('Antrenament mutat')
   expect(within(form).getByLabelText('Conținut')).toHaveValue('Conținut Antrenament mutat')
-  expect(within(form).getByLabelText('Prioritate')).toHaveValue('URGENT')
+  expect(within(form).getByLabelText('Prioritate')).toHaveAttribute('data-value', 'URGENT')
   expect(screen.getByRole('heading', { name: 'Echipament nou' })).toBeInTheDocument()
 })
 
@@ -67,7 +68,7 @@ test('salvarea trimite titlul, conținutul și prioritatea noi, apoi reîncarcă
   const titlu = within(form).getByLabelText('Titlu')
   await user.clear(titlu)
   await user.type(titlu, '  Antrenament mutat la 18:30 ')
-  await user.selectOptions(within(form).getByLabelText('Prioritate'), 'HIGH')
+  await pickSelectMenuValue(within(form).getByLabelText('Prioritate'), 'HIGH')
   await user.click(within(form).getByRole('button', { name: 'Salvează' }))
   await waitFor(() =>
     expect(mockedUpdate).toHaveBeenCalledWith('a', {

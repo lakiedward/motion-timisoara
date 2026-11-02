@@ -133,7 +133,7 @@ test('the address uses county, city and a map point that is saved but never show
   renderPage()
   await screen.findByLabelText(/^Nume club/)
   expect(screen.getByLabelText('Adresă')).toHaveValue('Str. Exemplu 10')
-  expect(screen.getByLabelText('Județ / regiune')).toHaveValue('Timiș')
+  expect(screen.getByLabelText('Județ / regiune')).toHaveAttribute('data-value', 'Timiș')
   expect(document.body.textContent).not.toContain('45.75')
   expect(document.querySelector('input[name="lat"], input[name="lng"]')).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: 'Salvează' }))

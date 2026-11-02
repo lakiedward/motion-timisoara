@@ -14,6 +14,7 @@ import {
   getMyClub,
 } from '@/api/club'
 import { fetchSports } from '@/api/sports'
+import { findSelectMenuOption, pickSelectMenuValue } from '@/test/select-menu'
 
 vi.mock('@/api/offer-hero', () => ({
   schimbaPozaOferta: vi.fn().mockResolvedValue('a/hero/a.jpg'),
@@ -112,12 +113,12 @@ test('formularul nou cere un antrenor din club și salvează regulamentul pe for
   const user = userEvent.setup()
   mockedCreate.mockResolvedValue({ id: 'act-nou' } as never)
   renderPage('/club/activities/new')
-  expect(await screen.findByRole('option', { name: 'Audit Antrenor' })).toBeInTheDocument()
+  await findSelectMenuOption(await screen.findByLabelText(/^Antrenor/), 'Audit Antrenor')
   expect(screen.getByText('Fișierul regulamentului')).toBeInTheDocument()
   await user.type(screen.getByLabelText(/^Nume/), 'Atelier club')
-  await user.selectOptions(screen.getByLabelText(/^Antrenor/), ANTRENOR)
-  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
-  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC)
+  await pickSelectMenuValue(screen.getByLabelText(/^Antrenor/), ANTRENOR)
+  await pickSelectMenuValue(screen.getByLabelText(/^Sport/), SPORT)
+  await pickSelectMenuValue(screen.getByLabelText(/^Locație/), LOC)
   fireEvent.change(screen.getByLabelText(/^Data/), { target: { value: '2026-10-20' } })
   fireEvent.change(screen.getByLabelText(/^Ora început/), { target: { value: '10:00' } })
   fireEvent.change(screen.getByLabelText(/^Ora final/), { target: { value: '11:00' } })
@@ -165,7 +166,7 @@ test('editarea încarcă activitatea clubului', async () => {
   } as never)
   renderPage('/club/activities/act-1/edit')
   expect(await screen.findByDisplayValue('Atelier de înot')).toBeInTheDocument()
-  expect(screen.getByLabelText(/^Antrenor/)).toHaveValue(ANTRENOR)
+  expect(screen.getByLabelText(/^Antrenor/)).toHaveAttribute('data-value', ANTRENOR)
   expect(screen.getByRole('link', { name: 'Vezi pagina publică' })).toHaveAttribute(
     'href',
     '/activitati/act-1',
@@ -196,7 +197,7 @@ test('dacă activitatea nu se poate citi, apare Reîncearcă', async () => {
 test('formularul are cardurile pe grupe și spune ce lipsește la fiecare câmp', async () => {
   const user = userEvent.setup()
   renderPage('/club/activities/new')
-  expect(await screen.findByRole('option', { name: 'Audit Antrenor' })).toBeInTheDocument()
+  await findSelectMenuOption(await screen.findByLabelText(/^Antrenor/), 'Audit Antrenor')
   for (const titlu of [
     'Cine o organizează',
     'Despre activitate',
@@ -216,7 +217,7 @@ test('formularul are cardurile pe grupe și spune ce lipsește la fiecare câmp'
 test('ora de final trebuie să fie după ora de început', async () => {
   const user = userEvent.setup()
   renderPage('/club/activities/new')
-  await screen.findByRole('option', { name: 'Audit Antrenor' })
+  await findSelectMenuOption(await screen.findByLabelText(/^Antrenor/), 'Audit Antrenor')
   fireEvent.change(screen.getByLabelText(/^Ora început/), { target: { value: '11:00' } })
   fireEvent.change(screen.getByLabelText(/^Ora final/), { target: { value: '10:00' } })
   await user.click(screen.getByRole('button', { name: 'Salvează' }))

@@ -471,8 +471,14 @@ test("SIMULATED associated coach corrects published podium on native viewport", 
   await expect(
     page.getByRole("button", { name: "Publică podiumul categoriei" }),
   ).toHaveCount(0);
-  await page.getByLabel("Locul 1").selectOption(alternateRegistrationId);
-  await expect(page.getByLabel("Locul 1")).toHaveValue(alternateRegistrationId);
+  await page.getByLabel("Locul 1").click();
+  await page
+    .locator(`[role="menuitemradio"][data-value="${alternateRegistrationId}"]`)
+    .click();
+  await expect(page.getByLabel("Locul 1")).toHaveAttribute(
+    "data-value",
+    alternateRegistrationId,
+  );
   await capture(page, info, "published-podium-coach-correction");
   expect(state.submissions).toMatchObject([
     { registration_id: alternateRegistrationId },

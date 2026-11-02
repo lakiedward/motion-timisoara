@@ -164,7 +164,7 @@ test('o sugestie aleasă umple adresa, orașul și deblochează salvarea', async
   await user.click(sugestie)
 
   expect(screen.getByLabelText('Adresă')).toHaveValue('Bulevardul Take Ionescu 46C')
-  expect(screen.getByLabelText('Oraș')).toHaveValue('Timișoara')
+  expect(screen.getByLabelText('Oraș')).toHaveAttribute('data-value', 'Timișoara')
 
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() =>
@@ -350,9 +350,9 @@ test('copying another club location fills exact source data and saves for the cu
   await user.keyboard('{Enter}')
   await waitFor(() => expect(screen.getByRole('button', { name: 'Salvează' })).toBeEnabled())
   expect(screen.getByLabelText(/^Nume/)).toHaveValue(nearbySource.name)
-  expect(screen.getByLabelText(/^Tip/)).toHaveValue(nearbySource.type)
+  expect(screen.getByLabelText(/^Tip/)).toHaveAttribute('data-value', nearbySource.type)
   expect(screen.getByLabelText('Adresă')).toHaveValue(nearbySource.address)
-  expect(screen.getByLabelText('Oraș')).toHaveValue(nearbySource.city)
+  expect(screen.getByLabelText('Oraș')).toHaveAttribute('data-value', nearbySource.city)
   expect(screen.getByLabelText('Descriere')).toHaveValue('')
 
   await user_salveaza()
