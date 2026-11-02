@@ -126,15 +126,6 @@ export async function getConcursPublic(slug: string): Promise<PublicCompetition 
   return prezinta(data as unknown as Competition & Legaturi)
 }
 
-export async function getConcursurileMele(owner: CompetitionOwner): Promise<Competition[]> {
-  let cerere = supabase.from('competitions').select('*').order('created_at', { ascending: false })
-  if (owner.role === 'CLUB') cerere = cerere.eq('club_id', owner.clubId ?? '')
-  if (owner.role === 'COACH') cerere = cerere.eq('coach_id', owner.coachUserId ?? '')
-  const { data, error } = await cerere
-  if (error) throw error
-  return (data ?? []) as Competition[]
-}
-
 export async function getConcurs(id: string): Promise<Competition | null> {
   const { data, error } = await supabase.from('competitions').select('*').eq('id', id).maybeSingle()
   if (error) throw error

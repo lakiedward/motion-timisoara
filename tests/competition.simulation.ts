@@ -510,7 +510,7 @@ test("SIMULATED coach configures competition on native viewport", async ({
     page.getByRole("heading", { name: "Trasee și categorii" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("group", { name: "Antrenorii asociați" }),
+    page.getByText("Antrenorii asociați", { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Completează podiumul după concurs" }),

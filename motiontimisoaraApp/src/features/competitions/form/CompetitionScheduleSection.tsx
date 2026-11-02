@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FormSelectMenu } from '@/components/ui/form-select-menu'
 import { TimePicker } from '@/components/ui/time-picker'
+import { FormSection, RequiredMark } from '@/components/FormSection'
+import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import type { CompetitionFormValues } from './competition-form-schema'
 import { Checkbox } from '@/components/ui/checkbox'
 
@@ -50,19 +52,19 @@ export function CompetitionScheduleSection({
   const locationLink = base.startsWith('/club') ? '/club/locations/new' : '/coach/locations/new'
 
   return (
-    <fieldset className="space-y-5 rounded-2xl border p-5">
-      <legend className="px-2 font-semibold">Program și înscrieri</legend>
-      <p className="text-muted-foreground text-sm">
-        Orele sunt pentru București. Înscrierile se închid cel târziu la începutul concursului.
-      </p>
-
+    <FormSection
+      title="Program și înscrieri"
+      description="Orele sunt pentru București. Înscrierile se închid cel târziu la începutul concursului."
+    >
       <div className="grid gap-4 sm:grid-cols-2">
         {SCHEDULE_FIELDS.map(({ name, id, label, kind }) => {
           const Picker = kind === 'date' ? DatePicker : TimePicker
           const error = errors[name]?.message
           return (
-            <div key={name} className="space-y-2">
-              <Label htmlFor={id}>{label}</Label>
+            <div key={name} className="min-w-0 space-y-1.5">
+              <Label htmlFor={id}>
+                {label} <RequiredMark />
+              </Label>
               <Controller
                 control={control}
                 name={name}
@@ -75,33 +77,35 @@ export function CompetitionScheduleSection({
                     onValueChange={field.onChange}
                     onBlur={field.onBlur}
                     aria-invalid={!!error}
-                    aria-describedby={error ? `${id}-error` : undefined}
+                    aria-describedby={fieldDescription(id, undefined, error)}
                   />
                 )}
               />
-              {error && (
-                <p id={`${id}-error`} className="text-destructive text-sm">
-                  {error}
-                </p>
-              )}
+              <FieldMessage id={id} error={error} />
             </div>
           )
         })}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="competition-location-text">Locația concursului</Label>
+      <div className="space-y-1.5">
+        <Label htmlFor="competition-location-text">
+          Locația concursului <RequiredMark />
+        </Label>
         <Input
           id="competition-location-text"
-          className="h-11 lg:h-9"
+          required
+          aria-invalid={!!errors.locationText}
+          aria-describedby={fieldDescription(
+            'competition-location-text',
+            undefined,
+            errors.locationText?.message,
+          )}
           {...register('locationText')}
         />
-        {errors.locationText && (
-          <p className="text-destructive text-sm">{errors.locationText.message}</p>
-        )}
+        <FieldMessage id="competition-location-text" error={errors.locationText?.message} />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Label htmlFor="competition-location-map">Locație pe hartă (opțional)</Label>
         <FormSelectMenu
           control={control}
@@ -129,6 +133,6 @@ export function CompetitionScheduleSection({
         <Checkbox {...register('allowCash')} />
         Acceptă plata cash pentru categoriile cu taxă
       </label>
-    </fieldset>
+    </FormSection>
   )
 }
