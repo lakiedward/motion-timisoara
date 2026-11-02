@@ -18,6 +18,7 @@ const leaseId = "00000000-0000-4000-8000-000000000002";
 const secret = "test-dispatch-secret-never-valid-in-production";
 const payload = (): PushDelivery => ({
   token: "test-token-abcdefghijklmnopqrstuvwxyz",
+  platform: "android",
   ttlSeconds: 3600,
   data: {
     eventId: id,

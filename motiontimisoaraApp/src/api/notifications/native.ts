@@ -22,7 +22,7 @@ export const MotionPush = registerPlugin<MotionPushPlugin>('MotionPush')
 const STORAGE_KEY = 'motion-push-binding'
 let storageQueue = Promise.resolve()
 
-export function supportsPush() {
+export function supportsNativePush() {
   return isNative() && platform() === 'android'
 }
 

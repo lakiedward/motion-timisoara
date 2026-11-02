@@ -17,7 +17,7 @@ vi.mock('./coordinator', () => ({
 }))
 vi.mock('@/lib/supabase', () => ({ supabase: { auth: { getSession: mocks.session } } }))
 vi.mock('./native', () => ({
-  supportsPush: () => mocks.supported,
+  supportsNativePush: () => mocks.supported,
   MotionPush: {},
   clearNativePush: vi.fn(),
   readPushState: vi.fn(),

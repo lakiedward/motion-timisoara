@@ -6,6 +6,9 @@ import { PushSettingsCard } from './PushSettingsCard'
 
 const mocks = vi.hoisted(() => ({
   supported: true,
+  web: false,
+  homeScreen: false,
+  prompt: vi.fn(),
   state: { status: 'disabled', busy: false, error: null, pendingDisable: false } as PushSnapshot,
   enable: vi.fn(),
   disable: vi.fn(),
@@ -18,6 +21,9 @@ vi.mock('@/lib/auth-context', () => ({
 }))
 vi.mock('@/api/notifications', () => ({
   supportsPush: () => mocks.supported,
+  supportsWebPush: () => mocks.web,
+  needsHomeScreenForPush: () => mocks.homeScreen,
+  promptWebPushPermission: mocks.prompt,
   pushNotifications: {
     getSnapshot: () => mocks.state,
     subscribe: (fn: () => void) => {
@@ -44,6 +50,8 @@ function mount() {
 beforeEach(() => {
   vi.clearAllMocks()
   mocks.supported = true
+  mocks.web = false
+  mocks.homeScreen = false
   mocks.state = { status: 'disabled', busy: false, error: null, pendingDisable: false }
 })
 afterEach(cleanup)
@@ -112,4 +120,34 @@ it('shows the offline opt-out failure and retries disabling, not activation', as
   })
   expect(mocks.disable).toHaveBeenCalledExactlyOnceWith('parent')
   expect(mocks.enable).not.toHaveBeenCalled()
+})
+
+it('uses browser wording on the website and asks permission inside the click', async () => {
+  mocks.web = true
+  mount()
+  expect(screen.getByRole('heading', { name: 'Notificări în browser' })).toBeInTheDocument()
+  expect(screen.getByRole('status')).toHaveTextContent('Notificările sunt oprite în acest browser.')
+  expect(screen.getByText(/browserul îți va cere permisiunea/)).toBeInTheDocument()
+  expect(screen.queryByText(/Android/)).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Activează notificările' }))
+  expect(mocks.prompt).toHaveBeenCalledOnce()
+  await act(async () => undefined)
+  expect(mocks.enable).toHaveBeenCalledWith('parent')
+})
+
+it('explains how to unblock a browser that denied notifications', () => {
+  mocks.web = true
+  mocks.state = { status: 'denied', busy: false, error: null, pendingDisable: false }
+  mount()
+  expect(screen.getByText(/Browserul blochează notificările/)).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Reîncearcă' })).toBeInTheDocument()
+})
+
+it('tells iPhone visitors in Safari to add Motion to the home screen first', () => {
+  mocks.supported = false
+  mocks.homeScreen = true
+  mount()
+  expect(screen.getByRole('heading', { name: 'Notificări pe iPhone' })).toBeInTheDocument()
+  expect(screen.getByText(/Adaugă pe ecranul principal/)).toBeInTheDocument()
+  expect(screen.queryByRole('button')).not.toBeInTheDocument()
 })

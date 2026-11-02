@@ -5,7 +5,12 @@ import { App } from '@capacitor/app'
 import { PushNotifications } from '@capacitor/push-notifications'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/auth-context'
-import { observePushAuth, pushNotifications, supportsPush } from '@/api/notifications'
+import {
+  observePushAuth,
+  pushNotifications,
+  supportsPush,
+  supportsWebPush,
+} from '@/api/notifications'
 import { parsePushPayload } from '@/api/notifications/payload'
 import type { PushPayload } from '@/api/notifications/types'
 
@@ -26,7 +31,7 @@ const affectedQueries = new Set([
   'camp-detail',
 ])
 
-export function NativePushListener() {
+export function PushListener() {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
   const client = useQueryClient()
@@ -112,6 +117,33 @@ export function NativePushListener() {
     }
     const unsubscribeAuth = observePushAuth()
     const unsubscribeState = pushNotifications.subscribe(flush)
+    if (supportsWebPush()) {
+      const onMessage = (event: MessageEvent) => {
+        const message: unknown = event.data
+        if (!message || typeof message !== 'object' || !('type' in message)) return
+        const payload = parsePushPayload('payload' in message ? message.payload : null)
+        if (!payload) return
+        if (message.type === 'motion-push-open') {
+          pendingTaps.set(`${payload.bindingId}:${payload.eventId}`, payload)
+          if (pendingTaps.size > 20) pendingTaps.delete(pendingTaps.keys().next().value!)
+          flush()
+        } else if (
+          message.type === 'motion-push-received' &&
+          pushNotifications.authorizedPayload(payload)
+        )
+          invalidate()
+      }
+      navigator.serviceWorker.addEventListener('message', onMessage)
+      window.addEventListener('online', restore)
+      flush()
+      return () => {
+        active = false
+        unsubscribeAuth()
+        unsubscribeState()
+        navigator.serviceWorker.removeEventListener('message', onMessage)
+        window.removeEventListener('online', restore)
+      }
+    }
     const listeners = [
       PushNotifications.addListener('registration', ({ value }) => {
         if (active) void pushNotifications.refreshToken(value)
