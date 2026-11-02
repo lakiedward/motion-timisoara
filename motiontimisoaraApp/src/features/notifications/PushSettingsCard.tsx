@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Bell, BellOff } from 'lucide-react'
+import { toast } from 'sonner'
 import {
   needsHomeScreenForPush,
   promptWebPushPermission,
@@ -35,8 +36,8 @@ const webCopy = {
     'Dacă alegi să le activezi, browserul îți va cere permisiunea. Le primești și când site-ul este închis, cât timp browserul rulează.',
 }
 
-export function PushSettingsCard() {
-  if (supportsPush()) return <PushSettings />
+export function PushSettingsCard({ hideWhenEnabled = false }: { hideWhenEnabled?: boolean }) {
+  if (supportsPush()) return <PushSettings hideWhenEnabled={hideWhenEnabled} />
   return needsHomeScreenForPush() ? <HomeScreenHint /> : null
 }
 
@@ -62,7 +63,7 @@ function HomeScreenHint() {
   )
 }
 
-function PushSettings() {
+function PushSettings({ hideWhenEnabled }: { hideWhenEnabled: boolean }) {
   const copy = supportsWebPush() ? webCopy : nativeCopy
   const { user } = useAuth()
   const state = useSyncExternalStore(pushNotifications.subscribe, pushNotifications.getSnapshot)
@@ -73,9 +74,20 @@ function PushSettings() {
       else if (kind === 'disable' || state.pendingDisable) await pushNotifications.disable(user.id)
       else await pushNotifications.restore(user.id)
     },
+    onSuccess: (_, kind) => {
+      if (
+        hideWhenEnabled &&
+        kind === 'enable' &&
+        pushNotifications.getSnapshot().status === 'enabled'
+      )
+        toast.success('Notificările sunt active.', {
+          description: 'Le poți opri oricând din Profilul meu.',
+        })
+    },
   })
   const busy = state.busy || action.isPending
   const enabled = state.status === 'enabled'
+  if (hideWhenEnabled && (enabled || state.status === 'loading')) return null
 
   return (
     <Card aria-labelledby="push-settings-title">
