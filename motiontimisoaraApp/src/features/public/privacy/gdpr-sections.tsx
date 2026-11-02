@@ -24,6 +24,12 @@ export const GDPR_SECTIONS: LegalSection[] = [
           trebuie pentru ea, de exemplu fișa de sănătate în tabără, și răspunde de felul în care le
           folosește acolo.
         </p>
+        <p>
+          Aplicația mobilă Motion România este publicată în Google Play de Romcad Design Inc. (New
+          York, SUA), în numele operatorului de mai sus. Romcad Design Inc. nu are acces la datele
+          din contul tău, din înscrieri sau din plăți; Google Play îi arată doar statistici agregate
+          despre instalări și erori ale aplicației.
+        </p>
       </>
     ),
   },
