@@ -14,6 +14,7 @@ import { Field } from '@/components/ui/field'
 import { fetchSports } from '@/api/sports'
 import { registerClub, roleHome } from '@/api/auth'
 import { useAuth } from '@/lib/auth-context'
+import { PricingSignupLink } from '@/features/public/pricing/PricingSignupLink'
 import { isValidCui, normalizeCui } from '../../../../supabase/functions/_shared/company-cui'
 
 const compactPhone = (value: string) => value.replace(/[\s.-]/g, '')
@@ -108,12 +109,15 @@ export default function ClubSignupPage() {
       subtitle="Creează contul administratorului și clubul"
       footer={
         step === 0 ? (
-          <Link
-            to={withReturnUrl('/signup', returnUrl)}
-            className="text-primary min-h-touch-target inline-flex items-center font-semibold"
-          >
-            Înapoi
-          </Link>
+          <>
+            <Link
+              to={withReturnUrl('/signup', returnUrl)}
+              className="text-primary min-h-touch-target inline-flex items-center font-semibold"
+            >
+              Înapoi
+            </Link>
+            <PricingSignupLink />
+          </>
         ) : undefined
       }
     >

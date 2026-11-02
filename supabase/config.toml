@@ -77,6 +77,9 @@ verify_jwt = false
 [functions.stripe-connect-webhook]
 verify_jwt = false
 
+[functions.stripe-subscription-webhook]
+verify_jwt = false
+
 [functions.validate-enrollment]
 verify_jwt = true
 
@@ -96,6 +99,9 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.create-checkout-session]
+verify_jwt = true
+
+[functions.sync-subscription-prices]
 verify_jwt = true
 
 [functions.mark-cash-paid]
