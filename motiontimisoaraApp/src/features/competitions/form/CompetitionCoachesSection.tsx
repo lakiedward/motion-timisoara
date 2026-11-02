@@ -10,6 +10,7 @@ import {
   searchCompetitionCoaches,
   type CompetitionCoach,
 } from '@/api/competition/competition-coaches'
+import { FormSection } from '@/components/FormSection'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -68,13 +69,10 @@ export function CompetitionCoachesSection({ competitionId }: { competitionId: st
   })
 
   return (
-    <fieldset className="space-y-4 rounded-2xl border p-5">
-      <legend className="px-2 font-semibold">Antrenorii asociați</legend>
-      <p className="text-muted-foreground text-sm">
-        Poți invita un antrenor la concurs. Numele și poza lui apar pe pagina publică doar după
-        acceptare.
-      </p>
-
+    <FormSection
+      title="Antrenorii asociați"
+      description="Poți invita un antrenor la concurs. Numele și poza lui apar pe pagina publică doar după acceptare."
+    >
       {coachesQuery.isPending ? (
         <Skeleton className="h-20 w-full rounded-xl" />
       ) : coachesQuery.isError ? (
@@ -215,6 +213,6 @@ export function CompetitionCoachesSection({ competitionId }: { competitionId: st
           )}
         </>
       )}
-    </fieldset>
+    </FormSection>
   )
 }

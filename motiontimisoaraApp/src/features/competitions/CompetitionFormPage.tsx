@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
+import { ArrowLeft } from 'lucide-react'
 
 import {
   createConcurs,
@@ -21,9 +22,13 @@ import {
   competitionScheduleFromFields,
   competitionScheduleToFields,
 } from '@/lib/competition-schedule'
+import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
 import { Button } from '@/components/ui/button'
+import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
 import { Textarea } from '@/components/ui/textarea'
 import type { CompetitionPortalBaza } from './competition-portal'
 import { useCompetitionOwner } from './useCompetitionOwner'
@@ -149,32 +154,46 @@ export default function CompetitionFormPage({ baza }: { baza: CompetitionPortalB
     },
   )
 
-  if (eroare || existent.isError) {
+  const backLink = (
+    <Link
+      to={baza}
+      className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
+    >
+      <ArrowLeft className="size-4" /> Înapoi
+    </Link>
+  )
+
+  if (eroare || existent.isError || (id && existent.data === null)) {
     return (
-      <div className="py-16 text-center" role="alert">
-        <p className="text-foreground font-medium">Nu am putut încărca concursul.</p>
-        <Button
-          className="mt-4 h-11 min-h-11"
-          type="button"
-          onClick={() => (eroare ? reincearca() : void existent.refetch())}
-        >
-          Reîncearcă
-        </Button>
+      <div className="mx-auto max-w-2xl">
+        {backLink}
+        <div className="mt-6">
+          {eroare || existent.isError ? (
+            <StatusView
+              state="error"
+              title="Nu am putut încărca concursul."
+              onRetry={() => (eroare ? reincearca() : void existent.refetch())}
+            />
+          ) : (
+            <StatusView
+              state="empty"
+              title="Concursul nu a fost găsit."
+              text="Poate a fost șters sau linkul nu mai este valabil."
+            />
+          )}
+        </div>
       </div>
     )
   }
 
   if (!gata || (id && existent.isLoading)) {
-    return <p className="text-muted-foreground text-sm">Se încarcă…</p>
-  }
-
-  if (id && existent.data === null) {
     return (
-      <div className="py-16 text-center">
-        <p className="text-muted-foreground">Concursul nu a fost găsit.</p>
-        <Link to={baza} className="text-primary mt-4 inline-flex h-11 items-center font-semibold">
-          ← Înapoi la concursuri
-        </Link>
+      <div className="mx-auto max-w-2xl">
+        {backLink}
+        <div role="status" aria-label="Se încarcă concursul" className="mt-4 space-y-4">
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-96 rounded-xl" />
+        </div>
       </div>
     )
   }
@@ -182,85 +201,100 @@ export default function CompetitionFormPage({ baza }: { baza: CompetitionPortalB
   const heroSalvat = existent.data?.hero_photo_storage_path ?? null
 
   return (
-    <>
-      <form className="mx-auto max-w-2xl" onSubmit={(e) => void salveaza(e)}>
-        <h1 className="font-display text-2xl font-bold">
-          {id ? 'Editează concursul' : 'Concurs nou'}
-        </h1>
-        <p className="text-muted-foreground mt-2 text-sm">
-          Detaliile apar pe pagina publică după salvare. Traseele și categoriile se adaugă apoi.
+    <div className="mx-auto max-w-2xl">
+      {backLink}
+      <h1 className="font-display mt-4 text-2xl font-bold">
+        {id ? 'Editează concursul' : 'Concurs nou'}
+      </h1>
+      <RequiredFieldsNote />
+      {!id && (
+        <p className="text-muted-foreground mt-1 text-sm">
+          Traseele, categoriile și antrenorii se adaugă după prima salvare.
         </p>
+      )}
 
-        <div className="mt-6 space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="titlu-concurs">Titlu</Label>
-            <Input id="titlu-concurs" className="h-11 lg:h-9" {...register('title')} />
-            {errors.title && <p className="text-destructive text-sm">{errors.title.message}</p>}
+      <form className="mt-6 space-y-6" onSubmit={(e) => void salveaza(e)} noValidate>
+        <FormSection
+          title="Despre concurs"
+          description="Ce văd participanții și părinții pe pagina concursului."
+        >
+          <div className="space-y-1.5">
+            <Label htmlFor="titlu-concurs">
+              Titlu <RequiredMark />
+            </Label>
+            <Input
+              id="titlu-concurs"
+              required
+              aria-invalid={!!errors.title}
+              aria-describedby={fieldDescription('titlu-concurs', undefined, errors.title?.message)}
+              {...register('title')}
+            />
+            <FieldMessage id="titlu-concurs" error={errors.title?.message} />
           </div>
-
-          <CompetitionScheduleSection
-            register={register}
-            control={control}
-            errors={errors}
-            locations={locatii.data ?? []}
-            locationError={locatii.isError}
-            base={baza}
-          />
-
-          <div className="space-y-2">
-            <Label htmlFor="descriere-concurs">Descriere</Label>
-            <Textarea id="descriere-concurs" rows={6} {...register('description')} />
-            {errors.description && (
-              <p className="text-destructive text-sm">{errors.description.message}</p>
-            )}
+          <div className="space-y-1.5">
+            <Label htmlFor="descriere-concurs">
+              Descriere <RequiredMark />
+            </Label>
+            <Textarea
+              id="descriere-concurs"
+              rows={6}
+              required
+              aria-invalid={!!errors.description}
+              aria-describedby={fieldDescription(
+                'descriere-concurs',
+                undefined,
+                errors.description?.message,
+              )}
+              {...register('description')}
+            />
+            <FieldMessage id="descriere-concurs" error={errors.description?.message} />
           </div>
+        </FormSection>
 
-          <HeroPhotoField
-            savedUrl={urlHeroConcurs(heroSalvat)}
-            error={eroareHero}
-            onFile={(ales) => {
-              setFisier(ales)
-              setEroareHero(null)
-            }}
-          />
-        </div>
+        <CompetitionScheduleSection
+          register={register}
+          control={control}
+          errors={errors}
+          locations={locatii.data ?? []}
+          locationError={locatii.isError}
+          base={baza}
+        />
 
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Button
-            type="submit"
-            className="h-11 min-h-11"
-            disabled={isSubmitting || sterge.isPending}
-          >
-            Salvează
+        <HeroPhotoField
+          savedUrl={urlHeroConcurs(heroSalvat)}
+          error={eroareHero}
+          onFile={(ales) => {
+            setFisier(ales)
+            setEroareHero(null)
+          }}
+        />
+
+        <div className="flex flex-wrap gap-2 pt-2">
+          <Button type="submit" disabled={isSubmitting || sterge.isPending}>
+            {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>
-          <Button type="button" variant="outline" className="h-11 min-h-11" asChild>
-            <Link to={baza}>Renunță</Link>
+          <Button type="button" variant="outline" asChild>
+            <Link to={baza}>Anulează</Link>
           </Button>
           {id &&
             (confirmaStergerea ? (
               <Button
                 type="button"
                 variant="destructive"
-                className="h-11 min-h-11"
                 disabled={sterge.isPending}
                 onClick={() => sterge.mutate()}
               >
                 Confirmă ștergerea
               </Button>
             ) : (
-              <Button
-                type="button"
-                variant="outline"
-                className="h-11 min-h-11"
-                onClick={() => setConfirmaStergerea(true)}
-              >
+              <Button type="button" variant="outline" onClick={() => setConfirmaStergerea(true)}>
                 Șterge concursul
               </Button>
             ))}
         </div>
       </form>
       {id && (
-        <div className="mx-auto mt-10 max-w-2xl space-y-8">
+        <div className="mt-10 space-y-6">
           <CompetitionOffersSection competitionId={id} />
           <CompetitionCoachesSection competitionId={id} />
           <CompetitionCashPaymentsSection competitionId={id} />
@@ -269,6 +303,6 @@ export default function CompetitionFormPage({ baza }: { baza: CompetitionPortalB
           </Button>
         </div>
       )}
-    </>
+    </div>
   )
 }
