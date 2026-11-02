@@ -10,7 +10,7 @@ Coaches and clubs keep signing up as today, but appearing on the marketplace and
 
 ## Out of scope
 
-- Parent payments for offers. They stay on Stripe Connect plus cash, with the platform fee of 1 RON + 3.5% on card payments (see "Platform fee").
+- Parent payments for offers. They stay on Stripe Connect plus cash. Card payments carry only the exact Stripe processing fee as the platform fee (see "Platform fee").
 - Any purchase inside the native Android or iOS app. Subscriptions are sold and managed only on the website.
 - Annual billing, coupons, referral discounts and per-coach pricing (models B and C were rejected).
 - VAT. The operator is not VAT registered (see "Invoicing").
@@ -142,7 +142,37 @@ Migration `00107` (check the ledger first; 00106 is the last committed).
 
 ## Platform fee
 
-- The fee on parent card payments stays 1 RON + 3.5% of the amount, for subscribers and during trials alike.
+Amended 2026-11-02 after three owner decisions on cards:
+
+- 15:17:26Z, "Reținem exact costul Stripe din plată": the platform fee on a parent card payment is exactly the Stripe processing fee of that payment. It replaces 1 RON + 3.5%, for subscribers and during trials alike. The platform earns nothing on payments; its revenue is the subscription.
+- 15:29:12Z, "Săptămânal, lunea": coach and club Express accounts pay out weekly on Mondays.
+- 15:53:34Z, "A. Trei cifre": the coach and club dashboards show the online payments of the current month in three figures.
+
+### Exact Stripe fee
+
+- Payments stay destination charges, so Stripe charges its fee to the platform balance.
+- At creation the application fee is the ceiling for the most expensive card: 3.15% + 1 RON, plus 2% for currency conversion, capped at the amount.
+- When the charge's balance transaction is available, the webhook reads its `fee` and refunds the difference between the application fee and that fee through an application fee refund. The recipient then receives the amount minus exactly the Stripe fee.
+- The payment row stores `stripe_fee_amount` (bani, from the balance transaction) next to `platform_fee_amount` and `coach_payout_amount`, which are updated after the refund.
+- If the balance transaction is not available, the payment keeps the ceiling and a retry job settles it. A settled payment is never settled twice (idempotent on the charge id).
+- Connect account fees (10 RON per active account per month, 0.25% + 1.50 RON per payout) stay with the platform and are not passed on.
+- Feature #636.
+
+### Payout schedule
+
+- `settings.payouts.schedule` is `interval: weekly`, `weekly_anchor: monday` when a coach or club Express account is created in `stripe-connect`.
+- Existing connected accounts are updated once through a script; that Stripe write needs the owner's card.
+- Romania settles in 3 business days (7 for the first payout), so a Monday payout carries the payments settled by then.
+- Feature #636.
+
+### Dashboard figures
+
+- `/coach` and `/club` show a card "Plăți online în <month>" with: collected from parents, Stripe fee withheld (negative), and net received (primary accent). It also shows the count of successful card payments so far this month and a note that the fee is withheld from each payment and that the subscription is paid separately. The subscription note is hidden in native builds (store compliance).
+- The data covers successful card payments for offers the coach owns (or the club's offers for a club), read through an `src/api` function under RLS.
+- States: loading skeleton, error with retry, zero payments as an empty message, Stripe not configured as the existing "Plăți cu cardul" card.
+- Payment-level detail stays on the card payments page.
+- Prototype captures: `/mnt/project-files/verificari/cost-stripe-dashboard/` (variant A). Feature #640.
+
 - The 19% VAT that the code adds on top of the fee is removed (bug #1304), because the operator is not VAT registered. The rate stays a single named constant set to 0, so it can change if the company registers for VAT.
 
 ## Invoicing
