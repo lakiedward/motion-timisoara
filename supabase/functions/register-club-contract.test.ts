@@ -96,6 +96,20 @@ Deno.test("ANAF outage is unavailable, not a refusal", async () => {
   });
 });
 
+Deno.test("ANAF answers 404 when no CUI is found, which is a refusal", async () => {
+  const missing = () =>
+    Promise.resolve(
+      Response.json({ found: [], notFound: [999999908] }, { status: 404 }),
+    );
+  assertEquals(await lookupAnafCompany("999999908", missing as typeof fetch), {
+    status: "not_found",
+  });
+  const html = () => Promise.resolve(new Response("<html>", { status: 404 }));
+  assertEquals(await lookupAnafCompany("999999908", html as typeof fetch), {
+    status: "unavailable",
+  });
+});
+
 Deno.test("ANAF request sends the numeric CUI and today's date", async () => {
   let sent: unknown;
   const fetcher = (_url: string, init?: RequestInit) => {
