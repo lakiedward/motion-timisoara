@@ -253,7 +253,7 @@ test('salvarea eșuată păstrează valorile completate și anunță eroarea', a
 })
 
 // --- Criteriul 8: structura si titlurile celor doua moduri ---
-test('titlul urmează modul: „Curs nou” la creare, „Editează curs” la editare', async () => {
+test('titlul urmează modul: „Curs nou” la creare, „Editează cursul” la editare', async () => {
   const { unmount } = renderForm()
   expect(await screen.findByRole('heading', { name: 'Curs nou' })).toBeInTheDocument()
   unmount()
@@ -273,7 +273,7 @@ test('titlul urmează modul: „Curs nou” la creare, „Editează curs” la e
     description: '',
   } as never)
   renderForm('/club/courses/c1/edit')
-  expect(await screen.findByRole('heading', { name: 'Editează curs' })).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: 'Editează cursul' })).toBeInTheDocument()
 })
 
 test('EUR citește cursul BNR și îl îngheață pe cursul de club', async () => {
@@ -317,7 +317,7 @@ test('pe un link de curs inexistent apare „Cursul nu a fost găsit.”, nu un 
   renderForm('/club/courses/lipsa/edit')
   expect(await screen.findByText('Cursul nu a fost găsit.')).toBeInTheDocument()
   expect(screen.getByRole('link', { name: /Înapoi/ })).toHaveAttribute('href', '/club/courses')
-  expect(screen.queryByRole('heading', { name: 'Editează curs' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Editează cursul' })).not.toBeInTheDocument()
 })
 
 test('cursul altui club nu se deschide în formularul clubului', async () => {
@@ -333,5 +333,5 @@ test('dacă cursul nu se poate citi, Reîncearcă repetă citirea', async () => 
   expect(await screen.findByText('Nu am putut încărca cursul.')).toBeInTheDocument()
   mockedExisting.mockResolvedValue({ id: 'c1', club_id: 'club-1', name: 'Înot avansat' } as never)
   await userEvent.setup().click(screen.getByRole('button', { name: 'Reîncearcă' }))
-  expect(await screen.findByRole('heading', { name: 'Editează curs' })).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: 'Editează cursul' })).toBeInTheDocument()
 })

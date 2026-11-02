@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
 import { getClubAnnouncements, getClubAudiences, getMyClub } from '@/api/club'
 import { getAtasamente } from '@/api/attachments'
+import { PageHeader, PageNewButton } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { StatusView } from '@/components/ui/status-view'
 import AnnouncementComposeForm from './announcements/AnnouncementComposeForm'
@@ -49,24 +49,11 @@ export default function ClubAnnouncementsPage() {
   const canCompose = !!club
   return (
     <div className="max-w-2xl">
-      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <h1 className="font-display text-foreground text-2xl font-bold">
-          Anunțuri
-          {!!items.length && (
-            <span className="text-muted-foreground ml-2 text-base font-normal">
-              ({items.length})
-            </span>
-          )}
-        </h1>
+      <PageHeader title="Anunțuri" count={items.length}>
         {canCompose && !composing && (
-          <Button
-            className="h-touch-target min-h-touch-target w-full md:w-auto"
-            onClick={() => setComposing(true)}
-          >
-            <Plus aria-hidden="true" /> Anunț nou
-          </Button>
+          <PageNewButton onClick={() => setComposing(true)}>Anunț nou</PageNewButton>
         )}
-      </div>
+      </PageHeader>
 
       {canCompose && composing && (
         <AnnouncementComposeForm

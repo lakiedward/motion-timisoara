@@ -3,12 +3,13 @@ import { Link, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, ExternalLink } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { getAdminClub, type ClubProfileRow } from '@/api/accounts/admin-accounts'
 import { getMyClub, updateClub } from '@/api/club'
 import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
+import { BackLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -60,14 +61,7 @@ export default function ClubProfilePage({ portal = 'club' }: { portal?: 'club' |
     queryFn: (): Promise<ClubProfileRow | null> => (isAdmin ? getAdminClub(id) : getMyClub()),
   })
   const club = query.data
-  const backLink = isAdmin ? (
-    <Link
-      to="/admin/clubs"
-      className="text-muted-foreground hover:text-foreground inline-flex h-touch-target items-center gap-1 text-sm"
-    >
-      <ArrowLeft className="size-4" /> Înapoi la cluburi
-    </Link>
-  ) : null
+  const backLink = isAdmin ? <BackLink to="/admin/clubs">Înapoi la cluburi</BackLink> : null
 
   const {
     register,
@@ -226,9 +220,16 @@ export default function ClubProfilePage({ portal = 'club' }: { portal?: 'club' |
           </label>
         </FormSection>
 
-        <Button type="submit" className="min-h-11" disabled={isSubmitting}>
-          {isSubmitting ? 'Se salvează…' : 'Salvează'}
-        </Button>
+        <div className="flex flex-wrap gap-3">
+          <Button type="submit" className="min-h-11" disabled={isSubmitting}>
+            {isSubmitting ? 'Se salvează…' : 'Salvează'}
+          </Button>
+          {isAdmin ? (
+            <Button asChild variant="outline" className="min-h-11">
+              <Link to="/admin/clubs">Anulează</Link>
+            </Button>
+          ) : null}
+        </div>
       </form>
     </div>
   )

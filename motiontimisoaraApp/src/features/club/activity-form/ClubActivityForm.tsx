@@ -14,7 +14,6 @@ import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -34,6 +33,7 @@ import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/Form
 import { HeroPhotoField } from '@/components/HeroPhotoField'
 import GalleryPhotosSection from '@/features/photo-gallery/GalleryPhotosSection'
 import { OfferRulesFieldset } from '@/components/RulesFileField'
+import { BackLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -249,14 +249,7 @@ export function ClubActivityForm() {
       undefined,
   })
 
-  const backLink = (
-    <Link
-      to="/club/activities"
-      className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
-    >
-      <ArrowLeft className="size-4" /> Înapoi
-    </Link>
-  )
+  const backLink = <BackLink to="/club/activities">Înapoi la activități</BackLink>
 
   if (isEdit && aEsuatCitirea) {
     return (
@@ -306,7 +299,7 @@ export function ClubActivityForm() {
     <div className="mx-auto max-w-2xl">
       {backLink}
       <h1 className="font-display mt-4 text-2xl font-bold">
-        {isEdit ? 'Editează activitate' : 'Activitate nouă'}
+        {isEdit ? 'Editează activitatea' : 'Activitate nouă'}
       </h1>
       <RequiredFieldsNote />
       <form

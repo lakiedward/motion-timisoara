@@ -380,7 +380,7 @@ test('Anulează și Înapoi întreabă când editarea are modificări', async ()
   await user.click(screen.getByRole('button', { name: 'Rămân' }))
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   expect(screen.getByLabelText(/^Nume curs/)).toHaveValue('Înot avansat x')
-  await user.click(screen.getByRole('link', { name: 'Înapoi' }))
+  await user.click(screen.getByRole('link', { name: 'Înapoi la cursuri' }))
   expect(
     await screen.findByRole('alertdialog', { name: 'Renunți la modificări?' }),
   ).toBeInTheDocument()
@@ -403,7 +403,10 @@ test('un curs inexistent arată „Cursul nu a fost găsit.” în loc de formul
   expect(await screen.findByText('Cursul nu a fost găsit.')).toBeInTheDocument()
   expect(screen.queryByLabelText('Nume curs')).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Salvează' })).not.toBeInTheDocument()
-  expect(screen.getByRole('link', { name: 'Înapoi' })).toHaveAttribute('href', '/coach/courses')
+  expect(screen.getByRole('link', { name: 'Înapoi la cursuri' })).toHaveAttribute(
+    'href',
+    '/coach/courses',
+  )
 })
 
 test('cât se încarcă cursul nu apare formularul gol', async () => {

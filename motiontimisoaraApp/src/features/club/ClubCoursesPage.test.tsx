@@ -69,14 +69,15 @@ beforeEach(() => {
   vi.mocked(getCurrentLocationOccurrences).mockResolvedValue([])
 })
 
-test('antetul stivuiește „Curs nou” sub titlu până la 640 px și îl readuce alături de la sm', async () => {
+test('antetul ține „Curs nou” lângă titlu, ca pe celelalte liste din panouri', async () => {
   mockedCourses.mockResolvedValue([])
   const { container } = renderPage()
   await screen.findByText(/Niciun curs încă/)
   const antet = container.querySelector('h1')!.parentElement!
-  expect(antet.className).toMatch(/flex-col/)
-  expect(antet.className).toMatch(/sm:flex-row/)
-  expect(antet.className).not.toMatch(/^\s*flex items-center justify-between\s*$/)
+  expect(antet.className).toMatch(/flex-wrap/)
+  const link = screen.getByRole('link', { name: /curs nou/i })
+  expect(link.className).toMatch(/min-h-touch-target/)
+  expect(link.className).not.toMatch(/w-full/)
 })
 
 test('locația apare în zona titlului, deci două cursuri omonime nu mai arată identic', async () => {

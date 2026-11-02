@@ -55,18 +55,15 @@ function course(overrides: Partial<CoachCourse>): CoachCourse {
   } as CoachCourse
 }
 
-test('header keeps Cursurile mele and Curs nou; stacks under the title on small screens', async () => {
+test('header keeps Cursurile mele and a compact Curs nou next to it, like the other panel lists', async () => {
   mockedGetMyCourses.mockResolvedValue([])
   renderPage()
-  expect(await screen.findByRole('heading', { name: 'Cursurile mele' })).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: /^Cursurile mele/ })).toBeInTheDocument()
   const link = screen.getByRole('link', { name: /curs nou/i })
   expect(link).toHaveAttribute('href', '/coach/courses/new')
-  expect(link.className).toMatch(/h-11/)
-  expect(link.className).toMatch(/w-full/)
-  expect(link.className).toMatch(/md:w-auto/)
-  const header = link.parentElement
-  expect(header?.className).toMatch(/flex-col/)
-  expect(header?.className).toMatch(/md:flex-row/)
+  expect(link.className).toMatch(/min-h-touch-target/)
+  expect(link.className).not.toMatch(/w-full/)
+  expect(link.parentElement?.className).toMatch(/flex-wrap/)
 })
 
 test('empty list shows dashed copy and keeps Curs nou in the header', async () => {
@@ -260,7 +257,10 @@ test('search, status pills and sport pills narrow the list and can be cleared', 
   await screen.findByRole('heading', { name: 'Înot începători' })
   expect(screen.getByRole('button', { name: /^Active\s*1$/ })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: /^Inactive\s*1$/ })).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: /^Toate\s*2$/ })).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getByRole('button', { name: /^Toate\s*2$/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
 
   await user.type(screen.getByRole('searchbox', { name: /caută cursuri/i }), 'stadion')
   expect(screen.queryByRole('heading', { name: 'Înot începători' })).not.toBeInTheDocument()

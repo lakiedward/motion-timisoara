@@ -14,7 +14,6 @@ import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { incarcaRegulamentActivitate, stergeRegulamentActivitate } from '@/api/camp-rules-file'
@@ -34,6 +33,7 @@ import { fetchSports } from '@/api/sports'
 import { OfferRulesFieldset } from '@/components/RulesFileField'
 import { campRulesFileFromRow, type CampRulesFileMeta } from '@/lib/camp-rules'
 import { baniToRon } from '@/lib/money'
+import { BackLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { ActivityScheduleFields } from '@/components/ActivityScheduleFields'
 import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
@@ -273,13 +273,9 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
   const noCoaches = form.coachesReady && !form.coaches.length
   const noLocations = form.locationsReady && !locations.length
   const backLink = (
-    <Link
-      to={listPath}
-      onClick={pleaca}
-      className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
-    >
-      <ArrowLeft className="size-4" /> Înapoi
-    </Link>
+    <BackLink to={listPath} onClick={pleaca}>
+      Înapoi la activități
+    </BackLink>
   )
 
   if (isEdit && !seIncarca && !existing) {
@@ -321,7 +317,7 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
     <div className="mx-auto max-w-2xl">
       {backLink}
       <h1 className="font-display mt-4 text-2xl font-bold">
-        {isEdit ? 'Editează activitate' : 'Activitate nouă'}
+        {isEdit ? 'Editează activitatea' : 'Activitate nouă'}
       </h1>
       <RequiredFieldsNote />
 

@@ -4,7 +4,6 @@ import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
 import { locationWriteErrorMessage } from '@/lib/geography/shared-location-guard'
 import { toast } from 'sonner'
 
@@ -13,6 +12,7 @@ import { createLocation, updateLocation } from '@/api/coach'
 import { createAdminLocation } from '@/api/locations/admin-locations'
 import LocationPicker from '@/components/LocationPicker'
 import { RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
+import { BackLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -181,14 +181,7 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
       toast.error(locationWriteErrorMessage(e, 'Nu am putut salva locația.'))
     }
   }
-  const backLink = (
-    <Link
-      to={listPath}
-      className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
-    >
-      <ArrowLeft className="size-4" /> Înapoi
-    </Link>
-  )
+  const backLink = <BackLink to={listPath}>Înapoi la locații</BackLink>
 
   if (isEdit && form.readyToRead && aEsuatCitirea) {
     return (
@@ -236,7 +229,7 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
     <div className="mx-auto max-w-2xl">
       {backLink}
       <h1 className="font-display mt-4 text-2xl font-bold">
-        {isEdit ? 'Editează locație' : 'Locație nouă'}
+        {isEdit ? 'Editează locația' : 'Locație nouă'}
       </h1>
       <RequiredFieldsNote />
 
@@ -285,7 +278,12 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
                 <Label htmlFor="type">
                   Tip <RequiredMark />
                 </Label>
-                <FormSelectMenu control={control} name="type" id="type" groups={locationTypeGroups} />
+                <FormSelectMenu
+                  control={control}
+                  name="type"
+                  id="type"
+                  groups={locationTypeGroups}
+                />
               </div>
             </div>
             <div className="space-y-1.5">

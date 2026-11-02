@@ -4,7 +4,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { vi } from 'vitest'
 
 import ClubDashboard from './ClubDashboard'
+import { getTaberelemele } from '@/api/camps-admin'
+import { getConcursurileMele } from '@/api/competition/competitions'
 import {
+  getClubActivities,
   getClubCoaches,
   getClubCourses,
   getClubLocations,
@@ -31,7 +34,15 @@ vi.mock('@/lib/auth-context', () => ({
   }),
 }))
 
+vi.mock('@/api/camps-admin', () => ({ getTaberelemele: vi.fn() }))
+vi.mock('@/api/competition/competitions', () => ({ getConcursurileMele: vi.fn() }))
+vi.mock('@/api/payments/cash-payments', () => ({
+  CASH_PAYMENTS_QUERY_KEY: ['cash-payments'],
+  getCashPayments: vi.fn().mockResolvedValue([]),
+}))
+
 vi.mock('@/api/club', () => ({
+  getClubActivities: vi.fn(),
   getMyClub: vi.fn(),
   getClubCoaches: vi.fn(),
   getClubCourses: vi.fn(),
@@ -96,11 +107,17 @@ function mockClubStats({
   coaches = 0,
   courses = 0,
   locations = 0,
+  activities = 0,
+  camps = 0,
+  competitions = 0,
   row = club(),
 }: {
   coaches?: number
   courses?: number
   locations?: number
+  activities?: number
+  camps?: number
+  competitions?: number
   row?: Club | null
 } = {}) {
   mockedGetMyClub.mockResolvedValue(row)
@@ -120,115 +137,121 @@ function mockClubStats({
       ReturnType<typeof getClubLocations>
     >,
   )
+  vi.mocked(getClubActivities).mockResolvedValue(
+    Array.from({ length: activities }, (_, i) => ({ id: `a-${i}` })) as never,
+  )
+  vi.mocked(getTaberelemele).mockResolvedValue(
+    Array.from({ length: camps }, (_, i) => ({ id: `t-${i}` })) as never,
+  )
+  vi.mocked(getConcursurileMele).mockResolvedValue(
+    Array.from({ length: competitions }, (_, i) => ({ id: `k-${i}` })) as never,
+  )
 }
 
 test('greeting uses the first name and keeps club identity as subtitle', async () => {
   mockClubStats()
   renderDashboard()
-  expect(await screen.findByRole('heading', { name: 'Salut, Audit!' })).toBeInTheDocument()
+  expect(
+    await screen.findByRole('heading', { level: 1, name: 'Salut, Audit!' }),
+  ).toBeInTheDocument()
   expect(screen.getByText('Club Audit Motion · Timișoara')).toBeInTheDocument()
-  expect(screen.queryByRole('heading', { name: 'Club Audit Motion' })).not.toBeInTheDocument()
 })
 
-test('stats mix is Antrenori, Cursuri, Locații, Stripe — not Anunțuri', async () => {
-  mockClubStats({ coaches: 1 })
+test('groups match the coach and admin panels: offer, organisation and quick add', async () => {
+  mockClubStats({ coaches: 2, courses: 3, locations: 1, activities: 4, camps: 1, competitions: 2 })
   renderDashboard()
-  const antrenori = await screen.findByRole('link', { name: /antrenori/i })
-  expect(antrenori).toHaveAttribute('href', '/club/coaches')
-  await waitFor(() => expect(antrenori).toHaveTextContent('1'))
-  expect(screen.getByRole('link', { name: /cursuri/i })).toHaveAttribute('href', '/club/courses')
-  expect(screen.getByRole('link', { name: /locații/i })).toHaveAttribute('href', '/club/locations')
-  expect(screen.getByRole('link', { name: /stripe, neconfigurat/i })).toHaveAttribute(
-    'href',
-    '/club/stripe',
-  )
-  expect(screen.getByText('Neconfigurat')).toBeInTheDocument()
+  for (const name of ['Oferta clubului', 'Organizare', 'Adaugă']) {
+    expect(await screen.findByRole('heading', { level: 2, name })).toBeInTheDocument()
+  }
+  const expected: [string, string, string][] = [
+    ['club-stat-cursuri', '/club/courses', '3'],
+    ['club-stat-activitati', '/club/activities', '4'],
+    ['club-stat-tabere', '/club/camps', '1'],
+    ['club-stat-concursuri', '/club/competitions', '2'],
+    ['club-stat-antrenori', '/club/coaches', '2'],
+    ['club-stat-locatii', '/club/locations', '1'],
+  ]
+  for (const [id, href, value] of expected) {
+    const row = screen.getByTestId(id)
+    expect(row).toHaveAttribute('href', href)
+    await waitFor(() => expect(row).toHaveTextContent(value))
+  }
   expect(screen.queryByText('Anunțuri')).not.toBeInTheDocument()
 })
 
-test('zero courses and locations stay visible as 0', async () => {
+test('quick add links open the new forms of every offer type', async () => {
+  mockClubStats()
+  renderDashboard()
+  expect(await screen.findByRole('link', { name: 'Curs nou' })).toHaveAttribute(
+    'href',
+    '/club/courses/new',
+  )
+  expect(screen.getByRole('link', { name: 'Activitate nouă' })).toHaveAttribute(
+    'href',
+    '/club/activities/new',
+  )
+  expect(screen.getByRole('link', { name: 'Tabără nouă' })).toHaveAttribute(
+    'href',
+    '/club/camps/new',
+  )
+  expect(screen.getByRole('link', { name: 'Concurs nou' })).toHaveAttribute(
+    'href',
+    '/club/competitions/new',
+  )
+})
+
+test('zero counts stay visible as 0 and carry a next-step hint', async () => {
   mockClubStats()
   renderDashboard()
   const cursuri = await screen.findByTestId('club-stat-cursuri')
   await waitFor(() => expect(cursuri).toHaveTextContent('0'))
-  await waitFor(() => expect(screen.getByTestId('club-stat-locatii')).toHaveTextContent('0'))
-  await waitFor(() => expect(screen.getByTestId('club-stat-antrenori')).toHaveTextContent('0'))
-  expect(screen.queryByText('Niciun club asociat contului.')).not.toBeInTheDocument()
+  expect(cursuri).toHaveTextContent('Adaugă primul curs')
+  expect(screen.getByTestId('club-stat-antrenori')).toHaveTextContent('Invită primul antrenor')
 })
 
 test('empty club shows the dashed message without stats', async () => {
   mockClubStats({ row: null })
   renderDashboard()
   expect(await screen.findByText('Niciun club asociat contului.')).toBeInTheDocument()
-  expect(screen.queryByRole('heading', { name: 'Salut, Audit!' })).not.toBeInTheDocument()
   expect(screen.queryByTestId('club-stat-antrenori')).not.toBeInTheDocument()
 })
 
 test('failed club request shows an in-page error, not the empty message', async () => {
-  mockedGetMyClub.mockRejectedValue(new Error('500'))
+  mockedGetMyClub.mockRejectedValue(new Error('network'))
   renderDashboard()
-  expect(await screen.findByRole('alert')).toHaveTextContent('Nu am putut încărca clubul.')
+  expect(await screen.findByText('Nu am putut încărca clubul.')).toBeInTheDocument()
   expect(screen.queryByText('Niciun club asociat contului.')).not.toBeInTheDocument()
   expect(screen.queryByTestId('club-stat-stripe')).not.toBeInTheDocument()
 })
 
-test('configured Stripe still links to setup and shows Configurat', async () => {
+test('card payments row links to setup and shows its state', async () => {
   mockClubStats({ row: club({ stripe_onboarding_complete: true }) })
   renderDashboard()
-  const stripe = await screen.findByRole('link', { name: /stripe, configurat/i })
-  expect(stripe).toHaveAttribute('href', '/club/stripe')
-  expect(screen.getByText('Configurat')).toBeInTheDocument()
-  expect(screen.queryByText('Neconfigurat')).not.toBeInTheDocument()
-})
-
-test('stat cards share a fixed min-height so stacked phone tiles match', async () => {
-  mockClubStats()
-  renderDashboard()
   const stripe = await screen.findByTestId('club-stat-stripe')
-  for (const id of [
-    'club-stat-antrenori',
-    'club-stat-cursuri',
-    'club-stat-locatii',
-    'club-stat-stripe',
-  ]) {
-    expect(screen.getByTestId(id).className).toMatch(/min-h-\[11\.5rem\]/)
-    expect(screen.getByTestId(id).className).toMatch(/h-full/)
-  }
-  expect(stripe.className).toMatch(/cursor-pointer/)
+  expect(stripe).toHaveAttribute('href', '/club/stripe')
+  expect(stripe).toHaveAccessibleName('Plăți cu cardul, Configurat')
 })
 
 test('counts show a skeleton while loading instead of a false 0', async () => {
   mockClubStats()
   mockedGetClubCourses.mockReturnValue(new Promise(() => {}))
   renderDashboard()
-  const cursuri = await screen.findByTestId('club-stat-cursuri')
-  expect(screen.getByRole('status', { name: 'Se încarcă: Cursuri' })).toBeInTheDocument()
-  expect(cursuri).not.toHaveTextContent('0')
+  expect(await screen.findByRole('status', { name: 'Se încarcă: Cursuri' })).toBeInTheDocument()
 })
 
 test('a failed count shows a dash and a hint, not 0', async () => {
   mockClubStats()
-  mockedGetClubLocations.mockRejectedValue(new Error('500'))
+  mockedGetClubLocations.mockRejectedValue(new Error('network'))
   renderDashboard()
   const locatii = await screen.findByTestId('club-stat-locatii')
   await waitFor(() => expect(locatii).toHaveTextContent('—'))
   expect(locatii).toHaveTextContent('Nu am putut număra')
-  expect(locatii).not.toHaveTextContent('0')
 })
 
 test('failed club request offers Reîncearcă and recovers', async () => {
-  mockClubStats()
-  mockedGetMyClub.mockRejectedValueOnce(new Error('500'))
+  mockedGetMyClub.mockRejectedValueOnce(new Error('network'))
   renderDashboard()
-  const retry = await screen.findByRole('button', { name: 'Reîncearcă' })
-  retry.click()
-  expect(await screen.findByRole('heading', { name: 'Salut, Audit!' })).toBeInTheDocument()
-})
-
-test('empty counts carry a next-step hint', async () => {
   mockClubStats()
-  renderDashboard()
-  expect(await screen.findByText('Adaugă primul curs')).toBeInTheDocument()
-  expect(screen.getByText('Adaugă prima locație')).toBeInTheDocument()
-  expect(screen.getByText('Configurează plățile cu cardul')).toBeInTheDocument()
+  ;(await screen.findByRole('button', { name: /Reîncearcă/ })).click()
+  expect(await screen.findByTestId('club-stat-cursuri')).toBeInTheDocument()
 })

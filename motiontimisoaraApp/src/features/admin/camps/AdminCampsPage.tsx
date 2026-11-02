@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
 
 import { getToateTaberele } from '@/api/camps-admin'
+import { PageHeader } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { StatusView } from '@/components/ui/status-view'
 import { CourseFilterBar, type FilterOption } from '@/features/admin/courses/CourseFilterBar'
@@ -70,15 +71,7 @@ export default function AdminCampsPage() {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h1 className="font-display text-foreground mr-auto text-2xl font-bold">
-          Tabere
-          {camps.length > 0 && (
-            <span className="text-muted-foreground ml-2 text-base font-normal">
-              ({camps.length})
-            </span>
-          )}
-        </h1>
+      <PageHeader title="Tabere" count={camps.length}>
         <FilterSearch
           className="order-last w-full md:order-none md:w-80"
           value={query}
@@ -91,7 +84,7 @@ export default function AdminCampsPage() {
             <Plus aria-hidden="true" /> Tabără nouă
           </Link>
         </Button>
-      </div>
+      </PageHeader>
 
       {isLoading ? (
         <CampListSkeleton />

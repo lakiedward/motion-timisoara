@@ -5,6 +5,7 @@ import { Search } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { getAllUsers, setUserEnabled } from '@/api/admin'
+import { PageHeader } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Input } from '@/components/ui/input'
@@ -83,8 +84,7 @@ export default function AdminUsersPage() {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h1 className="font-display text-foreground mr-auto text-2xl font-bold">Utilizatori</h1>
+      <PageHeader title="Utilizatori" count={users.length}>
         <div className="relative order-last w-full md:order-none md:w-80">
           <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
@@ -95,7 +95,7 @@ export default function AdminUsersPage() {
             className="h-touch-target min-h-touch-target pl-9 lg:h-9 lg:min-h-9"
           />
         </div>
-      </div>
+      </PageHeader>
 
       {isLoading ? (
         <LoadingState />

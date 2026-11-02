@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { getMyCourses, setCourseActive } from '@/api/coach'
+import { PageHeader, PageNewLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
@@ -46,14 +46,9 @@ export default function CoachCoursesPage() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <h1 className="font-display text-2xl font-bold text-foreground">Cursurile mele</h1>
-        <Button asChild className="h-11 min-h-11 w-full md:w-auto">
-          <Link to="/coach/courses/new">
-            <Plus /> Curs nou
-          </Link>
-        </Button>
-      </div>
+      <PageHeader title="Cursurile mele" count={courses.length}>
+        <PageNewLink to="/coach/courses/new">Curs nou</PageNewLink>
+      </PageHeader>
 
       {isLoading ? (
         <div role="status" aria-label="Se încarcă cursurile" className="grid gap-4 sm:grid-cols-2">

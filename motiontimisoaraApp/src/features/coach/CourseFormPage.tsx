@@ -22,7 +22,6 @@ import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { LeaveFormDialog } from '@/components/leave-form/LeaveFormDialog'
@@ -43,6 +42,7 @@ import { fetchSports } from '@/api/sports'
 import { OfferRulesFieldset } from '@/components/RulesFileField'
 import { campRulesFileFromRow, type CampRulesFileMeta } from '@/lib/camp-rules'
 import { baniToRon } from '@/lib/money'
+import { BackLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
@@ -273,7 +273,7 @@ export default function CourseFormPage() {
     <div className="mx-auto max-w-2xl">
       <InapoiLaCursuri onClick={pleaca} />
       <h1 className="font-display mt-4 text-2xl font-bold">
-        {isEdit ? 'Editează curs' : 'Curs nou'}
+        {isEdit ? 'Editează cursul' : 'Curs nou'}
       </h1>
 
       <RequiredFieldsNote />
@@ -351,7 +351,10 @@ export default function CourseFormPage() {
           </div>
         </FormSection>
 
-        <FormSection title="Copii și locuri" description="Pentru cine e cursul și câți copii primești.">
+        <FormSection
+          title="Copii și locuri"
+          description="Pentru cine e cursul și câți copii primești."
+        >
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="level">Nivel</Label>
@@ -432,11 +435,7 @@ export default function CourseFormPage() {
           </div>
         </FormSection>
 
-        <CourseProgramFields
-          control={control}
-          setValue={setValue}
-          errors={errors}
-        />
+        <CourseProgramFields control={control} setValue={setValue} errors={errors} />
         <HeroPhotoField
           hint={MESAJ_POZA_HERO}
           savedUrl={publicUrl('course-photos', existing?.hero_photo_storage_path)}
@@ -487,12 +486,8 @@ function InapoiLaCursuri({
   onClick?: (event: MouseEvent<HTMLAnchorElement>) => void
 }) {
   return (
-    <Link
-      to="/coach/courses"
-      onClick={onClick}
-      className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
-    >
-      <ArrowLeft className="size-4" /> Înapoi
-    </Link>
+    <BackLink to="/coach/courses" onClick={onClick}>
+      Înapoi la cursuri
+    </BackLink>
   )
 }

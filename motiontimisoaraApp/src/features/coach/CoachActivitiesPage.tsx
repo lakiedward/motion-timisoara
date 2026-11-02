@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { getMyActivities, setActivityActive, type CoachActivity } from '@/api/coach'
+import { PageHeader, PageNewLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -69,14 +69,9 @@ export default function CoachActivitiesPage() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <h1 className="font-display text-2xl font-bold text-foreground">Activitățile mele</h1>
-        <Button asChild className="h-touch-target min-h-touch-target w-full md:w-auto">
-          <Link to="/coach/activities/new">
-            <Plus aria-hidden="true" /> Activitate nouă
-          </Link>
-        </Button>
-      </div>
+      <PageHeader title="Activitățile mele" count={activities.length}>
+        <PageNewLink to="/coach/activities/new">Activitate nouă</PageNewLink>
+      </PageHeader>
 
       {isLoading ? (
         <div

@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { setClubLocationActive } from '@/api/club'
 import { getAllLocationsAdmin, type AdminLocation } from '@/api/locations/admin-locations'
+import { PageHeader, PageNewLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { StatusView } from '@/components/ui/status-view'
@@ -93,15 +93,7 @@ export default function AdminLocationsPage() {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h1 className="font-display text-foreground mr-auto text-2xl font-bold">
-          Locații
-          {locations.length > 0 && (
-            <span className="text-muted-foreground ml-2 text-base font-normal">
-              ({locations.length})
-            </span>
-          )}
-        </h1>
+      <PageHeader title="Locații" count={locations.length}>
         <FilterSearch
           className="order-last w-full md:order-none md:w-80"
           value={query}
@@ -109,12 +101,8 @@ export default function AdminLocationsPage() {
           placeholder="Caută locație, adresă sau organizator"
           aria-label="Caută locații după nume, adresă sau organizator"
         />
-        <Button asChild className="h-touch-target min-h-touch-target lg:h-9 lg:min-h-9">
-          <Link to="/admin/locations/new">
-            <Plus aria-hidden="true" /> Locație nouă
-          </Link>
-        </Button>
-      </div>
+        <PageNewLink to="/admin/locations/new">Locație nouă</PageNewLink>
+      </PageHeader>
 
       {isLoading ? (
         <ClubLocationListSkeleton />

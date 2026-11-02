@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
 
 import { getAllClubs, getCoachesForSelect } from '@/api/admin'
 import { getIndependentCoachCourses } from '@/api/announcements/admin-announcements'
 import { getClubAudiences } from '@/api/club'
+import { BackLink } from '@/components/page-header/PageHeader'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { SelectMenu } from '@/components/ui/select-menu'
@@ -100,12 +100,7 @@ export default function AdminAnnouncementFormPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <Link
-        to={LIST_PATH}
-        className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
-      >
-        <ArrowLeft className="size-4" /> Înapoi
-      </Link>
+      <BackLink to={LIST_PATH}>Înapoi la anunțuri</BackLink>
       <h1 className="font-display mt-4 text-2xl font-bold">Anunț nou</h1>
 
       <Card className="mt-6 mb-6">

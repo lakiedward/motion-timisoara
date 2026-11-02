@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -9,6 +8,7 @@ import {
   setActivityActiveAdmin,
   type AdminActivity,
 } from '@/api/activities/admin-activities'
+import { PageHeader, PageNewLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { StatusView } from '@/components/ui/status-view'
@@ -111,15 +111,7 @@ export default function AdminActivitiesPage() {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h1 className="font-display text-foreground mr-auto text-2xl font-bold">
-          Activități
-          {activities.length > 0 && (
-            <span className="text-muted-foreground ml-2 text-base font-normal">
-              ({activities.length})
-            </span>
-          )}
-        </h1>
+      <PageHeader title="Activități" count={activities.length}>
         <FilterSearch
           className="order-last w-full md:order-none md:w-80"
           value={query}
@@ -127,12 +119,8 @@ export default function AdminActivitiesPage() {
           placeholder="Caută activitate, antrenor sau club"
           aria-label="Caută activități după nume, antrenor, club sau locație"
         />
-        <Button asChild className="h-touch-target min-h-touch-target lg:h-9 lg:min-h-9">
-          <Link to="/admin/activities/new">
-            <Plus aria-hidden="true" /> Activitate nouă
-          </Link>
-        </Button>
-      </div>
+        <PageNewLink to="/admin/activities/new">Activitate nouă</PageNewLink>
+      </PageHeader>
 
       {isLoading ? (
         <ClubLocationListSkeleton />
