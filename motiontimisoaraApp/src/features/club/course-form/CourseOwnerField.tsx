@@ -1,4 +1,5 @@
 import { Label } from '@/components/ui/label'
+import { formSelectMenuClassName } from '@/components/ui/field-styles'
 import { SelectMenu } from '@/components/ui/select-menu'
 import { RequiredMark } from '@/components/FormSection'
 import type { AdminClub } from '@/api/admin'
@@ -24,6 +25,7 @@ export function CourseOwnerField({
     <div className="space-y-1.5">
       <Label htmlFor="owner">Organizator {required && <RequiredMark />}</Label>
       <SelectMenu
+        className={formSelectMenuClassName}
         id="owner"
         value={value}
         disabled={locked}
