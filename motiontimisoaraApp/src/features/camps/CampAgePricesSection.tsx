@@ -19,6 +19,7 @@ import {
 import { FormSection } from '@/components/FormSection'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { formSelectMenuClassName } from '@/components/ui/field-styles'
 import { SelectMenu } from '@/components/ui/select-menu'
 import { OfferCurrencyFields } from '@/components/OfferCurrencyFields'
 import { spreAdult, spreCamp, type Values } from './camp-form-schema'
@@ -103,6 +104,7 @@ export default function CampAgePricesSection({
         {surseDeCopiat.length > 0 && (
           <CampFormField eticheta="Copiază categoriile din altă tabără">
             <SelectMenu
+              className={formSelectMenuClassName}
               value=""
               onValueChange={(id) => void copiazaDin(id)}
               placeholder="alege o tabără…"

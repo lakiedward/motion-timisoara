@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button'
 import { FilePicker } from '@/components/ui/file-picker'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { formSelectMenuClassName } from '@/components/ui/field-styles'
 import { SelectMenu } from '@/components/ui/select-menu'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
@@ -530,6 +531,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
             <div className="space-y-2">
               <Label htmlFor="competition-category-route">Traseu</Label>
               <SelectMenu
+                className={formSelectMenuClassName}
                 id="competition-category-route"
                 value={categoryDraft.routeId}
                 onValueChange={(routeId) => setCategoryDraft({ ...categoryDraft, routeId })}

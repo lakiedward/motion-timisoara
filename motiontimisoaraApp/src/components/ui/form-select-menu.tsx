@@ -7,7 +7,9 @@ import {
   type FieldValues,
 } from 'react-hook-form'
 
+import { formSelectMenuClassName } from '@/components/ui/field-styles'
 import { SelectMenu } from '@/components/ui/select-menu'
+import { cn } from '@/lib/utils'
 
 type FormSelectMenuProps<TValues extends FieldValues> = Omit<
   ComponentProps<typeof SelectMenu>,
@@ -22,6 +24,7 @@ export function FormSelectMenu<TValues extends FieldValues>({
   control,
   name,
   onValueChange,
+  className,
   ...props
 }: FormSelectMenuProps<TValues>) {
   const {
@@ -36,6 +39,7 @@ export function FormSelectMenu<TValues extends FieldValues>({
   return (
     <SelectMenu
       {...props}
+      className={cn(formSelectMenuClassName, className)}
       ref={triggerRef}
       name={fieldName}
       value={value}

@@ -92,7 +92,9 @@ const SelectMenu = React.forwardRef<HTMLButtonElement, SelectMenuProps>(function
     event.stopPropagation()
     if (event.key === 'ArrowDown') {
       event.preventDefault()
-      contentRef.current?.querySelector<HTMLElement>('[role="menuitemradio"]:not([data-disabled])')?.focus()
+      contentRef.current
+        ?.querySelector<HTMLElement>('[role="menuitemradio"]:not([data-disabled])')
+        ?.focus()
     }
   }
 
@@ -153,7 +155,7 @@ const SelectMenu = React.forwardRef<HTMLButtonElement, SelectMenuProps>(function
                   aria-label={searchPlaceholder}
                   autoComplete="off"
                   className={cn(
-                    'border-input bg-background h-touch-target w-full rounded-lg border pr-3 pl-9 text-base md:text-sm',
+                    'border-input bg-background h-touch-target w-full rounded-lg border pr-3 pl-9 text-base md:text-sm [&::-webkit-search-cancel-button]:appearance-none',
                     fieldFocusClassName,
                   )}
                 />

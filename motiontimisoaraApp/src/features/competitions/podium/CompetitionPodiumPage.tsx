@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { formSelectMenuClassName } from '@/components/ui/field-styles'
 import { SelectMenu } from '@/components/ui/select-menu'
 import type { CompetitionPortalBaza } from '../competition-portal'
 import { useCompetitionOwner } from '../useCompetitionOwner'
@@ -132,10 +133,14 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
           <div className="space-y-2">
             <Label htmlFor="podium-category">Categorie</Label>
             <SelectMenu
+              className={formSelectMenuClassName}
               id="podium-category"
               value={selectedCategoryId}
               onValueChange={setCategoryId}
-              options={categories.data.map((category) => ({ value: category.id, label: category.name }))}
+              options={categories.data.map((category) => ({
+                value: category.id,
+                label: category.name,
+              }))}
             />
           </div>
           {publication ? (
@@ -170,6 +175,7 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
                   <div key={place} className="bg-card space-y-2 rounded-xl border p-5">
                     <Label htmlFor={`podium-place-${place}`}>Locul {place}</Label>
                     <SelectMenu
+                      className={formSelectMenuClassName}
                       id={`podium-place-${place}`}
                       value={current?.registration_id ?? ''}
                       disabled={save.isPending}
