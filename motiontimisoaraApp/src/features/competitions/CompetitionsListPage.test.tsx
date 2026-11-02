@@ -47,6 +47,10 @@ test('lista goală nu seamănă cu eroarea', async () => {
     'href',
     '/club/competitions/new',
   )
+  expect(screen.getByRole('link', { name: 'Creează primul concurs' })).toHaveAttribute(
+    'href',
+    '/club/competitions/new',
+  )
 })
 
 test('cardul duce la editare', async () => {

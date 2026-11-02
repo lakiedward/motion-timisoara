@@ -8,6 +8,7 @@ import { formatMoney } from '@/lib/money'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
 import { ClubActivityForm } from './activity-form/ClubActivityForm'
 
 function dataActivitate(zi: string) {
@@ -121,12 +122,18 @@ function Lista() {
           ))}
         </div>
       ) : (
-        <div className="text-muted-foreground rounded-xl border border-dashed py-16 text-center">
-          Nicio activitate încă.{' '}
-          <Link to="/club/activities/new" className="text-primary font-semibold">
-            Creează prima activitate
-          </Link>
-        </div>
+        <StatusView
+          state="empty"
+          title="Nicio activitate încă."
+          text="O activitate e un eveniment de o zi, cu dată, locație și preț."
+          action={
+            <Button asChild className="mt-3 h-touch-target min-h-touch-target">
+              <Link to="/club/activities/new">
+                <Plus aria-hidden="true" /> Creează prima activitate
+              </Link>
+            </Button>
+          }
+        />
       )}
     </div>
   )
