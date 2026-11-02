@@ -11,7 +11,8 @@ import { formatRon } from '@/lib/money'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ActiveFilterChips } from '@/components/catalog-filters/ActiveFilterChips'
-import { FilterSelect, type FilterOption } from '@/components/catalog-filters/FilterSelect'
+import type { FilterOption } from '@/lib/event-catalog'
+import { FilterMenu } from '@/components/catalog-filters/FilterMenu'
 import { MoreFiltersToggle } from '@/components/catalog-filters/MoreFiltersToggle'
 import { SportPills } from '@/components/catalog-filters/SportPills'
 
@@ -115,7 +116,7 @@ export function CourseFilters({
             })}
           </div>
         </div>
-        <FilterSelect
+        <FilterMenu
           id="course-price-filter"
           label="Buget pe lună"
           value={filters.maxPrice}
@@ -123,7 +124,7 @@ export function CourseFilters({
           options={PRICE_OPTIONS}
           onChange={set('maxPrice')}
         />
-        <FilterSelect
+        <FilterMenu
           id="course-location-filter"
           label="Unde?"
           value={filters.location}

@@ -6,6 +6,7 @@ import { MemoryRouter } from 'react-router-dom'
 
 import ActivitiesPage from './ActivitiesPage'
 import { getActivitatiPublice, type ActivitateDinLista } from '@/api/public'
+import { pickFilter } from '@/test/pick-filter'
 
 vi.mock('@/api/public', async () => {
   const real = await vi.importActual<typeof import('@/api/public')>('@/api/public')
@@ -201,6 +202,6 @@ test('filtrează activitățile după sport și lună', async () => {
   await user.click(screen.getByRole('button', { name: 'Înot' }))
   expect(screen.getByText('1 activitate găsită')).toBeInTheDocument()
   expect(screen.getByRole('link', { name: /Ziua înotului/ })).toBeInTheDocument()
-  await user.selectOptions(screen.getByLabelText('Când?'), 'Septembrie 2026')
+  await pickFilter('Când?', 'Septembrie 2026')
   expect(screen.getByText('Nicio activitate nu corespunde filtrelor.')).toBeInTheDocument()
 })

@@ -5,6 +5,7 @@ import { vi } from 'vitest'
 
 import { getCourseCatalog, type CourseCatalogItem } from '@/api/public'
 import ProgramPage from '../ProgramPage'
+import { pickFilter } from '@/test/pick-filter'
 
 vi.mock('@/api/public', () => ({
   getCourseCatalog: vi.fn(),
@@ -108,7 +109,7 @@ test('filters narrow the list and the empty result offers a reset', async () => 
   renderPage()
   await screen.findByRole('link', { name: 'Înot începători' })
 
-  fireEvent.change(screen.getByLabelText('Buget pe lună'), { target: { value: '20000' } })
+  await pickFilter('Buget pe lună', 'Până la 200 lei / lună')
   expect(screen.queryByRole('link', { name: 'Înot începători' })).toBeNull()
   expect(screen.getByRole('link', { name: 'Alergare' })).toBeInTheDocument()
 
@@ -118,7 +119,7 @@ test('filters narrow the list and the empty result offers a reset', async () => 
   fireEvent.click(screen.getByRole('button', { name: 'Resetează filtrele' }))
   expect(screen.getAllByRole('article')).toHaveLength(2)
 
-  fireEvent.change(screen.getByLabelText('Unde?'), { target: { value: 'Parc' } })
+  await pickFilter('Unde?', 'Parc')
   expect(screen.getAllByRole('article')).toHaveLength(1)
 })
 
@@ -138,7 +139,7 @@ test('sport chips toggle and each active filter can be removed on its own', asyn
   fireEvent.click(swim)
   expect(swim).toHaveAttribute('aria-pressed', 'true')
   expect(screen.getAllByRole('article')).toHaveLength(1)
-  fireEvent.change(screen.getByLabelText('Buget pe lună'), { target: { value: '60000' } })
+  await pickFilter('Buget pe lună', 'Până la 600 lei / lună')
 
   fireEvent.click(screen.getByRole('button', { name: 'Scoate filtrul Înot' }))
   expect(screen.getAllByRole('article')).toHaveLength(2)
@@ -183,7 +184,7 @@ test('the chosen sport is kept in the address and restored from it', async () =>
 
   fireEvent.click(screen.getByRole('button', { name: 'Alergare' }))
   expect(screen.getByTestId('search')).toHaveTextContent('?sport=alergare')
-  fireEvent.change(screen.getByLabelText('Buget pe lună'), { target: { value: '60000' } })
+  await pickFilter('Buget pe lună', 'Până la 600 lei / lună')
   expect(screen.getByTestId('search')).toHaveTextContent('?sport=alergare')
   fireEvent.click(screen.getByRole('button', { name: 'Toate' }))
   expect(screen.getByTestId('search')).toBeEmptyDOMElement()

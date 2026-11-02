@@ -8,7 +8,7 @@ import {
 } from '@/lib/event-catalog'
 import { cn } from '@/lib/utils'
 import { ActiveFilterChips, type ActiveFilterLabel } from './ActiveFilterChips'
-import { FilterSelect } from './FilterSelect'
+import { FilterMenu } from './FilterMenu'
 import { MoreFiltersToggle } from './MoreFiltersToggle'
 import { SportPills } from './SportPills'
 
@@ -75,7 +75,7 @@ export function EventFilters({
           open ? 'grid' : 'hidden',
         )}
       >
-        <FilterSelect
+        <FilterMenu
           id={`${idPrefix}-month-filter`}
           label="Când?"
           value={filters.month}
@@ -84,7 +84,7 @@ export function EventFilters({
           onChange={set('month')}
         />
         {priceOptions ? (
-          <FilterSelect
+          <FilterMenu
             id={`${idPrefix}-price-filter`}
             label="Buget"
             value={filters.maxPrice}
@@ -93,7 +93,7 @@ export function EventFilters({
             onChange={set('maxPrice')}
           />
         ) : null}
-        <FilterSelect
+        <FilterMenu
           id={`${idPrefix}-location-filter`}
           label="Unde?"
           value={filters.location}

@@ -6,6 +6,7 @@ import { MemoryRouter } from 'react-router-dom'
 
 import CompetitionsPage from './CompetitionsPage'
 import { getConcursuriPublice, type PublicCompetition } from '@/api/competition/competitions'
+import { pickFilter } from '@/test/pick-filter'
 
 vi.mock('@/api/competition/competitions', async () => {
   const real = await vi.importActual<typeof import('@/api/competition/competitions')>('@/api/competition/competitions')
@@ -75,7 +76,6 @@ test('fără concursuri, mesajul e altul decât cel de eroare', async () => {
 })
 
 test('concursurile se pot filtra după lună și locație', async () => {
-  const user = userEvent.setup()
   mocked.mockResolvedValue([
     CONCURS,
     {
@@ -90,9 +90,9 @@ test('concursurile se pot filtra după lună și locație', async () => {
   ])
   deseneaza()
   expect(await screen.findByText('2 concursuri găsite')).toBeInTheDocument()
-  await user.selectOptions(screen.getByLabelText('Unde?'), 'Parcul Central')
+  await pickFilter('Unde?', 'Parcul Central')
   expect(screen.getByText('1 concurs găsit')).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Crosul de iarnă' })).toBeInTheDocument()
-  await user.selectOptions(screen.getByLabelText('Când?'), 'Octombrie 2026')
+  await pickFilter('Când?', 'Octombrie 2026')
   expect(screen.getByText('Niciun concurs nu corespunde filtrelor.')).toBeInTheDocument()
 })

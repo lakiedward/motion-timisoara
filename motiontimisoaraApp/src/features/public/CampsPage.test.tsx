@@ -6,6 +6,7 @@ import { MemoryRouter } from 'react-router-dom'
 
 import CampsPage from './CampsPage'
 import { getTaberePublice, type TabaraDinLista } from '@/api/camps'
+import { pickFilter } from '@/test/pick-filter'
 
 vi.mock('@/api/camps', async () => {
   const real = await vi.importActual<typeof import('@/api/camps')>('@/api/camps')
@@ -193,13 +194,13 @@ test('filters camps by month, budget and location, and resets when nothing match
   ])
   deseneaza()
   expect(await screen.findByText('2 tabere găsite')).toBeInTheDocument()
-  await user.selectOptions(screen.getByLabelText('Când?'), 'Ianuarie 2027')
+  await pickFilter('Când?', 'Ianuarie 2027')
   expect(screen.getByText('1 tabără găsită')).toBeInTheDocument()
   expect(screen.getByRole('heading', { name: 'Tabără de schi' })).toBeInTheDocument()
-  await user.selectOptions(screen.getByLabelText('Buget'), 'Până la 1.000 lei')
+  await pickFilter('Buget', 'Până la 1.000 lei')
   expect(screen.getByText('Nicio tabără nu corespunde filtrelor.')).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Resetează filtrele' }))
   expect(screen.getByText('2 tabere găsite')).toBeInTheDocument()
-  await user.selectOptions(screen.getByLabelText('Unde?'), 'Lugoj')
+  await pickFilter('Unde?', 'Lugoj')
   expect(screen.getByRole('button', { name: 'Scoate filtrul Lugoj' })).toBeInTheDocument()
 })

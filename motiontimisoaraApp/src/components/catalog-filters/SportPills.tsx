@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SPORT_GLYPH, SPORT_GLYPH_FALLBACK } from '@/components/sport/sport-icons'
-import type { FilterOption } from './FilterSelect'
+import type { FilterOption } from '@/lib/event-catalog'
 
 export function SportPills({
   value,
