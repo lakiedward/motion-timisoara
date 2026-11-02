@@ -1,15 +1,17 @@
-import { Link } from 'react-router-dom'
-import { ArrowLeft, MapPin } from 'lucide-react'
+import { MapPin } from 'lucide-react'
 
 import { publicUrl, type ClubListItem } from '@/api/public'
 import { cn } from '@/lib/utils'
+import { Card } from '@/components/ui/card'
 import { PublicHeroBand } from '../PublicHeroBand'
+import { DetailBackLink } from '../components/DetailBackLink'
+import { PROFILE_CARD_LAYOUT } from '../coaches/CoachHero'
 
 function ClubLogo({ name, url, onPhoto }: { name: string; url: string | null; onPhoto: boolean }) {
   return (
     <div
       className={cn(
-        'bg-card size-20 shrink-0 overflow-hidden rounded-xl border md:size-24',
+        'bg-card size-24 shrink-0 overflow-hidden rounded-xl border',
         onPhoto && 'border-white/40',
       )}
     >
@@ -38,7 +40,6 @@ export function ClubHero({ club }: { club: ClubListItem }) {
         title={club.name}
         backTo="/cluburi"
         backLabel="Înapoi la cluburi"
-        width="max-w-5xl"
         media={<ClubLogo name={club.name} url={logo} onPhoto />}
       >
         {club.city && (
@@ -51,26 +52,21 @@ export function ClubHero({ club }: { club: ClubListItem }) {
   }
 
   return (
-    <section data-section="club-hero" className="mx-auto max-w-5xl px-6 pt-8">
-      <Link
-        to="/cluburi"
-        className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
-      >
-        <ArrowLeft className="size-4" /> Înapoi la cluburi
-      </Link>
-      <div className="mt-4 flex min-w-0 items-center gap-4">
+    <section data-section="club-hero" className="mx-auto max-w-6xl px-6 pt-10">
+      <DetailBackLink to="/cluburi" label="Înapoi la cluburi" />
+      <Card className={PROFILE_CARD_LAYOUT}>
         <ClubLogo name={club.name} url={logo} onPhoto={false} />
         <div className="min-w-0 wrap-anywhere">
           <h1 className="font-display text-foreground text-3xl font-extrabold md:text-4xl">
             {club.name}
           </h1>
           {club.city && (
-            <p className="text-muted-foreground mt-1 flex items-center gap-1 text-sm">
+            <p className="text-muted-foreground mt-2 flex items-center justify-center gap-1 text-sm sm:justify-start">
               <MapPin className="size-4" /> {club.city}
             </p>
           )}
         </div>
-      </div>
+      </Card>
     </section>
   )
 }

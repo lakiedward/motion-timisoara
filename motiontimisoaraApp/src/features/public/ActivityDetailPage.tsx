@@ -1,6 +1,5 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
 
 import { ACTIVITY_RULES_FILE_BUCKET, rulesFileAfisabil } from '@/api/camp-rules-file'
 import { activitateSAincheiat, getActivitateDetaliu } from '@/api/public'
@@ -9,6 +8,7 @@ import { PhotoMosaic } from '@/components/photo-gallery/PhotoMosaic'
 import ActivityPlaceMap from '@/features/public/map/ActivityPlaceMap'
 import { useAuth } from '@/lib/auth-context'
 import { descriptionParagraphs } from '@/lib/course-detail'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SportIllustration } from '@/components/sport/SportIllustration'
@@ -16,6 +16,7 @@ import { OrganizerCoaches } from './components/OrganizerCoaches'
 import { PublicHeroBand } from './PublicHeroBand'
 import { ActivityEnrollCard } from './activity-detail/ActivityEnrollCard'
 import { ActivityInfoBand } from './activity-detail/ActivityInfoBand'
+import { DetailBackLink } from '@/features/public/components/DetailBackLink'
 
 export default function ActivityDetailPage() {
   const { id = '' } = useParams()
@@ -77,16 +78,16 @@ export default function ActivityDetailPage() {
         title={a.name}
         backTo="/activitati"
         backLabel="Înapoi la activități"
+        badges={
+          a.sport && (
+            <Badge className="px-3 py-1 text-sm font-semibold md:text-base">{a.sport.name}</Badge>
+          )
+        }
       />
 
       {!a.bandUrl && (
         <div className="mx-auto max-w-6xl px-6 pt-8">
-          <Link
-            to="/activitati"
-            className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
-          >
-            <ArrowLeft className="size-4" /> Înapoi la activități
-          </Link>
+          <DetailBackLink to="/activitati" label="Înapoi la activități" />
           <h1 className="font-display text-foreground mt-4 text-3xl font-extrabold tracking-tight md:text-4xl">
             {a.name}
           </h1>

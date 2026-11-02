@@ -24,14 +24,14 @@ export default function ClubDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-5xl px-6 py-12">
+      <div className="mx-auto max-w-6xl px-6 py-12">
         <Skeleton className="h-48 w-full rounded-xl" />
       </div>
     )
   }
   if (isError) {
     return (
-      <div className="mx-auto max-w-5xl px-6 py-20 text-center" role="alert">
+      <div className="mx-auto max-w-6xl px-6 py-20 text-center" role="alert">
         <p className="text-foreground font-medium">Nu am putut încărca clubul.</p>
         <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetch()}>
           Reîncearcă
@@ -41,7 +41,7 @@ export default function ClubDetailPage() {
   }
   if (!club) {
     return (
-      <div className="mx-auto max-w-5xl px-6 py-20 text-center">
+      <div className="mx-auto max-w-6xl px-6 py-20 text-center">
         <p className="text-muted-foreground">Clubul nu a fost găsit.</p>
         <Link
           to="/cluburi"
@@ -56,8 +56,8 @@ export default function ClubDetailPage() {
   return (
     <div>
       <ClubHero club={club} />
-      <div className="mx-auto max-w-5xl px-6">
-        <div className="mt-8 grid gap-6 pb-10 lg:grid-cols-[1.6fr_1fr]">
+      <div className="mx-auto max-w-6xl px-6">
+        <div className="mt-8 grid gap-6 lg:grid-cols-[1.6fr_1fr]">
           <ClubAbout club={club} />
           <ClubContact club={club} />
         </div>

@@ -157,7 +157,7 @@ test('poza activității umple banda, iar galeria rămâne sub descriere', async
   expect(
     screen.getByRole('button', { name: 'Deschide poza 1 din 1: Traseul cu jaloane' }),
   ).toBeInTheDocument()
-  expect(screen.queryByText('Ciclism')).not.toBeInTheDocument()
+  expect(screen.getByText('Ciclism').closest('section')).toContainElement(titlu)
 })
 
 test('titlul de pe bandă pornește din aceeași coloană ca restul paginii', async () => {
@@ -193,7 +193,7 @@ test('banda Data, Ore și Loc stă sus, iar organizatorul și antrenorul vin dup
   expect(ore.parentElement).toHaveTextContent('10:00–12:00')
   expect(locEticheta.closest('a')).toHaveAttribute('href', '/harta?location=loc-1')
   expect(locEticheta.closest('a')).toHaveTextContent('DEMO — Parc de antrenament')
-  const banda = dataEticheta.closest('.grid-cols-3')
+  const banda = dataEticheta.closest('.grid')
   expect(banda).toHaveClass('bg-card', 'rounded-xl', 'border')
   expect(banda).toContainElement(ore)
   expect(banda).toContainElement(locEticheta)

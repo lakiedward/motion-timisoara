@@ -110,7 +110,7 @@ test('cât se încarcă, în locul cardurilor stau forme de așteptare', async (
   mocked.mockReturnValue(new Promise(() => {}))
   deseneaza()
   await waitFor(() => {
-    expect(document.querySelectorAll('[data-slot="skeleton"]').length).toBe(2)
+    expect(document.querySelectorAll('[data-slot="skeleton"]').length).toBe(3)
   })
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   expect(screen.queryByText(/Nicio tabără programată/)).not.toBeInTheDocument()
@@ -169,12 +169,12 @@ test('a location without coordinates remains readable without a broken map link'
   expect(screen.queryByRole('link', { name: /vezi pe hartă/ })).not.toBeInTheDocument()
 })
 
-test('a camp with places left says registrations are open, a full one does not', async () => {
+test('only a full camp gets a status badge, like the other offer cards', async () => {
   mocked.mockResolvedValue([TABARA, { ...TABARA, id: 'c', slug: 'mtb', locuriRamase: 0 }])
   deseneaza()
-  expect(await screen.findByText('Înscrieri deschise')).toBeInTheDocument()
-  expect(screen.getAllByText('Înscrieri deschise')).toHaveLength(1)
-  expect(screen.getByText('Locuri epuizate')).toBeInTheDocument()
+  expect(await screen.findByText('Locuri epuizate')).toBeInTheDocument()
+  expect(screen.getAllByText('Locuri epuizate')).toHaveLength(1)
+  expect(screen.queryByText('Înscrieri deschise')).not.toBeInTheDocument()
 })
 
 test('filters camps by month, budget and location, and resets when nothing matches', async () => {

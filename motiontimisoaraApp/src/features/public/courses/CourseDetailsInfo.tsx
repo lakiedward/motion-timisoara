@@ -1,5 +1,4 @@
-import { Link } from 'react-router-dom'
-import { Building2, CalendarDays, MapPin, Users } from 'lucide-react'
+import { CalendarDays, MapPin, Users } from 'lucide-react'
 
 import { COURSE_RULES_FILE_BUCKET, rulesFileAfisabil } from '@/api/camp-rules-file'
 import { galeriePublica } from '@/api/photo-gallery'
@@ -11,7 +10,9 @@ import {
   upcomingSessions,
   weeklyProgram,
 } from '@/lib/course-detail'
-import { FOCUS_RING, InfoTile } from '@/features/public/components/InfoTile'
+import { InfoBand, InfoTile } from '@/features/public/components/InfoTile'
+import { OrganizerCoaches, type OrganizerCard } from '@/features/public/components/OrganizerCoaches'
+import ActivityPlaceMap from '@/features/public/map/ActivityPlaceMap'
 import { PhotoMosaic } from '@/components/photo-gallery/PhotoMosaic'
 
 export function CourseDetailsInfo({
@@ -23,6 +24,20 @@ export function CourseDetailsInfo({
 }) {
   const sessions = upcomingSessions(course.occurrences)
   const weekly = sessions.length ? formatWeeklyProgram(weeklyProgram(course)) : null
+  const coach = course.coach
+    ? {
+        id: course.coach.id,
+        nume: course.coach.name,
+        pozaUrl: course.coach.avatar_url,
+        link: `/antrenori/${course.coach.id}`,
+      }
+    : null
+  const organizer: OrganizerCard | null = course.club
+    ? { fel: 'club', nume: course.club.name, link: `/cluburi/${course.club.id}` }
+    : coach
+      ? { fel: 'antrenor', nume: coach.nume, link: coach.link, pozaUrl: coach.pozaUrl }
+      : null
+  const coaches = course.club && coach ? [coach] : []
   const ages =
     course.age_from != null && course.age_to != null
       ? `${course.age_from}–${course.age_to} ani`
@@ -30,7 +45,7 @@ export function CourseDetailsInfo({
 
   return (
     <div>
-      <div className="bg-card divide-border grid grid-cols-3 divide-x rounded-xl border">
+      <InfoBand>
         <InfoTile icon={<Users className="size-4" />} label="Vârstă" value={ages} />
         <InfoTile
           icon={<MapPin className="size-4" />}
@@ -45,20 +60,7 @@ export function CourseDetailsInfo({
           value={course.capacity != null ? `${remaining ?? '—'} locuri rămase` : '—'}
           hint={course.capacity != null ? `din ${course.capacity}` : undefined}
         />
-      </div>
-
-      {course.club && (
-        <p className="text-muted-foreground mt-4 flex flex-wrap items-center gap-x-1.5 text-sm">
-          <Building2 aria-hidden="true" className="text-primary size-4 shrink-0" />
-          Organizat de
-          <Link
-            to={`/cluburi/${course.club.id}`}
-            className={`text-primary inline-flex min-h-touch-target items-center rounded-sm font-semibold underline-offset-2 hover:underline ${FOCUS_RING}`}
-          >
-            {course.club.name}
-          </Link>
-        </p>
-      )}
+      </InfoBand>
 
       <PhotoMosaic
         photos={galeriePublica(
@@ -121,31 +123,22 @@ export function CourseDetailsInfo({
         </div>
       </section>
 
-      {course.coach && (
-        <section className="mt-8">
-          <h2 className="font-display text-xl font-bold">Antrenor</h2>
-          <Link
-            to={`/antrenori/${course.coach.id}`}
-            className={`bg-card hover:border-foreground/20 hover:shadow-card mt-4 flex items-center gap-4 rounded-xl border p-4 transition-[border-color,box-shadow] duration-200 motion-reduce:transition-none ${FOCUS_RING}`}
-          >
-            {course.coach.avatar_url ? (
-              <img
-                src={course.coach.avatar_url}
-                alt=""
-                className="size-14 rounded-full object-cover"
-              />
-            ) : (
-              <span className="from-primary to-sky grid size-14 shrink-0 place-items-center rounded-full bg-gradient-to-br text-lg font-bold text-white">
-                {course.coach.name.charAt(0)}
-              </span>
-            )}
-            <span className="min-w-0">
-              <span className="text-foreground block font-semibold">{course.coach.name}</span>
-              <span className="text-muted-foreground text-sm">Vezi profilul antrenorului</span>
-            </span>
-          </Link>
-        </section>
+      {course.location?.lat != null && course.location.lng != null && (
+        <ActivityPlaceMap
+          lat={course.location.lat}
+          lng={course.location.lng}
+          name={course.location.name}
+          address={course.location.address}
+        />
       )}
+
+      <OrganizerCoaches
+        sectionKey="course-organizer"
+        organizerTitle="Organizat de"
+        organizator={organizer}
+        antrenori={coaches}
+        coachesTitle={() => 'Antrenor'}
+      />
     </div>
   )
 }
