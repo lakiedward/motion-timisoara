@@ -123,12 +123,18 @@ export default function ClubCoursesPage() {
           )}
         </>
       ) : (
-        <div className="text-muted-foreground rounded-xl border border-dashed border-input py-16 text-center">
-          Niciun curs încă.{' '}
-          <Link to="/club/courses/new" className="text-primary font-semibold">
-            Creează primul curs
-          </Link>
-        </div>
+        <StatusView
+          state="empty"
+          title="Niciun curs încă."
+          text="Alege antrenorul, locația și programul primului curs al clubului."
+          action={
+            <Button asChild className="mt-3 h-touch-target min-h-touch-target">
+              <Link to="/club/courses/new">
+                <Plus aria-hidden="true" /> Creează primul curs
+              </Link>
+            </Button>
+          }
+        />
       )}
     </div>
   )
