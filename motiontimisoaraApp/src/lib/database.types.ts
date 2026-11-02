@@ -1151,6 +1151,7 @@ export type Database = {
           description: string | null
           email: string | null
           hero_photo_storage_path: string | null
+          hidden_from_public: boolean
           id: string
           lat: number | null
           lng: number | null
@@ -1182,6 +1183,7 @@ export type Database = {
           description?: string | null
           email?: string | null
           hero_photo_storage_path?: string | null
+          hidden_from_public?: boolean
           id?: string
           lat?: number | null
           lng?: number | null
@@ -1213,6 +1215,7 @@ export type Database = {
           description?: string | null
           email?: string | null
           hero_photo_storage_path?: string | null
+          hidden_from_public?: boolean
           id?: string
           lat?: number | null
           lng?: number | null
@@ -1461,6 +1464,7 @@ export type Database = {
           company_name: string | null
           company_reg_number: string | null
           has_company: boolean
+          hidden_from_public: boolean
           id: string
           photo_storage_path: string | null
           stripe_account_id: string | null
@@ -1479,6 +1483,7 @@ export type Database = {
           company_name?: string | null
           company_reg_number?: string | null
           has_company?: boolean
+          hidden_from_public?: boolean
           id?: string
           photo_storage_path?: string | null
           stripe_account_id?: string | null
@@ -1497,6 +1502,7 @@ export type Database = {
           company_name?: string | null
           company_reg_number?: string | null
           has_company?: boolean
+          hidden_from_public?: boolean
           id?: string
           photo_storage_path?: string | null
           stripe_account_id?: string | null
@@ -2767,6 +2773,7 @@ export type Database = {
           email: string
           enabled: boolean
           id: string
+          is_test_account: boolean
           name: string
           oauth_provider: string | null
           oauth_provider_id: string | null
@@ -2780,6 +2787,7 @@ export type Database = {
           email: string
           enabled?: boolean
           id: string
+          is_test_account?: boolean
           name: string
           oauth_provider?: string | null
           oauth_provider_id?: string | null
@@ -2793,6 +2801,7 @@ export type Database = {
           email?: string
           enabled?: boolean
           id?: string
+          is_test_account?: boolean
           name?: string
           oauth_provider?: string | null
           oauth_provider_id?: string | null
@@ -3500,6 +3509,23 @@ export type Database = {
           updated_at: string
         }[]
       }
+      hidden_from_public:
+        | {
+            Args: { "": Database["public"]["Tables"]["activities"]["Row"] }
+            Returns: boolean
+          }
+        | {
+            Args: { "": Database["public"]["Tables"]["camps"]["Row"] }
+            Returns: boolean
+          }
+        | {
+            Args: { "": Database["public"]["Tables"]["competitions"]["Row"] }
+            Returns: boolean
+          }
+        | {
+            Args: { "": Database["public"]["Tables"]["courses"]["Row"] }
+            Returns: boolean
+          }
       join_club_by_invitation: { Args: { p_code: string }; Returns: Json }
       mark_parent_announcements_seen: {
         Args: { p_as_of: string; p_expected_user_id: string }

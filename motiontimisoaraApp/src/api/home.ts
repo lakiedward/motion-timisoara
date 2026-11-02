@@ -7,7 +7,9 @@ export interface HomeStats {
   courses: number
 }
 
-async function countRows(query: PromiseLike<{ count: number | null; error: unknown }>): Promise<number> {
+async function countRows(
+  query: PromiseLike<{ count: number | null; error: unknown }>,
+): Promise<number> {
   const { count, error } = await query
   if (error) throw error
   return count ?? 0
@@ -15,11 +17,25 @@ async function countRows(query: PromiseLike<{ count: number | null; error: unkno
 
 export async function getHomeStats(): Promise<HomeStats> {
   const [clubs, coaches, sports, courses] = await Promise.all([
-    countRows(supabase.from('clubs').select('id', { count: 'exact', head: true })),
-    countRows(supabase.from('coach_profiles').select('id', { count: 'exact', head: true })),
+    countRows(
+      supabase
+        .from('clubs')
+        .select('id', { count: 'exact', head: true })
+        .filter('hidden_from_public', 'is', false),
+    ),
+    countRows(
+      supabase
+        .from('coach_profiles')
+        .select('id', { count: 'exact', head: true })
+        .filter('hidden_from_public', 'is', false),
+    ),
     countRows(supabase.from('sports').select('id', { count: 'exact', head: true })),
     countRows(
-      supabase.from('courses').select('id', { count: 'exact', head: true }).eq('active', true),
+      supabase
+        .from('courses')
+        .select('id', { count: 'exact', head: true })
+        .eq('active', true)
+        .filter('hidden_from_public', 'is', false),
     ),
   ])
   return { clubs, coaches, sports, courses }

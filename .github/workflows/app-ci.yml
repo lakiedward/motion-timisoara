@@ -136,6 +136,9 @@ jobs:
       - name: Verify club approval
         shell: pwsh
         run: ./supabase/tests/run-club-approval.ps1
+      - name: Verify test account visibility
+        shell: pwsh
+        run: ./supabase/tests/run-test-account-visibility.ps1
       - name: Verify checkout acceptance log
         shell: pwsh
         run: ./supabase/tests/run-checkout-acceptances.ps1
