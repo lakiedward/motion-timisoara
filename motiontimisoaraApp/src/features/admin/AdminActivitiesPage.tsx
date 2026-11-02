@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus, Search } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -11,7 +11,6 @@ import {
 } from '@/api/activities/admin-activities'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { Input } from '@/components/ui/input'
 import { StatusView } from '@/components/ui/status-view'
 import { ClubLocationListSkeleton } from '@/features/club/locations/ClubLocationListSkeleton'
 import { plural } from '@/lib/plural'
@@ -31,6 +30,7 @@ import {
   type ActivityGroup,
   type ActivityStatus,
 } from './activities/activity-overview'
+import { FilterSearch } from '@/components/catalog-filters/FilterSearch'
 
 const STATUS_OPTIONS: FilterOption<ActivityStatus>[] = [
   { value: 'upcoming', label: 'Viitoare' },
@@ -120,20 +120,13 @@ export default function AdminActivitiesPage() {
             </span>
           )}
         </h1>
-        <div className="relative order-last w-full md:order-none md:w-80">
-          <Search
-            aria-hidden="true"
-            className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-          />
-          <Input
-            type="search"
-            value={query}
-            onChange={(e) => set({ query: e.target.value })}
-            placeholder="Caută activitate, antrenor sau club"
-            aria-label="Caută activități după nume, antrenor, club sau locație"
-            className="h-touch-target min-h-touch-target pl-9 lg:h-9 lg:min-h-9"
-          />
-        </div>
+        <FilterSearch
+          className="order-last w-full md:order-none md:w-80"
+          value={query}
+          onChange={(e) => set({ query: e.target.value })}
+          placeholder="Caută activitate, antrenor sau club"
+          aria-label="Caută activități după nume, antrenor, club sau locație"
+        />
         <Button asChild className="h-touch-target min-h-touch-target lg:h-9 lg:min-h-9">
           <Link to="/admin/activities/new">
             <Plus aria-hidden="true" /> Activitate nouă

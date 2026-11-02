@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
@@ -60,9 +60,13 @@ test('an independent coach shows the coach form or a message without courses', a
   renderPage()
   await screen.findByRole('option', { name: 'Clubul Delfinul' })
   await user.selectOptions(screen.getByLabelText('Organizator'), 'independent')
-  await screen.findByRole('option', { name: 'Ana Rusu' })
-  await user.selectOptions(screen.getByLabelText('Antrenor'), 'u1')
+  const coach = screen.getByLabelText('Antrenor')
+  await waitFor(() => expect(coach).toBeEnabled())
+  await user.click(coach)
+  await user.click(await screen.findByRole('menuitemradio', { name: 'Ana Rusu' }))
+  expect(coach).toHaveTextContent('Ana Rusu')
   expect(await screen.findByLabelText('Cursul')).toHaveValue('k9')
-  await user.selectOptions(screen.getByLabelText('Antrenor'), 'u2')
+  await user.click(coach)
+  await user.click(await screen.findByRole('menuitemradio', { name: 'Dan Pop' }))
   expect(await screen.findByText('Antrenorul nu are cursuri active.')).toBeInTheDocument()
 })

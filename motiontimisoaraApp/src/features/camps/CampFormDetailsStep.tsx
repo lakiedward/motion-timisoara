@@ -14,6 +14,7 @@ import { slugDinTitlu } from '@/api/camps-admin'
 import { HeroPhotoField } from '@/components/HeroPhotoField'
 import type { CampRulesFileMeta } from '@/lib/camp-rules'
 import type { Values } from './camp-form-schema'
+import { Checkbox } from '@/components/ui/checkbox'
 
 type LocatieOptiune = { id: string; name: string; city: string | null }
 
@@ -150,7 +151,7 @@ export default function CampFormDetailsStep({
 
       <FormSection title="Plată" description="Pe lângă plata cu cardul.">
         <label className="flex min-h-11 items-center gap-3 text-sm">
-          <input type="checkbox" {...register('allow_cash')} className="size-4" />
+          <Checkbox {...register('allow_cash')} />
           Acceptă plata cash
         </label>
       </FormSection>

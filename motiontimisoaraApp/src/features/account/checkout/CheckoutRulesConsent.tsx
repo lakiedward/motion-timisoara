@@ -17,6 +17,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import { Checkbox } from '@/components/ui/checkbox'
 
 export interface OfferingRules {
   text: string | null
@@ -98,9 +99,7 @@ export function CheckoutRulesConsent({
         </div>
       )}
       <label className="flex cursor-pointer items-start gap-3 text-sm">
-        <input
-          type="checkbox"
-          className="accent-primary focus-visible:outline-ring mt-0.5 size-4 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2"
+        <Checkbox
           checked={checked}
           onChange={(e) => onCheckedChange(e.target.checked)}
         />

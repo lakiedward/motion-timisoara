@@ -4,6 +4,7 @@ import { listeazaSabloaneTabara, type Proprietar } from '@/api/camps-admin'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import CampFormField from '../CampFormField'
+import { Checkbox } from '@/components/ui/checkbox'
 
 export default function CampTemplateOnCreate({
   proprietar,
@@ -32,9 +33,7 @@ export default function CampTemplateOnCreate({
   return (
     <div className="bg-card space-y-3 rounded-xl border p-4">
       <label className="flex min-h-11 items-center gap-3 text-sm font-medium">
-        <input
-          type="checkbox"
-          className="size-4"
+        <Checkbox
           checked={activ}
           onChange={(e) => onActiv(e.target.checked)}
         />

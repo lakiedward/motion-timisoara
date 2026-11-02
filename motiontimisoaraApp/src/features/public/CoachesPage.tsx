@@ -1,3 +1,4 @@
+import { FilterMenu } from '@/components/catalog-filters/FilterMenu'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -61,22 +62,14 @@ export default function CoachesPage() {
               onChange={(event) => setNameSearch(event.target.value)}
             />
           </div>
-          <div className="min-w-0 space-y-2">
-            <Label htmlFor="coach-sport-filter">Sport</Label>
-            <select
-              id="coach-sport-filter"
-              value={sportId}
-              onChange={(event) => setSportId(event.target.value)}
-              className="border-input bg-background hover:border-muted-foreground focus-visible:outline-ring h-touch-target w-full min-w-0 rounded-md border px-3 text-base shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 md:text-sm"
-            >
-              <option value="">Toate sporturile</option>
-              {sports.map((sport) => (
-                <option key={sport.id} value={sport.id}>
-                  {sport.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <FilterMenu
+            id="coach-sport-filter"
+            label="Sport"
+            value={sportId}
+            allLabel="Toate sporturile"
+            options={sports.map((sport) => ({ value: sport.id, label: sport.name }))}
+            onChange={setSportId}
+          />
         </div>
         {listLoading ? (
           <div

@@ -1,9 +1,8 @@
-import { Search } from 'lucide-react'
 
-import { Input } from '@/components/ui/input'
 import { CourseFilterBar, type FilterOption } from '@/features/admin/courses/CourseFilterBar'
 import { TIPURI_ALERTA } from './child-alerts'
 import type { AlertFilter, ArrivalFilter, ParticipantFilters } from './participant-list'
+import { FilterSearch } from '@/components/catalog-filters/FilterSearch'
 
 const ARRIVAL_LABELS: Record<Exclude<ArrivalFilter, ''>, string> = {
   pending: 'Neconfirmați',
@@ -38,20 +37,12 @@ export function ParticipantFilterBar({
 
   return (
     <div className="mb-4 space-y-2">
-      <div className="relative">
-        <Search
-          aria-hidden="true"
-          className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-        />
-        <Input
-          type="search"
-          value={filters.query}
-          onChange={(e) => onChange({ ...filters, query: e.target.value })}
-          placeholder="Caută participant sau contact"
-          aria-label="Caută participanți după nume, contact sau telefon"
-          className="h-touch-target pl-9"
-        />
-      </div>
+      <FilterSearch
+        value={filters.query}
+        onChange={(e) => onChange({ ...filters, query: e.target.value })}
+        placeholder="Caută participant sau contact"
+        aria-label="Caută participanți după nume, contact sau telefon"
+      />
       <CourseFilterBar
         status={filters.alert}
         sport={filters.arrival}
