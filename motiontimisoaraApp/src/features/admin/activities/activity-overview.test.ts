@@ -5,7 +5,6 @@ import {
   NO_ACTIVITY_FILTERS,
   activitySportCounts,
   activityStatusCounts,
-  activityWhen,
   countActivities,
   filterActivities,
   groupActivitiesByOrganizer,
@@ -96,8 +95,7 @@ test('groups put clubs first and keep totals from every activity', () => {
   expect(past[0].activities.map((a) => a.id)).toEqual(['1', '2'])
 })
 
-test('formats the date, time and count in Romanian', () => {
-  expect(activityWhen(all[0])).toMatch(/^joi, 5 nov\.? · 10:00–12:30$/)
+test('formats the count in Romanian', () => {
   expect(countActivities(1)).toBe('1 activitate')
   expect(countActivities(3)).toBe('3 activități')
   expect(todayInBucharest(new Date('2026-10-19T22:30:00Z'))).toBe('2026-10-20')

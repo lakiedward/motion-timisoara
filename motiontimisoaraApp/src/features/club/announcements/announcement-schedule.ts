@@ -1,5 +1,6 @@
 import type { ClubAnnouncement } from '@/api/club'
 import { zonedCivilTimeToUtc } from '@/lib/course-program/occurrences'
+import { formatShortDateTime } from '@/lib/panel-date'
 
 const TZ = 'Europe/Bucharest'
 
@@ -31,16 +32,7 @@ const partsFormat = new Intl.DateTimeFormat('en-GB', {
   minute: '2-digit',
 })
 
-const displayFormat = new Intl.DateTimeFormat('ro-RO', {
-  timeZone: TZ,
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-})
-
-export const formatMoment = (iso: string) => displayFormat.format(new Date(iso))
+export const formatMoment = (iso: string) => formatShortDateTime(iso)
 
 function inBucharest(iso: string): { date: string; time: string } {
   const v = Object.fromEntries(

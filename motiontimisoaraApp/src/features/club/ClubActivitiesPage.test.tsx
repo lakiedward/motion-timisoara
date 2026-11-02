@@ -86,6 +86,9 @@ test('activitatea clubului se editează din formular', async () => {
       id: 'act-1',
       name: 'Atelier de înot',
       activity_date: '2026-10-03',
+      start_time: '10:00:00',
+      end_time: '12:00:00',
+      capacity: 20,
       price: 5000,
       currency: 'RON',
       active: true,
@@ -96,7 +99,10 @@ test('activitatea clubului se editează din formular', async () => {
   ] as never)
   renderPage()
   expect(await screen.findByText('Atelier de înot')).toBeInTheDocument()
-  expect(screen.getByRole('link', { name: 'Editează' })).toHaveAttribute(
+  const rand = screen.getByText('Atelier de înot').closest('li')!
+  expect(rand).toHaveTextContent('03.10.2026 · 10:00–12:00')
+  expect(rand).toHaveTextContent('Antrenor: Audit Antrenor')
+  expect(screen.getByRole('link', { name: 'Editează Atelier de înot' })).toHaveAttribute(
     'href',
     '/club/activities/act-1/edit',
   )

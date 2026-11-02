@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -110,21 +110,21 @@ test('retry refetches courses', async () => {
   expect(await screen.findByText(/niciun curs încă/i)).toBeInTheDocument()
 })
 
-test('loading keeps the header and two rounded skeletons', () => {
+test('loading keeps the header and three row skeletons', () => {
   mockedGetMyCourses.mockImplementation(() => new Promise(() => {}))
   renderPage()
   expect(screen.getByRole('heading', { name: 'Cursurile mele' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: /curs nou/i })).toBeInTheDocument()
   const skeletons = document.querySelectorAll('[data-slot="skeleton"]')
-  expect(skeletons).toHaveLength(2)
+  expect(skeletons).toHaveLength(3)
   skeletons.forEach((el) => {
-    expect(el.className).toMatch(/h-52/)
+    expect(el.className).toMatch(/h-20/)
     expect(el.className).toMatch(/rounded-xl/)
     expect(el.className).toMatch(/animate-pulse/)
   })
 })
 
-test('filled cards show location under the title, badges, price, gray line and outline actions', async () => {
+test('filled rows show title, sport and status badges, location, age, price and the shared actions', async () => {
   mockedGetMyCourses.mockResolvedValue([
     course({
       id: '1',
@@ -168,23 +168,23 @@ test('filled cards show location under the title, badges, price, gray line and o
   expect(screen.getByText('480,00 lei')).toBeInTheDocument()
   expect(screen.getByText('600,00 lei')).toBeInTheDocument()
   expect(screen.getByText('400,00 lei')).toBeInTheDocument()
-  expect(screen.getByText('Stadion Atletism · 8–14 ani')).toBeInTheDocument()
-  expect(screen.getByText('Bazin Olimpic Timișoara · 6–10 ani')).toBeInTheDocument()
-  expect(screen.getByText('Bazin Audit Motion · 7–12 ani')).toBeInTheDocument()
+  const rows = screen.getAllByRole('listitem')
+  expect(rows[0]).toHaveTextContent('8–14 ani')
+  expect(rows[1]).toHaveTextContent('6–10 ani')
+  expect(rows[2]).toHaveTextContent('7–12 ani')
+  expect(screen.getByText('Alergare').getAttribute('data-slot')).toBe('badge')
   const edit = screen.getAllByRole('link', { name: /editează/i })
   expect(edit[0]).toHaveAttribute('href', '/coach/courses/1/edit')
-  const deactivate = screen.getAllByRole('button', { name: 'Dezactivează' })[0]
-  expect(deactivate.className).toMatch(/border/)
-  expect(deactivate.className).not.toMatch(/ghost/)
-  expect(screen.getByRole('button', { name: 'Activează' }).className).toMatch(/border/)
-  expect(deactivate.className).toMatch(/min-h-11/)
-  expect(edit[0].className).toMatch(/min-h-11/)
-  const card = edit[0].closest('[data-slot="card"]')
-  expect(card?.className).toMatch(/border/)
-  expect(card?.className).not.toMatch(/shadow-card/)
+  expect(edit[0].className).toMatch(/min-h-touch-target/)
+  const deactivate = screen.getAllByRole('button', { name: /^Dezactivează/ })[0]
+  expect(deactivate.className).toMatch(/min-h-touch-target/)
+  expect(screen.getByRole('button', { name: /^Activează/ })).toBeInTheDocument()
+  const list = rows[0].closest('ul')
+  expect(list?.className).toMatch(/border/)
+  expect(list?.className).not.toMatch(/shadow/)
 })
 
-test('cards say de la, până la, a full interval, or no age', async () => {
+test('rows say de la, până la, a full interval, or no age', async () => {
   mockedGetMyCourses.mockResolvedValue([
     course({
       id: 'both',
@@ -223,21 +223,22 @@ test('cards say de la, până la, a full interval, or no age', async () => {
     }),
   ])
   renderPage()
-  expect(await screen.findByText('Stadion Ambele · 8–14 ani')).toBeInTheDocument()
-  expect(screen.getByText('Stadion Minim · de la 7 ani')).toBeInTheDocument()
-  expect(screen.getByText('Stadion Maxim · până la 14 ani')).toBeInTheDocument()
-  expect(screen.getByText('Stadion Zero · 0–5 ani')).toBeInTheDocument()
-  expect(screen.getAllByText('Stadion Nicio').length).toBeGreaterThan(0)
-  expect(screen.queryByText(/Stadion Nicio ·/)).not.toBeInTheDocument()
+  const row = async (name: string) => (await screen.findByText(name)).closest('li')!
+  expect(await row('Ambele')).toHaveTextContent('8–14 ani')
+  expect(await row('Doar minim')).toHaveTextContent('de la 7 ani')
+  expect(await row('Doar maxim')).toHaveTextContent('până la 14 ani')
+  expect(await row('De la zero')).toHaveTextContent('0–5 ani')
+  expect(await row('Fără limite')).not.toHaveTextContent(/ani/)
   expect(screen.queryByText(/null/)).not.toBeInTheDocument()
 })
 
-test('grid uses one column on phone and two from sm up', async () => {
+test('courses render as rows of one bordered list, like the admin and club lists', async () => {
   mockedGetMyCourses.mockResolvedValue([course({ id: '1' }), course({ id: '2' })])
   renderPage()
   await screen.findAllByRole('heading', { name: 'Înot' })
-  const grid = screen.getAllByRole('heading', { name: 'Înot' })[0].closest('.grid')
-  expect(grid?.className).toMatch(/sm:grid-cols-2/)
+  const list = screen.getAllByRole('heading', { name: 'Înot' })[0].closest('ul')
+  expect(list?.className).toMatch(/divide-y/)
+  expect(within(list as HTMLElement).getAllByRole('listitem')).toHaveLength(2)
 })
 
 test('search, status pills and sport pills narrow the list and can be cleared', async () => {

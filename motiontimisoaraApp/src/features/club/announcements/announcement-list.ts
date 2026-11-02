@@ -1,4 +1,5 @@
 import type { ClubAnnouncement, ClubAudience } from '@/api/club'
+import { formatShortDate } from '@/lib/panel-date'
 import { scheduleState, type ScheduleState } from './announcement-schedule'
 
 export type PriorityStyle = {
@@ -40,14 +41,7 @@ export function numeleTintei(
   return INDISPONIBIL[a.audience_kind] ?? `${fel} indisponibil`
 }
 
-const dateFormat = new Intl.DateTimeFormat('ro-RO', {
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-  timeZone: 'Europe/Bucharest',
-})
-
-export const formatData = (iso: string) => dateFormat.format(new Date(iso))
+export const formatData = (iso: string) => formatShortDate(iso)
 
 const GRUPE: { key: ScheduleState; title: string }[] = [
   { key: 'scheduled', title: 'Programate' },

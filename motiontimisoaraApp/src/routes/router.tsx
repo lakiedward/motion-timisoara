@@ -241,9 +241,7 @@ export const router = createBrowserRouter([
                 element: (
                   <AdminCoursesPage
                     headerActions={<NewCourseButton />}
-                    renderRowActions={(course, layout) => (
-                      <EditCourseAction course={course} layout={layout} />
-                    )}
+                    renderRowActions={(course) => <EditCourseAction course={course} />}
                   />
                 ),
               },

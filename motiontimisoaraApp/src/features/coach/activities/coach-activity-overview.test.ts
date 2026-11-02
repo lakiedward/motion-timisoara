@@ -1,6 +1,5 @@
 import type { CoachActivity } from '@/api/coach'
 import {
-  activityDateLine,
   coachActivityStatusCounts,
   filterCoachActivities,
   groupByMonth,
@@ -74,10 +73,6 @@ test('groups by month with a counted title', () => {
     'Septembrie 2026 · 1 activitate',
     'August 2026 · 1 activitate',
   ])
-})
-
-test('date line shows the Romanian weekday, date and time range', () => {
-  expect(activityDateLine(act({ id: 'x' }))).toBe('Vineri, 23.10.2026 · 09:00–11:30')
 })
 
 test('only the cleared state has no filters', () => {

@@ -9,7 +9,7 @@ import { StatusView } from '@/components/ui/status-view'
 import { todayInBucharest } from '@/features/admin/activities/activity-overview'
 import { ClubLocationListSkeleton } from '@/features/club/locations/ClubLocationListSkeleton'
 import { ActivityRoster } from '@/features/coach/activities/ActivityRoster'
-import { activityDateLine } from '@/features/coach/activities/coach-activity-overview'
+import { activityWhen } from '@/lib/panel-date'
 import { plural } from '@/lib/plural'
 import { cn } from '@/lib/utils'
 
@@ -60,7 +60,7 @@ export function CoachActivityAttendance() {
   const roster = (a: CoachActivity) => (
     <ActivityRoster
       activityId={a.id}
-      opensOn={a.activity_date > today ? activityDateLine(a) : null}
+      opensOn={a.activity_date > today ? activityWhen(a) : null}
     />
   )
   const groups = [
@@ -104,7 +104,7 @@ export function CoachActivityAttendance() {
                               {marked}/{a.enrolled} pontați
                             </Badge>
                           </span>
-                          <span className="text-foreground text-sm">{activityDateLine(a)}</span>
+                          <span className="text-foreground text-sm">{activityWhen(a)}</span>
                           <span className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                             <span className="inline-flex min-w-0 items-center gap-1 wrap-anywhere">
                               <MapPin aria-hidden="true" className="size-4 shrink-0" />
@@ -130,7 +130,7 @@ export function CoachActivityAttendance() {
           <h2 className="font-display text-foreground -mx-4 border-b px-4 py-3 font-bold">
             <span className="line-clamp-2 wrap-anywhere">{sel.name}</span>
             <span className="text-muted-foreground block text-sm font-normal">
-              {activityDateLine(sel)}
+              {activityWhen(sel)}
             </span>
           </h2>
           {roster(sel)}

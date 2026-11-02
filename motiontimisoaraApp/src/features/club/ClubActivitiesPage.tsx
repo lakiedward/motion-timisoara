@@ -1,24 +1,20 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Pencil, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { getClubActivities, getMyClub, setClubActivityActive } from '@/api/club'
-import { formatMoney } from '@/lib/money'
-import { Badge } from '@/components/ui/badge'
 import { PageHeader, PageNewLink } from '@/components/page-header/PageHeader'
+import { ActivityListRow } from '@/components/panel-list/ActivityListRow'
+import { todayInBucharest } from '@/features/admin/activities/activity-overview'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { ClubActivityForm } from './activity-form/ClubActivityForm'
 
-function dataActivitate(zi: string) {
-  const [an, luna, ziua] = zi.split('-').map(Number)
-  return new Date(an, (luna ?? 1) - 1, ziua ?? 1).toLocaleDateString('ro-RO')
-}
-
 function Lista() {
   const qc = useQueryClient()
+  const today = todayInBucharest()
   const {
     data: club,
     isLoading: clubLoading,
@@ -57,9 +53,9 @@ function Lista() {
         <PageNewLink to="/club/activities/new">Activitate nouă</PageNewLink>
       </PageHeader>
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {[0, 1].map((i) => (
-            <Skeleton key={i} className="h-44 rounded-xl" />
+        <div className="grid gap-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-20 rounded-xl" />
           ))}
         </div>
       ) : isError ? (
@@ -77,46 +73,19 @@ function Lista() {
           </Button>
         </div>
       ) : activities.length ? (
-        <div className="grid gap-4 sm:auto-rows-fr sm:grid-cols-2">
+        <ul className="bg-card divide-y overflow-hidden rounded-xl border">
           {activities.map((activity) => (
-            <div key={activity.id} className="bg-card rounded-xl border p-5">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <h3 className="font-display text-lg font-bold">{activity.name}</h3>
-                  <p className="text-muted-foreground mt-1 text-sm">
-                    {dataActivitate(activity.activity_date)}
-                    {activity.location?.name ? ` · ${activity.location.name}` : ''}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {activity.sport && <Badge>{activity.sport.name}</Badge>}
-                    <Badge variant={activity.active ? 'success' : 'outline'}>
-                      {activity.active ? 'Activă' : 'Inactivă'}
-                    </Badge>
-                  </div>
-                </div>
-                <span className="font-display font-bold">
-                  {formatMoney(activity.price, activity.currency)}
-                </span>
-              </div>
-              <p className="text-muted-foreground mt-2 text-sm">{activity.coach?.name ?? '—'}</p>
-              <div className="mt-4 flex gap-2">
-                <Button asChild size="sm" variant="outline">
-                  <Link to={`/club/activities/${activity.id}/edit`}>
-                    <Pencil /> Editează
-                  </Link>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={toggle.isPending}
-                  onClick={() => toggle.mutate({ id: activity.id, active: !activity.active })}
-                >
-                  {activity.active ? 'Dezactivează' : 'Activează'}
-                </Button>
-              </div>
-            </div>
+            <ActivityListRow
+              key={activity.id}
+              activity={activity}
+              editTo={`/club/activities/${activity.id}/edit`}
+              past={activity.activity_date < today}
+              showCoach
+              pending={toggle.isPending && toggle.variables?.id === activity.id}
+              onToggle={() => toggle.mutate({ id: activity.id, active: !activity.active })}
+            />
           ))}
-        </div>
+        </ul>
       ) : (
         <StatusView
           state="empty"
