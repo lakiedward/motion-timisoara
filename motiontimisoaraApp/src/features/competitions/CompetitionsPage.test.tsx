@@ -73,3 +73,26 @@ test('fără concursuri, mesajul e altul decât cel de eroare', async () => {
   await waitFor(() => expect(screen.getByText(/Niciun concurs publicat/)).toBeInTheDocument())
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 })
+
+test('concursurile se pot filtra după lună și locație', async () => {
+  const user = userEvent.setup()
+  mocked.mockResolvedValue([
+    CONCURS,
+    {
+      ...CONCURS,
+      id: 'k2',
+      slug: 'cros',
+      title: 'Crosul de iarnă',
+      startAt: '2027-01-24T08:00:00Z',
+      endAt: '2027-01-24T11:00:00Z',
+      locationText: 'Parcul Central',
+    },
+  ])
+  deseneaza()
+  expect(await screen.findByText('2 concursuri găsite')).toBeInTheDocument()
+  await user.selectOptions(screen.getByLabelText('Unde?'), 'Parcul Central')
+  expect(screen.getByText('1 concurs găsit')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Crosul de iarnă' })).toBeInTheDocument()
+  await user.selectOptions(screen.getByLabelText('Când?'), 'Octombrie 2026')
+  expect(screen.getByText('Niciun concurs nu corespunde filtrelor.')).toBeInTheDocument()
+})

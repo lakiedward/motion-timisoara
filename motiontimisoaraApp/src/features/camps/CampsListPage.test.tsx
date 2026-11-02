@@ -51,6 +51,7 @@ function tabara(p: Partial<TabaraDinLista> = {}): TabaraDinLista {
     club_id: 'club-1',
     coach_id: null,
     currency: 'RON',
+    eurRonRateMicros: null,
     gallery_json: null,
     camp_requirements: [],
     rules: null,

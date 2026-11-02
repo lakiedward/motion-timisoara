@@ -1,5 +1,5 @@
 import { vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
@@ -22,6 +22,7 @@ const ACTIVITATE: ActivitateDinLista = {
   endTime: '12:00:00',
   price: 2000,
   currency: 'EUR',
+  eurRonRateMicros: null,
   locationName: 'DEMO — Parc de antrenament',
   sportName: 'Ciclism',
   sportCode: 'ciclism',
@@ -123,7 +124,7 @@ test('cardul arată poza, sportul pe poză, data, orele, locul, prețul, locuril
     'src',
     'https://public/sport-photos/ciclism.jpg',
   )
-  const sport = screen.getByText('Ciclism')
+  const sport = within(card).getByText('Ciclism')
   expect(card.querySelector('.relative')?.contains(sport)).toBe(true)
   expect(card.querySelector('h3')?.textContent).toBe('DEMO — Atelier de ciclism')
   expect(
@@ -132,7 +133,7 @@ test('cardul arată poza, sportul pe poză, data, orele, locul, prețul, locuril
   ).toBeTruthy()
   expect(screen.getByText('26.09.2026')).toBeInTheDocument()
   expect(screen.getByText('10:00–12:00')).toBeInTheDocument()
-  expect(screen.getByText('DEMO — Parc de antrenament')).toBeInTheDocument()
+  expect(within(card).getByText('DEMO — Parc de antrenament')).toBeInTheDocument()
   expect(screen.getAllByRole('link')).toHaveLength(1)
   expect(screen.getByText('20,00 EUR')).toBeInTheDocument()
   expect(screen.getByText('11 locuri rămase')).toBeInTheDocument()
@@ -147,7 +148,7 @@ test('fără poză, cardul pune o iconiță, nu un emoji', async () => {
   expect(card.querySelector('img')).toBeNull()
   expect(card.querySelector('svg')).toBeInTheDocument()
   expect(card.textContent).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u)
-  expect(screen.getByText('Ciclism')).toBeInTheDocument()
+  expect(within(card).getByText('Ciclism')).toBeInTheDocument()
 })
 
 test('dacă poza nu se încarcă, cardul trece pe ilustrația sportului', async () => {
@@ -180,4 +181,26 @@ test('fără limită nu arată nici locuri, nici „epuizate”', async () => {
   await screen.findByText('DEMO — Atelier de ciclism')
   expect(screen.queryByText(/locuri rămase/)).not.toBeInTheDocument()
   expect(screen.queryByText('Locuri epuizate')).not.toBeInTheDocument()
+})
+
+test('filtrează activitățile după sport și lună', async () => {
+  const user = userEvent.setup()
+  mocked.mockResolvedValue([
+    ACTIVITATE,
+    {
+      ...ACTIVITATE,
+      id: 'inot',
+      name: 'Ziua înotului',
+      activityDate: '2026-10-10',
+      sportName: 'Înot',
+      sportCode: 'inot',
+    },
+  ])
+  deseneaza()
+  expect(await screen.findByText('2 activități găsite')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Înot' }))
+  expect(screen.getByText('1 activitate găsită')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /Ziua înotului/ })).toBeInTheDocument()
+  await user.selectOptions(screen.getByLabelText('Când?'), 'Septembrie 2026')
+  expect(screen.getByText('Nicio activitate nu corespunde filtrelor.')).toBeInTheDocument()
 })

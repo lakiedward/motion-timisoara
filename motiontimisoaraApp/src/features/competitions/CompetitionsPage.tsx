@@ -1,25 +1,50 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 
 import { getConcursuriPublice, type PublicCompetition } from '@/api/competition/competitions'
-import { Button } from '@/components/ui/button'
+import {
+  EMPTY_EVENT_FILTERS,
+  eventLocationOptions,
+  eventMatchesFilters,
+  eventMonthOptions,
+  type EventCatalogItem,
+} from '@/lib/event-catalog'
+import { plural } from '@/lib/plural'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
+import { EventFilters } from '@/components/catalog-filters/EventFilters'
+import { FilteredEmptyState } from '@/components/catalog-filters/FilteredEmptyState'
 import { formatCompetitionDateTime } from '@/lib/competition-schedule'
 
+function competitionItem(concurs: PublicCompetition): EventCatalogItem {
+  return { startDate: concurs.startAt, endDate: concurs.endAt, location: concurs.locationText }
+}
+
 export default function CompetitionsPage() {
+  const [filters, setFilters] = useState(EMPTY_EVENT_FILTERS)
   const {
     data: concursuri = [],
     isLoading,
     isError,
     refetch,
   } = useQuery({ queryKey: ['concursuri-publice'], queryFn: getConcursuriPublice })
+  const items = concursuri.map(competitionItem)
+  const filtered = concursuri.filter((_, index) => eventMatchesFilters(items[index]!, filters))
 
   return (
     <div>
-      <section className="from-primary/8 to-transparent border-b bg-gradient-to-b">
+      <section
+        aria-labelledby="competitions-page-title"
+        data-section="motion-react:page:/concursuri:section:toata-pagina"
+        className="from-primary/8 to-transparent border-b bg-gradient-to-b"
+      >
         <div className="mx-auto max-w-7xl px-6 py-14">
           <span className="eyebrow mb-3">Întreceri</span>
-          <h1 className="font-display text-foreground text-4xl font-extrabold lg:text-5xl">
+          <h1
+            id="competitions-page-title"
+            className="font-display text-foreground text-4xl font-extrabold lg:text-5xl"
+          >
             Concursuri
           </h1>
           <p className="text-muted-foreground mt-2">Concursuri sportive pentru copii și adulți.</p>
@@ -28,28 +53,52 @@ export default function CompetitionsPage() {
 
       <div className="mx-auto max-w-7xl px-6 py-10">
         {isError ? (
-          <div className="rounded-xl border border-dashed py-20 text-center" role="alert">
-            <p className="text-foreground font-medium">Nu am putut încărca concursurile.</p>
-            <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => void refetch()}>
-              Reîncearcă
-            </Button>
-          </div>
+          <StatusView
+            state="error"
+            title="Nu am putut încărca concursurile."
+            text="Verifică conexiunea și încearcă din nou."
+            onRetry={() => void refetch()}
+          />
         ) : isLoading ? (
-          <div className="grid gap-7 md:grid-cols-2">
+          <div role="status" aria-label="Se încarcă concursurile" className="grid gap-7 md:grid-cols-2">
             {[0, 1].map((i) => (
               <Skeleton key={i} className="h-72 rounded-xl" />
             ))}
           </div>
         ) : concursuri.length ? (
-          <div className="grid gap-7 md:grid-cols-2">
-            {concursuri.map((concurs) => (
-              <CardConcurs key={concurs.id} concurs={concurs} />
-            ))}
-          </div>
+          <>
+            <EventFilters
+              idPrefix="competition"
+              filters={filters}
+              monthOptions={eventMonthOptions(items)}
+              locationOptions={eventLocationOptions(items)}
+              loading={false}
+              onChange={setFilters}
+            />
+            {filtered.length ? (
+              <>
+                <p className="text-muted-foreground mb-4 text-sm" aria-live="polite">
+                  {plural(filtered.length, 'concurs găsit', 'concursuri găsite')}
+                </p>
+                <div className="grid gap-7 md:grid-cols-2">
+                  {filtered.map((concurs) => (
+                    <CardConcurs key={concurs.id} concurs={concurs} />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <FilteredEmptyState
+                title="Niciun concurs nu corespunde filtrelor."
+                onReset={() => setFilters(EMPTY_EVENT_FILTERS)}
+              />
+            )}
+          </>
         ) : (
-          <div className="text-muted-foreground rounded-xl border border-dashed py-20 text-center">
-            Niciun concurs publicat momentan.
-          </div>
+          <StatusView
+            state="empty"
+            title="Niciun concurs publicat momentan."
+            text="Concursurile noi apar aici când un club sau un antrenor le publică."
+          />
         )}
       </div>
     </div>

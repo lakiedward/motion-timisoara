@@ -3,7 +3,7 @@ import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { CourseFilterBar, type FilterOption } from '@/features/admin/courses/CourseFilterBar'
-import { FILTER_SELECT_CLASS } from '@/features/public/courses/CourseFilters'
+import { FILTER_SELECT_CLASS } from '@/components/catalog-filters/FilterSelect'
 import type { ClubCourseFilters, ClubStatusFilter } from './club-course-filters'
 
 const STATUS_OPTIONS: FilterOption<ClubStatusFilter>[] = [

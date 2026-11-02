@@ -1,17 +1,51 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
-import { getTaberePublice } from '@/api/camps'
+import { getTaberePublice, type TabaraDinLista } from '@/api/camps'
+import {
+  CAMP_PRICE_LIMITS,
+  EMPTY_EVENT_FILTERS,
+  eventLocationOptions,
+  eventMatchesFilters,
+  eventMonthOptions,
+  priceInRonBani,
+  priceLimitOptions,
+  type EventCatalogItem,
+} from '@/lib/event-catalog'
+import { formatRon } from '@/lib/money'
+import { plural } from '@/lib/plural'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
+import { EventFilters } from '@/components/catalog-filters/EventFilters'
+import { FilteredEmptyState } from '@/components/catalog-filters/FilteredEmptyState'
 import { CardTabara } from './components/CampListCard'
 
+const PRICE_OPTIONS = priceLimitOptions(CAMP_PRICE_LIMITS, (bani) =>
+  formatRon(bani).replace(',00', ''),
+)
+
+function campItem(tabara: TabaraDinLista): EventCatalogItem {
+  return {
+    startDate: tabara.period_start,
+    endDate: tabara.period_end,
+    location: tabara.location?.name ?? tabara.location_text,
+    priceRonBani:
+      tabara.pricingMode === 'by_age'
+        ? null
+        : priceInRonBani(tabara.price, tabara.currency, tabara.eurRonRateMicros),
+  }
+}
+
 export default function CampsPage() {
+  const [filters, setFilters] = useState(EMPTY_EVENT_FILTERS)
   const {
     data: tabere = [],
     isLoading,
     isError,
     refetch,
   } = useQuery({ queryKey: ['tabere-publice'], queryFn: () => getTaberePublice() })
+  const items = tabere.map(campItem)
+  const filtered = tabere.filter((_, index) => eventMatchesFilters(items[index]!, filters))
 
   return (
     <div>
@@ -50,13 +84,36 @@ export default function CampsPage() {
             ))}
           </div>
         ) : tabere.length ? (
-          <ul className="grid gap-4 sm:grid-cols-2">
-            {tabere.map((t) => (
-              <li key={t.id}>
-                <CardTabara tabara={t} />
-              </li>
-            ))}
-          </ul>
+          <>
+            <EventFilters
+              idPrefix="camp"
+              filters={filters}
+              monthOptions={eventMonthOptions(items)}
+              priceOptions={PRICE_OPTIONS}
+              locationOptions={eventLocationOptions(items)}
+              loading={false}
+              onChange={setFilters}
+            />
+            {filtered.length ? (
+              <>
+                <p className="text-muted-foreground mb-4 text-sm" aria-live="polite">
+                  {plural(filtered.length, 'tabără găsită', 'tabere găsite')}
+                </p>
+                <ul className="grid gap-4 sm:grid-cols-2">
+                  {filtered.map((t) => (
+                    <li key={t.id}>
+                      <CardTabara tabara={t} />
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <FilteredEmptyState
+                title="Nicio tabără nu corespunde filtrelor."
+                onReset={() => setFilters(EMPTY_EVENT_FILTERS)}
+              />
+            )}
+          </>
         ) : (
           <StatusView
             state="empty"

@@ -108,6 +108,7 @@ export async function getConcursuriPublice(): Promise<PublicCompetition[]> {
   const { data, error } = await supabase
     .from('competitions')
     .select('*, club:clubs(id, name), coach:profiles(id, name)')
+    .order('start_at', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false })
   if (error) throw error
   return ((data ?? []) as unknown as Array<Competition & Legaturi>).map(prezinta)
