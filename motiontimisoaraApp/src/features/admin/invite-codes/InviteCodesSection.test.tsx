@@ -1,9 +1,11 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, expect, test, vi } from 'vitest'
 
 import { inviteCodeStatus } from '@/api/admin'
 import AdminInviteCodesPage from '../AdminInviteCodesPage'
+import { setPickerValue, pickerValue } from '@/test/pickers'
+import { addDays, formatDateLong, todayIso } from '@/lib/date-picker'
 
 const mocks = vi.hoisted(() => ({
   getCodes: vi.fn(),
@@ -128,46 +130,28 @@ test.each(['0', '-1', '1.5', ''])('invalid max uses %s prevents generation', asy
 
 test('past expiry prevents generation; future expiry passes its ISO instant', async () => {
   renderPage()
-  fireEvent.change(screen.getByLabelText('Expiră la (opțional)'), {
-    target: { value: '2000-01-01T12:00' },
-  })
+  setPickerValue(screen.getByLabelText('Expiră la (opțional)'), `${todayIso()}T00:00`)
   fireEvent.click(screen.getByRole('button', { name: 'Generează cod' }))
   expect(await screen.findByText('Alege o dată și o oră în viitor.')).toBeVisible()
   expect(mocks.generate).not.toHaveBeenCalled()
-  fireEvent.change(screen.getByLabelText('Expiră la (opțional)'), {
-    target: { value: '2099-01-01T12:00' },
-  })
+  setPickerValue(screen.getByLabelText('Expiră la (opțional)'), '2030-01-01T12:00')
   fireEvent.change(screen.getByLabelText('Număr maxim de utilizări'), { target: { value: '3' } })
   fireEvent.click(screen.getByRole('button', { name: 'Generează cod' }))
   await waitFor(() =>
-    expect(mocks.generate).toHaveBeenCalledWith(3, new Date('2099-01-01T12:00').toISOString()),
+    expect(mocks.generate).toHaveBeenCalledWith(3, new Date('2030-01-01T12:00').toISOString()),
   )
 })
 
-test('partial native datetime blocks generation while a truly empty expiry remains optional', async () => {
+test('past days cannot be picked while a truly empty expiry remains optional', async () => {
   renderPage()
   const expiry = screen.getByLabelText('Expiră la (opțional)')
-  const form = expiry.closest('form')!
-  Object.defineProperty(expiry, 'validity', {
-    configurable: true,
-    value: { badInput: true },
-  })
-  fireEvent.submit(form)
-  expect(
-    await screen.findByText('Completează data și ora expirării sau golește câmpul.'),
-  ).toBeVisible()
-  expect(expiry).toHaveAttribute('aria-invalid', 'true')
-  expect(mocks.generate).not.toHaveBeenCalled()
-  Object.defineProperty(expiry, 'validity', {
-    configurable: true,
-    value: { badInput: false },
-  })
-  expect(expiry).toHaveValue('')
-  fireEvent.submit(form)
+  fireEvent.click(expiry)
+  const grid = screen.getByRole('grid')
+  expect(within(grid).getByRole('gridcell', { name: formatDateLong(addDays(todayIso(), -1)) })).toBeDisabled()
+  fireEvent.click(within(grid).getByRole('gridcell', { name: formatDateLong(todayIso()) }))
+  setPickerValue(expiry, '')
+  fireEvent.submit(expiry.closest('form')!)
   await waitFor(() => expect(mocks.generate).toHaveBeenCalledWith(1, null))
-  expect(
-    screen.queryByText('Completează data și ora expirării sau golește câmpul.'),
-  ).not.toBeInTheDocument()
 })
 
 test('generation rejects duplicates while pending and retains values on failure', async () => {
@@ -408,16 +392,14 @@ test('generator disclosure retains settings and returns focus to its toggle', as
   const maximum = screen.getByLabelText('Număr maxim de utilizări')
   await waitFor(() => expect(maximum).toHaveFocus())
   fireEvent.change(maximum, { target: { value: '5' } })
-  fireEvent.change(screen.getByLabelText('Expiră la (opțional)'), {
-    target: { value: '2099-01-01T12:00' },
-  })
+  setPickerValue(screen.getByLabelText('Expiră la (opțional)'), '2030-01-01T12:00')
   fireEvent.click(screen.getByRole('button', { name: 'Închide setările' }))
   const toggle = screen.getByRole('button', { name: 'Cod nou' })
   expect(toggle).toHaveFocus()
   expect(maximum).not.toBeVisible()
   fireEvent.click(toggle)
   expect(maximum).toHaveValue(5)
-  expect(screen.getByLabelText('Expiră la (opțional)')).toHaveValue('2099-01-01T12:00')
+  expect(pickerValue(screen.getByLabelText('Expiră la (opțional)'))).toBe('2030-01-01T12:00')
   await waitFor(() => expect(maximum).toHaveFocus())
 })
 

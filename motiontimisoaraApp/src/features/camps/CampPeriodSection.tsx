@@ -1,10 +1,10 @@
 import { FormSection } from '@/components/FormSection'
-import type { Control, FieldErrors, UseFormRegister, UseFormSetValue } from 'react-hook-form'
-import { useWatch } from 'react-hook-form'
+import type { Control, FieldErrors, UseFormSetValue } from 'react-hook-form'
+import { Controller, useWatch } from 'react-hook-form'
 
 import { formatZi } from '@/api/camps'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import {
   addCampInclusiveDays,
   campIsoDate,
@@ -17,12 +17,10 @@ import type { Values } from './camp-form-schema'
 const DURATE = [7, 8, 14] as const
 
 export default function CampPeriodSection({
-  register,
   control,
   setValue,
   errors,
 }: {
-  register: UseFormRegister<Values>
   control: Control<Values>
   setValue: UseFormSetValue<Values>
   errors: FieldErrors<Values>
@@ -34,7 +32,6 @@ export default function CampPeriodSection({
     durata && campIsoDate(start) && campIsoDate(end)
       ? `${formatZi(start)} – ${formatZi(end)} · ${durata}`
       : null
-  const startReg = register('period_start')
   const poateAlegeDurata = campIsoDate(start)
 
   return (
@@ -49,14 +46,11 @@ export default function CampPeriodSection({
       )}
       <CampFormRand columns="two" className="mt-3 flex-none">
         <CampFormField rand obligatoriu eticheta="Începe" eroare={errors.period_start?.message}>
-          <Input
-            type="date"
-           
-            aria-invalid={!!errors.period_start}
-            {...startReg}
-            onChange={(e) => {
-              startReg.onChange(e)
-              const urmatoarea = e.target.value
+          <PeriodDate
+            control={control}
+            name="period_start"
+            invalid={!!errors.period_start}
+            onPicked={(urmatoarea) => {
               if (campIsoDate(urmatoarea) && (!end || end < urmatoarea)) {
                 setValue('period_end', urmatoarea, { shouldDirty: true, shouldValidate: true })
               }
@@ -64,12 +58,11 @@ export default function CampPeriodSection({
           />
         </CampFormField>
         <CampFormField rand obligatoriu eticheta="Se termină" eroare={errors.period_end?.message}>
-          <Input
-            type="date"
+          <PeriodDate
+            control={control}
+            name="period_end"
+            invalid={!!errors.period_end}
             min={campIsoDate(start) ? start : undefined}
-           
-            aria-invalid={!!errors.period_end}
-            {...register('period_end')}
           />
         </CampFormField>
       </CampFormRand>
@@ -93,5 +86,43 @@ export default function CampPeriodSection({
         ))}
       </div>
     </FormSection>
+  )
+}
+
+function PeriodDate({
+  id,
+  control,
+  name,
+  invalid,
+  min,
+  onPicked,
+}: {
+  id?: string
+  control: Control<Values>
+  name: 'period_start' | 'period_end'
+  invalid: boolean
+  min?: string
+  onPicked?: (value: string) => void
+}) {
+  return (
+    <Controller
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <DatePicker
+          id={id}
+          ref={field.ref}
+          name={field.name}
+          value={field.value}
+          onBlur={field.onBlur}
+          min={min}
+          aria-invalid={invalid}
+          onValueChange={(value) => {
+            field.onChange(value)
+            onPicked?.(value)
+          }}
+        />
+      )}
+    />
   )
 }

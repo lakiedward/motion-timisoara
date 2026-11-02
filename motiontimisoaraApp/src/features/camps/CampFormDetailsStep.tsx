@@ -93,7 +93,6 @@ export default function CampFormDetailsStep({
       </FormSection>
 
       <CampPeriodSection
-        register={register}
         control={control}
         setValue={setValue}
         errors={errors}

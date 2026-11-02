@@ -1,13 +1,34 @@
-import type { Control, FieldErrors, UseFormRegister } from 'react-hook-form'
+import { Controller, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 
+import { DatePicker } from '@/components/ui/date-picker'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FormSelectMenu } from '@/components/ui/form-select-menu'
+import { TimePicker } from '@/components/ui/time-picker'
 import type { CompetitionFormValues } from './competition-form-schema'
 import { Checkbox } from '@/components/ui/checkbox'
 
 type LocationOption = { id: string; name: string; city: string | null }
+
+const SCHEDULE_FIELDS = [
+  { name: 'startDate', id: 'competition-start-date', label: 'Data de început', kind: 'date' },
+  { name: 'startTime', id: 'competition-start-time', label: 'Ora de început', kind: 'time' },
+  { name: 'endDate', id: 'competition-end-date', label: 'Data de final', kind: 'date' },
+  { name: 'endTime', id: 'competition-end-time', label: 'Ora de final', kind: 'time' },
+  {
+    name: 'registrationDeadlineDate',
+    id: 'competition-deadline-date',
+    label: 'Ultima zi de înscriere',
+    kind: 'date',
+  },
+  {
+    name: 'registrationDeadlineTime',
+    id: 'competition-deadline-time',
+    label: 'Ora închiderii înscrierilor',
+    kind: 'time',
+  },
+] as const
 
 type Props = {
   register: UseFormRegister<CompetitionFormValues>
@@ -36,74 +57,36 @@ export function CompetitionScheduleSection({
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="competition-start-date">Data de început</Label>
-          <Input
-            id="competition-start-date"
-            type="date"
-            className="h-11 lg:h-9"
-            {...register('startDate')}
-          />
-          {errors.startDate && (
-            <p className="text-destructive text-sm">{errors.startDate.message}</p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="competition-start-time">Ora de început</Label>
-          <Input
-            id="competition-start-time"
-            type="time"
-            className="h-11 lg:h-9"
-            {...register('startTime')}
-          />
-          {errors.startTime && (
-            <p className="text-destructive text-sm">{errors.startTime.message}</p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="competition-end-date">Data de final</Label>
-          <Input
-            id="competition-end-date"
-            type="date"
-            className="h-11 lg:h-9"
-            {...register('endDate')}
-          />
-          {errors.endDate && <p className="text-destructive text-sm">{errors.endDate.message}</p>}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="competition-end-time">Ora de final</Label>
-          <Input
-            id="competition-end-time"
-            type="time"
-            className="h-11 lg:h-9"
-            {...register('endTime')}
-          />
-          {errors.endTime && <p className="text-destructive text-sm">{errors.endTime.message}</p>}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="competition-deadline-date">Ultima zi de înscriere</Label>
-          <Input
-            id="competition-deadline-date"
-            type="date"
-            className="h-11 lg:h-9"
-            {...register('registrationDeadlineDate')}
-          />
-          {errors.registrationDeadlineDate && (
-            <p className="text-destructive text-sm">{errors.registrationDeadlineDate.message}</p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="competition-deadline-time">Ora închiderii înscrierilor</Label>
-          <Input
-            id="competition-deadline-time"
-            type="time"
-            className="h-11 lg:h-9"
-            {...register('registrationDeadlineTime')}
-          />
-          {errors.registrationDeadlineTime && (
-            <p className="text-destructive text-sm">{errors.registrationDeadlineTime.message}</p>
-          )}
-        </div>
+        {SCHEDULE_FIELDS.map(({ name, id, label, kind }) => {
+          const Picker = kind === 'date' ? DatePicker : TimePicker
+          const error = errors[name]?.message
+          return (
+            <div key={name} className="space-y-2">
+              <Label htmlFor={id}>{label}</Label>
+              <Controller
+                control={control}
+                name={name}
+                render={({ field }) => (
+                  <Picker
+                    id={id}
+                    ref={field.ref}
+                    name={field.name}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    onBlur={field.onBlur}
+                    aria-invalid={!!error}
+                    aria-describedby={error ? `${id}-error` : undefined}
+                  />
+                )}
+              />
+              {error && (
+                <p id={`${id}-error`} className="text-destructive text-sm">
+                  {error}
+                </p>
+              )}
+            </div>
+          )
+        })}
       </div>
 
       <div className="space-y-2">

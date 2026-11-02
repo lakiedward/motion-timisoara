@@ -3,15 +3,14 @@ import type {
   FieldErrors,
   FieldValues,
   Path,
-  UseFormRegister,
   UseFormSetValue,
 } from 'react-hook-form'
-import { useWatch } from 'react-hook-form'
+import { Controller, useWatch } from 'react-hook-form'
 
 import { FormSection } from '@/components/FormSection'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { TimePicker } from '@/components/ui/time-picker'
 import {
   COURSE_WEEKDAYS,
   emptyCourseProgram,
@@ -28,14 +27,12 @@ type ProgramErrors = {
 
 export default function CourseProgramFields<T extends FieldValues>({
   control,
-  register,
   setValue,
   errors,
   inputClassName,
   chipClassName,
 }: {
   control: Control<T>
-  register: UseFormRegister<T>
   setValue: UseFormSetValue<T>
   errors: FieldErrors<T>
   inputClassName?: string
@@ -112,24 +109,42 @@ export default function CourseProgramFields<T extends FieldValues>({
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label htmlFor={startId}>Ora start</Label>
-                    <Input
-                      id={startId}
-                      type="time"
-                      className={inputClassName}
-                      aria-invalid={!!startError}
-                      aria-describedby={startError ? `${startId}-error` : undefined}
-                      {...register(`program.${index}.start` as Path<T>)}
+                    <Controller
+                      control={control}
+                      name={`program.${index}.start` as Path<T>}
+                      render={({ field }) => (
+                        <TimePicker
+                          id={startId}
+                          ref={field.ref}
+                          name={field.name}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          onBlur={field.onBlur}
+                          className={inputClassName}
+                          aria-invalid={!!startError}
+                          aria-describedby={startError ? `${startId}-error` : undefined}
+                        />
+                      )}
                     />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor={endId}>Ora final</Label>
-                    <Input
-                      id={endId}
-                      type="time"
-                      className={inputClassName}
-                      aria-invalid={!!endError}
-                      aria-describedby={endError ? `${endId}-error` : undefined}
-                      {...register(`program.${index}.end` as Path<T>)}
+                    <Controller
+                      control={control}
+                      name={`program.${index}.end` as Path<T>}
+                      render={({ field }) => (
+                        <TimePicker
+                          id={endId}
+                          ref={field.ref}
+                          name={field.name}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          onBlur={field.onBlur}
+                          className={inputClassName}
+                          aria-invalid={!!endError}
+                          aria-describedby={endError ? `${endId}-error` : undefined}
+                        />
+                      )}
                     />
                   </div>
                 </div>
