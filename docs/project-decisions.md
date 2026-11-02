@@ -228,3 +228,12 @@ reorganizing this document; correct obsolete facts with current evidence.
   (21% since 2025-08-01), which is added on top of the fee and capped so the fee never
   exceeds the charge, and redeploy create-payment-intent and create-checkout-session.
   Confirm with the accountant (To-Do #227).
+- 2026-11-02 — Feature #612: `create-subscription-checkout` and `billing-portal` derive
+  the subscriber only from the caller's live role (COACH: own row; CLUB: owned club),
+  never from request ids, and accept only the website origins of spec #609. Both
+  return to `/coach/abonament` or `/club/abonament`. A launch-promotion trial
+  (`trial_end` NULL) cannot start Checkout while `launch_at` is NULL (409
+  `LAUNCH_PENDING`), because its free period has no end date and Stripe could
+  charge too early. An open subscription Checkout for the same plan and terms is
+  reused; any other open subscription Checkout is expired first, so two tabs cannot
+  create two Stripe subscriptions.

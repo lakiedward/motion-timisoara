@@ -131,3 +131,9 @@ verify_jwt = true
 # iar functia cere rolul service_role din el, fiindca `verify_jwt` lasa sa treaca
 # si cheia anon. Nu dezactiva `verify_jwt` aici: rolul ar putea fi falsificat.
 verify_jwt = true
+
+[functions.create-subscription-checkout]
+verify_jwt = true
+
+[functions.billing-portal]
+verify_jwt = true
