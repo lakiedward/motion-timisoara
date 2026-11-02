@@ -7,6 +7,7 @@ import {
   getCompetitionCashPayments,
 } from '@/api/competition/competition-cash'
 import { formatMoney } from '@/lib/money'
+import { FormSection } from '@/components/FormSection'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -29,13 +30,10 @@ export function CompetitionCashPaymentsSection({ competitionId }: { competitionI
   })
 
   return (
-    <section className="space-y-4 rounded-2xl border p-5" aria-label="Plăți cash">
-      <div>
-        <h2 className="font-display text-lg font-bold">Plăți cash</h2>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Confirmă plata numai după ce ai încasat suma de la participant sau părinte.
-        </p>
-      </div>
+    <FormSection
+      title="Plăți cash"
+      description="Confirmă plata numai după ce ai încasat suma de la participant sau părinte."
+    >
       {payments.isLoading ? (
         <Skeleton className="h-28 rounded-xl" />
       ) : payments.isError ? (
@@ -86,6 +84,6 @@ export function CompetitionCashPaymentsSection({ competitionId }: { competitionI
           Nu există încă plăți cash pentru acest concurs.
         </p>
       )}
-    </section>
+    </FormSection>
   )
 }

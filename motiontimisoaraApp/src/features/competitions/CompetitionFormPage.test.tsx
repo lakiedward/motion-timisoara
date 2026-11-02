@@ -93,15 +93,15 @@ test('un concurs nou se salvează cu proprietarul clubului', async () => {
     allow_cash: false,
   })
   deseneaza()
-  await user.type(screen.getByLabelText('Titlu'), 'Cupa')
-  await user.type(screen.getByLabelText('Descriere'), 'Descriere suficientă.')
-  setPickerValue(screen.getByLabelText('Data de început'), '2026-10-01')
-  setPickerValue(screen.getByLabelText('Ora de început'), '10:00')
-  setPickerValue(screen.getByLabelText('Data de final'), '2026-10-01')
-  setPickerValue(screen.getByLabelText('Ora de final'), '12:00')
-  setPickerValue(screen.getByLabelText('Ultima zi de înscriere'), '2026-09-30')
-  setPickerValue(screen.getByLabelText('Ora închiderii înscrierilor'), '23:59')
-  await user.type(screen.getByLabelText('Locația concursului'), 'Timișoara')
+  await user.type(screen.getByLabelText(/^Titlu/), 'Cupa')
+  await user.type(screen.getByLabelText(/^Descriere/), 'Descriere suficientă.')
+  setPickerValue(screen.getByLabelText(/^Data de început/), '2026-10-01')
+  setPickerValue(screen.getByLabelText(/^Ora de început/), '10:00')
+  setPickerValue(screen.getByLabelText(/^Data de final/), '2026-10-01')
+  setPickerValue(screen.getByLabelText(/^Ora de final/), '12:00')
+  setPickerValue(screen.getByLabelText(/^Ultima zi de înscriere/), '2026-09-30')
+  setPickerValue(screen.getByLabelText(/^Ora închiderii înscrierilor/), '23:59')
+  await user.type(screen.getByLabelText(/^Locația concursului/), 'Timișoara')
   fireEvent.change(screen.getByLabelText('Poza din capul paginii'), {
     target: { files: [new File(['poza'], 'hero.jpg', { type: 'image/jpeg' })] },
   })
@@ -122,4 +122,18 @@ test('un concurs nou se salvează cu proprietarul clubului', async () => {
     ),
   )
   expect(await screen.findByText('editor concurs')).toBeInTheDocument()
+})
+
+test('formularul are Înapoi, câmpuri obligatorii marcate și Anulează', () => {
+  deseneaza()
+  expect(screen.getByRole('link', { name: 'Înapoi' })).toHaveAttribute('href', '/club/competitions')
+  expect(screen.getByText(/sunt obligatorii/)).toBeInTheDocument()
+  expect(screen.getByText('Despre concurs')).toBeInTheDocument()
+  expect(screen.getByText('Program și înscrieri')).toBeInTheDocument()
+  expect(screen.getByLabelText(/^Titlu/)).toBeRequired()
+  expect(screen.getByRole('link', { name: 'Anulează' })).toHaveAttribute(
+    'href',
+    '/club/competitions',
+  )
+  expect(screen.queryByText('Renunță')).not.toBeInTheDocument()
 })

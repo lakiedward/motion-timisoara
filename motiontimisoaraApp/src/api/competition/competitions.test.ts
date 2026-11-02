@@ -4,11 +4,11 @@ import {
   coloaneProprietar,
   createConcurs,
   getConcursuriPublice,
-  getConcursurileMele,
   organizatorDinLegaturi,
   slugConcurs,
   stergeConcurs,
 } from './competitions'
+import { getCompetitionList, toCompetitionListItem } from './competition-list'
 
 let raspuns: Record<string, { data: unknown; error: unknown }> = {}
 let cereri: Record<string, string[]> = {}
@@ -93,11 +93,11 @@ test('organizatorul public este clubul sau antrenorul', () => {
 })
 
 test('lista clubului filtrează după club, iar adminul vede tot', async () => {
-  await getConcursurileMele({ role: 'CLUB', clubId: 'club-1', coachUserId: null })
+  await getCompetitionList({ role: 'CLUB', clubId: 'club-1', coachUserId: null })
   expect(cereri.competitions.join(' ')).toContain('eq(club_id,club-1)')
 
   cereri = {}
-  await getConcursurileMele({ role: 'ADMIN', clubId: null, coachUserId: null })
+  await getCompetitionList({ role: 'ADMIN', clubId: null, coachUserId: null })
   expect(cereri.competitions.join(' ')).not.toContain('eq(')
 })
 
@@ -175,4 +175,38 @@ test('ștergerea scoate poza cât timp rândul încă există', async () => {
   expect(fisiereSterse).toEqual(['competition-photos:id-1/hero/a.jpg'])
   const jurnal = cereri.competitions.join(' ')
   expect(jurnal.indexOf('select(')).toBeLessThan(jurnal.indexOf('delete('))
+})
+
+test('rândul din listă aduce organizatorul, prețurile și doar înscrierile active', () => {
+  const item = toCompetitionListItem({
+    id: 'k1',
+    slug: 'cupa',
+    title: 'Cupa',
+    description: '',
+    hero_photo_storage_path: null,
+    club_id: 'c1',
+    coach_id: null,
+    created_at: '2026-09-22T00:00:00Z',
+    updated_at: '2026-09-22T00:00:00Z',
+    start_at: null,
+    end_at: null,
+    registration_deadline_at: null,
+    location_id: null,
+    location_text: null,
+    allow_cash: false,
+    club: { id: 'c1', name: 'Club Delfin' },
+    coach: null,
+    competition_routes: [{ id: 'r1' }, { id: 'r2' }],
+    competition_age_categories: [{ price_bani: 5000 }, { price_bani: 0 }],
+    competition_registrations: [
+      { enrollment: { status: 'ACTIVE' } },
+      { enrollment: { status: 'PENDING' } },
+      { enrollment: { status: 'CANCELLED' } },
+    ],
+  })
+  expect(item.organizer).toEqual({ key: 'club:c1', kind: 'club', name: 'Club Delfin' })
+  expect(item.prices).toEqual([5000, 0])
+  expect(item.routesCount).toBe(2)
+  expect(item.registeredCount).toBe(2)
+  expect(item).not.toHaveProperty('competition_registrations')
 })

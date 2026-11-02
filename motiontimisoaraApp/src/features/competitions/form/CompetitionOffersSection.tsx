@@ -207,7 +207,11 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
 
   if (offersQuery.isError) {
     return (
-      <section aria-label="Trasee și categorii" role="alert" className="rounded-2xl border p-5">
+      <section
+        aria-label="Trasee și categorii"
+        role="alert"
+        className="bg-card rounded-xl border p-6"
+      >
         <p>Nu am putut încărca traseele și categoriile concursului.</p>
         <Button
           type="button"
@@ -231,8 +235,8 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
           Trasee și categorii
         </h2>
         <p className="text-muted-foreground mt-1 text-sm">
-          Salvează concursul înainte de a adăuga trasee. Vârsta participantului se verifică la data
-          înscrierii.
+          Fiecare categorie de vârstă are traseul și prețul ei. Vârsta participantului se verifică
+          la data înscrierii.
         </p>
       </div>
 
@@ -242,7 +246,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
         </p>
       )}
 
-      <div className="space-y-4 rounded-2xl border p-5">
+      <div className="bg-card text-card-foreground space-y-4 rounded-xl border p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="font-display text-lg font-semibold">Trasee</h3>
           <Button
@@ -396,7 +400,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
         )}
       </div>
 
-      <div className="space-y-4 rounded-2xl border p-5">
+      <div className="bg-card text-card-foreground space-y-4 rounded-xl border p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="font-display text-lg font-semibold">Categorii de vârstă</h3>
           <Button
