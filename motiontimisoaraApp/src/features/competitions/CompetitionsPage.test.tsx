@@ -6,6 +6,7 @@ import { MemoryRouter } from 'react-router-dom'
 
 import CompetitionsPage from './CompetitionsPage'
 import { getConcursuriPublice, type PublicCompetition } from '@/api/competition/competitions'
+import { pickFilter } from '@/test/pick-filter'
 
 vi.mock('@/api/competition/competitions', async () => {
   const real = await vi.importActual<typeof import('@/api/competition/competitions')>('@/api/competition/competitions')
@@ -72,4 +73,26 @@ test('fără concursuri, mesajul e altul decât cel de eroare', async () => {
   deseneaza()
   await waitFor(() => expect(screen.getByText(/Niciun concurs publicat/)).toBeInTheDocument())
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+})
+
+test('concursurile se pot filtra după lună și locație', async () => {
+  mocked.mockResolvedValue([
+    CONCURS,
+    {
+      ...CONCURS,
+      id: 'k2',
+      slug: 'cros',
+      title: 'Crosul de iarnă',
+      startAt: '2027-01-24T08:00:00Z',
+      endAt: '2027-01-24T11:00:00Z',
+      locationText: 'Parcul Central',
+    },
+  ])
+  deseneaza()
+  expect(await screen.findByText('2 concursuri găsite')).toBeInTheDocument()
+  await pickFilter('Unde?', 'Parcul Central')
+  expect(screen.getByText('1 concurs găsit')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Crosul de iarnă' })).toBeInTheDocument()
+  await pickFilter('Când?', 'Octombrie 2026')
+  expect(screen.getByText('Niciun concurs nu corespunde filtrelor.')).toBeInTheDocument()
 })

@@ -79,6 +79,7 @@ export type TabaraDinLista = {
   location: CampLocation | null
   price: number
   currency: string
+  eurRonRateMicros: number | null
   pricingMode: string
   allow_cash: boolean
   heroUrl: string | null
@@ -148,6 +149,7 @@ export async function getTaberePublice(
       location: location ?? null,
       price: c.price,
       currency: c.currency,
+      eurRonRateMicros: c.eur_ron_rate_micros ?? null,
       pricingMode: c.pricing_mode,
       allow_cash: c.allow_cash,
       heroUrl: c.hero_photo_storage_path

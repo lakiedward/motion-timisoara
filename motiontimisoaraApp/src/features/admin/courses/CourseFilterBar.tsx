@@ -2,7 +2,7 @@ import { CircleAlert } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { FILTER_SELECT_CLASS } from '@/features/public/courses/CourseFilters'
+import { FILTER_SELECT_CLASS } from '@/components/catalog-filters/FilterSelect'
 import { cn } from '@/lib/utils'
 import type { StatusFilter } from './course-overview'
 

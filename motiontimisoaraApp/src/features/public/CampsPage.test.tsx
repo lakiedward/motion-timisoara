@@ -1,11 +1,12 @@
 import { vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 
 import CampsPage from './CampsPage'
 import { getTaberePublice, type TabaraDinLista } from '@/api/camps'
+import { pickFilter } from '@/test/pick-filter'
 
 vi.mock('@/api/camps', async () => {
   const real = await vi.importActual<typeof import('@/api/camps')>('@/api/camps')
@@ -25,6 +26,7 @@ const TABARA: TabaraDinLista = {
   location: null,
   price: 90000,
   currency: 'RON',
+  eurRonRateMicros: null,
   pricingMode: 'single',
   allow_cash: false,
   heroUrl: 'https://public/hero.jpg',
@@ -163,7 +165,7 @@ test('a location without coordinates remains readable without a broken map link'
     },
   ])
   deseneaza()
-  expect(await screen.findByText('Bazin Olimpic')).toBeInTheDocument()
+  expect(within((await screen.findAllByRole('article'))[0]!).getByText('Bazin Olimpic')).toBeInTheDocument()
   expect(screen.queryByRole('link', { name: /vezi pe hartă/ })).not.toBeInTheDocument()
 })
 
@@ -173,4 +175,32 @@ test('a camp with places left says registrations are open, a full one does not',
   expect(await screen.findByText('Înscrieri deschise')).toBeInTheDocument()
   expect(screen.getAllByText('Înscrieri deschise')).toHaveLength(1)
   expect(screen.getByText('Locuri epuizate')).toBeInTheDocument()
+})
+
+test('filters camps by month, budget and location, and resets when nothing matches', async () => {
+  const user = userEvent.setup()
+  mocked.mockResolvedValue([
+    TABARA,
+    {
+      ...TABARA,
+      id: 'c',
+      slug: 'schi',
+      title: 'Tabără de schi',
+      period_start: '2027-01-03',
+      period_end: '2027-01-09',
+      location_text: 'Lugoj',
+      price: 250000,
+    },
+  ])
+  deseneaza()
+  expect(await screen.findByText('2 tabere găsite')).toBeInTheDocument()
+  await pickFilter('Când?', 'Ianuarie 2027')
+  expect(screen.getByText('1 tabără găsită')).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Tabără de schi' })).toBeInTheDocument()
+  await pickFilter('Buget', 'Până la 1.000 lei')
+  expect(screen.getByText('Nicio tabără nu corespunde filtrelor.')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Resetează filtrele' }))
+  expect(screen.getByText('2 tabere găsite')).toBeInTheDocument()
+  await pickFilter('Unde?', 'Lugoj')
+  expect(screen.getByRole('button', { name: 'Scoate filtrul Lugoj' })).toBeInTheDocument()
 })

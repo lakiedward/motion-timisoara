@@ -96,6 +96,7 @@ const camp: TabaraDinLista = {
   location_text: 'Intrarea din parc',
   price: 50000,
   currency: 'RON',
+  eurRonRateMicros: null,
   pricingMode: 'single',
   allow_cash: true,
   heroUrl: null,

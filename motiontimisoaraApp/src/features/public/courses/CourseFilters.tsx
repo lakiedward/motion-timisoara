@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { SlidersHorizontal, X } from 'lucide-react'
 
 import {
   COURSE_DAY_OPTIONS,
@@ -11,14 +10,11 @@ import {
 import { formatRon } from '@/lib/money'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Skeleton } from '@/components/ui/skeleton'
-import { SPORT_GLYPH, SPORT_GLYPH_FALLBACK } from '@/components/sport/sport-icons'
-
-type Option = { value: string; label: string }
-
-export const FILTER_SELECT_CLASS =
-  'border-input bg-background hover:border-muted-foreground focus-visible:outline-ring h-touch-target w-full min-w-0 rounded-md border px-3 text-base shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 md:text-sm'
+import { ActiveFilterChips } from '@/components/catalog-filters/ActiveFilterChips'
+import type { FilterOption } from '@/lib/event-catalog'
+import { FilterMenu } from '@/components/catalog-filters/FilterMenu'
+import { MoreFiltersToggle } from '@/components/catalog-filters/MoreFiltersToggle'
+import { SportPills } from '@/components/catalog-filters/SportPills'
 
 const PRICE_OPTIONS = COURSE_PRICE_LIMITS.map((limit) => ({
   value: String(limit),
@@ -35,42 +31,7 @@ const SHORT_DAYS: Record<string, string> = {
   '7': 'Du',
 }
 
-function FilterSelect({
-  id,
-  label,
-  value,
-  allLabel,
-  options,
-  onChange,
-}: {
-  id: string
-  label: string
-  value: string
-  allLabel: string
-  options: Option[]
-  onChange: (value: string) => void
-}) {
-  return (
-    <div className="min-w-0 space-y-2">
-      <Label htmlFor={id}>{label}</Label>
-      <select
-        id={id}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className={FILTER_SELECT_CLASS}
-      >
-        <option value="">{allLabel}</option>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  )
-}
-
-function activeLabels(filters: CourseCatalogFilters, sportOptions: Option[]) {
+function activeLabels(filters: CourseCatalogFilters, sportOptions: FilterOption[]) {
   const labels: { key: keyof CourseCatalogFilters; text: string }[] = []
   if (filters.sport)
     labels.push({
@@ -99,67 +60,31 @@ export function CourseFilters({
   onChange,
 }: {
   filters: CourseCatalogFilters
-  sportOptions: Option[]
-  locationOptions: Option[]
+  sportOptions: FilterOption[]
+  locationOptions: FilterOption[]
   loading: boolean
   onChange: (filters: CourseCatalogFilters) => void
 }) {
   const [open, setOpen] = useState(false)
-  const moreActive = countActiveCourseFilters({ ...filters, sport: '' })
   const set = (key: keyof CourseCatalogFilters) => (value: string) =>
     onChange({ ...filters, [key]: value })
-  const labels = activeLabels(filters, sportOptions)
 
   return (
     <div className="mb-8 space-y-5">
-      <div
-        role="group"
-        aria-label="Sport"
-        className="flex flex-wrap gap-2"
-      >
-        <Button
-          type="button"
-          className="shrink-0 rounded-full"
-          variant={filters.sport ? 'outline' : 'default'}
-          aria-pressed={!filters.sport}
-          onClick={() => set('sport')('')}
-        >
-          Toate
-        </Button>
-        {loading
-          ? [0, 1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-touch-target w-28 shrink-0 rounded-full" />
-            ))
-          : sportOptions.map((sport) => {
-              const Glyph = SPORT_GLYPH[sport.value] ?? SPORT_GLYPH_FALLBACK
-              const active = filters.sport === sport.value
-              return (
-                <Button
-                  key={sport.value}
-                  type="button"
-                  className="shrink-0 rounded-full"
-                  variant={active ? 'default' : 'outline'}
-                  aria-pressed={active}
-                  onClick={() => set('sport')(active ? '' : sport.value)}
-                >
-                  <Glyph aria-hidden="true" />
-                  {sport.label}
-                </Button>
-              )
-            })}
-      </div>
+      <SportPills
+        value={filters.sport}
+        options={sportOptions}
+        loading={loading}
+        onChange={set('sport')}
+      />
 
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full sm:hidden"
-        aria-expanded={open}
-        aria-controls="course-more-filters"
-        onClick={() => setOpen((value) => !value)}
-      >
-        <SlidersHorizontal aria-hidden="true" />
-        {moreActive ? `Zi, buget, locație (${moreActive})` : 'Zi, buget, locație'}
-      </Button>
+      <MoreFiltersToggle
+        label="Zi, buget, locație"
+        activeCount={countActiveCourseFilters({ ...filters, sport: '' })}
+        open={open}
+        controls="course-more-filters"
+        onToggle={() => setOpen((value) => !value)}
+      />
 
       <div
         id="course-more-filters"
@@ -191,7 +116,7 @@ export function CourseFilters({
             })}
           </div>
         </div>
-        <FilterSelect
+        <FilterMenu
           id="course-price-filter"
           label="Buget pe lună"
           value={filters.maxPrice}
@@ -199,7 +124,7 @@ export function CourseFilters({
           options={PRICE_OPTIONS}
           onChange={set('maxPrice')}
         />
-        <FilterSelect
+        <FilterMenu
           id="course-location-filter"
           label="Unde?"
           value={filters.location}
@@ -209,27 +134,11 @@ export function CourseFilters({
         />
       </div>
 
-      {labels.length ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-muted-foreground text-sm">Filtre active:</span>
-          {labels.map((label) => (
-            <Button
-              key={label.key}
-              type="button"
-              variant="secondary"
-              className="rounded-full"
-              aria-label={`Scoate filtrul ${label.text}`}
-              onClick={() => set(label.key)('')}
-            >
-              {label.text}
-              <X aria-hidden="true" />
-            </Button>
-          ))}
-          <Button type="button" variant="link" onClick={() => onChange(EMPTY_COURSE_FILTERS)}>
-            Șterge tot
-          </Button>
-        </div>
-      ) : null}
+      <ActiveFilterChips
+        labels={activeLabels(filters, sportOptions)}
+        onRemove={(key) => set(key)('')}
+        onClear={() => onChange(EMPTY_COURSE_FILTERS)}
+      />
     </div>
   )
 }

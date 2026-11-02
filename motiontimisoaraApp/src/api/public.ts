@@ -347,6 +347,7 @@ export type ActivitateDinLista = {
   endTime: string
   price: number
   currency: string
+  eurRonRateMicros: number | null
   locationName: string | null
   sportName: string | null
   sportCode: string | null
@@ -360,6 +361,7 @@ type ActivitateBruta = ActivitateProgramata & {
   name: string
   price: number
   currency: string
+  eur_ron_rate_micros: number | null
   hero_photo_storage_path: string | null
   sport: SportRow | null
   location: { name: string } | null
@@ -375,7 +377,7 @@ export async function getActivitatiPublice(
   let q = supabase
     .from('activities')
     .select(
-      'id, name, activity_date, start_time, end_time, price, currency, hero_photo_storage_path, sport:sports(id, code, name, default_photo_storage_path), location:locations(name), club:clubs(name), coach:profiles(name)',
+      'id, name, activity_date, start_time, end_time, price, currency, eur_ron_rate_micros, hero_photo_storage_path, sport:sports(id, code, name, default_photo_storage_path), location:locations(name), club:clubs(name), coach:profiles(name)',
     )
     .eq('active', true)
   if (clubId) q = q.eq('club_id', clubId)
@@ -404,6 +406,7 @@ export async function getActivitatiPublice(
     endTime: activitate.end_time,
     price: activitate.price,
     currency: activitate.currency,
+    eurRonRateMicros: activitate.eur_ron_rate_micros ?? null,
     locationName: activitate.location?.name ?? null,
     sportName: activitate.sport?.name ?? null,
     sportCode: activitate.sport?.code ?? null,
