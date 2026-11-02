@@ -22,6 +22,7 @@ import { incarcaRegulamentFisier, stergeRegulamentFisier } from '@/api/camp-rule
 import { getCursBnr } from '@/api/bnr-rate'
 import { getClubSelectableLocations } from '@/api/club'
 import { getSelectableLocations } from '@/api/coach'
+import { pickSelectMenuValue, selectMenuOptionLabels } from '@/test/select-menu'
 
 vi.mock('@/api/camps-admin', async () => {
   const real = await vi.importActual<typeof import('@/api/camps-admin')>('@/api/camps-admin')
@@ -220,13 +221,12 @@ test('după Continuă cu erori, mesajul dispare imediat ce titlul devine corect'
 test('tabăra alege locul din locațiile clubului', async () => {
   renderForm()
   const select = await screen.findByLabelText('Loc')
-  await waitFor(() =>
-    expect(
-      within(select)
-        .getAllByRole('option')
-        .map((o) => o.textContent),
-    ).toEqual(['— fără loc ales —', 'Bazin Olimpic Timișoara · Timișoara', 'Cabana Muntele Mic']),
-  )
+  await waitFor(() => expect(getClubSelectableLocations).toHaveBeenCalled())
+  expect(await selectMenuOptionLabels(select)).toEqual([
+    '— fără loc ales —',
+    'Bazin Olimpic Timișoara · Timișoara',
+    'Cabana Muntele Mic',
+  ])
   expect(getClubSelectableLocations).toHaveBeenCalledWith('club-1', null)
   expect(getSelectableLocations).not.toHaveBeenCalled()
   expect(screen.getByRole('link', { name: /Adaugă o locație nouă/ })).toHaveAttribute(
@@ -251,7 +251,7 @@ test('la editare, locul salvat apare selectat chiar dacă lista vine după tabă
 
   renderForm('/club/camps/tabara-1/edit')
   await waitFor(() => expect(screen.getByLabelText(/^Titlu/)).toHaveValue('Tabără de înot'))
-  await waitFor(() => expect(screen.getByLabelText('Loc')).toHaveValue(BAZIN))
+  await waitFor(() => expect(screen.getByLabelText('Loc')).toHaveTextContent('Bazin Olimpic'))
   expect(getClubSelectableLocations).toHaveBeenCalledWith('club-1', BAZIN)
 })
 
@@ -729,13 +729,10 @@ test('la editare, categoriile salvate revin ca o componentă, iar copiază din l
   expect(within(lista).getAllByLabelText(/Sumă \(/)[0]).toHaveValue(400)
   expect(within(lista).getAllByRole('status')[0]).toHaveTextContent(/Total 700,00 lei/)
   const select = await screen.findByLabelText('Copiază categoriile din altă tabără')
-  expect(
-    within(select)
-      .getAllByRole('option')
-      .map((o) => o.textContent),
-  ).toEqual(['alege o tabără…', 'Tabăra de anul trecut'])
+  expect(select).toHaveTextContent('alege o tabără…')
+  expect(await selectMenuOptionLabels(select)).toEqual(['Tabăra de anul trecut'])
 
-  await user.selectOptions(select, 'tabara-2')
+  await pickSelectMenuValue(select, 'tabara-2')
   await waitFor(() => expect(within(lista).getAllByLabelText('De la (ani)')).toHaveLength(2))
   expect(getPreturilePeVarsta).toHaveBeenCalledWith('tabara-2')
   const sume = within(lista).getAllByLabelText(/Sumă \(/)
@@ -770,7 +767,7 @@ test('salvarea trimite location_id, regulamentul și necesar fără preț global
   renderForm()
   await completeazaDetalii(user)
   const select = await screen.findByLabelText('Loc')
-  await user.selectOptions(select, CABANA)
+  await pickSelectMenuValue(select, CABANA)
   await user.type(screen.getByLabelText('Detalii despre loc'), 'Intrarea din spate')
   fireEvent.change(screen.getByLabelText('Regulamentul taberei'), {
     target: { value: 'Fără telefoane.' },

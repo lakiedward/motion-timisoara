@@ -7,6 +7,7 @@ import { vi } from 'vitest'
 import CoachAnnouncementsPage from './CoachAnnouncementsPage'
 import { getMyCourses, type CoachCourse } from '@/api/coach'
 import { getCoachAnnouncements, type CoachAnnouncement } from '@/api/coach-announcements'
+import { selectMenuOptionLabels } from '@/test/select-menu'
 
 vi.mock('@/api/coach', () => ({ getMyCourses: vi.fn() }))
 vi.mock('@/api/coach-announcements', () => ({
@@ -61,13 +62,13 @@ test('the form opens from Anunț nou and lists only active courses', async () =>
   expect(screen.queryByRole('heading', { name: 'Anunț nou' })).not.toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: /Anunț nou/ }))
   const select = screen.getByLabelText('Cursul')
-  expect(
-    within(select)
-      .getAllByRole('option')
-      .map((o) => o.textContent),
-  ).toEqual(['Alege cursul', 'Înot începători', 'Atletism'])
+  expect(await selectMenuOptionLabels(select)).toEqual([
+    'Alege cursul',
+    'Înot începători',
+    'Atletism',
+  ])
   await userEvent.click(screen.getByRole('button', { name: 'Publică' }))
-  expect(await screen.findByText('Alege cursul', { selector: 'p, span' })).toBeInTheDocument()
+  expect(await screen.findByText('Alege cursul', { selector: 'p' })).toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Renunță' }))
   expect(screen.queryByLabelText('Cursul')).not.toBeInTheDocument()
 })

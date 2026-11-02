@@ -10,13 +10,12 @@ import { createCourseAnnouncement } from '@/api/coach-announcements'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
+import { FormSelectMenu } from '@/components/ui/form-select-menu'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import AnnouncementMediaPicker from '@/features/club/announcements/AnnouncementMediaPicker'
 import type { FisierPregatit } from '@/lib/media'
-import { announcementSelectClassName } from '@/features/club/announcements/announcement-form'
 import { Checkbox } from '@/components/ui/checkbox'
-
 
 const schema = z.object({
   courseId: z.string().min(1, 'Alege cursul'),
@@ -39,6 +38,7 @@ export default function CoachAnnouncementForm({ courses, onPublished, onCancel }
     pinned: false,
   }
   const {
+    control,
     register,
     handleSubmit,
     reset,
@@ -76,20 +76,16 @@ export default function CoachAnnouncementForm({ courses, onPublished, onCancel }
         <form onSubmit={handleSubmit((v) => create.mutate(v))} noValidate className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="courseId">Cursul</Label>
-            <select
+            <FormSelectMenu
+              control={control}
+              className="md:text-base"
+              name="courseId"
               id="courseId"
-              className={announcementSelectClassName}
-              aria-invalid={!!errors.courseId}
               aria-describedby={fieldDescription('courseId', undefined, errors.courseId?.message)}
-              {...register('courseId')}
-            >
-              <option value="">Alege cursul</option>
-              {courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              searchable={courses.length > 8}
+              emptyLabel="Alege cursul"
+              options={courses.map((c) => ({ value: c.id, label: c.name }))}
+            />
             <FieldMessage id="courseId" error={errors.courseId?.message} />
           </div>
 

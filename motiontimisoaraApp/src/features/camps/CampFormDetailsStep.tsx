@@ -3,7 +3,7 @@ import type { Control, FieldErrors, UseFormRegister, UseFormSetValue } from 'rea
 import { FormSection, RequiredFieldsNote } from '@/components/FormSection'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { selectClassName } from '@/components/ui/field-styles'
+import { FormSelectMenu } from '@/components/ui/form-select-menu'
 import CampFormField from './CampFormField'
 import CampPeriodSection from './CampPeriodSection'
 import CampPhotosSection from './CampPhotosSection'
@@ -108,15 +108,16 @@ export default function CampFormDetailsStep({
               : 'Un loc din platformă: așa ajunge tabăra pe hartă.'
           }
         >
-          <select {...register('location_id')} className={selectClassName}>
-            <option value="">— fără loc ales —</option>
-            {(locatii ?? []).map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
-                {l.city ? ` · ${l.city}` : ''}
-              </option>
-            ))}
-          </select>
+          <FormSelectMenu
+            control={control}
+            name="location_id"
+            searchable={(locatii ?? []).length > 8}
+            emptyLabel="— fără loc ales —"
+            options={(locatii ?? []).map((l) => ({
+              value: l.id,
+              label: l.city ? `${l.name} · ${l.city}` : l.name,
+            }))}
+          />
         </CampFormField>
         <Link
           to={eClub ? '/club/locations/new' : '/coach/locations/new'}

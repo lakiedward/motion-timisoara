@@ -1,5 +1,6 @@
 import { RequiredMark } from '@/components/FormSection'
 import { Label } from '@/components/ui/label'
+import { SelectMenu } from '@/components/ui/select-menu'
 import type { AdminClub } from '@/api/admin'
 import { SHARED_OWNER } from './useLocationFormOwner'
 
@@ -10,7 +11,6 @@ export function LocationOwnerField({
   locked,
   lockedName,
   error,
-  selectClassName,
   onChange,
 }: {
   value: string
@@ -19,44 +19,42 @@ export function LocationOwnerField({
   locked: boolean
   lockedName: string
   error: string | null
-  selectClassName: string
   onChange: (owner: string) => void
 }) {
   const hintId = locked ? 'owner-hint' : error ? 'owner-error' : undefined
   return (
     <div className="space-y-1.5">
       <Label htmlFor="owner">Organizator {!locked && <RequiredMark />}</Label>
-      <select
-        id="owner"
-        className={selectClassName}
-        value={value}
-        disabled={locked}
-        onChange={(e) => onChange(e.target.value)}
-        aria-invalid={!!error}
-        aria-describedby={hintId}
-      >
-        {locked ? (
-          <option value={value}>{value === SHARED_OWNER ? 'Fără organizator' : lockedName}</option>
-        ) : (
-          <>
-            <option value="">—</option>
-            <optgroup label="Cluburi">
-              {clubs.map((c) => (
-                <option key={c.id} value={`club:${c.id}`}>
-                  {c.name}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label="Antrenori">
-              {coaches.map((c) => (
-                <option key={c.user_id} value={`coach:${c.user_id}`}>
-                  {c.name}
-                </option>
-              ))}
-            </optgroup>
-          </>
-        )}
-      </select>
+      {locked ? (
+        <SelectMenu
+          id="owner"
+          value={value}
+          disabled
+          onValueChange={onChange}
+          aria-describedby={hintId}
+          options={[{ value, label: value === SHARED_OWNER ? 'Fără organizator' : lockedName }]}
+        />
+      ) : (
+        <SelectMenu
+          id="owner"
+          value={value}
+          onValueChange={onChange}
+          aria-invalid={!!error}
+          aria-describedby={hintId}
+          searchable
+          emptyLabel="—"
+          groups={[
+            {
+              label: 'Cluburi',
+              options: clubs.map((c) => ({ value: `club:${c.id}`, label: c.name })),
+            },
+            {
+              label: 'Antrenori',
+              options: coaches.map((c) => ({ value: `coach:${c.user_id}`, label: c.name })),
+            },
+          ]}
+        />
+      )}
       {locked ? (
         <p id="owner-hint" className="text-muted-foreground text-xs">
           Organizatorul rămâne cel de la creare.

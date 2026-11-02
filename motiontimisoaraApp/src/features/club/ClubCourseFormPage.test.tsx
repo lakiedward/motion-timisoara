@@ -14,6 +14,7 @@ import {
 } from '@/api/club'
 import { fetchSports } from '@/api/sports'
 import { getCursBnr } from '@/api/bnr-rate'
+import { findSelectMenuOption, pickSelectMenuValue } from '@/test/select-menu'
 
 vi.mock('@/api/offer-hero', () => ({
   schimbaPozaOferta: vi.fn().mockResolvedValue('c/hero/a.jpg'),
@@ -112,8 +113,8 @@ test('la editare, antrenorul salvat apare selectat chiar dacă lista lui vine du
   await screen.findByDisplayValue('Înot avansat')
 
   await waitFor(() => {
-    expect(screen.getByLabelText(/^Antrenor/)).toHaveValue(ANTRENOR)
-    expect(screen.getByLabelText(/^Locație/)).toHaveValue(LOC_COMUNA)
+    expect(screen.getByLabelText(/^Antrenor/)).toHaveAttribute('data-value', ANTRENOR)
+    expect(screen.getByLabelText(/^Locație/)).toHaveAttribute('data-value', LOC_COMUNA)
   })
 })
 
@@ -121,12 +122,9 @@ test('la editare, antrenorul salvat apare selectat chiar dacă lista lui vine du
 test('selectul de locație folosește lista utilizabilă, nu doar locațiile proprii', async () => {
   renderForm()
   // Selectul se randează imediat; abia opțiunea dovedește că lista a sosit.
-  expect(await screen.findByRole('option', { name: 'Bazin Olimpic Timișoara' })).toBeInTheDocument()
+  await findSelectMenuOption(await screen.findByLabelText(/^Locație/), 'Bazin Olimpic Timișoara')
   // La creare nu exista curs, deci nicio locatie de pastrat.
   expect(mockedLocations).toHaveBeenCalledWith('club-1', null)
-  expect(
-    within(screen.getByLabelText(/^Locație/)).getByText('Bazin Olimpic Timișoara'),
-  ).toBeInTheDocument()
 })
 
 // Regresie (Bugbot): filtrul `is_active` nu are voie sa scoata din lista locatia
@@ -157,7 +155,9 @@ test('locația dezactivată a unui curs rămâne în listă la editare', async (
 
   // Interogarea primeste locatia curenta, ca sa o poata pastra chiar inactiva.
   await waitFor(() => expect(mockedLocations).toHaveBeenCalledWith('club-1', 'loc-inactiva'))
-  await waitFor(() => expect(screen.getByLabelText(/^Locație/)).toHaveValue('loc-inactiva'))
+  await waitFor(() =>
+    expect(screen.getByLabelText(/^Locație/)).toHaveAttribute('data-value', 'loc-inactiva'),
+  )
 })
 
 // --- Criteriul 3: fiecare camp gresit e marcat si legat de mesajul lui ---
@@ -202,7 +202,7 @@ test('mesajul „Adaugă o locație” apare doar când nu există nicio locați
     { id: LOC_COMUNA, name: 'Bazin Olimpic Timișoara', city: 'Timișoara' },
   ] as never)
   renderForm()
-  await screen.findByRole('option', { name: 'Bazin Olimpic Timișoara' })
+  await findSelectMenuOption(await screen.findByLabelText(/^Locație/), 'Bazin Olimpic Timișoara')
   expect(screen.queryByText(/Nu ai locații/)).not.toBeInTheDocument()
 })
 
@@ -212,9 +212,9 @@ test('salvarea reușită creează cursul și duce înapoi în listă', async () 
   vi.mocked(createClubCourse).mockResolvedValue({ id: 'c-nou' } as never)
   renderForm()
   await user.type(await screen.findByLabelText(/^Nume curs/), 'Curs nou de test')
-  await user.selectOptions(screen.getByLabelText(/^Antrenor/), ANTRENOR)
-  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
-  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC_COMUNA)
+  await pickSelectMenuValue(screen.getByLabelText(/^Antrenor/), ANTRENOR)
+  await pickSelectMenuValue(screen.getByLabelText(/^Sport/), SPORT)
+  await pickSelectMenuValue(screen.getByLabelText(/^Locație/), LOC_COMUNA)
   await user.type(screen.getByLabelText(/^Preț \/ ședință \(lei\)/), '80')
   await completeazaProgram(user)
   punePozaHero()
@@ -236,9 +236,9 @@ test('salvarea eșuată păstrează valorile completate și anunță eroarea', a
   vi.mocked(createClubCourse).mockRejectedValue(new Error('500'))
   renderForm()
   await user.type(await screen.findByLabelText(/^Nume curs/), 'Curs care nu se salvează')
-  await user.selectOptions(screen.getByLabelText(/^Antrenor/), ANTRENOR)
-  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
-  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC_COMUNA)
+  await pickSelectMenuValue(screen.getByLabelText(/^Antrenor/), ANTRENOR)
+  await pickSelectMenuValue(screen.getByLabelText(/^Sport/), SPORT)
+  await pickSelectMenuValue(screen.getByLabelText(/^Locație/), LOC_COMUNA)
   await user.type(screen.getByLabelText(/^Preț \/ ședință \(lei\)/), '80')
   await completeazaProgram(user)
   punePozaHero()
@@ -280,9 +280,9 @@ test('EUR citește cursul BNR și îl îngheață pe cursul de club', async () =
   vi.mocked(createClubCourse).mockResolvedValue({ id: 'c-eur' } as never)
   renderForm()
   await user.type(await screen.findByLabelText(/^Nume curs/), 'Curs euro')
-  await user.selectOptions(screen.getByLabelText(/^Antrenor/), ANTRENOR)
-  await user.selectOptions(screen.getByLabelText(/^Sport/), SPORT)
-  await user.selectOptions(screen.getByLabelText(/^Locație/), LOC_COMUNA)
+  await pickSelectMenuValue(screen.getByLabelText(/^Antrenor/), ANTRENOR)
+  await pickSelectMenuValue(screen.getByLabelText(/^Sport/), SPORT)
+  await pickSelectMenuValue(screen.getByLabelText(/^Locație/), LOC_COMUNA)
   await user.click(screen.getByRole('radio', { name: 'Euro (EUR)' }))
   expect(await screen.findByText('Curs BNR din 19.09.2026: 5,123456 lei/EUR')).toBeInTheDocument()
   expect(screen.queryByLabelText('Cursul tău: 1 EUR în lei')).not.toBeInTheDocument()
@@ -302,10 +302,8 @@ test('cât timp listele se încarcă, selecturile spun asta și salvarea nu porn
   let gataLocatii: (value: never) => void = () => {}
   mockedLocations.mockReturnValue(new Promise((resolve) => (gataLocatii = resolve)))
   renderForm()
-  await screen.findByRole('option', { name: 'Audit Antrenor' })
-  expect(within(screen.getByLabelText(/^Locație/)).getByRole('option')).toHaveTextContent(
-    'Se încarcă…',
-  )
+  await findSelectMenuOption(await screen.findByLabelText(/^Antrenor/), 'Audit Antrenor')
+  expect(screen.getByLabelText(/^Locație/)).toHaveTextContent('Se încarcă…')
   expect(screen.getByRole('button', { name: 'Salvează' })).toBeDisabled()
   expect(screen.getByRole('status')).toHaveTextContent('Se încarcă opțiunile…')
   gataLocatii([{ id: LOC_COMUNA, name: 'Bazin Olimpic Timișoara', city: 'Timișoara' }] as never)

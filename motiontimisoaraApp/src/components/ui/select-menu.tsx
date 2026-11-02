@@ -7,7 +7,7 @@ import { fieldFocusClassName } from '@/components/ui/field-styles'
 import { filterBySearch } from '@/lib/select-search'
 
 export type SelectMenuOption = { value: string; label: string; disabled?: boolean }
-export type SelectMenuGroup = { label: string; options: SelectMenuOption[] }
+export type SelectMenuGroup = { label: string; options: readonly SelectMenuOption[] }
 
 type SelectMenuProps = {
   id?: string
@@ -15,8 +15,8 @@ type SelectMenuProps = {
   value: string
   onValueChange: (value: string) => void
   onBlur?: () => void
-  options?: SelectMenuOption[]
-  groups?: SelectMenuGroup[]
+  options?: readonly SelectMenuOption[]
+  groups?: readonly SelectMenuGroup[]
   emptyLabel?: string
   placeholder?: string
   disabled?: boolean
@@ -37,6 +37,7 @@ function Item({ option }: { option: SelectMenuOption }) {
   return (
     <DropdownMenuPrimitive.RadioItem
       value={option.value}
+      data-value={option.value}
       disabled={option.disabled}
       className={ITEM_CLASS}
     >
@@ -103,6 +104,7 @@ const SelectMenu = React.forwardRef<HTMLButtonElement, SelectMenuProps>(function
       <DropdownMenuPrimitive.Trigger
         ref={ref}
         id={id}
+        data-value={value}
         disabled={disabled}
         onBlur={onBlur}
         aria-invalid={aria['aria-invalid']}

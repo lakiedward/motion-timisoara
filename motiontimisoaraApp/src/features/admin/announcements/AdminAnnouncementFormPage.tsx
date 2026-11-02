@@ -130,7 +130,6 @@ export default function AdminAnnouncementFormPage() {
               clubs={clubs.data ?? []}
               locked={false}
               error={null}
-              selectClassName={selectClassName}
               onChange={chooseOwner}
             />
           )}

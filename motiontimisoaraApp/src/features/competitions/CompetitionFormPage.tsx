@@ -73,6 +73,7 @@ export default function CompetitionFormPage({ baza }: { baza: CompetitionPortalB
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
@@ -199,6 +200,7 @@ export default function CompetitionFormPage({ baza }: { baza: CompetitionPortalB
 
           <CompetitionScheduleSection
             register={register}
+            control={control}
             errors={errors}
             locations={locatii.data ?? []}
             locationError={locatii.isError}

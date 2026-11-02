@@ -10,6 +10,7 @@ import { getAllClubs, getCoachesForSelect } from '@/api/admin'
 import { createAdminLocation, getLocationAdmin } from '@/api/locations/admin-locations'
 import { geocoding } from '@/api/geocoding'
 import { getLocations } from '@/api/public'
+import { pickSelectMenuValue } from '@/test/select-menu'
 
 vi.mock('@/api/club', () => ({
   getMyClub: vi.fn(),
@@ -103,8 +104,7 @@ test('adminul nu citește „clubul meu” și trebuie să aleagă organizatorul
 test('locația nouă se salvează pe clubul sau antrenorul ales și revine la lista admin', async () => {
   const user = userEvent.setup()
   renderForm('/admin/locations/new')
-  await screen.findByRole('option', { name: 'Ana Rusu' })
-  await user.selectOptions(screen.getByLabelText(/^Organizator/), `coach:${COACH}`)
+  await pickSelectMenuValue(screen.getByLabelText(/^Organizator/), `coach:${COACH}`)
   await completeaza(user)
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() =>
@@ -137,7 +137,7 @@ test('la editare organizatorul e blocat și se vede numele lui', async () => {
   await screen.findByDisplayValue('Bazin Audit')
   const owner = screen.getByLabelText(/^Organizator/)
   expect(owner).toBeDisabled()
-  expect(owner).toHaveDisplayValue('Club Audit Motion')
+  expect(owner).toHaveTextContent('Club Audit Motion')
   expect(screen.getByText('Organizatorul rămâne cel de la creare.')).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() => expect(updateClubLocation).toHaveBeenCalledWith('loc-1', expect.any(Object)))

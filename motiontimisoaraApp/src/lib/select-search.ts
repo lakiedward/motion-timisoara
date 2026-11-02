@@ -8,7 +8,10 @@ export function matchesSearch(label: string, query: string): boolean {
   return normalizeSearchText(label).includes(needle)
 }
 
-export function filterBySearch<T extends { label: string }>(items: T[], query: string): T[] {
+export function filterBySearch<T extends { label: string }>(
+  items: readonly T[],
+  query: string,
+): readonly T[] {
   if (!normalizeSearchText(query)) return items
   return items.filter((item) => matchesSearch(item.label, query))
 }

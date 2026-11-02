@@ -7,6 +7,7 @@ import { updateClubAnnouncement, type ClubAnnouncement } from '@/api/club'
 import { Button } from '@/components/ui/button'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { FormSelectMenu } from '@/components/ui/form-select-menu'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { AnnouncementScheduleFields } from './AnnouncementScheduleFields'
@@ -15,7 +16,6 @@ import {
   announcementSchema,
   withScheduleRules,
   type AnnouncementValues,
-  announcementSelectClassName,
 } from './announcement-form'
 import { scheduleFromFields, scheduleState, scheduleToFields } from './announcement-schedule'
 
@@ -33,6 +33,7 @@ export function AnnouncementEditForm({ anunt, onSaved, onCancel }: Props) {
   }
   const initial = scheduleToFields(anunt)
   const {
+    control,
     register,
     handleSubmit,
     formState: { errors, isDirty },
@@ -103,17 +104,13 @@ export function AnnouncementEditForm({ anunt, onSaved, onCancel }: Props) {
       <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1.5 sm:w-56">
           <Label htmlFor={ids.priority}>Prioritate</Label>
-          <select
+          <FormSelectMenu
+            control={control}
+            className="md:text-base"
+            name="priority"
             id={ids.priority}
-            className={announcementSelectClassName}
-            {...register('priority')}
-          >
-            {PRIORITY_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            options={PRIORITY_OPTIONS}
+          />
         </div>
         <div className="flex flex-col-reverse gap-2 sm:flex-row">
           <Button type="button" variant="outline" disabled={save.isPending} onClick={onCancel}>

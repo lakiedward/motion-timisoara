@@ -1,5 +1,11 @@
 import type { ComponentProps } from 'react'
-import { useController, type Control, type FieldPath, type FieldValues } from 'react-hook-form'
+import {
+  useController,
+  type Control,
+  type FieldPath,
+  type FieldPathValue,
+  type FieldValues,
+} from 'react-hook-form'
 
 import { SelectMenu } from '@/components/ui/select-menu'
 
@@ -18,18 +24,25 @@ export function FormSelectMenu<TValues extends FieldValues>({
   onValueChange,
   ...props
 }: FormSelectMenuProps<TValues>) {
-  const { field, fieldState } = useController({ control, name })
-  const value = field.value === null || field.value === undefined ? '' : String(field.value)
+  const {
+    field: { ref: triggerRef, name: fieldName, onBlur, onChange, value: fieldValue },
+    fieldState,
+  } = useController({
+    control,
+    name,
+    defaultValue: '' as FieldPathValue<TValues, FieldPath<TValues>>,
+  })
+  const value = fieldValue === null || fieldValue === undefined ? '' : String(fieldValue)
   return (
     <SelectMenu
       {...props}
-      ref={field.ref}
-      name={field.name}
+      ref={triggerRef}
+      name={fieldName}
       value={value}
       aria-invalid={props['aria-invalid'] ?? (fieldState.invalid || undefined)}
-      onBlur={field.onBlur}
+      onBlur={onBlur}
       onValueChange={(next) => {
-        field.onChange(next)
+        onChange(next)
         onValueChange?.(next)
       }}
     />

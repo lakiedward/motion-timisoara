@@ -1,9 +1,9 @@
-import type { FieldErrors, UseFormRegister } from 'react-hook-form'
+import type { Control, FieldErrors, UseFormRegister } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { selectClassName } from '@/components/ui/field-styles'
+import { FormSelectMenu } from '@/components/ui/form-select-menu'
 import type { CompetitionFormValues } from './competition-form-schema'
 import { Checkbox } from '@/components/ui/checkbox'
 
@@ -11,6 +11,7 @@ type LocationOption = { id: string; name: string; city: string | null }
 
 type Props = {
   register: UseFormRegister<CompetitionFormValues>
+  control: Control<CompetitionFormValues>
   errors: FieldErrors<CompetitionFormValues>
   locations: LocationOption[]
   locationError: boolean
@@ -19,6 +20,7 @@ type Props = {
 
 export function CompetitionScheduleSection({
   register,
+  control,
   errors,
   locations,
   locationError,
@@ -118,19 +120,17 @@ export function CompetitionScheduleSection({
 
       <div className="space-y-2">
         <Label htmlFor="competition-location-map">Locație pe hartă (opțional)</Label>
-        <select
+        <FormSelectMenu
+          control={control}
+          name="locationId"
           id="competition-location-map"
-          className={selectClassName}
-          {...register('locationId')}
-        >
-          <option value="">Fără pin pe hartă</option>
-          {locations.map((location) => (
-            <option key={location.id} value={location.id}>
-              {location.name}
-              {location.city ? ` · ${location.city}` : ''}
-            </option>
-          ))}
-        </select>
+          searchable={locations.length > 8}
+          emptyLabel="Fără pin pe hartă"
+          options={locations.map((location) => ({
+            value: location.id,
+            label: location.city ? `${location.name} · ${location.city}` : location.name,
+          }))}
+        />
         {locationError && (
           <p className="text-destructive text-sm">Nu am putut încărca locațiile de pe hartă.</p>
         )}

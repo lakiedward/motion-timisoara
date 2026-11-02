@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
-import { selectClassName } from '@/components/ui/field-styles'
+import { SelectMenu } from '@/components/ui/select-menu'
 import type { CompetitionPortalBaza } from '../competition-portal'
 import { useCompetitionOwner } from '../useCompetitionOwner'
 import { useState } from 'react'
@@ -131,18 +131,12 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
         <>
           <div className="space-y-2">
             <Label htmlFor="podium-category">Categorie</Label>
-            <select
+            <SelectMenu
               id="podium-category"
               value={selectedCategoryId}
-              onChange={(event) => setCategoryId(event.target.value)}
-              className={selectClassName}
-            >
-              {categories.data.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
+              onValueChange={setCategoryId}
+              options={categories.data.map((category) => ({ value: category.id, label: category.name }))}
+            />
           </div>
           {publication ? (
             <p role="status" className="bg-primary/10 rounded-xl p-3 text-sm font-medium">
@@ -175,31 +169,28 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
                 return (
                   <div key={place} className="bg-card space-y-2 rounded-xl border p-5">
                     <Label htmlFor={`podium-place-${place}`}>Locul {place}</Label>
-                    <select
+                    <SelectMenu
                       id={`podium-place-${place}`}
                       value={current?.registration_id ?? ''}
                       disabled={save.isPending}
-                      onChange={(event) =>
+                      onValueChange={(registrationId) =>
                         save.mutate({
                           competitionId: id,
                           categoryId: selectedCategoryId,
                           place,
-                          registrationId: event.target.value || null,
+                          registrationId: registrationId || null,
                           currentId: current?.id ?? null,
                         })
                       }
-                      className={selectClassName}
-                    >
-                      <option value="">Loc necompletat</option>
-                      {candidates.data
-                        ?.filter((candidate) => !taken.has(candidate.registration_id))
-                        .map((candidate) => (
-                          <option key={candidate.registration_id} value={candidate.registration_id}>
-                            {candidate.participant_name} · {candidate.age_at_registration} ani la
-                            înscriere
-                          </option>
-                        ))}
-                    </select>
+                      searchable={candidateCount > 8}
+                      emptyLabel="Loc necompletat"
+                      options={(candidates.data ?? [])
+                        .filter((candidate) => !taken.has(candidate.registration_id))
+                        .map((candidate) => ({
+                          value: candidate.registration_id,
+                          label: `${candidate.participant_name} · ${candidate.age_at_registration} ani la înscriere`,
+                        }))}
+                    />
                   </div>
                 )
               })}
