@@ -25,6 +25,7 @@ import { fetchSports } from '@/api/sports'
 import { registerCoach, roleHome } from '@/api/auth'
 import { redeemCoachInvitation } from '@/api/coach-registration'
 import { useAuth } from '@/lib/auth-context'
+import { PricingSignupLink } from '@/features/public/pricing/PricingSignupLink'
 
 function coachSchema(signedIn: boolean) {
   return z.object({
@@ -212,12 +213,15 @@ export default function CoachSignupPage() {
       subtitle="Necesită un cod de invitație"
       footer={
         step === 0 ? (
-          <Link
-            to={withReturnUrl('/signup', returnUrl)}
-            className="text-primary min-h-touch-target inline-flex items-center font-semibold"
-          >
-            Înapoi
-          </Link>
+          <>
+            <Link
+              to={withReturnUrl('/signup', returnUrl)}
+              className="text-primary min-h-touch-target inline-flex items-center font-semibold"
+            >
+              Înapoi
+            </Link>
+            <PricingSignupLink />
+          </>
         ) : undefined
       }
     >
