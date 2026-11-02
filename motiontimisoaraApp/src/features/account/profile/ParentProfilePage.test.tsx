@@ -18,6 +18,9 @@ const toasts = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }))
 vi.mock('@/lib/auth-context', () => ({ useAuth: () => state }))
 vi.mock('@/api/auth', () => api)
 vi.mock('sonner', () => ({ toast: toasts }))
+vi.mock('./DeleteAccountSection', () => ({
+  DeleteAccountSection: ({ userId }: { userId: string }) => <p>ștergere pentru {userId}</p>,
+}))
 
 const parent: AppUser = {
   id: 'parent-1',
@@ -56,6 +59,7 @@ test('afișează numele, telefonul și emailul doar de citit', () => {
   expect(screen.getByLabelText(/Telefon/)).toHaveValue('+40700000001')
   expect(screen.getByLabelText('Email')).toHaveAttribute('readonly')
   expect(screen.getByText('Date de contact')).toBeInTheDocument()
+  expect(screen.getByText('ștergere pentru parent-1')).toBeInTheDocument()
 })
 
 test('salvează numele și telefonul fără spații, apoi reîncarcă profilul', async () => {

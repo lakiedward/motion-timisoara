@@ -88,6 +88,7 @@ import PaymentReturnPage from '@/features/account/PaymentReturnPage'
 import ChildQrPage from '@/features/children/ChildQrPage'
 import PrivacyPage from '@/features/public/PrivacyPage'
 import TermsPage from '@/features/public/TermsPage'
+import AccountDeletionPage from '@/features/public/account-deletion/AccountDeletionPage'
 import NativeExplorePage from '@/layout/native/NativeExplorePage'
 import NativeAccountPage from '@/layout/native/NativeAccountPage'
 import { usesNativeNavigation } from '@/layout/native/native-runtime'
@@ -123,6 +124,7 @@ export const router = createBrowserRouter([
           { path: '/contact', element: <ContactPage /> },
           { path: '/termeni', element: <TermsPage /> },
           { path: '/confidentialitate', element: <PrivacyPage /> },
+          { path: '/stergere-cont', element: <AccountDeletionPage /> },
           ...(import.meta.env.DEV
             ? [
                 { path: '/dev/ui', element: <UiGalleryPage /> },

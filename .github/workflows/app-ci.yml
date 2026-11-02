@@ -46,6 +46,8 @@ on:
       - 'supabase/functions/_shared/terms-version.ts'
       - 'supabase/migrations/00104_cash_payments_list.sql'
       - 'supabase/tests/*cash-payments-list*'
+      - 'supabase/migrations/00106_parent_account_deletion.sql'
+      - 'supabase/tests/*parent-account-deletion*'
   workflow_dispatch:
 
 concurrency:
@@ -123,6 +125,9 @@ jobs:
       - name: Verify cash payments list access
         shell: pwsh
         run: ./supabase/tests/run-cash-payments-list.ps1
+      - name: Verify parent account deletion
+        shell: pwsh
+        run: ./supabase/tests/run-parent-account-deletion.ps1
 
   build:
     runs-on: ubuntu-latest

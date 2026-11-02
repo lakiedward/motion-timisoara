@@ -13,6 +13,7 @@ import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { DeleteAccountSection } from './DeleteAccountSection'
 
 const parentProfileSchema = z.object({
   name: z.string().trim().min(2, 'Minim 2 caractere'),
@@ -151,6 +152,7 @@ export default function ParentProfilePage() {
           {isSubmitting ? 'Se salvează…' : 'Salvează'}
         </Button>
       </form>
+      <DeleteAccountSection userId={user.id} />
     </div>
   )
 }

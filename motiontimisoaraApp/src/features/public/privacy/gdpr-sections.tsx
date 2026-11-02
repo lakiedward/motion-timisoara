@@ -190,7 +190,11 @@ export const GDPR_SECTIONS: LegalSection[] = [
         <ul className={listClass}>
           <li>
             <strong>Contul și profilurile copiilor:</strong> cât timp ai cont. Un profil de copil îl
-            poți șterge oricând din cont; pentru ștergerea contului scrie-ne.
+            poți șterge oricând din cont, iar contul întreg din Profilul meu, cu pașii de pe{' '}
+            <Link className={linkClass} to="/stergere-cont">
+              pagina de ștergere a contului
+            </Link>
+            .
           </li>
           <li>
             <strong>Înscrieri și prezență:</strong> cât timp ai cont, ca să vezi istoricul și

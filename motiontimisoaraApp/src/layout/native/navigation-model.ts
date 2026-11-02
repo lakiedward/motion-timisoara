@@ -140,6 +140,7 @@ const secondaryScreens = [
   ['/auth/callback', 'Contul tău', '/cont'],
   ['/termeni', 'Termeni și condiții', '/cont'],
   ['/confidentialitate', 'Confidențialitate', '/cont'],
+  ['/stergere-cont', 'Ștergerea contului', '/cont'],
   ['/account/profile', 'Profilul meu', '/cont'],
   ['/admin/profile', 'Profil administrator', '/admin'],
   ['/coach/profile', 'Profil antrenor', '/cont'],
