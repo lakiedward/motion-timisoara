@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react'
-import { Building2, ChevronDown, GraduationCap } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Building2, ChevronDown, GraduationCap, Pencil } from 'lucide-react'
+
+import { Button } from '@/components/ui/button'
 
 import { Highlight } from '@/features/admin/courses/CourseParts'
 import { plural } from '@/lib/plural'
@@ -24,6 +27,21 @@ export function ClubCourseCount({ club }: { club: ClubSummary }) {
       {club.activeCourses === 1 ? 'activ' : 'active'} din{' '}
       {plural(club.totalCourses, 'curs', 'cursuri')}
     </span>
+  )
+}
+
+export function EditClubAction({ club }: { club: Pick<ClubSummary, 'id' | 'name'> }) {
+  return (
+    <Button
+      asChild
+      variant="outline"
+      size="sm"
+      className="h-touch-target min-h-touch-target lg:h-9 lg:min-h-9"
+    >
+      <Link to={`/admin/clubs/${club.id}/edit`} aria-label={`Editează ${club.name}`}>
+        <Pencil aria-hidden="true" /> Editează
+      </Link>
+    </Button>
   )
 }
 
@@ -65,7 +83,9 @@ export function ClubRow({
           <ClubCourseCount club={club} />
         </span>
       )}
-      {action && <span className="w-full pl-13 md:w-auto md:pl-0">{action}</span>}
+      {action && (
+        <span className="flex w-full flex-wrap gap-2 pl-13 md:w-auto md:pl-0">{action}</span>
+      )}
     </li>
   )
 }
@@ -128,7 +148,13 @@ export function ClubGroupCard({
         <div id={panelId}>
           <ul className="divide-y border-t">
             {shown.map((club) => (
-              <ClubRow key={club.id} club={club} query={query} coursesKnown={coursesKnown} />
+              <ClubRow
+                key={club.id}
+                club={club}
+                query={query}
+                coursesKnown={coursesKnown}
+                action={<EditClubAction club={club} />}
+              />
             ))}
           </ul>
           {hidden > 0 && (

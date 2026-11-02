@@ -1,12 +1,13 @@
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ExternalLink } from 'lucide-react'
+import { ArrowLeft, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { getMyClub, updateClub, type Club } from '@/api/club'
+import { getAdminClub, type ClubProfileRow } from '@/api/accounts/admin-accounts'
+import { getMyClub, updateClub } from '@/api/club'
 import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,7 +33,7 @@ const EMPTY: ClubProfileValues = {
   public_email_consent: false,
 }
 
-function toValues(club: Club): ClubProfileValues {
+function toValues(club: ClubProfileRow): ClubProfileValues {
   return {
     name: club.name,
     description: club.description ?? '',
@@ -48,10 +49,24 @@ function toValues(club: Club): ClubProfileValues {
   }
 }
 
-export default function ClubProfilePage() {
+export default function ClubProfilePage({ portal = 'club' }: { portal?: 'club' | 'admin' }) {
   const qc = useQueryClient()
-  const query = useQuery({ queryKey: ['my-club'], queryFn: getMyClub })
+  const { id = '' } = useParams()
+  const isAdmin = portal === 'admin'
+  const queryKey = isAdmin ? ['admin-club', id] : ['my-club']
+  const query = useQuery({
+    queryKey,
+    queryFn: (): Promise<ClubProfileRow | null> => (isAdmin ? getAdminClub(id) : getMyClub()),
+  })
   const club = query.data
+  const backLink = isAdmin ? (
+    <Link
+      to="/admin/clubs"
+      className="text-muted-foreground hover:text-foreground inline-flex h-touch-target items-center gap-1 text-sm"
+    >
+      <ArrowLeft className="size-4" /> Înapoi la cluburi
+    </Link>
+  ) : null
 
   const {
     register,
@@ -75,6 +90,7 @@ export default function ClubProfilePage() {
   if (query.isError)
     return (
       <div role="alert" className="max-w-2xl space-y-3 rounded-2xl border p-4">
+        {backLink}
         <p className="text-destructive text-sm">Nu am putut încărca profilul clubului.</p>
         <Button
           type="button"
@@ -106,7 +122,8 @@ export default function ClubProfilePage() {
         public_email_consent: v.public_email_consent,
       })
       reset({ ...v, website })
-      void qc.invalidateQueries({ queryKey: ['my-club'] })
+      void qc.invalidateQueries({ queryKey })
+      if (isAdmin) void qc.invalidateQueries({ queryKey: ['admin-clubs'] })
       toast.success('Profil actualizat.')
     } catch {
       toast.error('Nu am putut salva profilul.')
@@ -140,9 +157,12 @@ export default function ClubProfilePage() {
 
   return (
     <div className="max-w-2xl">
+      {backLink}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Profil club</h1>
+          <h1 className="font-display text-2xl font-bold text-foreground break-words">
+            {isAdmin ? `Editează ${club.name}` : 'Profil club'}
+          </h1>
           <RequiredFieldsNote />
         </div>
         <Link
@@ -172,8 +192,18 @@ export default function ClubProfilePage() {
 
         <FormSection title="Logo și copertă" description="Opționale; le poți schimba oricând.">
           <div className="grid gap-6 sm:grid-cols-2">
-            <ClubImageField clubId={club.id} kind="logo" path={club.logo_storage_path} />
-            <ClubImageField clubId={club.id} kind="hero" path={club.hero_photo_storage_path} />
+            <ClubImageField
+              clubId={club.id}
+              kind="logo"
+              path={club.logo_storage_path}
+              queryKey={queryKey}
+            />
+            <ClubImageField
+              clubId={club.id}
+              kind="hero"
+              path={club.hero_photo_storage_path}
+              queryKey={queryKey}
+            />
           </div>
         </FormSection>
 

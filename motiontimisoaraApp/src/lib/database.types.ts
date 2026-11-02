@@ -3253,6 +3253,17 @@ export type Database = {
           users: number
         }[]
       }
+      admin_user_detail: {
+        Args: { p_user_id: string }
+        Returns: {
+          email: string
+          enabled: boolean
+          id: string
+          name: string
+          phone: string
+          role: string
+        }[]
+      }
       admin_users: {
         Args: never
         Returns: {

@@ -145,14 +145,19 @@ test('cardul arată nume, oraș, email și cursurile, cu — unde lipsește', as
   expect(within(gamma).getAllByText('—')).toHaveLength(2)
 })
 
-test('rândurile de club rămân statice, fără link de detaliu', async () => {
+test('fiecare rând de club are un singur link, „Editează”, spre formularul de editare', async () => {
   mockedClubs.mockResolvedValue(listaNesortata())
   renderPage()
   await asteaptaLista()
-  expect(screen.queryByRole('link', { name: /Alpha Club/ })).not.toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Editează Alpha Club' })).toHaveAttribute(
+    'href',
+    expect.stringMatching(/^\/admin\/clubs\/[^/]+\/edit$/),
+  )
   for (const card of carduri()) {
     expect(card.tagName).toBe('LI')
-    expect(within(card).queryByRole('link')).not.toBeInTheDocument()
+    const links = within(card).getAllByRole('link')
+    expect(links).toHaveLength(1)
+    expect(links[0]).toHaveTextContent('Editează')
   }
 })
 

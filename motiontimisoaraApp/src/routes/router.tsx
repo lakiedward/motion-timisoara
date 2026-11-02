@@ -17,6 +17,7 @@ import CoachAnnouncementsPage from '@/features/coach/announcements/CoachAnnounce
 import AdminLayout from '@/features/admin/AdminLayout'
 import AdminDashboard from '@/features/admin/AdminDashboard'
 import AdminUsersPage from '@/features/admin/AdminUsersPage'
+import AdminUserEditPage from '@/features/admin/users/AdminUserEditPage'
 import AdminClubsPage from '@/features/admin/AdminClubsPage'
 import AdminCoursesPage from '@/features/admin/AdminCoursesPage'
 import AdminLocationsPage from '@/features/admin/AdminLocationsPage'
@@ -232,7 +233,9 @@ export const router = createBrowserRouter([
               { path: '/admin', element: <AdminDashboard /> },
               { path: '/admin/profile', element: <AdminProfilePage /> },
               { path: '/admin/users', element: <AdminUsersPage /> },
+              { path: '/admin/users/:id/edit', element: <AdminUserEditPage /> },
               { path: '/admin/clubs', element: <AdminClubsPage /> },
+              { path: '/admin/clubs/:id/edit', element: <ClubProfilePage portal="admin" /> },
               {
                 path: '/admin/courses',
                 element: (

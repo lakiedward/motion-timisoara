@@ -1,4 +1,6 @@
 import { useId } from 'react'
+import { Link } from 'react-router-dom'
+import { Pencil } from 'lucide-react'
 
 import type { AdminUser } from '@/api/admin'
 import { Badge } from '@/components/ui/badge'
@@ -85,6 +87,16 @@ export function ToggleAction({
   )
 }
 
+export function EditUserAction({ user, className }: { user: AdminUser; className?: string }) {
+  return (
+    <Button asChild variant="outline" size="sm" className={className}>
+      <Link to={`/admin/users/${user.id}/edit`} aria-label={`Editează ${user.name}`}>
+        <Pencil aria-hidden="true" /> Editează
+      </Link>
+    </Button>
+  )
+}
+
 type RowProps = {
   users: AdminUser[]
   query: string
@@ -141,12 +153,15 @@ export function UserTable({ users, query, pending, onToggle, showRole = true }: 
               {DATE_FMT.format(new Date(u.created_at))}
             </td>
             <td className="px-4 py-3 text-right">
-              <ToggleAction
-                user={u}
-                pending={pending}
-                onToggle={onToggle}
-                className={TABLE_ACTION}
-              />
+              <span className="inline-flex flex-wrap justify-end gap-2">
+                <EditUserAction user={u} className={TABLE_ACTION} />
+                <ToggleAction
+                  user={u}
+                  pending={pending}
+                  onToggle={onToggle}
+                  className={TABLE_ACTION}
+                />
+              </span>
             </td>
           </tr>
         ))}
@@ -171,7 +186,15 @@ export function UserCardList({ users, query, pending, onToggle, showRole = true 
           </p>
           <div className="mt-3 flex items-center justify-between gap-3">
             <StatusBadge enabled={u.enabled} />
-            <ToggleAction user={u} pending={pending} onToggle={onToggle} className={CARD_ACTION} />
+            <span className="flex flex-wrap justify-end gap-2">
+              <EditUserAction user={u} className={CARD_ACTION} />
+              <ToggleAction
+                user={u}
+                pending={pending}
+                onToggle={onToggle}
+                className={CARD_ACTION}
+              />
+            </span>
           </div>
         </li>
       ))}

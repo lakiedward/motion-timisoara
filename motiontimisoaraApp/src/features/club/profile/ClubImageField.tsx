@@ -31,15 +31,17 @@ export default function ClubImageField({
   clubId,
   kind,
   path,
+  queryKey = ['my-club'],
 }: {
   clubId: string
   kind: ClubImageKind
   path: string | null
+  queryKey?: string[]
 }) {
   const qc = useQueryClient()
   const copy = COPY[kind]
   const url = publicUrl('club-assets', path)
-  const done = () => void qc.invalidateQueries({ queryKey: ['my-club'] })
+  const done = () => void qc.invalidateQueries({ queryKey })
   const upload = useMutation({
     mutationFn: (file: File) => setClubImage(clubId, kind, file),
     onSuccess: () => {
