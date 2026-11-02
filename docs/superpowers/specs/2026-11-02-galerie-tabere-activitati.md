@@ -8,7 +8,7 @@ Data: 2026-11-02. Cerere: proprietarul a ales „Tabere + activități” după 
 - Titluri publice: „O zi la curs”, „O zi la tabără”, „Din activitate”.
 - Un singur cod pentru toate trei: `src/api/photo-gallery.ts` (citire, urcare, descriere, ștergere, ordine, galeria publică), `src/features/photo-gallery/` (editorul din formular) și `src/components/photo-gallery/PhotoMosaic.tsx` (mozaicul public). `PhotoGallery` rămâne pentru traseele de concurs.
 
-## Bază de date (migrația 00112)
+## Bază de date (migrația 00114)
 
 - `camp_photos`: `caption`, `consent_confirmed_at`, `uploaded_by` și trigger de acord la INSERT, ca la `course_photos` în 00111. Rândurile vechi rămân cu acord NULL.
 - `activity_photos`: tabel nou, UUID, `timestamptz`, FK cu `ON DELETE CASCADE` spre activitate și `SET NULL` spre profil, RLS: citire după vizibilitatea activității, scriere prin `pot_administra_activitate`. Fișierele stau în `activity-photos/{activity_id}/gallery/`, acoperit deja de politicile de storage din 00090.
