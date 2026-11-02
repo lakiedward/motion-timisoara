@@ -85,7 +85,7 @@ export async function lookupAnafCompany(
       ]),
       signal: AbortSignal.timeout(8000),
     });
-    if (!response.ok) return { status: "unavailable" };
+    if (!response.ok && response.status !== 404) return { status: "unavailable" };
     return parseAnafCompany(cui, await response.json());
   } catch {
     return { status: "unavailable" };
