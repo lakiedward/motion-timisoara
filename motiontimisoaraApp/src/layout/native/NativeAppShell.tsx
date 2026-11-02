@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react'
 
 import type { Role } from '@/api/auth'
 import { Logo } from '@/components/Logo'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { activeDestination, bottomNavigation, nativeScreen } from './navigation-model'
@@ -69,6 +70,7 @@ export function NativeAppShell({ role, children }: { role: Role | null; children
             <Logo showText={false} />
           )}
           <p className="min-w-0 flex-1 truncate text-base font-semibold">{screen.title}</p>
+          <ThemeToggle />
         </div>
       </header>
       <main ref={contentRef} className="native-content">

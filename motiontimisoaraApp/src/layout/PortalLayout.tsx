@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { LogOut, Menu } from 'lucide-react'
 
 import { Logo } from '@/components/Logo'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -73,6 +74,15 @@ function LogoutControl({
         {pending ? 'Se deconectează…' : 'Deconectare'}
       </button>
     </>
+  )
+}
+
+function ThemeRow() {
+  return (
+    <div className="mb-2 flex items-center justify-between gap-3 px-3">
+      <span className="text-muted-foreground text-sm font-medium">Temă</span>
+      <ThemeToggle />
+    </div>
   )
 }
 
@@ -261,6 +271,7 @@ export function PortalLayout({
         </div>
         <div className="shrink-0 border-t p-3">
           {profileTo && fullName ? <ProfileCard to={profileTo} name={fullName} /> : null}
+          <ThemeRow />
           <LogoutControl pending={loggingOut} error={logoutError} onLogout={onLogout} />
         </div>
       </aside>
@@ -302,6 +313,7 @@ export function PortalLayout({
               {profileTo && fullName ? (
                 <ProfileCard to={profileTo} name={fullName} onNavigate={closeSheet} />
               ) : null}
+              <ThemeRow />
               <LogoutControl pending={loggingOut} error={logoutError} onLogout={onLogout} />
             </div>
           </SheetContent>

@@ -24,6 +24,7 @@ import { useAuth } from '@/lib/auth-context'
 import { signOut, type Role } from '@/api/auth'
 import { cn } from '@/lib/utils'
 import { publicNavigation } from '@/layout/navigation'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 
 function initials(name: string) {
   return name
@@ -93,7 +94,9 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="ml-auto hidden items-center gap-2 lg:flex">
+        <ThemeToggle className="ml-auto" />
+
+        <div className="hidden items-center gap-2 lg:flex">
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -144,7 +147,7 @@ export function Header() {
 
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="ml-auto lg:hidden" aria-label="Meniu">
+            <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Meniu">
               <Menu />
             </Button>
           </SheetTrigger>
