@@ -36,6 +36,19 @@ function matchesQuery(payment: CashPayment, query: string) {
   return fold(`${payment.participant_name} ${payment.offer_title}`).includes(needle)
 }
 
+const latest = (payment: CashPayment) => Date.parse(payment.paid_at ?? payment.created_at)
+
+function byAttentionThenNewest(a: CashPayment, b: CashPayment) {
+  return Number(isPending(b)) - Number(isPending(a)) || latest(b) - latest(a)
+}
+
+export const OVERDUE_DAYS = 14
+
+export function pendingDays(payment: CashPayment, now = Date.now()) {
+  if (!isPending(payment)) return 0
+  return Math.floor((now - Date.parse(payment.created_at)) / 86_400_000)
+}
+
 export function filterCashPayments(payments: CashPayment[], filters: CashFilters) {
   return payments.filter(
     (p) =>
@@ -74,6 +87,7 @@ export function groupCashPayments(payments: CashPayment[]): CashGroup[] {
     if (isPending(payment)) group.pending += 1
     groups.set(key, group)
   }
+  for (const group of groups.values()) group.payments.sort(byAttentionThenNewest)
   return [...groups.values()].sort(
     (a, b) => Number(b.pending > 0) - Number(a.pending > 0) || a.title.localeCompare(b.title, 'ro'),
   )

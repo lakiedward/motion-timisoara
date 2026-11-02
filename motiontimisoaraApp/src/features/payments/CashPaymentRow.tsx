@@ -1,10 +1,12 @@
 import type { CashPayment } from '@/api/payments/cash-payments'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { AttentionNote } from '@/features/admin/courses/CourseParts'
 import { formatMoney } from '@/lib/money'
 import { plural } from '@/lib/plural'
+import { OVERDUE_DAYS, pendingDays } from './cash-payment-list'
 
-function day(iso: string) {
+function cashDay(iso: string) {
   return new Date(iso).toLocaleDateString('ro-RO', {
     day: 'numeric',
     month: 'long',
@@ -14,24 +16,23 @@ function day(iso: string) {
 
 export function CashPaymentRow({
   payment,
-  armed,
   busy,
   onConfirm,
 }: {
   key?: string
   payment: CashPayment
-  armed: boolean
   busy: boolean
   onConfirm: () => void
 }) {
   const pending = payment.status === 'PENDING'
+  const waiting = pendingDays(payment)
   const details = [
     formatMoney(payment.amount, payment.currency),
     payment.sessions ? plural(payment.sessions, 'ședință', 'ședințe') : null,
     pending
-      ? `înscris pe ${day(payment.created_at)}`
+      ? `înscris pe ${cashDay(payment.created_at)}`
       : payment.paid_at
-        ? `confirmată pe ${day(payment.paid_at)}`
+        ? `confirmată pe ${cashDay(payment.paid_at)}`
         : null,
   ].filter(Boolean)
 
@@ -48,21 +49,22 @@ export function CashPaymentRow({
           </Badge>
         </div>
         <p className="text-muted-foreground text-sm">{details.join(' · ')}</p>
+        <AttentionNote
+          reason={
+            waiting > OVERDUE_DAYS ? `În așteptare de ${plural(waiting, 'zi', 'zile')}` : null
+          }
+        />
       </div>
       {pending && (
         <Button
           type="button"
-          variant={armed ? 'default' : 'outline'}
+          variant="outline"
           className="h-touch-target min-h-touch-target shrink-0 lg:h-9 lg:min-h-9"
           disabled={busy}
-          aria-label={
-            armed
-              ? `Confirmă suma încasată: ${formatMoney(payment.amount, payment.currency)} de la ${payment.participant_name}`
-              : undefined
-          }
+          aria-label={`Confirmă încasarea de la ${payment.participant_name}`}
           onClick={onConfirm}
         >
-          {armed ? 'Confirmă suma încasată' : 'Confirmă încasarea'}
+          Confirmă încasarea
         </Button>
       )}
     </li>

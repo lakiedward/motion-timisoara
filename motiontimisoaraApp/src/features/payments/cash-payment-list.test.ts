@@ -8,6 +8,7 @@ import {
   filterCashPayments,
   groupCashPayments,
   hasCashFilters,
+  pendingDays,
 } from './cash-payment-list'
 
 function payment(over: Partial<CashPayment>): CashPayment {
@@ -76,4 +77,27 @@ test('groups by offer, with offers that still wait for money first', () => {
     ['Tabăra de vară', 1, 1],
     ['Alergare', 1, 0],
   ])
+})
+
+test('în grup pune întâi plățile de confirmat, apoi pe cele încasate, cele mai noi primele', () => {
+  const [group] = groupCashPayments([
+    payment({ payment_id: 'old-paid', status: 'SUCCEEDED', paid_at: '2026-10-20T10:00:00Z' }),
+    payment({ payment_id: 'old-pending', created_at: '2026-10-01T10:00:00Z' }),
+    payment({ payment_id: 'new-paid', status: 'SUCCEEDED', paid_at: '2026-10-30T10:00:00Z' }),
+    payment({ payment_id: 'new-pending', created_at: '2026-10-29T10:00:00Z' }),
+  ])
+  expect(group.payments.map((p) => p.payment_id)).toEqual([
+    'new-pending',
+    'old-pending',
+    'new-paid',
+    'old-paid',
+  ])
+})
+
+test('numără zilele de așteptare doar pentru plățile neconfirmate', () => {
+  const now = Date.parse('2026-11-02T09:00:00Z')
+  expect(pendingDays(payment({ created_at: '2026-09-17T10:00:00Z' }), now)).toBe(45)
+  expect(
+    pendingDays(payment({ status: 'SUCCEEDED', created_at: '2026-09-17T10:00:00Z' }), now),
+  ).toBe(0)
 })

@@ -38,7 +38,7 @@ function renderPage() {
   )
 }
 
-test('confirmă o plată cash de curs numai după al doilea pas', async () => {
+test('confirmă o plată cash de curs numai din fereastra cu suma', async () => {
   const user = userEvent.setup()
   vi.mocked(getCashPayments).mockResolvedValue([
     base,
@@ -62,16 +62,23 @@ test('confirmă o plată cash de curs numai după al doilea pas', async () => {
   expect(within(group).getByText(/8 ședințe/)).toBeInTheDocument()
   expect(screen.queryByText('Ion')).not.toBeInTheDocument()
 
-  await user.click(within(group).getByRole('button', { name: 'Confirmă încasarea' }))
+  await user.click(within(group).getByRole('button', { name: /Confirmă încasarea/ }))
+  const dialog = await screen.findByRole('alertdialog', {
+    name: /Ai primit 400,00 lei de la Ana Pop\?/,
+  })
+  expect(within(dialog).getByText(/Curs · Înot pentru începători/)).toBeInTheDocument()
+  await user.click(within(dialog).getByRole('button', { name: 'Anulează' }))
   expect(confirmCashPayment).not.toHaveBeenCalled()
-  await user.click(within(group).getByRole('button', { name: /^Confirmă suma încasată/ }))
+
+  await user.click(within(group).getByRole('button', { name: /Confirmă încasarea/ }))
+  await user.click(await screen.findByRole('button', { name: 'Da, am primit banii' }))
   await waitFor(() =>
     expect(confirmCashPayment).toHaveBeenCalledWith('payment-1', expect.anything()),
   )
 
   await user.click(screen.getByRole('button', { name: /Încasate/ }))
   expect(await screen.findByText('Ion')).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Confirmă încasarea' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /Confirmă încasarea/ })).not.toBeInTheDocument()
 })
 
 test('arată o stare goală când nu există plăți cash', async () => {
