@@ -15,6 +15,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "cap:sync": "npm run build && cap sync",
     "android": "npm run build && cap sync android && cap open android",
+    "android:bundle": "node scripts/android-bundle.mjs",
     "postinstall": "patch-package --error-on-fail",
     "capacitor:sync:after": "node scripts/normalize-capacitor-paths.mjs"
   },
