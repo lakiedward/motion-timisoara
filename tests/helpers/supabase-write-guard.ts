@@ -12,6 +12,7 @@ const READ_ONLY_RPCS = new Set([
   'camp_spots_remaining',
   'club_coach_contacts',
   'course_spots_remaining',
+  'get_cash_payments',
   'get_competition_cash_payments',
   'get_competition_podium_candidates',
   'get_my_children_camp_attendance',
