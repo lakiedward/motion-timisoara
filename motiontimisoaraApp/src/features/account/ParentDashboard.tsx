@@ -66,7 +66,7 @@ export default function ParentDashboard() {
         </Link>
       </div>
 
-      <PushSettingsCard />
+      <PushSettingsCard hideWhenEnabled />
 
       {(childrenListLoading || childrenQuery.isError || childrenQuery.isSuccess) && (
         <section aria-labelledby="dashboard-children-title">

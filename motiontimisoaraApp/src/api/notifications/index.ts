@@ -13,12 +13,25 @@ import {
   clearNativePush,
   readPushState,
   requestPushPermission,
-  supportsPush,
+  supportsNativePush,
   writePushState,
 } from './native'
 import { pushSessionId } from './types'
+import {
+  clearWebPush,
+  configureWebPush,
+  requestWebPushPermission,
+  supportsWebPush,
+  webPushPermission,
+} from './web'
 
-export { supportsPush } from './native'
+export { needsHomeScreenForPush, promptWebPushPermission, supportsWebPush } from './web'
+
+export function supportsPush() {
+  return supportsNativePush() || supportsWebPush()
+}
+
+const web = !supportsNativePush()
 
 export const pushNotifications = createPushCoordinator({
   session: getPushSession,
@@ -35,12 +48,12 @@ export const pushNotifications = createPushCoordinator({
     queryClient.setQueryData(['push-preferences', session.userId, session.sessionId], result)
     return result
   },
-  register: registerPushDevice,
+  register: (session, device) => registerPushDevice(session, device, web ? 'web' : 'android'),
   revoke: revokePushDevice,
-  configure: (input) => MotionPush.configure(input),
-  clear: clearNativePush,
-  permission: async () => (await MotionPush.status()).permission,
-  requestPermission: requestPushPermission,
+  configure: (input) => (web ? configureWebPush(input) : MotionPush.configure(input)),
+  clear: web ? clearWebPush : clearNativePush,
+  permission: async () => (web ? webPushPermission() : (await MotionPush.status()).permission),
+  requestPermission: web ? requestWebPushPermission : requestPushPermission,
   read: readPushState,
   write: writePushState,
   uuid: () => crypto.randomUUID(),

@@ -237,3 +237,10 @@ reorganizing this document; correct obsolete facts with current evidence.
   charge too early. An open subscription Checkout for the same plan and terms is
   reused; any other open subscription Checkout is expired first, so two tabs cannot
   create two Stripe subscriptions.
+
+- 2026-11-02 — Parent push also works on the website with standard Web Push and VAPID
+  (no Firebase web SDK). The same outbox, audience checks and consent flow serve
+  `android` and `web` devices; web subscriptions are stored as compact JSON and limited
+  to the major push services' HTTPS hosts. The VAPID private key lives only in the
+  Supabase secret `WEB_PUSH_VAPID_JWK`. iPhone needs Motion on the home screen. See
+  `docs/superpowers/specs/2026-11-02-web-push-parinti.md`.

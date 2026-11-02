@@ -22,6 +22,8 @@ on:
       - 'supabase/migrations/00057_android_parent_push.sql'
       - 'supabase/functions/dispatch-push/**'
       - 'supabase/functions/dispatch-push-contract.test.ts'
+      - 'supabase/functions/dispatch-push-web.test.ts'
+      - 'supabase/migrations/00110_web_push.sql'
       - 'supabase/tests/*push*'
       - 'supabase/migrations/00060_atomic_enrollment_creation.sql'
       - 'supabase/migrations/00061_free_enrollment_fulfillment.sql'
@@ -123,8 +125,8 @@ jobs:
       - name: Verify push audience, delivery and concurrent claims
         shell: pwsh
         run: ./supabase/tests/run-push-delivery.ps1
-      - name: Verify dispatcher and FCM contracts
-        run: deno test --no-lock supabase/functions/dispatch-push-contract.test.ts
+      - name: Verify dispatcher, FCM and Web Push contracts
+        run: deno test --no-lock supabase/functions/dispatch-push-contract.test.ts supabase/functions/dispatch-push-web.test.ts && deno check --no-lock supabase/functions/dispatch-push/index.ts
       - name: Verify parent announcement feed and audience isolation
         shell: pwsh
         run: ./supabase/tests/run-parent-announcement-feed.ps1

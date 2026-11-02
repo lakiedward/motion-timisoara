@@ -3641,6 +3641,7 @@ export type Database = {
         Args: {
           p_binding_id: string
           p_installation_id: string
+          p_platform?: string
           p_token: string
         }
         Returns: undefined

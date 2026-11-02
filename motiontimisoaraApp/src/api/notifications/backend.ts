@@ -63,6 +63,7 @@ export async function setPushEnabled(session: PushSession, enabled: boolean) {
 export async function registerPushDevice(
   session: PushSession,
   device: { installationId: string; bindingId: string; token: string },
+  platform: 'android' | 'web' = 'android',
 ) {
   const { error } = await requestPush((signal) =>
     supabase
@@ -70,6 +71,7 @@ export async function registerPushDevice(
         p_installation_id: device.installationId,
         p_binding_id: device.bindingId,
         p_token: device.token,
+        ...(platform === 'web' ? { p_platform: platform } : {}),
       })
       .setHeader('Authorization', `Bearer ${session.accessToken}`)
       .abortSignal(signal),

@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { act, cleanup, render, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { NativePushListener } from './NativePushListener'
+import { PushListener } from './PushListener'
 
 type Handler = (value: never) => void
 const mocks = vi.hoisted(() => ({
@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   },
   state: { status: 'loading', busy: false },
   supported: true,
+  web: false,
   navigate: vi.fn(),
   invalidate: vi.fn(),
   restore: vi.fn(),
@@ -44,6 +45,7 @@ vi.mock('@tanstack/react-query', () => {
 })
 vi.mock('@/api/notifications', () => ({
   supportsPush: () => mocks.supported,
+  supportsWebPush: () => mocks.web,
   observePushAuth: () => mocks.unsubscribeAuth,
   pushNotifications: {
     restore: mocks.restore,
@@ -101,6 +103,7 @@ beforeEach(() => {
   mocks.auth = { user: { id: 'parent-a', role: 'PARENT' }, loading: false }
   mocks.state = { status: 'loading', busy: false }
   mocks.supported = true
+  mocks.web = false
   mocks.listeners.clear()
   mocks.stateListeners.clear()
   mocks.seen.clear()
@@ -112,12 +115,12 @@ afterEach(cleanup)
 
 it('waits for verified parent and binding restoration before opening a cold-start tap', async () => {
   mocks.auth = { user: null, loading: true }
-  const view = render(<NativePushListener />)
+  const view = render(<PushListener />)
   await emit('pushNotificationActionPerformed', { notification: { data: payload } })
   expect(mocks.navigate).not.toHaveBeenCalled()
   expect(mocks.restore).not.toHaveBeenCalled()
   mocks.auth = { user: { id: 'parent-a', role: 'PARENT' }, loading: false }
-  view.rerender(<NativePushListener />)
+  view.rerender(<PushListener />)
   expect(mocks.restore).toHaveBeenCalledWith('parent-a')
   expect(mocks.navigate).not.toHaveBeenCalled()
   await ready()
@@ -125,7 +128,7 @@ it('waits for verified parent and binding restoration before opening a cold-star
 })
 
 it('deduplicates a notification tap delivered again while the app is warm', async () => {
-  render(<NativePushListener />)
+  render(<PushListener />)
   await ready()
   await emit('pushNotificationActionPerformed', { notification: { data: payload } })
   await emit('pushNotificationActionPerformed', { notification: { data: payload } })
@@ -133,7 +136,7 @@ it('deduplicates a notification tap delivered again while the app is warm', asyn
 })
 
 it('drops another binding, unrelated destinations and signed-out taps', async () => {
-  const view = render(<NativePushListener />)
+  const view = render(<PushListener />)
   await ready()
   await emit('pushNotificationActionPerformed', {
     notification: { data: { ...payload, bindingId: payload.entityId } },
@@ -142,7 +145,7 @@ it('drops another binding, unrelated destinations and signed-out taps', async ()
     notification: { data: { ...payload, path: 'https://example.com' } },
   })
   mocks.auth = { user: null, loading: false }
-  view.rerender(<NativePushListener />)
+  view.rerender(<PushListener />)
   await emit('pushNotificationActionPerformed', { notification: { data: payload } })
   expect(mocks.navigate).not.toHaveBeenCalled()
   expect(mocks.clear).toHaveBeenCalled()
@@ -151,7 +154,7 @@ it('drops another binding, unrelated destinations and signed-out taps', async ()
 it('leaves one listener per event after StrictMode mounts and removes all on unmount', async () => {
   const view = render(
     <StrictMode>
-      <NativePushListener />
+      <PushListener />
     </StrictMode>,
   )
   await waitFor(() =>
@@ -168,13 +171,13 @@ it('leaves one listener per event after StrictMode mounts and removes all on unm
 
 it('does not attach native listeners or restore push preferences on web', () => {
   mocks.supported = false
-  render(<NativePushListener />)
+  render(<PushListener />)
   expect(mocks.listeners.size).toBe(0)
   expect(mocks.restore).not.toHaveBeenCalled()
 })
 
 it('shows one actionable foreground notification and rechecks its binding when clicked', async () => {
-  render(<NativePushListener />)
+  render(<PushListener />)
   await ready()
   await emit('pushNotificationReceived', { data: payload })
   await emit('pushNotificationReceived', { data: payload })
@@ -190,7 +193,7 @@ it('shows one actionable foreground notification and rechecks its binding when c
 })
 
 it('does not interrupt consent or opt-out when Android resumes or the network returns', async () => {
-  render(<NativePushListener />)
+  render(<PushListener />)
   mocks.restore.mockClear()
   mocks.state = { status: 'disabled', busy: true }
   await emit('appStateChange', { isActive: true })
@@ -202,15 +205,53 @@ it('does not interrupt consent or opt-out when Android resumes or the network re
 
 it('buffers foreground delivery while restoring and rejects a buffered previous-account binding', async () => {
   mocks.auth = { user: null, loading: true }
-  const view = render(<NativePushListener />)
+  const view = render(<PushListener />)
   const message = { ...payload, eventId: '77777777-7777-4777-8777-777777777777' }
   await emit('pushNotificationReceived', { data: message })
   await emit('pushNotificationReceived', { data: { ...message, bindingId: payload.entityId } })
   expect(mocks.toast).not.toHaveBeenCalled()
   mocks.auth = { user: { id: 'parent-a', role: 'PARENT' }, loading: false }
-  view.rerender(<NativePushListener />)
+  view.rerender(<PushListener />)
   await ready()
   expect(mocks.toast).toHaveBeenCalledOnce()
   await emit('pushNotificationReceived', { data: message })
   expect(mocks.toast).toHaveBeenCalledOnce()
+})
+
+function webWorker() {
+  const worker = new EventTarget()
+  Object.defineProperty(navigator, 'serviceWorker', { value: worker, configurable: true })
+  mocks.web = true
+  return async (data: unknown) => {
+    await act(async () => {
+      worker.dispatchEvent(new MessageEvent('message', { data }))
+    })
+  }
+}
+
+it('opens a browser notification tap through the router once the binding is restored', async () => {
+  const post = webWorker()
+  render(<PushListener />)
+  expect(mocks.listeners.size).toBe(0)
+  expect(mocks.restore).toHaveBeenCalledWith('parent-a')
+  await post({ type: 'motion-push-open', payload })
+  expect(mocks.navigate).not.toHaveBeenCalled()
+  await ready()
+  expect(mocks.navigate).toHaveBeenCalledExactlyOnceWith('/account/announcements')
+  await post({ type: 'motion-push-open', payload })
+  expect(mocks.navigate).toHaveBeenCalledTimes(1)
+})
+
+it('refreshes data for a browser notification without a second in-page toast', async () => {
+  const post = webWorker()
+  render(<PushListener />)
+  await ready()
+  await post({ type: 'motion-push-received', payload })
+  expect(mocks.invalidate).toHaveBeenCalledOnce()
+  expect(mocks.toast).not.toHaveBeenCalled()
+  await post({ type: 'motion-push-received', payload: { ...payload, bindingId: payload.entityId } })
+  await post({ type: 'motion-push-open', payload: { ...payload, path: 'https://example.com' } })
+  await post('motion-push-open')
+  expect(mocks.invalidate).toHaveBeenCalledOnce()
+  expect(mocks.navigate).not.toHaveBeenCalled()
 })

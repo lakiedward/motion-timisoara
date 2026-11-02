@@ -20,6 +20,7 @@ try {
     }
     if (-not $ready) { throw 'Isolated PostgreSQL did not become ready within 30 seconds.' }
     Invoke-PushDocker @('cp', (Join-Path $PSScriptRoot '../migrations/00057_android_parent_push.sql'), "${containerName}:/tmp/00057_android_parent_push.sql")
+    Invoke-PushDocker @('cp', (Join-Path $PSScriptRoot '../migrations/00110_web_push.sql'), "${containerName}:/tmp/00110_web_push.sql")
     foreach ($file in @('push-bootstrap.sql', 'push-delivery.sql')) {
         Invoke-PushDocker @('cp', (Join-Path $PSScriptRoot $file), "${containerName}:/tmp/$file")
         Invoke-PushDocker @('exec', $containerName, 'psql', '-X', '-U', 'supabase_admin', '-d', $database, '-v', 'ON_ERROR_STOP=1', '-f', "/tmp/$file")
@@ -44,6 +45,8 @@ try {
         if ($testJob.State -ne 'Completed') { throw 'Concurrent claim did not complete.' }
     }
     Invoke-PushDocker @('exec', $containerName, 'psql', '-X', '-U', 'supabase_admin', '-d', $database, '-v', 'ON_ERROR_STOP=1', '-c', "SELECT public.test_assert((SELECT count(*)=2 AND count(DISTINCT claim->0->>'deliveryId')=2 AND bool_and(jsonb_array_length(claim)=1) FROM public.test_claims),'concurrent claim skips locked row without waiting or double delivery'); SELECT count(*) AS passed_assertions FROM public.test_results;")
+    Invoke-PushDocker @('cp', (Join-Path $PSScriptRoot 'push-web.sql'), "${containerName}:/tmp/push-web.sql")
+    Invoke-PushDocker @('exec', $containerName, 'psql', '-X', '-U', 'supabase_admin', '-d', $database, '-v', 'ON_ERROR_STOP=1', '-f', '/tmp/push-web.sql')
     Write-Output 'All isolated push delivery tests passed.'
 } finally {
     foreach ($testJob in $jobs) {
