@@ -48,10 +48,12 @@
   --gradient-warm: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
   --gradient-green: linear-gradient(135deg, #10b981 0%, #34d399 100%);
   --overlay-scrim: rgba(15, 23, 42, 0.88);
+  --backdrop-start: #bdd0f9;
+  --backdrop-end: #cae9fa;
   --backdrop: linear-gradient(
     162deg,
-    color-mix(in srgb, var(--primary) 30%, var(--background)) 0%,
-    color-mix(in srgb, var(--sky) 22%, var(--background)) 42%,
+    var(--backdrop-start) 0%,
+    var(--backdrop-end) 42%,
     var(--page) 42.05%
   );
 
@@ -117,12 +119,8 @@
   --sidebar-ring: #3b82f6;
   --overlay-scrim: rgba(11, 18, 32, 0.9);
   --page: var(--background);
-  --backdrop: linear-gradient(
-    162deg,
-    color-mix(in srgb, var(--primary) 30%, var(--background)) 0%,
-    color-mix(in srgb, var(--sky) 20%, var(--background)) 42%,
-    var(--page) 42.05%
-  );
+  --backdrop-start: #19345f;
+  --backdrop-end: #14344b;
 }
 
 @theme inline {
