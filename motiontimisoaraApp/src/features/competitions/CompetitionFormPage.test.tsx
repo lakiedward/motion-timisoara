@@ -126,7 +126,7 @@ test('un concurs nou se salvează cu proprietarul clubului', async () => {
 
 test('formularul are Înapoi, câmpuri obligatorii marcate și Anulează', () => {
   deseneaza()
-  expect(screen.getByRole('link', { name: 'Înapoi' })).toHaveAttribute('href', '/club/competitions')
+  expect(screen.getByRole('link', { name: 'Înapoi la concursuri' })).toHaveAttribute('href', '/club/competitions')
   expect(screen.getByText(/sunt obligatorii/)).toBeInTheDocument()
   expect(screen.getByText('Despre concurs')).toBeInTheDocument()
   expect(screen.getByText('Program și înscrieri')).toBeInTheDocument()

@@ -4,7 +4,7 @@ import { CalendarDays, CreditCard, GraduationCap, MapPin, Plus, Tent, Trophy } f
 import { useAuth } from '@/lib/auth-context'
 import { getMyActivities, getMyCoachStripeStatus, getMyCourses, getMyLocations } from '@/api/coach'
 import { getTaberelemele } from '@/api/camps-admin'
-import { getConcursurileMele } from '@/api/competition/competitions'
+import { getCompetitionList } from '@/api/competition/competition-list'
 import { DashboardGrid, DashboardGroup, DashboardRow } from '@/components/dashboard/DashboardGroups'
 import { countRowProps } from '@/components/dashboard/dashboard-count'
 import { CashPaymentsNotice } from '@/features/payments/CashPaymentsNotice'
@@ -27,8 +27,8 @@ export default function CoachDashboard() {
     retry: false,
   })
   const competitionsQuery = useQuery({
-    queryKey: ['concursurile-mele', 'COACH', null, coachUserId],
-    queryFn: () => getConcursurileMele({ role: 'COACH', clubId: null, coachUserId }),
+    queryKey: ['concursurile-mele', 'lista', 'COACH', null, coachUserId],
+    queryFn: () => getCompetitionList({ role: 'COACH', clubId: null, coachUserId }),
     enabled: !!coachUserId,
     retry: false,
   })

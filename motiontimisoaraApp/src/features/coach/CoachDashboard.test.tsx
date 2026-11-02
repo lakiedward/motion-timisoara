@@ -12,7 +12,7 @@ import {
   type CoachCourse,
 } from '@/api/coach'
 import { getTaberelemele } from '@/api/camps-admin'
-import { getConcursurileMele } from '@/api/competition/competitions'
+import { getCompetitionList } from '@/api/competition/competition-list'
 
 vi.mock('@/lib/auth-context', () => ({
   useAuth: () => ({
@@ -37,7 +37,7 @@ vi.mock('@/api/coach', () => ({
   getMyCoachStripeStatus: vi.fn(),
 }))
 vi.mock('@/api/camps-admin', () => ({ getTaberelemele: vi.fn() }))
-vi.mock('@/api/competition/competitions', () => ({ getConcursurileMele: vi.fn() }))
+vi.mock('@/api/competition/competition-list', () => ({ getCompetitionList: vi.fn() }))
 vi.mock('@/api/payments/cash-payments', () => ({
   CASH_PAYMENTS_QUERY_KEY: ['cash-payments'],
   getCashPayments: vi.fn().mockResolvedValue([]),
@@ -52,7 +52,7 @@ beforeEach(() => {
   vi.mocked(getMyActivities).mockResolvedValue([])
   vi.mocked(getMyLocations).mockResolvedValue([])
   vi.mocked(getTaberelemele).mockResolvedValue([])
-  vi.mocked(getConcursurileMele).mockResolvedValue([])
+  vi.mocked(getCompetitionList).mockResolvedValue([])
 })
 
 function renderDashboard() {
@@ -112,7 +112,7 @@ test('the start panel covers every offer type, not only courses', async () => {
     { id: 'w' },
   ] as never)
   vi.mocked(getTaberelemele).mockResolvedValue([{ id: 't' }] as never)
-  vi.mocked(getConcursurileMele).mockResolvedValue([{ id: 'k' }, { id: 'l' }] as never)
+  vi.mocked(getCompetitionList).mockResolvedValue([{ id: 'k' }, { id: 'l' }] as never)
   vi.mocked(getMyLocations).mockResolvedValue([{ id: 'loc' }] as never)
   renderDashboard()
   for (const name of ['Oferta ta', 'Organizare', 'Adaugă']) {

@@ -18,7 +18,7 @@ import {
   getMyClub,
 } from '@/api/club'
 import { getTaberelemele } from '@/api/camps-admin'
-import { getConcursurileMele } from '@/api/competition/competitions'
+import { getCompetitionList } from '@/api/competition/competition-list'
 import { DashboardGrid, DashboardGroup, DashboardRow } from '@/components/dashboard/DashboardGroups'
 import { countRowProps } from '@/components/dashboard/dashboard-count'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -57,8 +57,8 @@ export default function ClubDashboard() {
     enabled: !!clubId,
   })
   const competitionsQuery = useQuery({
-    queryKey: ['concursurile-mele', 'CLUB', clubId, null],
-    queryFn: () => getConcursurileMele({ role: 'CLUB', clubId: clubId!, coachUserId: null }),
+    queryKey: ['concursurile-mele', 'lista', 'CLUB', clubId, null],
+    queryFn: () => getCompetitionList({ role: 'CLUB', clubId: clubId!, coachUserId: null }),
     enabled: !!clubId,
   })
   const locationsQuery = useQuery({

@@ -5,7 +5,7 @@ import { vi } from 'vitest'
 
 import ClubDashboard from './ClubDashboard'
 import { getTaberelemele } from '@/api/camps-admin'
-import { getConcursurileMele } from '@/api/competition/competitions'
+import { getCompetitionList } from '@/api/competition/competition-list'
 import {
   getClubActivities,
   getClubCoaches,
@@ -35,7 +35,7 @@ vi.mock('@/lib/auth-context', () => ({
 }))
 
 vi.mock('@/api/camps-admin', () => ({ getTaberelemele: vi.fn() }))
-vi.mock('@/api/competition/competitions', () => ({ getConcursurileMele: vi.fn() }))
+vi.mock('@/api/competition/competition-list', () => ({ getCompetitionList: vi.fn() }))
 vi.mock('@/api/payments/cash-payments', () => ({
   CASH_PAYMENTS_QUERY_KEY: ['cash-payments'],
   getCashPayments: vi.fn().mockResolvedValue([]),
@@ -143,7 +143,7 @@ function mockClubStats({
   vi.mocked(getTaberelemele).mockResolvedValue(
     Array.from({ length: camps }, (_, i) => ({ id: `t-${i}` })) as never,
   )
-  vi.mocked(getConcursurileMele).mockResolvedValue(
+  vi.mocked(getCompetitionList).mockResolvedValue(
     Array.from({ length: competitions }, (_, i) => ({ id: `k-${i}` })) as never,
   )
 }

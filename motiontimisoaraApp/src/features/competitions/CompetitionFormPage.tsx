@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { ArrowLeft } from 'lucide-react'
 
 import {
   createConcurs,
@@ -23,6 +22,7 @@ import {
   competitionScheduleToFields,
 } from '@/lib/competition-schedule'
 import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
+import { BackLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -154,14 +154,7 @@ export default function CompetitionFormPage({ baza }: { baza: CompetitionPortalB
     },
   )
 
-  const backLink = (
-    <Link
-      to={baza}
-      className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
-    >
-      <ArrowLeft className="size-4" /> Înapoi
-    </Link>
-  )
+  const backLink = <BackLink to={baza}>Înapoi la concursuri</BackLink>
 
   if (eroare || existent.isError || (id && existent.data === null)) {
     return (
