@@ -7,7 +7,7 @@ import { approveClub } from '@/api/admin'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { plural } from '@/lib/plural'
-import { ClubRow } from './ClubGroupCard'
+import { ClubRow, EditClubAction } from './ClubGroupCard'
 import type { ClubSummary } from './club-overview'
 
 export function PendingClubsCard({
@@ -62,14 +62,17 @@ export function PendingClubsCard({
             query={query}
             coursesKnown={coursesKnown}
             action={
-              <Button
-                type="button"
-                size="sm"
-                className="h-touch-target min-h-touch-target lg:h-9 lg:min-h-9"
-                onClick={() => setTarget(club)}
-              >
-                <Check aria-hidden="true" /> Aprobă
-              </Button>
+              <>
+                <EditClubAction club={club} />
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-touch-target min-h-touch-target lg:h-9 lg:min-h-9"
+                  onClick={() => setTarget(club)}
+                >
+                  <Check aria-hidden="true" /> Aprobă
+                </Button>
+              </>
             }
           />
         ))}
