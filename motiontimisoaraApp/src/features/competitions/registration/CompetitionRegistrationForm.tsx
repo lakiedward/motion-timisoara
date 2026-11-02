@@ -21,13 +21,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
-import { selectClassName } from '@/components/ui/field-styles'
+import { SelectMenu } from '@/components/ui/select-menu'
 import { CheckoutBillingFields } from '@/features/account/checkout/CheckoutBillingFields'
 import { CheckoutPaymentStep } from '@/features/account/checkout/CheckoutPaymentStep'
 import { CheckoutOrderSummary } from '@/features/account/checkout/CheckoutOrderSummary'
 import { usePaymentAdapter } from '@/features/account/checkout/usePaymentAdapter'
 import { useCompetitionClock } from '../useCompetitionClock'
-import { cn } from '@/lib/utils'
 
 type Props = { competition: PublicCompetition; categories: CompetitionCategory[] }
 
@@ -70,6 +69,10 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
   const [includeSelf, setIncludeSelf] = useState(false)
   const [selfBirthDate, setSelfBirthDate] = useState('')
   const [selfCategoryId, setSelfCategoryId] = useState('')
+  const categoryOptions = categories.map((category) => ({
+    value: category.id,
+    label: `${category.name} · ${category.age_from}–${category.age_to} ani · ${formatRonOffer(category.price_bani)}`,
+  }))
   const [acceptedKey, setAcceptedKey] = useState<string | null>(null)
   const [method, setMethod] = useState<PaymentMethod>('CARD')
   const [billing, setBilling] = useState<BillingDetails>({
@@ -301,23 +304,17 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
                       <Label htmlFor={`competition-category-${child.id}`} className="font-semibold">
                         {child.name}
                       </Label>
-                      <select
+                      <SelectMenu
                         id={`competition-category-${child.id}`}
                         value={choice[child.id] ?? ''}
-                        onChange={(event) => {
-                          setChoice((previous) => ({ ...previous, [child.id]: event.target.value }))
+                        onValueChange={(value) => {
+                          setChoice((previous) => ({ ...previous, [child.id]: value }))
                           setAcceptedKey(null)
                         }}
-                        className={cn(selectClassName, 'mt-3')}
-                      >
-                        <option value="">Nu înscrie acest copil</option>
-                        {categories.map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {category.name} · {category.age_from}–{category.age_to} ani ·{' '}
-                            {formatRonOffer(category.price_bani)}
-                          </option>
-                        ))}
-                      </select>
+                        emptyLabel="Nu înscrie acest copil"
+                        options={categoryOptions}
+                        className="mt-3"
+                      />
                       {verdict && !verdict.eligible && (
                         <p role="alert" className="text-destructive mt-2 text-sm">
                           {verdict.reason ?? 'Categoria nu este disponibilă pentru acest copil.'}
@@ -371,23 +368,16 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="competition-self-category">Categoria mea</Label>
-                  <select
+                  <SelectMenu
                     id="competition-self-category"
                     value={selfCategoryId}
-                    onChange={(event) => {
-                      setSelfCategoryId(event.target.value)
+                    onValueChange={(value) => {
+                      setSelfCategoryId(value)
                       setAcceptedKey(null)
                     }}
-                    className={selectClassName}
-                  >
-                    <option value="">Alege categoria</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name} · {category.age_from}–{category.age_to} ani ·{' '}
-                        {formatRonOffer(category.price_bani)}
-                      </option>
-                    ))}
-                  </select>
+                    emptyLabel="Alege categoria"
+                    options={categoryOptions}
+                  />
                 </div>
                 {!selfComplete && (
                   <p className="text-muted-foreground text-sm">

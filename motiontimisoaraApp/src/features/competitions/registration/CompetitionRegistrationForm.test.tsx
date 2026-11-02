@@ -98,6 +98,17 @@ beforeEach(() => {
   ] as never)
 })
 
+async function pickCategory(
+  user: ReturnType<typeof userEvent.setup>,
+  trigger: HTMLElement,
+  category: CompetitionCategory,
+) {
+  await user.click(trigger)
+  await user.click(
+    await screen.findByRole('menuitemradio', { name: new RegExp(`^${category.name} ·`) }),
+  )
+}
+
 test('categoria eligibilă gratuită se înscrie fără card sau cash', async () => {
   const user = userEvent.setup()
   vi.mocked(validateCompetitionRegistration).mockResolvedValue({
@@ -122,7 +133,7 @@ test('categoria eligibilă gratuită se înscrie fără card sau cash', async ()
     requiresPaymentIntent: false,
   })
   renderRegistration()
-  await user.selectOptions(await screen.findByLabelText('Copil Audit'), category.id)
+  await pickCategory(user, await screen.findByLabelText('Copil Audit'), category)
   expect(await screen.findByText('Preț verificat: Gratuit')).toBeInTheDocument()
   await user.click(screen.getByRole('checkbox', { name: /Confirm categoriile/ }))
   await user.click(screen.getByRole('button', { name: 'Confirmă înscrierea gratuită' }))
@@ -155,7 +166,7 @@ test('categoria respinsă nu permite înscrierea', async () => {
     allowCash: false,
   })
   renderRegistration()
-  await user.selectOptions(await screen.findByLabelText('Copil Audit'), category.id)
+  await pickCategory(user, await screen.findByLabelText('Copil Audit'), category)
   expect(await screen.findByRole('alert')).toHaveTextContent('Vârsta la data înscrierii')
   expect(screen.getByRole('button', { name: 'Finalizează înscrierea' })).toBeDisabled()
   expect(createCompetitionRegistration).not.toHaveBeenCalled()
@@ -199,7 +210,7 @@ test('adultul fără copii se înscrie gratuit cu data nașterii introdusă doar
   ).toBeInTheDocument()
   await user.click(screen.getByRole('checkbox', { name: 'Mă înscriu eu' }))
   await user.type(screen.getByLabelText('Data mea de naștere'), '1990-05-12')
-  await user.selectOptions(screen.getByLabelText('Categoria mea'), adultCategory.id)
+  await pickCategory(user, screen.getByLabelText('Categoria mea'), adultCategory)
   await waitFor(() =>
     expect(validateCompetitionRegistration).toHaveBeenCalledWith(competition.id, [
       { selfBirthDate: '1990-05-12', categoryId: adultCategory.id },
@@ -254,7 +265,7 @@ test('schimbarea datei nașterii cere un preț nou și reconfirmare', async () =
   await user.click(screen.getByRole('checkbox', { name: 'Mă înscriu eu' }))
   const birthDate = screen.getByLabelText('Data mea de naștere')
   await user.type(birthDate, '1990-05-12')
-  await user.selectOptions(screen.getByLabelText('Categoria mea'), adultCategory.id)
+  await pickCategory(user, screen.getByLabelText('Categoria mea'), adultCategory)
   await screen.findByText('Preț verificat: Gratuit')
   await user.click(screen.getByRole('checkbox', { name: /Confirm categoriile/ }))
   expect(screen.getByRole('button', { name: 'Confirmă înscrierea gratuită' })).toBeEnabled()
@@ -317,7 +328,7 @@ test('adultul poate alege plata cash pentru propria înscriere cu preț pozitiv'
   renderRegistration([adultCategory])
   await user.click(screen.getByRole('checkbox', { name: 'Mă înscriu eu' }))
   await user.type(screen.getByLabelText('Data mea de naștere'), '1990-05-12')
-  await user.selectOptions(screen.getByLabelText('Categoria mea'), adultCategory.id)
+  await pickCategory(user, screen.getByLabelText('Categoria mea'), adultCategory)
   await screen.findByText('Preț verificat: 120,00 lei')
   await user.click(screen.getByRole('radio', { name: /Cash, la antrenor/ }))
   await user.click(screen.getByRole('checkbox', { name: /Confirm categoriile/ }))

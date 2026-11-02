@@ -73,9 +73,7 @@ beforeEach(() => {
 test('nivelul scris cu diacritice apare ales în listă', async () => {
   renderForm()
   await screen.findByDisplayValue('Andrei Popescu')
-  const nivel = screen.getByLabelText('Nivel') as HTMLSelectElement
-  expect(nivel.value).toBe('incepator')
-  expect(nivel.selectedOptions[0].textContent).toBe('Începător')
+  expect(screen.getByLabelText('Nivel')).toHaveTextContent('Începător')
 })
 
 test('salvarea scrie forma canonică a nivelului, nu cea cu diacritice', async () => {
@@ -96,8 +94,7 @@ test('un nivel necunoscut rămâne în listă și nu se pierde la salvare', asyn
   mockedGet.mockResolvedValue({ ...copil, level: 'expert' } as never)
   renderForm()
   await screen.findByDisplayValue('Andrei Popescu')
-  const nivel = screen.getByLabelText('Nivel') as HTMLSelectElement
-  expect(nivel.value).toBe('expert')
+  expect(screen.getByLabelText('Nivel')).toHaveTextContent(/expert/i)
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() =>
     expect(mockedUpdate).toHaveBeenCalledWith(
@@ -294,7 +291,8 @@ test('acordul, înotul, cine ridică, sănătatea și mâncarea se salvează în
   await screen.findByDisplayValue('Andrei Popescu')
   expect(screen.getByLabelText('Da, poate apărea')).toBeChecked()
   await user.click(screen.getByLabelText('Nu, fără poze și video cu copilul'))
-  await user.selectOptions(screen.getByLabelText('Știe să înoate?'), 'Puțin')
+  await user.click(screen.getByLabelText('Știe să înoate?'))
+  await user.click(await screen.findByRole('menuitemradio', { name: 'Puțin' }))
   await user.type(screen.getByLabelText('Cine poate ridica copilul'), '  Maria Pop, bunica  ')
   await user.type(screen.getByLabelText('Afecțiuni și medicație'), ' Astm, inhalator ')
   await user.type(screen.getByLabelText('Restricții alimentare'), 'Fără lactoză ')
@@ -391,7 +389,9 @@ test('cu modificări nesalvate, Cod QR întreabă, „Rămân” păstrează tex
   const nume = await screen.findByDisplayValue('Andrei Popescu')
   await user.type(nume, ' Jr')
   await user.click(screen.getByRole('link', { name: 'Cod QR' }))
-  expect(await screen.findByRole('alertdialog', { name: 'Renunți la modificări?' })).toBeInTheDocument()
+  expect(
+    await screen.findByRole('alertdialog', { name: 'Renunți la modificări?' }),
+  ).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Rămân' }))
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   expect(screen.getByDisplayValue('Andrei Popescu Jr')).toBeInTheDocument()

@@ -1,6 +1,6 @@
 import { type ComponentProps, useEffect } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { type Control, Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -22,12 +22,26 @@ import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { Textarea } from '@/components/ui/textarea'
-import { selectClassName } from '@/components/ui/field-styles'
+import { SelectMenu, type SelectMenuOption } from '@/components/ui/select-menu'
 
 const TELEFON = /^\+?[0-9]{8,15}$/
 const doarNumarul = (s: string) => s.replace(/[\s().-]/g, '')
 const eTelefonValid = (s: string) => TELEFON.test(doarNumarul(s))
 const azi = () => toIso(new Date())
+const NIVELURI: SelectMenuOption[] = [
+  { value: 'incepator', label: 'Începător' },
+  { value: 'intermediar', label: 'Intermediar' },
+  { value: 'avansat', label: 'Avansat' },
+]
+const MARIMI: SelectMenuOption[] = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL'].map((s) => ({
+  value: s,
+  label: s,
+}))
+const INOT: SelectMenuOption[] = [
+  { value: 'no', label: 'Nu' },
+  { value: 'basic', label: 'Puțin' },
+  { value: 'yes', label: 'Da' },
+]
 const PICKUP_HINT = 'Nume și relație, câte unul pe rând. De exemplu: Maria Pop, bunica.'
 
 const obligatoriu = (minim: number) =>
@@ -97,6 +111,7 @@ export default function ChildFormPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting, isDirty },
@@ -272,24 +287,22 @@ export default function ChildFormPage() {
               </div>
               <div className="min-w-0 space-y-1.5">
                 <Label htmlFor="level">Nivel</Label>
-                <select id="level" className={selectClassName} {...register('level')}>
-                  <option value="">—</option>
-                  <option value="incepator">Începător</option>
-                  <option value="intermediar">Intermediar</option>
-                  <option value="avansat">Avansat</option>
-                  {nivelStrain && <option value={nivelStrain}>{formatLevel(nivelStrain)}</option>}
-                </select>
+                <MeniuCamp
+                  id="level"
+                  control={control}
+                  options={
+                    nivelStrain
+                      ? [
+                          ...NIVELURI,
+                          { value: nivelStrain, label: formatLevel(nivelStrain) ?? nivelStrain },
+                        ]
+                      : NIVELURI
+                  }
+                />
               </div>
               <div className="min-w-0 space-y-1.5">
                 <Label htmlFor="tshirt_size">Mărime tricou</Label>
-                <select id="tshirt_size" className={selectClassName} {...register('tshirt_size')}>
-                  <option value="">—</option>
-                  {['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL'].map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
+                <MeniuCamp id="tshirt_size" control={control} options={MARIMI} />
               </div>
             </div>
           </CardContent>
@@ -328,12 +341,7 @@ export default function ChildFormPage() {
             />
             <div className="space-y-1.5 sm:max-w-[calc(50%-0.5rem)]">
               <Label htmlFor="swim_level">Știe să înoate?</Label>
-              <select id="swim_level" className={selectClassName} {...register('swim_level')}>
-                <option value="">—</option>
-                <option value="no">Nu</option>
-                <option value="basic">Puțin</option>
-                <option value="yes">Da</option>
-              </select>
+              <MeniuCamp id="swim_level" control={control} options={INOT} />
             </div>
           </CardContent>
         </Card>
@@ -497,5 +505,34 @@ function InapoiLaCopii() {
     >
       <ArrowLeft className="size-4" /> Înapoi
     </Link>
+  )
+}
+
+function MeniuCamp({
+  id,
+  control,
+  options,
+}: {
+  id: 'level' | 'tshirt_size' | 'swim_level'
+  control: Control<Values>
+  options: SelectMenuOption[]
+}) {
+  return (
+    <Controller
+      name={id}
+      control={control}
+      render={({ field }) => (
+        <SelectMenu
+          ref={field.ref}
+          id={id}
+          name={field.name}
+          value={field.value ?? ''}
+          onValueChange={field.onChange}
+          onBlur={field.onBlur}
+          emptyLabel="—"
+          options={options}
+        />
+      )}
+    />
   )
 }
