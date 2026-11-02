@@ -2,6 +2,8 @@ import { createBrowserRouter } from 'react-router-dom'
 import RootLayout from '@/routes/RootLayout'
 import CoreLayout from '@/layout/CoreLayout'
 import { RequireAuth, RequireRole } from '@/routes/guards'
+import { SUBSCRIPTION_ROUTES } from '@/routes/subscription-routes'
+import { NATIVE_BUILD, webOnly } from '@/lib/store-compliance'
 import CoachLayout from '@/features/coach/CoachLayout'
 import CoachDashboard from '@/features/coach/CoachDashboard'
 import CoachCoursesPage from '@/features/coach/CoachCoursesPage'
@@ -125,6 +127,7 @@ export const router = createBrowserRouter([
           { path: '/termeni', element: <TermsPage /> },
           { path: '/confidentialitate', element: <PrivacyPage /> },
           { path: '/stergere-cont', element: <AccountDeletionPage /> },
+          ...(NATIVE_BUILD ? [] : webOnly(SUBSCRIPTION_ROUTES)),
           ...(import.meta.env.DEV
             ? [
                 { path: '/dev/ui', element: <UiGalleryPage /> },

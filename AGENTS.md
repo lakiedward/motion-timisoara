@@ -24,6 +24,7 @@ Run these from `motiontimisoaraApp/`, unless the table says repository root:
 | Production build | `npm run build` |
 | Serve built assets | `npm run preview -- --host 127.0.0.1` |
 | Regenerate UI conventions | `npm run conventions` |
+| Native web bundle + subscription scan | `npm run build:native` |
 | Build and sync native projects | `npm run cap:sync` |
 | Build, sync and open Android Studio | `npm run android` |
 | Signed Play bundle (owner machine; see [release runbook](docs/releases/google-play-android.md)) | `npm run android:bundle` |
@@ -45,6 +46,7 @@ Use `npm run typecheck`, not bare `tsc --noEmit`: the root TypeScript configurat
 - Keep the existing feature layout and `@/` alias to app `src/`; do not create a parallel `src/pages/` or `src/app/` tree.
 - Screen data access goes through typed `src/api/*.ts` functions and TanStack Query. Do not add direct Supabase queries to screen components.
 - Store money in integer bani; convert through `baniToRon` / `ronToBani`. Keep server-side authorization, price snapshots and payment fulfillment intact.
+- Coach/club subscriptions are sold only on the web (Google Play/Apple rules). Native builds use `npm run build:native`; put subscription routes in `src/routes/subscription-routes.tsx` and gate prices, plan names, links and buttons with `NATIVE_BUILD` / `subscriptionSalesAllowed()` from `src/lib/store-compliance.ts`. `scripts/native-bundle-scan.mjs` must keep passing.
 - Auth must check the session and live profile role. Route guards and hidden controls do not replace PostgreSQL RLS. Web and native session/deep-link adapters differ.
 - Authored source files stay at or below 600 lines; group folders before exceeding 20 files. Generated artifacts require generator-aware review, not manual shortening.
 - Do not add inline/block comments, JSDoc, TODOs or commented-out code to authored TS/TSX/JS/MJS/Astro/CSS. Remove comments from changed authored code during its relevant refactor; compiler directives and shebangs are allowed.
