@@ -37,10 +37,27 @@ function javaTool(name) {
   return process.env.JAVA_HOME ? join(process.env.JAVA_HOME, 'bin', executable) : executable
 }
 
-function run(command, args, cwd) {
-  const result = spawnSync(command, args, { cwd, stdio: 'inherit', shell: windows })
-  if (result.status !== 0)
-    fail(`${command} ${args.join(' ')} failed with exit code ${result.status}.`)
+function run(command, args, cwd, env = process.env) {
+  const result = spawnSync(command, args, { cwd, env, stdio: 'inherit', shell: windows })
+  if (result.status !== 0) {
+    fail(
+      `${command} ${args.join(' ')} failed: ${result.error?.message ?? `exit code ${result.status}`}.`,
+    )
+  }
+}
+
+function gradleEnv() {
+  if (process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT) return process.env
+  if (readProperties(join(androidDir, 'local.properties'))['sdk.dir']) return process.env
+  const fallback = windows
+    ? join(process.env.LOCALAPPDATA ?? '', 'Android', 'Sdk')
+    : join(
+        process.env.HOME ?? '',
+        process.platform === 'darwin' ? 'Library/Android/sdk' : 'Android/Sdk',
+      )
+  if (!existsSync(fallback))
+    fail('Android SDK not found. Set ANDROID_HOME or sdk.dir in android/local.properties.')
+  return { ...process.env, ANDROID_HOME: fallback }
 }
 
 function checkSigning() {
@@ -91,9 +108,10 @@ if (!skipWeb) {
   run('npx', ['cap', 'sync', 'android'], appDir)
 }
 run(
-  windows ? 'gradlew.bat' : 'sh',
+  windows ? `"${join(androidDir, 'gradlew.bat')}"` : 'sh',
   [...(windows ? [] : ['./gradlew']), '--no-daemon', ':app:bundleRelease'],
   androidDir,
+  gradleEnv(),
 )
 
 const bundle = join(androidDir, 'app', 'build', 'outputs', 'bundle', 'release', 'app-release.aab')

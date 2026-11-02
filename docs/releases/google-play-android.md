@@ -15,7 +15,7 @@ Runbook for building a signed Android App Bundle (AAB) and uploading it to a Goo
 
   Without them `bundleRelease` still compiles but produces an unsigned bundle that Play rejects; debug builds and CI are unaffected.
 - `versionCode` increases automatically: minutes since 2026-01-01 UTC, so every build is higher than the previous one without a manual bump. Override with `MT_VERSION_CODE` or `-PmtVersionCode=<n>`. `versionName` defaults to `1.0.0`; override with `MT_VERSION_NAME` or `-PmtVersionName=<name>`.
-- `npm run android:bundle` (from `motiontimisoaraApp/`) checks `android/app/google-services.json`, the upload key and the `VITE_SUPABASE_*` build variables, then runs `npm run build`, `npx cap sync android` and `gradlew :app:bundleRelease`. It fails unless `jarsigner` verifies the result and prints the bundle path and the upload certificate SHA-256. `--skip-web` reuses the last web build and sync.
+- `npm run android:bundle` (from `motiontimisoaraApp/`) checks `android/app/google-services.json`, the upload key and the `VITE_SUPABASE_*` build variables, then runs `npm run build`, `npx cap sync android` and `gradlew :app:bundleRelease`. It uses the default SDK location (`%LOCALAPPDATA%\Android\Sdk`, `~/Library/Android/sdk` or `~/Android/Sdk`) when neither `ANDROID_HOME` nor `sdk.dir` is set, and fails unless `jarsigner` verifies the result and prints the bundle path and the upload certificate SHA-256. `--skip-web` reuses the last web build and sync.
 
 ## One-time setup on the release machine
 
