@@ -119,8 +119,8 @@
   --page: var(--background);
   --backdrop: linear-gradient(
     162deg,
-    color-mix(in srgb, var(--primary) 40%, var(--background)) 0%,
-    color-mix(in srgb, var(--sky) 25%, var(--background)) 42%,
+    color-mix(in srgb, var(--primary) 30%, var(--background)) 0%,
+    color-mix(in srgb, var(--sky) 20%, var(--background)) 42%,
     var(--page) 42.05%
   );
 }
