@@ -46,7 +46,7 @@ function PlanCard({
   )
 }
 
-export function PricingDirectionA() {
+export function PricingContent() {
   return (
     <div>
       <section className="from-primary/8 to-transparent border-b bg-gradient-to-b">
