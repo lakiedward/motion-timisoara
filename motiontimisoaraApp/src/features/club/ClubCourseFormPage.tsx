@@ -61,7 +61,7 @@ const schema = z
     age_to: z.string().optional(),
     capacity: z.string().optional(),
     price_per_session_lei: offerAmountSchema,
-    description: z.string().optional(),
+    description: z.string().trim().min(1, 'Descrierea este obligatorie.'),
     program: courseProgramSchema,
   })
   .superRefine((value, ctx) => {
@@ -117,7 +117,13 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
     formState: { errors, isSubmitting },
   } = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { currency: 'RON', eur_ron_rate: '', program: emptyCourseProgram() },
+    defaultValues: {
+      currency: 'RON',
+      eur_ron_rate: '',
+      capacity: '',
+      description: '',
+      program: emptyCourseProgram(),
+    },
   })
   const [fisierLocal, setFisierLocal] = useState<File | null>(null)
   const [pozaHero, setPozaHero] = useState<File | null>(null)
@@ -186,7 +192,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
       age_to: num(v.age_to),
       capacity: num(v.capacity),
       price_per_session: parseScaledDecimal(v.price_per_session_lei, 2)!,
-      description: v.description || null,
+      description: v.description,
       recurrence_rule: requireSerializedProgram(v.program),
     }
     try {
@@ -324,7 +330,14 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
         className="mt-6 space-y-6"
         noValidate
       >
-        <FormSection title="Despre curs" description="Cine îl ține, ce sport și unde.">
+        <FormSection
+          title="Cine îl organizează"
+          description={
+            isAdmin
+              ? 'Clubul și antrenorul care țin cursul.'
+              : 'Antrenorul din club care ține cursul.'
+          }
+        >
           {isAdmin && (
             <CourseOwnerField
               value={owner}
@@ -341,6 +354,24 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
               {noLocations && <p>Organizatorul ales nu are locații active.</p>}
             </div>
           )}
+          <div className="space-y-1.5 sm:max-w-[calc(50%-0.5rem)]">
+            <Label htmlFor="coach_id">
+              Antrenor <RequiredMark />
+            </Label>
+            <FormSelectMenu
+              control={control}
+              name="coach_id"
+              id="coach_id"
+              {...camp('coach_id')}
+              searchable={coaches.length > 8}
+              emptyLabel={etichetaGoala(!hasOwner || coachesReady)}
+              options={coaches.map((c) => ({ value: c.user_id, label: c.name }))}
+            />
+            <FieldMessage id="coach_id" error={errors.coach_id?.message} />
+          </div>
+        </FormSection>
+
+        <FormSection title="Despre curs" description="Ce vede părintele pe pagina cursului.">
           <div className="space-y-1.5">
             <Label htmlFor="name">
               Nume curs <RequiredMark />
@@ -349,21 +380,6 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
             <FieldMessage id="name" error={errors.name?.message} />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="min-w-0 space-y-1.5">
-              <Label htmlFor="coach_id">
-                Antrenor <RequiredMark />
-              </Label>
-              <FormSelectMenu
-                control={control}
-                name="coach_id"
-                id="coach_id"
-                {...camp('coach_id')}
-                searchable={coaches.length > 8}
-                emptyLabel={etichetaGoala(!hasOwner || coachesReady)}
-                options={coaches.map((c) => ({ value: c.user_id, label: c.name }))}
-              />
-              <FieldMessage id="coach_id" error={errors.coach_id?.message} />
-            </div>
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="sport_id">
                 Sport <RequiredMark />
@@ -394,6 +410,30 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
               />
               <FieldMessage id="location_id" error={errors.location_id?.message} />
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="description">
+              Descriere <RequiredMark />
+            </Label>
+            <Textarea
+              id="description"
+              rows={4}
+              required
+              {...register('description')}
+              {...camp('description')}
+            />
+            <FieldMessage id="description" error={errors.description?.message} />
+          </div>
+        </FormSection>
+
+        <CourseProgramFields
+          control={control}
+          setValue={setValue}
+          errors={errors}
+        />
+
+        <FormSection title="Copii și locuri" description="Pentru cine e cursul și câți copii primești.">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="level">Nivel</Label>
               <FormSelectMenu
@@ -404,39 +444,17 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
                 options={levelOptions}
               />
             </div>
-          </div>
-        </FormSection>
-
-        <FormSection
-          title="Preț și locuri"
-          description="Cât plătește părintele pentru o ședință și câți copii primești."
-        >
-          <OfferCurrencyFields
-            currency={currency}
-            currencyField={register('currency')}
-            setValue={setValue}
-          />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="min-w-0 space-y-1.5">
-              <Label htmlFor="price_per_session_lei">
-                Preț / ședință ({currency === 'EUR' ? 'EUR' : 'lei'}) <RequiredMark />
-              </Label>
-              <Input
-                id="price_per_session_lei"
-                type="number"
-                step="0.01"
-                required
-                {...register('price_per_session_lei')}
-                {...camp('price_per_session_lei')}
-              />
-              <FieldMessage
-                id="price_per_session_lei"
-                error={errors.price_per_session_lei?.message}
-              />
-            </div>
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="capacity">Capacitate</Label>
-              <Input id="capacity" type="number" {...register('capacity')} />
+              <Input
+                id="capacity"
+                type="number"
+                aria-describedby="capacitate-hint"
+                {...register('capacity')}
+              />
+              <p id="capacitate-hint" className="text-muted-foreground text-sm">
+                Lasă gol dacă nu ai limită.
+              </p>
             </div>
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="age_from">Vârstă minimă</Label>
@@ -462,18 +480,30 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
           </div>
         </FormSection>
 
-        <FormSection title="Descriere" description="Ce vede părintele pe pagina cursului.">
-          <div className="space-y-1.5">
-            <Label htmlFor="description">Descriere</Label>
-            <Textarea id="description" rows={4} {...register('description')} />
+        <FormSection title="Preț" description="Cât plătește părintele pentru o ședință.">
+          <OfferCurrencyFields
+            currency={currency}
+            currencyField={register('currency')}
+            setValue={setValue}
+          />
+          <div className="space-y-1.5 sm:max-w-[calc(50%-0.5rem)]">
+            <Label htmlFor="price_per_session_lei">
+              Preț / ședință ({currency === 'EUR' ? 'EUR' : 'lei'}) <RequiredMark />
+            </Label>
+            <Input
+              id="price_per_session_lei"
+              type="number"
+              step="0.01"
+              required
+              {...register('price_per_session_lei')}
+              {...camp('price_per_session_lei')}
+            />
+            <FieldMessage
+              id="price_per_session_lei"
+              error={errors.price_per_session_lei?.message}
+            />
           </div>
         </FormSection>
-
-        <CourseProgramFields
-          control={control}
-          setValue={setValue}
-          errors={errors}
-        />
         <HeroPhotoField
           savedUrl={publicUrl('course-photos', existing?.hero_photo_storage_path)}
           error={eroareHero}

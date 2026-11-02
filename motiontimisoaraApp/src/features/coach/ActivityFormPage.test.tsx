@@ -132,7 +132,7 @@ async function completeaza(user: ReturnType<typeof userEvent.setup>, descriere =
   })
 }
 
-test('frazele de fus și de capacitate stau pe formular, iar poza folosește fraza scurtă', async () => {
+test('frazele de fus și de capacitate stau pe formular, iar poza folosește fraza comună', async () => {
   renderForm()
   expect(await screen.findByText('Orele sunt în fusul României.')).toBeInTheDocument()
   expect(screen.getByText('Lasă gol dacă nu ai limită.')).toBeInTheDocument()
@@ -143,12 +143,11 @@ test('frazele de fus și de capacitate stau pe formular, iar poza folosește fra
     screen.getByText('Lasă gol dacă nu ai limită. Poți completa doar una.'),
   ).toBeInTheDocument()
   expect(screen.queryByRole('switch')).not.toBeInTheDocument()
-  expect(screen.getByText('Poza din capul paginii este obligatorie.')).toBeInTheDocument()
   expect(
-    screen.queryByText(
+    screen.getByText(
       'Obligatorie. Se vede în banda de deasupra titlului, pe pagina publică. Galeria rămâne separată.',
     ),
-  ).not.toBeInTheDocument()
+  ).toBeInTheDocument()
 })
 
 test('ora final înainte de început oprește salvarea', async () => {
