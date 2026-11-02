@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { getMyLocations, setLocationActive } from '@/api/coach'
 import type { ClubLocation } from '@/api/club'
+import { PageHeader, PageNewLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { StatusView } from '@/components/ui/status-view'
@@ -77,24 +77,18 @@ export default function CoachLocationsPage() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="font-display text-foreground text-2xl font-bold">
-          Locațiile mele
-          {!!total && (
-            <span className="text-muted-foreground ml-2 text-base font-normal">({total})</span>
-          )}
-        </h1>
-        <Button asChild className="h-11 lg:h-9">
-          <Link to="/coach/locations/new">
-            <Plus aria-hidden="true" /> Locație nouă
-          </Link>
-        </Button>
-      </div>
+      <PageHeader title="Locațiile mele" count={total}>
+        <PageNewLink to="/coach/locations/new">Locație nouă</PageNewLink>
+      </PageHeader>
 
       {isLoading ? (
         <ClubLocationListSkeleton />
       ) : isError && !total ? (
-        <StatusView state="error" title="Nu am putut încărca locațiile." onRetry={() => refetch()} />
+        <StatusView
+          state="error"
+          title="Nu am putut încărca locațiile."
+          onRetry={() => refetch()}
+        />
       ) : total ? (
         <>
           <ClubLocationFilterBar

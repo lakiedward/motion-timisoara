@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   Building2,
-  ChevronRight,
   GraduationCap,
   Tent,
   Ticket,
@@ -21,8 +20,8 @@ import {
   type AdminStatKey,
   type AdminStats,
 } from '@/api/admin'
+import { DashboardGrid, DashboardGroup, DashboardRow } from '@/components/dashboard/DashboardGroups'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
 import { usesNativeNavigation } from '@/layout/native/native-runtime'
 
 const GROUPS: { title: string; keys: AdminStatKey[] }[] = [
@@ -177,50 +176,48 @@ export default function AdminDashboard() {
               </Button>
             </div>
           ) : null}
-          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+          <DashboardGrid>
             {GROUPS.map((group) => (
-              <section key={group.title} className="bg-card min-w-0 rounded-xl border">
-                <h2 className="font-display text-foreground border-b px-5 py-4 text-base font-bold">
-                  {group.title}
-                </h2>
-                <ul className="divide-y">
-                  {group.keys.map((key) => {
-                    const stat = STATS.find((s) => s.key === key)!
-                    return (
-                      <li key={key}>
-                        <StatRow
-                          to={stat.to}
-                          testId={stat.testId}
-                          icon={stat.icon}
-                          label={stat.label}
-                          hint={stat.hint}
-                          cell={data?.[stat.key]}
-                          loading={isLoading}
-                        />
-                      </li>
-                    )
-                  })}
-                </ul>
-              </section>
+              <DashboardGroup key={group.title} title={group.title}>
+                {group.keys.map((key) => {
+                  const stat = STATS.find((s) => s.key === key)!
+                  const cell = data?.[key]
+                  const { display, aria } = statText({ ...stat, cell, loading: isLoading })
+                  return (
+                    <DashboardRow
+                      key={key}
+                      to={stat.to}
+                      testId={stat.testId}
+                      icon={stat.icon}
+                      label={stat.label}
+                      hint={stat.hint}
+                      ariaLabel={aria}
+                      loading={isLoading}
+                      value={display}
+                      error={cell?.error ?? undefined}
+                    />
+                  )
+                })}
+              </DashboardGroup>
             ))}
-          </div>
+          </DashboardGrid>
         </>
       )}
     </div>
   )
 }
 
-type StatProps = {
-  to: string
-  testId: string
-  icon: LucideIcon
+function statText({
+  cell,
+  label,
+  hint,
+  loading,
+}: {
   cell: AdminStatCell | undefined
   label: string
   hint?: string
   loading: boolean
-}
-
-function statText({ cell, label, hint, loading }: StatProps) {
+}) {
   const failed = Boolean(cell?.error)
   const display = failed ? '—' : formatAdminCount(cell?.value ?? 0, cell?.capped)
   const aria = loading
@@ -230,50 +227,5 @@ function statText({ cell, label, hint, loading }: StatProps) {
       : hint
         ? `${label}, ${display}, ${hint}`
         : `${label}, ${display}`
-  return { failed, display, aria }
-}
-
-function StatIcon({ icon: Icon }: { icon: LucideIcon }) {
-  return (
-    <span
-      aria-hidden="true"
-      className="bg-primary/10 text-primary grid size-11 shrink-0 place-items-center rounded-xl"
-    >
-      <Icon className="size-5" />
-    </span>
-  )
-}
-
-function StatValue({ loading, display }: { loading: boolean; display: string }) {
-  return loading ? <Skeleton className="h-8 w-14" role="status" aria-label="Se încarcă" /> : display
-}
-
-function StatRow(props: StatProps) {
-  const { to, testId, icon, cell, label, hint, loading } = props
-  const { failed, display, aria } = statText(props)
-  return (
-    <Link
-      to={to}
-      data-testid={testId}
-      aria-label={aria}
-      aria-busy={loading || undefined}
-      className="group hover:bg-muted/60 focus-visible:outline-ring flex min-h-touch-target items-center gap-4 px-5 py-3 transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2"
-    >
-      <StatIcon icon={icon} />
-      <div className="min-w-0 flex-1">
-        <div className="text-foreground text-sm font-medium break-words">{label}</div>
-        {hint ? <div className="text-muted-foreground text-xs break-words">{hint}</div> : null}
-        {failed && cell?.error ? (
-          <p className="text-destructive mt-1 text-xs break-words">{cell.error}</p>
-        ) : null}
-      </div>
-      <div className="font-display text-foreground text-2xl font-extrabold">
-        <StatValue loading={loading} display={display} />
-      </div>
-      <ChevronRight
-        aria-hidden="true"
-        className="text-muted-foreground group-hover:text-primary size-5 shrink-0 transition-colors"
-      />
-    </Link>
-  )
+  return { display, aria }
 }

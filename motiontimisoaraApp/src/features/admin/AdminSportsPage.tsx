@@ -14,6 +14,7 @@ import {
   sportNameError,
   type SportPhotoResult,
 } from '@/api/sports/admin-sports'
+import { PageHeader } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Input } from '@/components/ui/input'
@@ -160,8 +161,7 @@ export default function AdminSportsPage() {
 
   return (
     <div className="min-w-0">
-      <div className="mb-2 flex flex-wrap items-center gap-3">
-        <h1 className="font-display text-foreground mr-auto text-2xl font-bold">Sporturi</h1>
+      <PageHeader title="Sporturi" count={sports.length}>
         {sports.length > 0 && (
           <FilterSearch
             className="order-last w-full md:order-none md:w-80"
@@ -171,7 +171,7 @@ export default function AdminSportsPage() {
             aria-label="Caută sporturi după nume sau cod"
           />
         )}
-      </div>
+      </PageHeader>
       <p className="text-muted-foreground mb-4 max-w-2xl text-sm">
         Poza standard pe tip de curs apare pe toate cursurile acelui sport când antrenorul nu a
         încărcat o fotografie proprie.

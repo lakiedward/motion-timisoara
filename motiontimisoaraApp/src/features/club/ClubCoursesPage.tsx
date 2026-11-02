@@ -5,6 +5,7 @@ import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { getMyClub, getClubCourses, setClubCourseActive } from '@/api/club'
+import { PageHeader, PageNewLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { StatusView } from '@/components/ui/status-view'
 import { CurrentLocationSessions } from '@/features/live-location/CurrentLocationSessions'
@@ -65,14 +66,9 @@ export default function ClubCoursesPage() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="font-display text-2xl font-bold text-foreground">Cursurile clubului</h1>
-        <Button asChild className="h-11 min-h-11">
-          <Link to="/club/courses/new">
-            <Plus /> Curs nou
-          </Link>
-        </Button>
-      </div>
+      <PageHeader title="Cursurile clubului" count={courses.length}>
+        <PageNewLink to="/club/courses/new">Curs nou</PageNewLink>
+      </PageHeader>
 
       <CurrentLocationSessions
         courses={courses.map((c) => ({ id: c.id, name: c.name, coachName: c.coach?.name ?? null }))}

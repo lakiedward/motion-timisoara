@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
 
 import { getTaberelePeId, getTaberelemele } from '@/api/camps-admin'
+import { PageHeader, PageNewLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { StatusView } from '@/components/ui/status-view'
 import { useProprietarTabere } from './useProprietarTabere'
@@ -56,21 +57,9 @@ export default function CampsListPage({ baza }: { baza: CampPortalBaza }) {
 
   return (
     <div>
-      <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="font-display text-foreground text-2xl font-bold">
-          Tabere
-          {tabere.length > 0 && (
-            <span className="text-muted-foreground ml-2 text-base font-normal">
-              ({tabere.length})
-            </span>
-          )}
-        </h1>
-        <Button asChild className="h-touch-target min-h-touch-target">
-          <Link to={`${baza}/new`}>
-            <Plus aria-hidden="true" /> Tabără nouă
-          </Link>
-        </Button>
-      </div>
+      <PageHeader title={eClub ? 'Taberele clubului' : 'Taberele mele'} count={tabere.length}>
+        <PageNewLink to={`${baza}/new`}>Tabără nouă</PageNewLink>
+      </PageHeader>
 
       {eAntrenor && <CampInvitations />}
 

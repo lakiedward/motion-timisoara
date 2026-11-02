@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -12,6 +11,7 @@ import {
   type AdminUserProfile,
 } from '@/api/accounts/admin-accounts'
 import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
+import { BackLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -21,17 +21,6 @@ import { StatusView } from '@/components/ui/status-view'
 import { Textarea } from '@/components/ui/textarea'
 import { RoleBadge, StatusBadge } from './UserParts'
 import { adminUserSchema, toPatch, type AdminUserParsed, type AdminUserValues } from './user-edit'
-
-const BACK =
-  'text-muted-foreground hover:text-foreground inline-flex h-touch-target items-center gap-1 text-sm'
-
-function BackLink() {
-  return (
-    <Link to="/admin/users" className={BACK}>
-      <ArrowLeft className="size-4" /> Înapoi la utilizatori
-    </Link>
-  )
-}
 
 function UserForm({ user }: { user: AdminUserProfile }) {
   const qc = useQueryClient()
@@ -137,9 +126,14 @@ function UserForm({ user }: { user: AdminUserProfile }) {
           </p>
         )}
       </FormSection>
-      <Button type="submit" disabled={isSubmitting} className="h-touch-target min-h-touch-target">
-        {isSubmitting ? 'Se salvează…' : 'Salvează'}
-      </Button>
+      <div className="flex flex-wrap gap-3">
+        <Button type="submit" disabled={isSubmitting} className="h-touch-target min-h-touch-target">
+          {isSubmitting ? 'Se salvează…' : 'Salvează'}
+        </Button>
+        <Button asChild variant="outline" className="h-touch-target min-h-touch-target">
+          <Link to="/admin/users">Anulează</Link>
+        </Button>
+      </div>
     </form>
   )
 }
@@ -163,7 +157,7 @@ export default function AdminUserEditPage() {
   if (query.isError || !query.data)
     return (
       <div className="max-w-2xl">
-        <BackLink />
+        <BackLink to="/admin/users">Înapoi la utilizatori</BackLink>
         <StatusView
           state="error"
           title={query.isError ? 'Nu am putut încărca utilizatorul.' : 'Utilizatorul nu există.'}
@@ -178,7 +172,7 @@ export default function AdminUserEditPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <BackLink />
+        <BackLink to="/admin/users">Înapoi la utilizatori</BackLink>
         <h1 className="font-display text-foreground text-2xl font-bold break-words">
           Editează {user.name}
         </h1>

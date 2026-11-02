@@ -1,9 +1,8 @@
 import { useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
 
 import { getAllClubs, getAllCourses } from '@/api/admin'
+import { PageHeader, PageNewLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
@@ -91,14 +90,7 @@ export default function AdminClubsPage() {
 
   return (
     <div className="min-w-0">
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h1
-          ref={headingRef}
-          tabIndex={-1}
-          className="font-display text-foreground mr-auto text-2xl font-bold break-words outline-none"
-        >
-          Cluburi
-        </h1>
+      <PageHeader title="Cluburi" count={clubs.length} headingRef={headingRef}>
         <FilterSearch
           className="order-last w-full md:order-none md:w-80"
           value={query}
@@ -106,12 +98,8 @@ export default function AdminClubsPage() {
           placeholder="Caută după nume, oraș sau email"
           aria-label="Caută cluburi după nume, oraș sau email"
         />
-        <Button asChild className="h-touch-target min-h-touch-target lg:h-9 lg:min-h-9">
-          <Link to="/admin/codes">
-            <Plus aria-hidden="true" /> Adaugă club
-          </Link>
-        </Button>
-      </div>
+        <PageNewLink to="/admin/codes">Club nou</PageNewLink>
+      </PageHeader>
 
       {loading ? (
         <LoadingState />

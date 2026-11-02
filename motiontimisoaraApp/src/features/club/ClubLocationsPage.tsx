@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
 import { locationWriteErrorMessage } from '@/lib/geography/shared-location-guard'
 import { toast } from 'sonner'
 
 import { getMyClub, getClubLocations, setClubLocationActive, type ClubLocation } from '@/api/club'
 import { plural } from '@/lib/plural'
+import { PageHeader, PageNewLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { StatusView } from '@/components/ui/status-view'
@@ -90,19 +90,9 @@ export default function ClubLocationsPage() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="font-display text-foreground text-2xl font-bold">
-          Locațiile clubului
-          {!!total && (
-            <span className="text-muted-foreground ml-2 text-base font-normal">({total})</span>
-          )}
-        </h1>
-        <Button asChild className="h-11 lg:h-9">
-          <Link to="/club/locations/new">
-            <Plus aria-hidden="true" /> Locație nouă
-          </Link>
-        </Button>
-      </div>
+      <PageHeader title="Locațiile clubului" count={total}>
+        <PageNewLink to="/club/locations/new">Locație nouă</PageNewLink>
+      </PageHeader>
 
       {seIncarcaClubul || isLoading ? (
         <ClubLocationListSkeleton />

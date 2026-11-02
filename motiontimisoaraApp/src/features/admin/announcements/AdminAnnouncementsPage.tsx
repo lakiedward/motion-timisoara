@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { stergeFisiereleAnuntului } from '@/api/attachments'
@@ -11,6 +10,7 @@ import {
 } from '@/api/announcements/admin-announcements'
 import { deleteClubAnnouncement, setAnnouncementActive } from '@/api/club'
 import { deleteCourseAnnouncement, setCourseAnnouncementPinned } from '@/api/coach-announcements'
+import { PageHeader, PageNewLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { StatusView } from '@/components/ui/status-view'
@@ -126,15 +126,7 @@ export default function AdminAnnouncementsPage() {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h1 className="font-display text-foreground mr-auto text-2xl font-bold">
-          Anunțuri
-          {items.length > 0 && (
-            <span className="text-muted-foreground ml-2 text-base font-normal">
-              ({items.length})
-            </span>
-          )}
-        </h1>
+      <PageHeader title="Anunțuri" count={items.length}>
         <FilterSearch
           className="order-last w-full md:order-none md:w-80"
           value={query}
@@ -142,12 +134,8 @@ export default function AdminAnnouncementsPage() {
           placeholder="Caută în anunțuri, club sau curs"
           aria-label="Caută anunțuri după text, organizator sau curs"
         />
-        <Button asChild className="h-touch-target min-h-touch-target lg:h-9 lg:min-h-9">
-          <Link to="/admin/announcements/new">
-            <Plus aria-hidden="true" /> Anunț nou
-          </Link>
-        </Button>
-      </div>
+        <PageNewLink to="/admin/announcements/new">Anunț nou</PageNewLink>
+      </PageHeader>
 
       {isLoading ? (
         <ClubLocationListSkeleton />

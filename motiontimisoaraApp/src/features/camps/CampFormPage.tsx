@@ -11,11 +11,11 @@ import {
 import { ofertaDinDraft, varsteDinDateSalvate } from './camp-form-totals'
 import { eurFaraCurs, offerCurrencyValues } from '@/lib/pricing/offer-currency'
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useForm, useWatch, type FieldErrors } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Check } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -40,6 +40,7 @@ import {
   formatCampRulesFileSize,
 } from '@/lib/camp-rules'
 import { incarcaRegulamentFisier } from '@/api/camp-rules-file'
+import { BackLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
@@ -326,14 +327,7 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
     else void handleSubmit(onSubmit, onInvalid)()
   }
 
-  const backLink = (
-    <Link
-      to={baza}
-      className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
-    >
-      <ArrowLeft className="size-4" /> Înapoi la tabere
-    </Link>
-  )
+  const backLink = <BackLink to={baza}>Înapoi la tabere</BackLink>
 
   if (eEditare && eroareTabara) {
     return (

@@ -108,7 +108,7 @@ test('câmpurile păstrate rămân pe ecran, harta se adaugă lângă ele', asyn
   for (const eticheta of [/^Nume/, /^Tip/, 'Județ / regiune', 'Oraș', 'Adresă', 'Descriere']) {
     expect(screen.getByLabelText(eticheta)).toBeInTheDocument()
   }
-  expect(screen.getByRole('heading', { name: 'Editează locație' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Editează locația' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Salvează' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Anulează' })).toBeInTheDocument()
 })

@@ -179,7 +179,7 @@ test('pe un link de activitate inexistent apare „Activitatea nu a fost găsit�
   renderPage('/club/activities/lipsa/edit')
   expect(await screen.findByText('Activitatea nu a fost găsită.')).toBeInTheDocument()
   expect(screen.getByRole('link', { name: /Înapoi/ })).toHaveAttribute('href', '/club/activities')
-  expect(screen.queryByRole('heading', { name: 'Editează activitate' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Editează activitatea' })).not.toBeInTheDocument()
 })
 
 test('activitatea altui club apare ca negăsită', async () => {

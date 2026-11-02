@@ -5,6 +5,7 @@ import { Plus } from 'lucide-react'
 
 import { getCompetitionList } from '@/api/competition/competition-list'
 import { FilterSearch } from '@/components/catalog-filters/FilterSearch'
+import { PageHeader, PageNewLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { StatusView } from '@/components/ui/status-view'
 import { CourseFilterBar, type FilterOption } from '@/features/admin/courses/CourseFilterBar'
@@ -74,22 +75,19 @@ export default function CompetitionsListPage({ baza }: { baza: CompetitionPortal
   return (
     <div>
       {owner.role === 'COACH' && <CompetitionInvitations />}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h1 className="font-display text-foreground mr-auto text-2xl font-bold">
-          Concursuri
-          {items.length > 0 && (
-            <span className="text-muted-foreground ml-2 text-base font-normal">
-              ({items.length})
-            </span>
-          )}
-        </h1>
+      <PageHeader
+        title={
+          owner.role === 'CLUB'
+            ? 'Concursurile clubului'
+            : owner.role === 'COACH'
+              ? 'Concursurile mele'
+              : 'Concursuri'
+        }
+        count={items.length}
+      >
         {isAdmin && items.length > 0 && search}
-        <Button asChild className="h-touch-target min-h-touch-target lg:h-9 lg:min-h-9">
-          <Link to={`${baza}/new`}>
-            <Plus aria-hidden="true" /> Concurs nou
-          </Link>
-        </Button>
-      </div>
+        <PageNewLink to={`${baza}/new`}>Concurs nou</PageNewLink>
+      </PageHeader>
 
       {eroare || (isError && !items.length) ? (
         <StatusView

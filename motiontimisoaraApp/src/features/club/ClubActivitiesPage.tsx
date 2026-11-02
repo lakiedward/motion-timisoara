@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { getClubActivities, getMyClub, setClubActivityActive } from '@/api/club'
 import { formatMoney } from '@/lib/money'
 import { Badge } from '@/components/ui/badge'
+import { PageHeader, PageNewLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
@@ -52,14 +53,9 @@ function Lista() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="font-display text-2xl font-bold text-foreground">Activitățile clubului</h1>
-        <Button asChild>
-          <Link to="/club/activities/new">
-            <Plus /> Activitate nouă
-          </Link>
-        </Button>
-      </div>
+      <PageHeader title="Activitățile clubului" count={activities.length}>
+        <PageNewLink to="/club/activities/new">Activitate nouă</PageNewLink>
+      </PageHeader>
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {[0, 1].map((i) => (

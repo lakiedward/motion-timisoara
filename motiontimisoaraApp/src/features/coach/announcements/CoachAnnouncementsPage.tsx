@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
 
 import { getAtasamente, type AtasamentAfisabil } from '@/api/attachments'
 import { getCoachAnnouncements } from '@/api/coach-announcements'
 import { getMyCourses } from '@/api/coach'
-import { Button } from '@/components/ui/button'
+import { PageHeader, PageNewButton } from '@/components/page-header/PageHeader'
 import { StatusView } from '@/components/ui/status-view'
 import CoachAnnouncementForm from './CoachAnnouncementForm'
 import { CoachAnnouncementList } from './CoachAnnouncementList'
@@ -70,21 +69,11 @@ export default function CoachAnnouncementsPage() {
 
   return (
     <div className="max-w-2xl">
-      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <h1 className="font-display text-2xl font-bold text-foreground">
-          Anunțuri
-          {!!items.length && (
-            <span className="text-muted-foreground ml-2 text-base font-normal">
-              ({items.length})
-            </span>
-          )}
-        </h1>
+      <PageHeader title="Anunțuri" count={items.length}>
         {canCompose && !composing && (
-          <Button className="h-11 min-h-11 w-full md:w-auto" onClick={() => setComposing(true)}>
-            <Plus /> Anunț nou
-          </Button>
+          <PageNewButton onClick={() => setComposing(true)}>Anunț nou</PageNewButton>
         )}
-      </div>
+      </PageHeader>
 
       {canCompose && composing && form}
 

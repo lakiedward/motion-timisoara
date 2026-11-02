@@ -22,7 +22,6 @@ import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { createClubCourse, getClubCourseById, updateClubCourse } from '@/api/club'
@@ -36,6 +35,7 @@ import { fetchSports } from '@/api/sports'
 import { OfferRulesFieldset } from '@/components/RulesFileField'
 import { campRulesFileFromRow, type CampRulesFileMeta } from '@/lib/camp-rules'
 import { baniToRon } from '@/lib/money'
+import { BackLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -240,14 +240,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
   })
   const etichetaGoala = (gata: boolean) => (gata ? '—' : 'Se încarcă…')
 
-  const backLink = (
-    <Link
-      to={listPath}
-      className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
-    >
-      <ArrowLeft className="size-4" /> Înapoi
-    </Link>
-  )
+  const backLink = <BackLink to={listPath}>Înapoi la cursuri</BackLink>
   const alAltuiClub = !isAdmin && !!existing && existing.club_id !== owner
 
   if (isEdit && aEsuatCitirea) {
@@ -295,7 +288,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
     <div className="mx-auto max-w-2xl">
       {backLink}
       <h1 className="font-display mt-4 text-2xl font-bold">
-        {isEdit ? 'Editează curs' : 'Curs nou'}
+        {isEdit ? 'Editează cursul' : 'Curs nou'}
       </h1>
       <RequiredFieldsNote />
 
@@ -426,13 +419,12 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
           </div>
         </FormSection>
 
-        <CourseProgramFields
-          control={control}
-          setValue={setValue}
-          errors={errors}
-        />
+        <CourseProgramFields control={control} setValue={setValue} errors={errors} />
 
-        <FormSection title="Copii și locuri" description="Pentru cine e cursul și câți copii primești.">
+        <FormSection
+          title="Copii și locuri"
+          description="Pentru cine e cursul și câți copii primești."
+        >
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="level">Nivel</Label>

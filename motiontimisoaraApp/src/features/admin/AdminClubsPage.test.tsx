@@ -244,7 +244,7 @@ test('Reîncearcă e dezactivat cu Se reîncarcă…, apoi mută focusul pe H1',
   expect(await screen.findByText('Alpha Club')).toBeInTheDocument()
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   await waitFor(() => {
-    expect(document.activeElement).toBe(screen.getByRole('heading', { level: 1, name: 'Cluburi' }))
+    expect(document.activeElement).toBe(screen.getByRole('heading', { level: 1, name: /^Cluburi/ }))
   })
 })
 
@@ -277,10 +277,10 @@ test('în fiecare grup cluburile sunt sortate A-Z după nume', async () => {
   ])
 })
 
-test('Adaugă club duce la /admin/codes', async () => {
+test('Club nou duce la /admin/codes', async () => {
   mockedClubs.mockResolvedValue(listaNesortata())
   renderPage()
-  const adauga = await screen.findByRole('link', { name: 'Adaugă club' })
+  const adauga = await screen.findByRole('link', { name: 'Club nou' })
   expect(adauga).toHaveAttribute('href', '/admin/codes')
   await userEvent.click(adauga)
   expect(screen.getByText('pagina coduri invitație')).toBeInTheDocument()
@@ -289,8 +289,8 @@ test('Adaugă club duce la /admin/codes', async () => {
 test('in incarcare, antetul ramane si apare scheletul', async () => {
   mockedClubs.mockReturnValue(new Promise(() => {}) as never)
   renderPage()
-  expect(screen.getByRole('heading', { level: 1, name: 'Cluburi' })).toBeInTheDocument()
-  expect(screen.getByRole('link', { name: 'Adaugă club' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { level: 1, name: /^Cluburi/ })).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Club nou' })).toBeInTheDocument()
   expect(document.querySelector('[aria-busy="true"]')).toBeInTheDocument()
   expect(document.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(2)
 })
