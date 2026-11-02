@@ -77,6 +77,9 @@ verify_jwt = false
 [functions.stripe-connect-webhook]
 verify_jwt = false
 
+[functions.stripe-subscription-webhook]
+verify_jwt = false
+
 [functions.validate-enrollment]
 verify_jwt = true
 
