@@ -62,7 +62,7 @@ export async function lookupAddress(
       headers: {
         Accept: "application/json",
         "User-Agent":
-          "MotionRomania/1.0 (https://motionromania.com)",
+          "MotionRomania/1.0 (https://motionromania.ro)",
       },
       redirect: "error",
     });

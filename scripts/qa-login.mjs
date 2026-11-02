@@ -11,8 +11,8 @@ const ROLES = {
 }
 
 const LIVE_ORIGINS = new Set([
-  'https://motionromania.com',
-  'https://www.motionromania.com',
+  'https://motionromania.ro',
+  'https://www.motionromania.ro',
   'https://master--motiontimisoara.netlify.app',
 ])
 const DEPLOY_PREVIEW_ORIGIN = /^https:\/\/deploy-preview-[0-9]+--motiontimisoara\.netlify\.app$/

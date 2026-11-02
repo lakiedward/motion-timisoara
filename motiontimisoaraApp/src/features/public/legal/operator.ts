@@ -3,7 +3,7 @@ export type OperatorField = {
   value: string | null
 }
 
-export const PRIVACY_EMAIL = 'contact@motionromania.com'
+export const PRIVACY_EMAIL = 'contact@motionromania.ro'
 
 export const OPERATOR_FIELDS: OperatorField[] = [
   { label: 'Denumire', value: null },

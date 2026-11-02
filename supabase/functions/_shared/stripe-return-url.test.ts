@@ -2,8 +2,8 @@ import { assertEquals } from "https://deno.land/std@0.177.0/testing/asserts.ts";
 import { stripeReturnBase } from "./stripe-return-url.ts";
 
 Deno.test("production origin is used as the Stripe return base", () => {
-  assertEquals(stripeReturnBase("https://motionromania.com", undefined), "https://motionromania.com");
-  assertEquals(stripeReturnBase("https://www.motionromania.com", undefined), "https://www.motionromania.com");
+  assertEquals(stripeReturnBase("https://motionromania.ro", undefined), "https://motionromania.ro");
+  assertEquals(stripeReturnBase("https://www.motionromania.ro", undefined), "https://www.motionromania.ro");
 });
 
 Deno.test("local and deploy preview origins return to themselves", () => {
@@ -20,15 +20,15 @@ Deno.test("local and deploy preview origins return to themselves", () => {
 });
 
 Deno.test("missing configuration falls back to production, never localhost", () => {
-  assertEquals(stripeReturnBase(null, undefined), "https://motionromania.com");
-  assertEquals(stripeReturnBase(null, ""), "https://motionromania.com");
+  assertEquals(stripeReturnBase(null, undefined), "https://motionromania.ro");
+  assertEquals(stripeReturnBase(null, ""), "https://motionromania.ro");
 });
 
 Deno.test("unknown or native origins use the configured origin", () => {
-  assertEquals(stripeReturnBase("https://evil.example", undefined), "https://motionromania.com");
-  assertEquals(stripeReturnBase("https://motionromania.com.evil.example", undefined), "https://motionromania.com");
-  assertEquals(stripeReturnBase("capacitor://localhost", "https://motionromania.com/"), "https://motionromania.com");
-  assertEquals(stripeReturnBase("https://localhost", undefined), "https://motionromania.com");
-  assertEquals(stripeReturnBase("https://motiontimisoara.com", undefined), "https://motionromania.com");
-  assertEquals(stripeReturnBase("https://www.motiontimisoara.com", undefined), "https://motionromania.com");
+  assertEquals(stripeReturnBase("https://evil.example", undefined), "https://motionromania.ro");
+  assertEquals(stripeReturnBase("https://motionromania.ro.evil.example", undefined), "https://motionromania.ro");
+  assertEquals(stripeReturnBase("capacitor://localhost", "https://motionromania.ro/"), "https://motionromania.ro");
+  assertEquals(stripeReturnBase("https://localhost", undefined), "https://motionromania.ro");
+  assertEquals(stripeReturnBase("https://motiontimisoara.com", undefined), "https://motionromania.ro");
+  assertEquals(stripeReturnBase("https://www.motiontimisoara.com", undefined), "https://motionromania.ro");
 });

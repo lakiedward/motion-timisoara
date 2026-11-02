@@ -124,7 +124,7 @@ Deno.test("provider identifies the app and only requests reverse address data", 
     assertEquals(url.searchParams.get("lang"), "default");
     assertEquals(
       new Headers(init?.headers).get("User-Agent"),
-      "MotionRomania/1.0 (https://motionromania.com)",
+      "MotionRomania/1.0 (https://motionromania.ro)",
     );
     return Response.json({
       features: [{

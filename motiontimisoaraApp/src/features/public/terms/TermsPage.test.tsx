@@ -21,7 +21,7 @@ test('antetul are eyebrow, titlu, intermediarul și versiunea', () => {
       /contractul pentru curs, activitate sau tabără se încheie între tine și organizatorul/i,
     ),
   ).toBeInTheDocument()
-  expect(screen.getByText(/^Versiunea 1\.1 · ultima actualizare: /)).toBeInTheDocument()
+  expect(screen.getByText(/^Versiunea 1\.2 · ultima actualizare: /)).toBeInTheDocument()
 })
 
 test('cuprinsul are câte o ancoră spre fiecare secțiune', () => {
@@ -62,9 +62,9 @@ test('participare și date personale au textele cerute, inclusiv dovada acceptă
 test('contactul are email, telefon și formular apăsabile', () => {
   randeaza()
   const contact = screen.getByRole('region', { name: /Contact/ })
-  expect(within(contact).getByRole('link', { name: /contact@motionromania\.com/ })).toHaveAttribute(
+  expect(within(contact).getByRole('link', { name: /contact@motionromania\.ro/ })).toHaveAttribute(
     'href',
-    'mailto:contact@motionromania.com',
+    'mailto:contact@motionromania.ro',
   )
   expect(within(contact).getByRole('link', { name: /\+40 750 420 455/ })).toHaveAttribute(
     'href',
