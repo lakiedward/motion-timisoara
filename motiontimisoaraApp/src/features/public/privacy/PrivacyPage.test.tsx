@@ -42,15 +42,20 @@ describe('PrivacyPage', () => {
     for (const id of sectionIds) expect(document.getElementById(id)).not.toBeNull()
   })
 
-  it('marks missing operator data visibly and keeps the privacy email', () => {
+  it('shows the operator company data and the privacy email', () => {
     renderPage()
     const operator = document.getElementById('operator')!
-    for (const label of ['Denumire', 'CUI', 'Nr. Registrul Comerțului', 'Sediu']) {
-      const row = within(operator).getByText(label).parentElement!
-      expect(within(row).getByText('De completat')).toBeInTheDocument()
+    const expected: Record<string, string> = {
+      Denumire: 'TITUS CLUB SWIM&FUN S.R.L.',
+      CUI: '49252540',
+      'Nr. Registrul Comerțului': 'J35/4752/2023',
+      Sediu: 'Str. Arieș nr. 2, sat Ghiroda, comuna Ghiroda, județul Timiș',
+      'Email pentru date personale': 'office@motionromania.ro',
     }
-    const emailRow = within(operator).getByText('Email pentru date personale').parentElement!
-    expect(emailRow).toHaveTextContent('contact@motionromania.ro')
+    for (const [label, value] of Object.entries(expected)) {
+      expect(within(operator).getByText(label).parentElement).toHaveTextContent(value)
+    }
+    expect(within(operator).queryByText('De completat')).not.toBeInTheDocument()
   })
 
   it('states a legal basis for each purpose, including health data and photos', () => {
@@ -105,9 +110,9 @@ describe('PrivacyPage', () => {
       'href',
       '/contact',
     )
-    expect(within(rights).getByRole('link', { name: 'contact@motionromania.ro' })).toHaveAttribute(
+    expect(within(rights).getByRole('link', { name: 'office@motionromania.ro' })).toHaveAttribute(
       'href',
-      'mailto:contact@motionromania.ro',
+      'mailto:office@motionromania.ro',
     )
     expect(within(rights).getByRole('link', { name: 'dataprotection.ro' })).toHaveAttribute(
       'href',
