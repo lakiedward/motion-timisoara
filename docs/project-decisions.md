@@ -247,7 +247,8 @@ reorganizing this document; correct obsolete facts with current evidence.
 
 - 2026-11-02 — QA and demo accounts are hidden from public lists, not deleted (bug #1312).
   `profiles.is_test_account` is a flag that clients cannot read or change. The
-  computed field `hidden_from_public(row)` lets the public lists for courses, camps,
+  computed field `hidden_from_public(row)` (a derived column on `clubs` and
+  `coach_profiles`, because those tables grant SELECT per column) lets the public lists for courses, camps,
   activities, competitions, coaches, clubs and the home counters filter out offers of
   flagged coaches and clubs. RLS, detail pages, owner pages and enrollments are
   unchanged, so QA flows keep working. The owner chose to flag the accounts only at

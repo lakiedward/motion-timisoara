@@ -1151,6 +1151,7 @@ export type Database = {
           description: string | null
           email: string | null
           hero_photo_storage_path: string | null
+          hidden_from_public: boolean
           id: string
           lat: number | null
           lng: number | null
@@ -1182,6 +1183,7 @@ export type Database = {
           description?: string | null
           email?: string | null
           hero_photo_storage_path?: string | null
+          hidden_from_public?: boolean
           id?: string
           lat?: number | null
           lng?: number | null
@@ -1213,6 +1215,7 @@ export type Database = {
           description?: string | null
           email?: string | null
           hero_photo_storage_path?: string | null
+          hidden_from_public?: boolean
           id?: string
           lat?: number | null
           lng?: number | null
@@ -1461,6 +1464,7 @@ export type Database = {
           company_name: string | null
           company_reg_number: string | null
           has_company: boolean
+          hidden_from_public: boolean
           id: string
           photo_storage_path: string | null
           stripe_account_id: string | null
@@ -1479,6 +1483,7 @@ export type Database = {
           company_name?: string | null
           company_reg_number?: string | null
           has_company?: boolean
+          hidden_from_public?: boolean
           id?: string
           photo_storage_path?: string | null
           stripe_account_id?: string | null
@@ -1497,6 +1502,7 @@ export type Database = {
           company_name?: string | null
           company_reg_number?: string | null
           has_company?: boolean
+          hidden_from_public?: boolean
           id?: string
           photo_storage_path?: string | null
           stripe_account_id?: string | null
@@ -3510,14 +3516,6 @@ export type Database = {
           }
         | {
             Args: { "": Database["public"]["Tables"]["camps"]["Row"] }
-            Returns: boolean
-          }
-        | {
-            Args: { "": Database["public"]["Tables"]["clubs"]["Row"] }
-            Returns: boolean
-          }
-        | {
-            Args: { "": Database["public"]["Tables"]["coach_profiles"]["Row"] }
             Returns: boolean
           }
         | {

@@ -16,9 +16,14 @@ CREATE TABLE public.courses (id uuid PRIMARY KEY, coach_id uuid REFERENCES publi
 CREATE TABLE public.camps (id uuid PRIMARY KEY, coach_id uuid REFERENCES public.profiles(id), club_id uuid REFERENCES public.clubs(id));
 CREATE TABLE public.activities (id uuid PRIMARY KEY, coach_id uuid REFERENCES public.profiles(id), club_id uuid REFERENCES public.clubs(id));
 CREATE TABLE public.competitions (id uuid PRIMARY KEY, coach_id uuid REFERENCES public.profiles(id), club_id uuid REFERENCES public.clubs(id));
-GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA public TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.courses, public.camps, public.activities, public.competitions TO anon, authenticated;
+GRANT INSERT, UPDATE ON public.profiles, public.clubs, public.coach_profiles TO anon, authenticated;
+GRANT SELECT (id, name, role) ON public.profiles TO anon, authenticated;
+GRANT SELECT (id, owner_user_id, name) ON public.clubs TO anon, authenticated;
+GRANT SELECT (id, user_id) ON public.coach_profiles TO anon, authenticated;
 
 \i /tmp/migrations/00112_test_account_visibility.sql
+\i /tmp/migrations/00113_test_account_visibility_columns.sql
 
 INSERT INTO public.profiles VALUES
     ('00000000-0000-0000-0000-000000000001', 'Antrenor real', 'COACH'),
@@ -61,10 +66,10 @@ BEGIN
     FROM public.competitions c WHERE public.hidden_from_public(c);
     IF v_hidden IS DISTINCT FROM '2,3' THEN RAISE EXCEPTION 'competitions hidden: %', v_hidden; END IF;
     SELECT string_agg(right(c.id::text, 1), ',' ORDER BY c.id) INTO v_hidden
-    FROM public.clubs c WHERE public.hidden_from_public(c);
+    FROM public.clubs c WHERE c.hidden_from_public;
     IF v_hidden IS DISTINCT FROM '4' THEN RAISE EXCEPTION 'clubs hidden: %', v_hidden; END IF;
     SELECT string_agg(right(c.id::text, 1), ',' ORDER BY c.id) INTO v_hidden
-    FROM public.coach_profiles c WHERE public.hidden_from_public(c);
+    FROM public.coach_profiles c WHERE c.hidden_from_public;
     IF v_hidden IS DISTINCT FROM '2' THEN RAISE EXCEPTION 'coaches hidden: %', v_hidden; END IF;
 
     BEGIN
@@ -95,6 +100,10 @@ BEGIN
         RAISE EXCEPTION 'authenticated inserted a flagged profile';
     EXCEPTION WHEN insufficient_privilege THEN NULL;
     END;
+    UPDATE public.clubs SET hidden_from_public = false, name = 'Test redenumit'
+    WHERE id = '10000000-0000-0000-0000-000000000004';
+    UPDATE public.coach_profiles SET hidden_from_public = false
+    WHERE id = '20000000-0000-0000-0000-000000000002';
     UPDATE public.profiles SET name = 'Antrenor test redenumit' WHERE id = '00000000-0000-0000-0000-000000000002';
     INSERT INTO public.profiles (id, name, role) VALUES ('00000000-0000-0000-0000-000000000009', 'Nou', 'PARENT');
 END;
@@ -105,6 +114,20 @@ DO $$
 BEGIN
     IF NOT (SELECT is_test_account FROM public.profiles WHERE id = '00000000-0000-0000-0000-000000000002') THEN
         RAISE EXCEPTION 'flag lost after a name update';
+    END IF;
+    IF NOT (SELECT hidden_from_public FROM public.clubs WHERE id = '10000000-0000-0000-0000-000000000004')
+       OR NOT (SELECT hidden_from_public FROM public.coach_profiles WHERE id = '20000000-0000-0000-0000-000000000002') THEN
+        RAISE EXCEPTION 'a client unhid a flagged club or coach';
+    END IF;
+    UPDATE public.profiles SET is_test_account = false WHERE id = '00000000-0000-0000-0000-000000000004';
+    UPDATE public.profiles SET is_test_account = true WHERE id = '00000000-0000-0000-0000-000000000001';
+    IF (SELECT hidden_from_public FROM public.clubs WHERE id = '10000000-0000-0000-0000-000000000004')
+       OR NOT (SELECT hidden_from_public FROM public.coach_profiles WHERE id = '20000000-0000-0000-0000-000000000001') THEN
+        RAISE EXCEPTION 'flag changes did not sync to clubs and coaches';
+    END IF;
+    INSERT INTO public.clubs VALUES ('10000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000002', 'Nou');
+    IF NOT (SELECT hidden_from_public FROM public.clubs WHERE id = '10000000-0000-0000-0000-000000000005') THEN
+        RAISE EXCEPTION 'a new club of a flagged owner is visible';
     END IF;
     IF (SELECT is_test_account FROM public.profiles WHERE id = '00000000-0000-0000-0000-000000000009') THEN
         RAISE EXCEPTION 'new profile is flagged by default';
