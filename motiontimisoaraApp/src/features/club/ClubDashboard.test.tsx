@@ -36,6 +36,17 @@ vi.mock('@/lib/auth-context', () => ({
 
 vi.mock('@/api/camps-admin', () => ({ getTaberelemele: vi.fn() }))
 vi.mock('@/api/competition/competition-list', () => ({ getCompetitionList: vi.fn() }))
+vi.mock('@/api/payments/card-payments-month', () => ({
+  CARD_PAYMENTS_MONTH_QUERY_KEY: ['card-payments-month'],
+  getCardPaymentsMonth: vi.fn().mockResolvedValue({
+    monthStart: '2026-11-01',
+    collected: 1600000,
+    stripeFee: 29000,
+    net: 1571000,
+    paymentCount: 50,
+    unsettledCount: 0,
+  }),
+}))
 vi.mock('@/api/payments/cash-payments', () => ({
   CASH_PAYMENTS_QUERY_KEY: ['cash-payments'],
   getCashPayments: vi.fn().mockResolvedValue([]),
@@ -230,6 +241,21 @@ test('card payments row links to setup and shows its state', async () => {
   const stripe = await screen.findByTestId('club-stat-stripe')
   expect(stripe).toHaveAttribute('href', '/club/stripe')
   expect(stripe).toHaveAccessibleName('Plăți cu cardul, Configurat')
+})
+
+test('a club with Stripe sees its online payments and the club as recipient', async () => {
+  mockClubStats({ row: club({ stripe_onboarding_complete: true }) })
+  renderDashboard()
+  const card = await screen.findByTestId('card-payments-month')
+  expect(await screen.findByText('50 de plăți cu cardul la ofertele clubului, până azi')).toBeInTheDocument()
+  expect(card).toHaveTextContent('Primește clubul')
+})
+
+test('a club without Stripe does not see the online payments card', async () => {
+  mockClubStats()
+  renderDashboard()
+  await screen.findByTestId('club-stat-stripe')
+  expect(screen.queryByTestId('card-payments-month')).not.toBeInTheDocument()
 })
 
 test('counts show a skeleton while loading instead of a false 0', async () => {

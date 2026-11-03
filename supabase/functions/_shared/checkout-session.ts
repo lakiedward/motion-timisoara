@@ -1,7 +1,7 @@
 import type Stripe from "https://esm.sh/stripe@14?target=deno";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enrollmentJson } from "./enrollment-pricing.ts";
-import { calculatePlatformFee } from "./stripe.ts";
+import { stripeFeeCeiling } from "./stripe.ts";
 
 export const MAX_CHECKOUT_LINES = 10;
 
@@ -108,7 +108,7 @@ export async function prepareCheckoutSession(
   const ids = paymentIdsKey(payable);
   const minute = Math.floor(now / 60000);
   const enrollmentIds = payable.map((line) => line.enrollmentId).join(",");
-  const fees = payable.map((line) => order.destination ? calculatePlatformFee(line.amount).platformFeeTotal : null);
+  const fees = payable.map((line) => order.destination ? stripeFeeCeiling(line.amount) : null);
   const params: Stripe.Checkout.SessionCreateParams = {
     mode: "payment",
     locale: "ro",
@@ -151,6 +151,7 @@ export async function prepareCheckoutSession(
       client_secret: null,
       platform_fee_amount: fee,
       coach_payout_amount: fee == null ? null : line.amount - fee,
+      stripe_destination_account: order.destination,
     }).eq("id", line.paymentId).eq("method", "CARD").eq("status", line.status)
       .eq("amount", line.amount).eq("currency", "RON");
     update = line.gatewayId ? update.eq("gateway_txn_id", line.gatewayId) : update.is("gateway_txn_id", null);

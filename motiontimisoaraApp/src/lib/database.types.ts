@@ -2766,6 +2766,8 @@ export type Database = {
           platform_fee_amount: number | null
           pricing_snapshot: Json | null
           status: string
+          stripe_destination_account: string | null
+          stripe_fee_amount: number | null
           stripe_transfer_id: string | null
           updated_at: string
         }
@@ -2791,6 +2793,8 @@ export type Database = {
           platform_fee_amount?: number | null
           pricing_snapshot?: Json | null
           status: string
+          stripe_destination_account?: string | null
+          stripe_fee_amount?: number | null
           stripe_transfer_id?: string | null
           updated_at?: string
         }
@@ -2816,6 +2820,8 @@ export type Database = {
           platform_fee_amount?: number | null
           pricing_snapshot?: Json | null
           status?: string
+          stripe_destination_account?: string | null
+          stripe_fee_amount?: number | null
           stripe_transfer_id?: string | null
           updated_at?: string
         }
@@ -3488,6 +3494,17 @@ export type Database = {
       freeze_payment_intent_request: {
         Args: { p_params: Json; p_payment_id: string }
         Returns: Json
+      }
+      get_card_payments_month: {
+        Args: never
+        Returns: {
+          collected: number
+          month_start: string
+          net: number
+          payment_count: number
+          stripe_fee: number
+          unsettled_count: number
+        }[]
       }
       get_cash_payments: {
         Args: never

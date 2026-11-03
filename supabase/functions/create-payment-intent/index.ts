@@ -4,7 +4,7 @@ import { authorizedRonCharge } from "../_shared/payment-charge.ts";
 import { paymentRecipient } from "../_shared/payment-recipient.ts";
 import { preparePaymentIntent } from "../_shared/payment-intent.ts";
 import { withCors } from "../_shared/cors.ts";
-import { calculatePlatformFee, getStripe } from "../_shared/stripe.ts";
+import { getStripe, stripeFeeCeiling } from "../_shared/stripe.ts";
 
 serve(
   withCors(async (req: Request) => {
@@ -76,12 +76,12 @@ serve(
     };
 
     if (destinationAccountId) {
-      const fee = calculatePlatformFee(amountInBani);
-      params.application_fee_amount = fee.platformFeeTotal;
+      const feeCeiling = stripeFeeCeiling(amountInBani);
+      params.application_fee_amount = feeCeiling;
       params.transfer_data = { destination: destinationAccountId };
       params.metadata.destinationType = destinationType;
-      params.metadata.platformFee = fee.platformFeeTotal.toString();
-      params.metadata.recipientAmount = fee.recipientAmount.toString();
+      params.metadata.platformFee = feeCeiling.toString();
+      params.metadata.recipientAmount = (amountInBani - feeCeiling).toString();
       if (coachId) params.metadata.coachId = coachId;
       if (destinationType === "CLUB" && clubId) {
         params.metadata.clubId = clubId;

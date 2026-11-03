@@ -2,6 +2,7 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import type Stripe from "https://esm.sh/stripe@14?target=deno";
 import { cashPaymentHandler } from "./mark-cash-paid/handler.ts";
 import { paymentWebhookHandler } from "./stripe-webhook/handler.ts";
+import type { SettlementLine, SettlementResult } from "./_shared/stripe-fee-settlement.ts";
 import { withCors } from "./_shared/cors.ts";
 
 function equal(actual: unknown, expected: unknown) {
@@ -161,11 +162,17 @@ function webhook(
   db: SupabaseClient,
   type = "payment_intent.succeeded",
   receivedAmount = 50000,
+  settlement: () => Promise<SettlementResult> = () => Promise.resolve("settled"),
 ) {
   let verified = 0;
+  const settled: SettlementLine[][] = [];
   const handler = paymentWebhookHandler({
     db,
     sessionForIntent: () => Promise.resolve(null),
+    settleFee: (_intent, lines) => {
+      settled.push(lines);
+      return settlement();
+    },
     verifyEvent: async (body, signature) => {
       equal(body, "raw-event");
       verified++;
@@ -184,7 +191,7 @@ function webhook(
       } as unknown as Stripe.Event;
     },
   });
-  return { handler, verified: () => verified };
+  return { handler, verified: () => verified, settled };
 }
 
 const webhookRequest = (signature?: string) =>
@@ -235,6 +242,29 @@ for (
     },
   );
 }
+
+Deno.test("a successful charge settles the exact Stripe fee after the payment is saved", async () => {
+  const services = database();
+  const receiver = webhook(services.db);
+  equal((await receiver.handler(webhookRequest("valid"))).status, 200);
+  equal(receiver.settled, [[{ paymentId: "payment", amount: 50000 }]]);
+  const failed = webhook(database().db, "payment_intent.payment_failed");
+  equal((await failed.handler(webhookRequest("valid"))).status, 200);
+  equal(failed.settled.length, 0);
+});
+
+Deno.test("an unsettled Stripe fee keeps the saved payment and asks Stripe to retry", async () => {
+  const pending = database();
+  const waiting = webhook(pending.db, "payment_intent.succeeded", 50000, () => Promise.resolve("pending"));
+  equal((await waiting.handler(webhookRequest("valid"))).status, 503);
+  equal(pending.calls.length, 1);
+  const broken = database();
+  const failing = webhook(broken.db, "payment_intent.succeeded", 50000, () => Promise.reject(new Error("Stripe down")));
+  equal((await failing.handler(webhookRequest("valid"))).status, 500);
+  equal(broken.calls.length, 1);
+  const platform = webhook(database().db, "payment_intent.succeeded", 50000, () => Promise.resolve("not_applicable"));
+  equal((await platform.handler(webhookRequest("valid"))).status, 200);
+});
 
 Deno.test("webhook does not acknowledge a failed transaction", async () => {
   const services = database();
@@ -288,8 +318,13 @@ function checkoutWebhook(rows: { id: string; amount: number; gateway_txn_id: str
       return Promise.resolve({ data: { changed: false, status: "SUCCEEDED", enrollmentId: "e", sessionsAdded: 0 }, error: null });
     },
   } as unknown as SupabaseClient;
+  const settled: SettlementLine[][] = [];
   const handler = paymentWebhookHandler({
     db,
+    settleFee: (_intent, lines) => {
+      settled.push(lines);
+      return Promise.resolve("settled");
+    },
     sessionForIntent: (id) => {
       equal(id, "pi_checkout");
       return Promise.resolve(session);
@@ -299,7 +334,7 @@ function checkoutWebhook(rows: { id: string; amount: number; gateway_txn_id: str
       data: { object: { id: "pi_checkout", metadata: { paymentIds: "a,b" }, amount, amount_received: amount, currency: "ron" } },
     } as unknown as Stripe.Event),
   });
-  return { handler, calls };
+  return { handler, calls, settled };
 }
 
 Deno.test("a Checkout payment confirms every child's payment with its own amount and the session id", async () => {
@@ -312,6 +347,7 @@ Deno.test("a Checkout payment confirms every child's payment with its own amount
     ["a", 40000, "cs_order"],
     ["b", 30000, "cs_order"],
   ]);
+  equal(receiver.settled, [[{ paymentId: "a", amount: 40000 }, { paymentId: "b", amount: 30000 }]]);
 });
 
 Deno.test("a Checkout payment that does not match the saved session or total is refused", async () => {

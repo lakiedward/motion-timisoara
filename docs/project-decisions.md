@@ -228,6 +228,15 @@ reorganizing this document; correct obsolete facts with current evidence.
   (21% since 2025-08-01), which is added on top of the fee and capped so the fee never
   exceeds the charge, and redeploy create-payment-intent and create-checkout-session.
   Confirm with the accountant (To-Do #227).
+- 2026-11-03 — Superseded the entry above (owner cards 2026-11-02 15:17Z, 15:29Z, 15:53Z;
+  features #636 and #640). The platform fee on a parent card payment is exactly that
+  payment's Stripe processing fee: checkout sets a ceiling of 1 RON + 5.15% (worst card plus
+  conversion), and `stripe-webhook` refunds the application fee down to the balance
+  transaction's `stripe_fee` and stores it in `payments.stripe_fee_amount`. The platform
+  earns nothing on payments; its revenue is the subscription, and it keeps paying Connect's
+  per-account and payout fees. Coach and club Express accounts pay out weekly on Mondays,
+  which cuts the per-payout Connect cost. The coach and club dashboards show this month's
+  collected, withheld and net amounts from `get_card_payments_month()`.
 - 2026-11-02 — Feature #612: `create-subscription-checkout` and `billing-portal` derive
   the subscriber only from the caller's live role (COACH: own row; CLUB: owned club),
   never from request ids, and accept only the website origins of spec #609. Both

@@ -115,9 +115,9 @@ jobs:
         shell: pwsh
         run: ./supabase/tests/run-camp-adult-enrollment.ps1
       - name: Verify enrollment and payment-intent contracts
-        run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/price-snapshot.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/bnr-rate-contract.test.ts supabase/functions/_shared/stripe-return-url.test.ts supabase/functions/_shared/stripe.test.ts supabase/functions/_shared/checkout-session.test.ts
+        run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/price-snapshot.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/bnr-rate-contract.test.ts supabase/functions/_shared/stripe-return-url.test.ts supabase/functions/_shared/stripe.test.ts supabase/functions/_shared/checkout-session.test.ts supabase/functions/_shared/stripe-fee-settlement.test.ts
       - name: Type-check Stripe Connect function
-        run: deno check --no-lock supabase/functions/stripe-connect/index.ts
+        run: deno check --no-lock supabase/functions/stripe-connect/index.ts supabase/functions/stripe-webhook/index.ts
       - name: Verify subscription price sync contract
         run: deno test --no-lock --allow-read=motiontimisoaraApp/src supabase/functions/sync-subscription-prices/contract.test.ts
       - name: Type-check subscription price sync function
@@ -145,6 +145,9 @@ jobs:
       - name: Verify cash payments list access
         shell: pwsh
         run: ./supabase/tests/run-cash-payments-list.ps1
+      - name: Verify card payments month summary
+        shell: pwsh
+        run: ./supabase/tests/run-card-payments-month.ps1
       - name: Verify parent account deletion
         shell: pwsh
         run: ./supabase/tests/run-parent-account-deletion.ps1
