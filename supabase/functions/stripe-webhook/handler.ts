@@ -2,6 +2,7 @@ import type Stripe from "https://esm.sh/stripe@14?target=deno";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { applyPaymentResult, notifyPaymentResult } from "../_shared/payment-completion.ts";
 import { enrollmentJson } from "../_shared/enrollment-pricing.ts";
+import type { SettlementLine, SettlementResult } from "../_shared/stripe-fee-settlement.ts";
 
 interface Charge {
   paymentId: string;
@@ -29,10 +30,11 @@ async function checkoutCharges(
   });
 }
 
-export function paymentWebhookHandler({ db, verifyEvent, sessionForIntent }: {
+export function paymentWebhookHandler({ db, verifyEvent, sessionForIntent, settleFee }: {
   db: SupabaseClient;
   verifyEvent: (body: string, signature: string) => Promise<Stripe.Event>;
   sessionForIntent: (intentId: string) => Promise<string | null>;
+  settleFee: (intent: Stripe.PaymentIntent, lines: SettlementLine[]) => Promise<SettlementResult>;
 }) {
   return async (req: Request) => {
     if (req.method !== "POST") return enrollmentJson({ error: "Method not allowed" }, 405);
@@ -68,6 +70,15 @@ export function paymentWebhookHandler({ db, verifyEvent, sessionForIntent }: {
           gatewayId: charge.gatewayId,
         });
         await notifyPaymentResult(db, result, intent.last_payment_error?.message);
+      }
+      if (event.type === "payment_intent.succeeded") {
+        let settlement: SettlementResult;
+        try {
+          settlement = await settleFee(intent, charges.map(({ paymentId, amount }) => ({ paymentId, amount })));
+        } catch {
+          return enrollmentJson({ error: "Stripe fee could not be settled" }, 500);
+        }
+        if (settlement === "pending") return enrollmentJson({ error: "Stripe fee is not available yet" }, 503);
       }
       return enrollmentJson({ received: true, type: event.type });
     } catch {

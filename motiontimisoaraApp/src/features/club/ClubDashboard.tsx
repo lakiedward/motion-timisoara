@@ -24,6 +24,7 @@ import { countRowProps } from '@/components/dashboard/dashboard-count'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { useAuth } from '@/lib/auth-context'
+import { CardPaymentsMonthCard } from '@/features/payments/CardPaymentsMonthCard'
 import { CashPaymentsNotice } from '@/features/payments/CashPaymentsNotice'
 
 export default function ClubDashboard() {
@@ -114,6 +115,12 @@ export default function ClubDashboard() {
       </div>
 
       <CashPaymentsNotice to="/club/payments" />
+
+      <CardPaymentsMonthCard
+        enabled={stripeDone}
+        offersLabel="ofertele clubului"
+        netLabel="Primește clubul"
+      />
 
       <DashboardGrid>
         <DashboardGroup title="Oferta clubului">

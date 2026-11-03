@@ -154,26 +154,28 @@ Amended 2026-11-02 after three owner decisions on cards:
 - At creation the application fee is the ceiling for the most expensive card: 3.15% + 1 RON, plus 2% for currency conversion, capped at the amount.
 - When the charge's balance transaction is available, the webhook reads its `fee` and refunds the difference between the application fee and that fee through an application fee refund. The recipient then receives the amount minus exactly the Stripe fee.
 - The payment row stores `stripe_fee_amount` (bani, from the balance transaction) next to `platform_fee_amount` and `coach_payout_amount`, which are updated after the refund.
-- If the balance transaction is not available, the payment keeps the ceiling and a retry job settles it. A settled payment is never settled twice (idempotent on the charge id).
+- If the balance transaction is not available, the payment keeps the ceiling and the webhook answers 503, so Stripe redelivers the event (up to three days) and settles it then. Payment confirmation is already idempotent, and a settled payment is never settled twice: the refund is computed from the application fee's `amount_refunded`, sent with an idempotency key on the charge id, and the row is updated only while `stripe_fee_amount` is NULL.
+- A Checkout charge for several children splits its Stripe fee across the payments by amount (largest remainder). If Stripe ever charges more than the ceiling, the platform absorbs the difference.
+- The payment row also stores `stripe_destination_account`, the Express account that received the transfer, so each payment counts for whoever received it.
 - Connect account fees (10 RON per active account per month, 0.25% + 1.50 RON per payout) stay with the platform and are not passed on.
 - Feature #636.
 
 ### Payout schedule
 
 - `settings.payouts.schedule` is `interval: weekly`, `weekly_anchor: monday` when a coach or club Express account is created in `stripe-connect`.
-- Existing connected accounts are updated once through a script; that Stripe write needs the owner's card.
+- Existing connected accounts are moved to the weekly schedule when `stripe-connect` refreshes their status (the coach or club opens the Stripe page). No separate script is needed; a failed update is logged and retried at the next refresh.
 - Romania settles in 3 business days (7 for the first payout), so a Monday payout carries the payments settled by then.
 - Feature #636.
 
 ### Dashboard figures
 
 - `/coach` and `/club` show a card "Plăți online în <month>" with: collected from parents, Stripe fee withheld (negative), and net received (primary accent). It also shows the count of successful card payments so far this month and a note that the fee is withheld from each payment and that the subscription is paid separately. The subscription note is hidden in native builds (store compliance).
-- The data covers successful card payments for offers the coach owns (or the club's offers for a club), read through an `src/api` function under RLS.
+- The data covers successful card payments transferred to the caller's own Express account since the first day of the month in Romania, read through `get_card_payments_month()` (SECURITY DEFINER, COACH and CLUB only) and `src/api/payments/card-payments-month.ts`. While a payment is not settled the card shows the ceiling fee and says the exact cost follows in a few minutes.
 - States: loading skeleton, error with retry, zero payments as an empty message, Stripe not configured as the existing "Plăți cu cardul" card.
 - Payment-level detail stays on the card payments page.
 - Prototype captures: `/mnt/project-files/verificari/cost-stripe-dashboard/` (variant A). Feature #640.
 
-- The 19% VAT that the code adds on top of the fee is removed (bug #1304), because the operator is not VAT registered. The rate stays a single named constant set to 0, so it can change if the company registers for VAT.
+- The 19% VAT that the code added on top of the fee was removed (bug #1304), because the operator is not VAT registered. With #636 the fee is a pass-through of Stripe's own cost, so no VAT constant remains; a VAT registration would need a new decision on invoicing this pass-through.
 
 ## Invoicing
 

@@ -138,6 +138,7 @@ export async function preparePaymentIntent(
     client_secret: intent.client_secret,
     platform_fee_amount: savedParams.application_fee_amount ?? null,
     coach_payout_amount: savedParams.application_fee_amount == null ? null : payment.amount - savedParams.application_fee_amount,
+    stripe_destination_account: savedParams.transfer_data?.destination ?? null,
   }).eq("id", payment.id).eq("method", "CARD").eq("status", payment.status)
     .eq("amount", payment.amount).eq("currency", "RON").is("gateway_txn_id", null).select("id").single();
   if (saved.error || !saved.data) {

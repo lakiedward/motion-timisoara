@@ -117,7 +117,7 @@ Deno.test("one Romanian Checkout Session covers every child with one line each a
   equal(params.metadata, { paymentIds: "payment-a,payment-b" });
   equal(params.payment_intent_data!.metadata, { paymentIds: "payment-a,payment-b" });
   equal(params.payment_intent_data!.transfer_data, { destination: "acct_club" });
-  equal(params.payment_intent_data!.application_fee_amount, 1500 + 1150);
+  equal(params.payment_intent_data!.application_fee_amount, 2160 + 1645);
   equal(params.success_url, "https://master--motiontimisoara.netlify.app/account/plata?rezultat=reusita&inscrieri=enrollment-a,enrollment-b");
   equal(params.cancel_url, "https://master--motiontimisoara.netlify.app/account/plata?rezultat=anulata&inscrieri=enrollment-a,enrollment-b");
   equal([...f.saved.values()].map((row) => row.gatewayId), ["cs_1", "cs_1"]);

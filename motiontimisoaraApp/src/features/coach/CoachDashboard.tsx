@@ -7,6 +7,7 @@ import { getTaberelemele } from '@/api/camps-admin'
 import { getCompetitionList } from '@/api/competition/competition-list'
 import { DashboardGrid, DashboardGroup, DashboardRow } from '@/components/dashboard/DashboardGroups'
 import { countRowProps } from '@/components/dashboard/dashboard-count'
+import { CardPaymentsMonthCard } from '@/features/payments/CardPaymentsMonthCard'
 import { CashPaymentsNotice } from '@/features/payments/CashPaymentsNotice'
 import { plural } from '@/lib/plural'
 
@@ -62,6 +63,12 @@ export default function CoachDashboard() {
       </div>
 
       <CashPaymentsNotice to="/coach/payments" />
+
+      <CardPaymentsMonthCard
+        enabled={stripeComplete}
+        offersLabel="ofertele tale"
+        netLabel="Primești tu"
+      />
 
       <DashboardGrid>
         <DashboardGroup title="Oferta ta">

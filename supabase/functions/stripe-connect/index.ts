@@ -1,12 +1,8 @@
-// Edge Function: stripe-connect
-// Replaces: StripeConnectService.kt
-// Handles: create-account, onboarding-link, dashboard-link, refresh-status
-// Route by action parameter
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { supabaseAdmin, getUser, getUserRole } from "../_shared/supabase.ts";
 import { withCors } from "../_shared/cors.ts";
-import { getStripe } from "../_shared/stripe.ts";
+import { getStripe, paysOutWeeklyOnMonday, WEEKLY_MONDAY_PAYOUTS } from "../_shared/stripe.ts";
 import { stripeReturnBase } from "../_shared/stripe-return-url.ts";
 
 /** Machine-readable marker the web client matches on. Keep in sync with
@@ -28,10 +24,6 @@ serve(
     const { action } = body;
     const returnBase = stripeReturnBase(req.headers.get("origin"), Deno.env.get("FRONTEND_URL"));
 
-    // Without STRIPE_SECRET_KEY every action below throws, and withCors would
-    // flatten that into an opaque 500. The clients need to tell "the platform
-    // has no Stripe keys yet" apart from "something broke", so they can show a
-    // setup-pending state instead of an error.
     let stripe: ReturnType<typeof getStripe>;
     try {
       stripe = getStripe();
@@ -47,7 +39,6 @@ serve(
 
     switch (action) {
       case "create-account": {
-        // Coach or Club creates a Stripe Express account
         if (role === "COACH") {
           return await createCoachAccount(stripe, user.id, user.email!);
         } else if (role === "CLUB") {
@@ -109,6 +100,15 @@ function jsonResponse(data: any, status = 200) {
   });
 }
 
+async function ensureWeeklyPayouts(stripe: any, account: any) {
+  if (paysOutWeeklyOnMonday(account)) return;
+  try {
+    await stripe.accounts.update(account.id, { settings: WEEKLY_MONDAY_PAYOUTS });
+  } catch {
+    console.error("Weekly payout schedule could not be set");
+  }
+}
+
 async function createCoachAccount(
   stripe: any,
   userId: string,
@@ -133,6 +133,7 @@ async function createCoachAccount(
       transfers: { requested: true },
     },
     business_type: "individual",
+    settings: WEEKLY_MONDAY_PAYOUTS,
     metadata: { coach_user_id: userId, platform: "triathlon-team" },
   });
 
@@ -174,6 +175,7 @@ async function createClubAccount(
       transfers: { requested: true },
     },
     business_type: "company",
+    settings: WEEKLY_MONDAY_PAYOUTS,
     metadata: {
       club_id: clubId,
       platform: "triathlon-team",
@@ -279,6 +281,7 @@ async function refreshCoachStatus(stripe: any, userId: string) {
   }
 
   const account = await stripe.accounts.retrieve(profile.stripe_account_id);
+  await ensureWeeklyPayouts(stripe, account);
   const chargesEnabled = account.charges_enabled ?? false;
   const payoutsEnabled = account.payouts_enabled ?? false;
   const onboardingComplete = chargesEnabled && payoutsEnabled;
@@ -319,6 +322,7 @@ async function refreshClubStatus(stripe: any, userId: string) {
   }
 
   const account = await stripe.accounts.retrieve(club.stripe_account_id);
+  await ensureWeeklyPayouts(stripe, account);
   const chargesEnabled = account.charges_enabled ?? false;
   const payoutsEnabled = account.payouts_enabled ?? false;
   const onboardingComplete = chargesEnabled && payoutsEnabled;
