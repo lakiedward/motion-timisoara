@@ -3,6 +3,7 @@ import {
   Building2,
   CalendarRange,
   ClipboardCheck,
+  CreditCard,
   Dumbbell,
   GraduationCap,
   Info,
@@ -16,6 +17,8 @@ import {
   Users,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+
+import { webOnly } from '@/lib/store-compliance'
 
 export interface PortalNavItem {
   to: string
@@ -35,6 +38,9 @@ export const coachNavigation: PortalNavItem[] = [
   { to: '/coach/attendance', label: 'Prezență', icon: ClipboardCheck, group: 'Organizare' },
   { to: '/coach/payments', label: 'Încasări cash', icon: Banknote, group: 'Organizare' },
   { to: '/coach/announcements', label: 'Anunțuri', icon: Megaphone, group: 'Organizare' },
+  ...webOnly([
+    { to: '/coach/abonament', label: 'Abonament', icon: CreditCard, group: 'Organizare' },
+  ]),
 ]
 
 export const clubNavigation: PortalNavItem[] = [
