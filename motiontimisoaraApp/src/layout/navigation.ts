@@ -54,6 +54,9 @@ export const clubNavigation: PortalNavItem[] = [
   { to: '/club/coaches', label: 'Antrenori', icon: Users, group: 'Organizare' },
   { to: '/club/payments', label: 'Încasări cash', icon: Banknote, group: 'Organizare' },
   { to: '/club/announcements', label: 'Anunțuri', icon: Megaphone, group: 'Organizare' },
+  ...webOnly([
+    { to: '/club/abonament', label: 'Abonament', icon: CreditCard, group: 'Organizare' },
+  ]),
 ]
 
 export const adminNavigation: PortalNavItem[] = [

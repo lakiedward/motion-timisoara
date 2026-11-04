@@ -104,6 +104,7 @@ test('coach navigation groups offers and organisation under labelled groups', ()
     'Prezență',
     'Încasări cash',
     'Anunțuri',
+    'Abonament',
   ])
   const offers = within(nav).getByRole('group', { name: 'Oferte' })
   expect(within(offers).getAllByRole('link')).toHaveLength(4)
@@ -112,7 +113,7 @@ test('coach navigation groups offers and organisation under labelled groups', ()
     within(organisation)
       .getAllByRole('link')
       .map((link) => link.textContent),
-  ).toEqual(['Locații', 'Prezență', 'Încasări cash', 'Anunțuri'])
+  ).toEqual(['Locații', 'Prezență', 'Încasări cash', 'Anunțuri', 'Abonament'])
   expect(screen.getByRole('link', { name: 'Panou' })).toHaveAttribute('aria-current', 'page')
 })
 

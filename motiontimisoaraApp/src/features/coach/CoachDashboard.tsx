@@ -9,6 +9,8 @@ import { DashboardGrid, DashboardGroup, DashboardRow } from '@/components/dashbo
 import { countRowProps } from '@/components/dashboard/dashboard-count'
 import { CardPaymentsMonthCard } from '@/features/payments/CardPaymentsMonthCard'
 import { CashPaymentsNotice } from '@/features/payments/CashPaymentsNotice'
+import { CoachSubscriptionBanner } from '@/features/coach/subscription/CoachSubscriptionBanner'
+import { NATIVE_BUILD, subscriptionSalesAllowed } from '@/lib/store-compliance'
 import { plural } from '@/lib/plural'
 
 export default function CoachDashboard() {
@@ -61,6 +63,8 @@ export default function CoachDashboard() {
         </h1>
         <p className="text-muted-foreground mt-1">Panoul tău de antrenor.</p>
       </div>
+
+      {!NATIVE_BUILD && subscriptionSalesAllowed() ? <CoachSubscriptionBanner /> : null}
 
       <CashPaymentsNotice to="/coach/payments" />
 
