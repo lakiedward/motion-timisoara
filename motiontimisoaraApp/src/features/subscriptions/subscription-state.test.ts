@@ -93,6 +93,29 @@ describe('describeSubscription', () => {
     })
   })
 
+  test('a paid trial or active plan set to cancel at period end reads as canceled', () => {
+    const trial = row({
+      trialEnd: '2026-11-24T10:00:00Z',
+      currentPeriodEnd: '2026-11-24T10:00:00Z',
+      cancelAtPeriodEnd: true,
+      hasStripeSubscription: true,
+    })
+    expect(describeSubscription(trial, noLaunch, NOW)).toEqual({
+      kind: 'canceled',
+      endsAt: '2026-11-24T10:00:00Z',
+    })
+    const active = row({
+      status: 'active',
+      currentPeriodEnd: '2026-12-01T00:00:00Z',
+      cancelAtPeriodEnd: true,
+      hasStripeSubscription: true,
+    })
+    expect(describeSubscription(active, noLaunch, NOW)).toEqual({
+      kind: 'canceled',
+      endsAt: '2026-12-01T00:00:00Z',
+    })
+  })
+
   test('expired can subscribe again', () => {
     const expired = row({ status: 'expired', hasStripeSubscription: true })
     const view = describeSubscription(expired, noLaunch, NOW)

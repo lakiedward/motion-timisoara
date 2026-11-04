@@ -41,6 +41,9 @@ export function describeSubscription(
       const endsAt = effectiveTrialEnd(subscription, settings)
       if (!endsAt) return { kind: 'launch_pending', launchTrialDays: settings.launchTrialDays }
       if (Date.parse(endsAt) <= now) return { kind: 'expired' }
+      if (subscription.cancelAtPeriodEnd && subscription.hasStripeSubscription) {
+        return { kind: 'canceled', endsAt: periodEnd ?? endsAt }
+      }
       return {
         kind: 'trialing',
         endsAt,
@@ -50,6 +53,7 @@ export function describeSubscription(
     }
     case 'active':
       if (periodEnd && Date.parse(periodEnd) + DAY_MS <= now) return { kind: 'expired' }
+      if (subscription.cancelAtPeriodEnd) return { kind: 'canceled', endsAt: periodEnd }
       return { kind: 'active', nextChargeAt: periodEnd }
     case 'past_due': {
       const graceEndsAt = subscription.pastDueSince

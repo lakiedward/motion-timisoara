@@ -93,7 +93,12 @@ function scheduledNote(context: PlanContext) {
   if (!code || !current || code === current.code) return null
   const next = context.plans.find((plan) => plan.code === code)
   if (!next) return null
-  const end = context.view.kind === 'active' ? context.view.nextChargeAt : null
+  const end =
+    context.view.kind === 'active'
+      ? context.view.nextChargeAt
+      : context.view.kind === 'trialing'
+        ? context.view.endsAt
+        : null
   return (
     <p className="text-foreground text-sm font-medium" data-testid="scheduled-plan-note">
       {end ? `De la ${formatShortDate(end)}` : 'De luna viitoare'} treci la {next.name} (
@@ -160,7 +165,7 @@ export default function ClubSubscriptionPage() {
             onClick={() => void redirect.portal()}
             data-testid="billing-portal"
           >
-            {redirect.busy?.kind === 'portal' ? 'Se deschide…' : 'Gestionează abonamentul'}
+            {redirect.busy?.kind === 'portal' ? 'Se deschide Stripe…' : 'Gestionează abonamentul'}
           </Button>
         ) : null}
       </SubscriptionStatusCard>

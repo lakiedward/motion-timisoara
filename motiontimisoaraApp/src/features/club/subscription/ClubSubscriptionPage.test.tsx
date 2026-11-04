@@ -135,3 +135,16 @@ test('a load failure shows a retry, not an empty page', async () => {
   renderPage()
   expect(await screen.findByRole('button', { name: 'Reîncearcă' })).toBeTruthy()
 })
+
+test('a downgrade scheduled during the trial names the trial end date', async () => {
+  api.subscription = {
+    ...activeOn('CLUB'),
+    status: 'trialing',
+    trialEnd: '2099-11-24T10:00:00Z',
+    currentPeriodEnd: '2099-11-24T10:00:00Z',
+    scheduledPlanCode: 'CLUB_START',
+  }
+  renderPage()
+  const note = await screen.findByTestId('scheduled-plan-note')
+  expect(note.textContent).toBe('De la 24.11.2099 treci la Club Start (199 lei / lună).')
+})
