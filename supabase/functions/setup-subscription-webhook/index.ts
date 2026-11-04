@@ -11,13 +11,20 @@ function stripeEndpoints(): WebhookEndpointApi {
   return {
     async list() {
       const { data } = await stripe.webhookEndpoints.list({ limit: 100 });
-      return data.map((endpoint: Stripe.WebhookEndpoint) => ({ id: endpoint.id, url: endpoint.url }));
+      return data.map((endpoint: Stripe.WebhookEndpoint) => ({
+        id: endpoint.id,
+        url: endpoint.url,
+        status: endpoint.status,
+        enabled_events: endpoint.enabled_events,
+        description: endpoint.description,
+      }));
     },
-    async create({ url, events, description }) {
+    async create({ url, events, description, connect }) {
       const endpoint = await stripe.webhookEndpoints.create({
         url,
         enabled_events: events as never,
         description,
+        ...(connect ? { connect: true } : {}),
       });
       if (!endpoint.secret) throw new Error("Stripe nu a întors secretul endpointului.");
       return { id: endpoint.id, url: endpoint.url, secret: endpoint.secret };
@@ -46,7 +53,7 @@ serve(
       modeFromKey: stripeModeFromKey,
       requireAdmin,
       endpoints: stripeEndpoints,
-      webhookUrl: supabaseUrl ? `${supabaseUrl.replace(/\/$/, "")}/functions/v1/stripe-subscription-webhook` : undefined,
+      functionsBaseUrl: supabaseUrl ? `${supabaseUrl.replace(/\/$/, "")}/functions/v1` : undefined,
     }),
   ),
 );

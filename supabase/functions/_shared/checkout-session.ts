@@ -113,6 +113,7 @@ export async function prepareCheckoutSession(
     mode: "payment",
     locale: "ro",
     payment_method_types: ["card"],
+    adaptive_pricing: { enabled: false },
     line_items: payable.map((line) => ({
       quantity: 1,
       price_data: { currency: "ron", unit_amount: line.amount, product_data: { name: line.name } },

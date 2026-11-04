@@ -110,6 +110,7 @@ Deno.test("one Romanian Checkout Session covers every child with one line each a
   equal(result, { url: "https://checkout.stripe.com/c/1" });
   const params = f.creates[0].params;
   equal(params.locale, "ro");
+  equal(params.adaptive_pricing, { enabled: false });
   equal(items(params).map((item) => [item.price_data!.product_data!.name, item.price_data!.unit_amount]), [
     ["Înot · Copil a", 40000],
     ["Înot · Copil b", 30000],
