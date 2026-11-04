@@ -53,6 +53,10 @@ on:
       - 'supabase/tests/*parent-account-deletion*'
       - 'supabase/migrations/00107_subscriptions.sql'
       - 'supabase/tests/*subscriptions*'
+      - 'supabase/migrations/00116_subscription_access_rules.sql'
+      - 'supabase/migrations/00117_club_coach_limit.sql'
+      - 'supabase/migrations/00118_subscription_trials.sql'
+      - 'supabase/tests/*subscription-access*'
       - 'supabase/functions/register-club/**'
       - 'supabase/functions/register-club-contract.test.ts'
       - 'supabase/functions/_shared/company-cui.ts'
@@ -154,6 +158,9 @@ jobs:
       - name: Verify subscription schema and access
         shell: pwsh
         run: ./supabase/tests/run-subscriptions.ps1
+      - name: Verify subscription access rules, coach limits and trials
+        shell: pwsh
+        run: ./supabase/tests/run-subscription-access-rules.ps1
 
   build:
     runs-on: ubuntu-latest

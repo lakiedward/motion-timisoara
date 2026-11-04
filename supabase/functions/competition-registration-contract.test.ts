@@ -56,6 +56,7 @@ function fixture(priceBani = 12000, allowCash = true) {
     coach_profiles: [],
   };
   const rpcCalls: { name: string; args: Row }[] = [];
+  const access = { accepts: true, checks: [] as Row[] };
   const storagePaths = new Set(["competition/route.gpx"]);
   const db = {
     storage: {
@@ -109,6 +110,10 @@ function fixture(priceBani = 12000, allowCash = true) {
       };
     },
     rpc(name: string, args: Row) {
+      if (name === "enrollment_offer_has_access") {
+        access.checks.push(args);
+        return Promise.resolve({ data: access.accepts, error: null });
+      }
       rpcCalls.push({ name, args });
       return Promise.resolve({
         data: {
@@ -136,7 +141,7 @@ function fixture(priceBani = 12000, allowCash = true) {
     competitionId: "competition",
     selections: [{ childId: "child", categoryId: "category" }],
   };
-  return { rows, db, services, rpcCalls, request, selection, storagePaths };
+  return { rows, db, services, rpcCalls, request, selection, storagePaths, access };
 }
 
 Deno.test(
@@ -560,5 +565,30 @@ Deno.test(
       else throw error;
     }
     equal(status, 409);
+  },
+);
+
+Deno.test(
+  "a competition whose organizer has no subscription access refuses quotes and registrations with 409",
+  async () => {
+    const context = fixture();
+    context.access.accepts = false;
+    const validation = await withCors(
+      validateCompetitionRegistrationHandler(context.services),
+    )(context.request(context.selection));
+    equal(validation.status, 409);
+    equal((await validation.json()).code, "SUBSCRIPTION_INACTIVE");
+    const response = await withCors(
+      createCompetitionRegistrationHandler(context.services),
+    )(context.request({ ...context.selection, paymentMethod: "CASH" }));
+    equal(response.status, 409);
+    const body = await response.json();
+    equal(body.code, "SUBSCRIPTION_INACTIVE");
+    equal(body.error, "Această ofertă nu primește înscrieri momentan.");
+    equal(context.rpcCalls.length, 0);
+    equal(context.access.checks[0], {
+      p_kind: "COMPETITION",
+      p_entity_id: "competition",
+    });
   },
 );

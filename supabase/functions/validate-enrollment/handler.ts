@@ -1,5 +1,6 @@
 import { getEnrollmentAdultPrice, getEnrollmentChildPrices, validChildIds, type EnrollmentServices, type EnrollmentOffer, type ExistingEnrollment } from "../_shared/enrollment-pricing.ts";
 import { validQuantity, type PriceSnapshot } from "../_shared/price-snapshot.ts";
+import { offerAcceptsEnrollments, SUBSCRIPTION_INACTIVE_MESSAGE } from "../_shared/subscription-access.ts";
 
 interface ValidateRequest {
   kind: "COURSE" | "CAMP" | "ACTIVITY";
@@ -121,6 +122,12 @@ export function createValidationHandler({ db: supabaseAdmin, getUser, getUserRol
       capacity = activity.capacity;
       offer = activity;
     }
+    let acceptsNew: boolean;
+    try {
+      acceptsNew = await offerAcceptsEnrollments(supabaseAdmin, kind, entityId);
+    } catch {
+      return json({ error: "Nu am putut verifica oferta. Reîncearcă." }, 503);
+    }
     const existing: ExistingEnrollment[] = [];
     if (childIds.length) {
       const { data, error: existingError } = await supabaseAdmin
@@ -198,6 +205,9 @@ export function createValidationHandler({ db: supabaseAdmin, getUser, getUserRol
           reason: "Deja înscris",
         };
       }
+      if (!acceptsNew && !statuses.includes("PENDING")) {
+        return { childId, name: child.name, eligible: false, severity: "error", reason: SUBSCRIPTION_INACTIVE_MESSAGE };
+      }
       if (statuses.includes("PENDING")) {
         return {
           childId,
@@ -225,6 +235,8 @@ export function createValidationHandler({ db: supabaseAdmin, getUser, getUserRol
         adult = null;
       } else if (quote.reason) {
         adult = { adultProfileId: user.id, name, eligible: false, severity: "error", reason: quote.reason };
+      } else if (!acceptsNew && !existing.some((row) => row.adult_profile_id === user.id && row.status === "PENDING")) {
+        adult = { adultProfileId: user.id, name, eligible: false, severity: "error", reason: SUBSCRIPTION_INACTIVE_MESSAGE };
       } else {
         const adultExisting = existing.filter((row) => row.adult_profile_id === user.id);
         const pending = adultExisting.some((row) => row.status === "PENDING");

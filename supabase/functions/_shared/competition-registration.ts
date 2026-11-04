@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enrollmentJson } from "./enrollment-pricing.ts";
+import { offerAcceptsEnrollments, subscriptionInactiveBody } from "./subscription-access.ts";
 import {
   createCompetitionPriceSnapshot,
   type PriceSnapshot,
@@ -106,6 +107,13 @@ export async function quoteCompetitionRegistration(
   if (competitionError || !competition) {
     throw enrollmentJson({ error: "Concursul nu a fost găsit." }, 404);
   }
+  let acceptsNew: boolean;
+  try {
+    acceptsNew = await offerAcceptsEnrollments(db, "COMPETITION", competitionId);
+  } catch {
+    throw enrollmentJson({ error: "Nu am putut verifica concursul. Reîncearcă." }, 503);
+  }
+  if (!acceptsNew) throw enrollmentJson(subscriptionInactiveBody(), 409);
   const deadline = Date.parse(competition.registration_deadline_at ?? "");
   const start = Date.parse(competition.start_at ?? "");
   if (

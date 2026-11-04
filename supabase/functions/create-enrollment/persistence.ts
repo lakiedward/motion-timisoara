@@ -76,6 +76,7 @@ export async function saveEnrollmentBatch(db: SupabaseClient, input: SaveBatchIn
     throw enrollmentJson({
       error: status === 500 ? "Nu am putut salva înscrierile. Reîncearcă." : error.message,
       ...(error.details === "PRICE_CHANGED" ? { code: "PRICE_CHANGED" } : {}),
+      ...(error.details === "SUBSCRIPTION_INACTIVE" ? { code: "SUBSCRIPTION_INACTIVE" } : {}),
     }, status);
   }
   if (!data?.enrollmentIds?.length) throw enrollmentJson({ error: "Nu s-au creat înscrieri. Reîncearcă." }, 500);

@@ -8,6 +8,7 @@ import {
 
 const client: ManagedCoachClient = {
   auth: supabaseAdmin.auth,
+  rpc: (name, args) => supabaseAdmin.rpc(name, args),
   from: (table) =>
     supabaseAdmin.from(table) as unknown as ReturnType<
       ManagedCoachClient["from"]

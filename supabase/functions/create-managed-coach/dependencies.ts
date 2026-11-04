@@ -46,6 +46,10 @@ export type ManagedCoachClient = {
       deleteUser: (id: string) => Promise<{ error: DatabaseError | null }>;
     };
   };
+  rpc: (
+    name: string,
+    args: Record<string, unknown>,
+  ) => PromiseLike<DatabaseResult<unknown>>;
   from: (table: string) => {
     select: (columns: string) => CoachQuery;
     update: (input: Record<string, unknown>) => CoachMutation;
@@ -82,6 +86,16 @@ export function createManagedCoachDependencies(
         .eq("id", clubId).maybeSingle();
       if (error) throw new Error("Target club lookup failed");
       return data !== null;
+    },
+    clubHasCoachRoom: async (clubId) => {
+      const { data, error } = await client.rpc("club_coach_capacity", {
+        p_club_id: clubId,
+      });
+      const capacity = data as { hasRoom?: unknown } | null;
+      if (error || typeof capacity?.hasRoom !== "boolean") {
+        throw new Error("Club coach capacity lookup failed");
+      }
+      return capacity.hasRoom;
     },
     createUser: async (payload, password, creationId) => {
       const { data, error } = await client.auth.admin.createUser({
@@ -137,6 +151,9 @@ export function createManagedCoachDependencies(
       const { data, error } = await client.from("club_coaches")
         .insert({ club_id: clubId, coach_profile_id: coachProfileId })
         .select("club_id,coach_profile_id").single();
+      if (error?.message === "COACH_LIMIT_REACHED") {
+        throw new Error("COACH_LIMIT_REACHED");
+      }
       if (
         error || data?.club_id !== clubId ||
         data.coach_profile_id !== coachProfileId
