@@ -4,6 +4,11 @@ import { applyPaymentResult, notifyPaymentResult } from "../_shared/payment-comp
 import { enrollmentJson } from "../_shared/enrollment-pricing.ts";
 import type { SettlementLine, SettlementResult } from "../_shared/stripe-fee-settlement.ts";
 
+export const PAYMENT_WEBHOOK_EVENTS = new Set([
+  "payment_intent.succeeded",
+  "payment_intent.payment_failed",
+]);
+
 interface Charge {
   paymentId: string;
   amount: number;

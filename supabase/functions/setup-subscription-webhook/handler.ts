@@ -1,5 +1,6 @@
 import type { StripeMode } from "../sync-subscription-prices/sync.ts";
 import { HANDLED_EVENTS } from "../stripe-subscription-webhook/handler.ts";
+import { PAYMENT_WEBHOOK_EVENTS } from "../stripe-webhook/handler.ts";
 
 export interface WebhookEndpoint {
   id: string;
@@ -38,6 +39,7 @@ export type WebhookTarget = {
 };
 
 export const SUBSCRIPTION_EVENTS = [...HANDLED_EVENTS];
+export const PAYMENT_EVENTS = [...PAYMENT_WEBHOOK_EVENTS];
 
 export const WEBHOOK_TARGETS: Record<WebhookKind, WebhookTarget> = {
   subscriptions: {
@@ -49,7 +51,7 @@ export const WEBHOOK_TARGETS: Record<WebhookKind, WebhookTarget> = {
   },
   payments: {
     functionName: "stripe-webhook",
-    events: ["payment_intent.succeeded", "payment_intent.payment_failed"],
+    events: PAYMENT_EVENTS,
     connect: false,
     description: "Motion România: plăți cu cardul pentru înscrieri",
     secretName: "STRIPE_WEBHOOK_SECRET",

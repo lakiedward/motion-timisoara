@@ -1,6 +1,12 @@
 import { assertEquals } from "https://deno.land/std@0.177.0/testing/asserts.ts";
 import { stripeModeFromKey } from "../sync-subscription-prices/sync.ts";
-import { createSetupHandler, SUBSCRIPTION_EVENTS, WEBHOOK_TARGETS, type WebhookEndpoint } from "./handler.ts";
+import {
+  createSetupHandler,
+  PAYMENT_EVENTS,
+  SUBSCRIPTION_EVENTS,
+  WEBHOOK_TARGETS,
+  type WebhookEndpoint,
+} from "./handler.ts";
 
 const BASE = "https://ref.supabase.co/functions/v1";
 const URL = `${BASE}/stripe-subscription-webhook`;
@@ -87,7 +93,9 @@ Deno.test("payments and connect endpoints target their own functions, events and
   const s = setup();
   const payments = await (await s.call({ kind: "payments" })).json();
   assertEquals(payments.url, `${BASE}/stripe-webhook`);
-  assertEquals(payments.events, ["payment_intent.succeeded", "payment_intent.payment_failed"]);
+  assertEquals(payments.events, PAYMENT_EVENTS);
+  assertEquals(PAYMENT_EVENTS.includes("payment_intent.succeeded"), true);
+  assertEquals(PAYMENT_EVENTS.includes("payment_intent.payment_failed"), true);
   assertEquals(payments.secret_name, "STRIPE_WEBHOOK_SECRET");
   assertEquals(payments.connect, false);
   const connect = await (await s.call({ kind: "connect" })).json();
