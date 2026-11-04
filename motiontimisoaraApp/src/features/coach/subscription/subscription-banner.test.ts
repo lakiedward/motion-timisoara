@@ -38,6 +38,7 @@ describe('daysLeftLabel', () => {
 
   it('stays hidden for the calm states', () => {
     expect(daysLeftLabel({ kind: 'active', nextChargeAt: null })).toBeNull()
+    expect(daysLeftLabel({ kind: 'canceled', endsAt: '2026-12-01T00:00:00.000Z' })).toBeNull()
     expect(daysLeftLabel({ kind: 'missing' })).toBeNull()
     expect(daysLeftLabel({ kind: 'launch_pending', launchTrialDays: 90 })).toBeNull()
   })
