@@ -10,12 +10,7 @@ export function CoachSubscriptionActions({ state }: { state: CoachSubscriptionSt
   return (
     <>
       {checkoutAllowed && plan ? (
-        <Button
-          type="button"
-          className="h-11 min-h-11"
-          disabled={working}
-          onClick={() => void billing.checkout(plan.code)}
-        >
+        <Button type="button" disabled={working} onClick={() => void billing.checkout(plan.code)}>
           {billing.busy?.kind === 'checkout' ? 'Se deschide plata…' : 'Alege abonamentul'}
         </Button>
       ) : null}
@@ -23,7 +18,6 @@ export function CoachSubscriptionActions({ state }: { state: CoachSubscriptionSt
         <Button
           type="button"
           variant={view?.kind === 'past_due' ? 'default' : 'outline'}
-          className="h-11 min-h-11"
           disabled={working}
           onClick={() => void billing.portal()}
         >

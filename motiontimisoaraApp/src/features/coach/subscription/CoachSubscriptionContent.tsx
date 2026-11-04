@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { CardPaymentsMonthCard } from '@/features/payments/CardPaymentsMonthCard'
 import { PlanFeatureList } from '@/features/public/pricing/PlanFeatureList'
 import { COACH_PLAN, PRICE_NOTE } from '@/features/public/pricing/pricing-content'
 import { CheckoutReturnNotice } from '@/features/subscriptions/CheckoutReturnNotice'
@@ -11,11 +12,11 @@ import {
 } from './CoachSubscriptionParts'
 import type { CoachSubscriptionState } from './use-coach-subscription'
 
-export function CoachSubscriptionLayoutA({ state }: { state: CoachSubscriptionState }) {
+export function CoachSubscriptionContent({ state }: { state: CoachSubscriptionState }) {
   const { view, planLabel } = state
   if (!view) return null
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="max-w-2xl space-y-6">
       <div>
         <h1 className="font-display text-foreground text-3xl font-extrabold">Abonament</h1>
         <p className="text-muted-foreground mt-1">
@@ -28,6 +29,11 @@ export function CoachSubscriptionLayoutA({ state }: { state: CoachSubscriptionSt
         <CoachSubscriptionActions state={state} />
       </SubscriptionStatusCard>
       <ClubCoverNotice state={state} />
+      <CardPaymentsMonthCard
+        enabled={state.stripeComplete}
+        offersLabel="ofertele tale"
+        netLabel="Primești tu"
+      />
       <Card>
         <CardHeader>
           <CardTitle className="font-display text-lg">Ce include abonamentul</CardTitle>

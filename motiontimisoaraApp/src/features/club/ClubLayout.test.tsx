@@ -52,6 +52,7 @@ test('club chrome keeps the portal nav links and logo to public home', () => {
     'Antrenori',
     'Încasări cash',
     'Anunțuri',
+    'Abonament',
   ]
   const hrefs = [
     '/club',
@@ -64,6 +65,7 @@ test('club chrome keeps the portal nav links and logo to public home', () => {
     '/club/coaches',
     '/club/payments',
     '/club/announcements',
+    '/club/abonament',
   ]
   const nav = screen.getByRole('navigation', { name: 'Navigare club' })
   const links = within(nav).getAllByRole('link')
@@ -73,7 +75,7 @@ test('club chrome keeps the portal nav links and logo to public home', () => {
     'CursuriActivitățiTabereConcursuri',
   )
   expect(within(nav).getByRole('group', { name: 'Organizare' })).toHaveTextContent(
-    'LocațiiAntrenoriÎncasări cashAnunțuri',
+    'LocațiiAntrenoriÎncasări cashAnunțuriAbonament',
   )
   expect(screen.getAllByRole('link', { name: /motion românia/i })[0]).toHaveAttribute('href', '/')
   expect(screen.getByRole('button', { name: 'Deconectare' })).toBeInTheDocument()
@@ -96,7 +98,9 @@ test('menu, logout and close meet the 44px tap class; CLUB label is in chrome', 
   renderLayout()
   expect(screen.getByRole('button', { name: 'Meniu' }).className).toMatch(/size-11/)
   expect(screen.getByRole('button', { name: 'Deconectare' }).className).toMatch(/min-h-11/)
-  expect(screen.getByRole('button', { name: 'Deconectare' }).className).toMatch(/focus-visible:outline-ring/)
+  expect(screen.getByRole('button', { name: 'Deconectare' }).className).toMatch(
+    /focus-visible:outline-ring/,
+  )
   await user.click(screen.getByRole('button', { name: 'Meniu' }))
   const close = await screen.findByRole('button', { name: 'Închide' })
   expect(close.className).toMatch(/size-touch-target/)

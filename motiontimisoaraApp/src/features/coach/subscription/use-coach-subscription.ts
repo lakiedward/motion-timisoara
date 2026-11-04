@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 
+import { getMyCoachStripeStatus } from '@/api/coach'
 import { useAuth } from '@/lib/auth-context'
 import { formatPlanPrice } from '@/features/public/pricing/pricing-content'
 import {
@@ -12,10 +13,16 @@ import { COACH_CLUB_COVER_QUERY_KEY, getCoachClubCover } from './coach-club-cove
 export function useCoachSubscription() {
   const { user } = useAuth()
   const isCoach = user?.role === 'COACH'
-  const data = useSubscription('COACH')
+  const data = useSubscription('COACH', user?.id ?? null)
   const cover = useQuery({
     queryKey: COACH_CLUB_COVER_QUERY_KEY,
     queryFn: getCoachClubCover,
+    enabled: isCoach,
+    retry: false,
+  })
+  const stripe = useQuery({
+    queryKey: ['my-coach-stripe'],
+    queryFn: getMyCoachStripeStatus,
     enabled: isCoach,
     retry: false,
   })
@@ -37,6 +44,7 @@ export function useCoachSubscription() {
     coveringClubs,
     coverSettled: cover.isSuccess || cover.isError,
     billing,
+    stripeComplete: stripe.data?.onboardingComplete ?? false,
     checkoutAllowed: Boolean(view && plan && canStartCheckout(view, subscription)),
     manageAllowed: Boolean(
       view && view.kind !== 'launch_pending' && hasLiveStripeSubscription(view, subscription),
