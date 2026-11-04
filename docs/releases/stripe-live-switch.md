@@ -122,10 +122,8 @@ Why each part matters:
 
 Put the TEST secret key back in `STRIPE_SECRET_KEY`, the `pk_test_` key back in Netlify, rerun `node scripts/sync-subscription-prices.mjs` and `node scripts/setup-stripe-webhooks.mjs --kind all --replace` in TEST mode (the TEST signing secrets were overwritten in step 7), and publish again. Live connected accounts created in between keep their LIVE ids in the database and must be cleared the same way as in step 4.
 
-## Adaptive Pricing on one-off payments (decision for the owner)
+## Adaptive Pricing on one-off payments (decided)
 
-Today, a parent whose card or IP is foreign sees the RON price converted into their currency, and Stripe adds about 4% that the parent pays. The coach still receives RON, and the fee ceiling of #636 still works (payment 2 of the 2026-11-03 test).
+Until 2026-11-04 a parent whose card or IP was foreign saw the RON price converted into their currency, and Stripe added about 4% that the parent paid (payment 2 of the 2026-11-03 test).
 
-- **A, recommended:** turn it off in code by sending `adaptive_pricing: { enabled: false }` from `prepareCheckoutSession`, as the subscription Checkout already does. Prices on the site and on the Stripe page are then always the same RON amount, and receipts match the enrollment price snapshot.
-- **B:** keep it on. Foreign parents pay in a familiar currency, at a higher total.
-- **C:** turn it off in the Stripe Dashboard only. Same effect as A, but invisible in code and easy to lose when the account settings change.
+The owner chose on 2026-11-04 (card, option A) to always charge in RON. `prepareCheckoutSession` now sends `adaptive_pricing: { enabled: false }`, as the subscription Checkout already did, so the Stripe page always shows the same RON amount as the site, the enrollment price snapshot and the receipt. The code setting overrides the Dashboard default, so it holds in TEST and LIVE alike.
