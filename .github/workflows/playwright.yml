@@ -151,8 +151,8 @@ jobs:
       run: deno check --no-lock supabase/functions/create-competition-registration/index.ts supabase/functions/validate-competition-registration/index.ts && deno test --no-lock supabase/functions/competition-registration-contract.test.ts supabase/functions/_shared/competition-payment-recipient.test.ts
     - name: Check payment confirmation functions
       run: deno check --no-lock supabase/functions/mark-cash-paid/index.ts supabase/functions/stripe-webhook/index.ts supabase/functions/cancel-draft-enrollment/index.ts supabase/functions/create-checkout-session/index.ts
-    - name: Check and test the subscription webhook
-      run: deno check --no-lock supabase/functions/stripe-subscription-webhook/index.ts supabase/functions/setup-subscription-webhook/index.ts && deno test --no-lock supabase/functions/stripe-subscription-webhook/contract.test.ts supabase/functions/_shared/subscription-sync.test.ts supabase/functions/setup-subscription-webhook/contract.test.ts
+    - name: Check and test the Stripe webhooks and their setup
+      run: deno check --no-lock supabase/functions/stripe-subscription-webhook/index.ts supabase/functions/setup-subscription-webhook/index.ts supabase/functions/stripe-connect-webhook/index.ts && deno test --no-lock supabase/functions/stripe-subscription-webhook/contract.test.ts supabase/functions/_shared/subscription-sync.test.ts supabase/functions/setup-subscription-webhook/contract.test.ts
     - name: Test isolated competition SQL
       shell: pwsh
       run: ./supabase/tests/run-competition-offers-and-coaches.ps1

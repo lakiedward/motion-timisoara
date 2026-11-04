@@ -1,7 +1,3 @@
-// Edge Function: stripe-connect-webhook
-// Replaces: POST /api/webhooks/stripe/connect
-// Handles: account.updated for coach/club Stripe accounts
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { supabaseAdmin } from "../_shared/supabase.ts";
 import { getStripe } from "../_shared/stripe.ts";
@@ -11,10 +7,16 @@ serve(async (req: Request) => {
     return new Response("Method not allowed", { status: 405 });
   }
 
+  const webhookSecret = Deno.env.get("STRIPE_CONNECT_WEBHOOK_SECRET");
+  if (!webhookSecret) {
+    return new Response(JSON.stringify({ error: "Webhook is not configured" }), {
+      status: 503,
+    });
+  }
+
   const stripe = getStripe();
   const body = await req.text();
   const signature = req.headers.get("stripe-signature");
-  const webhookSecret = Deno.env.get("STRIPE_CONNECT_WEBHOOK_SECRET")!;
 
   if (!signature) {
     return new Response(JSON.stringify({ error: "Missing signature" }), {
@@ -24,7 +26,7 @@ serve(async (req: Request) => {
 
   let event;
   try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
   } catch (_err) {
     return new Response(JSON.stringify({ error: "Invalid signature" }), {
       status: 400,
@@ -52,12 +54,11 @@ async function handleAccountUpdate(stripeAccountId: string) {
   const payoutsEnabled = account.payouts_enabled ?? false;
   const onboardingComplete = chargesEnabled && payoutsEnabled;
 
-  // Try coach_profiles first
   const { data: coachProfile } = await supabaseAdmin
     .from("coach_profiles")
     .select("id")
     .eq("stripe_account_id", stripeAccountId)
-    .single();
+    .maybeSingle();
 
   if (coachProfile) {
     await supabaseAdmin
@@ -74,12 +75,11 @@ async function handleAccountUpdate(stripeAccountId: string) {
     return;
   }
 
-  // Try clubs
   const { data: club } = await supabaseAdmin
     .from("clubs")
     .select("id")
     .eq("stripe_account_id", stripeAccountId)
-    .single();
+    .maybeSingle();
 
   if (club) {
     await supabaseAdmin
