@@ -4,27 +4,19 @@ import { Button } from '@/components/ui/button'
 import { NoticeRow } from '@/features/billing/StripeNotice'
 import type { CoachSubscriptionState } from './use-coach-subscription'
 
-export function CoachSubscriptionActions({ state }: { state: CoachSubscriptionState }) {
-  const { checkoutAllowed, manageAllowed, plan, billing, view } = state
-  const working = billing.busy !== null
+export function CoachPortalButton({ state }: { state: CoachSubscriptionState }) {
+  const { manageAllowed, billing, view } = state
+  if (!manageAllowed) return null
   return (
-    <>
-      {checkoutAllowed && plan ? (
-        <Button type="button" disabled={working} onClick={() => void billing.checkout(plan.code)}>
-          {billing.busy?.kind === 'checkout' ? 'Se deschide plata…' : 'Alege abonamentul'}
-        </Button>
-      ) : null}
-      {manageAllowed ? (
-        <Button
-          type="button"
-          variant={view?.kind === 'past_due' ? 'default' : 'outline'}
-          disabled={working}
-          onClick={() => void billing.portal()}
-        >
-          {billing.busy?.kind === 'portal' ? 'Se deschide Stripe…' : 'Gestionează abonamentul'}
-        </Button>
-      ) : null}
-    </>
+    <Button
+      type="button"
+      variant={view?.kind === 'past_due' ? 'default' : 'outline'}
+      disabled={billing.busy !== null}
+      onClick={() => void billing.portal()}
+      data-testid="billing-portal"
+    >
+      {billing.busy?.kind === 'portal' ? 'Se deschide Stripe…' : 'Gestionează abonamentul'}
+    </Button>
   )
 }
 

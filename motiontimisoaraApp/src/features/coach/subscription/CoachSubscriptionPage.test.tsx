@@ -63,7 +63,7 @@ describe('CoachSubscriptionPage', () => {
     mockState({ view: trial, checkoutAllowed: true })
     renderPage()
     expect(screen.getByText('Mai ai 27 zile gratuite')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Alege abonamentul' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Alege Antrenor' }))
     expect(checkout).toHaveBeenCalledWith('COACH')
     expect(screen.queryByRole('button', { name: 'Gestionează abonamentul' })).toBeNull()
   })
@@ -74,7 +74,7 @@ describe('CoachSubscriptionPage', () => {
       manageAllowed: true,
     })
     renderPage()
-    expect(screen.queryByRole('button', { name: 'Alege abonamentul' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Alege Antrenor' })).toBeNull()
     await userEvent.click(screen.getByRole('button', { name: 'Gestionează abonamentul' }))
     expect(portal).toHaveBeenCalledTimes(1)
   })
