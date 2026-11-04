@@ -25,6 +25,10 @@ const failures = {
     409,
     "Codul de invitație a fost deja folosit de numărul maxim de ori.",
   ],
+  COACH_LIMIT_REACHED: [
+    409,
+    "Clubul a atins numărul maxim de antrenori din pachetul ales. Clubul trebuie să aleagă un pachet mai mare.",
+  ],
   INVALID_SPORTS: [
     400,
     "Selecția sporturilor nu mai este disponibilă. Alege din nou.",

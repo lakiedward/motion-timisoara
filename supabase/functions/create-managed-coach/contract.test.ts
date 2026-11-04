@@ -51,6 +51,11 @@ function fixture(overrides: Partial<ManagedCoachDependencies> = {}) {
       calls.push("target-club");
       return Promise.resolve(true);
     },
+    clubHasCoachRoom: (id) => {
+      assert([clubId, otherClubId].includes(id));
+      calls.push(`capacity:${id}`);
+      return Promise.resolve(true);
+    },
     createUser: (input, password, marker) => {
       assert(input.name === "Coach Test" && input.email === "coach@local.test");
       calls.push("create");
@@ -155,7 +160,7 @@ Deno.test("CLUB is confined to its owned roster even with a different requested 
   assert(response.status === 200 && (await response.json()).clubId === clubId);
   assert(
     state.calls.join(",") ===
-      `owned-club,create,role,profile,sports,roster:${clubId},verify`,
+      `owned-club,capacity:${clubId},create,role,profile,sports,roster:${clubId},verify`,
   );
   const admin = fixture();
   const adminResponse = await managedCoachHandler(admin.dependencies)(post({
@@ -299,6 +304,10 @@ function databaseFixture(
   const deleted: string[] = [];
   const writes: string[] = [];
   const client = {
+    rpc: (name: string) => {
+      assert(name === "club_coach_capacity");
+      return Promise.resolve({ data: { hasRoom: true }, error: null });
+    },
     auth: {
       getUser: () =>
         Promise.resolve({ data: { user: { id: callerId } }, error: null }),
@@ -531,4 +540,26 @@ Deno.test("production adapter rejects final disabled or mismatched profiles and 
   const body = await response.json();
   assert(response.status === 500 && body.code === "CREATION_INCOMPLETE");
   assert(!("tempPassword" in body) && incomplete.deleted.length === 1);
+});
+
+Deno.test("CLUB at its plan limit is refused before any account is created", async () => {
+  const state = fixture({
+    getCaller: () => Promise.resolve({ id: callerId, role: "CLUB" }),
+    clubHasCoachRoom: () => Promise.resolve(false),
+  });
+  const response = await managedCoachHandler(state.dependencies)(post());
+  const body = await response.json();
+  assert(response.status === 409 && body.code === "COACH_LIMIT_REACHED");
+  assert(!state.calls.includes("create"));
+});
+
+Deno.test("a roster insert refused by the limit trigger compensates Auth and answers 409", async () => {
+  const state = fixture({
+    getCaller: () => Promise.resolve({ id: callerId, role: "CLUB" }),
+    addToClub: () => Promise.reject(new Error("COACH_LIMIT_REACHED")),
+  });
+  const response = await managedCoachHandler(state.dependencies)(post());
+  const body = await response.json();
+  assert(response.status === 409 && body.code === "COACH_LIMIT_REACHED");
+  assert(state.calls.includes("cleanup"));
 });

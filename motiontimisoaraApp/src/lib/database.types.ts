@@ -3415,6 +3415,10 @@ export type Database = {
       cheama_purge_expired_media: { Args: never; Returns: undefined }
       claim_location_reverse: { Args: { p_key: string }; Returns: Json }
       claim_push_deliveries: { Args: { p_limit?: number }; Returns: Json }
+      club_coach_capacity: {
+        Args: { p_club_id: string; p_plan_code?: string }
+        Returns: Json
+      }
       club_coach_contacts: {
         Args: { p_club_id: string }
         Returns: {
@@ -3425,8 +3429,10 @@ export type Database = {
         }[]
       }
       club_enrolled_child_ids: { Args: never; Returns: string[] }
+      club_listed: { Args: { p_club_id: string }; Returns: boolean }
       coach_enrolled_child_ids: { Args: never; Returns: string[] }
       coach_has_access: { Args: { p_coach_user_id: string }; Returns: boolean }
+      coach_listed: { Args: { p_coach_user_id: string }; Returns: boolean }
       coach_live_location_transaction: {
         Args: { p_actor_id: string; p_payload: Json }
         Returns: Json
@@ -3476,6 +3482,10 @@ export type Database = {
       enrollment_camp_offer: {
         Args: { p_camp_id: string; p_child_id: string }
         Returns: Json
+      }
+      enrollment_offer_has_access: {
+        Args: { p_entity_id: string; p_kind: string }
+        Returns: boolean
       }
       finish_location_reverse: {
         Args: { p_key: string; p_result: Json; p_token: string }
@@ -3683,6 +3693,15 @@ export type Database = {
       }
       offer_has_access: {
         Args: { p_club_id: string; p_coach_id: string }
+        Returns: boolean
+      }
+      offer_listed: {
+        Args: {
+          p_club_id: string
+          p_coach_id: string
+          p_entity_id: string
+          p_kind: string
+        }
         Returns: boolean
       }
       pot_administra_activitate: {

@@ -114,6 +114,9 @@ export function createCompetitionRegistrationHandler({
           ...(error.details === "PRICE_CHANGED"
             ? { code: "PRICE_CHANGED" }
             : {}),
+          ...(error.details === "SUBSCRIPTION_INACTIVE"
+            ? { code: "SUBSCRIPTION_INACTIVE" }
+            : {}),
         },
         status,
       );

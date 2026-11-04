@@ -19,6 +19,8 @@ const COACH_INVITATION_MESSAGES: Record<string, string> = {
   INVALID_INVITATION: 'Cod de invitație invalid.',
   INVITATION_EXPIRED: 'Codul de invitație a expirat. Cere unul nou clubului.',
   INVITATION_EXHAUSTED: 'Codul de invitație a fost deja folosit de numărul maxim de ori.',
+  COACH_LIMIT_REACHED:
+    'Clubul a atins numărul maxim de antrenori din pachetul ales. Clubul trebuie să aleagă un pachet mai mare.',
   INVALID_SPORTS: 'Selecția sporturilor nu mai este disponibilă. Alege din nou.',
   EMAIL_UNVERIFIED: 'Confirmă adresa de email înainte de a activa contul de antrenor.',
   PROFILE_DISABLED: 'Contul este dezactivat. Contactează administratorul.',

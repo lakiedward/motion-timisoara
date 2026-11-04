@@ -122,7 +122,14 @@ class FakeDatabase {
 
   removeChannel(_channel: unknown) { return Promise.resolve("ok"); }
 
+  offerAccess = true;
+  accessChecks: Row[] = [];
+
   async rpc(name: string, args: Row) {
+    if (name === "enrollment_offer_has_access") {
+      this.accessChecks.push(args);
+      return Promise.resolve({ data: this.offerAccess, error: null });
+    }
     if (name === "save_enrollment_batch_with_acceptance") return this.saveBatch(args);
     if (name === "enrollment_camp_adult_offer") {
       return Promise.resolve({
@@ -744,4 +751,46 @@ Deno.test("an unreadable rules file blocks the enrollment instead of recording u
   const quoted = await quote(context);
   equal((await context.create(undefined, quoted.versions)).status, 503);
   equal(context.db.batchCalls, []);
+});
+
+Deno.test("an offer whose owner has no subscription access refuses new participants on both endpoints", async () => {
+  for (const kind of ["CAMP", "COURSE", "ACTIVITY"]) {
+    const context = fixture("PARENT", kind);
+    context.db.offerAccess = false;
+    const validation = await context.validate();
+    equal(validation.status, 200);
+    const body = await validation.json() as { results: ChildQuote[] };
+    equal(body.results.map((row) => [row.eligible, row.reason]), [
+      [false, "Această ofertă nu primește înscrieri momentan."],
+      [false, "Această ofertă nu primește înscrieri momentan."],
+    ]);
+    for (const paymentMethod of ["CARD", "CASH"]) {
+      const response = await context.create(undefined, {}, { paymentMethod });
+      equal(response.status, 409);
+      equal(await response.json(), { error: "Această ofertă nu primește înscrieri momentan.", code: "SUBSCRIPTION_INACTIVE" });
+    }
+    equal(context.db.accessChecks[0], { p_kind: kind, p_entity_id: kind.toLowerCase() });
+    equal(context.db.batchCalls, []);
+    equal(context.db.attempts, []);
+  }
+});
+
+Deno.test("an existing unpaid enrollment can still be paid after the owner loses access", async () => {
+  const context = fixture();
+  pending(context, "PENDING", "pi_existing");
+  context.db.offerAccess = false;
+  const quoted = await quote(context, ["child-a"]);
+  equal(quoted.results[0].eligible, true);
+  const response = await context.create(["child-a"], quoted.versions);
+  equal(response.status, 200);
+  equal((await response.json()).prices, [{ childId: "child-a", amount: 7000, currency: "RON" }]);
+});
+
+Deno.test("the database refusal for an offer without access keeps its code", async () => {
+  const context = fixture();
+  const quoted = await quote(context);
+  context.db.batchError = { code: "23514", message: "Această ofertă nu primește înscrieri momentan.", details: "SUBSCRIPTION_INACTIVE" };
+  const response = await context.create(undefined, quoted.versions);
+  equal(response.status, 409);
+  equal(await response.json(), { error: "Această ofertă nu primește înscrieri momentan.", code: "SUBSCRIPTION_INACTIVE" });
 });

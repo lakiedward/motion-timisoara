@@ -2,6 +2,7 @@ import { getEnrollmentAdultPrice, getEnrollmentChildPrices, quoteSubjectKey, val
 import { completedEnrollmentPrices, notifyCashEnrollments, saveEnrollmentBatch } from "./persistence.ts";
 import { validQuantity } from "../_shared/price-snapshot.ts";
 import { buildCheckoutAcceptance, type ClientAcceptance } from "../_shared/checkout-acceptance.ts";
+import { offerAcceptsEnrollments, subscriptionInactiveBody } from "../_shared/subscription-access.ts";
 
 interface EnrollmentRequest {
   kind: "COURSE" | "CAMP" | "ACTIVITY";
@@ -283,6 +284,16 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
           );
         }
       }
+    }
+
+    if (newEnrollmentCount > 0) {
+      let accepts: boolean;
+      try {
+        accepts = await offerAcceptsEnrollments(supabaseAdmin, kind, entityId);
+      } catch {
+        return enrollmentJson({ error: "Nu am putut verifica oferta. Reîncearcă." }, 503);
+      }
+      if (!accepts) return enrollmentJson(subscriptionInactiveBody(), 409);
     }
 
     const completed = paymentMethod === "CARD"

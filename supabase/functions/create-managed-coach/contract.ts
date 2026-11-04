@@ -21,6 +21,10 @@ const failures = {
   COACH_PROFILE_FAILED: [500, "Nu am putut salva profilul de antrenor."],
   SPORTS_SETUP_FAILED: [500, "Nu am putut salva sporturile antrenorului."],
   CLUB_SETUP_FAILED: [500, "Nu am putut adăuga antrenorul în club."],
+  COACH_LIMIT_REACHED: [
+    409,
+    "Clubul a atins numărul maxim de antrenori din pachetul ales. Alege un pachet mai mare pentru a adăuga antrenori.",
+  ],
   VERIFICATION_FAILED: [500, "Nu am putut verifica noul cont de antrenor."],
   CREATION_INCOMPLETE: [
     500,
@@ -40,6 +44,7 @@ export type ManagedCoachDependencies = {
   ) => Promise<{ id: string; role: string | null } | null>;
   findOwnedClub: (callerId: string) => Promise<string | null>;
   clubExists: (clubId: string) => Promise<boolean>;
+  clubHasCoachRoom: (clubId: string) => Promise<boolean>;
   createUser: (
     payload: ManagedCoachRequest,
     password: string,
@@ -136,6 +141,9 @@ export function managedCoachHandler(dependencies: ManagedCoachDependencies) {
         }
         targetClubId = payload.clubId;
       }
+      if (targetClubId && !await dependencies.clubHasCoachRoom(targetClubId)) {
+        return failure("COACH_LIMIT_REACHED");
+      }
       const password = temporaryPassword();
       failedStage = "AUTH_CREATION_FAILED";
       const created = await dependencies.createUser(
@@ -179,7 +187,11 @@ export function managedCoachHandler(dependencies: ManagedCoachDependencies) {
         clubId: targetClubId,
         message: "Antrenorul a fost creat.",
       });
-    } catch {
+    } catch (error) {
+      if (
+        failedStage === "CLUB_SETUP_FAILED" && error instanceof Error &&
+        error.message === "COACH_LIMIT_REACHED"
+      ) failedStage = "COACH_LIMIT_REACHED";
       if (createdUserId) {
         try {
           await dependencies.deleteCreatedUser(createdUserId, creationId);
