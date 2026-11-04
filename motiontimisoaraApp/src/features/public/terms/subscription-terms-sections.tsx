@@ -9,7 +9,8 @@ const listClass = 'list-disc space-y-2 pl-5'
 
 export const SUBSCRIPTION_PLANS_SECTION: LegalSection = {
   id: 'abonamente-planuri-si-plata',
-  surfaceKey: 'manual:section:abonamente-planuri-plata-si-facturare:7d1e155f-3d36-480a-b4b6-28a35ac05fc9',
+  surfaceKey:
+    'manual:section:abonamente-planuri-plata-si-facturare:7d1e155f-3d36-480a-b4b6-28a35ac05fc9',
   icon: Receipt,
   title: 'Abonamente: planuri, plată și facturare',
   body: (
@@ -90,7 +91,8 @@ export const SUBSCRIPTION_PLANS_SECTION: LegalSection = {
 
 export const SUBSCRIPTION_CANCEL_SECTION: LegalSection = {
   id: 'abonamente-anulare-si-expirare',
-  surfaceKey: 'manual:section:abonamente-anulare-rambursare-si-expirar:e6aa4370-39f7-40a7-94ae-067c5feb8e9b',
+  surfaceKey:
+    'manual:section:abonamente-anulare-rambursare-si-expirar:e6aa4370-39f7-40a7-94ae-067c5feb8e9b',
   icon: Ban,
   title: 'Abonamente: anulare, rambursare și expirare',
   body: (
