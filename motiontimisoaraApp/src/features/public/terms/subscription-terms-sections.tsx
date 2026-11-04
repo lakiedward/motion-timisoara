@@ -16,9 +16,9 @@ export const SUBSCRIPTION_PLANS_SECTION: LegalSection = {
     <>
       <p>
         Părinții folosesc Motion România gratuit. Un antrenor independent sau un club care vrea să
-        apară în căutare și să primească înscrieri plătește un abonament lunar, pe care îl
-        încheie cu {OPERATOR_NAME} (CUI {OPERATOR_CUI}, {OPERATOR_REG_COM}), operatorul
-        platformei. Abonamentul este pentru activitatea ta profesională.
+        apară în căutare și să primească înscrieri plătește un abonament lunar, pe care îl încheie
+        cu {OPERATOR_NAME} (CUI {OPERATOR_CUI}, {OPERATOR_REG_COM}), operatorul platformei.
+        Abonamentul este pentru activitatea ta profesională.
       </p>
       <ul className={listClass}>
         <li>
@@ -52,8 +52,8 @@ export const SUBSCRIPTION_PLANS_SECTION: LegalSection = {
         <li>
           <strong>Schimbarea planului:</strong> treci la un plan mai mare oricând, iar diferența se
           calculează proporțional cu zilele rămase. Treci la un plan mai mic de la următoarea
-          perioadă, doar dacă numărul tău de antrenori încape în el; nimeni nu este scos automat
-          din club. La limita planului nu mai poți adăuga antrenori până nu treci la unul mai mare.
+          perioadă, doar dacă numărul tău de antrenori încape în el; nimeni nu este scos automat din
+          club. La limita planului nu mai poți adăuga antrenori până nu treci la unul mai mare.
         </li>
         <li>
           <strong>Schimbarea prețurilor:</strong> te anunțăm pe email cu cel puțin 30 de zile
@@ -63,23 +63,25 @@ export const SUBSCRIPTION_PLANS_SECTION: LegalSection = {
         </li>
         <li>
           <strong>Facturare:</strong> {OPERATOR_NAME} emite factura pentru fiecare plată, fără TVA,
-          pe datele de facturare pe care le completezi înainte de prima plată: numele sau
-          denumirea, CUI dacă ai firmă sau PFA, adresa. Chitanța Stripe nu este factură fiscală.
-          Datele de facturare sunt tratate în{' '}
+          pe datele de facturare pe care le completezi înainte de prima plată: numele sau denumirea,
+          CUI dacă ai firmă sau PFA, adresa. Chitanța Stripe nu este factură fiscală. Datele de
+          facturare sunt tratate în{' '}
           <Link className={linkClass} to="/confidentialitate">
             politica de confidențialitate
           </Link>
           .
         </li>
         <li>
-          <strong>Acceptare:</strong> înainte de plată, Stripe îți cere să bifezi acceptarea
-          acestor termeni. Păstrăm versiunea acceptată și data.
+          <strong>Acceptare:</strong> înainte de plată, Stripe îți cere să bifezi acceptarea acestor
+          termeni. Păstrăm versiunea acceptată și data.
         </li>
         <li>
           <strong>Plățile de la părinți:</strong> sunt separate de abonament. Pentru o plată cu
           cardul primită de la un părinte, platforma reține doar costul exact al procesării Stripe
           pentru acea plată, fără alt comision. Banii ajung în contul tău Stripe și se virează
-          săptămânal, lunea.
+          săptămânal, lunea. Dacă rambursezi o înscriere plătită cu cardul, comisionul Stripe al
+          acelei plăți rămâne în sarcina ta: Stripe nu îl returnează, iar platforma nu îl suportă în
+          locul tău.
         </li>
       </ul>
     </>
@@ -93,37 +95,36 @@ export const SUBSCRIPTION_CANCEL_SECTION: LegalSection = {
   title: 'Abonamente: anulare, rambursare și expirare',
   body: (
     <ul className={listClass}>
-        <li>
-          <strong>Anulare:</strong> anulezi oricând din pagina de abonament a panoului tău, prin
-          portalul de facturare Stripe. Anularea are efect la sfârșitul perioadei deja plătite: până
-          atunci păstrezi accesul complet și nu se mai face nicio plată. Anularea cu efect imediat
-          nu există.
-        </li>
-        <li>
-          <strong>Rambursare:</strong> nu rambursăm parțial luna începută și nu rambursăm lunile
-          trecute. Rambursăm integral o plată făcută de două ori, o sumă greșită sau o plată pentru
-          o lună în care o eroare a platformei ți-a blocat accesul. Dacă folosești abonamentul ca
-          persoană fizică, în afara activității tale profesionale, drepturile legale ale
-          consumatorului, inclusiv dreptul de retragere de 14 zile, rămân neatinse.
-        </li>
-        <li>
-          <strong>Plată nereușită:</strong> dacă o reînnoire eșuează, Stripe reîncearcă plata timp
-          de 7 zile, iar accesul rămâne în acest timp. Dacă plata tot nu reușește, abonamentul
-          expiră.
-        </li>
-        <li>
-          <strong>Expirare:</strong> abonamentul expiră când perioada gratuită se termină fără un
-          plan ales, când cele 7 zile de după o plată nereușită trec, sau când o perioadă anulată se
-          încheie. Atunci ofertele și profilul tău dispar din căutare, din liste și de pe hartă, iar
-          părinții nu mai pot face înscrieri noi.
-        </li>
-        <li>
-          <strong>Ce rămâne după expirare:</strong> nu ștergem nimic. Înscrierile făcute, plățile,
-          prezența și anunțurile continuă, iar părinții înscriși își văd în continuare ofertele.
-          Panoul tău rămâne accesibil, iar ofertele noi se salvează, dar apar abia după reactivare.
-          Dacă plătești din nou, totul reapare imediat. Rămâi răspunzător față de părinții deja
-          înscriși, ca organizator.
-        </li>
+      <li>
+        <strong>Anulare:</strong> anulezi oricând din pagina de abonament a panoului tău, prin
+        portalul de facturare Stripe. Anularea are efect la sfârșitul perioadei deja plătite: până
+        atunci păstrezi accesul complet și nu se mai face nicio plată. Anularea cu efect imediat nu
+        există.
+      </li>
+      <li>
+        <strong>Rambursare:</strong> nu rambursăm parțial luna începută și nu rambursăm lunile
+        trecute. Rambursăm integral o plată făcută de două ori, o sumă greșită sau o plată pentru o
+        lună în care o eroare a platformei ți-a blocat accesul. Dacă folosești abonamentul ca
+        persoană fizică, în afara activității tale profesionale, drepturile legale ale
+        consumatorului, inclusiv dreptul de retragere de 14 zile, rămân neatinse.
+      </li>
+      <li>
+        <strong>Plată nereușită:</strong> dacă o reînnoire eșuează, Stripe reîncearcă plata timp de
+        7 zile, iar accesul rămâne în acest timp. Dacă plata tot nu reușește, abonamentul expiră.
+      </li>
+      <li>
+        <strong>Expirare:</strong> abonamentul expiră când perioada gratuită se termină fără un plan
+        ales, când cele 7 zile de după o plată nereușită trec, sau când o perioadă anulată se
+        încheie. Atunci ofertele și profilul tău dispar din căutare, din liste și de pe hartă, iar
+        părinții nu mai pot face înscrieri noi.
+      </li>
+      <li>
+        <strong>Ce rămâne după expirare:</strong> nu ștergem nimic. Înscrierile făcute, plățile,
+        prezența și anunțurile continuă, iar părinții înscriși își văd în continuare ofertele.
+        Panoul tău rămâne accesibil, iar ofertele noi se salvează, dar apar abia după reactivare.
+        Dacă plătești din nou, totul reapare imediat. Rămâi răspunzător față de părinții deja
+        înscriși, ca organizator.
+      </li>
     </ul>
   ),
 }

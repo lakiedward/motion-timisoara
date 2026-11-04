@@ -22,7 +22,9 @@ test('termenii abonamentelor au prețurile, operatorul și regula de anulare', a
   for (const text of [/100 lei/, /199 lei/, /349 lei/, /599 lei/, /nu este plătitor de TVA/]) {
     expect(within(planuri).getByText(text)).toBeInTheDocument()
   }
-  expect(within(planuri).getByText(/TITUS CLUB SWIM&FUN S\.R\.L\. \(CUI 49252540/)).toBeInTheDocument()
+  expect(
+    within(planuri).getByText(/TITUS CLUB SWIM&FUN S\.R\.L\. \(CUI 49252540/),
+  ).toBeInTheDocument()
   expect(within(planuri).getByRole('link', { name: 'Prețuri' })).toHaveAttribute('href', '/preturi')
 
   const anulare = screen.getByRole('region', {
@@ -31,6 +33,16 @@ test('termenii abonamentelor au prețurile, operatorul și regula de anulare', a
   expect(within(anulare).getByText(/efect la sfârșitul perioadei deja plătite/)).toBeInTheDocument()
   expect(within(anulare).getByText(/nu rambursăm parțial luna începută/)).toBeInTheDocument()
   expect(within(anulare).getByText(/reîncearcă plata timp de 7 zile/)).toBeInTheDocument()
+})
+
+test('comisionul Stripe la o rambursare cade în sarcina organizatorului, în ambele părți ale termenilor', async () => {
+  await randeaza()
+  const parinti = screen.getByRole('region', { name: /Înscrieri și plăți/ })
+  expect(within(parinti).getByText(/primești integral suma rambursată/)).toBeInTheDocument()
+  const planuri = screen.getByRole('region', { name: /Abonamente: planuri, plată și facturare/ })
+  expect(
+    within(planuri).getByText(/comisionul Stripe al acelei plăți rămâne în sarcina ta/),
+  ).toBeInTheDocument()
 })
 
 test('în aplicația nativă termenii abonamentelor lipsesc', async () => {

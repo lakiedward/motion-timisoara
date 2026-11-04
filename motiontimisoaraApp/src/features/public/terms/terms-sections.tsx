@@ -38,6 +38,10 @@ export const TERMS_SECTIONS: LegalSection[] = [
           art. 16 lit. l). Anularea și rambursarea urmează regulamentul ofertei.
         </li>
         <li>Dacă organizatorul anulează oferta, primești banii înapoi integral.</li>
+        <li>
+          La rambursarea unei plăți cu cardul primești integral suma rambursată. Comisionul Stripe,
+          care nu se returnează, este suportat de antrenorul sau clubul care a primit plata.
+        </li>
       </ul>
     ),
   },
