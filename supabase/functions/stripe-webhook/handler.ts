@@ -4,6 +4,15 @@ import { applyPaymentResult, notifyPaymentResult } from "../_shared/payment-comp
 import { enrollmentJson } from "../_shared/enrollment-pricing.ts";
 import type { SettlementLine, SettlementResult } from "../_shared/stripe-fee-settlement.ts";
 
+export const PAYMENT_WEBHOOK_EVENTS = new Set([
+  "payment_intent.succeeded",
+  "payment_intent.payment_failed",
+  "charge.refunded",
+  "charge.refund.updated",
+]);
+
+export type RefundOutcome = "created" | "updated" | "unknown";
+
 interface Charge {
   paymentId: string;
   amount: number;
@@ -30,12 +39,36 @@ async function checkoutCharges(
   });
 }
 
-export function paymentWebhookHandler({ db, verifyEvent, sessionForIntent, settleFee }: {
+const idOf = (value: string | { id: string } | null | undefined) =>
+  typeof value === "string" ? value : value?.id ?? null;
+
+export function paymentWebhookHandler({
+  db,
+  verifyEvent,
+  sessionForIntent,
+  settleFee,
+  refundsOfCharge,
+  recordRefund,
+  saveCard,
+}: {
   db: SupabaseClient;
   verifyEvent: (body: string, signature: string) => Promise<Stripe.Event>;
   sessionForIntent: (intentId: string) => Promise<string | null>;
   settleFee: (intent: Stripe.PaymentIntent, lines: SettlementLine[]) => Promise<SettlementResult>;
+  refundsOfCharge?: (charge: Stripe.Charge) => Promise<Stripe.Refund[]>;
+  recordRefund?: (refund: Stripe.Refund, sessionId: string | null) => Promise<RefundOutcome>;
+  saveCard?: (intent: Stripe.PaymentIntent, paymentIds: string[]) => Promise<void>;
 }) {
+  async function syncRefunds(refunds: Stripe.Refund[]) {
+    const outcomes: RefundOutcome[] = [];
+    for (const refund of refunds) {
+      const intentId = idOf(refund.payment_intent);
+      const sessionId = intentId ? await sessionForIntent(intentId) : null;
+      outcomes.push(await recordRefund!(refund, sessionId));
+    }
+    return outcomes;
+  }
+
   return async (req: Request) => {
     if (req.method !== "POST") return enrollmentJson({ error: "Method not allowed" }, 405);
     const signature = req.headers.get("stripe-signature");
@@ -45,6 +78,16 @@ export function paymentWebhookHandler({ db, verifyEvent, sessionForIntent, settl
       event = await verifyEvent(await req.text(), signature);
     } catch {
       return enrollmentJson({ error: "Invalid signature" }, 400);
+    }
+    if ((event.type === "charge.refunded" || event.type === "charge.refund.updated") && recordRefund) {
+      try {
+        const refunds = event.type === "charge.refund.updated"
+          ? [event.data.object as Stripe.Refund]
+          : await refundsOfCharge!(event.data.object as Stripe.Charge);
+        return enrollmentJson({ received: true, type: event.type, refunds: await syncRefunds(refunds) });
+      } catch {
+        return enrollmentJson({ error: "Refund could not be recorded" }, 500);
+      }
     }
     if (event.type !== "payment_intent.succeeded" && event.type !== "payment_intent.payment_failed") {
       return enrollmentJson({ received: true });
@@ -70,6 +113,9 @@ export function paymentWebhookHandler({ db, verifyEvent, sessionForIntent, settl
           gatewayId: charge.gatewayId,
         });
         await notifyPaymentResult(db, result, intent.last_payment_error?.message);
+      }
+      if (event.type === "payment_intent.succeeded" && saveCard) {
+        await saveCard(intent, charges.map(({ paymentId }) => paymentId)).catch(() => undefined);
       }
       if (event.type === "payment_intent.succeeded") {
         let settlement: SettlementResult;

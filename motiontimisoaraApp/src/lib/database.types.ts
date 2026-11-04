@@ -2743,15 +2743,106 @@ export type Database = {
           },
         ]
       }
+      payment_refunds: {
+        Row: {
+          admin_name: string | null
+          admin_user_id: string | null
+          amount: number
+          cancel_enrollment: boolean
+          created_at: string
+          currency: string
+          description_snapshot: string | null
+          failure_reason: string | null
+          id: string
+          method: string
+          origin: string
+          payer_snapshot: string | null
+          payment_id: string | null
+          reason: string
+          reverse_transfer: boolean
+          status: string
+          stripe_refund_id: string | null
+          subscription_invoice_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_name?: string | null
+          admin_user_id?: string | null
+          amount: number
+          cancel_enrollment?: boolean
+          created_at?: string
+          currency?: string
+          description_snapshot?: string | null
+          failure_reason?: string | null
+          id?: string
+          method: string
+          origin: string
+          payer_snapshot?: string | null
+          payment_id?: string | null
+          reason: string
+          reverse_transfer?: boolean
+          status: string
+          stripe_refund_id?: string | null
+          subscription_invoice_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_name?: string | null
+          admin_user_id?: string | null
+          amount?: number
+          cancel_enrollment?: boolean
+          created_at?: string
+          currency?: string
+          description_snapshot?: string | null
+          failure_reason?: string | null
+          id?: string
+          method?: string
+          origin?: string
+          payer_snapshot?: string | null
+          payment_id?: string | null
+          reason?: string
+          reverse_transfer?: boolean
+          status?: string
+          stripe_refund_id?: string | null
+          subscription_invoice_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_refunds_admin_user_id_fkey"
+            columns: ["admin_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_refunds_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_refunds_subscription_invoice_id_fkey"
+            columns: ["subscription_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
+          amount_refunded: number
           billing_address_line1: string | null
           billing_city: string | null
           billing_country: string | null
           billing_email: string | null
           billing_name: string | null
           billing_postal_code: string | null
+          card_brand: string | null
+          card_last4: string | null
           client_secret: string | null
           coach_payout_amount: number | null
           created_at: string
@@ -2773,12 +2864,15 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          amount_refunded?: number
           billing_address_line1?: string | null
           billing_city?: string | null
           billing_country?: string | null
           billing_email?: string | null
           billing_name?: string | null
           billing_postal_code?: string | null
+          card_brand?: string | null
+          card_last4?: string | null
           client_secret?: string | null
           coach_payout_amount?: number | null
           created_at?: string
@@ -2800,12 +2894,15 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_refunded?: number
           billing_address_line1?: string | null
           billing_city?: string | null
           billing_country?: string | null
           billing_email?: string | null
           billing_name?: string | null
           billing_postal_code?: string | null
+          card_brand?: string | null
+          card_last4?: string | null
           client_secret?: string | null
           coach_payout_amount?: number | null
           created_at?: string
@@ -3045,6 +3142,89 @@ export type Database = {
           type?: string
         }
         Relationships: []
+      }
+      subscription_invoices: {
+        Row: {
+          amount: number
+          amount_refunded: number
+          billing_email: string | null
+          billing_name: string | null
+          card_brand: string | null
+          card_last4: string | null
+          created_at: string
+          currency: string
+          hosted_invoice_url: string | null
+          id: string
+          paid_at: string | null
+          period_end: string | null
+          period_start: string | null
+          plan_code: string | null
+          status: string
+          stripe_charge_id: string | null
+          stripe_invoice_id: string
+          stripe_payment_intent_id: string | null
+          subscriber_name: string | null
+          subscriber_type: string
+          subscription_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          amount_refunded?: number
+          billing_email?: string | null
+          billing_name?: string | null
+          card_brand?: string | null
+          card_last4?: string | null
+          created_at?: string
+          currency?: string
+          hosted_invoice_url?: string | null
+          id?: string
+          paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          plan_code?: string | null
+          status: string
+          stripe_charge_id?: string | null
+          stripe_invoice_id: string
+          stripe_payment_intent_id?: string | null
+          subscriber_name?: string | null
+          subscriber_type: string
+          subscription_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          amount_refunded?: number
+          billing_email?: string | null
+          billing_name?: string | null
+          card_brand?: string | null
+          card_last4?: string | null
+          created_at?: string
+          currency?: string
+          hosted_invoice_url?: string | null
+          id?: string
+          paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          plan_code?: string | null
+          status?: string
+          stripe_charge_id?: string | null
+          stripe_invoice_id?: string
+          stripe_payment_intent_id?: string | null
+          subscriber_name?: string | null
+          subscriber_type?: string
+          subscription_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_invoices_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscription_plans: {
         Row: {
@@ -3504,6 +3684,33 @@ export type Database = {
       freeze_payment_intent_request: {
         Args: { p_params: Json; p_payment_id: string }
         Returns: Json
+      }
+      get_admin_payments: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          amount: number
+          amount_refunded: number
+          card_brand: string
+          card_last4: string
+          created_at: string
+          currency: string
+          enrollment_status: string
+          gateway_ref: string
+          id: string
+          is_adult: boolean
+          kind: string
+          method: string
+          offer_title: string
+          paid_at: string
+          participant_name: string
+          payer_email: string
+          payer_name: string
+          receiver_name: string
+          refunds: Json
+          source: string
+          status: string
+          stripe_fee_amount: number
+        }[]
       }
       get_card_payments_month: {
         Args: never

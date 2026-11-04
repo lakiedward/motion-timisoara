@@ -48,6 +48,7 @@ import CampEnrolledPage from '@/features/camps/CampEnrolledPage'
 import ClubStripePage from '@/features/club/ClubStripePage'
 import CoachStripePage from '@/features/coach/CoachStripePage'
 import CashPaymentsPage from '@/features/payments/CashPaymentsPage'
+import AdminPaymentsPage from '@/features/admin/payments/AdminPaymentsPage'
 import HomePage from '@/features/public/HomePage'
 import ProgramPage from '@/features/public/ProgramPage'
 import CourseDetailsPage from '@/features/public/CourseDetailsPage'
@@ -279,7 +280,7 @@ export const router = createBrowserRouter([
               { path: '/admin/announcements', element: <AdminAnnouncementsPage /> },
               { path: '/admin/announcements/new', element: <AdminAnnouncementFormPage /> },
               { path: '/admin/attendance', element: <AdminAttendancePage /> },
-              { path: '/admin/payments', element: <CashPaymentsPage /> },
+              { path: '/admin/payments', element: <AdminPaymentsPage /> },
               { path: '/admin/locations', element: <AdminLocationsPage /> },
               { path: '/admin/locations/new', element: <ClubLocationFormPage portal="admin" /> },
               {

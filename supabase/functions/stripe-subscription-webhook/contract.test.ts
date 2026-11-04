@@ -33,7 +33,10 @@ function baseRow(overrides: Partial<SubscriptionRow> = {}): SubscriptionRow {
   };
 }
 
-function world(rows: SubscriptionRow[] = [baseRow()]) {
+function world(
+  rows: SubscriptionRow[] = [baseRow()],
+  recordInvoice?: (invoice: Stripe.Invoice, type: string, owner: SubscriptionRow | null) => Promise<void>,
+) {
   const events = new Map<string, { type: string; processed: boolean; note: string | null }>();
   const writes: { id: string; patch: SubscriptionPatch }[] = [];
   let version = 0;
@@ -118,6 +121,7 @@ function world(rows: SubscriptionRow[] = [baseRow()]) {
       assertEquals(id, stripe.id);
       return Promise.resolve({ ...stripe });
     },
+    recordInvoice,
   });
 
   return {
@@ -366,4 +370,24 @@ Deno.test("checkout finds the row by client_reference_id even without a customer
   assertEquals(w.rows.length, 1);
   assertEquals(w.rows[0].stripe_subscription_id, "sub_1");
   assertEquals(w.rows[0].stripe_customer_id, "cus_1");
+});
+
+Deno.test("invoice events are kept in the payment history with their subscription row", async () => {
+  const recorded: [string, string, string | null][] = [];
+  const w = world([baseRow({ status: "active", stripe_subscription_id: "sub_1", plan_code: "COACH" })], (invoice, type, owner) => {
+    recorded.push([invoice.id, type, owner?.id ?? null]);
+    return Promise.resolve();
+  });
+  w.setStripe({ status: "active", current_period_end: T0 + 30 * DAY });
+  assertEquals((await send(w.handler, invoiceEvent("evt_paid", "invoice.paid"))).status, 200);
+  assertEquals((await send(w.handler, subscriptionEvent("evt_updated", "updated", "active"))).status, 200);
+  assertEquals(recorded, [["in_evt_paid", "invoice.paid", "row_coach"]]);
+});
+
+Deno.test("an invoice history failure asks Stripe to retry the event", async () => {
+  const w = world([baseRow({ status: "active", stripe_subscription_id: "sub_1", plan_code: "COACH" })], () =>
+    Promise.reject(new Error("db down")));
+  w.setStripe({ status: "active", current_period_end: T0 + 30 * DAY });
+  assertEquals((await send(w.handler, invoiceEvent("evt_paid", "invoice.paid"))).status, 500);
+  assertEquals(w.events.get("evt_paid")?.processed, false);
 });

@@ -14,6 +14,7 @@ import {
   Ticket,
   Trophy,
   Users,
+  Wallet,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -61,7 +62,7 @@ export const adminNavigation: PortalNavItem[] = [
   { to: '/admin/competitions', label: 'Concursuri', icon: Trophy },
   { to: '/admin/announcements', label: 'Anunțuri', icon: Megaphone },
   { to: '/admin/attendance', label: 'Prezență', icon: ClipboardCheck },
-  { to: '/admin/payments', label: 'Încasări cash', icon: Banknote },
+  { to: '/admin/payments', label: 'Plăți', icon: Wallet },
   { to: '/admin/sports', label: 'Sporturi', icon: Dumbbell },
   { to: '/admin/codes', label: 'Coduri invitație', icon: Ticket },
 ]

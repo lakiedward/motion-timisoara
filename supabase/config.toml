@@ -140,3 +140,6 @@ verify_jwt = true
 
 [functions.billing-portal]
 verify_jwt = true
+
+[functions.admin-refund-payment]
+verify_jwt = true

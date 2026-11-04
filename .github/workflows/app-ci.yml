@@ -49,6 +49,8 @@ on:
       - 'supabase/functions/_shared/terms-version.ts'
       - 'supabase/migrations/00104_cash_payments_list.sql'
       - 'supabase/tests/*cash-payments-list*'
+      - 'supabase/migrations/00119_admin_payments_refunds.sql'
+      - 'supabase/tests/*admin-payments-refunds*'
       - 'supabase/migrations/00106_parent_account_deletion.sql'
       - 'supabase/tests/*parent-account-deletion*'
       - 'supabase/migrations/00107_subscriptions.sql'
@@ -149,6 +151,9 @@ jobs:
       - name: Verify cash payments list access
         shell: pwsh
         run: ./supabase/tests/run-cash-payments-list.ps1
+      - name: Verify admin payment history and refunds
+        shell: pwsh
+        run: ./supabase/tests/run-admin-payments-refunds.ps1
       - name: Verify card payments month summary
         shell: pwsh
         run: ./supabase/tests/run-card-payments-month.ps1
