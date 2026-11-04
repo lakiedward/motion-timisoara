@@ -43,6 +43,7 @@ export interface SubscriptionWebhookServices {
   store: SubscriptionStore;
   verifyEvent: (body: string, signature: string) => Promise<Stripe.Event>;
   subscription: (id: string) => Promise<StripeSubscriptionState>;
+  recordInvoice?: (invoice: Stripe.Invoice, eventType: string, owner: SubscriptionRow | null) => Promise<void>;
   now?: () => Date;
 }
 
@@ -151,6 +152,9 @@ export function subscriptionWebhookHandler(services: SubscriptionWebhookServices
       for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         const outcome = await syncOnce(services, target);
         if (outcome !== null) {
+          if (event.type.startsWith("invoice.") && services.recordInvoice) {
+            await services.recordInvoice(event.data.object as Stripe.Invoice, event.type, await store.findRow(target.keys));
+          }
           const note = outcome.startsWith("skipped") ? outcome : null;
           await store.finishEvent(event.id, { processed: true, note });
           return enrollmentJson({ received: true, type: event.type, outcome });

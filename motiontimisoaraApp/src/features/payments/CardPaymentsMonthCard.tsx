@@ -121,7 +121,8 @@ export function CardPaymentsMonthCard({
           <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
           <span>
             Costul Stripe (1,5% + 1 leu pe plată, mai mult la cardurile premium sau din afara UE) se
-            reține automat din fiecare plată.
+            reține automat din fiecare plată. Dacă o plată e rambursată, costul Stripe nu se
+            întoarce și rămâne reținut din partea ta.
             {subscriptionSalesAllowed() ? ' Abonamentul se plătește separat.' : ''}
           </span>
         </p>
