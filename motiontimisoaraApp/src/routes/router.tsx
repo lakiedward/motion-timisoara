@@ -2,7 +2,7 @@ import { createBrowserRouter } from 'react-router-dom'
 import RootLayout from '@/routes/RootLayout'
 import CoreLayout from '@/layout/CoreLayout'
 import { RequireAuth, RequireRole } from '@/routes/guards'
-import { SUBSCRIPTION_ROUTES } from '@/routes/subscription-routes'
+import { CLUB_SUBSCRIPTION_ROUTES, SUBSCRIPTION_ROUTES } from '@/routes/subscription-routes'
 import { NATIVE_BUILD, webOnly } from '@/lib/store-compliance'
 import CoachLayout from '@/features/coach/CoachLayout'
 import CoachDashboard from '@/features/coach/CoachDashboard'
@@ -304,6 +304,7 @@ export const router = createBrowserRouter([
                 children: [
                   { path: '/club', element: <ClubDashboard /> },
                   { path: '/club/stripe', element: <ClubStripePage /> },
+                  ...(NATIVE_BUILD ? [] : webOnly(CLUB_SUBSCRIPTION_ROUTES)),
                   { path: '/club/stripe/onboarding/complete', element: <ClubStripePage /> },
                   { path: '/club/stripe/onboarding/refresh', element: <ClubStripePage /> },
                   { path: '/club/coaches', element: <ClubCoachesPage /> },
