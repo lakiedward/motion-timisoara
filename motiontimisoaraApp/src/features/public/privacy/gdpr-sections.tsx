@@ -62,6 +62,11 @@ export const GDPR_SECTIONS: LegalSection[] = [
           pentru încasări și locațiile.
         </li>
         <li>
+          <strong>Facturare pentru cluburi și antrenori:</strong> numele sau denumirea, CUI dacă ai
+          firmă sau PFA, adresa de facturare, planul ales, perioadele și starea plății, facturile
+          emise și versiunea termenilor acceptată. Datele cardului ajung doar la Stripe.
+        </li>
+        <li>
           <strong>Mesaje și recenzii:</strong> ce trimiți prin formularul de contact, anunțurile și
           notele sau comentariile lăsate antrenorilor și cursurilor.
         </li>
@@ -85,8 +90,9 @@ export const GDPR_SECTIONS: LegalSection[] = [
           (contract, art. 6 alin. 1 lit. b din GDPR).
         </li>
         <li>
-          <strong>Plăți și facturi:</strong> pentru încasare (contract) și pentru evidența cerută de
-          legea contabilă și fiscală (obligație legală, art. 6 alin. 1 lit. c).
+          <strong>Plăți și facturi:</strong> pentru încasare, inclusiv facturarea clubului sau a
+          antrenorului (contract), și pentru evidența cerută de legea contabilă și fiscală
+          (obligație legală, art. 6 alin. 1 lit. c).
         </li>
         <li>
           <strong>Datele de sănătate ale copilului:</strong> ca organizatorul să-l țină în
@@ -151,7 +157,12 @@ export const GDPR_SECTIONS: LegalSection[] = [
             identificatorul canalului și ora evenimentului.
           </li>
           <li>
-            <strong>Stripe:</strong> plățile cu cardul. Datele cardului ajung doar la Stripe.
+            <strong>Stripe:</strong> plățile cu cardul, inclusiv plata clubului sau a antrenorului
+            către platformă. Datele cardului ajung doar la Stripe.
+          </li>
+          <li>
+            <strong>Programul de facturare al operatorului și ANAF:</strong> primesc datele de pe
+            factură, iar ANAF le primește prin sistemul e-Factura, când legea cere.
           </li>
           <li>
             <strong>Google:</strong> conectarea cu contul Google, dacă o alegi, și notificările pe
