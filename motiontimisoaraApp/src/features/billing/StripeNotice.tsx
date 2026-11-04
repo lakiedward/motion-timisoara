@@ -14,7 +14,7 @@ function Spinner() {
   )
 }
 
-function Row({
+export function NoticeRow({
   icon,
   role,
   tone = 'muted',
@@ -45,7 +45,7 @@ export function StripeNotice({ state }: { state: StripeOnboardingState }) {
   const { phase, unavailable, actionError, entity, complete, retry, busy } = state
   if (unavailable) {
     return (
-      <Row
+      <NoticeRow
         role="status"
         icon={<Clock aria-hidden="true" className="text-muted-foreground mt-0.5 size-5 shrink-0" />}
       >
@@ -55,28 +55,28 @@ export function StripeNotice({ state }: { state: StripeOnboardingState }) {
         <p className="text-muted-foreground">
           Nu e nimic de făcut din contul tău. Până atunci, înscrierile se pot plăti cash.
         </p>
-      </Row>
+      </NoticeRow>
     )
   }
   if (phase === 'redirecting') {
     return (
-      <Row role="status" icon={<Spinner />}>
+      <NoticeRow role="status" icon={<Spinner />}>
         <p className="font-semibold">Linkul Stripe a expirat. Te ducem înapoi la Stripe…</p>
         <p className="text-muted-foreground">Durează câteva secunde.</p>
-      </Row>
+      </NoticeRow>
     )
   }
   if (phase === 'verifying') {
     return (
-      <Row role="status" icon={<Spinner />}>
+      <NoticeRow role="status" icon={<Spinner />}>
         <p className="font-semibold">Verificăm contul la Stripe…</p>
         <p className="text-muted-foreground">Durează câteva secunde.</p>
-      </Row>
+      </NoticeRow>
     )
   }
   if (actionError) {
     return (
-      <Row
+      <NoticeRow
         role="alert"
         tone="error"
         icon={
@@ -94,12 +94,12 @@ export function StripeNotice({ state }: { state: StripeOnboardingState }) {
           <RefreshCw aria-hidden="true" />
           Reîncearcă
         </Button>
-      </Row>
+      </NoticeRow>
     )
   }
   if (phase === 'verified' && entity) {
     return complete ? (
-      <Row
+      <NoticeRow
         role="status"
         tone="success"
         icon={
@@ -108,9 +108,9 @@ export function StripeNotice({ state }: { state: StripeOnboardingState }) {
       >
         <p className="font-semibold">Gata! Plățile cu cardul sunt active.</p>
         <p className="text-muted-foreground">Părinții pot plăti înscrierile cu cardul.</p>
-      </Row>
+      </NoticeRow>
     ) : (
-      <Row
+      <NoticeRow
         role="status"
         icon={<Info aria-hidden="true" className="text-muted-foreground mt-0.5 size-5 shrink-0" />}
       >
@@ -118,7 +118,7 @@ export function StripeNotice({ state }: { state: StripeOnboardingState }) {
         <p className="text-muted-foreground">
           Continuă configurarea ca să activezi plățile cu cardul.
         </p>
-      </Row>
+      </NoticeRow>
     )
   }
   return null

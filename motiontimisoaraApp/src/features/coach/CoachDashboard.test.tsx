@@ -36,6 +36,9 @@ vi.mock('@/api/coach', () => ({
   getMyLocations: vi.fn(),
   getMyCoachStripeStatus: vi.fn(),
 }))
+vi.mock('@/features/coach/subscription/CoachSubscriptionBanner', () => ({
+  CoachSubscriptionBanner: () => null,
+}))
 vi.mock('@/api/camps-admin', () => ({ getTaberelemele: vi.fn() }))
 vi.mock('@/api/competition/competition-list', () => ({ getCompetitionList: vi.fn() }))
 vi.mock('@/api/payments/card-payments-month', () => ({

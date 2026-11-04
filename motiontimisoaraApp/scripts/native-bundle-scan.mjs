@@ -14,6 +14,7 @@ export const FORBIDDEN = [
   { label: 'subscription plans table', pattern: /subscription_plans/ },
   { label: 'subscription checkout function', pattern: /create-subscription-checkout/ },
   { label: 'billing portal', pattern: /billing-portal|billingPortal|billing\.stripe\.com/ },
+  { label: 'subscription plan change function', pattern: /change-subscription-plan/ },
 ]
 
 export function findForbidden(text) {

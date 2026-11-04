@@ -11,6 +11,10 @@ import {
 } from "./subscription-billing.ts";
 import type { SubscriptionCheckoutDependencies } from "../create-subscription-checkout/contract.ts";
 import type { BillingPortalDependencies } from "../billing-portal/contract.ts";
+import type {
+  ChangePlan,
+  ChangePlanDependencies,
+} from "../change-subscription-plan/contract.ts";
 
 const subscriptionColumns =
   "id,subscriber_type,plan_code,status,trial_end,stripe_customer_id,stripe_subscription_id";
@@ -65,6 +69,14 @@ const lookup: BillingLookup = {
   },
 };
 
+async function countClubCoaches(clubId: string): Promise<number> {
+  const { count, error } = await supabaseAdmin.from("club_coaches")
+    .select("coach_profile_id", { count: "exact", head: true })
+    .eq("club_id", clubId);
+  if (error || count === null) throw new Error("Coach count failed");
+  return count;
+}
+
 export function subscriptionCheckoutDependencies(): SubscriptionCheckoutDependencies {
   return {
     ...lookup,
@@ -81,13 +93,7 @@ export function subscriptionCheckoutDependencies(): SubscriptionCheckoutDependen
       if (error || !data) throw new Error("Subscription settings missing");
       return data as SubscriptionSettings;
     },
-    countClubCoaches: async (clubId) => {
-      const { count, error } = await supabaseAdmin.from("club_coaches")
-        .select("coach_profile_id", { count: "exact", head: true })
-        .eq("club_id", clubId);
-      if (error || count === null) throw new Error("Coach count failed");
-      return count;
-    },
+    countClubCoaches,
     createCustomer: (params, idempotencyKey) =>
       stripeCall(async () =>
         (await stripe().customers.create(params, { idempotencyKey })).id
@@ -149,5 +155,119 @@ export function billingPortalDependencies(): BillingPortalDependencies {
       ),
     portalConfiguration: Deno.env.get("STRIPE_BILLING_PORTAL_CONFIGURATION") ||
       null,
+  };
+}
+
+const idOf = (value: string | { id: string } | null | undefined) =>
+  typeof value === "string" ? value : value?.id ?? null;
+
+function isCardError(error: unknown): boolean {
+  const type = (error as { type?: string } | null)?.type;
+  return type === "StripeCardError" || type === "card_error";
+}
+
+export function changePlanDependencies(): ChangePlanDependencies {
+  return {
+    ...lookup,
+    countClubCoaches,
+    findClubPlans: async () => {
+      const { data, error } = await supabaseAdmin.from("subscription_plans")
+        .select(
+          "code,subscriber_type,price_bani,coach_limit,stripe_price_id,active",
+        )
+        .eq("subscriber_type", "CLUB");
+      if (error) throw new Error("Plan lookup failed");
+      return (data ?? []) as ChangePlan[];
+    },
+    retrieveSubscription: (id) =>
+      stripeCall(async () => {
+        const subscription = await stripe().subscriptions.retrieve(id);
+        const items = subscription.items?.data ?? [];
+        if (items.length !== 1 || !items[0].price?.id) {
+          throw new Error(`Subscription ${id} has ${items.length} items`);
+        }
+        return {
+          id: subscription.id,
+          status: subscription.status,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end ||
+            subscription.cancel_at !== null,
+          itemId: items[0].id,
+          priceId: items[0].price.id,
+          currentPeriodStart: subscription.current_period_start,
+          currentPeriodEnd: subscription.current_period_end,
+          trialEnd: subscription.trial_end ?? null,
+          scheduleId: idOf(subscription.schedule),
+          metadata: subscription.metadata ?? {},
+        };
+      }),
+    releaseSchedule: (scheduleId) =>
+      stripeCall(async () => {
+        await stripe().subscriptionSchedules.release(scheduleId);
+      }),
+    upgradeSubscription: async (params) => {
+      try {
+        await stripe().subscriptions.update(
+          params.subscriptionId,
+          {
+            items: [{ id: params.itemId, price: params.priceId }],
+            proration_behavior: "always_invoice",
+            payment_behavior: "error_if_incomplete",
+          },
+          {
+            idempotencyKey:
+              `plan-upgrade-${params.subscriptionId}-${params.priceId}-${
+                Math.floor(Date.now() / 60_000)
+              }`,
+          },
+        );
+      } catch (error) {
+        if (error instanceof Response) throw error;
+        if (isCardError(error)) throw billingFailure("PAYMENT_FAILED");
+        console.error("Stripe plan upgrade failed", error);
+        throw billingFailure("STRIPE_ERROR");
+      }
+    },
+    scheduleDowngrade: (params) =>
+      stripeCall(async () => {
+        const client = stripe();
+        const scheduleId = params.scheduleId ??
+          (await client.subscriptionSchedules.create({
+            from_subscription: params.subscriptionId,
+          })).id;
+        const schedule = await client.subscriptionSchedules.retrieve(
+          scheduleId,
+        );
+        const start = schedule.current_phase?.start_date ?? params.periodStart;
+        const trial = params.trialEnd !== null &&
+          params.trialEnd >= params.periodEnd;
+        await client.subscriptionSchedules.update(scheduleId, {
+          end_behavior: "release",
+          phases: [
+            {
+              items: [{ price: params.currentPriceId, quantity: 1 }],
+              start_date: start,
+              end_date: params.periodEnd,
+              proration_behavior: "none",
+              metadata: {
+                ...params.metadata,
+                plan_code: params.currentPlanCode,
+              },
+              ...(trial ? { trial: true } : {}),
+            },
+            {
+              items: [{ price: params.priceId, quantity: 1 }],
+              iterations: 1,
+              proration_behavior: "none",
+              metadata: { ...params.metadata, plan_code: params.planCode },
+            },
+          ],
+        });
+      }),
+    saveLocalPlan: async (rowId, patch) => {
+      const { error } = await supabaseAdmin.from("subscriptions")
+        .update({ ...patch, updated_at: new Date().toISOString() })
+        .eq("id", rowId);
+      if (error) throw new Error("Local plan save failed");
+    },
   };
 }

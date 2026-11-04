@@ -143,3 +143,6 @@ verify_jwt = true
 
 [functions.admin-refund-payment]
 verify_jwt = true
+
+[functions.change-subscription-plan]
+verify_jwt = true

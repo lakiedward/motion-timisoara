@@ -81,6 +81,19 @@ const failures = {
     "Perioada gratuită de lansare nu are încă o dată de final. Vei putea alege abonamentul după lansare.",
   ],
   NO_BILLING_ACCOUNT: [409, "Nu ai încă un abonament plătit de gestionat."],
+  PLAN_CHANGE_CLUB_ONLY: [403, "Doar cluburile pot schimba pachetul."],
+  SUBSCRIPTION_PAST_DUE: [
+    409,
+    "Plata lunară nu a trecut. Actualizează întâi cardul din Gestionează abonamentul.",
+  ],
+  SUBSCRIPTION_CANCELED: [
+    409,
+    "Abonamentul este anulat. Reactivează-l întâi din Gestionează abonamentul.",
+  ],
+  PAYMENT_FAILED: [
+    402,
+    "Plata diferenței nu a trecut. Pachetul a rămas cel vechi. Verifică cardul și încearcă din nou.",
+  ],
   STRIPE_NOT_CONFIGURED: [
     503,
     "Plățile cu cardul nu sunt încă activate pe platformă.",
