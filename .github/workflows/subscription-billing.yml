@@ -5,6 +5,7 @@ on:
     paths:
       - 'supabase/functions/create-subscription-checkout/**'
       - 'supabase/functions/billing-portal/**'
+      - 'supabase/functions/change-subscription-plan/**'
       - 'supabase/functions/_shared/subscription-billing*.ts'
       - 'supabase/functions/_shared/cors.ts'
       - 'supabase/functions/_shared/stripe.ts'
@@ -26,7 +27,7 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.6
-      - name: Verify Checkout and Customer Portal role, plan, limit and origin rules
-        run: deno test --no-lock supabase/functions/create-subscription-checkout/contract.test.ts supabase/functions/billing-portal/contract.test.ts
+      - name: Verify Checkout, Customer Portal and plan change role, plan, limit and origin rules
+        run: deno test --no-lock supabase/functions/create-subscription-checkout/contract.test.ts supabase/functions/billing-portal/contract.test.ts supabase/functions/change-subscription-plan/contract.test.ts
       - name: Typecheck the subscription billing entrypoints
-        run: deno check --no-lock --node-modules-dir=none supabase/functions/create-subscription-checkout/index.ts supabase/functions/billing-portal/index.ts
+        run: deno check --no-lock --node-modules-dir=none supabase/functions/create-subscription-checkout/index.ts supabase/functions/billing-portal/index.ts supabase/functions/change-subscription-plan/index.ts
