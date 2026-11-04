@@ -66,6 +66,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO service_role;
 GRANT UPDATE ON public.payments, public.enrollments TO service_role;
 
 \i /tmp/migrations/00119_admin_payments_refunds.sql
+\i /tmp/migrations/00120_admin_payments_receiver.sql
 
 INSERT INTO public.profiles (id, role, name, email) VALUES
     ('00000000-0000-0000-0000-0000000000a1', 'ADMIN', 'Laki Admin', 'admin@example.test'),
@@ -238,13 +239,18 @@ BEGIN
     WHERE id = '00000000-0000-0000-0000-0000000000f1';
     IF v_row.payer_name <> 'Părinte' OR v_row.payer_email <> 'parent@example.test' OR v_row.participant_name <> 'Ana'
        OR v_row.receiver_name <> 'Club Delfinii' OR v_row.offer_title <> 'Înot' OR v_row.amount_refunded <> 40000
-       OR jsonb_array_length(v_row.refunds) <> 2 OR v_row.enrollment_status <> 'CANCELLED' THEN
+       OR jsonb_array_length(v_row.refunds) <> 2 OR v_row.enrollment_status <> 'CANCELLED' OR NOT v_row.transferred THEN
         RAISE EXCEPTION 'Payment row is incomplete: %', row_to_json(v_row);
     END IF;
     SELECT * INTO v_row FROM public.get_admin_payments('2026-11-01', '2026-11-05')
     WHERE id = '00000000-0000-0000-0000-0000000000f2';
-    IF v_row.payer_name <> 'Adult' OR NOT v_row.is_adult OR v_row.receiver_name <> 'Antrenor' THEN
+    IF v_row.payer_name <> 'Adult' OR NOT v_row.is_adult OR v_row.receiver_name <> 'Antrenor' OR v_row.transferred THEN
         RAISE EXCEPTION 'Adult cash row is incomplete: %', row_to_json(v_row);
+    END IF;
+    SELECT * INTO v_row FROM public.get_admin_payments('2026-09-01', '2026-11-05')
+    WHERE id = '00000000-0000-0000-0000-0000000000f3';
+    IF v_row.receiver_name <> 'Motion România' OR v_row.transferred THEN
+        RAISE EXCEPTION 'A card payment without a Connect account goes to the platform: %', row_to_json(v_row);
     END IF;
     SELECT * INTO v_row FROM public.get_admin_payments('2026-11-01', '2026-11-05')
     WHERE source = 'SUBSCRIPTION_INVOICE';

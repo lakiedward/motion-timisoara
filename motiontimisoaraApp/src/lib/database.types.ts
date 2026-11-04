@@ -3710,6 +3710,7 @@ export type Database = {
           source: string
           status: string
           stripe_fee_amount: number
+          transferred: boolean
         }[]
       }
       get_card_payments_month: {

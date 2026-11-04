@@ -43,6 +43,7 @@ export type AdminPayment = {
   paid_at: string | null
   enrollment_status: string | null
   refunds: AdminRefund[]
+  transferred: boolean
 }
 
 export type PaymentRange = { from: string; to: string }

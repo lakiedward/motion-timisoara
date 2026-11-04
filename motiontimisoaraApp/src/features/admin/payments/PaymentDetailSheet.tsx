@@ -60,6 +60,9 @@ function feeNote(payment: AdminPayment) {
   if (payment.source === 'SUBSCRIPTION_INVOICE') {
     return 'Banii se întorc pe card în 5–10 zile lucrătoare. Costul Stripe al abonamentului rămâne al platformei.'
   }
+  if (!payment.transferred) {
+    return 'Banii se întorc pe card în 5–10 zile lucrătoare. Plata a intrat în contul Motion România, pentru că organizatorul nu avea plățile Stripe active, așa că suma iese din contul platformei. Costul Stripe nu se întoarce la rambursare.'
+  }
   return `Banii se întorc pe card în 5–10 zile lucrătoare. Partea lui ${payment.receiver_name} se retrage din contul lui Stripe. Costul Stripe nu se întoarce la rambursare: îl suportă antrenorul sau clubul.`
 }
 

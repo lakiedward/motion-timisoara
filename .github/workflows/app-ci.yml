@@ -50,6 +50,7 @@ on:
       - 'supabase/migrations/00104_cash_payments_list.sql'
       - 'supabase/tests/*cash-payments-list*'
       - 'supabase/migrations/00119_admin_payments_refunds.sql'
+      - 'supabase/migrations/00120_admin_payments_receiver.sql'
       - 'supabase/tests/*admin-payments-refunds*'
       - 'supabase/migrations/00106_parent_account_deletion.sql'
       - 'supabase/tests/*parent-account-deletion*'

@@ -24,6 +24,7 @@ export function adminPayment(overrides: Partial<AdminPayment> = {}): AdminPaymen
     paid_at: '2026-11-04T08:42:00Z',
     enrollment_status: 'ACTIVE',
     refunds: [],
+    transferred: true,
     ...overrides,
   }
 }

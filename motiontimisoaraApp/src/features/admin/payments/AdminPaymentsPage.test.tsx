@@ -111,6 +111,21 @@ test('rambursează parțial cu motiv, după confirmare, și spune cine suportă 
   )
 })
 
+test('o plată fără contul Stripe al organizatorului se rambursează din contul platformei', async () => {
+  const user = userEvent.setup()
+  vi.mocked(getAdminPayments).mockResolvedValue([
+    adminPayment({ transferred: false, receiver_name: 'Motion România', stripe_fee_amount: null }),
+  ])
+  renderPage()
+
+  await user.click(await screen.findByRole('button', { name: /Detalii plată Andreea Popescu/ }))
+  const sheet = await screen.findByRole('dialog')
+  expect(within(sheet).getByText('Motion România')).toBeInTheDocument()
+  await user.click(within(sheet).getByRole('button', { name: 'Rambursează' }))
+  expect(within(sheet).getByText(/suma iese din contul platformei/)).toBeInTheDocument()
+  expect(within(sheet).queryByText(/îl suportă antrenorul sau clubul/)).not.toBeInTheDocument()
+})
+
 test('rambursarea totală poate anula și înscrierea', async () => {
   const user = userEvent.setup()
   vi.mocked(getAdminPayments).mockResolvedValue([adminPayment()])
