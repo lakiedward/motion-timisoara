@@ -30,7 +30,7 @@ describe('PrivacyPage', () => {
     renderPage()
     expect(screen.getByRole('heading', { level: 1, name: 'Confidențialitate' })).toBeInTheDocument()
     expect(
-      screen.getByText(/Versiunea 1\.2 · ultima actualizare: 2 noiembrie 2026/),
+      screen.getByText(/Versiunea 1\.3 · ultima actualizare: 4 noiembrie 2026/),
     ).toBeInTheDocument()
   })
 

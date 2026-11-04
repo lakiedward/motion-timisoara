@@ -21,7 +21,7 @@ test('antetul are eyebrow, titlu, intermediarul și versiunea', () => {
       /contractul pentru curs, activitate sau tabără se încheie între tine și organizatorul/i,
     ),
   ).toBeInTheDocument()
-  expect(screen.getByText(/^Versiunea 1\.2 · ultima actualizare: /)).toBeInTheDocument()
+  expect(screen.getByText(/^Versiunea 1\.3 · ultima actualizare: /)).toBeInTheDocument()
 })
 
 test('cuprinsul are câte o ancoră spre fiecare secțiune', () => {

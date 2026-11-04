@@ -1,10 +1,13 @@
 import { Link } from 'react-router-dom'
 import { CreditCard, Lock, Mail, MessageSquare, Phone, ShieldCheck } from 'lucide-react'
 
-import type { LegalSection } from '../legal/LegalPage'
+import { NATIVE_BUILD, webOnly } from '@/lib/store-compliance'
 
-export const TERMS_VERSION = '1.2'
-export const TERMS_UPDATED = '2 noiembrie 2026'
+import type { LegalSection } from '../legal/LegalPage'
+import { SUBSCRIPTION_TERMS_SECTIONS } from './subscription-terms-sections'
+
+export const TERMS_VERSION = '1.3'
+export const TERMS_UPDATED = '4 noiembrie 2026'
 
 const linkClass = 'text-primary underline underline-offset-4'
 const rowClass =
@@ -92,6 +95,7 @@ export const TERMS_SECTIONS: LegalSection[] = [
       </>
     ),
   },
+  ...(NATIVE_BUILD ? [] : webOnly(SUBSCRIPTION_TERMS_SECTIONS)),
   {
     id: 'contact',
     surfaceKey: 'manual:section:contact:0661474a-434f-46e9-84cd-29bc8015e623',
