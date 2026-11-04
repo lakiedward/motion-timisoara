@@ -22,6 +22,7 @@ describe('native bundle scan', () => {
     ['from("subscription_plans")', 'subscription plans table'],
     ['functions.invoke("create-subscription-checkout")', 'subscription checkout function'],
     ['invoke("billing-portal")', 'billing portal'],
+    ['invoke("change-subscription-plan")', 'subscription plan change function'],
   ])('flags %s', (text, label) => {
     expect(findForbidden(text).map((hit) => hit.label)).toContain(label)
   })
