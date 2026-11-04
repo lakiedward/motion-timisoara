@@ -41,8 +41,9 @@ This session had no live Stripe key, so the live account was not read again on 2
 |---|---|
 | `stripe-connect-webhook` | It verified signatures with the synchronous `constructEvent`, which the Deno Stripe SDK cannot run (SubtleCrypto is async only), so every event would have answered 400. It now uses `constructEventAsync`, answers 503 when its secret is missing, and uses `maybeSingle()`. |
 | `setup-subscription-webhook` | It now registers all three endpoints (`kind`: `subscriptions`, `payments`, `connect`, the last with `connect: true`), lists endpoints read-only (`action: "list"`) and deletes named endpoints (`action: "remove"`). A LIVE key still needs `confirmLive: true` for every write. The name is kept so the deployed function and its permissions stay the same. |
+| `create-checkout-session` | Sends `adaptive_pricing: { enabled: false }`, so parents always pay in RON (owner decision, see the end). |
 
-Deploy: `npx supabase@2.122.0 functions deploy stripe-connect-webhook setup-subscription-webhook --project-ref ehdzafadshbaaghzdzdo --use-api` (owner's card). Both can go out in TEST mode, before launch day.
+Deploy: `npx supabase@2.122.0 functions deploy stripe-connect-webhook setup-subscription-webhook create-checkout-session --project-ref ehdzafadshbaaghzdzdo --use-api` (owner's card). All three can go out in TEST mode, before launch day.
 
 ## Scripts
 
