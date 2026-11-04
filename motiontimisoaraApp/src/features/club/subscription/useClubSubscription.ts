@@ -35,7 +35,7 @@ export function useClubSubscription() {
     queryFn: () => getClubCoaches(clubId!),
     enabled: !!clubId,
   })
-  const data = useSubscription('CLUB')
+  const data = useSubscription('CLUB', clubId ?? null)
   const redirect = useBillingRedirect()
   const [pending, setPending] = useState<PendingChange | null>(null)
   const plans = data.plans.data ?? []

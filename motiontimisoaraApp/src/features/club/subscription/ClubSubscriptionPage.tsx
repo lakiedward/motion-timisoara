@@ -1,17 +1,16 @@
-import { useSearchParams } from 'react-router-dom'
 import { CircleAlert, TriangleAlert } from 'lucide-react'
 
 import { PageHeader } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { StatusView } from '@/components/ui/status-view'
 import { NoticeRow } from '@/features/billing/StripeNotice'
+import { CardPaymentsMonthCard } from '@/features/payments/CardPaymentsMonthCard'
 import { formatPlanPrice, PRICE_NOTE } from '@/features/public/pricing/pricing-content'
 import { CheckoutReturnNotice } from '@/features/subscriptions/CheckoutReturnNotice'
 import { SubscriptionStatusCard } from '@/features/subscriptions/SubscriptionStatusCard'
 import { subscriptionQueryKey } from '@/features/subscriptions/use-subscription'
 import { SubscriptionBillingError } from '@/api/subscriptions/billing'
 import { formatShortDate } from '@/lib/panel-date'
-import { ClubPlanCards } from './ClubPlanCards'
 import { ClubPlanList } from './ClubPlanList'
 import { PlanChangeDialog } from './PlanChangeDialog'
 import { currentPlan, limitWarning, nextLargerPlan, type PlanContext } from './plan-actions'
@@ -105,8 +104,6 @@ function scheduledNote(context: PlanContext) {
 
 export default function ClubSubscriptionPage() {
   const state = useClubSubscription()
-  const [params] = useSearchParams()
-  const variant = params.get('varianta') === 'b' ? 'list' : 'cards'
 
   if (state.isLoading) {
     return (
@@ -180,13 +177,14 @@ export default function ClubSubscriptionPage() {
           </p>
           {note && <p className="text-muted-foreground mt-1 text-sm">{note}</p>}
         </div>
-        {variant === 'list' ? (
-          <ClubPlanList context={context} state={state} />
-        ) : (
-          <ClubPlanCards context={context} state={state} />
-        )}
+        <ClubPlanList context={context} state={state} />
       </section>
       <p className="text-muted-foreground max-w-3xl text-sm">{PRICE_NOTE}</p>
+      <CardPaymentsMonthCard
+        enabled={state.club.data?.stripe_onboarding_complete === true}
+        offersLabel="ofertele clubului"
+        netLabel="Primește clubul"
+      />
       <PlanChangeDialog state={state} />
     </div>
   )

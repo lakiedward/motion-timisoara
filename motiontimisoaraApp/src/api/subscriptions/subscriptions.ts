@@ -47,14 +47,16 @@ const STATUSES: readonly SubscriptionStatus[] = [
 const SUBSCRIPTION_COLUMNS =
   'id,subscriber_type,plan_code,scheduled_plan_code,status,trial_end,current_period_end,past_due_since,cancel_at_period_end,stripe_customer_id,stripe_subscription_id'
 
-export async function getMySubscription(type: SubscriberType): Promise<Subscription | null> {
-  const { data, error } = await supabase
+export async function getMySubscription(
+  type: SubscriberType,
+  subscriberId?: string,
+): Promise<Subscription | null> {
+  let query = supabase
     .from('subscriptions')
     .select(SUBSCRIPTION_COLUMNS)
     .eq('subscriber_type', type)
-    .order('created_at')
-    .limit(1)
-    .maybeSingle()
+  if (subscriberId) query = query.eq(type === 'CLUB' ? 'club_id' : 'coach_user_id', subscriberId)
+  const { data, error } = await query.order('created_at').limit(1).maybeSingle()
   if (error) throw new Error('Nu am putut încărca abonamentul.', { cause: error })
   if (!data) return null
   const status = STATUSES.includes(data.status as SubscriptionStatus)

@@ -17,10 +17,11 @@ export function subscriptionQueryKey(type: SubscriberType) {
   return [...SUBSCRIPTION_QUERY_KEY, type] as const
 }
 
-export function useSubscription(type: SubscriberType) {
+export function useSubscription(type: SubscriberType, subscriberId?: string | null) {
   const subscription = useQuery({
-    queryKey: subscriptionQueryKey(type),
-    queryFn: () => getMySubscription(type),
+    queryKey: [...subscriptionQueryKey(type), subscriberId ?? null],
+    queryFn: () => getMySubscription(type, subscriberId ?? undefined),
+    enabled: subscriberId !== null,
   })
   const settings = useQuery({
     queryKey: SUBSCRIPTION_SETTINGS_QUERY_KEY,

@@ -67,6 +67,15 @@ test('reads the own subscription row and hides the Stripe ids', async () => {
   expect(calls).toContainEqual(['eq', 'subscriber_type', 'CLUB'])
 })
 
+test('a subscriber id narrows the read to that club or coach, so an admin never gets another row', async () => {
+  result = { data: null, error: null }
+  await getMySubscription('CLUB', 'club-1')
+  expect(calls).toContainEqual(['eq', 'club_id', 'club-1'])
+  calls.length = 0
+  await getMySubscription('COACH', 'user-1')
+  expect(calls).toContainEqual(['eq', 'coach_user_id', 'user-1'])
+})
+
 test('no row is null and an error is a Romanian message', async () => {
   result = { data: null, error: null }
   await expect(getMySubscription('COACH')).resolves.toBeNull()
