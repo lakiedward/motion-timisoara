@@ -155,6 +155,9 @@ jobs:
       - name: Verify admin payment history and refunds
         shell: pwsh
         run: ./supabase/tests/run-admin-payments-refunds.ps1
+      - name: Verify admin subscriptions panel
+        shell: pwsh
+        run: ./supabase/tests/run-admin-subscriptions.ps1
       - name: Verify card payments month summary
         shell: pwsh
         run: ./supabase/tests/run-card-payments-month.ps1
