@@ -119,7 +119,7 @@ export default function CoachCoursesPage() {
           title="Niciun curs încă."
           text="Cursurile pe care le creezi apar aici."
           action={
-            <Button asChild variant="outline" className="mt-3 h-11 min-h-11">
+            <Button asChild variant="outline" className="mt-3 h-touch-target min-h-touch-target">
               <Link to="/coach/courses/new">Creează primul curs</Link>
             </Button>
           }

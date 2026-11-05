@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
 
 import { getCompetitionList } from '@/api/competition/competition-list'
 import { FilterSearch } from '@/components/catalog-filters/FilterSearch'
@@ -74,7 +73,6 @@ export default function CompetitionsListPage({ baza }: { baza: CompetitionPortal
 
   return (
     <div>
-      {owner.role === 'COACH' && <CompetitionInvitations />}
       <PageHeader
         title={
           owner.role === 'CLUB'
@@ -88,6 +86,8 @@ export default function CompetitionsListPage({ baza }: { baza: CompetitionPortal
         {isAdmin && items.length > 0 && search}
         <PageNewLink to={`${baza}/new`}>Concurs nou</PageNewLink>
       </PageHeader>
+
+      {owner.role === 'COACH' && <CompetitionInvitations />}
 
       {eroare || (isError && !items.length) ? (
         <StatusView
@@ -104,10 +104,8 @@ export default function CompetitionsListPage({ baza }: { baza: CompetitionPortal
           title="Niciun concurs încă."
           text="Adaugă programul și locația, apoi traseele GPX și categoriile de vârstă."
           action={
-            <Button asChild className="mt-3 h-touch-target min-h-touch-target">
-              <Link to={`${baza}/new`}>
-                <Plus aria-hidden="true" /> Creează primul concurs
-              </Link>
+            <Button asChild variant="outline" className="mt-3 h-touch-target min-h-touch-target">
+              <Link to={`${baza}/new`}>Creează primul concurs</Link>
             </Button>
           }
         />

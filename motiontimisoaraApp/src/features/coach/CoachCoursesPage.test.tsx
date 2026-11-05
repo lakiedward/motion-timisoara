@@ -55,14 +55,15 @@ function course(overrides: Partial<CoachCourse>): CoachCourse {
   } as CoachCourse
 }
 
-test('header keeps Cursurile mele and a compact Curs nou next to it, like the other panel lists', async () => {
+test('header keeps Cursurile mele and a full-width-on-phone Curs nou under it, like the other panel lists', async () => {
   mockedGetMyCourses.mockResolvedValue([])
   renderPage()
   expect(await screen.findByRole('heading', { name: /^Cursurile mele/ })).toBeInTheDocument()
   const link = screen.getByRole('link', { name: /curs nou/i })
   expect(link).toHaveAttribute('href', '/coach/courses/new')
   expect(link.className).toMatch(/min-h-touch-target/)
-  expect(link.className).not.toMatch(/w-full/)
+  expect(link.className).toMatch(/w-full/)
+  expect(link.className).toMatch(/sm:w-auto/)
   expect(link.parentElement?.className).toMatch(/flex-wrap/)
 })
 
@@ -76,7 +77,9 @@ test('empty list shows dashed copy and keeps Curs nou in the header', async () =
   )
   expect(screen.getByRole('link', { name: /curs nou/i })).toBeInTheDocument()
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
-  expect(screen.getByRole('link', { name: /creează primul curs/i }).className).toMatch(/min-h-11/)
+  expect(screen.getByRole('link', { name: /creează primul curs/i }).className).toMatch(
+    /min-h-touch-target/,
+  )
 })
 
 test('failed load shows error and retry, not the empty list', async () => {

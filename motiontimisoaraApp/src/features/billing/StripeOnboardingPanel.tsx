@@ -27,7 +27,7 @@ export function StripeOnboardingPanel({ scope }: { scope: StripeScope }) {
   return (
     <div className="max-w-xl space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-extrabold text-foreground">Configurare plăți</h1>
+        <h1 className="font-display text-2xl font-bold text-foreground">Configurare plăți</h1>
         <p className="text-muted-foreground mt-1">{config.description(entity.label)}</p>
       </div>
       <StripeStatusCard state={state} />

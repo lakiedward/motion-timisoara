@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { getAtasamente, type AtasamentAfisabil } from '@/api/attachments'
 import { getCoachAnnouncements } from '@/api/coach-announcements'
 import { getMyCourses } from '@/api/coach'
 import { PageHeader, PageNewButton } from '@/components/page-header/PageHeader'
+import { Button } from '@/components/ui/button'
 import { StatusView } from '@/components/ui/status-view'
 import CoachAnnouncementForm from './CoachAnnouncementForm'
 import { CoachAnnouncementList } from './CoachAnnouncementList'
@@ -91,6 +93,11 @@ export default function CoachAnnouncementsPage() {
           state="empty"
           title="Niciun curs încă."
           text="Anunțurile se trimit părinților unui curs. Creează un curs ca să poți publica."
+          action={
+            <Button asChild variant="outline" className="mt-3 h-touch-target min-h-touch-target">
+              <Link to="/coach/courses/new">Creează primul curs</Link>
+            </Button>
+          }
         />
       ) : items.length ? (
         <CoachAnnouncementList
@@ -104,6 +111,18 @@ export default function CoachAnnouncementsPage() {
           state="empty"
           title="Niciun anunț încă."
           text="Anunțurile tale și cele trimise de club către cursurile tale apar aici."
+          action={
+            canCompose ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-3 h-touch-target min-h-touch-target"
+                onClick={() => setComposing(true)}
+              >
+                Publică primul anunț
+              </Button>
+            ) : null
+          }
         />
       )}
     </div>
