@@ -1,7 +1,8 @@
 import { expect, test } from 'vitest'
 
-import { grupeazaInLocuri, loculRandului } from './locuri'
-import type { LocationRow } from '@/api/public'
+import { grupeazaInLocuri, locuriCuOferte, loculRandului } from './locuri'
+import type { ActivityListItem, CourseListItem, LocationRow } from '@/api/public'
+import type { TabaraDinLista } from '@/api/camps'
 
 function rand(over: Partial<LocationRow> & { id: string }): LocationRow {
   return {
@@ -123,4 +124,24 @@ test('un rând se regăsește în locul lui, oricare din grup ar fi', () => {
   expect(loculRandului(locuri, 'b')!.cheie).toBe(loculRandului(locuri, 'a')!.cheie)
   expect(loculRandului(locuri, 'c')!.cheie).not.toBe(loculRandului(locuri, 'a')!.cheie)
   expect(loculRandului(locuri, 'nu-exista')).toBeUndefined()
+})
+
+test('locuriCuOferte păstrează doar locurile cu curs, activitate sau tabără', () => {
+  const locuri = grupeazaInLocuri([
+    rand({ id: 'a', name: 'Cu curs', lat: 45.1, lng: 21.1 }),
+    rand({ id: 'b', name: 'Cu activitate', lat: 45.2, lng: 21.2 }),
+    rand({ id: 'c', name: 'Cu tabără', lat: 45.3, lng: 21.3 }),
+    rand({ id: 'd', name: 'Gol', lat: 47.3, lng: 13.4 }),
+    rand({ id: 'e', name: 'Tabără fără loc accesibil', lat: 45.4, lng: 21.4 }),
+  ])
+  const rezultat = locuriCuOferte(
+    locuri,
+    [{ id: 'c1', location_id: 'a' }] as unknown as CourseListItem[],
+    [{ id: 'a1', location_id: 'b' }] as unknown as ActivityListItem[],
+    [
+      { id: 't1', location_id: 'c', location: { id: 'c' } },
+      { id: 't2', location_id: 'e', location: null },
+    ] as unknown as TabaraDinLista[],
+  )
+  expect(rezultat.map((p) => p.location.nume)).toEqual(['Cu curs', 'Cu activitate', 'Cu tabără'])
 })
