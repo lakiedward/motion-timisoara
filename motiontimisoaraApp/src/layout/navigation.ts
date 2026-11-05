@@ -72,6 +72,7 @@ export const adminNavigation: PortalNavItem[] = [
   { to: '/admin/announcements', label: 'Anunțuri', icon: Megaphone },
   { to: '/admin/attendance', label: 'Prezență', icon: ClipboardCheck },
   { to: '/admin/payments', label: 'Plăți', icon: Wallet },
+  ...webOnly([{ to: '/admin/subscriptions', label: 'Abonamente', icon: CreditCard }]),
   { to: '/admin/sports', label: 'Sporturi', icon: Dumbbell },
   { to: '/admin/codes', label: 'Coduri invitație', icon: Ticket },
 ]

@@ -3,6 +3,7 @@ import RootLayout from '@/routes/RootLayout'
 import CoreLayout from '@/layout/CoreLayout'
 import { RequireAuth, RequireRole } from '@/routes/guards'
 import {
+  ADMIN_SUBSCRIPTION_ROUTES,
   CLUB_SUBSCRIPTION_ROUTES,
   COACH_SUBSCRIPTION_ROUTES,
   SUBSCRIPTION_ROUTES,
@@ -286,6 +287,7 @@ export const router = createBrowserRouter([
               { path: '/admin/announcements/new', element: <AdminAnnouncementFormPage /> },
               { path: '/admin/attendance', element: <AdminAttendancePage /> },
               { path: '/admin/payments', element: <AdminPaymentsPage /> },
+              ...(NATIVE_BUILD ? [] : webOnly(ADMIN_SUBSCRIPTION_ROUTES)),
               { path: '/admin/locations', element: <AdminLocationsPage /> },
               { path: '/admin/locations/new', element: <ClubLocationFormPage portal="admin" /> },
               {

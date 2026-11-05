@@ -3713,6 +3713,28 @@ export type Database = {
           transferred: boolean
         }[]
       }
+      get_admin_subscriptions: {
+        Args: never
+        Returns: {
+          access_end: string
+          adjustments: Json
+          cancel_at_period_end: boolean
+          coach_count: number
+          created_at: string
+          current_period_end: string
+          has_stripe_subscription: boolean
+          id: string
+          plan_code: string
+          plan_name: string
+          price_bani: number
+          scheduled_plan_name: string
+          status: string
+          subscriber_email: string
+          subscriber_name: string
+          subscriber_type: string
+          trial_end: string
+        }[]
+      }
       get_card_payments_month: {
         Args: never
         Returns: {
