@@ -19,7 +19,7 @@ vi.mock('@/api/public', async () => {
   return { ...real, getActivitateDetaliu: vi.fn() }
 })
 
-let utilizator: { id: string } | null = null
+let utilizator: { id: string; role: string } | null = null
 vi.mock('@/lib/auth-context', () => ({ useAuth: () => ({ user: utilizator }) }))
 
 const mocked = vi.mocked(getActivitateDetaliu)
@@ -322,13 +322,23 @@ test('prețul în lei nu are notă, zero e Gratuit, iar înscrierea cere login',
 
 test('contul deschis duce la checkout, iar cursul lipsă lasă înscrierea', async () => {
   const user = userEvent.setup()
-  utilizator = { id: 'parinte-1' }
+  utilizator = { id: 'parinte-1', role: 'PARENT' }
   mocked.mockResolvedValue({ ...DETALIU, eur_ron_rate_micros: null })
   deseneaza()
   const nota = await screen.findByText(/Cursul în lei nu este disponibil/)
   expect(nota.className).toContain('text-xs')
   await user.click(screen.getByRole('button', { name: 'Înscrie-te' }))
   expect(navigheaza).toHaveBeenCalledWith('/account/checkout?kind=ACTIVITY&id=act-1')
+})
+
+test('un cont de antrenor vede că înscrierea se face din cont de părinte, fără buton', async () => {
+  utilizator = { id: 'antrenor-1', role: 'COACH' }
+  deseneaza()
+  expect(
+    await screen.findByText('Înscrierile se fac dintr-un cont de părinte.'),
+  ).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Înscrie-te' })).not.toBeInTheDocument()
+  expect(navigheaza).not.toHaveBeenCalled()
 })
 
 test('activitatea încheiată închide înscrierea și nu mai spune locurile', async () => {

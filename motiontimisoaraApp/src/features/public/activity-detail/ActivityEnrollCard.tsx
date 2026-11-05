@@ -1,3 +1,4 @@
+import { PARENT_ACCOUNT_REQUIRED } from '@/api/checkout'
 import { OfferExchangeNote } from '@/components/OfferExchangeNote'
 import { formatOfferPrice } from '@/lib/money'
 import { plural } from '@/lib/plural'
@@ -7,12 +8,14 @@ export function ActivityEnrollCard({
   spotsLeft,
   ended,
   full,
+  parentAccount,
   onEnroll,
 }: {
   offer: { price: number; currency: string; eur_ron_rate_micros?: number | null }
   spotsLeft: number | null
   ended: boolean
   full: boolean
+  parentAccount: boolean
   onEnroll: () => void
 }) {
   return (
@@ -36,6 +39,10 @@ export function ActivityEnrollCard({
       ) : full ? (
         <p className="text-muted-foreground bg-muted mt-5 w-full rounded-lg px-4 py-3 text-sm font-medium">
           Toate locurile sunt ocupate.
+        </p>
+      ) : !parentAccount ? (
+        <p className="text-muted-foreground bg-muted mt-5 w-full rounded-lg px-4 py-3 text-sm">
+          {PARENT_ACCOUNT_REQUIRED}
         </p>
       ) : (
         <button type="button" onClick={onEnroll} className="btn-cta btn-cta--primary mt-5 w-full">
