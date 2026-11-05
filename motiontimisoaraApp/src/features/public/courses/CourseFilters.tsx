@@ -18,7 +18,7 @@ import { SportPills } from '@/components/catalog-filters/SportPills'
 
 const PRICE_OPTIONS = COURSE_PRICE_LIMITS.map((limit) => ({
   value: String(limit),
-  label: `Până la ${formatRon(limit).replace(',00', '')} / lună`,
+  label: `Până la ${formatRon(limit).replace(',00', '')} / ședință`,
 }))
 
 const SHORT_DAYS: Record<string, string> = {
@@ -118,9 +118,9 @@ export function CourseFilters({
         </div>
         <FilterMenu
           id="course-price-filter"
-          label="Buget pe lună"
+          label="Preț pe ședință"
           value={filters.maxPrice}
-          allLabel="Orice buget"
+          allLabel="Orice preț"
           options={PRICE_OPTIONS}
           onChange={set('maxPrice')}
         />

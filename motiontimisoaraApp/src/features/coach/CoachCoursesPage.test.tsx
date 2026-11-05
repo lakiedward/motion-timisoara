@@ -130,7 +130,7 @@ test('filled rows show title, sport and status badges, location, age, price and 
       id: '1',
       name: 'Înot — audit UI',
       active: false,
-      price: 48000,
+      price_per_session: 4800,
       age_from: 8,
       age_to: 14,
       sport: { id: 's2', code: 'run', name: 'Alergare' },
@@ -140,7 +140,7 @@ test('filled rows show title, sport and status badges, location, age, price and 
       id: '2',
       name: 'Înot — audit UI',
       active: true,
-      price: 60000,
+      price_per_session: 6000,
       age_from: 6,
       age_to: 10,
       sport: { id: 's1', code: 'swim', name: 'Înot' },
@@ -150,7 +150,7 @@ test('filled rows show title, sport and status badges, location, age, price and 
       id: '3',
       name: 'Înot — audit UI',
       active: true,
-      price: 40000,
+      price_per_session: 4000,
       age_from: 7,
       age_to: 12,
       sport: { id: 's1', code: 'swim', name: 'Înot' },
@@ -165,9 +165,9 @@ test('filled rows show title, sport and status badges, location, age, price and 
   expect(screen.getByText('Alergare')).toBeInTheDocument()
   expect(screen.getByText('Inactiv')).toBeInTheDocument()
   expect(screen.getAllByText('Activ')).toHaveLength(2)
-  expect(screen.getByText('480,00 lei')).toBeInTheDocument()
-  expect(screen.getByText('600,00 lei')).toBeInTheDocument()
-  expect(screen.getByText('400,00 lei')).toBeInTheDocument()
+  expect(screen.getByText('48,00 lei / ședință')).toBeInTheDocument()
+  expect(screen.getByText('60,00 lei / ședință')).toBeInTheDocument()
+  expect(screen.getByText('40,00 lei / ședință')).toBeInTheDocument()
   const rows = screen.getAllByRole('listitem')
   expect(rows[0]).toHaveTextContent('8–14 ani')
   expect(rows[1]).toHaveTextContent('6–10 ani')

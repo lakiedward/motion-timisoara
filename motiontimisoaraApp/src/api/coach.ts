@@ -76,7 +76,7 @@ export async function createCourse(input: CourseFormInput): Promise<Tables<'cour
     .insert({
       ...input,
       coach_id: coachId,
-      price: input.price_per_session * 8,
+      price: input.price_per_session,
       active: true,
     })
     .select()
@@ -94,7 +94,7 @@ export async function createCourse(input: CourseFormInput): Promise<Tables<'cour
 export async function updateCourse(id: string, input: CourseFormInput): Promise<Tables<'courses'>> {
   const { data, error } = await supabase
     .from('courses')
-    .update({ ...input, price: input.price_per_session * 8 })
+    .update({ ...input, price: input.price_per_session })
     .eq('id', id)
     .select()
     .single()

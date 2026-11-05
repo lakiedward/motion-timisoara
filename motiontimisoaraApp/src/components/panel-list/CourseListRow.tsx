@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 
 export type CourseListItem = Pick<
   Tables<'courses'>,
-  'id' | 'name' | 'active' | 'price' | 'currency' | 'age_from' | 'age_to'
+  'id' | 'name' | 'active' | 'price_per_session' | 'currency' | 'age_from' | 'age_to'
 > & {
   sport: { name: string } | null
   location: { name: string } | null
@@ -67,7 +67,9 @@ export function CourseListRow({
             </span>
           )}
           {enrollment}
-          <span className="text-foreground font-semibold">{formatMoney(c.price, c.currency)}</span>
+          <span className="text-foreground font-semibold">
+            {formatMoney(c.price_per_session, c.currency)} / ședință
+          </span>
         </p>
         {showCoach && (
           <p className="text-muted-foreground mt-1 text-sm wrap-anywhere">
