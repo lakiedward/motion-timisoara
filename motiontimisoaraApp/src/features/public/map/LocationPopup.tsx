@@ -11,8 +11,6 @@ import {
   SPORT_GLYPH_FALLBACK,
 } from '@/components/sport/sport-icons'
 
-const dateFmt = new Intl.DateTimeFormat('ro-RO', { day: 'numeric', month: 'short' })
-
 function PopupRow({
   to,
   sportCode,
@@ -81,17 +79,17 @@ export default function LocationPopup({
             <MapPin className="size-4" />
           </span>
           <div className="min-w-0">
-            <p className="font-display text-primary-foreground break-words text-base font-extrabold leading-tight">
+            <div className="font-display text-primary-foreground break-words text-base font-extrabold leading-tight">
               {location.nume}
-            </p>
-            <p className="text-primary-foreground mt-1 break-words text-xs leading-snug">
+            </div>
+            <div className="text-primary-foreground mt-1 break-words text-xs leading-snug">
               {location.address ? `${location.address}, ` : ''}
               {location.city}
-            </p>
+            </div>
             {location.cluburi > 1 && (
-              <p className="text-primary-foreground mt-1 text-xs">
+              <div className="text-primary-foreground mt-1 text-xs">
                 {plural(location.cluburi, 'club se antrenează aici', 'cluburi se antrenează aici')}
-              </p>
+              </div>
             )}
           </div>
         </div>
@@ -128,11 +126,9 @@ export default function LocationPopup({
                   sportCode={activity.sport?.code}
                   title={activity.name}
                   meta={[
-                    dateFmt.format(new Date(activity.activity_date)),
-                    activity.start_time?.slice(0, 5),
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')}
+                    formatZi(activity.activity_date),
+                    `${activity.start_time.slice(0, 5)}–${activity.end_time.slice(0, 5)}`,
+                  ].join(' · ')}
                 />
               ))}
             </div>

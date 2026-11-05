@@ -159,48 +159,45 @@ export default function LocationMap({
               />
             )}
             <FocusLocation locationId={focusId} locations={visibleLocations} markers={markers} />
-            {visiblePlaces.map(
-              ({
-                location,
-                courses: placeCourses,
-                activities: placeActivities,
-                camps: placeCamps,
-              }) => {
-                return (
-                  <Marker
-                    key={location.cheie}
-                    position={[location.lat, location.lng]}
-                    icon={getOfferMarkerIcon({
-                      courses: placeCourses.length > 0,
-                      activities: placeActivities.length > 0,
-                      camps: placeCamps.length > 0,
-                    })}
-                    alt={location.nume}
-                    title={location.nume}
-                    riseOnHover
-                    ref={(marker) => {
-                      if (marker) markers.current.set(location.cheie, marker)
-                      else markers.current.delete(location.cheie)
-                    }}
+            {visiblePlaces.map(({ location, courses, activities, camps }) => {
+              const placeCourses = offerType === 'all' || offerType === 'courses' ? courses : []
+              const placeActivities =
+                offerType === 'all' || offerType === 'activities' ? activities : []
+              const placeCamps = offerType === 'all' || offerType === 'camps' ? camps : []
+              return (
+                <Marker
+                  key={location.cheie}
+                  position={[location.lat, location.lng]}
+                  icon={getOfferMarkerIcon({
+                    courses: placeCourses.length > 0,
+                    activities: placeActivities.length > 0,
+                    camps: placeCamps.length > 0,
+                  })}
+                  alt={location.nume}
+                  title={location.nume}
+                  riseOnHover
+                  ref={(marker) => {
+                    if (marker) markers.current.set(location.cheie, marker)
+                    else markers.current.delete(location.cheie)
+                  }}
+                >
+                  <Popup
+                    className="mt-popup"
+                    minWidth={264}
+                    maxWidth={280}
+                    autoPanPaddingTopLeft={[64, 16]}
+                    autoPanPaddingBottomRight={[16, 16]}
                   >
-                    <Popup
-                      className="mt-popup"
-                      minWidth={264}
-                      maxWidth={280}
-                      autoPanPaddingTopLeft={[64, 16]}
-                      autoPanPaddingBottomRight={[16, 16]}
-                    >
-                      <LocationPopup
-                        location={location}
-                        courses={placeCourses}
-                        activities={placeActivities}
-                        camps={placeCamps}
-                      />
-                    </Popup>
-                  </Marker>
-                )
-              },
-            )}
+                    <LocationPopup
+                      location={location}
+                      courses={placeCourses}
+                      activities={placeActivities}
+                      camps={placeCamps}
+                    />
+                  </Popup>
+                </Marker>
+              )
+            })}
             {visibleClubs.map((club) => (
               <Marker
                 key={`club-${club.id}`}

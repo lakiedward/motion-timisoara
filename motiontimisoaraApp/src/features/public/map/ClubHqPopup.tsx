@@ -6,7 +6,7 @@ export default function ClubHqPopup({ club }: { club: ClubHeadquarters }) {
   const address = [club.address, club.city].filter(Boolean).join(', ')
   return (
     <>
-      <div className="bg-foreground shrink-0 px-3.5 py-3">
+      <div className="mt-popup-club bg-foreground shrink-0 px-3.5 py-3">
         <div className="flex items-start gap-2.5 pr-11">
           <span className="bg-background/20 text-background mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg">
             <Building2 className="size-4" />
