@@ -1,9 +1,10 @@
-import { beforeEach, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 
 import {
   activitateSAincheiat,
   activitatiVizibile,
   activityHeroUrl,
+  getActivities,
   getActivitateDetaliu,
   getActivitatiPublice,
 } from './public'
@@ -94,6 +95,40 @@ beforeEach(() => {
   raspuns = {}
   apeluriRpc = []
   rpcPentru = () => ({ data: 11, error: null })
+})
+
+afterEach(() => {
+  vi.useRealTimers()
+})
+
+test('harta nu primește activitățile deja încheiate', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-11-05T14:43:00Z'))
+  raspuns.activities = {
+    data: [
+      rand({
+        id: 'terminata',
+        activity_date: '2026-11-05',
+        start_time: '11:00:00',
+        end_time: '12:00:00',
+      }),
+      rand({
+        id: 'in-desfasurare',
+        activity_date: '2026-11-05',
+        start_time: '16:00:00',
+        end_time: '18:00:00',
+      }),
+      rand({
+        id: 'maine',
+        activity_date: '2026-11-06',
+        start_time: '09:00:00',
+        end_time: '10:00:00',
+      }),
+    ],
+    error: null,
+  }
+  const activitati = await getActivities()
+  expect(activitati.map((activitate) => activitate.id)).toEqual(['in-desfasurare', 'maine'])
 })
 
 test('o activitate se încheie la ora de final, în Europa/București', () => {
