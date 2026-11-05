@@ -15,6 +15,7 @@ import { PublicHeroBand } from './PublicHeroBand'
 import { CampInfoBand } from './camp-detail/CampInfoBand'
 import { OrganizerCoaches } from './components/OrganizerCoaches'
 import { DetailBackLink } from '@/features/public/components/DetailBackLink'
+import { useDocumentTitle } from '@/lib/page-title'
 
 export default function CampDetailsPage() {
   const { slug = '' } = useParams()
@@ -26,6 +27,7 @@ export default function CampDetailsPage() {
     queryFn: () => getTabaraDetaliu(slug),
     retry: false,
   })
+  useDocumentTitle(data?.tabara.title, 'Tabere')
 
   if (isLoading) {
     return (

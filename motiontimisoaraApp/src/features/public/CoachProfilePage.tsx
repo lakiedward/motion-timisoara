@@ -9,6 +9,7 @@ import { StatusView } from '@/components/ui/status-view'
 import { StarRating } from '@/components/StarRating'
 import { CoachOffer } from './coaches/CoachOffer'
 import { CoachBackLink, CoachHero, CoachHeroSkeleton } from './coaches/CoachHero'
+import { useDocumentTitle } from '@/lib/page-title'
 
 export default function CoachProfilePage() {
   const { id = '' } = useParams()
@@ -24,6 +25,7 @@ export default function CoachProfilePage() {
     queryFn: () => getCoachByUserId(id),
     retry: false,
   })
+  useDocumentTitle(coach?.profile?.name, 'Antrenori')
   const { data: rating } = useQuery({
     queryKey: ['coach-rating', id],
     queryFn: () => getCoachRatingSummary(id),

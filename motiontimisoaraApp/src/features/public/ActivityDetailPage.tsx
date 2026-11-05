@@ -17,6 +17,7 @@ import { PublicHeroBand } from './PublicHeroBand'
 import { ActivityEnrollCard } from './activity-detail/ActivityEnrollCard'
 import { ActivityInfoBand } from './activity-detail/ActivityInfoBand'
 import { DetailBackLink } from '@/features/public/components/DetailBackLink'
+import { useDocumentTitle } from '@/lib/page-title'
 
 export default function ActivityDetailPage() {
   const { id = '' } = useParams()
@@ -32,6 +33,7 @@ export default function ActivityDetailPage() {
     queryFn: () => getActivitateDetaliu(id),
     retry: false,
   })
+  useDocumentTitle(a?.name, 'Activități')
 
   if (isLoading) {
     return (
