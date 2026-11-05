@@ -8,9 +8,11 @@ import { NativeAppShell } from '@/layout/native/NativeAppShell'
 import { ScrollToTop } from '@/layout/ScrollToTop'
 import { usesNativeNavigation } from '@/layout/native/native-runtime'
 import { useAuth } from '@/lib/auth-context'
+import { useRouteTitle } from '@/lib/page-title'
 
 export default function RootLayout() {
   const { user } = useAuth()
+  useRouteTitle()
   return (
     <>
       <NativeOAuthListener />

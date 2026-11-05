@@ -8,6 +8,7 @@ import { ClubAbout } from './club-detail/ClubAbout'
 import { ClubContact } from './club-detail/ClubContact'
 import { ClubHero } from './club-detail/ClubHero'
 import { ClubOffer } from './club-detail/ClubOffer'
+import { useDocumentTitle } from '@/lib/page-title'
 
 export default function ClubDetailPage() {
   const { id = '' } = useParams()
@@ -21,6 +22,7 @@ export default function ClubDetailPage() {
     queryFn: () => getPublicClub(id),
     retry: false,
   })
+  useDocumentTitle(club?.name, 'Cluburi')
 
   if (isLoading) {
     return (

@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { CourseDetailsInfo } from '@/features/public/courses/CourseDetailsInfo'
 import { CourseHero } from '@/features/public/courses/CourseHero'
 import { CourseEnrollCard } from '@/features/public/courses/CourseEnrollCard'
+import { useDocumentTitle } from '@/lib/page-title'
 
 export default function CourseDetailsPage() {
   const { id = '' } = useParams()
@@ -21,6 +22,7 @@ export default function CourseDetailsPage() {
     queryKey: ['course', id],
     queryFn: () => getCourse(id),
   })
+  useDocumentTitle(course?.name, 'Cursuri')
   const { data: spotsRemaining } = useQuery({
     queryKey: ['course-spots', id],
     queryFn: () => getCourseSpotsRemaining(id),
