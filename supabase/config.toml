@@ -146,3 +146,8 @@ verify_jwt = true
 
 [functions.change-subscription-plan]
 verify_jwt = true
+
+[functions.send-subscription-emails]
+# Called hourly by pg_cron with the service key. verify_jwt checks the signature;
+# the function then requires the service_role claim, because anon and user JWTs are valid too.
+verify_jwt = true

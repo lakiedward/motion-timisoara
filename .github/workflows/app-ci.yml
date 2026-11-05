@@ -129,6 +129,10 @@ jobs:
         run: deno test --no-lock --allow-read=motiontimisoaraApp/src supabase/functions/sync-subscription-prices/contract.test.ts
       - name: Type-check subscription price sync function
         run: deno check --no-lock supabase/functions/sync-subscription-prices/index.ts
+      - name: Verify subscription emails contract
+        run: deno test --no-lock supabase/functions/send-subscription-emails/contract.test.ts
+      - name: Type-check subscription emails function
+        run: deno check --no-lock supabase/functions/send-subscription-emails/index.ts
       - name: Verify push audience, delivery and concurrent claims
         shell: pwsh
         run: ./supabase/tests/run-push-delivery.ps1
