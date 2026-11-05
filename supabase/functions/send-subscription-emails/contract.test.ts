@@ -193,6 +193,10 @@ Deno.test("run: test mode skips real users, sends to test accounts, never twice,
   const off = await runSubscriptionEmails({ store: memoryStore(subscriptions, "a@b.ro").store, sender, mode: "off", allowed: new Set(), siteUrl: "https://motionromania.ro", now: NOW });
   assertEquals([off.due, sent.length], [0, 0], "off does nothing");
 
+  const keyless = memoryStore(subscriptions, "qa@test.ro");
+  const noKey = await runSubscriptionEmails({ store: keyless.store, sender: null, mode: "test", allowed: new Set(["qa@test.ro"]), siteUrl: "https://motionromania.ro", now: NOW });
+  assertEquals([noKey.due, keyless.log.size], [0, 0], "missing Resend key claims nothing, so emails go out once the key is set");
+
   const real = memoryStore(subscriptions, "client@real.ro");
   const skipped = await runSubscriptionEmails({ store: real.store, sender, mode: "test", allowed: new Set(["qa@test.ro"]), siteUrl: "https://motionromania.ro", now: NOW });
   assertEquals([skipped.skipped, sent.length], [1, 0], "real user skipped in test mode");

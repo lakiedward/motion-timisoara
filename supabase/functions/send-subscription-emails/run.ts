@@ -68,7 +68,7 @@ export interface RunSummary {
 export async function runSubscriptionEmails(options: RunOptions): Promise<RunSummary> {
   const { store, sender, mode, allowed, siteUrl, now } = options;
   const summary: RunSummary = { mode, due: 0, sent: 0, skipped: 0, failed: 0, kinds: {} };
-  if (mode === "off") return summary;
+  if (mode === "off" || !sender) return summary;
 
   const settings = await store.settings();
   const subscriptions = await store.subscriptions();
@@ -85,10 +85,10 @@ export async function runSubscriptionEmails(options: RunOptions): Promise<RunSum
     if (!claim) continue;
     summary.kinds[item.kind] = (summary.kinds[item.kind] ?? 0) + 1;
 
-    if (!sender || !recipientAllowed(mode, allowed, recipient.email)) {
+    if (!recipientAllowed(mode, allowed, recipient.email)) {
       await store.finish(claim, {
         status: "SKIPPED",
-        error: !recipient.email ? "no recipient email" : !sender ? "sender not configured" : `not sent in ${mode} mode`,
+        error: recipient.email ? `not sent in ${mode} mode` : "no recipient email",
       });
       summary.skipped++;
       continue;
