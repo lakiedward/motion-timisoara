@@ -127,7 +127,7 @@ export async function getActivities(): Promise<ActivityListItem[]> {
     .filter('hidden_from_public', 'is', false)
     .order('activity_date')
   if (error) throw error
-  return (data ?? []) as unknown as ActivityListItem[]
+  return activitatiVizibile((data ?? []) as unknown as ActivityListItem[])
 }
 
 export async function getActivity(id: string): Promise<ActivityListItem | null> {
