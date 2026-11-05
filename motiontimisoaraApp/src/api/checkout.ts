@@ -76,6 +76,32 @@ export class EnrollmentRequestError extends Error {
 export const CHECKOUT_SERVER_UNREACHABLE =
   'Nu am putut contacta serverul. Verifică conexiunea și încearcă din nou.'
 
+export const PARENT_ACCOUNT_REQUIRED = 'Înscrierile se fac dintr-un cont de părinte.'
+
+const SERVER_MESSAGES: Record<string, string> = {
+  'Only parents can enroll children': PARENT_ACCOUNT_REQUIRED,
+  'kind, entityId and childIds are required': 'Selectează cel puțin un participant.',
+  'Failed to load children': 'Nu am putut încărca lista de copii. Încearcă din nou.',
+  'Children not found': 'Nu am găsit copiii selectați. Reîncarcă pagina.',
+  'Course not found': 'Nu am găsit acest curs. Poate a fost șters.',
+  'Camp not found': 'Nu am găsit această tabără. Poate a fost ștearsă.',
+  'Activity not found': 'Nu am găsit această activitate. Poate a fost ștearsă.',
+  'Course is not active': 'Cursul nu mai primește înscrieri.',
+  'Activity is not active': 'Activitatea nu mai primește înscrieri.',
+  'Cash payments not allowed for this camp': 'La această tabără se plătește doar cu cardul.',
+  'Method not allowed': CHECKOUT_SERVER_UNREACHABLE,
+}
+
+export function checkoutErrorMessage(message: string): string {
+  const known = SERVER_MESSAGES[message]
+  if (known) return known
+  const enrolled = /^Child already enrolled: (.+)$/.exec(message)
+  if (enrolled) return `${enrolled[1].trim()} are deja o înscriere aici.`
+  const spots = /^Not enough spots\. Requested: (\d+), Available: (\d+)$/.exec(message)
+  if (spots) return `Locuri insuficiente: mai sunt ${spots[2]}, ai nevoie de ${spots[1]}.`
+  return message
+}
+
 export async function invokeCheckoutFunction<T>(
   name: string,
   body: Record<string, unknown>,
@@ -85,11 +111,14 @@ export async function invokeCheckoutFunction<T>(
     const details = (data as FunctionErrorBody | null)?.error
       ? (data as FunctionErrorBody)
       : await readFunctionError(error)
-    throw new EnrollmentRequestError(details?.error ?? CHECKOUT_SERVER_UNREACHABLE, details?.code)
+    throw new EnrollmentRequestError(
+      details?.error ? checkoutErrorMessage(details.error) : CHECKOUT_SERVER_UNREACHABLE,
+      details?.code,
+    )
   }
   if ((data as { error?: string } | null)?.error) {
     const details = data as FunctionErrorBody
-    throw new EnrollmentRequestError(details.error!, details.code)
+    throw new EnrollmentRequestError(checkoutErrorMessage(details.error!), details.code)
   }
   return data as T
 }

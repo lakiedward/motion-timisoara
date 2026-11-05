@@ -153,6 +153,7 @@ export default function ActivityDetailPage() {
               spotsLeft={a.locuriRamase}
               ended={incheiata}
               full={plina}
+              parentAccount={!user || user.role === 'PARENT'}
               onEnroll={onEnroll}
             />
           </aside>

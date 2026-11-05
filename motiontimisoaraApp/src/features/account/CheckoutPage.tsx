@@ -1,6 +1,11 @@
 import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { getCheckoutCamp, type EnrollmentKind, type PaymentMethod } from '@/api/checkout'
+import {
+  getCheckoutCamp,
+  PARENT_ACCOUNT_REQUIRED,
+  type EnrollmentKind,
+  type PaymentMethod,
+} from '@/api/checkout'
 import { getActivity, getCourse } from '@/api/public'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -15,6 +20,7 @@ import {
 } from '@/api/camp-rules-file'
 import { campRulesForDisplay } from '@/lib/camp-rules'
 import { rulesFingerprint } from './checkout/checkout-acceptance'
+import { useAuth } from '@/lib/auth-context'
 
 const DEFAULT_PACKAGES = [5, 10, 20]
 
@@ -47,6 +53,8 @@ export default function CheckoutPage() {
   const kind = (params.get('kind') ?? 'COURSE').toUpperCase() as EnrollmentKind
   const id = params.get('id')
   const slug = params.get('slug')
+  const { user } = useAuth()
+  const parentAccount = user?.role === 'PARENT'
 
   const {
     data: offering,
@@ -100,8 +108,17 @@ export default function CheckoutPage() {
       }
       return null
     },
-    enabled: Boolean(id || slug),
+    enabled: parentAccount && Boolean(id || slug),
   })
+
+  if (!parentAccount) {
+    return (
+      <Invalid
+        title={PARENT_ACCOUNT_REQUIRED}
+        message="Contul cu care ești conectat nu este de părinte. Ca să înscrii un copil, intră cu un cont de părinte."
+      />
+    )
+  }
 
   if (!id && !slug) {
     return (
