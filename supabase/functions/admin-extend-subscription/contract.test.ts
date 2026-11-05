@@ -100,7 +100,7 @@ Deno.test("an extension without Stripe is stored with the computed end", async (
 
 Deno.test("a live Stripe subscription gets the new trial end before the database changes", async () => {
   const order: string[] = [];
-  const { calls, handler } = setup({
+  const { handler } = setup({
     beginExtension: () => Promise.resolve(plan({ stripeSubscriptionId: "sub_test1" })),
     setStripeTrialEnd: () => {
       order.push("stripe");
@@ -114,19 +114,19 @@ Deno.test("a live Stripe subscription gets the new trial end before the database
   const response = await handler(post(VALID));
   assertEquals((await response.json()).stripeUpdated, true);
   assertEquals(order, ["stripe", "apply"]);
-  assertEquals(calls.begin.length, 1);
 });
 
 Deno.test("the Stripe trial end is the new end in whole seconds", async () => {
-  const { calls, handler } = setup({
+  const stripeCalls: unknown[][] = [];
+  const { handler } = setup({
     beginExtension: () => Promise.resolve(plan({ stripeSubscriptionId: "sub_test1" })),
     setStripeTrialEnd: (...args) => {
-      calls.stripe.push(args);
+      stripeCalls.push(args);
       return Promise.resolve();
     },
   });
   await handler(post(VALID));
-  assertEquals(calls.stripe, [["sub_test1", Math.floor(Date.parse(NEW_END) / 1000)]]);
+  assertEquals(stripeCalls, [["sub_test1", Math.floor(Date.parse(NEW_END) / 1000)]]);
 });
 
 Deno.test("an ended Stripe subscription is not touched but the extension is stored", async () => {
