@@ -396,7 +396,7 @@ export async function getAllCourses(): Promise<AdminCourse[]> {
         '*, sport:sports(name), coach:profiles(name), location:locations(name), club:clubs(name)',
       )
       .order('name')
-      .order('price')
+      .order('price_per_session')
       .order('id'),
     getCourseEnrollmentRows(),
   ])

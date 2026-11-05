@@ -31,7 +31,7 @@ function renderPage(props: Parameters<typeof AdminCoursesPage>[0] = {}) {
 
 function curs(over: Partial<AdminCourse> & { id: string; name: string }): AdminCourse {
   return {
-    price: 48000,
+    price_per_session: 4800,
     currency: 'RON',
     active: true,
     capacity: 12,
@@ -51,12 +51,12 @@ const lista = (): AdminCourse[] => [
   curs({
     id: '1',
     name: 'Înot — audit UI',
-    price: 40000,
+    price_per_session: 4000,
     club_id: 'club-audit',
     location: { name: 'Bazin Audit Motion' },
     club: { name: 'Club Audit Motion' },
   }),
-  curs({ id: '2', name: 'Înot — audit UI', price: 60000 }),
+  curs({ id: '2', name: 'Înot — audit UI', price_per_session: 6000 }),
   curs({
     id: '3',
     name: 'Alergare — audit UI',
@@ -292,7 +292,7 @@ test('fiecare curs e un rand cu nume, locatie, sport, stare, ocupare si pret, la
   expect(within(r).getByText('Înot').getAttribute('data-slot')).toBe('badge')
   expect(within(r).getByText('Activ').getAttribute('data-slot')).toBe('badge')
   expect(r).toHaveTextContent('Antrenor: Audit Antrenor')
-  expect(r).toHaveTextContent(/400,00\slei/)
+  expect(r).toHaveTextContent(/40,00\slei \/ ședință/)
   expect(
     within(r).getByRole('button', { name: 'Dezactivează Înot — audit UI' }),
   ).toBeInTheDocument()

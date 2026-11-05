@@ -11,7 +11,7 @@ export type CourseSlot = { iso: number; start: string }
 export type CatalogCourseFields = {
   recurrence_rule: string | null
   occurrences: { starts_at: string }[] | null
-  price: number
+  price_per_session: number
   currency: string
   eur_ron_rate_micros: number | null
   sport: { code: string; name: string } | null
@@ -34,7 +34,7 @@ export const EMPTY_COURSE_FILTERS: CourseCatalogFilters = {
 
 export const COURSE_PAGE_SIZE = 12
 
-export const COURSE_PRICE_LIMITS = [20_000, 40_000, 60_000, 100_000]
+export const COURSE_PRICE_LIMITS = [3_000, 5_000, 7_500, 10_000]
 
 const SHORT_WEEKDAYS: Record<number, string> = {
   1: 'Lu',
@@ -94,12 +94,12 @@ export function formatCourseSchedule(slots: CourseSlot[]): string | null {
     .join('; ')
 }
 
-export function monthlyPriceInRonBani(
-  course: Pick<CatalogCourseFields, 'price' | 'currency' | 'eur_ron_rate_micros'>,
+export function sessionPriceInRonBani(
+  course: Pick<CatalogCourseFields, 'price_per_session' | 'currency' | 'eur_ron_rate_micros'>,
 ): number | null {
-  if (course.currency === 'RON') return course.price
+  if (course.currency === 'RON') return course.price_per_session
   if (course.currency === 'EUR' && course.eur_ron_rate_micros && course.eur_ron_rate_micros > 0)
-    return Math.round((course.price * course.eur_ron_rate_micros) / 1_000_000)
+    return Math.round((course.price_per_session * course.eur_ron_rate_micros) / 1_000_000)
   return null
 }
 
@@ -121,7 +121,7 @@ export function courseMatchesFilters(
   if (filters.day && !courseSlots(course, now).some((slot) => String(slot.iso) === filters.day))
     return false
   if (filters.maxPrice) {
-    const price = monthlyPriceInRonBani(course)
+    const price = sessionPriceInRonBani(course)
     if (price === null || price > Number(filters.maxPrice)) return false
   }
   return true

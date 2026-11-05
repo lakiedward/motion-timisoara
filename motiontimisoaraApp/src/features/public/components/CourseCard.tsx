@@ -25,8 +25,8 @@ export function CourseCard({ course }: { course: CourseListItem }) {
           content: `${course.location?.city ?? 'Timișoara'}${ages}`,
         },
       ]}
-      price={formatMoney(course.price, course.currency)}
-      priceSuffix="/ lună"
+      price={formatMoney(course.price_per_session, course.currency)}
+      priceSuffix="/ ședință"
     />
   )
 }

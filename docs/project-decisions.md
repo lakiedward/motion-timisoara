@@ -263,3 +263,9 @@ reorganizing this document; correct obsolete facts with current evidence.
   unchanged, so QA flows keep working. The owner chose to flag the accounts only at
   launch, because hiding them now would empty the catalog. See
   `docs/superpowers/specs/2026-11-02-test-account-visibility.md`.
+- 2026-11-05 — Bug #1309: courses show only the per-session price ("X lei / ședință") on cards, the
+  public detail page, panel lists and the "Preț pe ședință" filter. The legacy `price = pricePerSession × 8`
+  "/ lună" figure matched no payment: checkout charges price per session × the package the parent
+  picks (default 10). `courses.price` is now written equal to `price_per_session` and no screen reads
+  it; existing rows keep their old ×8 value until a later cleanup. The owner chose this over a
+  program-derived monthly estimate and over a "pachet 8 ședințe" label.

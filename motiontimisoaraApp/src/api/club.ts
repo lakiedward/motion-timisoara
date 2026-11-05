@@ -399,7 +399,7 @@ export async function createClubCourse(clubId: string | null, input: ClubCourseF
       ...input,
       club_id: clubId,
       payment_recipient: clubId ? 'CLUB' : 'COACH',
-      price: input.price_per_session * 8,
+      price: input.price_per_session,
       active: true,
     })
     .select()
@@ -416,7 +416,7 @@ export async function createClubCourse(clubId: string | null, input: ClubCourseF
 export async function updateClubCourse(id: string, input: ClubCourseFormInput) {
   const { error } = await supabase
     .from('courses')
-    .update({ ...input, price: input.price_per_session * 8 })
+    .update({ ...input, price: input.price_per_session })
     .eq('id', id)
     .select()
     .single()
