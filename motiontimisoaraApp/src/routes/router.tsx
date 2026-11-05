@@ -3,11 +3,13 @@ import RootLayout from '@/routes/RootLayout'
 import CoreLayout from '@/layout/CoreLayout'
 import { RequireAuth, RequireRole } from '@/routes/guards'
 import {
+  ADMIN_SUBSCRIPTION_ROUTES,
   CLUB_SUBSCRIPTION_ROUTES,
   COACH_SUBSCRIPTION_ROUTES,
   SUBSCRIPTION_ROUTES,
 } from '@/routes/subscription-routes'
 import { NATIVE_BUILD, webOnly } from '@/lib/store-compliance'
+import { pageTitle } from '@/lib/page-title'
 import CoachLayout from '@/features/coach/CoachLayout'
 import CoachDashboard from '@/features/coach/CoachDashboard'
 import CoachCoursesPage from '@/features/coach/CoachCoursesPage'
@@ -115,24 +117,40 @@ export const router = createBrowserRouter([
         element: <CoreLayout />,
         children: [
           { path: '/', element: <HomePage /> },
-          { path: '/cursuri', element: <ProgramPage /> },
-          { path: '/cursuri/:id', element: <CourseDetailsPage /> },
-          { path: '/activitati', element: <ActivitiesPage /> },
-          { path: '/activitati/:id', element: <ActivityDetailPage /> },
-          { path: '/tabere', element: <CampsPage /> },
-          { path: '/tabere/:slug', element: <CampDetailsPage /> },
-          { path: '/concursuri', element: <CompetitionsPage /> },
-          { path: '/concursuri/:slug', element: <CompetitionDetailsPage /> },
-          { path: '/antrenori', element: <CoachesPage /> },
-          { path: '/antrenori/:id', element: <CoachProfilePage /> },
-          { path: '/cluburi', element: <ClubsPage /> },
-          { path: '/cluburi/:id', element: <ClubDetailPage /> },
-          { path: '/harta', element: <MapPage /> },
-          { path: '/despre', element: <AboutPage /> },
-          { path: '/contact', element: <ContactPage /> },
-          { path: '/termeni', element: <TermsPage /> },
-          { path: '/confidentialitate', element: <PrivacyPage /> },
-          { path: '/stergere-cont', element: <AccountDeletionPage /> },
+          { path: '/cursuri', element: <ProgramPage />, handle: pageTitle('Cursuri') },
+          { path: '/cursuri/:id', element: <CourseDetailsPage />, handle: pageTitle('Cursuri') },
+          { path: '/activitati', element: <ActivitiesPage />, handle: pageTitle('Activități') },
+          {
+            path: '/activitati/:id',
+            element: <ActivityDetailPage />,
+            handle: pageTitle('Activități'),
+          },
+          { path: '/tabere', element: <CampsPage />, handle: pageTitle('Tabere') },
+          { path: '/tabere/:slug', element: <CampDetailsPage />, handle: pageTitle('Tabere') },
+          { path: '/concursuri', element: <CompetitionsPage />, handle: pageTitle('Concursuri') },
+          {
+            path: '/concursuri/:slug',
+            element: <CompetitionDetailsPage />,
+            handle: pageTitle('Concursuri'),
+          },
+          { path: '/antrenori', element: <CoachesPage />, handle: pageTitle('Antrenori') },
+          { path: '/antrenori/:id', element: <CoachProfilePage />, handle: pageTitle('Antrenori') },
+          { path: '/cluburi', element: <ClubsPage />, handle: pageTitle('Cluburi') },
+          { path: '/cluburi/:id', element: <ClubDetailPage />, handle: pageTitle('Cluburi') },
+          { path: '/harta', element: <MapPage />, handle: pageTitle('Harta') },
+          { path: '/despre', element: <AboutPage />, handle: pageTitle('Despre noi') },
+          { path: '/contact', element: <ContactPage />, handle: pageTitle('Contact') },
+          { path: '/termeni', element: <TermsPage />, handle: pageTitle('Termeni și condiții') },
+          {
+            path: '/confidentialitate',
+            element: <PrivacyPage />,
+            handle: pageTitle('Confidențialitate'),
+          },
+          {
+            path: '/stergere-cont',
+            element: <AccountDeletionPage />,
+            handle: pageTitle('Ștergerea contului'),
+          },
           ...(NATIVE_BUILD ? [] : webOnly(SUBSCRIPTION_ROUTES)),
           ...(import.meta.env.DEV
             ? [
@@ -169,7 +187,7 @@ export const router = createBrowserRouter([
               },
             ],
           },
-          { path: '*', element: <NotFoundPage /> },
+          { path: '*', element: <NotFoundPage />, handle: pageTitle('Pagina nu a fost găsită') },
         ],
       },
       {
@@ -286,6 +304,7 @@ export const router = createBrowserRouter([
               { path: '/admin/announcements/new', element: <AdminAnnouncementFormPage /> },
               { path: '/admin/attendance', element: <AdminAttendancePage /> },
               { path: '/admin/payments', element: <AdminPaymentsPage /> },
+              ...(NATIVE_BUILD ? [] : webOnly(ADMIN_SUBSCRIPTION_ROUTES)),
               { path: '/admin/locations', element: <AdminLocationsPage /> },
               { path: '/admin/locations/new', element: <ClubLocationFormPage portal="admin" /> },
               {
@@ -355,14 +374,26 @@ export const router = createBrowserRouter([
           },
         ],
       },
-      { path: '/login', element: <LoginPage /> },
-      { path: '/signup', element: <SignupChoicePage /> },
-      { path: '/register', element: <RegisterPage /> },
-      { path: '/register-coach', element: <CoachSignupPage /> },
-      { path: '/register-club', element: <ClubSignupPage /> },
-      { path: '/forgot-password', element: <ForgotPasswordPage /> },
-      { path: '/reset-password', element: <ResetPasswordPage /> },
-      { path: '/auth/callback', element: <OAuthCallbackPage /> },
+      { path: '/login', element: <LoginPage />, handle: pageTitle('Autentificare') },
+      { path: '/signup', element: <SignupChoicePage />, handle: pageTitle('Creează un cont') },
+      { path: '/register', element: <RegisterPage />, handle: pageTitle('Cont de părinte') },
+      {
+        path: '/register-coach',
+        element: <CoachSignupPage />,
+        handle: pageTitle('Înregistrare antrenor'),
+      },
+      {
+        path: '/register-club',
+        element: <ClubSignupPage />,
+        handle: pageTitle('Înregistrare club'),
+      },
+      {
+        path: '/forgot-password',
+        element: <ForgotPasswordPage />,
+        handle: pageTitle('Resetează parola'),
+      },
+      { path: '/reset-password', element: <ResetPasswordPage />, handle: pageTitle('Parolă nouă') },
+      { path: '/auth/callback', element: <OAuthCallbackPage />, handle: pageTitle('Te conectăm') },
     ],
   },
 ])

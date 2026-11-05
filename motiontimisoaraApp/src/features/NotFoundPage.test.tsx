@@ -19,13 +19,4 @@ describe('NotFoundPage', () => {
     )
     expect(screen.getByRole('link', { name: 'Vezi cursurile' })).toHaveAttribute('href', '/cursuri')
   })
-
-  it('names the browser tab after the missing page', () => {
-    render(
-      <MemoryRouter>
-        <NotFoundPage />
-      </MemoryRouter>,
-    )
-    expect(document.title).toBe('Pagina nu a fost găsită · Motion România')
-  })
 })

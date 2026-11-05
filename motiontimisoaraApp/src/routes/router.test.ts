@@ -56,3 +56,64 @@ test(
   },
   TIMEOUT_REIMPORT_MS,
 )
+
+const PAGINI_PUBLICE_CU_TITLU = [
+  '/cursuri',
+  '/cursuri/:id',
+  '/activitati',
+  '/activitati/:id',
+  '/tabere',
+  '/tabere/:slug',
+  '/concursuri',
+  '/concursuri/:slug',
+  '/antrenori',
+  '/antrenori/:id',
+  '/cluburi',
+  '/cluburi/:id',
+  '/harta',
+  '/despre',
+  '/contact',
+  '/termeni',
+  '/confidentialitate',
+  '/stergere-cont',
+  '/preturi',
+  '/login',
+  '/signup',
+  '/register',
+  '/register-coach',
+  '/register-club',
+  '/forgot-password',
+  '/reset-password',
+  '/auth/callback',
+  '*',
+]
+
+type RutaCuTitlu = { path?: string; handle?: { pageTitle?: string }; children?: RutaCuTitlu[] }
+
+function titluriPeCale(rute: RutaCuTitlu[]): Map<string, string | undefined> {
+  const harta = new Map<string, string | undefined>()
+  for (const r of rute) {
+    if (r.path && !harta.has(r.path)) harta.set(r.path, r.handle?.pageTitle)
+    for (const [cale, titlu] of titluriPeCale(r.children ?? [])) {
+      if (!harta.has(cale)) harta.set(cale, titlu)
+    }
+  }
+  return harta
+}
+
+test(
+  'fiecare pagină publică are un titlu de tab propriu',
+  async () => {
+    vi.stubEnv('DEV', false)
+    vi.resetModules()
+    const { router } = await import('./router')
+    const titluri = titluriPeCale(router.routes as RutaCuTitlu[])
+    const fara = PAGINI_PUBLICE_CU_TITLU.filter((cale) => !titluri.get(cale))
+    expect(fara).toEqual([])
+    const unice = new Set(
+      PAGINI_PUBLICE_CU_TITLU.filter((c) => !c.includes(':')).map((c) => titluri.get(c)),
+    )
+    expect(unice.size).toBe(PAGINI_PUBLICE_CU_TITLU.filter((c) => !c.includes(':')).length)
+  },
+  TIMEOUT_REIMPORT_MS,
+)

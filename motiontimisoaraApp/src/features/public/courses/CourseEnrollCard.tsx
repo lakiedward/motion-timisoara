@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils'
 const FOCUS_RING = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring'
 
 type EnrollCourse = {
-  price: number
   price_per_session: number
   currency: string
   eur_ron_rate_micros?: number | null
@@ -33,7 +32,7 @@ export function CourseEnrollCard({
   myRating: number
   onRate: (value: number) => void
 }) {
-  const free = course.price === 0
+  const free = course.price_per_session === 0
 
   return (
     <div
@@ -41,14 +40,10 @@ export function CourseEnrollCard({
       className="bg-card flex flex-col items-center rounded-xl border p-6 text-center"
     >
       <div className="font-display text-foreground text-3xl font-extrabold">
-        {free ? 'Gratuit' : formatMoney(course.price, course.currency)}
-        {!free && <span className="text-muted-foreground text-base font-normal"> / lună</span>}
+        {free ? 'Gratuit' : formatMoney(course.price_per_session, course.currency)}
+        {!free && <span className="text-muted-foreground text-base font-normal"> / ședință</span>}
       </div>
-      {!free && course.price_per_session > 0 && (
-        <p className="text-muted-foreground mt-1 text-sm">
-          {formatMoney(course.price_per_session, course.currency)} / ședință
-        </p>
-      )}
+      {!free && <p className="text-muted-foreground mt-1 text-sm">Alegi pachetul la înscriere</p>}
       <OfferExchangeNote offer={course} className="text-xs" />
 
       {canEnroll ? (

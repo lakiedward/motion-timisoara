@@ -56,8 +56,8 @@ export function CourseCatalogCard({ course }: { course: CourseCatalogItem }) {
           content: <OrganizerLine prefix="Organizat de" name={organizer.name} />,
         },
       ]}
-      price={formatMoney(course.price, course.currency)}
-      priceSuffix="/ lună"
+      price={formatMoney(course.price_per_session, course.currency)}
+      priceSuffix="/ ședință"
     />
   )
 }

@@ -23,6 +23,7 @@ import { InfoBand, InfoTile } from '@/features/public/components/InfoTile'
 import { OrganizerCoaches } from '@/features/public/components/OrganizerCoaches'
 import { CompetitionEnrollCard } from './registration/CompetitionEnrollCard'
 import { DetailBackLink } from '@/features/public/components/DetailBackLink'
+import { useDocumentTitle } from '@/lib/page-title'
 
 export default function CompetitionDetailsPage() {
   const { slug = '' } = useParams()
@@ -31,6 +32,7 @@ export default function CompetitionDetailsPage() {
     queryFn: () => getConcursPublic(slug),
     retry: false,
   })
+  useDocumentTitle(data?.title, 'Concursuri')
   const now = useCompetitionClock(data?.endAt, data?.registrationDeadlineAt)
   const offers = useQuery({
     queryKey: ['competition-offers', data?.id],

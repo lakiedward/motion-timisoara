@@ -18,7 +18,7 @@ function course(overrides: Partial<CourseCatalogItem>): CourseCatalogItem {
   return {
     id: 'swim',
     name: 'Înot începători',
-    price: 48_000,
+    price_per_session: 6_000,
     currency: 'RON',
     eur_ron_rate_micros: null,
     age_from: 6,
@@ -100,7 +100,7 @@ test('filters narrow the list and the empty result offers a reset', async () => 
     course({
       id: 'run',
       name: 'Alergare',
-      price: 16_000,
+      price_per_session: 2_000,
       sport: { id: 's3', code: 'alergare', name: 'Alergare', default_photo_storage_path: null },
       location: { name: 'Parc', city: 'Timișoara' } as CourseCatalogItem['location'],
       recurrence_rule: null,
@@ -109,7 +109,7 @@ test('filters narrow the list and the empty result offers a reset', async () => 
   renderPage()
   await screen.findByRole('link', { name: 'Înot începători' })
 
-  await pickFilter('Buget pe lună', 'Până la 200 lei / lună')
+  await pickFilter('Preț pe ședință', 'Până la 30 lei / ședință')
   expect(screen.queryByRole('link', { name: 'Înot începători' })).toBeNull()
   expect(screen.getByRole('link', { name: 'Alergare' })).toBeInTheDocument()
 
@@ -139,11 +139,11 @@ test('sport chips toggle and each active filter can be removed on its own', asyn
   fireEvent.click(swim)
   expect(swim).toHaveAttribute('aria-pressed', 'true')
   expect(screen.getAllByRole('article')).toHaveLength(1)
-  await pickFilter('Buget pe lună', 'Până la 600 lei / lună')
+  await pickFilter('Preț pe ședință', 'Până la 100 lei / ședință')
 
   fireEvent.click(screen.getByRole('button', { name: 'Scoate filtrul Înot' }))
   expect(screen.getAllByRole('article')).toHaveLength(2)
-  expect(screen.getByRole('button', { name: /Scoate filtrul Până la 600 lei/ })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /Scoate filtrul Până la 100 lei/ })).toBeInTheDocument()
 
   fireEvent.click(screen.getByRole('button', { name: 'Șterge tot' }))
   expect(screen.queryByText('Filtre active:')).toBeNull()
@@ -184,7 +184,7 @@ test('the chosen sport is kept in the address and restored from it', async () =>
 
   fireEvent.click(screen.getByRole('button', { name: 'Alergare' }))
   expect(screen.getByTestId('search')).toHaveTextContent('?sport=alergare')
-  await pickFilter('Buget pe lună', 'Până la 600 lei / lună')
+  await pickFilter('Preț pe ședință', 'Până la 100 lei / ședință')
   expect(screen.getByTestId('search')).toHaveTextContent('?sport=alergare')
   fireEvent.click(screen.getByRole('button', { name: 'Toate' }))
   expect(screen.getByTestId('search')).toBeEmptyDOMElement()

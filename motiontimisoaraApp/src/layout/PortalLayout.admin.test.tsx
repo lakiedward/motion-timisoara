@@ -70,6 +70,7 @@ test('admin navigation keeps the accepted destinations in order', () => {
     ['Anunțuri', '/admin/announcements'],
     ['Prezență', '/admin/attendance'],
     ['Plăți', '/admin/payments'],
+    ['Abonamente', '/admin/subscriptions'],
     ['Sporturi', '/admin/sports'],
     ['Coduri invitație', '/admin/codes'],
   ])

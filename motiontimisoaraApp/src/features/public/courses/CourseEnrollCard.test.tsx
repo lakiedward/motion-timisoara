@@ -4,7 +4,7 @@ import { vi } from 'vitest'
 
 import { CourseEnrollCard } from './CourseEnrollCard'
 
-const COURSE = { price: 48000, price_per_session: 6000, currency: 'RON' }
+const COURSE = { price_per_session: 6000, currency: 'RON' }
 
 function renderCard(props: Partial<Parameters<typeof CourseEnrollCard>[0]> = {}) {
   const onEnroll = vi.fn()
@@ -26,10 +26,12 @@ function renderCard(props: Partial<Parameters<typeof CourseEnrollCard>[0]> = {})
   return onEnroll
 }
 
-test('shows the monthly and per-session price with the package payment note', () => {
+test('shows only the per-session price with the package payment note', () => {
   const onEnroll = renderCard()
-  expect(screen.getByText('/ lună')).toBeInTheDocument()
-  expect(screen.getByText('60,00 lei / ședință')).toBeInTheDocument()
+  expect(screen.getByText('/ ședință')).toBeInTheDocument()
+  expect(screen.getByText(/60,00 lei/)).toBeInTheDocument()
+  expect(screen.queryByText(/lună/)).not.toBeInTheDocument()
+  expect(screen.getByText('Alegi pachetul la înscriere')).toBeInTheDocument()
   expect(
     screen.getByText('Plătești la înscriere un pachet de ședințe, online sau cash.'),
   ).toBeInTheDocument()
@@ -44,16 +46,15 @@ test('a full course disables the button and links to other courses without repea
   expect(screen.getByRole('link', { name: 'Vezi alte cursuri' })).toHaveAttribute('href', '/cursuri')
 })
 
-test('a free course reads Gratuit without monthly or per-session price', () => {
-  renderCard({ course: { ...COURSE, price: 0 } })
+test('a free course reads Gratuit without a per-session price', () => {
+  renderCard({ course: { ...COURSE, price_per_session: 0 } })
   expect(screen.getByText('Gratuit')).toBeInTheDocument()
-  expect(screen.queryByText('/ lună')).not.toBeInTheDocument()
-  expect(screen.queryByText(/ședință$/)).not.toBeInTheDocument()
+  expect(screen.queryByText('/ ședință')).not.toBeInTheDocument()
 })
 
 test('an EUR course shows the per-session price before the exchange note', () => {
   renderCard({ course: { ...COURSE, currency: 'EUR', eur_ron_rate_micros: 5_100_000 } })
-  const perSession = screen.getByText('60,00 EUR / ședință')
+  const perSession = screen.getByText(/60,00 EUR/)
   const note = screen.getByText(/Plata se face în lei/)
   expect(perSession.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 })

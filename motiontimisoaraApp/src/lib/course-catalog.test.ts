@@ -6,7 +6,7 @@ import {
   courseSlots,
   courseSportOptions,
   formatCourseSchedule,
-  monthlyPriceInRonBani,
+  sessionPriceInRonBani,
   type CatalogCourseFields,
 } from './course-catalog'
 
@@ -16,7 +16,7 @@ function course(overrides: Partial<CatalogCourseFields> = {}): CatalogCourseFiel
   return {
     recurrence_rule: null,
     occurrences: [],
-    price: 48_000,
+    price_per_session: 6_000,
     currency: 'RON',
     eur_ron_rate_micros: null,
     sport: { code: 'inot', name: 'Înot' },
@@ -57,11 +57,13 @@ test('without a rule the schedule falls back to future sessions in Bucharest tim
 })
 
 test('EUR prices compare in lei through the organizer rate and are excluded without one', () => {
-  expect(monthlyPriceInRonBani(course())).toBe(48_000)
+  expect(sessionPriceInRonBani(course())).toBe(6_000)
   expect(
-    monthlyPriceInRonBani(course({ currency: 'EUR', price: 6_000, eur_ron_rate_micros: 5_000_000 })),
-  ).toBe(30_000)
-  expect(monthlyPriceInRonBani(course({ currency: 'EUR', price: 6_000 }))).toBeNull()
+    sessionPriceInRonBani(
+      course({ currency: 'EUR', price_per_session: 1_000, eur_ron_rate_micros: 5_000_000 }),
+    ),
+  ).toBe(5_000)
+  expect(sessionPriceInRonBani(course({ currency: 'EUR', price_per_session: 1_000 }))).toBeNull()
 })
 
 test('sport, day, price and location filters combine', () => {
@@ -69,17 +71,17 @@ test('sport, day, price and location filters combine', () => {
   const bike = course({
     sport: { code: 'ciclism', name: 'Ciclism' },
     location: { name: 'Stadion Atletism' },
-    price: 60_000,
+    price_per_session: 7_500,
   })
   const filters = { ...EMPTY_COURSE_FILTERS }
   expect([swimMonday, bike].filter((c) => courseMatchesFilters(c, filters, now))).toHaveLength(2)
   expect(courseMatchesFilters(bike, { ...filters, sport: 'inot' }, now)).toBe(false)
   expect(courseMatchesFilters(swimMonday, { ...filters, day: '1' }, now)).toBe(true)
   expect(courseMatchesFilters(swimMonday, { ...filters, day: '2' }, now)).toBe(false)
-  expect(courseMatchesFilters(bike, { ...filters, maxPrice: '40000' }, now)).toBe(false)
-  expect(courseMatchesFilters(swimMonday, { ...filters, maxPrice: '60000' }, now)).toBe(true)
+  expect(courseMatchesFilters(bike, { ...filters, maxPrice: '5000' }, now)).toBe(false)
+  expect(courseMatchesFilters(swimMonday, { ...filters, maxPrice: '10000' }, now)).toBe(true)
   expect(courseMatchesFilters(bike, { ...filters, location: 'Stadion Atletism' }, now)).toBe(true)
-  const combined = { sport: 'inot', day: '3', maxPrice: '60000', location: 'Bazin Olimpic Timișoara' }
+  const combined = { sport: 'inot', day: '3', maxPrice: '10000', location: 'Bazin Olimpic Timișoara' }
   expect(courseMatchesFilters(swimMonday, combined, now)).toBe(true)
   expect(courseMatchesFilters(bike, combined, now)).toBe(false)
   expect(countActiveCourseFilters(combined)).toBe(4)
