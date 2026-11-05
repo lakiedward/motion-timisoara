@@ -1,4 +1,5 @@
-import type { LocationRow } from '@/api/public'
+import type { ActivityListItem, CourseListItem, LocationRow } from '@/api/public'
+import type { TabaraDinLista } from '@/api/camps'
 
 /**
  * Harta desenează LOCURI, nu rânduri din baza de date.
@@ -112,4 +113,32 @@ export function grupeazaInLocuri(
 /** Locul care contine randul cerut, pentru `/harta?location=<id>`. */
 export function loculRandului(locuri: Loc[], locationId: string): Loc | undefined {
   return locuri.find((loc) => loc.randuri.some((r) => r.id === locationId))
+}
+
+export interface LocCuOferte {
+  location: Loc
+  courses: CourseListItem[]
+  activities: ActivityListItem[]
+  camps: TabaraDinLista[]
+}
+
+export function locuriCuOferte(
+  locuri: Loc[],
+  courses: CourseListItem[],
+  activities: ActivityListItem[],
+  camps: TabaraDinLista[],
+): LocCuOferte[] {
+  return locuri
+    .map((location) => {
+      const ids = new Set(location.randuri.map((row) => row.id))
+      return {
+        location,
+        courses: courses.filter((course) => course.location_id && ids.has(course.location_id)),
+        activities: activities.filter(
+          (activity) => activity.location_id && ids.has(activity.location_id),
+        ),
+        camps: camps.filter((camp) => camp.location && camp.location_id && ids.has(camp.location_id)),
+      }
+    })
+    .filter((place) => place.courses.length + place.activities.length + place.camps.length > 0)
 }

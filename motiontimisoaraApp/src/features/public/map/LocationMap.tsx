@@ -2,10 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
 import type L from 'leaflet'
 import { Button } from '@/components/ui/button'
-import type { ActivityListItem, ClubHeadquarters, CourseListItem } from '@/api/public'
-import type { TabaraDinLista } from '@/api/camps'
+import type { ClubHeadquarters } from '@/api/public'
 import { Building2, CalendarRange, GraduationCap, MapPin, Tent } from 'lucide-react'
-import type { Loc } from '@/lib/locuri'
+import type { LocCuOferte } from '@/lib/locuri'
 import { clubMarkerIcon, getOfferMarkerIcon } from '@/lib/map-marker'
 import ClubHqPopup from './ClubHqPopup'
 import FocusLocation from './FocusLocation'
@@ -35,17 +34,11 @@ const emptyOffers = {
 }
 
 export default function LocationMap({
-  locations,
-  courses,
-  activities,
-  camps,
+  places,
   clubs,
   focusId,
 }: {
-  locations: Loc[]
-  courses: CourseListItem[]
-  activities: ActivityListItem[]
-  camps: TabaraDinLista[]
+  places: LocCuOferte[]
   clubs: ClubHeadquarters[]
   focusId: string | null
 }) {
@@ -55,23 +48,6 @@ export default function LocationMap({
   )
   const [attempt, setAttempt] = useState(0)
   const [offerType, setOfferType] = useState<(typeof offerFilters)[number]['value']>('all')
-  const places = useMemo(
-    () =>
-      locations.map((location) => {
-        const ids = new Set(location.randuri.map((row) => row.id))
-        return {
-          location,
-          courses: courses.filter((course) => course.location_id && ids.has(course.location_id)),
-          activities: activities.filter(
-            (activity) => activity.location_id && ids.has(activity.location_id),
-          ),
-          camps: camps.filter(
-            (camp) => camp.location && camp.location_id && ids.has(camp.location_id),
-          ),
-        }
-      }),
-    [locations, courses, activities, camps],
-  )
   const visiblePlaces = useMemo(
     () =>
       offerType === 'clubs'

@@ -159,11 +159,6 @@ export default function LocationPopup({
             </div>
           </div>
         )}
-        {!courses.length && !activities.length && !camps.length && (
-          <p className="text-muted-foreground text-sm">
-            Momentan fără cursuri, activități sau tabere la această locație.
-          </p>
-        )}
       </div>
     </>
   )
