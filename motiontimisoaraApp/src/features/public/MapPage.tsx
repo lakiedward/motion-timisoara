@@ -7,7 +7,7 @@ import { getActivities, getClubHeadquarters, getCourses, getLocations } from '@/
 import { getTaberePublice } from '@/api/camps'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { grupeazaInLocuri } from '@/lib/locuri'
+import { grupeazaInLocuri, locuriCuOferte } from '@/lib/locuri'
 import LocationMap from './map/LocationMap'
 
 export default function MapPage() {
@@ -18,14 +18,19 @@ export default function MapPage() {
   const activitiesQuery = useQuery({ queryKey: ['activities'], queryFn: getActivities })
   const campsQuery = useQuery({ queryKey: ['tabere-publice'], queryFn: () => getTaberePublice() })
   const clubsQuery = useQuery({ queryKey: ['club-headquarters'], queryFn: getClubHeadquarters })
-  const locations = useMemo(() => {
+  const places = useMemo(() => {
     const counts = new Map<string, number>()
     for (const course of coursesQuery.data ?? []) {
       if (course.location_id)
         counts.set(course.location_id, (counts.get(course.location_id) ?? 0) + 1)
     }
-    return grupeazaInLocuri(locationsQuery.data ?? [], counts)
-  }, [locationsQuery.data, coursesQuery.data])
+    return locuriCuOferte(
+      grupeazaInLocuri(locationsQuery.data ?? [], counts),
+      coursesQuery.data ?? [],
+      activitiesQuery.data ?? [],
+      campsQuery.data ?? [],
+    )
+  }, [locationsQuery.data, coursesQuery.data, activitiesQuery.data, campsQuery.data])
   const queries = [locationsQuery, coursesQuery, activitiesQuery, campsQuery, clubsQuery]
   const isError = queries.some((query) => query.isError)
   const isLoading = queries.some((query) => query.isPending)
@@ -73,16 +78,13 @@ export default function MapPage() {
             <p className="text-muted-foreground text-sm">Se încarcă locațiile și ofertele…</p>
             <Skeleton className="h-96 w-full" />
           </div>
-        ) : locations.length === 0 && !clubsQuery.data?.length ? (
+        ) : places.length === 0 && !clubsQuery.data?.length ? (
           <p role="status" className="text-muted-foreground px-6 py-16 text-center">
             Momentan nu există locații disponibile pe hartă.
           </p>
         ) : (
           <LocationMap
-            locations={locations}
-            courses={coursesQuery.data ?? []}
-            activities={activitiesQuery.data ?? []}
-            camps={campsQuery.data ?? []}
+            places={places}
             clubs={clubsQuery.data ?? []}
             focusId={params.get('location')}
           />

@@ -104,6 +104,26 @@ const camp: TabaraDinLista = {
   locuriRamase: 5,
 }
 
+const activityAt = (locationId: string, id = `activity-at-${locationId}`) =>
+  ({
+    id,
+    name: `Activitate ${id}`,
+    location_id: locationId,
+    activity_date: '2026-10-01',
+    start_time: '09:00',
+    sport: null,
+  }) as unknown as Awaited<ReturnType<typeof getActivities>>[number]
+
+const courseAt = (locationId: string, id = `course-at-${locationId}`) =>
+  ({
+    id,
+    name: `Curs ${id}`,
+    location_id: locationId,
+    age_from: 6,
+    age_to: 10,
+    sport: null,
+  }) as unknown as Awaited<ReturnType<typeof getCourses>>[number]
+
 function renderMap(route = '/harta') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
@@ -120,7 +140,7 @@ beforeEach(() => {
   vi.stubEnv('VITE_CARTO_BASEMAP_API_KEY', 'test-key')
   vi.mocked(getLocations).mockResolvedValue([place])
   vi.mocked(getCourses).mockResolvedValue([])
-  vi.mocked(getActivities).mockResolvedValue([])
+  vi.mocked(getActivities).mockResolvedValue([activityAt(place.id)])
   vi.mocked(getTaberePublice).mockResolvedValue([])
   vi.mocked(getClubHeadquarters).mockResolvedValue([])
 })
@@ -223,6 +243,7 @@ test('the camps filter hides places without camps and all locations restores the
     place,
     { ...place, id: 'other-place', name: 'Teren Test', lat: 45.8 },
   ])
+  vi.mocked(getActivities).mockResolvedValue([activityAt(place.id), activityAt('other-place')])
   vi.mocked(getTaberePublice).mockResolvedValue([camp])
   renderMap()
   expect(await screen.findByText('Teren Test')).toBeInTheDocument()
@@ -259,8 +280,12 @@ test.each([
     vi.mocked(getCourses).mockResolvedValue(
       offers as unknown as Awaited<ReturnType<typeof getCourses>>,
     )
+    vi.mocked(getActivities).mockResolvedValue([activityAt('other-place')])
   } else {
-    vi.mocked(getActivities).mockResolvedValue(offers as Awaited<ReturnType<typeof getActivities>>)
+    vi.mocked(getActivities).mockResolvedValue([
+      ...(offers as Awaited<ReturnType<typeof getActivities>>),
+    ])
+    vi.mocked(getCourses).mockResolvedValue([courseAt('other-place')])
   }
   vi.mocked(getTaberePublice).mockResolvedValue([camp])
   renderMap()
@@ -283,6 +308,10 @@ test.each([
 ])(
   'shows the empty state for $label without hiding other filter choices',
   async ({ label, empty }) => {
+    if (label === 'Activități') {
+      vi.mocked(getActivities).mockResolvedValue([])
+      vi.mocked(getCourses).mockResolvedValue([courseAt(place.id)])
+    }
     renderMap()
     await screen.findByText('Bazin Test')
     await userEvent.click(screen.getByRole('button', { name: label }))
@@ -292,6 +321,27 @@ test.each([
     expect(screen.getByText('Bazin Test')).toBeInTheDocument()
   },
 )
+
+test('a place without any course, activity or camp is not plotted', async () => {
+  vi.mocked(getLocations).mockResolvedValue([
+    place,
+    { ...place, id: 'empty-place', name: 'Radstadt Gol', lat: 47.38, lng: 13.46 },
+  ])
+  renderMap()
+  expect(await screen.findByText('Bazin Test')).toBeInTheDocument()
+  expect(screen.queryByText('Radstadt Gol')).not.toBeInTheDocument()
+  expect(screen.queryByLabelText('Radstadt Gol')).not.toBeInTheDocument()
+  expect(screen.queryByText(/Momentan fără cursuri/)).not.toBeInTheDocument()
+})
+
+test('shows the empty state when the only locations have no offers', async () => {
+  vi.mocked(getActivities).mockResolvedValue([])
+  renderMap()
+  expect(
+    await screen.findByText('Momentan nu există locații disponibile pe hartă.'),
+  ).toBeInTheDocument()
+  expect(screen.queryByText('Bazin Test')).not.toBeInTheDocument()
+})
 
 test.each([
   { location_id: null, location: null },
@@ -321,6 +371,7 @@ test('missing basemap configuration preserves locations without requesting unaut
 test('frames every place on first load so nearby markers do not stack, except for deep links', async () => {
   const secondPlace = { ...place, id: 'place-2', name: 'Stadion Test', lat: 45.76, lng: 21.24 }
   vi.mocked(getLocations).mockResolvedValue([place, secondPlace])
+  vi.mocked(getActivities).mockResolvedValue([activityAt(place.id), activityAt(secondPlace.id)])
   const { unmount } = renderMap()
   await waitFor(() => expect(map.fitBounds).toHaveBeenCalledOnce())
   const [bounds, options] = map.fitBounds.mock.calls[0]!
