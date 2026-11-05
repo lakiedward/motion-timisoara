@@ -1,7 +1,7 @@
 import type { Subscription, SubscriptionSettings } from '@/api/subscriptions/subscriptions'
 
 const DAY_MS = 86_400_000
-const PAST_DUE_GRACE_DAYS = 7
+export const PAST_DUE_GRACE_DAYS = 7
 
 export type SubscriptionView =
   | { kind: 'missing' }

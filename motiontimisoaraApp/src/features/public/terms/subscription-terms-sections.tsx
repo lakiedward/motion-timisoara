@@ -24,13 +24,23 @@ export const SUBSCRIPTION_PLANS_SECTION: LegalSection = {
       <ul className={listClass}>
         <li>
           <strong>Prețuri:</strong> sunt în lei, pe lună, și finale. Operatorul nu este plătitor de
-          TVA, deci nu adaugă TVA. Antrenor independent: 100 lei. Club Start, până la 3 antrenori:
-          199 lei. Club, până la 10 antrenori: 349 lei. Club Pro, antrenori fără limită: 599 lei.
-          Prețurile curente sunt și pe pagina{' '}
-          <Link className={linkClass} to="/preturi">
-            Prețuri
-          </Link>
-          .
+          TVA, deci nu adaugă TVA.{' '}
+          <ul
+            aria-label="Planurile și prețurile lor"
+            className="mt-2 list-[circle] space-y-1 pl-5 text-pretty"
+          >
+            <li>Antrenor independent: 100 lei. </li>
+            <li>Club Start, până la 3 antrenori: 199 lei. </li>
+            <li>Club, până la 10 antrenori: 349 lei. </li>
+            <li>Club Pro, antrenori fără limită: 599 lei. </li>
+          </ul>
+          <span className="mt-2 block">
+            Prețurile curente sunt și pe pagina{' '}
+            <Link className={linkClass} to="/preturi">
+              Prețuri
+            </Link>
+            .
+          </span>
         </li>
         <li>
           <strong>Cine plătește:</strong> ofertele unui club sunt acoperite de abonamentul clubului,
