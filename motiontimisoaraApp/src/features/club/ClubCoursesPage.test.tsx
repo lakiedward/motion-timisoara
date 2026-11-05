@@ -69,7 +69,7 @@ beforeEach(() => {
   vi.mocked(getCurrentLocationOccurrences).mockResolvedValue([])
 })
 
-test('antetul ține „Curs nou” lângă titlu, ca pe celelalte liste din panouri', async () => {
+test('antetul ține „Curs nou” sub titlu pe telefon, ca pe celelalte liste din panouri', async () => {
   mockedCourses.mockResolvedValue([])
   const { container } = renderPage()
   await screen.findByText(/Niciun curs încă/)
@@ -77,7 +77,8 @@ test('antetul ține „Curs nou” lângă titlu, ca pe celelalte liste din pano
   expect(antet.className).toMatch(/flex-wrap/)
   const link = screen.getByRole('link', { name: /curs nou/i })
   expect(link.className).toMatch(/min-h-touch-target/)
-  expect(link.className).not.toMatch(/w-full/)
+  expect(link.className).toMatch(/w-full/)
+  expect(link.className).toMatch(/sm:w-auto/)
 })
 
 test('locația apare în zona titlului, deci două cursuri omonime nu mai arată identic', async () => {

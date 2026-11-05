@@ -127,7 +127,7 @@ export default function CoachLocationsPage() {
           title="Nicio locație încă."
           text="Adaugă bazinele, sălile sau terenurile unde îți ții cursurile și activitățile."
           action={
-            <Button asChild variant="outline" className="mt-3">
+            <Button asChild variant="outline" className="mt-3 h-touch-target min-h-touch-target">
               <Link to="/coach/locations/new">Adaugă prima locație</Link>
             </Button>
           }

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
 
 import { getTaberelePeId, getTaberelemele } from '@/api/camps-admin'
 import { PageHeader, PageNewLink } from '@/components/page-header/PageHeader'
@@ -88,10 +87,8 @@ export default function CampsListPage({ baza }: { baza: CampPortalBaza }) {
           title="Nicio tabără încă."
           text="Prima tabără are nevoie de titlu, perioadă și preț. Categoriile, antrenorii și pozele se adaugă după."
           action={
-            <Button asChild className="mt-3 h-touch-target min-h-touch-target">
-              <Link to={`${baza}/new`}>
-                <Plus aria-hidden="true" /> Creează prima tabără
-              </Link>
+            <Button asChild variant="outline" className="mt-3 h-touch-target min-h-touch-target">
+              <Link to={`${baza}/new`}>Creează prima tabără</Link>
             </Button>
           }
         />

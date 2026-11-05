@@ -37,7 +37,10 @@ export function PageHeader({
 
 export function PageNewLink({ to, children }: { to: string; children: ReactNode }) {
   return (
-    <Button asChild className="h-touch-target min-h-touch-target lg:h-9 lg:min-h-9">
+    <Button
+      asChild
+      className="h-touch-target min-h-touch-target w-full sm:w-auto lg:h-9 lg:min-h-9"
+    >
       <Link to={to}>
         <Plus aria-hidden="true" /> {children}
       </Link>
@@ -56,7 +59,7 @@ export function PageNewButton({
     <Button
       type="button"
       onClick={onClick}
-      className="h-touch-target min-h-touch-target lg:h-9 lg:min-h-9"
+      className="h-touch-target min-h-touch-target w-full sm:w-auto lg:h-9 lg:min-h-9"
     >
       <Plus aria-hidden="true" /> {children}
     </Button>
