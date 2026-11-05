@@ -35,10 +35,15 @@
   padding: 0;
   border-radius: var(--radius-lg);
   color: var(--primary-foreground);
-  background: var(--primary);
+  background: color-mix(in oklab, var(--primary-foreground) 20%, transparent);
   font-weight: 600;
 }
-.mt-popup a.leaflet-popup-close-button:hover {
+.mt-popup:has(.mt-popup-club) a.leaflet-popup-close-button {
+  color: var(--background);
+  background: color-mix(in oklab, var(--background) 20%, transparent);
+}
+.mt-popup a.leaflet-popup-close-button:hover,
+.mt-popup:has(.mt-popup-club) a.leaflet-popup-close-button:hover {
   color: var(--accent-foreground);
   background: var(--accent);
 }

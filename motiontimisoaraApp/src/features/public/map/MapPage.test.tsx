@@ -111,6 +111,7 @@ const activityAt = (locationId: string, id = `activity-at-${locationId}`) =>
     location_id: locationId,
     activity_date: '2026-10-01',
     start_time: '09:00',
+    end_time: '11:00',
     sport: null,
   }) as unknown as Awaited<ReturnType<typeof getActivities>>[number]
 
@@ -208,6 +209,7 @@ test('groups shared places and preserves offer links and grouped-row deep links'
       location_id: 'place-1',
       activity_date: '2026-10-01',
       start_time: '09:00',
+      end_time: '11:00',
       sport: null,
     },
   ] as Awaited<ReturnType<typeof getActivities>>)
@@ -262,45 +264,51 @@ test('the camps filter hides places without camps and all locations restores the
 test.each([
   { label: 'Cursuri', query: getCourses, empty: 'cursuri' },
   { label: 'Activități', query: getActivities, empty: 'activități' },
-])('filters $label locations and preserves shared camp offers', async ({ label, query, empty }) => {
-  vi.mocked(getLocations).mockResolvedValue([
-    place,
-    { ...place, id: 'other-place', name: 'Teren Test', lat: 45.8 },
-  ])
-  const offers = [
-    {
-      id: 'offer-1',
-      name: 'Oferta Test',
-      location_id: place.id,
-      activity_date: '2026-10-01',
-      sport: null,
-    },
-  ]
-  if (query === getCourses) {
-    vi.mocked(getCourses).mockResolvedValue(
-      offers as unknown as Awaited<ReturnType<typeof getCourses>>,
-    )
-    vi.mocked(getActivities).mockResolvedValue([activityAt('other-place')])
-  } else {
-    vi.mocked(getActivities).mockResolvedValue([
-      ...(offers as Awaited<ReturnType<typeof getActivities>>),
+])(
+  'filters $label locations and keeps only that offer type in the popup',
+  async ({ label, query, empty }) => {
+    vi.mocked(getLocations).mockResolvedValue([
+      place,
+      { ...place, id: 'other-place', name: 'Teren Test', lat: 45.8 },
     ])
-    vi.mocked(getCourses).mockResolvedValue([courseAt('other-place')])
-  }
-  vi.mocked(getTaberePublice).mockResolvedValue([camp])
-  renderMap()
-  await screen.findByText('Teren Test')
-  await userEvent.click(screen.getByRole('button', { name: label }))
-  expect(screen.getByRole('button', { name: label })).toHaveAttribute('aria-pressed', 'true')
-  expect(screen.queryByText('Teren Test')).not.toBeInTheDocument()
-  expect(screen.getByRole('link', { name: /^Oferta Test/ })).toBeInTheDocument()
-  expect(screen.getByRole('link', { name: /^Tabără Test/ })).toBeInTheDocument()
-  expect(
-    screen.queryByText(`Momentan nu există ${empty} cu locație pe hartă.`),
-  ).not.toBeInTheDocument()
-  await userEvent.click(screen.getByRole('button', { name: 'Toate' }))
-  expect(screen.getByText('Teren Test')).toBeInTheDocument()
-})
+    const offers = [
+      {
+        id: 'offer-1',
+        name: 'Oferta Test',
+        location_id: place.id,
+        activity_date: '2026-10-01',
+        start_time: '09:00',
+        end_time: '11:00',
+        sport: null,
+      },
+    ]
+    if (query === getCourses) {
+      vi.mocked(getCourses).mockResolvedValue(
+        offers as unknown as Awaited<ReturnType<typeof getCourses>>,
+      )
+      vi.mocked(getActivities).mockResolvedValue([activityAt('other-place')])
+    } else {
+      vi.mocked(getActivities).mockResolvedValue([
+        ...(offers as Awaited<ReturnType<typeof getActivities>>),
+      ])
+      vi.mocked(getCourses).mockResolvedValue([courseAt('other-place')])
+    }
+    vi.mocked(getTaberePublice).mockResolvedValue([camp])
+    renderMap()
+    await screen.findByText('Teren Test')
+    await userEvent.click(screen.getByRole('button', { name: label }))
+    expect(screen.getByRole('button', { name: label })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByText('Teren Test')).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /^Oferta Test/ })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /^Tabără Test/ })).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(`Momentan nu există ${empty} cu locație pe hartă.`),
+    ).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Toate' }))
+    expect(screen.getByText('Teren Test')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /^Tabără Test/ })).toBeInTheDocument()
+  },
+)
 
 test.each([
   { label: 'Cursuri', empty: 'cursuri' },

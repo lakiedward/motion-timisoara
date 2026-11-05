@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { expect, test } from 'vitest'
 
+import type { TabaraDinLista } from '@/api/camps'
 import type { ActivityListItem, CourseListItem } from '@/api/public'
 import type { Loc } from '@/lib/locuri'
 import LocationPopup from './LocationPopup'
@@ -33,4 +34,40 @@ test('rândurile din popup au iconița sportului, fără emoji', () => {
     expect(row.querySelector('svg')).not.toBeNull()
   }
   expect(container.textContent).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u)
+})
+
+test('activitatea și tabăra folosesc aceleași date ca listele, cu interval orar', () => {
+  render(
+    <MemoryRouter>
+      <LocationPopup
+        location={LOC}
+        courses={[]}
+        activities={
+          [
+            {
+              id: 'x',
+              name: 'Tură',
+              activity_date: '2026-11-29',
+              start_time: '09:30:00',
+              end_time: '11:00:00',
+              sport: null,
+            },
+          ] as unknown as ActivityListItem[]
+        }
+        camps={
+          [
+            {
+              id: 'c',
+              slug: 'vara',
+              title: 'Tabără',
+              period_start: '2026-12-14',
+              period_end: '2026-12-20',
+            },
+          ] as unknown as TabaraDinLista[]
+        }
+      />
+    </MemoryRouter>,
+  )
+  expect(screen.getByText('29.11.2026 · 09:30–11:00')).toBeInTheDocument()
+  expect(screen.getByText('14.12.2026 – 20.12.2026')).toBeInTheDocument()
 })
