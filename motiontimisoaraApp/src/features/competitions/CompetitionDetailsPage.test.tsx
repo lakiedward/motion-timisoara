@@ -148,3 +148,66 @@ test('fiecare traseu își păstrează descrierea și propriile poze', async () 
     )
   })
 })
+
+test('antrenorii confirmați sunt carduri cu link spre profil', async () => {
+  mocked.mockResolvedValue(CONCURS)
+  galleryApi.coaches.mockResolvedValue([
+    {
+      coachProfileId: 'cp1',
+      userId: 'u1',
+      name: 'Ana Pop',
+      photoUrl: null,
+      status: 'accepted',
+      respondedAt: null,
+    },
+    {
+      coachProfileId: 'cp2',
+      userId: null,
+      name: 'Dan Ionescu',
+      photoUrl: null,
+      status: 'accepted',
+      respondedAt: null,
+    },
+  ])
+  deseneaza()
+  const profil = await screen.findByRole('link', { name: /Ana Pop/ })
+  expect(profil).toHaveAttribute('href', '/antrenori/u1')
+  expect(screen.getByText('Dan Ionescu')).toBeInTheDocument()
+  expect(screen.queryByRole('link', { name: /Dan Ionescu/ })).not.toBeInTheDocument()
+  expect(screen.getByRole('heading', { level: 2, name: 'Antrenorii concursului' })).toBeVisible()
+})
+
+test('antrenorii: stare goală și eroare cu reîncercare', async () => {
+  const user = userEvent.setup()
+  mocked.mockResolvedValue(CONCURS)
+  galleryApi.coaches.mockRejectedValueOnce(new Error('retea')).mockResolvedValueOnce([])
+  deseneaza()
+  expect(await screen.findByText('Nu am putut încărca antrenorii.')).toBeInTheDocument()
+  await user.click(screen.getAllByRole('button', { name: 'Reîncearcă' })[0]!)
+  expect(
+    await screen.findByText('Nu există încă antrenori confirmați pentru acest concurs.'),
+  ).toBeInTheDocument()
+})
+
+test('categoriile gratuite arată „Gratuit”, cele cu preț arată lei', async () => {
+  mocked.mockResolvedValue(CONCURS)
+  galleryApi.offers.mockResolvedValue({
+    routes: [
+      {
+        id: 'r1',
+        competition_id: CONCURS.id,
+        name: 'Via Maior',
+        description: 'D',
+        gpx_storage_path: 'v.gpx',
+        display_order: 0,
+      },
+    ],
+    categories: [
+      { id: 'c1', route_id: 'r1', name: 'Copii', age_from: 6, age_to: 10, price_bani: 12000 },
+      { id: 'c2', route_id: 'r1', name: 'Mici', age_from: 3, age_to: 5, price_bani: 0 },
+    ],
+  })
+  deseneaza()
+  expect(await screen.findByText(/120,00/)).toBeInTheDocument()
+  expect(screen.getByText('Mici').closest('li')).toHaveTextContent('Gratuit')
+})
