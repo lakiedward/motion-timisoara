@@ -21,14 +21,17 @@ vi.mock('@/api/competition/competition-podium', () => ({
   saveCompetitionPodiumPlace: vi.fn(),
   publishCompetitionPodiumCategory: vi.fn(),
 }))
+const ownerState = vi.hoisted(() => ({ coachUserId: 'other-coach' }))
 vi.mock('../useCompetitionOwner', () => ({
   useCompetitionOwner: () => ({
-    owner: { role: 'COACH', clubId: null, coachUserId: 'other-coach' },
+    owner: { role: 'COACH', clubId: null, coachUserId: ownerState.coachUserId },
   }),
 }))
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
-test('antrenorul asociat corectează podiumul după publicare', async () => {
+function renderPublishedPodium(coachUserId: string) {
+  ownerState.coachUserId = coachUserId
+  vi.mocked(saveCompetitionPodiumPlace).mockClear()
   vi.mocked(getConcurs).mockResolvedValue({
     id: 'competition-1',
     title: 'Cupa',
@@ -91,6 +94,24 @@ test('antrenorul asociat corectează podiumul după publicare', async () => {
       </MemoryRouter>
     </QueryClientProvider>,
   )
+}
+
+test('antrenorul invitat nu mai poate schimba podiumul după publicare', async () => {
+  renderPublishedPodium('other-coach')
+  expect(
+    await screen.findByText(
+      'Publicat. După publicare, doar organizatorul mai poate corecta podiumul.',
+    ),
+  ).toBeInTheDocument()
+  expect(await screen.findByLabelText('Locul 1')).toBeDisabled()
+  expect(vi.mocked(saveCompetitionPodiumPlace)).not.toHaveBeenCalled()
+  expect(
+    screen.queryByRole('button', { name: 'Publică podiumul categoriei' }),
+  ).not.toBeInTheDocument()
+})
+
+test('organizatorul corectează podiumul după publicare', async () => {
+  renderPublishedPodium('owner-coach')
   expect(await screen.findByText(/Publicat. Corecțiile/)).toBeInTheDocument()
   await findSelectMenuOption(
     await screen.findByLabelText('Locul 1'),

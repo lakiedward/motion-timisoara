@@ -49,6 +49,8 @@ on:
       - 'supabase/tests/*camp-access-active-accounts*'
       - 'supabase/migrations/00131_payments_organizer_access.sql'
       - 'supabase/tests/*payments-organizer-access*'
+      - 'supabase/migrations/00133_competition_podium_and_birth_date_access.sql'
+      - 'supabase/tests/*competition-podium-and-birth-date-access*'
       - 'supabase/migrations/00102_checkout_acceptances.sql'
       - 'supabase/tests/*checkout-acceptances*'
       - 'supabase/functions/_shared/checkout-acceptance*.ts'
@@ -136,6 +138,9 @@ jobs:
       - name: Verify organizers no longer read parents' payment rows
         shell: pwsh
         run: ./supabase/tests/run-payments-organizer-access.ps1
+      - name: Verify published podiums and adult birth dates stay with the organizer
+        shell: pwsh
+        run: ./supabase/tests/run-competition-podium-and-birth-date-access.ps1
       - name: Verify enrollment and payment-intent contracts
         run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/price-snapshot.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/bnr-rate-contract.test.ts supabase/functions/_shared/stripe-return-url.test.ts supabase/functions/_shared/stripe.test.ts supabase/functions/_shared/checkout-session.test.ts supabase/functions/_shared/stripe-fee-settlement.test.ts supabase/functions/_shared/active-role.test.ts
       - name: Type-check Stripe Connect function
