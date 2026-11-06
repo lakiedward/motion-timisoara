@@ -301,7 +301,23 @@ Deno.test("a club cannot pick a plan below its current coach count", async () =>
 
   const pro = checkoutFixture({ role: "CLUB", coachCount: 40 });
   assert((await pro.handler(post({ planCode: "CLUB_PRO" }))).status === 200);
-  assert(!pro.calls.includes("count"));
+  assert(pro.calls.some((call) => call.startsWith("hold:CLUB_PRO:")));
+});
+
+Deno.test("a club Checkout holds the chosen plan's coach limit until the session expires", async () => {
+  const club = checkoutFixture({ role: "CLUB", coachCount: 2 });
+  assert((await club.handler(post({ planCode: "CLUB_START" }))).status === 200);
+  const expiresAt = club.sessions[0].params.expires_at;
+  const hold = `hold:CLUB_START:${new Date(expiresAt * 1000).toISOString()}`;
+  assert(club.calls.includes(hold), JSON.stringify(club.calls));
+  assert(
+    club.calls.indexOf(hold) < club.calls.indexOf("open:cus_new"),
+    "the hold is set before any Stripe session is reused or created",
+  );
+
+  const coach = checkoutFixture({ role: "COACH" });
+  assert((await coach.handler(post({ planCode: "COACH" }))).status === 200);
+  assert(!coach.calls.some((call) => call.startsWith("hold:")));
 });
 
 Deno.test("only subscribers without a live Stripe subscription can start Checkout", async () => {

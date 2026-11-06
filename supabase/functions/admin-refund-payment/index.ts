@@ -1,12 +1,12 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { getUser, getUserRole, supabaseAdmin } from "../_shared/supabase.ts";
+import { getActiveUserRole, getUser, supabaseAdmin } from "../_shared/supabase.ts";
 import { getStripe } from "../_shared/stripe.ts";
 import { withCors } from "../_shared/cors.ts";
 import { adminRefundHandler, RefundRpcError, type RefundRow } from "./handler.ts";
 
 serve(withCors(adminRefundHandler({
   getUser,
-  getUserRole,
+  getUserRole: getActiveUserRole,
   beginRefund: async (request, adminId) => {
     const { data, error } = await supabaseAdmin.rpc("begin_payment_refund", {
       p_source: request.source,
