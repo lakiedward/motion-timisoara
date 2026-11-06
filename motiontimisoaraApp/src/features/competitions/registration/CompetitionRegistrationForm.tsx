@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
@@ -65,15 +65,16 @@ function validBirthDate(value: string): boolean {
 
 export function CompetitionRegistrationForm({ competition, categories }: Props) {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const queryClient = useQueryClient()
   const { user } = useAuth()
   const payment = usePaymentAdapter()
   const now = useCompetitionClock(competition.registrationDeadlineAt)
   const createdIds = useRef<string[]>([])
   const [choice, setChoice] = useState<Record<string, string>>({})
-  const [includeSelf, setIncludeSelf] = useState(false)
+  const [includeSelfChoice, setIncludeSelf] = useState<boolean | null>(null)
   const [selfBirthDate, setSelfBirthDate] = useState('')
-  const [selfCategoryId, setSelfCategoryId] = useState('')
+  const [selfCategoryChoice, setSelfCategoryId] = useState<string | null>(null)
   const categoryOptions = categories.map((category) => ({
     value: category.id,
     label: `${category.name} · ${category.age_from}–${category.age_to} ani · ${formatRonOffer(category.price_bani)}`,
@@ -94,7 +95,18 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
     queryFn: getMyChildren,
     enabled: user?.role === 'PARENT',
   })
-  const childSelections: CompetitionSelection[] = Object.entries(choice)
+  const presetCategoryId = categories.find(
+    (category) => category.id === searchParams.get('categorie'),
+  )?.id
+  const presetChildId = presetCategoryId ? children.data?.[0]?.id : undefined
+  const presetSelf = Boolean(presetCategoryId) && children.isSuccess && !children.data.length
+  const includeSelf = includeSelfChoice ?? presetSelf
+  const selfCategoryId = selfCategoryChoice ?? (presetSelf ? (presetCategoryId ?? '') : '')
+  const effectiveChoice: Record<string, string> =
+    presetChildId && presetCategoryId && !(presetChildId in choice)
+      ? { [presetChildId]: presetCategoryId, ...choice }
+      : choice
+  const childSelections: CompetitionSelection[] = Object.entries(effectiveChoice)
     .filter(([, categoryId]) => Boolean(categoryId))
     .map(([childId, categoryId]) => ({ childId, categoryId }))
     .sort((a, b) => participantKey(a).localeCompare(participantKey(b)))
@@ -338,7 +350,7 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
                       </div>
                       <SelectMenu
                         id={`competition-category-${child.id}`}
-                        value={choice[child.id] ?? ''}
+                        value={effectiveChoice[child.id] ?? ''}
                         onValueChange={(value) => {
                           setChoice((previous) => ({ ...previous, [child.id]: value }))
                           setAcceptedKey(null)
