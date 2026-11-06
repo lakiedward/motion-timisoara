@@ -52,7 +52,10 @@ export async function getCourse(id: string): Promise<CourseDetail | null> {
     )
     .eq('id', id)
     .single()
-  if (error) return null
+  if (error) {
+    if (error.code === 'PGRST116') return null
+    throw error
+  }
   return data as unknown as CourseDetail
 }
 
@@ -136,7 +139,10 @@ export async function getActivity(id: string): Promise<ActivityListItem | null> 
     .select('*, sport:sports(id,code,name), location:locations(*)')
     .eq('id', id)
     .single()
-  if (error) return null
+  if (error) {
+    if (error.code === 'PGRST116') return null
+    throw error
+  }
   return data as unknown as ActivityListItem
 }
 
