@@ -1,4 +1,5 @@
 import { vi } from 'vitest'
+import { toast } from 'sonner'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -381,4 +382,69 @@ test('?categorie= necunoscută nu preselectează nimic', async () => {
   const trigger = await screen.findByLabelText('Copil Audit')
   expect(trigger).toHaveTextContent('Nu înscrie acest copil')
   expect(validateCompetitionRegistration).not.toHaveBeenCalled()
+})
+
+test('termen depășit și lipsa categoriilor au stări proprii', async () => {
+  const closed = { ...competition, registrationDeadlineAt: '2000-01-01T00:00:00Z' }
+  const { unmount } = render(
+    <QueryClientProvider client={new QueryClient()}>
+      <MemoryRouter>
+        <CompetitionRegistrationForm competition={closed} categories={[category]} />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  )
+  expect(await screen.findByText('Termenul înscrierilor a trecut.')).toBeInTheDocument()
+  unmount()
+  renderRegistration([])
+  expect(
+    await screen.findByText('Organizatorul nu a adăugat încă nicio categorie.'),
+  ).toBeInTheDocument()
+})
+
+test('părintele fără copii vede „Adaugă copil”, iar eroarea listei are reîncercare', async () => {
+  vi.mocked(getMyChildren).mockResolvedValueOnce([] as never)
+  const { unmount } = renderRegistration()
+  expect(
+    await screen.findByText('Nu ai copii adăugați. Te poți înscrie pe tine mai jos.'),
+  ).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Adaugă copil' })).toBeInTheDocument()
+  unmount()
+  vi.mocked(getMyChildren).mockRejectedValueOnce(new Error('x'))
+  renderRegistration()
+  expect(await screen.findByText('Nu am putut încărca lista de copii.')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Reîncearcă' })).toBeInTheDocument()
+})
+
+test('prețul schimbat între confirmare și trimitere refuză înscrierea cu mesaj', async () => {
+  const user = userEvent.setup()
+  const result = {
+    participantKey: 'child-1',
+    childId: 'child-1',
+    categoryId: category.id,
+    routeId: category.route_id,
+    name: 'Copil Audit',
+    eligible: true,
+    amount: 0,
+    currency: 'RON' as const,
+  }
+  vi.mocked(validateCompetitionRegistration)
+    .mockResolvedValueOnce({
+      results: [{ ...result, priceVersion: 'a'.repeat(64) }],
+      allowCash: false,
+    })
+    .mockResolvedValue({
+      results: [{ ...result, priceVersion: 'b'.repeat(64) }],
+      allowCash: false,
+    })
+  renderRegistration()
+  await pickCategory(user, await screen.findByLabelText('Copil Audit'), category)
+  expect(await screen.findByText('Preț verificat: Gratuit')).toBeInTheDocument()
+  await user.click(screen.getByRole('checkbox', { name: /Confirm categoriile/ }))
+  await user.click(screen.getByRole('button', { name: 'Confirmă înscrierea gratuită' }))
+  await waitFor(() =>
+    expect(toast.error).toHaveBeenCalledWith(
+      'Categoria sau prețul s-a schimbat. Confirmă noua ofertă.',
+    ),
+  )
+  expect(createCompetitionRegistration).not.toHaveBeenCalled()
 })

@@ -1,4 +1,5 @@
 import { vi } from 'vitest'
+import { toast } from 'sonner'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -6,6 +7,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
 import CompetitionFormPage from './CompetitionFormPage'
 import { createConcurs, getConcurs, stergeConcurs } from '@/api/competition/competitions'
+import { schimbaPozaConcurs } from '@/api/competition/competition-hero'
 import { setPickerValue } from '@/test/pickers'
 
 const owner = { role: 'CLUB' as const, clubId: 'club-1', coachUserId: null }
@@ -79,6 +81,9 @@ function deseneaza() {
 
 beforeEach(() => {
   vi.mocked(createConcurs).mockReset()
+  vi.mocked(stergeConcurs).mockReset()
+  vi.mocked(toast.success).mockClear()
+  vi.mocked(toast.error).mockClear()
 })
 
 test('titlul și descrierea goale nu pleacă spre server', async () => {
@@ -139,6 +144,47 @@ test('un concurs nou se salvează cu proprietarul clubului', async () => {
     ),
   )
   expect(await screen.findByText('editor concurs')).toBeInTheDocument()
+  expect(toast.success).toHaveBeenCalledWith('Concursul a fost salvat.')
+})
+
+test('eșecul încărcării pozei șterge concursul abia creat și explică de ce', async () => {
+  const user = userEvent.setup()
+  vi.mocked(createConcurs).mockResolvedValue({
+    id: 'k1',
+    slug: 'cupa',
+    title: 'Cupa',
+    description: 'Descriere suficientă.',
+    hero_photo_storage_path: null,
+    club_id: 'club-1',
+    coach_id: null,
+    created_at: '2026-09-22T00:00:00Z',
+    updated_at: '2026-09-22T00:00:00Z',
+    start_at: '2026-10-01T07:00:00Z',
+    end_at: '2026-10-01T09:00:00Z',
+    registration_deadline_at: '2026-09-30T21:00:00Z',
+    location_id: null,
+    location_text: 'Timișoara',
+    allow_cash: false,
+  })
+  vi.mocked(schimbaPozaConcurs).mockRejectedValueOnce(new Error('upload'))
+  vi.mocked(stergeConcurs).mockResolvedValue()
+  deseneaza()
+  await user.type(screen.getByLabelText(/^Titlu/), 'Cupa')
+  await user.type(screen.getByLabelText(/^Descriere/), 'Descriere suficientă.')
+  setPickerValue(screen.getByLabelText(/^Data de început/), '2026-10-01')
+  setPickerValue(screen.getByLabelText(/^Ora de început/), '10:00')
+  setPickerValue(screen.getByLabelText(/^Data de final/), '2026-10-01')
+  setPickerValue(screen.getByLabelText(/^Ora de final/), '12:00')
+  setPickerValue(screen.getByLabelText(/^Ultima zi de înscriere/), '2026-09-30')
+  setPickerValue(screen.getByLabelText(/^Ora închiderii înscrierilor/), '23:59')
+  await user.type(screen.getByLabelText(/^Locația concursului/), 'Timișoara')
+  fireEvent.change(screen.getByLabelText('Poza din capul paginii'), {
+    target: { files: [new File(['poza'], 'hero.jpg', { type: 'image/jpeg' })] },
+  })
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() => expect(stergeConcurs).toHaveBeenCalledWith('k1'))
+  expect(toast.error).toHaveBeenCalledWith('Fără poza din capul paginii concursul nu se salvează.')
+  expect(screen.queryByText('editor concurs')).not.toBeInTheDocument()
 })
 
 test('formularul are Înapoi, câmpuri obligatorii marcate și Anulează', () => {

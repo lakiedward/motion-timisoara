@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { vi } from 'vitest'
+import { toast } from 'sonner'
 import type { CompetitionCoach } from '@/api/competition/competition-coaches'
 import { CompetitionCoachesSection } from './CompetitionCoachesSection'
 
@@ -64,6 +65,9 @@ test('organizer sees an empty state, searches a coach, and sends an invitation',
   await user.click(await screen.findByRole('button', { name: 'Invită' }))
   await waitFor(() => expect(api.invite).toHaveBeenCalledWith('competition-1', 'coach-1'))
   expect(await screen.findByText('Așteaptă răspuns')).toBeVisible()
+  expect(toast.success).toHaveBeenCalledWith(
+    'Invitație trimisă. Antrenorul apare public după ce acceptă.',
+  )
 })
 
 test('removing a coach requires a second click', async () => {
@@ -76,6 +80,9 @@ test('removing a coach requires a second click', async () => {
   expect(api.remove).not.toHaveBeenCalled()
   await user.click(screen.getByRole('button', { name: 'Confirmă scoaterea lui Ana Popescu' }))
   await waitFor(() => expect(api.remove).toHaveBeenCalledWith('competition-1', 'coach-1'))
+  await waitFor(() =>
+    expect(toast.success).toHaveBeenCalledWith('Antrenorul a fost scos din concurs.'),
+  )
 })
 
 test('load errors offer retry rather than an empty coach list', async () => {
@@ -85,4 +92,36 @@ test('load errors offer retry rather than an empty coach list', async () => {
   expect(await screen.findByRole('alert')).toHaveTextContent('Nu am putut încărca antrenorii')
   await user.click(screen.getByRole('button', { name: 'Reîncearcă' }))
   expect(await screen.findByText('Niciun antrenor invitat încă.')).toBeVisible()
+})
+
+test('failed invite, removal and search show their own error messages', async () => {
+  api.invite.mockRejectedValueOnce(new Error('x'))
+  const user = userEvent.setup()
+  renderSection()
+  await screen.findByText('Niciun antrenor invitat încă.')
+  await user.type(screen.getByLabelText('Caută un antrenor'), 'Ana')
+  await user.click(await screen.findByRole('button', { name: 'Invită' }))
+  await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Nu am putut trimite invitația.'))
+})
+
+test('a failed search says so instead of showing no results', async () => {
+  api.search.mockRejectedValue(new Error('x'))
+  const user = userEvent.setup()
+  renderSection()
+  await screen.findByText('Niciun antrenor invitat încă.')
+  await user.type(screen.getByLabelText('Caută un antrenor'), 'Ana')
+  expect(await screen.findByText('Nu am putut căuta antrenori.')).toBeVisible()
+})
+
+test('a failed removal keeps the coach and reports the error', async () => {
+  coaches = [coach]
+  api.remove.mockRejectedValueOnce(new Error('x'))
+  const user = userEvent.setup()
+  renderSection()
+  await user.click(
+    await screen.findByRole('button', { name: 'Scoate-l pe Ana Popescu din concurs' }),
+  )
+  await user.click(screen.getByRole('button', { name: 'Confirmă scoaterea lui Ana Popescu' }))
+  await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Nu am putut scoate antrenorul.'))
+  expect(screen.getByText('Ana Popescu')).toBeVisible()
 })
