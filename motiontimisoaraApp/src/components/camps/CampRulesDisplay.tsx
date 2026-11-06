@@ -41,7 +41,7 @@ export function CampRulesBody({
         <Button
           type="button"
           variant="link"
-          className="mt-1 flex h-11 min-h-11 w-fit px-0 font-semibold"
+          className="mt-1 flex h-11 min-h-touch-target w-fit px-0 font-semibold"
           aria-expanded={extins}
           aria-controls={textId}
           onClick={() => setExtins((v) => !v)}
@@ -56,7 +56,7 @@ export function CampRulesBody({
           rel="noopener noreferrer"
           aria-label={`Deschide regulamentul: ${fisier.name}, ${detalii}`}
           title={fisier.name}
-          className="group text-primary focus-visible:outline-ring mt-3 flex min-h-11 w-fit items-center gap-2 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="group text-primary focus-visible:outline-ring mt-3 flex min-h-touch-target w-fit items-center gap-2 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <ExternalLink className="size-4 shrink-0" aria-hidden="true" />
           <span className="flex flex-col">

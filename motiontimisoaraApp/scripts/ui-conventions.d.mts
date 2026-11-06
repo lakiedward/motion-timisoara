@@ -42,6 +42,7 @@ export declare function ecraneCareIncarcaDate(): string[]
 
 export declare function tinteTactileScriseDeMana(): FisierCuNumar[]
 export declare function tokenDeTintaTactila(): string | null
+export declare function consumatoriDeTintaTactila(): string[]
 
 export declare function copiiLocaleDeSchelet(): string[]
 export declare function consumatoriDeSchelet(): string[]

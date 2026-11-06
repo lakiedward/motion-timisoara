@@ -92,7 +92,7 @@ export default function NearbyLocations({
             {isOwnLocation(location, ownerId) ? (
               <div className="space-y-2">
                 <p className="text-muted-foreground text-sm">{copy.ownLabel}</p>
-                <Button type="button" variant="outline" size="sm" className="min-h-11" asChild>
+                <Button type="button" variant="outline" size="sm" className="min-h-touch-target" asChild>
                   <Link
                     to={`${copy.editBasePath}/${location.id}/edit`}
                     aria-label={`Editează ${location.name}`}
@@ -106,7 +106,7 @@ export default function NearbyLocations({
                 type="button"
                 variant={choice?.sourceId === location.id ? 'secondary' : 'outline'}
                 size="sm"
-                className="min-h-11"
+                className="min-h-touch-target"
                 aria-label={`Folosește locul ${location.name}`}
                 aria-pressed={choice?.sourceId === location.id}
                 onClick={() => onChoose(location)}
@@ -125,7 +125,7 @@ export default function NearbyLocations({
       <Button
         type="button"
         variant="outline"
-        className="min-h-11"
+        className="min-h-touch-target"
         aria-pressed={choice?.sourceId === null}
         onClick={onCreateNew}
       >

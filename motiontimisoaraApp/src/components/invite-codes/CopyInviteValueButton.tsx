@@ -60,7 +60,7 @@ export default function CopyInviteValueButton({
       <Button
         type="button"
         variant="outline"
-        className="min-h-11"
+        className="min-h-touch-target"
         aria-label={label}
         disabled={status === 'pending'}
         onClick={() => void onCopy()}

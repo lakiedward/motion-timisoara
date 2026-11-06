@@ -216,7 +216,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
         <Button
           type="button"
           variant="outline"
-          className="mt-3 min-h-11"
+          className="mt-3 min-h-touch-target"
           onClick={() => void offersQuery.refetch()}
         >
           Reîncearcă
@@ -252,7 +252,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
           <Button
             type="button"
             variant="outline"
-            className="min-h-11"
+            className="min-h-touch-target"
             disabled={busy !== null}
             onClick={() => {
               setRouteDraft(routeDraftFrom())
@@ -288,7 +288,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {downloadUrl && (
-                        <Button asChild type="button" variant="outline" className="min-h-11">
+                        <Button asChild type="button" variant="outline" className="min-h-touch-target">
                           <a href={downloadUrl} download>
                             <Download aria-hidden="true" className="size-4" /> GPX
                           </a>
@@ -297,7 +297,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
                       <Button
                         type="button"
                         variant="outline"
-                        className="min-h-11"
+                        className="min-h-touch-target"
                         disabled={busy !== null}
                         onClick={() => {
                           setRouteDraft(routeDraftFrom(route))
@@ -309,7 +309,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
                       <Button
                         type="button"
                         variant={confirmRouteId === route.id ? 'destructive' : 'outline'}
-                        className="min-h-11"
+                        className="min-h-touch-target"
                         disabled={busy !== null || categoryCount > 0}
                         onClick={() =>
                           confirmRouteId === route.id
@@ -383,13 +383,13 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
               onFileChange={(file) => setRouteDraft({ ...routeDraft, file })}
             />
             <div className="flex flex-wrap gap-2">
-              <Button type="submit" className="min-h-11" disabled={busy !== null}>
+              <Button type="submit" className="min-h-touch-target" disabled={busy !== null}>
                 Salvează traseul
               </Button>
               <Button
                 type="button"
                 variant="outline"
-                className="min-h-11"
+                className="min-h-touch-target"
                 disabled={busy !== null}
                 onClick={() => setRouteDraft(null)}
               >
@@ -406,7 +406,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
           <Button
             type="button"
             variant="outline"
-            className="min-h-11"
+            className="min-h-touch-target"
             disabled={busy !== null || completeRoutes.length === 0}
             onClick={() => {
               setCategoryDraft(categoryDraftFrom(undefined, routes))
@@ -449,7 +449,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
                   <Button
                     type="button"
                     variant="outline"
-                    className="min-h-11"
+                    className="min-h-touch-target"
                     disabled={busy !== null}
                     onClick={() => {
                       setCategoryDraft(categoryDraftFrom(category, routes))
@@ -461,7 +461,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
                   <Button
                     type="button"
                     variant={confirmCategoryId === category.id ? 'destructive' : 'outline'}
-                    className="min-h-11"
+                    className="min-h-touch-target"
                     disabled={busy !== null}
                     onClick={() =>
                       confirmCategoryId === category.id
@@ -556,13 +556,13 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
               />
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button type="submit" className="min-h-11" disabled={busy !== null}>
+              <Button type="submit" className="min-h-touch-target" disabled={busy !== null}>
                 Salvează categoria
               </Button>
               <Button
                 type="button"
                 variant="outline"
-                className="min-h-11"
+                className="min-h-touch-target"
                 disabled={busy !== null}
                 onClick={() => setCategoryDraft(null)}
               >

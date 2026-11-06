@@ -99,7 +99,7 @@ export default function LocationMap({
           <p className="text-foreground text-sm">
             Fundalul hărții nu este disponibil. Locațiile pot fi consultate în continuare.
           </p>
-          <Button variant="outline" className="min-h-11" onClick={retryTiles}>
+          <Button variant="outline" className="min-h-touch-target" onClick={retryTiles}>
             {tileUrl ? 'Reîncearcă harta' : 'Reîncarcă pagina'}
           </Button>
         </div>
@@ -114,7 +114,7 @@ export default function LocationMap({
             {offerFilters.map((filter) => (
               <Button
                 key={filter.value}
-                className="min-h-11"
+                className="min-h-touch-target"
                 variant={offerType === filter.value ? 'default' : 'outline'}
                 aria-pressed={offerType === filter.value}
                 onClick={() => setOfferType(filter.value)}

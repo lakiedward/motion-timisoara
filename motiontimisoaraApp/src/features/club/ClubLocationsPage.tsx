@@ -126,7 +126,7 @@ export default function ClubLocationsPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="mt-3 h-11 min-h-11"
+                    className="mt-3 h-11 min-h-touch-target"
                     onClick={() => setFiltre(NO_FILTERS)}
                   >
                     Șterge filtrele

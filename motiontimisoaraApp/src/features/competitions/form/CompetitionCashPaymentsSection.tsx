@@ -63,7 +63,7 @@ export function CompetitionCashPaymentsSection({ competitionId }: { competitionI
                 <Button
                   type="button"
                   variant={confirmId === payment.payment_id ? 'default' : 'outline'}
-                  className="min-h-11"
+                  className="min-h-touch-target"
                   disabled={confirm.isPending}
                   onClick={() =>
                     confirmId === payment.payment_id

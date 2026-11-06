@@ -298,7 +298,7 @@ test('locația are titlu, adresă, link vizibil și ascunde dalele care nu se î
     name: 'Deschide DEMO — Parc de antrenament în hărți',
   })
   expect(link).toHaveTextContent('Deschide în hărți')
-  expect(link.className).toContain('min-h-11')
+  expect(link.className).toContain('min-h-touch-target')
   const harta = sectiune.querySelector('a[aria-hidden="true"]') as HTMLAnchorElement
   expect(harta).toHaveAttribute('tabindex', '-1')
   expect(harta).toHaveAttribute('href', link.getAttribute('href'))

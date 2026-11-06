@@ -115,7 +115,7 @@ export function CompetitionInvitations() {
                   <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
-                      className="min-h-11"
+                      className="min-h-touch-target"
                       disabled={answering}
                       aria-label={`Acceptă invitația la ${invitation.title}`}
                       onClick={() =>
@@ -127,7 +127,7 @@ export function CompetitionInvitations() {
                     <Button
                       type="button"
                       variant="outline"
-                      className="min-h-11"
+                      className="min-h-touch-target"
                       disabled={answering}
                       aria-label={`Refuză invitația la ${invitation.title}`}
                       onClick={() =>
@@ -147,7 +147,7 @@ export function CompetitionInvitations() {
                 {invitation.status === 'accepted' && (
                   <Link
                     to={`/coach/competitions/${invitation.competitionId}/results`}
-                    className="text-primary inline-flex min-h-11 items-center text-sm font-medium underline-offset-4 hover:underline"
+                    className="text-primary inline-flex min-h-touch-target items-center text-sm font-medium underline-offset-4 hover:underline"
                   >
                     Completează podiumul după concurs
                   </Link>

@@ -25,7 +25,7 @@ export default function CopyAccountDetailsButton({ value }: { value: string }) {
       <Button
         type="button"
         variant="outline"
-        className="min-h-11"
+        className="min-h-touch-target"
         disabled={status === 'pending'}
         onClick={() => void onCopy()}
       >

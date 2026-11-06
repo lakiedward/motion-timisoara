@@ -101,7 +101,7 @@ export default function ChildQrPage({ inapoi }: { inapoi: string }) {
           <Button
             type="button"
             variant="outline"
-            className="mt-3 h-11 min-h-11"
+            className="mt-3 h-11 min-h-touch-target"
             disabled={regenerare.isPending}
             onClick={() => setConfirmare(true)}
           >
@@ -204,7 +204,7 @@ function ImagineQr({ token, nume }: { token: string; nume: string }) {
       </div>
 
       <div className="mt-4 flex flex-wrap justify-center gap-2">
-        <Button asChild variant="outline" className="h-11 min-h-11" aria-disabled={!imagine}>
+        <Button asChild variant="outline" className="h-11 min-h-touch-target" aria-disabled={!imagine}>
           <a href={imagine ?? undefined} download={fisier}>
             <Download className="size-4" /> Salvează imaginea
           </a>
@@ -212,7 +212,7 @@ function ImagineQr({ token, nume }: { token: string; nume: string }) {
         <Button
           type="button"
           variant="outline"
-          className="h-11 min-h-11"
+          className="h-11 min-h-touch-target"
           disabled={!imagine}
           onClick={printeaza}
         >
@@ -228,7 +228,7 @@ function Cadru({ inapoi, children }: { inapoi: string; children: React.ReactNode
     <div className="mx-auto max-w-2xl">
       <Link
         to={inapoi}
-        className="text-muted-foreground hover:text-foreground inline-flex min-h-11 items-center gap-1 text-sm"
+        className="text-muted-foreground hover:text-foreground inline-flex min-h-touch-target items-center gap-1 text-sm"
       >
         <ArrowLeft className="size-4" /> Înapoi
       </Link>

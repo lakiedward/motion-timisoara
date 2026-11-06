@@ -54,7 +54,7 @@ export function OfferCurrencyFields({
         <legend className="mb-2 text-sm font-medium">Moneda prețului</legend>
         <div className="flex flex-wrap gap-4">
           {(['RON', 'EUR'] as const).map((value) => (
-            <label key={value} className="flex min-h-11 items-center gap-2 text-sm">
+            <label key={value} className="flex min-h-touch-target items-center gap-2 text-sm">
               <input
                 type="radio"
                 value={value}
@@ -111,7 +111,7 @@ function CursBnrAutomat({
         <Button
           type="button"
           variant="outline"
-          className="h-11 min-h-11"
+          className="h-11 min-h-touch-target"
           onClick={onRetry}
           aria-label="Reîncearcă cursul BNR"
         >

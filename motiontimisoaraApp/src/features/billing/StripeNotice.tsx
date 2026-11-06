@@ -87,7 +87,7 @@ export function StripeNotice({ state }: { state: StripeOnboardingState }) {
         <Button
           type="button"
           variant="outline"
-          className="mt-2 h-11 min-h-11"
+          className="mt-2 h-11 min-h-touch-target"
           disabled={busy}
           onClick={retry}
         >

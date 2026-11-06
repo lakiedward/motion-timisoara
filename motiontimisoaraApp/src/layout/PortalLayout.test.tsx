@@ -125,7 +125,7 @@ test('inactive nav items use a visible gray hover, not the active blue fill', ()
   expect(cursuri.className).toMatch(/hover:bg-secondary/)
   expect(cursuri.className).toMatch(/\[&:hover\]:bg-secondary/)
   expect(cursuri.className).not.toMatch(/hover:bg-accent/)
-  expect(cursuri.className).toMatch(/min-h-11/)
+  expect(cursuri.className).toMatch(/min-h-touch-target/)
   expect(cursuri.className).toMatch(/cursor-pointer/)
 })
 
@@ -133,7 +133,7 @@ test('menu button, logout and close control meet the 44px tap class', async () =
   const user = userEvent.setup()
   renderLayout()
   expect(screen.getByRole('button', { name: 'Meniu' }).className).toMatch(/size-11/)
-  expect(screen.getByRole('button', { name: 'Deconectare' }).className).toMatch(/min-h-11/)
+  expect(screen.getByRole('button', { name: 'Deconectare' }).className).toMatch(/min-h-touch-target/)
   expect(screen.getByRole('button', { name: 'Deconectare' }).className).toMatch(
     /focus-visible:outline-ring/,
   )

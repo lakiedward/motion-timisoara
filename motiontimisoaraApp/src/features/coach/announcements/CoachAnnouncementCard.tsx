@@ -78,7 +78,7 @@ export function CoachAnnouncementCard({
         <Button
           type="button"
           variant="link"
-          className="h-auto min-h-11 p-0"
+          className="h-auto min-h-touch-target p-0"
           aria-expanded={false}
           onClick={() => setOpen(true)}
         >

@@ -76,7 +76,7 @@ export default function CoachPhotoField({ name }: { name: string }) {
     <Button
       type="button"
       variant="outline"
-      className="min-h-11"
+      className="min-h-touch-target"
       disabled={busy}
       aria-label={url ? 'Schimbă poza de profil' : 'Alege poza de profil'}
       onClick={() => void fromGallery()}
@@ -87,7 +87,7 @@ export default function CoachPhotoField({ name }: { name: string }) {
   ) : (
     <Label
       className={cn(
-        'border-input inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-md border px-4 text-sm font-medium',
+        'border-input inline-flex min-h-touch-target cursor-pointer items-center gap-2 rounded-md border px-4 text-sm font-medium',
         fieldFocusWithinClassName,
         busy && 'pointer-events-none opacity-50',
       )}
@@ -115,7 +115,7 @@ export default function CoachPhotoField({ name }: { name: string }) {
         <Button
           type="button"
           variant="outline"
-          className="text-destructive min-h-11"
+          className="text-destructive min-h-touch-target"
           disabled={busy}
           onClick={() => {
             upload.reset()
@@ -141,7 +141,7 @@ export default function CoachPhotoField({ name }: { name: string }) {
         <Button
           type="button"
           variant="outline"
-          className="min-h-11"
+          className="min-h-touch-target"
           onClick={() => void photo.refetch()}
         >
           Reîncearcă

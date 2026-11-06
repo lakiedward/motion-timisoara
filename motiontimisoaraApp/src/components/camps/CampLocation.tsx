@@ -20,7 +20,7 @@ export default function CampLocation({
           (hasCoordinates ? (
             <Link
               to={`/harta?location=${encodeURIComponent(location.id)}`}
-              className="text-primary relative z-10 inline-flex min-h-11 items-center rounded-md font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              className="text-primary relative z-10 inline-flex min-h-touch-target items-center rounded-md font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               aria-label={`${location.name} — vezi pe hartă`}
             >
               {location.name}

@@ -69,7 +69,7 @@ export default function MapPage() {
             <p className="text-foreground font-medium">
               Nu am putut încărca locațiile și ofertele lor.
             </p>
-            <Button className="mt-4 min-h-11" onClick={retry} disabled={isRetrying}>
+            <Button className="mt-4 min-h-touch-target" onClick={retry} disabled={isRetrying}>
               {isRetrying ? 'Se reîncearcă…' : 'Reîncearcă'}
             </Button>
           </div>

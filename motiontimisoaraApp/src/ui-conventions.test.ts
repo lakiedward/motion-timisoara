@@ -14,6 +14,7 @@ import { expect, test } from 'vitest'
 import {
   consumatoriDeSAIncheiat,
   consumatoriDeSchelet,
+  consumatoriDeTintaTactila,
   contrastePeCuloriDeBrand,
   copiiLocaleDeSchelet,
   ecraneCareIncarcaDate,
@@ -24,6 +25,8 @@ import {
   raportContrast,
   textulAsteptat,
   textulDePeDisc,
+  tinteTactileScriseDeMana,
+  tokenDeTintaTactila,
   trateazaEroareaDeCitire,
 } from '../scripts/ui-conventions.mjs'
 
@@ -33,6 +36,7 @@ import {
 
 const PLAFON_ECRANE_OARBE = 0
 const PLAFON_LITERALE_HEX = 1
+const PLAFON_TINTE_SCRISE_DE_MANA = 0
 const CONTRAST_MINIM = 4.5
 
 /* ------------------------------------------------------------------ *
@@ -49,6 +53,13 @@ test('stare de eroare: nu mai multe ecrane oarbe decât azi', () => {
 
 test('forme de așteptare: nicio copie locală a scheletului', () => {
   expect(copiiLocaleDeSchelet()).toEqual([])
+})
+
+test('țintă tactilă: nicio valoare nouă scrisă de mână în locul tokenului', () => {
+  expect(tokenDeTintaTactila()).toBe('--touch-target')
+  const gasite = tinteTactileScriseDeMana()
+  const total = gasite.reduce((suma, g) => suma + g.cate, 0)
+  expect(total, JSON.stringify(gasite)).toBeLessThanOrEqual(PLAFON_TINTE_SCRISE_DE_MANA)
 })
 
 test('culorile de brand: nicio literală hex nouă în componente', () => {
@@ -97,6 +108,7 @@ test('măsurătoarea chiar găsește ecrane, nu returnează liste goale', () => 
   // Dacă un refactor rupe mersul prin fișiere, totul ar deveni verde în tăcere.
   expect(ecraneCareIncarcaDate().length).toBeGreaterThan(30)
   expect(consumatoriDeSchelet().length).toBeGreaterThan(20)
+  expect(consumatoriDeTintaTactila().length).toBeGreaterThan(50)
   expect(consumatoriDeSAIncheiat().length).toBeGreaterThan(0)
   expect(contrastePeCuloriDeBrand().length).toBeGreaterThan(5)
 })

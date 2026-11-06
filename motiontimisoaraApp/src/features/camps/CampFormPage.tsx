@@ -416,7 +416,7 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
           const current = i === step
           const done = i < step
           const className = cn(
-            'flex min-h-11 items-center gap-2 rounded-full px-3 py-1.5 text-sm',
+            'flex min-h-touch-target items-center gap-2 rounded-full px-3 py-1.5 text-sm',
             current
               ? 'bg-primary text-primary-foreground font-semibold'
               : 'bg-muted text-muted-foreground',
@@ -506,13 +506,13 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
             <Button
               type="button"
               variant="outline"
-              className="h-11 min-h-11 px-6"
+              className="h-11 min-h-touch-target px-6"
               onClick={() => inapoiLaPas(step - 1)}
             >
               Înapoi
             </Button>
           )}
-          <Button type="submit" className="h-11 min-h-11 px-6" disabled={isSubmitting || faraCurs}>
+          <Button type="submit" className="h-11 min-h-touch-target px-6" disabled={isSubmitting || faraCurs}>
             {isSubmitting
               ? 'Se salvează…'
               : step < 2

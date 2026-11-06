@@ -114,7 +114,7 @@ export default function CampCoachesSection({ campId }: { campId: string }) {
       <Button
         type="button"
         variant="outline"
-        className="h-11 min-h-11"
+        className="h-11 min-h-touch-target"
         onClick={() => void gasiti.refetch()}
       >
         Reîncearcă
@@ -135,7 +135,7 @@ export default function CampCoachesSection({ campId }: { campId: string }) {
           <Button
             type="button"
             variant="outline"
-            className="h-11 min-h-11 shrink-0"
+            className="h-11 min-h-touch-target shrink-0"
             disabled={invita.isPending}
             onClick={() => invita.mutate(g.coachProfileId)}
           >
@@ -154,7 +154,7 @@ export default function CampCoachesSection({ campId }: { campId: string }) {
       {isError ? (
         <div className="space-y-2" role="alert">
           <p className="text-sm font-medium">Nu am putut încărca antrenorii.</p>
-          <Button type="button" className="h-11 min-h-11" onClick={() => void refetch()}>
+          <Button type="button" className="h-11 min-h-touch-target" onClick={() => void refetch()}>
             Reîncearcă
           </Button>
         </div>

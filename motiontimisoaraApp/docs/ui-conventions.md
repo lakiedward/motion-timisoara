@@ -21,11 +21,12 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
 ## Țintă tactilă  [RESPECTATĂ]
 
     Niciun control sub ținta comună; se urmează tokenul, nu numărul.
-    Cât timp tokenul nu există, asta NU e o convenție — e un item de lucru.
+    Ținta minimă se scrie min-h-touch-target / min-w-touch-target,
+    niciodată min-h-11, min-w-11 sau 44px scris de mână.
 
     canonic  src/index.css --touch-target
-    măsurat  170 valori scrise de mână, în 71 fișiere
-    →        unde trăiește tokenul e o alegere, nu o măsurătoare. Deschis pe Focus.
+    plafon   0 valori scrise de mână, în 0 fișiere — poate doar scădea
+    folosit  177 fișiere
 
 ## Forme de așteptare  [RESPECTATĂ]
 

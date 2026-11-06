@@ -35,7 +35,7 @@ export default function ClubDetailPage() {
     return (
       <div className="mx-auto max-w-6xl px-6 py-20 text-center" role="alert">
         <p className="text-foreground font-medium">Nu am putut încărca clubul.</p>
-        <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetch()}>
+        <Button className="mt-4 h-11 min-h-touch-target" type="button" onClick={() => refetch()}>
           Reîncearcă
         </Button>
       </div>

@@ -59,7 +59,7 @@ function RouteMapSurface({ routeLabel, gpx }: { routeLabel: string; gpx: Competi
             <Button
               type="button"
               variant="outline"
-              className="min-h-11"
+              className="min-h-touch-target"
               onClick={() => {
                 setTileStatus('loading')
                 setAttempt((value) => value + 1)
@@ -166,7 +166,7 @@ export function CompetitionRouteMap({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-foreground font-medium">Traseul {routeLabel}</p>
         {url && (
-          <Button asChild variant="outline" className="min-h-11">
+          <Button asChild variant="outline" className="min-h-touch-target">
             <a href={downloadHref ?? undefined} download={filename} onClick={downloadFile}>
               <Download aria-hidden="true" className="size-4" /> Descarcă GPX
             </a>
@@ -189,7 +189,7 @@ export function CompetitionRouteMap({
           <Button
             type="button"
             variant="outline"
-            className="min-h-11"
+            className="min-h-touch-target"
             onClick={() => void refetch()}
           >
             Reîncearcă traseul
