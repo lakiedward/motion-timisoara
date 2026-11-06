@@ -11,6 +11,7 @@ vi.mock('@/api/club', () => ({
   createClubActivity: vi.fn(),
   updateClubActivity: vi.fn(),
   getClubActivityById: vi.fn(),
+  getClubActivityEnrollmentCounts: vi.fn().mockResolvedValue(new Map()),
   getMyClub: vi.fn().mockResolvedValue({ id: 'club-1' }),
   getClubRosterForSelect: vi.fn().mockResolvedValue([]),
   getClubSelectableLocations: vi.fn().mockResolvedValue([]),

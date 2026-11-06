@@ -19,6 +19,7 @@ import { toast } from 'sonner'
 import {
   createClubActivity,
   getClubActivityById,
+  getClubActivityEnrollmentCounts,
   getClubRosterForSelect,
   getClubSelectableLocations,
   getMyClub,
@@ -86,6 +87,10 @@ const schema = z
   })
 type Values = z.infer<typeof schema>
 
+const NOTA_SPORT = 'Sportul rămâne cel salvat: activitatea are înscrieri.'
+const NOTA_LOCATIE = 'Locația rămâne cea salvată: activitatea are înscrieri.'
+const NOTA_PRET = 'Prețul rămâne cel salvat: activitatea are înscrieri.'
+
 const num = (s: string | undefined) => (s && s.trim() ? Number(s) : null)
 
 export function ClubActivityForm() {
@@ -99,7 +104,12 @@ export function ClubActivityForm() {
   })
   const clubId = club?.id ?? ''
   const { data: sports = [] } = useQuery({ queryKey: ['sports'], queryFn: fetchSports })
-  const { data: coaches = [], isSuccess: coachesReady } = useQuery({
+  const {
+    data: coaches = [],
+    isSuccess: coachesReady,
+    isError: coachesError,
+    refetch: refetchCoaches,
+  } = useQuery({
     queryKey: ['club-roster-select', clubId],
     queryFn: () => getClubRosterForSelect(clubId),
     enabled: !!clubId,
@@ -114,7 +124,25 @@ export function ClubActivityForm() {
     queryFn: () => getClubActivityById(id as string),
     enabled: isEdit,
   })
-  const { data: locations = [], isSuccess: locationsReady } = useQuery({
+  const {
+    data: inscrieri,
+    isSuccess: inscrieriReady,
+    isError: inscrieriError,
+    refetch: refetchInscrieri,
+  } = useQuery({
+    queryKey: ['club-activity-enrollments', clubId],
+    queryFn: () => getClubActivityEnrollmentCounts(clubId),
+    enabled: isEdit && !!clubId,
+  })
+  const inscrieriActivitate = id ? inscrieri?.get(id) : undefined
+  const campuriBlocate =
+    isEdit && (inscrieriActivitate?.active ?? 0) + (inscrieriActivitate?.pending ?? 0) > 0
+  const {
+    data: locations = [],
+    isSuccess: locationsReady,
+    isError: locationsError,
+    refetch: refetchLocations,
+  } = useQuery({
     queryKey: ['club-selectable-locations', clubId, existing?.location_id ?? null],
     queryFn: () => getClubSelectableLocations(clubId, existing?.location_id ?? null),
     enabled: !!clubId && (!isEdit || !!existing),
@@ -251,7 +279,8 @@ export function ClubActivityForm() {
 
   const backLink = <BackLink to="/club/activities">Înapoi la activități</BackLink>
 
-  if (isEdit && aEsuatCitirea) {
+  const eroareDependinte = coachesError || locationsError || inscrieriError
+  if (isEdit && (aEsuatCitirea || eroareDependinte)) {
     return (
       <div className="mx-auto max-w-2xl">
         {backLink}
@@ -259,7 +288,12 @@ export function ClubActivityForm() {
           state="error"
           title="Nu am putut încărca activitatea."
           text="Verifică conexiunea și încearcă din nou."
-          onRetry={() => void refetch()}
+          onRetry={() => {
+            if (aEsuatCitirea) void refetch()
+            if (coachesError) void refetchCoaches()
+            if (locationsError) void refetchLocations()
+            if (inscrieriError) void refetchInscrieri()
+          }}
           className="mt-4"
         />
       </div>
@@ -280,7 +314,10 @@ export function ClubActivityForm() {
     )
   }
 
-  if (isEdit && (seIncarca || !clubFetched)) {
+  if (
+    isEdit &&
+    (seIncarca || !clubFetched || !coachesReady || !locationsReady || !inscrieriReady)
+  ) {
     return (
       <div className="mx-auto max-w-2xl">
         {backLink}
@@ -358,11 +395,17 @@ export function ClubActivityForm() {
                 control={control}
                 name="sport_id"
                 id="sport_id"
-                {...camp('sport_id')}
+                {...camp('sport_id', campuriBlocate ? 'sport-blocat' : undefined)}
+                disabled={campuriBlocate}
                 searchable={sports.length > 8}
                 emptyLabel="—"
                 options={sports.map((c) => ({ value: c.id, label: c.name }))}
               />
+              {campuriBlocate && (
+                <p id="sport-blocat" className="text-muted-foreground text-sm">
+                  {NOTA_SPORT}
+                </p>
+              )}
               <FieldMessage id="sport_id" error={errors.sport_id?.message} />
             </div>
             <div className="min-w-0 space-y-1.5">
@@ -373,11 +416,17 @@ export function ClubActivityForm() {
                 control={control}
                 name="location_id"
                 id="location_id"
-                {...camp('location_id')}
+                {...camp('location_id', campuriBlocate ? 'locatie-blocata' : undefined)}
+                disabled={campuriBlocate}
                 searchable={locations.length > 8}
                 emptyLabel="—"
                 options={locations.map((c) => ({ value: c.id, label: c.name }))}
               />
+              {campuriBlocate && (
+                <p id="locatie-blocata" className="text-muted-foreground text-sm">
+                  {NOTA_LOCATIE}
+                </p>
+              )}
               <FieldMessage id="location_id" error={errors.location_id?.message} />
             </div>
           </div>
@@ -450,6 +499,7 @@ export function ClubActivityForm() {
             currency={currency}
             currencyField={register('currency')}
             setValue={setValue}
+            disabled={campuriBlocate}
           />
           <div className="space-y-1.5 sm:max-w-[calc(50%-0.5rem)]">
             <Label htmlFor="price_lei">
@@ -461,8 +511,14 @@ export function ClubActivityForm() {
               step="0.01"
               required
               {...register('price_lei')}
-              {...camp('price_lei')}
+              {...camp('price_lei', campuriBlocate ? 'pret-blocat' : undefined)}
+              disabled={campuriBlocate}
             />
+            {campuriBlocate && (
+              <p id="pret-blocat" className="text-muted-foreground text-sm">
+                {NOTA_PRET}
+              </p>
+            )}
             <FieldMessage id="price_lei" error={errors.price_lei?.message} />
           </div>
         </FormSection>
