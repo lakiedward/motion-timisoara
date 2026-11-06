@@ -48,12 +48,15 @@ export default function CoachPhotoField({ name }: { name: string }) {
       toast.error('Poza trebuie să fie o imagine.')
       return
     }
+    clear.reset()
     upload.mutate(file)
   }
   const fromGallery = async () => {
     try {
       const picked = await alegeDinGalerie(1)
-      receive(picked.find(esteImagine) ?? null)
+      const image = picked.find(esteImagine) ?? null
+      if (!image && picked.length > 0) toast.error('Poza trebuie să fie o imagine.')
+      receive(image)
     } catch {
       toast.error('Nu am putut deschide galeria.')
     }
@@ -75,6 +78,7 @@ export default function CoachPhotoField({ name }: { name: string }) {
       variant="outline"
       className="min-h-11"
       disabled={busy}
+      aria-label={url ? 'Schimbă poza de profil' : 'Alege poza de profil'}
       onClick={() => void fromGallery()}
     >
       <Camera aria-hidden="true" />
@@ -113,7 +117,10 @@ export default function CoachPhotoField({ name }: { name: string }) {
           variant="outline"
           className="text-destructive min-h-11"
           disabled={busy}
-          onClick={() => clear.mutate()}
+          onClick={() => {
+            upload.reset()
+            clear.mutate()
+          }}
         >
           {clear.isPending ? 'Se scoate…' : 'Scoate poza'}
         </Button>
@@ -122,13 +129,25 @@ export default function CoachPhotoField({ name }: { name: string }) {
   )
 
   const errorText = (upload.isError || clear.isError || photo.isError) && (
-    <p role="alert" className="text-destructive text-sm">
-      {photo.isError
-        ? 'Nu am putut citi poza de profil.'
-        : upload.isError
-          ? 'Nu am putut salva poza. Încearcă din nou.'
-          : 'Nu am putut scoate poza. Încearcă din nou.'}
-    </p>
+    <div role="alert" className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+      <p className="text-destructive text-sm">
+        {photo.isError
+          ? 'Nu am putut citi poza de profil.'
+          : upload.isError
+            ? 'Nu am putut salva poza. Încearcă din nou.'
+            : 'Nu am putut scoate poza. Încearcă din nou.'}
+      </p>
+      {photo.isError && (
+        <Button
+          type="button"
+          variant="outline"
+          className="min-h-11"
+          onClick={() => void photo.refetch()}
+        >
+          Reîncearcă
+        </Button>
+      )}
+    </div>
   )
 
   return (
@@ -141,11 +160,13 @@ export default function CoachPhotoField({ name }: { name: string }) {
       <div className="min-w-0 space-y-3">
         <div>
           <p className="font-display text-foreground text-xl font-bold">{name}</p>
-          <p className="text-muted-foreground text-sm">
-            {url
-              ? 'Așa te văd părinții pe pagina ta publică.'
-              : 'Fără poză, părinții văd inițialele tale.'}
-          </p>
+          {!photo.isError && (
+            <p className="text-muted-foreground text-sm">
+              {url
+                ? 'Așa te văd părinții pe pagina ta publică.'
+                : 'Fără poză, părinții văd inițialele tale.'}
+            </p>
+          )}
         </div>
         {actions}
         {errorText}

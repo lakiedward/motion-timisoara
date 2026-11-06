@@ -56,16 +56,13 @@ function person(
   }
 }
 
-function renderPage() {
+function renderPage(baza: '/club/camps' | '/coach/camps' = '/club/camps') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={['/club/camps/camp-1/enrolled']}>
+      <MemoryRouter initialEntries={[`${baza}/camp-1/enrolled`]}>
         <Routes>
-          <Route
-            path="/club/camps/:id/enrolled"
-            element={<CampEnrolledPage baza="/club/camps" />}
-          />
+          <Route path={`${baza}/:id/enrolled`} element={<CampEnrolledPage baza={baza} />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -307,4 +304,20 @@ test('regulamentul taberei apare ca un card închis deasupra listei', async () =
     'false',
   )
   expect(screen.queryByText('Casca e obligatorie.')).not.toBeInTheDocument()
+})
+
+test('la antrenor linkurile duc în portalul antrenorului', async () => {
+  auth.role = 'COACH'
+  renderPage('/coach/camps')
+  expect(await waitList()).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /Înapoi la tabere/ })).toHaveAttribute(
+    'href',
+    '/coach/camps',
+  )
+  const child = cardFor('Copil Spec 520')
+  expect(within(child).getByRole('link', { name: 'Cod QR pentru Copil Spec 520' })).toHaveAttribute(
+    'href',
+    '/coach/children/c-spec/qr',
+  )
+  expect(screen.getByRole('searchbox', { name: /Caută participanți/ })).toBeInTheDocument()
 })
