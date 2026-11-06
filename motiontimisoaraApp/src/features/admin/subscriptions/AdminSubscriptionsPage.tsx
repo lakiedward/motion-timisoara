@@ -187,7 +187,10 @@ export default function AdminSubscriptionsPage() {
             </div>
           </div>
           <p role="status" className="text-muted-foreground mb-3 text-sm">
-            {visible.length > 0 && plural(visible.length, 'abonament', 'abonamente')}
+            {visible.length > 0 &&
+              (visible.length < subscriptions.length
+                ? `${visible.length} din ${plural(subscriptions.length, 'abonament', 'abonamente')}`
+                : plural(visible.length, 'abonament', 'abonamente'))}
           </p>
           {visible.length === 0 ? (
             <StatusView
