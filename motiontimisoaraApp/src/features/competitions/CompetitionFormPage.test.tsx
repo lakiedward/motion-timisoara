@@ -1,11 +1,11 @@
 import { vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
 import CompetitionFormPage from './CompetitionFormPage'
-import { createConcurs } from '@/api/competition/competitions'
+import { createConcurs, getConcurs, stergeConcurs } from '@/api/competition/competitions'
 import { setPickerValue } from '@/test/pickers'
 
 const owner = { role: 'CLUB' as const, clubId: 'club-1', coachUserId: null }
@@ -41,6 +41,23 @@ vi.mock('@/lib/galerie', () => ({
   galeriaSeDeschideNativ: () => false,
   alegeDinGalerie: vi.fn(),
 }))
+
+function deseneazaEditare() {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return render(
+    <QueryClientProvider client={qc}>
+      <MemoryRouter initialEntries={['/club/competitions/k1/edit']}>
+        <Routes>
+          <Route
+            path="/club/competitions/:id/edit"
+            element={<CompetitionFormPage baza="/club/competitions" />}
+          />
+          <Route path="/club/competitions" element={<div>lista concursuri</div>} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  )
+}
 
 function deseneaza() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -126,7 +143,10 @@ test('un concurs nou se salvează cu proprietarul clubului', async () => {
 
 test('formularul are Înapoi, câmpuri obligatorii marcate și Anulează', () => {
   deseneaza()
-  expect(screen.getByRole('link', { name: 'Înapoi la concursuri' })).toHaveAttribute('href', '/club/competitions')
+  expect(screen.getByRole('link', { name: 'Înapoi la concursuri' })).toHaveAttribute(
+    'href',
+    '/club/competitions',
+  )
   expect(screen.getByText(/sunt obligatorii/)).toBeInTheDocument()
   expect(screen.getByText('Despre concurs')).toBeInTheDocument()
   expect(screen.getByText('Program și înscrieri')).toBeInTheDocument()
@@ -136,4 +156,37 @@ test('formularul are Înapoi, câmpuri obligatorii marcate și Anulează', () =>
     '/club/competitions',
   )
   expect(screen.queryByText('Renunță')).not.toBeInTheDocument()
+})
+
+test('ștergerea cere confirmare în dialogul comun și Anulează păstrează concursul', async () => {
+  const user = userEvent.setup()
+  vi.mocked(getConcurs).mockResolvedValue({
+    id: 'k1',
+    slug: 'cupa',
+    title: 'Cupa',
+    description: 'Descriere suficientă.',
+    hero_photo_storage_path: 'k1/hero/a.jpg',
+    club_id: 'club-1',
+    coach_id: null,
+    created_at: '2026-09-22T00:00:00Z',
+    updated_at: '2026-09-22T00:00:00Z',
+    start_at: '2026-10-01T07:00:00Z',
+    end_at: '2026-10-01T09:00:00Z',
+    registration_deadline_at: '2026-09-30T21:00:00Z',
+    location_id: null,
+    location_text: 'Timișoara',
+    allow_cash: false,
+  })
+  vi.mocked(stergeConcurs).mockResolvedValue(undefined)
+  deseneazaEditare()
+  await user.click(await screen.findByRole('button', { name: 'Șterge concursul' }))
+  const dialog = await screen.findByRole('alertdialog')
+  expect(dialog).toHaveTextContent('Ștergi concursul?')
+  await user.click(screen.getByRole('button', { name: 'Anulează' }))
+  expect(stergeConcurs).not.toHaveBeenCalled()
+  await user.click(screen.getByRole('button', { name: 'Șterge concursul' }))
+  const confirm = await screen.findByRole('alertdialog')
+  await user.click(within(confirm).getByRole('button', { name: 'Șterge concursul' }))
+  await waitFor(() => expect(stergeConcurs).toHaveBeenCalledWith('k1'))
+  expect(await screen.findByText('lista concursuri')).toBeInTheDocument()
 })

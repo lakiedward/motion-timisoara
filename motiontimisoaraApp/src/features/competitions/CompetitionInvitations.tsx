@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -8,24 +9,16 @@ import {
 } from '@/api/competition/competition-coaches'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
 import { useAuth } from '@/lib/auth-context'
-
-const dateFormatter = new Intl.DateTimeFormat('ro-RO', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-  timeZone: 'Europe/Bucharest',
-})
-
-function formatCompetitionDate(value: string | null): string | null {
-  if (!value) return null
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? null : dateFormatter.format(date)
-}
+import { competitionWhen } from './list/competition-list'
 
 export function CompetitionInvitations() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
+  const [toDecline, setToDecline] = useState<{ competitionId: string; title: string } | null>(null)
   const invitationsQuery = useQuery({
     queryKey: ['competition-invitations', user?.id],
     queryFn: () => getMyCompetitionInvitations(user!.id),
@@ -35,6 +28,7 @@ export function CompetitionInvitations() {
     mutationFn: ({ competitionId, accept }: { competitionId: string; accept: boolean }) =>
       respondToCompetitionInvitation(competitionId, accept),
     onSuccess: (_data, variables) => {
+      setToDecline(null)
       toast.success(
         variables.accept ? 'Ai acceptat invitația la concurs.' : 'Ai refuzat invitația.',
       )
@@ -47,31 +41,30 @@ export function CompetitionInvitations() {
       })
       void queryClient.invalidateQueries({ queryKey: ['concurs-public'] })
     },
-    onError: () => toast.error('Nu am putut trimite răspunsul.'),
+    onError: () => {
+      setToDecline(null)
+      toast.error('Nu am putut trimite răspunsul.')
+    },
   })
 
   if (!user?.id) return null
 
   if (invitationsQuery.isPending) {
-    return <Skeleton className="mb-6 h-28 w-full rounded-2xl" />
+    return <Skeleton className="mb-6 h-28 w-full rounded-xl" />
   }
 
   if (invitationsQuery.isError) {
     return (
-      <section role="alert" className="mb-6 space-y-2 rounded-2xl border p-4">
-        <p>Nu am putut încărca invitațiile la concursuri.</p>
-        <Button
-          type="button"
-          variant="outline"
-          className="min-h-11"
-          onClick={() => void invitationsQuery.refetch()}
-        >
-          Reîncearcă
-        </Button>
-      </section>
+      <StatusView
+        state="error"
+        title="Nu am putut încărca invitațiile la concursuri."
+        onRetry={invitationsQuery.isFetching ? undefined : () => void invitationsQuery.refetch()}
+        className="mb-6"
+      />
     )
   }
 
+  const answering = respond.isPending || invitationsQuery.isFetching
   const invitations = [...invitationsQuery.data].sort(
     (left, right) => Number(right.status === 'invited') - Number(left.status === 'invited'),
   )
@@ -88,10 +81,14 @@ export function CompetitionInvitations() {
       ) : (
         <ul className="space-y-3">
           {invitations.map((invitation) => {
-            const start = formatCompetitionDate(invitation.startAt)
-            const end = formatCompetitionDate(invitation.endAt)
+            const when = invitation.startAt
+              ? competitionWhen({ start_at: invitation.startAt, end_at: invitation.endAt })
+              : null
             return (
-              <li key={invitation.competitionId} className="space-y-3 rounded-2xl border p-4">
+              <li
+                key={invitation.competitionId}
+                className="bg-card space-y-3 rounded-xl border p-4"
+              >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <Link
@@ -100,17 +97,15 @@ export function CompetitionInvitations() {
                     >
                       {invitation.title}
                     </Link>
-                    {(start || end || invitation.locationText) && (
+                    {(when || invitation.locationText) && (
                       <p className="text-muted-foreground mt-1 text-sm">
-                        {[
-                          start && end ? `${start} – ${end}` : (start ?? end),
-                          invitation.locationText,
-                        ]
-                          .filter(Boolean)
-                          .join(' · ')}
+                        {[when, invitation.locationText].filter(Boolean).join(' · ')}
                       </p>
                     )}
                   </div>
+                  {invitation.status === 'invited' && (
+                    <Badge variant="highlight">Așteaptă răspunsul tău</Badge>
+                  )}
                   {invitation.status === 'accepted' && <Badge>Ai acceptat</Badge>}
                   {invitation.status === 'declined' && (
                     <Badge variant="secondary">Ai refuzat</Badge>
@@ -121,7 +116,8 @@ export function CompetitionInvitations() {
                     <Button
                       type="button"
                       className="min-h-11"
-                      disabled={respond.isPending}
+                      disabled={answering}
+                      aria-label={`Acceptă invitația la ${invitation.title}`}
                       onClick={() =>
                         respond.mutate({ competitionId: invitation.competitionId, accept: true })
                       }
@@ -132,9 +128,13 @@ export function CompetitionInvitations() {
                       type="button"
                       variant="outline"
                       className="min-h-11"
-                      disabled={respond.isPending}
+                      disabled={answering}
+                      aria-label={`Refuză invitația la ${invitation.title}`}
                       onClick={() =>
-                        respond.mutate({ competitionId: invitation.competitionId, accept: false })
+                        setToDecline({
+                          competitionId: invitation.competitionId,
+                          title: invitation.title,
+                        })
                       }
                     >
                       Refuz
@@ -157,6 +157,18 @@ export function CompetitionInvitations() {
           })}
         </ul>
       )}
+      <ConfirmDialog
+        open={!!toDecline}
+        onOpenChange={(open) => !open && setToDecline(null)}
+        title={`Refuzi invitația la „${toDecline?.title ?? ''}”?`}
+        description="Răspunsul nu se mai poate schimba după ce îl trimiți."
+        confirmLabel="Refuz invitația"
+        destructive
+        pending={respond.isPending}
+        onConfirm={() =>
+          toDecline && respond.mutate({ competitionId: toDecline.competitionId, accept: false })
+        }
+      />
     </section>
   )
 }

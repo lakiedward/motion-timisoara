@@ -406,8 +406,9 @@ test("SIMULATED free competition registration on native viewport", async ({
   const state = await simulate(page, "free");
   await page.goto("/account/competitions/concurs-simulat/register");
   await expect(
-    page.getByRole("heading", { name: "Înscriere la Concurs Simulat" }),
+    page.getByRole("heading", { name: "Finalizează înscrierea" }),
   ).toBeVisible();
+  await expect(page.getByText("Concurs Simulat").first()).toBeVisible();
   await page.getByLabel("Copil Simulat").click();
   await page.getByRole("menuitemradio", { name: /^8–10 ani ·/ }).click();
   await expect(page.getByText("Preț verificat: Gratuit")).toBeVisible();
@@ -439,8 +440,9 @@ test("SIMULATED adult self-registration without children on native viewport", as
   const state = await simulate(page, "adult");
   await page.goto("/account/competitions/concurs-simulat/register");
   await expect(
-    page.getByRole("heading", { name: "Înscriere la Concurs Simulat" }),
+    page.getByRole("heading", { name: "Finalizează înscrierea" }),
   ).toBeVisible();
+  await expect(page.getByText("Concurs Simulat").first()).toBeVisible();
   await page.getByRole("checkbox", { name: "Mă înscriu eu" }).check();
   await page.getByLabel("Data mea de naștere").fill("1990-04-12");
   await page.getByLabel("Categoria mea").click();

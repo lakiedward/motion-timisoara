@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
 import { formSelectMenuClassName } from '@/components/ui/field-styles'
 import { SelectMenu } from '@/components/ui/select-menu'
 import type { CompetitionPortalBaza } from '../competition-portal'
@@ -75,25 +76,46 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
     onError: (error: Error) => toast.error(error.message || 'Nu am putut publica podiumul.'),
   })
 
+  const backLink = (
+    <Link to={baza} className="text-primary inline-flex min-h-11 items-center text-sm font-medium">
+      ← Concursuri
+    </Link>
+  )
+
   if (competition.isLoading || categories.isLoading || podium.isLoading) {
-    return <Skeleton className="h-80 rounded-xl" />
-  }
-  if (competition.isError || categories.isError || podium.isError) {
     return (
-      <div role="alert" className="space-y-3 py-10 text-center">
-        <p>Nu am putut încărca podiumul.</p>
-        <Button
-          variant="outline"
-          onClick={() =>
-            void Promise.all([competition.refetch(), categories.refetch(), podium.refetch()])
-          }
-        >
-          Reîncearcă
-        </Button>
+      <div className="mx-auto max-w-2xl space-y-6">
+        {backLink}
+        <Skeleton className="h-80 rounded-xl" />
       </div>
     )
   }
-  if (!competition.data) return <p>Concursul nu a fost găsit.</p>
+  if (competition.isError || categories.isError || podium.isError) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-6">
+        {backLink}
+        <StatusView
+          state="error"
+          title="Nu am putut încărca podiumul."
+          onRetry={() =>
+            void Promise.all([competition.refetch(), categories.refetch(), podium.refetch()])
+          }
+        />
+      </div>
+    )
+  }
+  if (!competition.data) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-6">
+        {backLink}
+        <StatusView
+          state="empty"
+          title="Concursul nu a fost găsit."
+          text="Poate a fost șters sau linkul nu mai este valabil."
+        />
+      </div>
+    )
+  }
 
   const canPublish =
     owner.role === 'ADMIN' ||
@@ -108,12 +130,7 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <Link
-        to={baza}
-        className="text-primary inline-flex min-h-11 items-center text-sm font-medium"
-      >
-        ← Concursuri
-      </Link>
+      {backLink}
       <div>
         <h1 className="font-display text-2xl font-bold">Podium · {competition.data.title}</h1>
         <p className="text-muted-foreground mt-2 text-sm">
@@ -154,12 +171,11 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
           {candidates.isLoading ? (
             <Skeleton className="h-52 rounded-2xl" />
           ) : candidates.isError ? (
-            <div role="alert" className="space-y-3 rounded-2xl border p-5">
-              <p>Nu am putut încărca participanții eligibili.</p>
-              <Button variant="outline" onClick={() => void candidates.refetch()}>
-                Reîncearcă
-              </Button>
-            </div>
+            <StatusView
+              state="error"
+              title="Nu am putut încărca participanții eligibili."
+              onRetry={() => void candidates.refetch()}
+            />
           ) : candidateCount === 0 ? (
             <p className="rounded-2xl border border-dashed p-5">
               Niciun participant înscris și confirmat în această categorie.
