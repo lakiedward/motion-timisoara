@@ -77,7 +77,7 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
   })
 
   const backLink = (
-    <Link to={baza} className="text-primary inline-flex min-h-11 items-center text-sm font-medium">
+    <Link to={baza} className="text-primary inline-flex min-h-touch-target items-center text-sm font-medium">
       ← Concursuri
     </Link>
   )
@@ -225,7 +225,7 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
           )}
           {canPublish && !publication && results.length > 0 && (
             <Button
-              className="h-11 min-h-11"
+              className="h-11 min-h-touch-target"
               disabled={publish.isPending}
               onClick={() => publish.mutate()}
             >

@@ -81,7 +81,7 @@ export default function CampTemplatePicker({
 
   const lista = sabloane.data ?? []
   const optiune =
-    'border-input has-checked:border-primary has-checked:ring-primary flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border p-4 text-sm has-checked:ring-1 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring'
+    'border-input has-checked:border-primary has-checked:ring-primary flex min-h-touch-target cursor-pointer items-start gap-3 rounded-xl border p-4 text-sm has-checked:ring-1 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring'
 
   return (
     <FormSection
@@ -94,7 +94,7 @@ export default function CampTemplatePicker({
           <Button
             type="button"
             variant="outline"
-            className="h-11 min-h-11"
+            className="h-11 min-h-touch-target"
             onClick={() => {
               reincearcaProprietar?.()
               void sabloane.refetch()
@@ -172,13 +172,13 @@ export default function CampTemplatePicker({
               : 'Înlocuiești câmpurile copiate din șablon? Titlul, adresa paginii și perioada rămân.'}
           </p>
           <div className="flex flex-wrap gap-3">
-            <Button type="button" className="h-11 min-h-11" onClick={confirmaAlegerea}>
+            <Button type="button" className="h-11 min-h-touch-target" onClick={confirmaAlegerea}>
               {asteptare === 'gol' ? 'Golește' : 'Înlocuiește'}
             </Button>
             <Button
               type="button"
               variant="outline"
-              className="h-11 min-h-11"
+              className="h-11 min-h-touch-target"
               onClick={() => setAsteptare(null)}
             >
               Renunță
@@ -193,7 +193,7 @@ export default function CampTemplatePicker({
             <Button
               type="button"
               variant="destructive"
-              className="h-11 min-h-11"
+              className="h-11 min-h-touch-target"
               disabled={sterge}
               onClick={() => void confirmaStergerea()}
             >
@@ -202,7 +202,7 @@ export default function CampTemplatePicker({
             <Button
               type="button"
               variant="outline"
-              className="h-11 min-h-11"
+              className="h-11 min-h-touch-target"
               onClick={() => setDeSters(null)}
             >
               Renunță

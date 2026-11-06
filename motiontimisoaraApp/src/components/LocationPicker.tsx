@@ -249,7 +249,7 @@ export default function LocationPicker({
                   aria-selected={i === indexActiv}
                   onClick={() => alegeSugestia(loc)}
                   onMouseEnter={() => setIndexActiv(i)}
-                  className={`flex min-h-11 w-full items-center gap-2.5 px-3 py-2 text-left text-sm ${
+                  className={`flex min-h-touch-target w-full items-center gap-2.5 px-3 py-2 text-left text-sm ${
                     i === indexActiv ? 'bg-accent text-accent-foreground' : ''
                   }`}
                 >

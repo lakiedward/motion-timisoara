@@ -84,7 +84,7 @@ export default function CourseProgramFields<T extends FieldValues>({
                 size="sm"
                 variant={selected ? 'default' : 'outline'}
                 aria-pressed={selected}
-                className={cn('min-h-11 px-3 lg:min-h-8', chipClassName)}
+                className={cn('min-h-touch-target px-3 lg:min-h-8', chipClassName)}
                 onClick={() => toggleDay(index)}
               >
                 {day.label}

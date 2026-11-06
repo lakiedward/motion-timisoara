@@ -23,7 +23,7 @@ function Contacte({ copil }: { copil: CopilInscris }) {
         <a
           key={t.tel}
           href={`tel:${t.tel}`}
-          className="hover:text-foreground inline-flex min-h-11 items-center gap-2 sm:min-h-0"
+          className="hover:text-foreground inline-flex min-h-touch-target items-center gap-2 sm:min-h-0"
         >
           <Phone className="size-4 shrink-0" aria-hidden="true" />
           {t.nume}: {t.tel}

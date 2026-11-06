@@ -73,4 +73,4 @@ export function CampFormRand({
 }
 
 export const campFormRandAction =
-  'size-11 min-h-11 shrink-0 sm:col-start-3 sm:row-start-2 sm:self-center'
+  'size-11 min-h-touch-target shrink-0 sm:col-start-3 sm:row-start-2 sm:self-center'

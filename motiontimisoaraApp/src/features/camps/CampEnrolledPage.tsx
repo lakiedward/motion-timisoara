@@ -119,7 +119,7 @@ export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
           <Button
             type="button"
             variant="outline"
-            className="h-11 min-h-11"
+            className="h-11 min-h-touch-target"
             onClick={() => void sosire.participants.refetch()}
           >
             Reîncearcă prezența

@@ -89,7 +89,7 @@ function InviteCodeRow({
           type="button"
           size="icon"
           variant="ghost"
-          className="text-destructive min-h-11 min-w-11"
+          className="text-destructive min-h-touch-target min-w-touch-target"
           aria-label={
             actions.deletingId === code.id
               ? `Se șterge codul invitație ${index}`

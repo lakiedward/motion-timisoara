@@ -75,8 +75,8 @@ beforeEach(() => {
 test('coach cards expose a named, touch-sized removal that asks for confirmation', async () => {
   renderPage()
   const remove = await screen.findByRole('button', { name: 'Elimină antrenorul Andrei Popescu' })
-  expect(remove.className).toContain('min-h-11')
-  expect(remove.className).toContain('min-w-11')
+  expect(remove.className).toContain('min-h-touch-target')
+  expect(remove.className).toContain('min-w-touch-target')
   fireEvent.click(remove)
   const dialog = await screen.findByRole('alertdialog', {
     name: 'Elimini antrenorul Andrei Popescu din club?',
@@ -155,7 +155,7 @@ test('the direct form uses first and last name and links errors to fields', asyn
   await waitFor(() => expect(first).toHaveAttribute('aria-invalid', 'true'))
   expect(first.getAttribute('aria-describedby')).toBe('coach-firstName-error')
   expect(document.getElementById('coach-firstName-error')).toHaveTextContent('Minim 2 caractere')
-  expect(first.className).toContain('min-h-11')
+  expect(first.className).toContain('min-h-touch-target')
 
   fillForm()
   fireEvent.click(screen.getByRole('button', { name: /Creează antrenor/ }))

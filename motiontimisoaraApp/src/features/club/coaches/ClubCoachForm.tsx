@@ -84,7 +84,7 @@ export default function ClubCoachForm({ clubId }: { clubId: string | undefined }
         <Input
           id={id}
           type={type}
-          className="min-h-11"
+          className="min-h-touch-target"
           autoComplete="off"
           {...register(name)}
           disabled={isCreating}
@@ -119,7 +119,7 @@ export default function ClubCoachForm({ clubId }: { clubId: string | undefined }
               ref={toggleButton}
               type="button"
               variant="outline"
-              className="min-h-11"
+              className="min-h-touch-target"
               aria-expanded={expanded}
               aria-controls="club-direct-coach-form"
               disabled={isCreating || !clubId}
@@ -171,7 +171,7 @@ export default function ClubCoachForm({ clubId }: { clubId: string | undefined }
             {field('email', 'Email', 'email')}
             {field('phone', 'Telefon (opțional)', 'tel', false)}
             <div className="sm:col-span-2">
-              <Button type="submit" className="min-h-11" disabled={isCreating || !clubId}>
+              <Button type="submit" className="min-h-touch-target" disabled={isCreating || !clubId}>
                 <UserPlus /> {isCreating ? 'Se creează…' : 'Creează antrenor'}
               </Button>
               <RequiredFieldsNote />

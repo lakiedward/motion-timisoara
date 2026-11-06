@@ -63,10 +63,10 @@ export default function NativeAccountPage() {
             <p className="text-muted-foreground text-sm">
               Intră în cont pentru copii, înscrieri și anunțuri.
             </p>
-            <Button asChild className="min-h-11 w-full">
+            <Button asChild className="min-h-touch-target w-full">
               <Link to="/login">Autentificare</Link>
             </Button>
-            <Button asChild variant="outline" className="min-h-11 w-full">
+            <Button asChild variant="outline" className="min-h-touch-target w-full">
               <Link to="/signup">Creează cont</Link>
             </Button>
           </CardContent>
@@ -86,7 +86,7 @@ export default function NativeAccountPage() {
           )}
           <Button
             variant="outline"
-            className="text-destructive min-h-11 w-full"
+            className="text-destructive min-h-touch-target w-full"
             disabled={busy}
             onClick={() => void logout()}
           >

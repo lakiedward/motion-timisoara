@@ -104,7 +104,7 @@ export default function AdminProfilePage() {
             <FieldMessage id="admin-profile-phone" error={errors.phone?.message} />
           </div>
         </FormSection>
-        <Button type="submit" disabled={isSubmitting} className="h-11 min-h-11">
+        <Button type="submit" disabled={isSubmitting} className="h-11 min-h-touch-target">
           {isSubmitting ? 'Se salvează…' : 'Salvează'}
         </Button>
       </form>

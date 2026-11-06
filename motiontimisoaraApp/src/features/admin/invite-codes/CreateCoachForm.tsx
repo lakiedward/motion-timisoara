@@ -88,7 +88,7 @@ export default function CreateCoachForm() {
               ref={toggleButton}
               type="button"
               variant="outline"
-              className="min-h-11"
+              className="min-h-touch-target"
               aria-expanded={expanded}
               aria-controls="direct-coach-form"
               disabled={isCreating}
@@ -137,7 +137,7 @@ export default function CreateCoachForm() {
               <Label htmlFor="coach-first-name">Prenume</Label>
               <Input
                 id="coach-first-name"
-                className="min-h-11"
+                className="min-h-touch-target"
                 autoComplete="off"
                 {...register('firstName')}
                 disabled={isCreating}
@@ -154,7 +154,7 @@ export default function CreateCoachForm() {
               <Label htmlFor="coach-last-name">Nume</Label>
               <Input
                 id="coach-last-name"
-                className="min-h-11"
+                className="min-h-touch-target"
                 autoComplete="off"
                 {...register('lastName')}
                 disabled={isCreating}
@@ -172,7 +172,7 @@ export default function CreateCoachForm() {
               <Input
                 id="coach-email"
                 type="email"
-                className="min-h-11"
+                className="min-h-touch-target"
                 {...register('email')}
                 disabled={isCreating}
                 aria-invalid={!!errors.email}
@@ -188,7 +188,7 @@ export default function CreateCoachForm() {
               <Label htmlFor="coach-phone">Telefon (opțional)</Label>
               <Input
                 id="coach-phone"
-                className="min-h-11"
+                className="min-h-touch-target"
                 {...register('phone')}
                 disabled={isCreating}
               />
@@ -227,7 +227,7 @@ export default function CreateCoachForm() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="min-h-11"
+                    className="min-h-touch-target"
                     disabled={clubs.isFetching}
                     onClick={() => void clubs.refetch()}
                   >
@@ -237,7 +237,7 @@ export default function CreateCoachForm() {
               )}
             </div>
             <div className="sm:col-span-2">
-              <Button type="submit" className="min-h-11" disabled={isCreating}>
+              <Button type="submit" className="min-h-touch-target" disabled={isCreating}>
                 <UserPlus /> {isCreating ? 'Se creează…' : 'Creează antrenor'}
               </Button>
             </div>

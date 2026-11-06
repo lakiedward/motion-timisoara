@@ -35,7 +35,7 @@ export default function ActivityPlaceMap({
         target={link.target}
         rel={link.rel}
         aria-label={`Deschide ${name} în hărți`}
-        className="group text-primary focus-visible:outline-ring mt-3 inline-flex min-h-11 items-center gap-2 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2"
+        className="group text-primary focus-visible:outline-ring mt-3 inline-flex min-h-touch-target items-center gap-2 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2"
       >
         <ExternalLink className="size-4 shrink-0" aria-hidden="true" />
         <span className="font-semibold underline-offset-4 group-hover:underline">

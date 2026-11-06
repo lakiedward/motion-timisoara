@@ -138,7 +138,7 @@ export default function AnnouncementMedia({ atasamente }: { atasamente: Atasamen
             {attachment.expiraLa && (
               <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                 <span>{describeExpiry(attachment.expiraLa)}</span>
-                <Button asChild variant="link" className="h-auto min-h-11 p-0 text-xs">
+                <Button asChild variant="link" className="h-auto min-h-touch-target p-0 text-xs">
                   <a
                     href={downloadUrl}
                     download
@@ -160,7 +160,7 @@ export default function AnnouncementMedia({ atasamente }: { atasamente: Atasamen
               <Button
                 asChild
                 variant="link"
-                className="h-auto min-h-11 max-w-full p-0 text-left whitespace-normal"
+                className="h-auto min-h-touch-target max-w-full p-0 text-left whitespace-normal"
               >
                 <a
                   href={link.href}

@@ -109,7 +109,6 @@ export function ecraneCareIncarcaDate() {
  * 2. Țintă tactilă
  * ------------------------------------------------------------------ */
 
-/** Valorile de țintă tactilă scrise direct în componente, fără token. */
 export function tinteTactileScriseDeMana() {
   const gasite = []
   for (const f of fisiere('src', ['.tsx'])) {
@@ -120,11 +119,16 @@ export function tinteTactileScriseDeMana() {
   return gasite
 }
 
-/** Există un token de țintă tactilă în foaia de tokeni? (azi: nu) */
 export function tokenDeTintaTactila() {
   const css = citeste('src/index.css')
   const potrivire = css.match(/^\s*(--(?:target|tap|touch|hit)[\w-]*)\s*:/m)
   return potrivire ? potrivire[1] : null
+}
+
+export function consumatoriDeTintaTactila() {
+  return fisiere('src', ['.tsx', '.ts'])
+    .filter((f) => !f.endsWith('.test.tsx') && !f.endsWith('.test.ts'))
+    .filter((f) => /\b(?:min-h|min-w|h|size)-touch-target\b/.test(citeste(f)))
 }
 
 /* ------------------------------------------------------------------ *
@@ -295,16 +299,17 @@ export function masoaraTot() {
     },
     {
       nume: 'Țintă tactilă',
-      stare: token ? RESPECTATA : FARA_CANONIC,
-      insemn: '',
+      stare: !token ? FARA_CANONIC : cateTinte === 0 ? RESPECTATA : DERIVA,
+      insemn: token && cateTinte > 0 ? `${cateTinte}` : '',
       regula: [
         'Niciun control sub ținta comună; se urmează tokenul, nu numărul.',
-        'Cât timp tokenul nu există, asta NU e o convenție — e un item de lucru.',
+        'Ținta minimă se scrie min-h-touch-target / min-w-touch-target,',
+        'niciodată min-h-11, min-w-11 sau 44px scris de mână.',
       ],
       randuri: [
         ['canonic', token ? `src/index.css ${token}` : '— lipsește —'],
-        ['măsurat', `${nrDe(cateTinte, 'valoare scrisă', 'valori scrise')} de mână, în ${nrDe(tinte.length, 'fișier', 'fișiere')}`],
-        ['→', 'unde trăiește tokenul e o alegere, nu o măsurătoare. Deschis pe Focus.'],
+        ['plafon', `${nrDe(cateTinte, 'valoare scrisă', 'valori scrise')} de mână, în ${nrDe(tinte.length, 'fișier', 'fișiere')} — poate doar scădea`],
+        ['folosit', nrDe(consumatoriDeTintaTactila().length, 'fișier', 'fișiere')],
       ],
     },
     {

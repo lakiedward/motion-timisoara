@@ -32,7 +32,7 @@ export default function CampTemplateOnCreate({
 
   return (
     <div className="bg-card space-y-3 rounded-xl border p-4">
-      <label className="flex min-h-11 items-center gap-3 text-sm font-medium">
+      <label className="flex min-h-touch-target items-center gap-3 text-sm font-medium">
         <Checkbox
           checked={activ}
           onChange={(e) => onActiv(e.target.checked)}
@@ -60,7 +60,7 @@ export default function CampTemplateOnCreate({
           <Button
             type="button"
             variant="outline"
-            className="h-11 min-h-11"
+            className="h-11 min-h-touch-target"
             onClick={() => void sabloane.refetch()}
           >
             Reîncearcă

@@ -40,7 +40,7 @@ export default function ClubCoachList({ clubId }: { clubId: string | undefined }
         <Button
           type="button"
           variant="outline"
-          className="min-h-11"
+          className="min-h-touch-target"
           disabled={query.isFetching}
           onClick={() => void query.refetch()}
         >
@@ -76,7 +76,7 @@ export default function ClubCoachList({ clubId }: { clubId: string | undefined }
               type="button"
               size="icon"
               variant="ghost"
-              className="text-destructive min-h-11 min-w-11"
+              className="text-destructive min-h-touch-target min-w-touch-target"
               aria-label={`Elimină antrenorul ${c.name}`}
               disabled={removeCoach.isPending}
               onClick={() => setDeEliminat(c)}

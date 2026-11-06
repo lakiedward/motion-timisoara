@@ -145,7 +145,7 @@ export default function InviteCodesSection({
               ref={toggleButton}
               type="button"
               variant={expanded ? 'outline' : 'default'}
-              className="min-h-11"
+              className="min-h-touch-target"
               aria-expanded={expanded}
               aria-controls="invite-code-form"
               disabled={gen.isPending || source.enabled === false}
@@ -171,7 +171,7 @@ export default function InviteCodesSection({
                   min="1"
                   max="2147483647"
                   step="1"
-                  className="min-h-11"
+                  className="min-h-touch-target"
                   {...register('maxUses')}
                   disabled={gen.isPending}
                   aria-invalid={!!errors.maxUses}
@@ -217,7 +217,7 @@ export default function InviteCodesSection({
                 )}
               </div>
               <div className="sm:col-span-2">
-                <Button type="submit" className="min-h-11" disabled={gen.isPending}>
+                <Button type="submit" className="min-h-touch-target" disabled={gen.isPending}>
                   <Plus /> {gen.isPending ? 'Se generează…' : 'Generează cod'}
                 </Button>
               </div>
@@ -268,7 +268,7 @@ export default function InviteCodesSection({
               <Button
                 type="button"
                 variant="outline"
-                className="min-h-11"
+                className="min-h-touch-target"
                 disabled={query.isFetching}
                 onClick={() => void query.refetch()}
               >

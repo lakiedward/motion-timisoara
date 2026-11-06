@@ -123,13 +123,13 @@ export function CompetitionScheduleSection({
         )}
         <Link
           to={locationLink}
-          className="text-primary inline-flex min-h-11 items-center text-sm underline-offset-4 hover:underline"
+          className="text-primary inline-flex min-h-touch-target items-center text-sm underline-offset-4 hover:underline"
         >
           Adaugă o locație cu pin pe hartă
         </Link>
       </div>
 
-      <label className="flex min-h-11 items-center gap-3 text-sm">
+      <label className="flex min-h-touch-target items-center gap-3 text-sm">
         <Checkbox {...register('allowCash')} />
         Acceptă plata cash pentru categoriile cu taxă
       </label>

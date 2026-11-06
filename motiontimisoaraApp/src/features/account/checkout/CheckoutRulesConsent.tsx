@@ -33,7 +33,7 @@ const RULES_OF: Record<EnrollmentKind, string> = {
 const linkClass =
   'text-primary focus-visible:outline-ring rounded-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2'
 
-const openerClass = `${linkClass} inline-flex min-h-11 shrink-0 items-center gap-1.5 font-semibold`
+const openerClass = `${linkClass} inline-flex min-h-touch-target shrink-0 items-center gap-1.5 font-semibold`
 
 function openFileNatively(event: MouseEvent<HTMLAnchorElement>, url: string) {
   if (!isNative()) return

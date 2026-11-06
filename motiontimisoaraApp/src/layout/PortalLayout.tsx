@@ -23,7 +23,7 @@ export type { PortalNavItem } from '@/layout/navigation'
 
 const navItemClass = ({ isActive }: { isActive: boolean }) =>
   cn(
-    'flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors',
+    'flex min-h-touch-target cursor-pointer items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors',
     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
     isActive
       ? 'bg-primary/10 text-primary'
@@ -31,14 +31,14 @@ const navItemClass = ({ isActive }: { isActive: boolean }) =>
   )
 
 const logoutClassName = cn(
-  'text-destructive flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-xl px-3 text-sm font-medium',
+  'text-destructive flex min-h-touch-target w-full cursor-pointer items-center gap-2 rounded-xl px-3 text-sm font-medium',
   'hover:bg-secondary [&:hover]:bg-secondary',
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
   'disabled:cursor-wait disabled:opacity-60',
 )
 
 const logoLinkClassName = cn(
-  'inline-flex min-h-11 min-w-11 items-center rounded-md',
+  'inline-flex min-h-touch-target min-w-touch-target items-center rounded-md',
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
 )
 
@@ -169,7 +169,7 @@ function ProfileCard({
       to={to}
       onClick={onNavigate}
       className={cn(
-        'bg-muted mb-2 flex min-h-11 cursor-pointer items-center gap-3 rounded-2xl p-3 transition-colors',
+        'bg-muted mb-2 flex min-h-touch-target cursor-pointer items-center gap-3 rounded-2xl p-3 transition-colors',
         'hover:bg-secondary [&:hover]:bg-secondary',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
       )}
@@ -193,7 +193,7 @@ function ProfileChip({ to, name }: { to: string; name: string }) {
     <Link
       to={to}
       className={cn(
-        'ml-auto flex min-h-11 cursor-pointer items-center gap-2 rounded-full py-1 pr-3 pl-1 text-sm font-medium transition-colors',
+        'ml-auto flex min-h-touch-target cursor-pointer items-center gap-2 rounded-full py-1 pr-3 pl-1 text-sm font-medium transition-colors',
         'hover:bg-secondary [&:hover]:bg-secondary',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
       )}

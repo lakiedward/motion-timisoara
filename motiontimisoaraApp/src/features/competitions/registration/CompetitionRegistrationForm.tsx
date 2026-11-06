@@ -395,7 +395,7 @@ export function CompetitionRegistrationForm({ competition, categories, routes }:
             className="bg-card space-y-4 rounded-xl border p-5"
             aria-label="Înscriere proprie"
           >
-            <label className="flex min-h-11 items-center gap-3 font-semibold">
+            <label className="flex min-h-touch-target items-center gap-3 font-semibold">
               <Checkbox
                 checked={includeSelf}
                 onChange={(event) => {
@@ -421,7 +421,7 @@ export function CompetitionRegistrationForm({ competition, categories, routes }:
                       setSelfBirthDate(event.target.value)
                       setAcceptedKey(null)
                     }}
-                    className="min-h-11"
+                    className="min-h-touch-target"
                   />
                 </div>
                 <div className="space-y-2">
@@ -494,7 +494,7 @@ export function CompetitionRegistrationForm({ competition, categories, routes }:
                     </div>
                   </div>
 
-                  <label className="flex min-h-11 items-start gap-3 text-sm">
+                  <label className="flex min-h-touch-target items-start gap-3 text-sm">
                     <Checkbox
                       checked={accepted}
                       disabled={!pricesReady}
@@ -545,7 +545,7 @@ export function CompetitionRegistrationForm({ competition, categories, routes }:
                   )}
 
                   <Button
-                    className="h-11 min-h-11"
+                    className="h-11 min-h-touch-target"
                     disabled={
                       !pricesReady ||
                       !accepted ||

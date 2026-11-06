@@ -59,7 +59,7 @@ test('cardul de profil și prenumele din dreapta duc la profil, nu sunt itemi de
   expect(card.className).toMatch(/focus-visible:outline-2/)
   const chip = screen.getByRole('link', { name: 'Audit' })
   expect(chip).toHaveAttribute('href', '/admin/profile')
-  expect(chip.className).toMatch(/min-h-11/)
+  expect(chip.className).toMatch(/min-h-touch-target/)
   const nav = screen.getByRole('navigation')
   expect(nav).not.toHaveTextContent('Audit')
 })

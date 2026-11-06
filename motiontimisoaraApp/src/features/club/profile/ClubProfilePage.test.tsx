@@ -173,18 +173,18 @@ test('a failed save keeps what was typed', async () => {
 test('touch targets, hints, public link and consent row', async () => {
   renderPage()
   await screen.findByLabelText(/^Nume club/)
-  expect(screen.getByLabelText(/^Nume club/).className).toContain('min-h-11')
+  expect(screen.getByLabelText(/^Nume club/).className).toContain('min-h-touch-target')
   expect(screen.getByLabelText(/^Nume club/)).toHaveAttribute('aria-required', 'true')
   expect(screen.getByText(/sunt obligatorii/)).toBeVisible()
   expect(screen.getByRole('group', { name: 'Logo' })).toBeVisible()
-  expect(screen.getByRole('button', { name: 'Salvează' }).className).toContain('min-h-11')
+  expect(screen.getByRole('button', { name: 'Salvează' }).className).toContain('min-h-touch-target')
   expect(screen.getByText('Apare pe pagina publică a clubului.')).toBeVisible()
   expect(screen.getByRole('link', { name: /Vezi pagina publică/ })).toHaveAttribute(
     'href',
     '/cluburi/club-1',
   )
   const consent = screen.getByLabelText('Afișează emailul public pe pagina clubului')
-  expect(consent.closest('label')?.className).toContain('min-h-11')
+  expect(consent.closest('label')?.className).toContain('min-h-touch-target')
 })
 
 test('logo can be removed and a cover uploaded', async () => {

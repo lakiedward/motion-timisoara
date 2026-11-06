@@ -27,7 +27,7 @@ export default function ClubHqPopup({ club }: { club: ClubHeadquarters }) {
       <div className="p-3">
         <Link
           to={`/cluburi/${club.id}`}
-          className="group/item -mx-1.5 flex min-h-11 items-center gap-2.5 rounded-xl px-1.5 py-2 text-sm font-semibold transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          className="group/item -mx-1.5 flex min-h-touch-target items-center gap-2.5 rounded-xl px-1.5 py-2 text-sm font-semibold transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
           <span className="flex-1">Vezi pagina clubului</span>
           <ChevronRight className="text-muted-foreground group-hover/item:text-primary size-4 shrink-0" />

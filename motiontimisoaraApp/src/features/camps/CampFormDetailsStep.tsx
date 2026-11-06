@@ -120,7 +120,7 @@ export default function CampFormDetailsStep({
         </CampFormField>
         <Link
           to={eClub ? '/club/locations/new' : '/coach/locations/new'}
-          className="text-primary -mt-2 inline-flex min-h-11 items-center text-sm underline-offset-4 hover:underline"
+          className="text-primary -mt-2 inline-flex min-h-touch-target items-center text-sm underline-offset-4 hover:underline"
         >
           Locul nu e în listă? Adaugă o locație nouă, cu pin pe hartă
         </Link>
@@ -150,7 +150,7 @@ export default function CampFormDetailsStep({
       <CampRequirementsSection control={control} register={register} errors={errors} />
 
       <FormSection title="Plată" description="Pe lângă plata cu cardul.">
-        <label className="flex min-h-11 items-center gap-3 text-sm">
+        <label className="flex min-h-touch-target items-center gap-3 text-sm">
           <Checkbox {...register('allow_cash')} />
           Acceptă plata cash
         </label>

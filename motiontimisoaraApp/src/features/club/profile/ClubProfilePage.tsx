@@ -90,7 +90,7 @@ export default function ClubProfilePage({ portal = 'club' }: { portal?: 'club' |
         <Button
           type="button"
           variant="outline"
-          className="min-h-11"
+          className="min-h-touch-target"
           disabled={query.isFetching}
           onClick={() => void query.refetch()}
         >
@@ -135,7 +135,7 @@ export default function ClubProfilePage({ portal = 'club' }: { portal?: 'club' |
         <Input
           id={id}
           type={type}
-          className="min-h-11"
+          className="min-h-touch-target"
           aria-required={required || undefined}
           {...register(id)}
           aria-invalid={!!message}
@@ -162,7 +162,7 @@ export default function ClubProfilePage({ portal = 'club' }: { portal?: 'club' |
         </div>
         <Link
           to={`/cluburi/${club.id}`}
-          className="text-primary inline-flex min-h-11 items-center gap-2 text-sm font-semibold"
+          className="text-primary inline-flex min-h-touch-target items-center gap-2 text-sm font-semibold"
         >
           <ExternalLink className="size-4" /> Vezi pagina publică
         </Link>
@@ -214,18 +214,18 @@ export default function ClubProfilePage({ portal = 'club' }: { portal?: 'club' |
             </p>
           </div>
           <ClubAddressFields control={control} setValue={setValue} />
-          <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
+          <label className="flex min-h-touch-target cursor-pointer items-center gap-3 text-sm">
             <Checkbox {...register('public_email_consent')} />
             Afișează emailul public pe pagina clubului
           </label>
         </FormSection>
 
         <div className="flex flex-wrap gap-3">
-          <Button type="submit" className="min-h-11" disabled={isSubmitting}>
+          <Button type="submit" className="min-h-touch-target" disabled={isSubmitting}>
             {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>
           {isAdmin ? (
-            <Button asChild variant="outline" className="min-h-11">
+            <Button asChild variant="outline" className="min-h-touch-target">
               <Link to="/admin/clubs">Anulează</Link>
             </Button>
           ) : null}

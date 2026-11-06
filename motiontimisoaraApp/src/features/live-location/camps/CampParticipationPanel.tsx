@@ -65,7 +65,7 @@ export function CampArrivalOnCard({
           <Button
             type="button"
             variant="outline"
-            className="h-11 min-h-11 lg:h-9 lg:min-h-9"
+            className="h-11 min-h-touch-target lg:h-9 lg:min-h-9"
             disabled={pending}
             onClick={() => {
               if (participant.arrivedAt) onAskDeparture()
@@ -85,7 +85,7 @@ export function CampArrivalOnCard({
             <Button
               type="button"
               variant="destructive"
-              className="h-11 min-h-11 lg:h-9 lg:min-h-9"
+              className="h-11 min-h-touch-target lg:h-9 lg:min-h-9"
               disabled={pending}
               onClick={onDepart}
             >
@@ -94,7 +94,7 @@ export function CampArrivalOnCard({
             <Button
               type="button"
               variant="outline"
-              className="h-11 min-h-11 lg:h-9 lg:min-h-9"
+              className="h-11 min-h-touch-target lg:h-9 lg:min-h-9"
               disabled={pending}
               onClick={onCancelDeparture}
             >

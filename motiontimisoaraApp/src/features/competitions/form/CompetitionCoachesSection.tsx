@@ -81,7 +81,7 @@ export function CompetitionCoachesSection({ competitionId }: { competitionId: st
           <Button
             type="button"
             variant="outline"
-            className="min-h-11"
+            className="min-h-touch-target"
             onClick={() => void coachesQuery.refetch()}
           >
             Reîncearcă
@@ -124,7 +124,7 @@ export function CompetitionCoachesSection({ competitionId }: { competitionId: st
                   <Button
                     type="button"
                     variant={confirmRemoveId === coach.coachProfileId ? 'destructive' : 'ghost'}
-                    className="min-h-11"
+                    className="min-h-touch-target"
                     disabled={remove.isPending}
                     onClick={() =>
                       confirmRemoveId === coach.coachProfileId
@@ -167,7 +167,7 @@ export function CompetitionCoachesSection({ competitionId }: { competitionId: st
                   <Button
                     type="button"
                     variant="outline"
-                    className="min-h-11"
+                    className="min-h-touch-target"
                     onClick={() => void candidatesQuery.refetch()}
                   >
                     Reîncearcă căutarea
@@ -199,7 +199,7 @@ export function CompetitionCoachesSection({ competitionId }: { competitionId: st
                       <Button
                         type="button"
                         variant="outline"
-                        className="min-h-11"
+                        className="min-h-touch-target"
                         disabled={invite.isPending}
                         onClick={() => invite.mutate(candidate.coachProfileId)}
                       >

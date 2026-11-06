@@ -442,7 +442,7 @@ export default function ChildFormPage() {
                     ['nu', 'Nu, fără poze și video cu copilul'],
                   ] as const
                 ).map(([valoare, eticheta]) => (
-                  <label key={valoare} className="flex min-h-11 items-center gap-3 text-sm">
+                  <label key={valoare} className="flex min-h-touch-target items-center gap-3 text-sm">
                     <input
                       type="radio"
                       value={valoare}

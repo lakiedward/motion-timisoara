@@ -72,7 +72,7 @@ export default function CampPeriodSection({
             key={zile}
             type="button"
             variant="outline"
-            className="h-11 min-h-11"
+            className="h-11 min-h-touch-target"
             disabled={!poateAlegeDurata}
             onClick={() =>
               setValue('period_end', addCampInclusiveDays(start, zile), {

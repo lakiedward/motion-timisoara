@@ -75,7 +75,7 @@ export function CampPriceComponents({
             <Button
               type="button"
               variant="ghost"
-              className="mt-[1.375rem] size-11 min-h-11 shrink-0"
+              className="mt-[1.375rem] size-11 min-h-touch-target shrink-0"
               disabled={arr.fields.length <= 1}
               onClick={() => arr.remove(j)}
               aria-label={`Șterge componenta ${j + 1}, ${ariaPrefix}`}
@@ -103,7 +103,7 @@ export function CampPriceComponents({
         <Button
           type="button"
           variant="outline"
-          className="h-11 min-h-11"
+          className="h-11 min-h-touch-target"
           onClick={() => arr.append({ name: '', amount_lei: '' })}
         >
           <Plus className="size-4" /> {textAdauga}
@@ -111,7 +111,7 @@ export function CampPriceComponents({
         <Button
           type="button"
           variant="outline"
-          className="h-11 min-h-11"
+          className="h-11 min-h-touch-target"
           onClick={() => arr.replace([{ name: 'Participare', amount_lei: '0' }])}
         >
           {textGratuit}

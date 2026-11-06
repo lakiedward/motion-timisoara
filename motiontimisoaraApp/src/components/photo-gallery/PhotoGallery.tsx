@@ -51,7 +51,7 @@ export default function PhotoGallery({ urls, alt }: { urls: string[]; alt: strin
         <Button
           type="button"
           variant="outline"
-          className={cn('mt-3 h-11 min-h-11', moreOnlyOnPhone && 'sm:hidden')}
+          className={cn('mt-3 h-11 min-h-touch-target', moreOnlyOnPhone && 'sm:hidden')}
           onClick={() => setExpanded((d) => !d)}
           aria-expanded={expanded}
         >
