@@ -127,6 +127,7 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
     (row) => row.category_id === selectedCategoryId,
   )
   const candidateCount = candidates.data?.length ?? 0
+  const lockedForInvitedCoach = Boolean(publication) && !canPublish
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -160,7 +161,11 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
               }))}
             />
           </div>
-          {publication ? (
+          {lockedForInvitedCoach ? (
+            <p role="status" className="bg-primary/10 rounded-xl p-3 text-sm font-medium">
+              Publicat. După publicare, doar organizatorul mai poate corecta podiumul.
+            </p>
+          ) : publication ? (
             <p role="status" className="bg-primary/10 rounded-xl p-3 text-sm font-medium">
               Publicat. Corecțiile făcute aici sunt vizibile imediat.
             </p>
@@ -194,7 +199,7 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
                       className={formSelectMenuClassName}
                       id={`podium-place-${place}`}
                       value={current?.registration_id ?? ''}
-                      disabled={save.isPending}
+                      disabled={save.isPending || lockedForInvitedCoach}
                       onValueChange={(registrationId) =>
                         save.mutate({
                           competitionId: id,
