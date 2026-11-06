@@ -12,7 +12,7 @@ import {
   validateCompetitionRegistration,
 } from '@/api/competition/competition-registration'
 import type { PublicCompetition } from '@/api/competition/competitions'
-import type { CompetitionCategory } from '@/api/competition/competition-offers'
+import type { CompetitionCategory, CompetitionRoute } from '@/api/competition/competition-offers'
 
 const authRole = vi.hoisted(() => ({ value: 'PARENT' }))
 
@@ -66,7 +66,18 @@ const category: CompetitionCategory = {
   updated_at: '2026-09-22T00:00:00Z',
 }
 
-function renderRegistration(availableCategories = [category], query = '') {
+const route: CompetitionRoute = {
+  id: 'route-1',
+  competition_id: competition.id,
+  name: 'Traseu scurt',
+  description: 'Descriere',
+  gpx_storage_path: null,
+  display_order: 0,
+  created_at: '2026-09-22T00:00:00Z',
+  updated_at: '2026-09-22T00:00:00Z',
+}
+
+function renderRegistration(availableCategories = [category], query = '', routes = [route]) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={queryClient}>
@@ -78,6 +89,7 @@ function renderRegistration(availableCategories = [category], query = '') {
               <CompetitionRegistrationForm
                 competition={competition}
                 categories={availableCategories}
+                routes={routes}
               />
             }
           />
@@ -389,7 +401,11 @@ test('termen depășit și lipsa categoriilor au stări proprii', async () => {
   const { unmount } = render(
     <QueryClientProvider client={new QueryClient()}>
       <MemoryRouter>
-        <CompetitionRegistrationForm competition={closed} categories={[category]} />
+        <CompetitionRegistrationForm
+          competition={closed}
+          categories={[category]}
+          routes={[route]}
+        />
       </MemoryRouter>
     </QueryClientProvider>,
   )
@@ -447,4 +463,49 @@ test('prețul schimbat între confirmare și trimitere refuză înscrierea cu me
     ),
   )
   expect(createCompetitionRegistration).not.toHaveBeenCalled()
+})
+
+test('aceeași vârstă pe două trasee: meniul arată traseul și trimite categoria aleasă', async () => {
+  const user = userEvent.setup()
+  const longRoute = { ...route, id: 'route-2', name: 'Traseu lung', display_order: 1 }
+  const longCategory = {
+    ...category,
+    id: 'category-long',
+    route_id: longRoute.id,
+    price_bani: 8000,
+  }
+  vi.mocked(validateCompetitionRegistration).mockResolvedValue({
+    results: [
+      {
+        participantKey: 'child-1',
+        childId: 'child-1',
+        categoryId: longCategory.id,
+        routeId: longRoute.id,
+        name: 'Copil Audit',
+        eligible: true,
+        amount: 8000,
+        currency: 'RON',
+        priceVersion: 'd'.repeat(64),
+      },
+    ],
+    allowCash: false,
+  })
+  renderRegistration([category, longCategory], '', [route, longRoute])
+  const trigger = await screen.findByLabelText('Copil Audit')
+  await user.click(trigger)
+  expect(
+    await screen.findByRole('menuitemradio', {
+      name: /^Traseu scurt · 8–10 ani · 8–10 ani · Gratuit/,
+    }),
+  ).toBeInTheDocument()
+  await user.click(
+    await screen.findByRole('menuitemradio', {
+      name: /^Traseu lung · 8–10 ani · 8–10 ani · 80,00 lei/,
+    }),
+  )
+  await waitFor(() =>
+    expect(validateCompetitionRegistration).toHaveBeenCalledWith('competition-1', [
+      { childId: 'child-1', categoryId: 'category-long' },
+    ]),
+  )
 })

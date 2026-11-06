@@ -235,8 +235,8 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
           Trasee și categorii
         </h2>
         <p className="text-muted-foreground mt-1 text-sm">
-          Fiecare categorie de vârstă are traseul și prețul ei. Vârsta participantului se verifică
-          la data înscrierii.
+          Fiecare traseu are categoriile lui de vârstă, fiecare cu prețul ei; aceeași vârstă poate
+          apărea pe trasee diferite. Vârsta participantului se verifică la data înscrierii.
         </p>
       </div>
 
@@ -417,8 +417,8 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
           </Button>
         </div>
         <p className="text-muted-foreground text-sm">
-          Capetele intervalului sunt incluse. Fiecare categorie are un traseu și un preț propriu; 0
-          lei înseamnă gratuit.
+          Capetele intervalului sunt incluse, iar pe același traseu intervalele nu se suprapun.
+          Fiecare categorie are un traseu și un preț propriu; 0 lei înseamnă gratuit.
         </p>
         {completeRoutes.length === 0 && (
           <p className="text-muted-foreground text-sm">
