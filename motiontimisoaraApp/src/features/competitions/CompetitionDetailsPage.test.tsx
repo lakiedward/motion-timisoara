@@ -208,7 +208,8 @@ test('categoriile gratuite arată „Gratuit”, cele cu preț arată lei', asyn
     ],
   })
   deseneaza()
-  expect(await screen.findByText(/120,00/)).toBeInTheDocument()
+  expect(await screen.findByText('Mici')).toBeInTheDocument()
+  expect(screen.getByText('Copii').closest('li')).toHaveTextContent('120,00')
   expect(screen.getByText('Mici').closest('li')).toHaveTextContent('Gratuit')
 })
 
