@@ -432,18 +432,37 @@ export type ClubActivity = Tables<'activities'> & {
   sport: Pick<Tables<'sports'>, 'id' | 'name'> | null
   location: Pick<Tables<'locations'>, 'id' | 'name'> | null
   coach: Pick<Tables<'profiles'>, 'id' | 'name'> | null
+  enrolled: number
+}
+
+export type ActivityEnrollmentCount = { active: number; pending: number }
+
+export async function getClubActivityEnrollmentCounts(
+  clubId: string,
+): Promise<Map<string, ActivityEnrollmentCount>> {
+  const { data, error } = await supabase.rpc('club_activity_enrollment_counts', {
+    p_club_id: clubId,
+  })
+  if (error) throw error
+  return new Map(
+    (data ?? []).map((r) => [r.activity_id, { active: r.active_count, pending: r.pending_count }]),
+  )
 }
 
 export async function getClubActivities(clubId: string): Promise<ClubActivity[]> {
-  const { data, error } = await supabase
-    .from('activities')
-    .select(
-      '*, sport:sports(id,name), location:locations(id,name), coach:profiles!activities_coach_id_fkey(id,name)',
-    )
-    .eq('club_id', clubId)
-    .order('activity_date', { ascending: false })
+  const [{ data, error }, counts] = await Promise.all([
+    supabase
+      .from('activities')
+      .select(
+        '*, sport:sports(id,name), location:locations(id,name), coach:profiles!activities_coach_id_fkey(id,name)',
+      )
+      .eq('club_id', clubId)
+      .order('activity_date', { ascending: false }),
+    getClubActivityEnrollmentCounts(clubId),
+  ])
   if (error) throw error
-  return (data ?? []) as unknown as ClubActivity[]
+  const activities = (data ?? []) as unknown as Omit<ClubActivity, 'enrolled'>[]
+  return activities.map((a) => ({ ...a, enrolled: counts.get(a.id)?.active ?? 0 }))
 }
 
 export interface ClubActivityFormInput {

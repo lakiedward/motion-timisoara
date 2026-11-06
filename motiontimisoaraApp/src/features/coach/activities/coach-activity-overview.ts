@@ -6,7 +6,19 @@ export type CoachActivityStatus = 'upcoming' | 'past' | 'inactive' | 'all'
 
 export type CoachActivityFilters = { status: CoachActivityStatus; sport: string; query: string }
 
-export type ActivityMonth = { key: string; title: string; activities: CoachActivity[] }
+export type OverviewActivity = Pick<
+  CoachActivity,
+  'name' | 'active' | 'activity_date' | 'start_time' | 'sport_id'
+> & {
+  sport: { name: string } | null
+  location: { name: string } | null
+}
+
+export type ActivityMonth<T extends OverviewActivity = CoachActivity> = {
+  key: string
+  title: string
+  activities: T[]
+}
 
 export const NO_COACH_ACTIVITY_FILTERS: CoachActivityFilters = {
   status: 'upcoming',
@@ -19,27 +31,34 @@ export const CLEARED_COACH_ACTIVITY_FILTERS: CoachActivityFilters = {
   status: 'all',
 }
 
-export function isPast(a: CoachActivity, today: string) {
+export function isPast(a: OverviewActivity, today: string) {
   return a.activity_date < today
 }
 
-export function matchesStatus(a: CoachActivity, status: CoachActivityStatus, today: string) {
+export function matchesStatus(a: OverviewActivity, status: CoachActivityStatus, today: string) {
   if (status === 'upcoming') return a.active && !isPast(a, today)
   if (status === 'past') return a.active && isPast(a, today)
   if (status === 'inactive') return !a.active
   return true
 }
 
-export function matchesQuery(a: CoachActivity, query: string) {
+const defaultSearchText = (a: OverviewActivity) => `${a.name} ${a.location?.name ?? ''}`
+
+export function matchesQuery<T extends OverviewActivity>(
+  a: T,
+  query: string,
+  searchText: (a: T) => string = defaultSearchText,
+) {
   const needle = fold(query.trim())
   if (!needle) return true
-  return fold(`${a.name} ${a.location?.name ?? ''}`).includes(needle)
+  return fold(searchText(a)).includes(needle)
 }
 
-export function filterCoachActivities(
-  activities: CoachActivity[],
+export function filterCoachActivities<T extends OverviewActivity>(
+  activities: T[],
   { status, sport, query }: CoachActivityFilters,
   today: string,
+  searchText?: (a: T) => string,
 ) {
   const newestFirst = status !== 'upcoming'
   return activities
@@ -47,7 +66,7 @@ export function filterCoachActivities(
       (a) =>
         matchesStatus(a, status, today) &&
         (!sport || a.sport_id === sport) &&
-        matchesQuery(a, query),
+        matchesQuery(a, query, searchText),
     )
     .sort((x, y) => {
       const order =
@@ -57,7 +76,7 @@ export function filterCoachActivities(
 }
 
 export function coachActivityStatusCounts(
-  activities: CoachActivity[],
+  activities: OverviewActivity[],
   today: string,
 ): Record<CoachActivityStatus, number> {
   return {
@@ -68,7 +87,7 @@ export function coachActivityStatusCounts(
   }
 }
 
-export function coachActivitySportCounts(activities: CoachActivity[]) {
+export function coachActivitySportCounts(activities: OverviewActivity[]) {
   const counts = new Map<string, { id: string; name: string; count: number }>()
   for (const a of activities) {
     if (!a.sport_id || !a.sport) continue
@@ -91,8 +110,8 @@ const monthFormat = new Intl.DateTimeFormat('ro-RO', {
 
 const capitalize = (s: string) => s.charAt(0).toLocaleUpperCase('ro-RO') + s.slice(1)
 
-export function groupByMonth(sorted: CoachActivity[]): ActivityMonth[] {
-  const months: ActivityMonth[] = []
+export function groupByMonth<T extends OverviewActivity>(sorted: T[]): ActivityMonth<T>[] {
+  const months: ActivityMonth<T>[] = []
   for (const a of sorted) {
     const key = a.activity_date.slice(0, 7)
     let month = months.at(-1)
@@ -111,7 +130,7 @@ export function groupByMonth(sorted: CoachActivity[]): ActivityMonth[] {
 const tileDay = new Intl.DateTimeFormat('ro-RO', { day: 'numeric', timeZone: 'UTC' })
 const tileMonth = new Intl.DateTimeFormat('ro-RO', { month: 'short', timeZone: 'UTC' })
 
-export function activityDateTile(a: CoachActivity) {
+export function activityDateTile(a: OverviewActivity) {
   const date = new Date(`${a.activity_date}T00:00:00Z`)
   return { day: tileDay.format(date), month: tileMonth.format(date).replace('.', '') }
 }

@@ -3612,6 +3612,14 @@ export type Database = {
         Args: { p_club_id: string; p_plan_code?: string }
         Returns: Json
       }
+      club_activity_enrollment_counts: {
+        Args: { p_club_id: string }
+        Returns: {
+          active_count: number
+          activity_id: string
+          pending_count: number
+        }[]
+      }
       club_coach_contacts: {
         Args: { p_club_id: string }
         Returns: {

@@ -9,11 +9,15 @@ import {
   createClubActivity,
   getClubActivities,
   getClubActivityById,
+  getClubActivityEnrollmentCounts,
   getClubRosterForSelect,
+  setClubActivityActive,
   getClubSelectableLocations,
   getMyClub,
+  updateClubActivity,
 } from '@/api/club'
 import { fetchSports } from '@/api/sports'
+import { toast } from 'sonner'
 import { findSelectMenuOption, pickSelectMenuValue } from '@/test/select-menu'
 import { setPickerValue } from '@/test/pickers'
 
@@ -26,6 +30,7 @@ vi.mock('@/api/club', () => ({
   getMyClub: vi.fn(),
   getClubActivities: vi.fn(),
   getClubActivityById: vi.fn(),
+  getClubActivityEnrollmentCounts: vi.fn(),
   getClubRosterForSelect: vi.fn(),
   getClubSelectableLocations: vi.fn(),
   createClubActivity: vi.fn(),
@@ -66,6 +71,7 @@ beforeEach(() => {
   vi.mocked(getClubRosterForSelect).mockResolvedValue([
     { user_id: ANTRENOR, name: 'Audit Antrenor' },
   ])
+  vi.mocked(getClubActivityEnrollmentCounts).mockResolvedValue(new Map())
   vi.mocked(getClubSelectableLocations).mockResolvedValue([
     { id: LOC, name: 'Bazin Audit Motion', city: 'Timișoara' },
   ] as never)
@@ -85,7 +91,7 @@ test('activitatea clubului se editează din formular', async () => {
     {
       id: 'act-1',
       name: 'Atelier de înot',
-      activity_date: '2026-10-03',
+      activity_date: '2099-10-03',
       start_time: '10:00:00',
       end_time: '12:00:00',
       capacity: 20,
@@ -95,13 +101,15 @@ test('activitatea clubului se editează din formular', async () => {
       sport: { id: 's1', name: 'Înot' },
       location: { id: LOC, name: 'Bazin Audit Motion' },
       coach: { id: ANTRENOR, name: 'Audit Antrenor' },
+      enrolled: 3,
     },
   ] as never)
   renderPage()
   expect(await screen.findByText('Atelier de înot')).toBeInTheDocument()
   const rand = screen.getByText('Atelier de înot').closest('li')!
-  expect(rand).toHaveTextContent('03.10.2026 · 10:00–12:00')
+  expect(rand).toHaveTextContent('03.10.2099 · 10:00–12:00')
   expect(rand).toHaveTextContent('Antrenor: Audit Antrenor')
+  expect(rand).toHaveTextContent('3/20 înscriși')
   expect(screen.getByRole('link', { name: 'Editează Atelier de înot' })).toHaveAttribute(
     'href',
     '/club/activities/act-1/edit',
@@ -231,4 +239,169 @@ test('ora de final trebuie să fie după ora de început', async () => {
   expect(
     await screen.findByText('Ora final trebuie să fie după ora de început.'),
   ).toBeInTheDocument()
+})
+
+function activitate(over: Record<string, unknown>) {
+  return {
+    id: 'a',
+    name: 'Activitate',
+    activity_date: '2099-05-10',
+    start_time: '10:00:00',
+    end_time: '11:00:00',
+    capacity: null,
+    price: 0,
+    currency: 'RON',
+    active: true,
+    sport_id: 's1',
+    sport: { id: 's1', name: 'Înot' },
+    location: { id: LOC, name: 'Bazin Audit Motion' },
+    coach: { id: ANTRENOR, name: 'Audit Antrenor' },
+    enrolled: 0,
+    ...over,
+  }
+}
+
+const LISTA = [
+  activitate({ id: 'a1', name: 'Ștafetă', activity_date: '2099-06-01' }),
+  activitate({
+    id: 'a2',
+    name: 'Atelier ciclism',
+    activity_date: '2099-05-02',
+    sport_id: 's2',
+    sport: { id: 's2', name: 'Ciclism' },
+    coach: { id: 'c2', name: 'Ioana Pop' },
+  }),
+  activitate({ id: 'a3', name: 'Activitate trecută', activity_date: '2020-01-10' }),
+  activitate({ id: 'a4', name: 'Activitate oprită', active: false }),
+]
+
+test('lista pornește pe Viitoare, cea mai apropiată prima, grupată pe luni', async () => {
+  mockedActivities.mockResolvedValue(LISTA as never)
+  renderPage()
+  expect(await screen.findByRole('button', { name: 'Viitoare 2' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  expect(screen.getByRole('button', { name: 'Încheiate 1' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Inactive 1' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Toate 4' })).toBeInTheDocument()
+  const grupuri = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'))
+  expect(grupuri).toEqual(['Mai 2099 · 1 activitate', 'Iunie 2099 · 1 activitate'])
+  expect(screen.queryByText('Activitate trecută')).not.toBeInTheDocument()
+})
+
+test('căutarea găsește după antrenor fără diacritice și filtrul de antrenor se combină', async () => {
+  const user = userEvent.setup()
+  mockedActivities.mockResolvedValue(LISTA as never)
+  renderPage()
+  const cautare = await screen.findByRole('searchbox', {
+    name: 'Caută activități după nume, locație sau antrenor',
+  })
+  await user.type(cautare, 'ioana')
+  expect(screen.getByText('Atelier ciclism')).toBeInTheDocument()
+  expect(screen.queryByText('Ștafetă')).not.toBeInTheDocument()
+  await user.clear(cautare)
+  await user.type(cautare, 'stafeta')
+  expect(screen.getByText('Ștafetă')).toBeInTheDocument()
+  await user.clear(cautare)
+  await pickSelectMenuValue(screen.getByLabelText('Antrenor'), 'c2')
+  expect(screen.getByText('Atelier ciclism')).toBeInTheDocument()
+  expect(screen.queryByText('Ștafetă')).not.toBeInTheDocument()
+})
+
+test('fără rezultate, Șterge filtrele golește tot și arată Toate', async () => {
+  const user = userEvent.setup()
+  mockedActivities.mockResolvedValue(LISTA as never)
+  renderPage()
+  await user.type(await screen.findByRole('searchbox'), 'nimic de găsit')
+  expect(screen.getByText('Nicio activitate pentru filtrele alese.')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Șterge filtrele' }))
+  expect(screen.getByRole('button', { name: 'Toate 4' })).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getByRole('searchbox')).toHaveValue('')
+  expect(screen.getByText('Activitate trecută')).toBeInTheDocument()
+})
+
+test('dezactivarea cu înscrieri cere confirmare, fără înscrieri se aplică direct', async () => {
+  const user = userEvent.setup()
+  vi.mocked(setClubActivityActive).mockResolvedValue(undefined)
+  mockedActivities.mockResolvedValue([
+    activitate({ id: 'a1', name: 'Cu copii', enrolled: 2 }),
+    activitate({ id: 'a2', name: 'Fără copii' }),
+  ] as never)
+  renderPage()
+  await user.click(await screen.findByRole('button', { name: 'Dezactivează Fără copii' }))
+  await waitFor(() => expect(setClubActivityActive).toHaveBeenCalledWith('a2', false))
+  expect(toast.success).toHaveBeenCalledWith('Fără copii a fost dezactivată.')
+  await user.click(screen.getByRole('button', { name: 'Dezactivează Cu copii' }))
+  const dialog = await screen.findByRole('alertdialog')
+  expect(dialog).toHaveTextContent('Are 2 înscrieri active.')
+  expect(setClubActivityActive).toHaveBeenCalledTimes(1)
+})
+
+test('antrenorul ieșit din club dă mesajul dedicat', async () => {
+  const user = userEvent.setup()
+  vi.mocked(setClubActivityActive).mockRejectedValue({ code: '42501' })
+  mockedActivities.mockResolvedValue([activitate({ id: 'a1', name: 'Atelier' })] as never)
+  renderPage()
+  await user.click(await screen.findByRole('button', { name: 'Dezactivează Atelier' }))
+  await waitFor(() =>
+    expect(toast.error).toHaveBeenCalledWith(
+      'Nu poți modifica această activitate: antrenorul ei nu face parte din club.',
+    ),
+  )
+})
+
+const SALVATA = {
+  id: 'act-1',
+  club_id: 'club-1',
+  name: 'Atelier de înot',
+  sport_id: SPORT,
+  location_id: LOC,
+  coach_id: ANTRENOR,
+  activity_date: '2099-10-03',
+  start_time: '10:00:00',
+  end_time: '11:00:00',
+  price: 4000,
+  currency: 'RON',
+  eur_ron_rate_micros: null,
+  capacity: null,
+  description: 'Descriere',
+  hero_photo_storage_path: 'act-1/hero/a.jpg',
+}
+
+test('cu înscrieri, sportul, locația și prețul rămân cele salvate', async () => {
+  const user = userEvent.setup()
+  vi.mocked(getClubActivityById).mockResolvedValue(SALVATA as never)
+  vi.mocked(getClubActivityEnrollmentCounts).mockResolvedValue(
+    new Map([['act-1', { active: 0, pending: 1 }]]),
+  )
+  renderPage('/club/activities/act-1/edit')
+  expect(await screen.findByDisplayValue('Atelier de înot')).toBeInTheDocument()
+  expect(screen.getByText('Sportul rămâne cel salvat: activitatea are înscrieri.')).toBeInTheDocument()
+  expect(screen.getByText('Locația rămâne cea salvată: activitatea are înscrieri.')).toBeInTheDocument()
+  expect(screen.getByLabelText(/^Preț \(lei\)/)).toBeDisabled()
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() => expect(updateClubActivity).toHaveBeenCalled())
+  expect(vi.mocked(updateClubActivity).mock.calls[0][1]).toMatchObject({
+    sport_id: SPORT,
+    location_id: LOC,
+    price: 4000,
+    currency: 'RON',
+  })
+})
+
+test('fără înscrieri câmpurile rămân editabile', async () => {
+  vi.mocked(getClubActivityById).mockResolvedValue(SALVATA as never)
+  renderPage('/club/activities/act-1/edit')
+  expect(await screen.findByDisplayValue('Atelier de înot')).toBeInTheDocument()
+  expect(screen.getByLabelText(/^Preț \(lei\)/)).not.toBeDisabled()
+  expect(screen.queryByText(/rămâne cel salvat/)).not.toBeInTheDocument()
+})
+
+test('dacă înscrierile nu se pot citi, formularul nu apare și se poate reîncerca', async () => {
+  vi.mocked(getClubActivityById).mockResolvedValue(SALVATA as never)
+  vi.mocked(getClubActivityEnrollmentCounts).mockRejectedValue(new Error('retea'))
+  renderPage('/club/activities/act-1/edit')
+  expect(await screen.findByText('Nu am putut încărca activitatea.')).toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Editează activitatea' })).not.toBeInTheDocument()
 })
