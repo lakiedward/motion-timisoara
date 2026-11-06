@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 
 import AdminUsersPage from './AdminUsersPage'
 import { getAllUsers, setUserEnabled, type AdminUser } from '@/api/admin'
+import { EnrollmentRequestError } from '@/api/checkout'
 
 vi.mock('@/api/admin', () => ({
   getAllUsers: vi.fn(),
@@ -252,6 +253,25 @@ test('o comutare esuata pastreaza mesajul de eroare si nu confirma nimic', async
 
   await waitFor(() =>
     expect(toast.error).toHaveBeenCalledWith('Nu am putut actualiza utilizatorul.'),
+  )
+  expect(toast.success).not.toHaveBeenCalled()
+})
+
+test('un refuz al serverului arata motivul primit, nu mesajul generic', async () => {
+  mockedUsers.mockResolvedValue(lista())
+  mockedToggle.mockRejectedValue(new EnrollmentRequestError('Nu îți poți dezactiva propriul cont.'))
+  renderPage()
+  await asteaptaLista()
+
+  await userEvent.click(
+    within(rand('Audit Părinte')!).getByRole('button', { name: 'Dezactivează' }),
+  )
+  await userEvent.click(
+    within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Dezactivează' }),
+  )
+
+  await waitFor(() =>
+    expect(toast.error).toHaveBeenCalledWith('Nu îți poți dezactiva propriul cont.'),
   )
   expect(toast.success).not.toHaveBeenCalled()
 })

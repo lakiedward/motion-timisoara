@@ -5,6 +5,7 @@ import { Search } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { getAllUsers, setUserEnabled } from '@/api/admin'
+import { EnrollmentRequestError } from '@/api/checkout'
 import { PageHeader } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -68,7 +69,12 @@ export default function AdminUsersPage() {
       qc.invalidateQueries({ queryKey: ['admin-users'] })
       toast.success(`Contul lui ${name} a fost ${enabled ? 'activat' : 'dezactivat'}.`)
     },
-    onError: () => toast.error('Nu am putut actualiza utilizatorul.'),
+    onError: (error) =>
+      toast.error(
+        error instanceof EnrollmentRequestError
+          ? error.message
+          : 'Nu am putut actualiza utilizatorul.',
+      ),
   })
 
   const searching = q.trim().length > 0

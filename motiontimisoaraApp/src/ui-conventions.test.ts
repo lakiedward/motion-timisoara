@@ -35,7 +35,7 @@ import {
  * ------------------------------------------------------------------ */
 
 const PLAFON_ECRANE_OARBE = 0
-const PLAFON_LITERALE_HEX = 1
+const PLAFON_LITERALE_HEX = 0
 const PLAFON_TINTE_SCRISE_DE_MANA = 0
 const CONTRAST_MINIM = 4.5
 
