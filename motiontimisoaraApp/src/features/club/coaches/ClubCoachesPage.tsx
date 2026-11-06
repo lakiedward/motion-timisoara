@@ -1,13 +1,27 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { deleteClubCode, generateClubCode, getClubCodes, getMyClub } from '@/api/club'
+import { StatusView } from '@/components/ui/status-view'
 import InviteCodesSection from '@/components/invite-codes/InviteCodesSection'
 import ClubCoachForm from './ClubCoachForm'
 import ClubCoachList from './ClubCoachList'
 
 export default function ClubCoachesPage() {
-  const { data: club } = useQuery({ queryKey: ['my-club'], queryFn: getMyClub })
-  const clubId = club?.id
+  const clubQuery = useQuery({ queryKey: ['my-club'], queryFn: getMyClub })
+  const clubId = clubQuery.data?.id
+
+  if (clubQuery.isError) {
+    return (
+      <StatusView
+        state="error"
+        title="Nu am putut încărca clubul."
+        text="Verifică conexiunea și încearcă din nou."
+        onRetry={() => void clubQuery.refetch()}
+        retrying={clubQuery.isRefetching}
+        className="max-w-3xl"
+      />
+    )
+  }
 
   return (
     <div className="max-w-3xl space-y-8">
