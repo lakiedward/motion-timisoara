@@ -51,12 +51,9 @@ export async function getCourse(id: string): Promise<CourseDetail | null> {
       '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), club:clubs(id,name), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order,caption)',
     )
     .eq('id', id)
-    .single()
-  if (error) {
-    if (error.code === 'PGRST116') return null
-    throw error
-  }
-  return data as unknown as CourseDetail
+    .maybeSingle()
+  if (error) throw error
+  return data as unknown as CourseDetail | null
 }
 
 export type CourseCatalogItem = CourseListItem & {
@@ -138,12 +135,9 @@ export async function getActivity(id: string): Promise<ActivityListItem | null> 
     .from('activities')
     .select('*, sport:sports(id,code,name), location:locations(*)')
     .eq('id', id)
-    .single()
-  if (error) {
-    if (error.code === 'PGRST116') return null
-    throw error
-  }
-  return data as unknown as ActivityListItem
+    .maybeSingle()
+  if (error) throw error
+  return data as unknown as ActivityListItem | null
 }
 
 // `getCamps` a fost scoasă: cerea toate taberele, inclusiv pe cele încheiate,

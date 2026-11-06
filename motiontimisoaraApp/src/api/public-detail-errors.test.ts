@@ -26,7 +26,7 @@ test.each([
   ['getCourse', getCourse],
   ['getActivity', getActivity],
 ])('%s întoarce null când rândul nu există', async (_nume, citeste) => {
-  raspuns = { data: null, error: { code: 'PGRST116', message: 'no rows' } }
+  raspuns = { data: null, error: null }
   await expect(citeste('x')).resolves.toBeNull()
 })
 
