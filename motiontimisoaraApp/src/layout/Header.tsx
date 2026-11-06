@@ -59,6 +59,7 @@ export function Header() {
   }, [])
 
   const onLogout = async () => {
+    setOpen(false)
     await signOut()
     navigate('/')
   }
@@ -134,11 +135,7 @@ export function Header() {
               <Button variant="ghost" asChild>
                 <Link to="/login">Autentificare</Link>
               </Button>
-              <Link
-                to="/signup"
-                className="inline-flex items-center rounded-full px-5 py-2 text-sm font-bold text-white shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all hover:-translate-y-0.5"
-                style={{ background: 'var(--gradient-primary)' }}
-              >
+              <Link to="/signup" className="btn-cta btn-cta--primary px-5 py-2 text-sm">
                 Înregistrare
               </Link>
             </>

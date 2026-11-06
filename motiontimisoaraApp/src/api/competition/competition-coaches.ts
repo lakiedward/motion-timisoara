@@ -16,6 +16,7 @@ type CompetitionCoachRow = {
 
 export type CompetitionCoach = {
   coachProfileId: string
+  userId: string | null
   name: string
   photoUrl: string | null
   status: CompetitionInvitationStatus
@@ -78,7 +79,7 @@ async function listCompetitionCoaches(
 
   const { data: profiles, error: profilesError } = await supabase
     .from('coach_profiles')
-    .select('id,photo_storage_path,profile:profiles(name)')
+    .select('id,user_id,photo_storage_path,profile:profiles(name)')
     .in(
       'id',
       data.map((row) => row.coach_profile_id),
@@ -89,6 +90,7 @@ async function listCompetitionCoaches(
     (profiles ?? []).map((profile) => [
       profile.id,
       {
+        userId: profile.user_id,
         name: (profile.profile as { name: string } | null)?.name ?? 'Antrenor',
         photoUrl: coachPhotoUrl(profile.photo_storage_path),
       },
@@ -97,6 +99,7 @@ async function listCompetitionCoaches(
 
   return data.map((row) => ({
     coachProfileId: row.coach_profile_id,
+    userId: profileById.get(row.coach_profile_id)?.userId ?? null,
     name: profileById.get(row.coach_profile_id)?.name ?? 'Antrenor',
     photoUrl: profileById.get(row.coach_profile_id)?.photoUrl ?? null,
     status: row.status,

@@ -128,6 +128,7 @@ const SAMPLE_KINDS: SubscriptionEmailKind[] = [
   "TRIAL_ENDS_3",
   "PAYMENT_FAILED",
   "PAYMENT_CONFIRMED",
+  "CANCELLATION_CONFIRMED",
   "SUBSCRIPTION_ENDED",
 ];
 
@@ -142,7 +143,13 @@ export function previewEmails(siteUrl: string, now: Date, subscriberType: "COACH
       planName: subscriberType === "CLUB" ? "Club" : "Antrenor",
       planPriceBani: subscriberType === "CLUB" ? 34_900 : 10_000,
       hasCard: false,
-      date: kind === "TRIAL_ENDS_14" ? inDays(14) : kind === "TRIAL_ENDS_3" ? inDays(3) : now.toISOString(),
+      date: kind === "TRIAL_ENDS_14"
+        ? inDays(14)
+        : kind === "TRIAL_ENDS_3"
+        ? inDays(3)
+        : kind === "CANCELLATION_CONFIRMED"
+        ? inDays(30)
+        : now.toISOString(),
       amountBani: subscriberType === "CLUB" ? 34_900 : 10_000,
       currency: "RON",
       periodEnd: inDays(30),

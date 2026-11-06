@@ -44,7 +44,10 @@ export default function CompetitionsPage() {
         text="Concursuri sportive pentru copii și adulți."
       />
 
-      <div className="mx-auto max-w-7xl px-6 py-10">
+      <div
+        data-section="motion-react:page:/concursuri:section:lista-concursuri"
+        className="mx-auto max-w-7xl px-6 py-10"
+      >
         {isError ? (
           <StatusView
             state="error"
@@ -55,7 +58,7 @@ export default function CompetitionsPage() {
         ) : isLoading ? (
           <div role="status" aria-label="Se încarcă concursurile" className={OFFER_GRID}>
             {[0, 1, 2].map((i) => (
-              <Skeleton key={i} className="h-72 rounded-xl" />
+              <Skeleton key={i} className="h-80 rounded-xl" />
             ))}
           </div>
         ) : concursuri.length ? (
@@ -73,11 +76,13 @@ export default function CompetitionsPage() {
                 <p className="text-muted-foreground mb-4 text-sm" aria-live="polite">
                   {plural(filtered.length, 'concurs găsit', 'concursuri găsite')}
                 </p>
-                <div className={OFFER_GRID}>
+                <ul className={OFFER_GRID}>
                   {filtered.map((concurs) => (
-                    <CardConcurs key={concurs.id} concurs={concurs} />
+                    <li key={concurs.id}>
+                      <CardConcurs concurs={concurs} />
+                    </li>
                   ))}
-                </div>
+                </ul>
               </>
             ) : (
               <FilteredEmptyState

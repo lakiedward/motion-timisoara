@@ -85,7 +85,14 @@ test('the public coach query explicitly filters accepted invitations', async () 
       error: null,
     },
     {
-      data: [{ id: 'coach-1', photo_storage_path: 'photo.jpg', profile: { name: 'Ana' } }],
+      data: [
+        {
+          id: 'coach-1',
+          user_id: 'user-1',
+          photo_storage_path: 'photo.jpg',
+          profile: { name: 'Ana' },
+        },
+      ],
       error: null,
     },
   ]
@@ -94,6 +101,7 @@ test('the public coach query explicitly filters accepted invitations', async () 
   expect(coaches).toEqual([
     {
       coachProfileId: 'coach-1',
+      userId: 'user-1',
       name: 'Ana',
       photoUrl: 'https://example.test/photo.jpg',
       status: 'accepted',

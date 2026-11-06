@@ -43,6 +43,7 @@ export interface SubscriptionWebhookServices {
   store: SubscriptionStore;
   verifyEvent: (body: string, signature: string) => Promise<Stripe.Event>;
   subscription: (id: string) => Promise<StripeSubscriptionState>;
+  invoice?: (id: string) => Promise<Stripe.Invoice>;
   recordInvoice?: (invoice: Stripe.Invoice, eventType: string, owner: SubscriptionRow | null) => Promise<void>;
   now?: () => Date;
 }
@@ -54,6 +55,20 @@ interface EventTarget {
 
 const idOf = (value: string | { id: string } | null | undefined) =>
   typeof value === "string" ? value : value?.id ?? null;
+
+type InvoiceParentDetails = {
+  subscription?: string | { id: string } | null;
+  metadata?: Record<string, string> | null;
+};
+
+function invoiceSubscription(invoice: Stripe.Invoice) {
+  const parent = (invoice as unknown as { parent?: { subscription_details?: InvoiceParentDetails | null } | null })
+    .parent?.subscription_details;
+  return {
+    subscriptionId: idOf(invoice.subscription) ?? idOf(parent?.subscription),
+    metadata: invoice.subscription_details?.metadata ?? parent?.metadata ?? null,
+  };
+}
 
 function subscriberFromMetadata(metadata: Record<string, string> | null | undefined, rowId?: string | null) {
   const type = metadata?.subscriber_type;
@@ -91,13 +106,13 @@ export function eventTarget(event: Stripe.Event): EventTarget | null {
     };
   }
   const invoice = event.data.object as Stripe.Invoice;
-  const subscriptionId = idOf(invoice.subscription);
+  const { subscriptionId, metadata } = invoiceSubscription(invoice);
   if (!subscriptionId) return null;
   return {
     keys: {
       subscriptionId,
       customerId: idOf(invoice.customer),
-      ...subscriberFromMetadata(invoice.subscription_details?.metadata),
+      ...subscriberFromMetadata(metadata),
     },
     terms: {},
   };
@@ -137,6 +152,14 @@ export function subscriptionWebhookHandler(services: SubscriptionWebhookServices
       return enrollmentJson({ error: "Invalid signature" }, 400);
     }
     if (!HANDLED_EVENTS.has(event.type)) return enrollmentJson({ received: true, ignored: event.type });
+    if (event.type.startsWith("invoice.") && services.invoice) {
+      try {
+        const fetched = await services.invoice((event.data.object as Stripe.Invoice).id);
+        event = { ...event, data: { ...event.data, object: fetched } } as Stripe.Event;
+      } catch {
+        return enrollmentJson({ error: "Invoice could not be read from Stripe" }, 500);
+      }
+    }
     const target = eventTarget(event);
     if (!target) return enrollmentJson({ received: true, ignored: "not a subscription event" });
 

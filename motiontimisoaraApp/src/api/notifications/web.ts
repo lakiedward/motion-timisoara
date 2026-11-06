@@ -104,6 +104,10 @@ export async function webPushPermission(): Promise<PushPermission> {
   return supportsWebPush() ? mapPermission(Notification.permission) : 'denied'
 }
 
+export function webPushPermissionGranted() {
+  return supportsWebPush() && Notification.permission === 'granted'
+}
+
 export function promptWebPushPermission() {
   if (!supportsWebPush() || Notification.permission !== 'default') return
   pendingPermission ??= Notification.requestPermission().finally(() => {
