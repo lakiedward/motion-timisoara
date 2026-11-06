@@ -11,19 +11,8 @@ import { codQr } from '@/lib/cod-qr'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
 
-/**
- * Codul QR al unui copil — identitatea lui scanabilă (#318).
- *
- * Același ecran pentru toți cei care au voie să vadă copilul: părintele îl
- * deschide din „Copiii mei", antrenorul și clubul din lista de înscriși, ca
- * rezervă când părintele n-are telefonul la el. Cine are voie decide RLS-ul
- * lui `children`, nu pagina: un id străin ajunge la „copilul nu a fost găsit".
- *
- * Codul se desenează AICI, din token, nu vine de la server: după prima
- * încărcare rămâne în cache-ul interogării, deci se arată și fără rețea, la
- * intrarea în bazin.
- */
 export default function ChildQrPage({ inapoi }: { inapoi: string }) {
   const { id } = useParams()
   const childId = id as string
@@ -52,15 +41,16 @@ export default function ChildQrPage({ inapoi }: { inapoi: string }) {
     onError: () => toast.error('Nu am putut genera un cod nou.'),
   })
 
-  if (isError) {
+  if (isError && !copil) {
     return (
       <Cadru inapoi={inapoi}>
-        <div role="alert" className="mt-6 rounded-xl border border-dashed py-16 text-center">
-          <p className="text-foreground font-medium">Nu am putut încărca copilul.</p>
-          <Button className="mt-4 h-11 min-h-11" type="button" onClick={() => refetch()}>
-            Reîncearcă
-          </Button>
-        </div>
+        <StatusView
+          state="error"
+          title="Nu am putut încărca copilul."
+          text="Verifică conexiunea și încearcă din nou."
+          onRetry={() => void refetch()}
+          className="mt-4"
+        />
       </Cadru>
     )
   }
@@ -68,8 +58,13 @@ export default function ChildQrPage({ inapoi }: { inapoi: string }) {
   if (isPending) {
     return (
       <Cadru inapoi={inapoi}>
-        <Skeleton className="mt-6 h-8 w-48 rounded-lg" />
-        <Skeleton className="mx-auto mt-6 size-64 rounded-xl" />
+        <StatusView
+          state="loading"
+          title="Se încarcă codul QR"
+          rows={2}
+          rowHeight={128}
+          className="mt-4"
+        />
       </Cadru>
     )
   }
@@ -77,7 +72,12 @@ export default function ChildQrPage({ inapoi }: { inapoi: string }) {
   if (!copil) {
     return (
       <Cadru inapoi={inapoi}>
-        <p className="text-muted-foreground mt-6">Copilul nu a fost găsit.</p>
+        <StatusView
+          state="empty"
+          title="Copilul nu a fost găsit."
+          text="Poate a fost șters sau linkul nu mai este valabil."
+          className="mt-4"
+        />
       </Cadru>
     )
   }
@@ -125,8 +125,6 @@ export default function ChildQrPage({ inapoi }: { inapoi: string }) {
 }
 
 function ImagineQr({ token, nume }: { token: string; nume: string }) {
-  // Rezultatul poartă tokenul din care a fost desenat: la un token nou, cel
-  // vechi devine automat „încă nedesenat", fără un setState în efect.
   const [desenat, setDesenat] = useState<{
     token: string
     imagine: string | null
@@ -137,8 +135,6 @@ function ImagineQr({ token, nume }: { token: string; nume: string }) {
 
   useEffect(() => {
     let anulat = false
-    // Nivelul M de corecție: un cod încă lizibil cu o zgârietură pe folie sau un
-    // reflex pe ecran, fără să devină prea des pentru camera de telefon.
     QRCode.toDataURL(codQr(token), { errorCorrectionLevel: 'M', margin: 2, width: 640 })
       .then((url) => {
         if (!anulat) setDesenat({ token, imagine: url, aEsuat: false })
@@ -160,15 +156,11 @@ function ImagineQr({ token, nume }: { token: string; nume: string }) {
 
   const printeaza = () => {
     if (!imagine) return
-    // O fereastră doar cu codul și numele: pagina de cont are meniu, antet și
-    // fundal colorat, care pe hârtie ar mânca cerneală și ar micșora codul.
     const f = window.open('', '_blank', 'width=600,height=700')
     if (!f) {
       toast.error('Browserul a blocat fereastra de printare.')
       return
     }
-    // Construit din noduri, nu din șir: numele copilului e text scris de un
-    // părinte și ajunge pe ecranul antrenorului, deci nu se interpretează ca HTML.
     const d = f.document
     d.title = `Cod QR — ${nume}`
     d.body.style.cssText =
@@ -192,16 +184,17 @@ function ImagineQr({ token, nume }: { token: string; nume: string }) {
 
   if (aEsuat) {
     return (
-      <p role="alert" className="text-destructive mt-6 text-sm">
-        Nu am putut desena codul. Reîncarcă pagina.
-      </p>
+      <StatusView
+        state="error"
+        title="Nu am putut desena codul."
+        text="Reîncarcă pagina și încearcă din nou."
+        className="mt-6"
+      />
     )
   }
 
   return (
     <div className="mt-6">
-      {/* Fundal alb dinadins, indiferent de temă: un cod QR pe fundal închis se
-          scanează prost, iar contrastul lui e cerința, nu estetica. */}
       <div className="bg-white mx-auto w-fit rounded-3xl p-4 shadow-sm">
         {imagine ? (
           <img src={imagine} alt={`Codul QR al lui ${nume}`} className="size-64 sm:size-80" />

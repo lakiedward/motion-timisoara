@@ -5,13 +5,21 @@ import { vi } from 'vitest'
 
 import { Header } from './Header'
 
+const authState = vi.hoisted(() => ({
+  user: null as null | { name: string; email: string; role: string },
+}))
+
 vi.mock('@/lib/auth-context', () => ({
-  useAuth: () => ({ user: null, loading: false, profileError: null, refresh: vi.fn() }),
+  useAuth: () => ({ user: authState.user, loading: false, profileError: null, refresh: vi.fn() }),
 }))
 
 vi.mock('@/api/auth', () => ({
   signOut: vi.fn(),
 }))
+
+beforeEach(() => {
+  authState.user = null
+})
 
 test('mobile menu marks the current page and keeps 44px link targets', async () => {
   const user = userEvent.setup()
@@ -43,6 +51,21 @@ test('choosing a link in the mobile menu closes it', async () => {
 
   await user.click(screen.getByRole('button', { name: 'Meniu' }))
   await user.click(within(screen.getByRole('dialog')).getByRole('link', { name: 'Contact' }))
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+})
+
+test('signing out from the mobile menu closes it', async () => {
+  authState.user = { name: 'Ana Spec', email: 'ana@example.com', role: 'PARENT' }
+  const user = userEvent.setup()
+  render(
+    <MemoryRouter initialEntries={['/']}>
+      <Header />
+    </MemoryRouter>,
+  )
+
+  await user.click(screen.getByRole('button', { name: 'Meniu' }))
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: /Deconectare/ }))
 
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
