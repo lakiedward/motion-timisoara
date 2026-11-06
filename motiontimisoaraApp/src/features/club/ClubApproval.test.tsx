@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { vi } from 'vitest'
@@ -52,8 +52,14 @@ test('un club aprobat vede pagina cerută', async () => {
   expect(screen.queryByText('Clubul tău așteaptă aprobarea')).not.toBeInTheDocument()
 })
 
-test('o eroare la încărcarea clubului lasă pagina să-și arate propria stare', async () => {
-  mockedClub.mockRejectedValue(new Error('offline'))
+test('o eroare la încărcarea clubului nu deschide poarta și permite reîncercarea', async () => {
+  mockedClub.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(club(null))
   renderGate()
-  expect(await screen.findByText('pagina cursuri')).toBeInTheDocument()
+  expect(await screen.findByText('Nu am putut încărca clubul.')).toBeInTheDocument()
+  expect(screen.queryByText('pagina cursuri')).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Reîncearcă' }))
+  expect(
+    await screen.findByRole('heading', { level: 1, name: 'Clubul tău așteaptă aprobarea' }),
+  ).toBeInTheDocument()
+  expect(screen.queryByText('pagina cursuri')).not.toBeInTheDocument()
 })
