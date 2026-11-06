@@ -11,6 +11,7 @@ import {
 import { SUBSCRIPTION_QUERY_KEY } from '@/api/subscriptions/subscriptions'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { FieldMessage } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -87,7 +88,12 @@ export function ExtendSubscriptionForm({
 
   const submit = () => {
     setTouched(true)
-    if (valid) setConfirming(true)
+    if (valid) {
+      setConfirming(true)
+      return
+    }
+    const daysOk = days >= 1 && days <= 366 && (preview !== null || subscription.status === 'trialing')
+    document.getElementById(daysOk ? 'extend-reason' : 'extend-days')?.focus()
   }
 
   return (
@@ -123,11 +129,7 @@ export function ExtendSubscriptionForm({
           aria-invalid={!!daysError}
           aria-describedby={daysError ? 'extend-days-error' : undefined}
         />
-        {daysError && (
-          <p id="extend-days-error" className="text-destructive text-sm">
-            {daysError}
-          </p>
-        )}
+        <FieldMessage id="extend-days" error={daysError ?? undefined} />
       </div>
       {preview && (
         <p className="bg-muted/40 rounded-xl border px-4 py-3 text-sm" role="status">
@@ -149,11 +151,7 @@ export function ExtendSubscriptionForm({
           aria-invalid={!!reasonError}
           aria-describedby={reasonError ? 'extend-reason-error' : undefined}
         />
-        {reasonError && (
-          <p id="extend-reason-error" className="text-destructive text-sm">
-            {reasonError}
-          </p>
-        )}
+        <FieldMessage id="extend-reason" error={reasonError ?? undefined} />
       </div>
       <p className="text-muted-foreground flex items-start gap-2 text-sm">
         <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
