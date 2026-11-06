@@ -254,14 +254,31 @@ export const router = createBrowserRouter([
           {
             element: <AdminLayout />,
             children: [
-              { path: '/admin', element: <AdminDashboard /> },
-              { path: '/admin/profile', element: <AdminProfilePage /> },
-              { path: '/admin/users', element: <AdminUsersPage /> },
-              { path: '/admin/users/:id/edit', element: <AdminUserEditPage /> },
-              { path: '/admin/clubs', element: <AdminClubsPage /> },
-              { path: '/admin/clubs/:id/edit', element: <ClubProfilePage portal="admin" /> },
+              { path: '/admin', element: <AdminDashboard />, handle: pageTitle('Panou') },
+              {
+                path: '/admin/profile',
+                element: <AdminProfilePage />,
+                handle: pageTitle('Profil'),
+              },
+              {
+                path: '/admin/users',
+                element: <AdminUsersPage />,
+                handle: pageTitle('Utilizatori'),
+              },
+              {
+                path: '/admin/users/:id/edit',
+                element: <AdminUserEditPage />,
+                handle: pageTitle('Editează utilizator'),
+              },
+              { path: '/admin/clubs', element: <AdminClubsPage />, handle: pageTitle('Cluburi') },
+              {
+                path: '/admin/clubs/:id/edit',
+                element: <ClubProfilePage portal="admin" />,
+                handle: pageTitle('Editează club'),
+              },
               {
                 path: '/admin/courses',
+                handle: pageTitle('Cursuri'),
                 element: (
                   <AdminCoursesPage
                     headerActions={<NewCourseButton />}
@@ -269,50 +286,113 @@ export const router = createBrowserRouter([
                   />
                 ),
               },
-              { path: '/admin/courses/new', element: <ClubCourseFormPage portal="admin" /> },
-              { path: '/admin/courses/:id/edit', element: <ClubCourseFormPage portal="admin" /> },
+              {
+                path: '/admin/courses/new',
+                element: <ClubCourseFormPage portal="admin" />,
+                handle: pageTitle('Curs nou'),
+              },
+              {
+                path: '/admin/courses/:id/edit',
+                element: <ClubCourseFormPage portal="admin" />,
+                handle: pageTitle('Editează curs'),
+              },
               {
                 path: '/admin/competitions',
+                handle: pageTitle('Concursuri'),
                 element: <CompetitionsListPage baza="/admin/competitions" />,
               },
               {
                 path: '/admin/competitions/new',
+                handle: pageTitle('Concurs nou'),
                 element: <CompetitionFormPage baza="/admin/competitions" />,
               },
               {
                 path: '/admin/competitions/:id/edit',
+                handle: pageTitle('Editează concurs'),
                 element: <CompetitionFormPage baza="/admin/competitions" />,
               },
               {
                 path: '/admin/competitions/:id/results',
+                handle: pageTitle('Rezultate concurs'),
                 element: <CompetitionPodiumPage baza="/admin/competitions" />,
               },
-              { path: '/admin/camps', element: <AdminCampsPage /> },
-              { path: '/admin/camps/new', element: <CampFormPage baza="/admin/camps" /> },
-              { path: '/admin/camps/:id/edit', element: <CampFormPage baza="/admin/camps" /> },
+              { path: '/admin/camps', element: <AdminCampsPage />, handle: pageTitle('Tabere') },
+              {
+                path: '/admin/camps/new',
+                element: <CampFormPage baza="/admin/camps" />,
+                handle: pageTitle('Tabără nouă'),
+              },
+              {
+                path: '/admin/camps/:id/edit',
+                element: <CampFormPage baza="/admin/camps" />,
+                handle: pageTitle('Editează tabără'),
+              },
               {
                 path: '/admin/camps/:id/enrolled',
+                handle: pageTitle('Înscriși tabără'),
                 element: <CampEnrolledPage baza="/admin/camps" />,
               },
-              { path: '/admin/activities', element: <AdminActivitiesPage /> },
-              { path: '/admin/activities/new', element: <ActivityFormPage portal="admin" /> },
+              {
+                path: '/admin/activities',
+                element: <AdminActivitiesPage />,
+                handle: pageTitle('Activități'),
+              },
+              {
+                path: '/admin/activities/new',
+                element: <ActivityFormPage portal="admin" />,
+                handle: pageTitle('Activitate nouă'),
+              },
               {
                 path: '/admin/activities/:id/edit',
+                handle: pageTitle('Editează activitate'),
                 element: <ActivityFormPage portal="admin" />,
               },
-              { path: '/admin/announcements', element: <AdminAnnouncementsPage /> },
-              { path: '/admin/announcements/new', element: <AdminAnnouncementFormPage /> },
-              { path: '/admin/attendance', element: <AdminAttendancePage /> },
-              { path: '/admin/payments', element: <AdminPaymentsPage /> },
+              {
+                path: '/admin/announcements',
+                element: <AdminAnnouncementsPage />,
+                handle: pageTitle('Anunțuri'),
+              },
+              {
+                path: '/admin/announcements/new',
+                element: <AdminAnnouncementFormPage />,
+                handle: pageTitle('Anunț nou'),
+              },
+              {
+                path: '/admin/attendance',
+                element: <AdminAttendancePage />,
+                handle: pageTitle('Prezență'),
+              },
+              {
+                path: '/admin/payments',
+                element: <AdminPaymentsPage />,
+                handle: pageTitle('Plăți'),
+              },
               ...(NATIVE_BUILD ? [] : webOnly(ADMIN_SUBSCRIPTION_ROUTES)),
-              { path: '/admin/locations', element: <AdminLocationsPage /> },
-              { path: '/admin/locations/new', element: <ClubLocationFormPage portal="admin" /> },
+              {
+                path: '/admin/locations',
+                element: <AdminLocationsPage />,
+                handle: pageTitle('Locații'),
+              },
+              {
+                path: '/admin/locations/new',
+                element: <ClubLocationFormPage portal="admin" />,
+                handle: pageTitle('Locație nouă'),
+              },
               {
                 path: '/admin/locations/:id/edit',
+                handle: pageTitle('Editează locație'),
                 element: <ClubLocationFormPage portal="admin" />,
               },
-              { path: '/admin/sports', element: <AdminSportsPage /> },
-              { path: '/admin/codes', element: <AdminInviteCodesPage /> },
+              {
+                path: '/admin/sports',
+                element: <AdminSportsPage />,
+                handle: pageTitle('Sporturi'),
+              },
+              {
+                path: '/admin/codes',
+                element: <AdminInviteCodesPage />,
+                handle: pageTitle('Coduri invitație'),
+              },
             ],
           },
         ],
