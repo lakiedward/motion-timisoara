@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { getMyChildren } from '@/api/account'
+import { childAge, getMyChildren } from '@/api/account'
 import { EnrollmentRequestError, type BillingDetails, type PaymentMethod } from '@/api/checkout'
 import type { CompetitionCategory } from '@/api/competition/competition-offers'
 import type { PublicCompetition } from '@/api/competition/competitions'
@@ -17,10 +17,14 @@ import { startStripeCheckout } from '@/api/payments/checkout-session'
 import { useAuth } from '@/lib/auth-context'
 import { formatRonOffer } from '@/lib/money'
 import { stripeConfigured } from '@/lib/stripe'
+import { cn } from '@/lib/utils'
+import { BackLink } from '@/components/page-header/PageHeader'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
 import { SelectMenu } from '@/components/ui/select-menu'
 import { CheckoutBillingFields } from '@/features/account/checkout/CheckoutBillingFields'
 import { CheckoutPaymentStep } from '@/features/account/checkout/CheckoutPaymentStep'
@@ -61,15 +65,16 @@ function validBirthDate(value: string): boolean {
 
 export function CompetitionRegistrationForm({ competition, categories }: Props) {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const queryClient = useQueryClient()
   const { user } = useAuth()
   const payment = usePaymentAdapter()
   const now = useCompetitionClock(competition.registrationDeadlineAt)
   const createdIds = useRef<string[]>([])
   const [choice, setChoice] = useState<Record<string, string>>({})
-  const [includeSelf, setIncludeSelf] = useState(false)
+  const [includeSelfChoice, setIncludeSelf] = useState<boolean | null>(null)
   const [selfBirthDate, setSelfBirthDate] = useState('')
-  const [selfCategoryId, setSelfCategoryId] = useState('')
+  const [selfCategoryChoice, setSelfCategoryId] = useState<string | null>(null)
   const categoryOptions = categories.map((category) => ({
     value: category.id,
     label: `${category.name} · ${category.age_from}–${category.age_to} ani · ${formatRonOffer(category.price_bani)}`,
@@ -90,7 +95,18 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
     queryFn: getMyChildren,
     enabled: user?.role === 'PARENT',
   })
-  const childSelections: CompetitionSelection[] = Object.entries(choice)
+  const presetCategoryId = categories.find(
+    (category) => category.id === searchParams.get('categorie'),
+  )?.id
+  const presetChildId = presetCategoryId ? children.data?.[0]?.id : undefined
+  const presetSelf = Boolean(presetCategoryId) && children.isSuccess && !children.data.length
+  const includeSelf = includeSelfChoice ?? presetSelf
+  const selfCategoryId = selfCategoryChoice ?? (presetSelf ? (presetCategoryId ?? '') : '')
+  const effectiveChoice: Record<string, string> =
+    presetChildId && presetCategoryId && !(presetChildId in choice)
+      ? { [presetChildId]: presetCategoryId, ...choice }
+      : choice
+  const childSelections: CompetitionSelection[] = Object.entries(effectiveChoice)
     .filter(([, categoryId]) => Boolean(categoryId))
     .map(([childId, categoryId]) => ({ childId, categoryId }))
     .sort((a, b) => participantKey(a).localeCompare(participantKey(b)))
@@ -257,57 +273,84 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <Link
-          className="text-primary inline-flex min-h-11 items-center text-sm font-medium"
-          to={`/concursuri/${competition.slug}`}
-        >
-          ← Înapoi la concurs
-        </Link>
-        <h1 className="font-display text-2xl font-bold">Înscriere la {competition.title}</h1>
+        <BackLink to={`/concursuri/${competition.slug}`}>Înapoi la concurs</BackLink>
+        <h1 className="font-display text-2xl font-bold">Finalizează înscrierea</h1>
+        <p className="text-muted-foreground mt-2 flex flex-wrap items-center gap-2 text-sm">
+          <Badge variant="outline">Concurs</Badge>
+          <span>{competition.title}</span>
+        </p>
         <p className="text-muted-foreground mt-2 text-sm">
           Alege categoriile participanților pe care dorești să îi înscrii.
         </p>
       </div>
 
       {closed ? (
-        <p role="status" className="rounded-2xl border p-5">
-          Termenul înscrierilor a trecut.
-        </p>
+        <StatusView state="empty" title="Termenul înscrierilor a trecut." />
       ) : categories.length === 0 ? (
-        <p className="rounded-2xl border border-dashed p-5 text-sm">
-          Organizatorul nu a adăugat încă nicio categorie.
-        </p>
+        <StatusView state="empty" title="Organizatorul nu a adăugat încă nicio categorie." />
       ) : (
         <>
           {user.role === 'PARENT' &&
             (children.isLoading ? (
               <Skeleton className="h-48 rounded-xl" />
             ) : children.isError ? (
-              <div role="alert" className="space-y-2 rounded-2xl border p-5">
-                <p>Nu am putut încărca lista de copii.</p>
-                <Button variant="outline" onClick={() => void children.refetch()}>
-                  Reîncearcă
-                </Button>
-              </div>
+              <StatusView
+                state="error"
+                title="Nu am putut încărca lista de copii."
+                onRetry={() => void children.refetch()}
+              />
             ) : children.data?.length === 0 ? (
-              <div className="space-y-3 rounded-2xl border border-dashed p-5">
-                <p>Nu ai copii adăugați. Te poți înscrie pe tine mai jos.</p>
-                <Button asChild variant="outline">
-                  <Link to="/account/child/new">Adaugă copil</Link>
-                </Button>
-              </div>
+              <StatusView
+                state="empty"
+                title="Nu ai copii adăugați. Te poți înscrie pe tine mai jos."
+                action={
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="mt-3 h-touch-target min-h-touch-target"
+                  >
+                    <Link to="/account/child/new">Adaugă copil</Link>
+                  </Button>
+                }
+              />
             ) : (
               <section className="space-y-4" aria-label="Copii și categorii">
                 {children.data?.map((child) => {
                   const verdict = verdictFor(child.id)
                   return (
-                    <div key={child.id} className="bg-card rounded-xl border p-5">
-                      <Label htmlFor={`competition-category-${child.id}`} className="font-semibold">
-                        {child.name}
-                      </Label>
+                    <div
+                      key={child.id}
+                      className={cn(
+                        'bg-card rounded-xl border p-4',
+                        verdict?.eligible && 'border-primary',
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span
+                          aria-hidden="true"
+                          className="bg-primary/10 text-primary grid size-10 shrink-0 place-items-center rounded-full font-bold"
+                        >
+                          {child.name.charAt(0)}
+                        </span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Label
+                            htmlFor={`competition-category-${child.id}`}
+                            className="font-semibold"
+                          >
+                            {child.name}
+                          </Label>
+                          <span className="text-muted-foreground text-sm">
+                            {childAge(child.birth_date)} ani
+                          </span>
+                          {verdict?.eligible && <Badge variant="success">Poate participa</Badge>}
+                          {verdict && !verdict.eligible && (
+                            <Badge variant="destructive">Nu poate</Badge>
+                          )}
+                        </div>
+                      </div>
                       <SelectMenu
                         id={`competition-category-${child.id}`}
-                        value={choice[child.id] ?? ''}
+                        value={effectiveChoice[child.id] ?? ''}
                         onValueChange={(value) => {
                           setChoice((previous) => ({ ...previous, [child.id]: value }))
                           setAcceptedKey(null)
@@ -401,12 +444,11 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
             <section className="space-y-5">
               {validation.isPending && <Skeleton className="h-24 rounded-2xl" />}
               {validation.isError && (
-                <div role="alert" className="space-y-2 rounded-2xl border p-5">
-                  <p>Nu am putut verifica eligibilitatea și prețul.</p>
-                  <Button variant="outline" onClick={() => void validation.refetch()}>
-                    Reîncearcă
-                  </Button>
-                </div>
+                <StatusView
+                  state="error"
+                  title="Nu am putut verifica eligibilitatea și prețul."
+                  onRetry={() => void validation.refetch()}
+                />
               )}
               {validation.isSuccess && (
                 <>

@@ -24,6 +24,7 @@ import {
 import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
 import { BackLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -108,8 +109,10 @@ export default function CompetitionFormPage({ baza }: { baza: CompetitionPortalB
       void qc.invalidateQueries({ queryKey: ['concursuri-publice'] })
       navigate(baza)
     },
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : 'Nu am putut șterge concursul.'),
+    onError: (error) => {
+      setConfirmaStergerea(false)
+      toast.error(error instanceof Error ? error.message : 'Nu am putut șterge concursul.')
+    },
   })
 
   const salveaza = handleSubmit(
@@ -269,23 +272,23 @@ export default function CompetitionFormPage({ baza }: { baza: CompetitionPortalB
           <Button type="button" variant="outline" asChild>
             <Link to={baza}>Anulează</Link>
           </Button>
-          {id &&
-            (confirmaStergerea ? (
-              <Button
-                type="button"
-                variant="destructive"
-                disabled={sterge.isPending}
-                onClick={() => sterge.mutate()}
-              >
-                Confirmă ștergerea
-              </Button>
-            ) : (
-              <Button type="button" variant="outline" onClick={() => setConfirmaStergerea(true)}>
-                Șterge concursul
-              </Button>
-            ))}
+          {id && (
+            <Button type="button" variant="outline" onClick={() => setConfirmaStergerea(true)}>
+              Șterge concursul
+            </Button>
+          )}
         </div>
       </form>
+      <ConfirmDialog
+        open={confirmaStergerea}
+        onOpenChange={setConfirmaStergerea}
+        title="Ștergi concursul?"
+        description="Concursul dispare din liste și de pe pagina publică. Acțiunea nu poate fi anulată."
+        confirmLabel="Șterge concursul"
+        destructive
+        pending={sterge.isPending}
+        onConfirm={() => sterge.mutate()}
+      />
       {id && (
         <div className="mt-10 space-y-6">
           <CompetitionOffersSection competitionId={id} />

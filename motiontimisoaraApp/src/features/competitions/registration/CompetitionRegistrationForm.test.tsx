@@ -15,7 +15,10 @@ import type { CompetitionCategory } from '@/api/competition/competition-offers'
 
 const authRole = vi.hoisted(() => ({ value: 'PARENT' }))
 
-vi.mock('@/api/account', () => ({ getMyChildren: vi.fn() }))
+vi.mock('@/api/account', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/api/account')>()),
+  getMyChildren: vi.fn(),
+}))
 vi.mock('@/api/competition/competition-registration', () => ({
   validateCompetitionRegistration: vi.fn(),
   createCompetitionRegistration: vi.fn(),
@@ -62,11 +65,11 @@ const category: CompetitionCategory = {
   updated_at: '2026-09-22T00:00:00Z',
 }
 
-function renderRegistration(availableCategories = [category]) {
+function renderRegistration(availableCategories = [category], query = '') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/account/competitions/cupa/register']}>
+      <MemoryRouter initialEntries={[`/account/competitions/cupa/register${query}`]}>
         <Routes>
           <Route
             path="/account/competitions/:slug/register"
@@ -342,4 +345,40 @@ test('adultul poate alege plata cash pentru propria înscriere cu preț pozitiv'
       billingDetails: undefined,
     }),
   )
+})
+
+test('?categorie= preselectează categoria pentru primul copil, fără să o forțeze', async () => {
+  const user = userEvent.setup()
+  const other = { ...category, id: 'category-2', name: '11–13 ani', age_from: 11, age_to: 13 }
+  vi.mocked(validateCompetitionRegistration).mockResolvedValue({
+    results: [
+      {
+        participantKey: 'child-1',
+        childId: 'child-1',
+        categoryId: other.id,
+        routeId: other.route_id,
+        name: 'Copil Audit',
+        eligible: true,
+        amount: 0,
+        currency: 'RON',
+        priceVersion: 'b'.repeat(64),
+      },
+    ],
+    allowCash: false,
+  })
+  renderRegistration([category, other], '?categorie=category-2')
+  const trigger = await screen.findByLabelText('Copil Audit')
+  await waitFor(() => expect(trigger).toHaveTextContent('11–13 ani'))
+  expect(validateCompetitionRegistration).toHaveBeenCalledWith('competition-1', [
+    { childId: 'child-1', categoryId: 'category-2' },
+  ])
+  await pickCategory(user, trigger, category)
+  await waitFor(() => expect(trigger).toHaveTextContent('8–10 ani'))
+})
+
+test('?categorie= necunoscută nu preselectează nimic', async () => {
+  renderRegistration([category], '?categorie=nu-exista')
+  const trigger = await screen.findByLabelText('Copil Audit')
+  expect(trigger).toHaveTextContent('Nu înscrie acest copil')
+  expect(validateCompetitionRegistration).not.toHaveBeenCalled()
 })

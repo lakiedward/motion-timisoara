@@ -5,6 +5,7 @@ import { getConcursPublic } from '@/api/competition/competitions'
 import { getCompetitionCategories } from '@/api/competition/competition-offers'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
 import { CompetitionRegistrationForm } from './CompetitionRegistrationForm'
 
 export default function CompetitionRegistrationPage() {
@@ -21,31 +22,39 @@ export default function CompetitionRegistrationPage() {
   })
 
   if (competition.isLoading || (competition.data && categories.isLoading)) {
-    return <Skeleton className="h-72 w-full rounded-xl" />
+    return (
+      <div className="mx-auto max-w-3xl space-y-4">
+        <Skeleton className="h-10 w-64 rounded-md" />
+        <Skeleton className="h-64 rounded-xl" />
+      </div>
+    )
   }
 
   if (competition.isError || categories.isError) {
     return (
-      <div role="alert" className="space-y-3 py-10 text-center">
-        <p>Nu am putut încărca înscrierea la concurs.</p>
-        <Button
-          variant="outline"
-          onClick={() => void (competition.isError ? competition.refetch() : categories.refetch())}
-        >
-          Reîncearcă
-        </Button>
-      </div>
+      <StatusView
+        state="error"
+        title="Nu am putut încărca înscrierea la concurs."
+        text="Verifică conexiunea și încearcă din nou."
+        onRetry={() => void (competition.isError ? competition.refetch() : categories.refetch())}
+        className="mx-auto max-w-lg"
+      />
     )
   }
 
   if (!competition.data) {
     return (
-      <div className="space-y-3 py-10 text-center">
-        <p>Concursul nu a fost găsit.</p>
-        <Link className="text-primary font-semibold" to="/concursuri">
-          Vezi concursurile
-        </Link>
-      </div>
+      <StatusView
+        state="empty"
+        title="Concursul nu a fost găsit."
+        text="Poate a fost șters sau linkul e greșit."
+        action={
+          <Button asChild className="mt-3 h-touch-target min-h-touch-target">
+            <Link to="/concursuri">Vezi concursurile</Link>
+          </Button>
+        }
+        className="mx-auto max-w-lg"
+      />
     )
   }
 
