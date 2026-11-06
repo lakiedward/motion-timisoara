@@ -122,7 +122,7 @@ jobs:
         shell: pwsh
         run: ./supabase/tests/run-camp-adult-enrollment.ps1
       - name: Verify enrollment and payment-intent contracts
-        run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/price-snapshot.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/bnr-rate-contract.test.ts supabase/functions/_shared/stripe-return-url.test.ts supabase/functions/_shared/stripe.test.ts supabase/functions/_shared/checkout-session.test.ts supabase/functions/_shared/stripe-fee-settlement.test.ts
+        run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/price-snapshot.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/bnr-rate-contract.test.ts supabase/functions/_shared/stripe-return-url.test.ts supabase/functions/_shared/stripe.test.ts supabase/functions/_shared/checkout-session.test.ts supabase/functions/_shared/stripe-fee-settlement.test.ts supabase/functions/_shared/active-role.test.ts
       - name: Type-check Stripe Connect function
         run: deno check --no-lock supabase/functions/stripe-connect/index.ts supabase/functions/stripe-webhook/index.ts
       - name: Verify subscription price sync contract
@@ -174,6 +174,9 @@ jobs:
       - name: Verify subscription access rules, coach limits and trials
         shell: pwsh
         run: ./supabase/tests/run-subscription-access-rules.ps1
+      - name: Verify subscription security fixes before and after
+        shell: pwsh
+        run: ./supabase/tests/run-subscription-security-fixes.ps1
 
   build:
     runs-on: ubuntu-latest

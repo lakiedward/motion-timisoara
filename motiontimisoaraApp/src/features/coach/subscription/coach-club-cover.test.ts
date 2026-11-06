@@ -10,6 +10,7 @@ vi.mock('@/lib/supabase', () => ({ supabase: { rpc: vi.fn() } }))
 const rpc = vi.mocked(supabase.rpc)
 
 beforeEach(() => {
+  rpc.mockReset()
   vi.mocked(getMyCoachClubs).mockResolvedValue([
     { id: 'club-a', name: 'Club A' },
     { id: 'club-b', name: 'Club B' },
@@ -17,14 +18,16 @@ beforeEach(() => {
 })
 
 describe('getCoachClubCover', () => {
-  it('keeps only the clubs whose subscription gives access', async () => {
-    rpc.mockImplementation(((_name: string, args: { p_club_id: string }) =>
-      Promise.resolve({ data: args.p_club_id === 'club-b', error: null })) as never)
+  it('keeps only the clubs the server reports as covering the coach', async () => {
+    rpc.mockResolvedValue({ data: ['club-b', 'club-x'], error: null } as never)
     await expect(getCoachClubCover()).resolves.toEqual([{ id: 'club-b', name: 'Club B' }])
-    expect(rpc).toHaveBeenCalledWith('subscriber_has_access', {
-      p_club_id: 'club-a',
-      p_coach_user_id: null,
-    })
+    expect(rpc).toHaveBeenCalledTimes(1)
+    expect(rpc).toHaveBeenCalledWith('my_covering_club_ids')
+  })
+
+  it('returns no clubs when none covers the coach', async () => {
+    rpc.mockResolvedValue({ data: [], error: null } as never)
+    await expect(getCoachClubCover()).resolves.toEqual([])
   })
 
   it('fails when the access check fails', async () => {

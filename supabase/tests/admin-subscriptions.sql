@@ -25,7 +25,10 @@ CREATE SCHEMA IF NOT EXISTS private;
 REVOKE ALL ON SCHEMA private FROM PUBLIC, anon;
 GRANT USAGE ON SCHEMA private TO authenticated, service_role;
 
-CREATE TABLE public.profiles (id UUID PRIMARY KEY, role TEXT NOT NULL, name TEXT, email TEXT);
+CREATE TABLE public.profiles (
+    id UUID PRIMARY KEY, role TEXT NOT NULL, name TEXT, email TEXT,
+    enabled BOOLEAN NOT NULL DEFAULT true, deleted_at TIMESTAMPTZ
+);
 CREATE TABLE public.clubs (
     id UUID PRIMARY KEY,
     name TEXT,
@@ -54,6 +57,7 @@ GRANT EXECUTE ON FUNCTION public.get_my_role(), public.my_club_ids() TO authenti
 
 \i /tmp/migrations/00107_subscriptions.sql
 \i /tmp/migrations/00122_admin_subscriptions.sql
+\i /tmp/migrations/00124_active_admin_guards.sql
 
 CREATE FUNCTION pg_temp.expect_denied(p_sql text)
 RETURNS void
@@ -228,6 +232,26 @@ DO $$
 BEGIN
     PERFORM pg_temp.expect_denied($q$SELECT * FROM public.get_admin_subscriptions()$q$);
     PERFORM pg_temp.expect_denied($q$SELECT * FROM public.begin_subscription_extension('00000000-0000-0000-0000-000000000101', 5)$q$);
+END;
+$$;
+RESET ROLE;
+
+UPDATE public.profiles SET enabled = false WHERE id = '00000000-0000-0000-0000-0000000000a1';
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000a1', true);
+DO $$
+BEGIN
+    PERFORM pg_temp.expect_denied($q$SELECT * FROM public.get_admin_subscriptions()$q$);
+END;
+$$;
+RESET ROLE;
+UPDATE public.profiles SET enabled = true, deleted_at = now() WHERE id = '00000000-0000-0000-0000-0000000000a1';
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000a1', true);
+DO $$
+BEGIN
+    PERFORM pg_temp.expect_denied($q$SELECT * FROM public.get_admin_subscriptions()$q$);
+    PERFORM pg_temp.expect_denied($q$SELECT private.caller_is_active_admin()$q$);
 END;
 $$;
 RESET ROLE;

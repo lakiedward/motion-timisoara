@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import type Stripe from "https://esm.sh/stripe@14?target=deno";
 import { withCors } from "../_shared/cors.ts";
 import { getStripe } from "../_shared/stripe.ts";
-import { getUser, getUserRole, supabaseAdmin } from "../_shared/supabase.ts";
+import { getUser, getActiveUserRole, supabaseAdmin } from "../_shared/supabase.ts";
 import { createSyncHandler } from "./handler.ts";
 import {
   type CatalogPrice,
@@ -98,7 +98,7 @@ function planStore(): PlanStore {
 async function requireAdmin(req: Request): Promise<boolean> {
   try {
     const user = await getUser(req);
-    return (await getUserRole(user.id)) === "ADMIN";
+    return (await getActiveUserRole(user.id)) === "ADMIN";
   } catch {
     return false;
   }

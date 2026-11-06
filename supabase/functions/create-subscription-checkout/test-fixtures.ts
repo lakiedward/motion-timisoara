@@ -160,9 +160,9 @@ export function checkoutFixture(options: Options = {}) {
         options.settings ??
           { launch_at: "2026-11-06T00:00:00Z", launch_trial_days: 90 },
       ),
-    countClubCoaches: (id) => {
+    holdClubCheckoutPlan: (id, planCode, expiresAt) => {
       assert(id === clubId);
-      calls.push("count");
+      calls.push(`hold:${planCode}:${expiresAt}`);
       return Promise.resolve(options.coachCount ?? 0);
     },
     createCustomer: (params, key) => {
