@@ -133,6 +133,7 @@ INSERT INTO public.enrollments (kind, entity_id, child_id, status) VALUES
 \i /tmp/migrations/00116_subscription_access_rules.sql
 \i /tmp/migrations/00117_club_coach_limit.sql
 \i /tmp/migrations/00118_subscription_trials.sql
+\i /tmp/migrations/00123_subscription_security_fixes.sql
 
 CREATE FUNCTION pg_temp.expect(p_ok boolean, p_message text)
 RETURNS void LANGUAGE plpgsql AS $$

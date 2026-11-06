@@ -8,6 +8,7 @@ import { getCourseRatingSummary, getMyCourseRating, submitCourseRating } from '@
 import { formatLevel } from '@/lib/level'
 import { useAuth } from '@/lib/auth-context'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusView } from '@/components/ui/status-view'
 import { CourseDetailsInfo } from '@/features/public/courses/CourseDetailsInfo'
 import { CourseHero } from '@/features/public/courses/CourseHero'
 import { CourseEnrollCard } from '@/features/public/courses/CourseEnrollCard'
@@ -18,7 +19,12 @@ export default function CourseDetailsPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const qc = useQueryClient()
-  const { data: course, isLoading } = useQuery({
+  const {
+    data: course,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['course', id],
     queryFn: () => getCourse(id),
   })
@@ -52,6 +58,19 @@ export default function CourseDetailsPage() {
       <div className="mx-auto max-w-5xl space-y-4 px-6 py-12">
         <Skeleton className="h-8 w-1/2" />
         <Skeleton className="h-64 w-full rounded-xl" />
+      </div>
+    )
+  }
+  if (isError) {
+    return (
+      <div className="mx-auto flex min-h-[55vh] max-w-lg flex-col items-center justify-center px-6 py-20">
+        <StatusView
+          state="error"
+          title="Nu am putut încărca cursul."
+          text="Verifică conexiunea și încearcă din nou."
+          onRetry={() => void refetch()}
+          className="w-full"
+        />
       </div>
     )
   }

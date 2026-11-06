@@ -65,7 +65,6 @@ test('codul se desenează din token, cu prefixul versiunii, și poartă numele c
     `MT1:${TOKEN}`,
     expect.objectContaining({ errorCorrectionLevel: 'M' }),
   )
-  // Numele fișierului salvat: fără diacritice, ca slugurile din restul aplicației.
   expect(screen.getByRole('link', { name: /Salvează imaginea/ })).toHaveAttribute(
     'download',
     'cod-qr-bogdan-stefan.png',
@@ -94,7 +93,6 @@ test('părintele generează un cod nou, iar codul de pe ecran se schimbă fără
     ),
   )
   expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
-  // Copilul NU s-a recitit: tokenul nou a venit din răspunsul funcției.
   expect(getChild).toHaveBeenCalledTimes(1)
 })
 
@@ -114,8 +112,6 @@ test('refuzul confirmării nu generează nimic', async () => {
   expect(regenereazaCodulCopilului).not.toHaveBeenCalled()
 })
 
-// Antrenorul vede codul (rezerva când părintele n-are telefonul), dar nu-l
-// poate schimba: regenerarea e a părintelui, baza o refuză oricum.
 test('antrenorul vede codul copilului înscris, fără butonul de regenerare', async () => {
   vi.mocked(useAuth).mockReturnValue({ user: { id: 'a1', role: 'COACH' } } as never)
   renderPagina('/coach/children/c1/qr')
@@ -133,7 +129,6 @@ test('un copil pe care nu-l vezi nu deschide un cod', async () => {
   expect(QRCode.toDataURL).not.toHaveBeenCalled()
 })
 
-// O citire căzută nu e un copil inexistent: are reîncercare.
 test('o citire căzută arată eroarea, cu reîncercare', async () => {
   vi.mocked(getChild)
     .mockRejectedValueOnce(new Error('rețea'))
@@ -144,4 +139,34 @@ test('o citire căzută arată eroarea, cu reîncercare', async () => {
   expect(await screen.findByRole('alert')).toHaveTextContent('Nu am putut încărca copilul.')
   await user.click(screen.getByRole('button', { name: 'Reîncearcă' }))
   expect(await screen.findByRole('img', { name: /Codul QR/ })).toBeInTheDocument()
+})
+
+test('încărcarea arată scheleturi într-un StatusView', () => {
+  vi.mocked(getChild).mockReturnValue(new Promise(() => {}))
+  renderPagina()
+
+  expect(screen.getByRole('status', { name: 'Se încarcă codul QR' })).toBeInTheDocument()
+})
+
+test('o reîncărcare căzută nu ascunde codul deja afișat', async () => {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={['/account/child/c1/qr']}>
+        <Routes>
+          <Route
+            path="/account/child/:id/qr"
+            element={<ChildQrPage inapoi="/account/children" />}
+          />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  )
+
+  await screen.findByRole('img', { name: /Codul QR/ })
+  vi.mocked(getChild).mockRejectedValue(new Error('rețea'))
+  await queryClient.refetchQueries({ queryKey: ['child', 'c1'] })
+
+  expect(screen.getByRole('img', { name: /Codul QR/ })).toBeInTheDocument()
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 })

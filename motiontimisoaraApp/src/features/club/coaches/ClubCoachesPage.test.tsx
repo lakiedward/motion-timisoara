@@ -106,6 +106,15 @@ test('a failed coach list shows an error with retry instead of the empty message
   expect(await screen.findByText('Andrei Popescu')).toBeVisible()
 })
 
+test('a failed club read shows an error with retry instead of a skeleton', async () => {
+  mocks.getMyClub.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce({ id: 'club-1' })
+  renderPage()
+  const alert = await screen.findByText('Nu am putut încărca clubul.')
+  expect(screen.queryByText('Antrenori')).toBeNull()
+  fireEvent.click(within(alert.parentElement!).getByRole('button', { name: 'Reîncearcă' }))
+  expect(await screen.findByText('Andrei Popescu')).toBeVisible()
+})
+
 test('an empty club shows the empty message', async () => {
   mocks.getCoaches.mockResolvedValue([])
   renderPage()
