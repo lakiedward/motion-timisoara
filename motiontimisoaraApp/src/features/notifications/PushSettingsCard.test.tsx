@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   supported: true,
   web: false,
   homeScreen: false,
+  granted: false,
   prompt: vi.fn(),
   toast: vi.fn(),
   state: { status: 'disabled', busy: false, error: null, pendingDisable: false } as PushSnapshot,
@@ -25,6 +26,7 @@ vi.mock('@/api/notifications', () => ({
   supportsPush: () => mocks.supported,
   supportsWebPush: () => mocks.web,
   needsHomeScreenForPush: () => mocks.homeScreen,
+  webPushPermissionGranted: () => mocks.granted,
   promptWebPushPermission: mocks.prompt,
   pushNotifications: {
     getSnapshot: () => mocks.state,
@@ -54,6 +56,7 @@ beforeEach(() => {
   mocks.supported = true
   mocks.web = false
   mocks.homeScreen = false
+  mocks.granted = false
   mocks.state = { status: 'disabled', busy: false, error: null, pendingDisable: false }
 })
 afterEach(cleanup)
@@ -169,10 +172,7 @@ it('leaves the dashboard once notifications are on and confirms where to turn th
   })
 })
 
-it('keeps the dashboard quiet while loading or enabled but shows it when off or blocked', () => {
-  mocks.state = { status: 'loading', busy: false, error: null, pendingDisable: false }
-  expect(mount(true).container).toBeEmptyDOMElement()
-  cleanup()
+it('keeps the dashboard quiet while enabled but shows it when off or blocked', () => {
   mocks.state = { status: 'enabled', busy: false, error: null, pendingDisable: false }
   expect(mount(true).container).toBeEmptyDOMElement()
   cleanup()
@@ -183,4 +183,55 @@ it('keeps the dashboard quiet while loading or enabled but shows it when off or 
   mocks.state = { status: 'enabled', busy: false, error: null, pendingDisable: false }
   mount()
   expect(screen.getByRole('button', { name: 'Dezactivează notificările' })).toBeInTheDocument()
+})
+
+it('reserves the dashboard slot while loading only when the browser cannot already be enabled', () => {
+  mocks.state = { status: 'loading', busy: false, error: null, pendingDisable: false }
+  expect(mount(true).container).toBeEmptyDOMElement()
+  cleanup()
+  mocks.web = true
+  mount(true)
+  expect(
+    screen.getByRole('status', { name: 'Se încarcă setările notificărilor' }),
+  ).toBeInTheDocument()
+  expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  cleanup()
+  mocks.granted = true
+  expect(mount(true).container).toBeEmptyDOMElement()
+})
+
+it('shows a compact dashboard prompt with one sentence and the activation button', () => {
+  mocks.web = true
+  mount(true)
+  const region = screen.getByRole('region', { name: 'Notificări în browser' })
+  expect(region).toContainElement(screen.getByRole('heading', { level: 2 }))
+  expect(screen.getByRole('status')).toHaveTextContent('Notificările sunt oprite în acest browser.')
+  expect(screen.getByRole('button', { name: 'Activează notificările' })).toBeInTheDocument()
+  expect(screen.queryByText(/Primești anunțuri de la organizatori/)).not.toBeInTheDocument()
+  expect(mocks.prompt).not.toHaveBeenCalled()
+})
+
+it('reports a failed update on the dashboard with a retry', async () => {
+  mocks.web = true
+  mocks.state = {
+    status: 'error',
+    busy: false,
+    error: 'Nu am putut actualiza notificările. Verifică internetul și reîncearcă.',
+    pendingDisable: false,
+  }
+  mount(true)
+  expect(screen.getByRole('alert')).toHaveTextContent('Nu am putut actualiza notificările.')
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Reîncearcă' }))
+  })
+  expect(mocks.restore).toHaveBeenCalledExactlyOnceWith('parent')
+})
+
+it('shows the iPhone home-screen steps on the dashboard without an activation button', () => {
+  mocks.supported = false
+  mocks.homeScreen = true
+  mount(true)
+  expect(screen.getByRole('region', { name: 'Notificări pe iPhone' })).toBeInTheDocument()
+  expect(screen.getByText(/Distribuie → „Adaugă pe ecranul principal”/)).toBeInTheDocument()
+  expect(screen.queryByRole('button')).not.toBeInTheDocument()
 })

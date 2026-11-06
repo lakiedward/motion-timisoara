@@ -19,5 +19,9 @@ export const COACH_SUBSCRIPTION_ROUTES: RouteObject[] = [
 ]
 
 export const ADMIN_SUBSCRIPTION_ROUTES: RouteObject[] = [
-  { path: '/admin/subscriptions', element: <AdminSubscriptionsPage /> },
+  {
+    path: '/admin/subscriptions',
+    element: <AdminSubscriptionsPage />,
+    handle: pageTitle('Abonamente'),
+  },
 ]

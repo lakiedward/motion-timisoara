@@ -3,6 +3,7 @@ export type SubscriptionEmailKind =
   | "TRIAL_ENDS_3"
   | "PAYMENT_FAILED"
   | "PAYMENT_CONFIRMED"
+  | "CANCELLATION_CONFIRMED"
   | "SUBSCRIPTION_ENDED";
 
 export type SubscriptionEmailsMode = "off" | "test" | "live";
@@ -17,7 +18,9 @@ export interface EmailSubscription {
   trial_end: string | null;
   current_period_end: string | null;
   past_due_since: string | null;
+  cancel_at_period_end: boolean;
   stripe_subscription_id: string | null;
+  updated_at: string;
 }
 
 export interface EmailInvoice {
@@ -101,7 +104,7 @@ export function accessEndedAt(
 }
 
 function trialEmail(subscription: EmailSubscription, settings: EmailSettings, now: Date): DueEmail | null {
-  if (subscription.status !== "trialing") return null;
+  if (subscription.status !== "trialing" || subscription.cancel_at_period_end) return null;
   const end = trialEndsAt(subscription, settings);
   if (!end) return null;
   const left = time(end) - now.getTime();
@@ -109,6 +112,28 @@ function trialEmail(subscription: EmailSubscription, settings: EmailSettings, no
   const kind = left <= 3 * DAY_MS ? "TRIAL_ENDS_3" : "TRIAL_ENDS_14";
   const prefix = kind === "TRIAL_ENDS_3" ? "trial3" : "trial14";
   return { kind, subscriptionId: subscription.id, dedupeKey: `${prefix}:${subscription.id}:${dayKey(end)}`, date: end, invoice: null };
+}
+
+export function canceledAccessEnd(subscription: EmailSubscription): string | null {
+  if (!subscription.stripe_subscription_id) return null;
+  if (subscription.status === "canceled") return subscription.current_period_end;
+  if (subscription.status === "trialing" && subscription.cancel_at_period_end) {
+    return subscription.trial_end ?? subscription.current_period_end;
+  }
+  return null;
+}
+
+function cancellationEmail(subscription: EmailSubscription, now: Date): DueEmail | null {
+  const end = canceledAccessEnd(subscription);
+  if (!end || time(end) <= now.getTime()) return null;
+  if (now.getTime() - time(subscription.updated_at) > EVENT_LOOKBACK_MS) return null;
+  return {
+    kind: "CANCELLATION_CONFIRMED",
+    subscriptionId: subscription.id,
+    dedupeKey: `canceled:${subscription.id}:${dayKey(end)}`,
+    date: end,
+    invoice: null,
+  };
 }
 
 function endedEmail(subscription: EmailSubscription, settings: EmailSettings, now: Date): DueEmail | null {
@@ -143,7 +168,8 @@ export function dueSubscriptionEmails(
   const known = new Set(subscriptions.map((subscription) => subscription.id));
   const due: DueEmail[] = [];
   for (const subscription of subscriptions) {
-    const email = trialEmail(subscription, settings, now) ?? endedEmail(subscription, settings, now);
+    const email = trialEmail(subscription, settings, now) ?? cancellationEmail(subscription, now) ??
+      endedEmail(subscription, settings, now);
     if (email && !(email.kind === "SUBSCRIPTION_ENDED" && recentlyEnded.has(subscription.id))) due.push(email);
   }
   for (const invoice of invoices) {

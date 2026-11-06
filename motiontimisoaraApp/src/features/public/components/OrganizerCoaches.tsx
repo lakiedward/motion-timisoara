@@ -67,33 +67,39 @@ export function OrganizerCoaches({
       {antrenori.length > 0 && (
         <section>
           <h2 className="font-display mb-3 text-lg font-bold">{coachesTitle(antrenori.length)}</h2>
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {antrenori.map((antrenor) => {
-              const body = (
-                <>
-                  <PersonAvatar name={antrenor.nume} src={antrenor.pozaUrl} />
-                  <CardText
-                    title={antrenor.nume}
-                    hint={antrenor.link ? 'Vezi profilul antrenorului' : undefined}
-                  />
-                </>
-              )
-              return (
-                <li key={antrenor.id}>
-                  {antrenor.link ? (
-                    <Link to={antrenor.link} className={LINK_CARD}>
-                      {body}
-                    </Link>
-                  ) : (
-                    <div className={CARD}>{body}</div>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
+          <CoachCardList antrenori={antrenori} />
         </section>
       )}
     </div>
+  )
+}
+
+export function CoachCardList({ antrenori }: { antrenori: CoachCard[] }) {
+  return (
+    <ul className="grid gap-3 sm:grid-cols-2">
+      {antrenori.map((antrenor) => {
+        const body = (
+          <>
+            <PersonAvatar name={antrenor.nume} src={antrenor.pozaUrl} />
+            <CardText
+              title={antrenor.nume}
+              hint={antrenor.link ? 'Vezi profilul antrenorului' : undefined}
+            />
+          </>
+        )
+        return (
+          <li key={antrenor.id}>
+            {antrenor.link ? (
+              <Link to={antrenor.link} className={LINK_CARD}>
+                {body}
+              </Link>
+            ) : (
+              <div className={CARD}>{body}</div>
+            )}
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 
