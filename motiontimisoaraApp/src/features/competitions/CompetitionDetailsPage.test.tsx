@@ -211,3 +211,40 @@ test('categoriile gratuite arată „Gratuit”, cele cu preț arată lei', asyn
   expect(await screen.findByText(/120,00/)).toBeInTheDocument()
   expect(screen.getByText('Mici').closest('li')).toHaveTextContent('Gratuit')
 })
+
+const OFERTE = {
+  routes: [
+    {
+      id: 'r1',
+      competition_id: 'k1',
+      name: 'Via Maior',
+      description: 'D',
+      gpx_storage_path: 'v.gpx',
+      display_order: 0,
+    },
+  ],
+  categories: [
+    { id: 'c1', route_id: 'r1', name: 'Copii', age_from: 6, age_to: 10, price_bani: 12000 },
+    { id: 'c2', route_id: 'r1', name: 'Juniori', age_from: 11, age_to: 15, price_bani: 15000 },
+  ],
+}
+
+test('fiecare categorie are buton de înscriere spre formular, cât timp înscrierile sunt deschise', async () => {
+  mocked.mockResolvedValue({ ...CONCURS, registrationDeadlineAt: '2999-01-01T00:00:00Z' })
+  galleryApi.offers.mockResolvedValue(OFERTE)
+  deseneaza()
+  const copii = await screen.findByRole('link', { name: 'Înscrie-te la categoria Copii' })
+  expect(copii).toHaveAttribute('href', '/account/competitions/cupa/register?categorie=c1')
+  expect(screen.getByRole('link', { name: 'Înscrie-te la categoria Juniori' })).toHaveAttribute(
+    'href',
+    '/account/competitions/cupa/register?categorie=c2',
+  )
+})
+
+test('după termenul limită categoriile nu mai au buton de înscriere', async () => {
+  mocked.mockResolvedValue(CONCURS)
+  galleryApi.offers.mockResolvedValue(OFERTE)
+  deseneaza()
+  await screen.findByText('Copii')
+  expect(screen.queryByRole('link', { name: /Înscrie-te la categoria/ })).not.toBeInTheDocument()
+})

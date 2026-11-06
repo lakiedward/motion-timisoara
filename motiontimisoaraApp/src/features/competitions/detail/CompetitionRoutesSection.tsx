@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useQuery, type UseQueryResult } from '@tanstack/react-query'
 
 import {
@@ -18,9 +19,11 @@ export const COMPETITION_ROUTES_SECTION =
 export function CompetitionRoutesSection({
   competitionId,
   offers,
+  enrollSlug,
 }: {
   competitionId: string
   offers: UseQueryResult<CompetitionOffers>
+  enrollSlug: string | null
 }) {
   const routePhotos = useQuery({
     queryKey: ['competition-route-photos', competitionId],
@@ -97,12 +100,23 @@ export function CompetitionRoutesSection({
                   {categories.map((category) => (
                     <li
                       key={category.id}
-                      className="flex flex-wrap justify-between gap-x-3 gap-y-1 rounded-xl border p-3 text-sm"
+                      className="flex flex-wrap items-center justify-between gap-x-3 gap-y-3 rounded-xl border p-3 text-sm"
                     >
                       <span className="min-w-0 break-words">
                         <strong>{category.name}</strong> · {category.age_from}–{category.age_to} ani
                       </span>
-                      <strong>{formatRonOffer(category.price_bani)}</strong>
+                      <span className="flex flex-wrap items-center gap-3">
+                        <strong>{formatRonOffer(category.price_bani)}</strong>
+                        {enrollSlug && (
+                          <Link
+                            to={`/account/competitions/${enrollSlug}/register?categorie=${category.id}`}
+                            aria-label={`Înscrie-te la categoria ${category.name}`}
+                            className="btn-cta btn-cta--outline px-5 text-sm"
+                          >
+                            Înscrie-te
+                          </Link>
+                        )}
+                      </span>
                     </li>
                   ))}
                 </ul>

@@ -69,6 +69,10 @@ export default function CompetitionDetailsPage() {
     )
   }
 
+  const enrollOpen =
+    data.registrationDeadlineAt !== null &&
+    Date.parse(data.registrationDeadlineAt) > now &&
+    Boolean(offers.data?.categories.length)
   const ended = Boolean(data.endAt && Date.parse(data.endAt) <= now)
   const startDay = data.startAt ? formatCompetitionDay(data.startAt) : null
   const endDay = data.endAt ? formatCompetitionDay(data.endAt) : null
@@ -131,7 +135,11 @@ export default function CompetitionDetailsPage() {
 
             <CompetitionCoachesSection competitionId={data.id} />
 
-            <CompetitionRoutesSection competitionId={data.id} offers={offers} />
+            <CompetitionRoutesSection
+              competitionId={data.id}
+              offers={offers}
+              enrollSlug={enrollOpen ? data.slug : null}
+            />
 
             {ended && (
               <CompetitionResultsSection
