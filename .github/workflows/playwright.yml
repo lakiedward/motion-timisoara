@@ -155,6 +155,8 @@ jobs:
       run: deno check --no-lock supabase/functions/admin-refund-payment/index.ts && deno test --no-lock supabase/functions/admin-refund-payment/contract.test.ts supabase/functions/stripe-webhook/refunds.test.ts supabase/functions/_shared/subscription-invoice.test.ts
     - name: Check and test admin subscription extension
       run: deno check --no-lock supabase/functions/admin-extend-subscription/index.ts && deno test --no-lock supabase/functions/admin-extend-subscription/contract.test.ts
+    - name: Check and test admin account deactivation with the Auth ban
+      run: deno check --no-lock supabase/functions/admin-set-user-enabled/index.ts && deno test --no-lock supabase/functions/admin-set-user-enabled/contract.test.ts
     - name: Check and test the Stripe webhooks and their setup
       run: deno check --no-lock supabase/functions/stripe-subscription-webhook/index.ts supabase/functions/setup-subscription-webhook/index.ts supabase/functions/stripe-connect-webhook/index.ts && deno test --no-lock supabase/functions/stripe-subscription-webhook/contract.test.ts supabase/functions/_shared/subscription-sync.test.ts supabase/functions/setup-subscription-webhook/contract.test.ts
     - name: Test isolated competition SQL

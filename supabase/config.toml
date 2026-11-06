@@ -147,6 +147,9 @@ verify_jwt = true
 [functions.admin-extend-subscription]
 verify_jwt = true
 
+[functions.admin-set-user-enabled]
+verify_jwt = true
+
 [functions.change-subscription-plan]
 verify_jwt = true
 

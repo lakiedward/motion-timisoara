@@ -72,7 +72,6 @@ const scrieri: [string, () => Promise<unknown>][] = [
     'coach.updateMyCoachProfile',
     () => coach.updateMyCoachProfile({ name: 'A', phone: null, bio: null }),
   ],
-  ['admin.setUserEnabled', () => admin.setUserEnabled('u', false)],
   ['admin.updateSport', () => admin.updateSport('s', 'COD', 'Nume')],
   ['admin.setSportDefaultPhoto', () => admin.setSportDefaultPhoto('s', poza())],
   ['admin.clearSportDefaultPhoto', () => admin.clearSportDefaultPhoto('s')],
@@ -105,7 +104,6 @@ test('account.deleteChild aruncă și pentru o eroare obișnuită a bazei', asyn
 })
 
 const scrieriPeColoaneRestranse: [string, () => Promise<unknown>][] = [
-  ['admin.setUserEnabled', () => admin.setUserEnabled('u', false)],
   ['club.updateClub', () => club.updateClub('c1', {} as Parameters<typeof club.updateClub>[1])],
   ['clubImages.setClubImage', () => clubImages.setClubImage('c1', 'logo', poza())],
   ['clubImages.clearClubImage', () => clubImages.clearClubImage('c1', 'logo')],
