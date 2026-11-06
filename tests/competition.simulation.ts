@@ -382,8 +382,14 @@ for (const viewport of [
     await expect(page.locator(".leaflet-tile-loaded").first()).toBeVisible();
     await expect(page.getByText("Fundalul hărții nu este disponibil momentan")).toHaveCount(0);
     await expect(
-      page.getByRole("link", { name: "Înscrie-te" }),
+      page.getByRole("link", { name: "Înscrie-te", exact: true }),
     ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Înscrie-te la categoria 8–10 ani" }),
+    ).toHaveAttribute(
+      "href",
+      /\/account\/competitions\/concurs-simulat\/register\?categorie=/,
+    );
     await capture(page, info, "public-competition");
     expect(state.errors).toEqual([]);
     expect(state.unexpectedApi).toEqual([]);
