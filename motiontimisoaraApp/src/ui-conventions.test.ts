@@ -31,7 +31,7 @@ import {
  * Plafoanele. Un singur loc, ca schimbarea lor să se vadă în diff.
  * ------------------------------------------------------------------ */
 
-const PLAFON_ECRANE_OARBE = 28
+const PLAFON_ECRANE_OARBE = 0
 const PLAFON_LITERALE_HEX = 1
 const CONTRAST_MINIM = 4.5
 
@@ -79,6 +79,11 @@ test('măsurătoarea recunoaște eroarea destructurată din useQuery', () => {
 
 test('măsurătoarea recunoaște eroarea citită de pe rezultat', () => {
   expect(trateazaEroareaDeCitire('const q = useQuery({ queryKey: [] })\nif (q.isError) return null')).toBe(true)
+})
+
+test('măsurătoarea recunoaște eroarea citită pe o listă de rezultate', () => {
+  const sursa = 'const a = useQuery({ queryKey: [] })\nconst qs = [a]\nconst isError = qs.some((query) => query.isError)'
+  expect(trateazaEroareaDeCitire(sursa)).toBe(true)
 })
 
 test('măsurătoarea NU ia toast.error drept ramură de eroare', () => {

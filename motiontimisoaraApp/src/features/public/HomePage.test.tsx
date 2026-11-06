@@ -156,3 +156,18 @@ test('blocul final cere cont doar vizitatorului nelogat', async () => {
   expect(screen.queryByRole('link', { name: /Creează cont/ })).not.toBeInTheDocument()
   expect(screen.getByRole('link', { name: /Vezi cursurile/ })).toHaveAttribute('href', '/cursuri')
 })
+
+test('testimonialele arată eroarea și se pot reîncărca', async () => {
+  const user = userEvent.setup()
+  testimonials
+    .mockRejectedValueOnce(new Error('retea'))
+    .mockResolvedValueOnce([
+      { id: 't1', quote: 'Copilul abia așteaptă antrenamentul.', author: 'Ana', createdAt: '2026-10-01' },
+      { id: 't2', quote: 'Antrenori atenți și răbdători.', author: 'Mihai', createdAt: '2026-10-02' },
+    ])
+  draw()
+  expect(await screen.findByText('Nu am putut încărca evaluările părinților.')).toBeInTheDocument()
+  const retry = screen.getAllByRole('button', { name: /Reîncearcă/ })
+  await user.click(retry[retry.length - 1])
+  expect(await screen.findByText(/Copilul abia așteaptă antrenamentul/)).toBeInTheDocument()
+})

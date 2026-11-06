@@ -1,11 +1,28 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { getHomeTestimonials } from '@/api/home'
+import { StatusView } from '@/components/ui/status-view'
 
 const MIN_TESTIMONIALS = 2
 
 export function HomeTestimonials() {
-  const { data } = useQuery({ queryKey: ['home', 'testimonials'], queryFn: getHomeTestimonials })
+  const { data, isError, refetch } = useQuery({
+    queryKey: ['home', 'testimonials'],
+    queryFn: getHomeTestimonials,
+  })
+  if (isError) {
+    return (
+      <section aria-label="Părinții spun" className="mx-auto max-w-7xl px-6 py-20 md:py-24">
+        <StatusView
+          state="error"
+          title="Nu am putut încărca evaluările părinților."
+          text="Verifică conexiunea și încearcă din nou."
+          onRetry={() => void refetch()}
+          className="bg-card border"
+        />
+      </section>
+    )
+  }
   if (!data || data.length < MIN_TESTIMONIALS) return null
 
   return (
