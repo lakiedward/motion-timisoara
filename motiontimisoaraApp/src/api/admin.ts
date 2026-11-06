@@ -1,3 +1,4 @@
+import { invokeCheckoutFunction } from '@/api/checkout'
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 
@@ -206,14 +207,13 @@ export async function getAllUsers(): Promise<AdminUser[]> {
   return (data as AdminUser[] | null) ?? []
 }
 
+export type SetUserEnabledResult = { userId: string; enabled: boolean }
+
 export async function setUserEnabled(id: string, enabled: boolean) {
-  const { error } = await supabase
-    .from('profiles')
-    .update({ enabled })
-    .eq('id', id)
-    .select('id')
-    .single()
-  if (error) throw error
+  return invokeCheckoutFunction<SetUserEnabledResult>('admin-set-user-enabled', {
+    userId: id,
+    enabled,
+  })
 }
 
 export {
