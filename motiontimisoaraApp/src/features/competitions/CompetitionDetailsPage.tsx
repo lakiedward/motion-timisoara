@@ -16,7 +16,10 @@ import { DetailBackLink } from '@/features/public/components/DetailBackLink'
 import { useDocumentTitle } from '@/lib/page-title'
 import { CompetitionCoachesSection } from './detail/CompetitionCoachesSection'
 import { CompetitionResultsSection } from './detail/CompetitionResultsSection'
-import { CompetitionRoutesSection } from './detail/CompetitionRoutesSection'
+import {
+  COMPETITION_ROUTES_ANCHOR,
+  CompetitionRoutesSection,
+} from './detail/CompetitionRoutesSection'
 
 const HERO_SECTION = 'motion-react:page:/concursuri/:slug:section:toata-pagina'
 const SCHEDULE_SECTION = 'manual:section:program-si-locatie:f5d67447-2bfe-4917-9325-e0fd16bbe201'
@@ -160,7 +163,7 @@ export default function CompetitionDetailsPage() {
 
           <aside className="lg:sticky lg:top-24 lg:self-start">
             <CompetitionEnrollCard
-              slug={data.slug}
+              categoriesAnchor={COMPETITION_ROUTES_ANCHOR}
               deadlineAt={data.registrationDeadlineAt}
               prices={offers.data?.categories.map((category) => category.price_bani) ?? []}
               loading={offers.isLoading}

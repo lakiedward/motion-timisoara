@@ -1,16 +1,14 @@
-import { Link } from 'react-router-dom'
-
 import { formatCompetitionDateTime } from '@/lib/competition-schedule'
 import { formatRonOffer } from '@/lib/money'
 
 export function CompetitionEnrollCard({
-  slug,
+  categoriesAnchor,
   deadlineAt,
   prices,
   loading,
   now,
 }: {
-  slug: string
+  categoriesAnchor: string
   deadlineAt: string | null
   prices: number[]
   loading: boolean
@@ -47,12 +45,9 @@ export function CompetitionEnrollCard({
           {message}
         </p>
       ) : (
-        <Link
-          to={`/account/competitions/${slug}/register`}
-          className="btn-cta btn-cta--primary mt-5 w-full"
-        >
-          Înscrie-te
-        </Link>
+        <a href={`#${categoriesAnchor}`} className="btn-cta btn-cta--primary mt-5 w-full">
+          Alege categoria
+        </a>
       )}
     </div>
   )

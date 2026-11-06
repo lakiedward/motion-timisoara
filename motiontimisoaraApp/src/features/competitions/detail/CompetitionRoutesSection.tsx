@@ -13,6 +13,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatRonOffer } from '@/lib/money'
 import { CompetitionRouteMap } from '../CompetitionRouteMap'
 
+export const COMPETITION_ROUTES_ANCHOR = 'trasee-si-categorii'
+
 export const COMPETITION_ROUTES_SECTION =
   'manual:section:trasee-si-categorii:270d30f3-04e5-4dcc-866c-7eabb7eb7c3d'
 
@@ -32,9 +34,10 @@ export function CompetitionRoutesSection({
 
   return (
     <section
+      id={COMPETITION_ROUTES_ANCHOR}
       data-section={COMPETITION_ROUTES_SECTION}
       aria-labelledby="competition-routes-title"
-      className="mt-8"
+      className="mt-8 scroll-mt-24"
     >
       <h2 id="competition-routes-title" className="font-display mb-3 text-xl font-bold">
         Trasee și categorii
