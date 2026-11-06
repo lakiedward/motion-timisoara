@@ -98,7 +98,7 @@ beforeEach(() => {
 
 afterEach(() => vi.unstubAllGlobals())
 
-test('category intervals are inclusive and cannot overlap even across different routes', () => {
+test('category intervals are inclusive and cannot overlap on the same route', () => {
   const offers: CompetitionOffers = {
     routes: [{ ...route, gpx_storage_path: `${competitionId}/routes/${routeId}/${fileId}.gpx` }],
     categories: [
@@ -128,6 +128,23 @@ test('category intervals are inclusive and cannot overlap even across different 
       offers,
     ).age_from,
   ).toBe(10)
+  const otherRoute = {
+    ...route,
+    id: 'route-2',
+    gpx_storage_path: `${competitionId}/routes/route-2/${fileId}.gpx`,
+  }
+  expect(
+    validateCompetitionCategory(
+      {
+        name: 'Copii mici lung',
+        route_id: otherRoute.id,
+        age_from: 6,
+        age_to: 9,
+        price_bani: 8000,
+      },
+      { ...offers, routes: [...offers.routes, otherRoute] },
+    ).route_id,
+  ).toBe(otherRoute.id)
   expect(() =>
     validateCompetitionCategory(
       { name: 'Copii mari', route_id: routeId, age_from: 10, age_to: 12, price_bani: 0 },

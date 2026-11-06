@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 
 import { childAge, getMyChildren } from '@/api/account'
 import { EnrollmentRequestError, type BillingDetails, type PaymentMethod } from '@/api/checkout'
-import type { CompetitionCategory } from '@/api/competition/competition-offers'
+import type { CompetitionCategory, CompetitionRoute } from '@/api/competition/competition-offers'
 import type { PublicCompetition } from '@/api/competition/competitions'
 import {
   createCompetitionRegistration,
@@ -33,7 +33,11 @@ import { usePaymentAdapter } from '@/features/account/checkout/usePaymentAdapter
 import { useCompetitionClock } from '../useCompetitionClock'
 import { Checkbox } from '@/components/ui/checkbox'
 
-type Props = { competition: PublicCompetition; categories: CompetitionCategory[] }
+type Props = {
+  competition: PublicCompetition
+  categories: CompetitionCategory[]
+  routes: CompetitionRoute[]
+}
 
 function selectionKey(
   selections: CompetitionSelection[],
@@ -63,7 +67,7 @@ function validBirthDate(value: string): boolean {
   )
 }
 
-export function CompetitionRegistrationForm({ competition, categories }: Props) {
+export function CompetitionRegistrationForm({ competition, categories, routes }: Props) {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const queryClient = useQueryClient()
@@ -75,10 +79,22 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
   const [includeSelfChoice, setIncludeSelf] = useState<boolean | null>(null)
   const [selfBirthDate, setSelfBirthDate] = useState('')
   const [selfCategoryChoice, setSelfCategoryId] = useState<string | null>(null)
-  const categoryOptions = categories.map((category) => ({
-    value: category.id,
-    label: `${category.name} · ${category.age_from}–${category.age_to} ani · ${formatRonOffer(category.price_bani)}`,
-  }))
+  const categoryOptions = categories.map((category) => {
+    const route = routes.find((item) => item.id === category.route_id)
+    const range = `${category.age_from}–${category.age_to} ani · ${formatRonOffer(category.price_bani)}`
+    return {
+      value: category.id,
+      label:
+        routes.length > 1 && route
+          ? `${route.name} · ${category.name} · ${range}`
+          : `${category.name} · ${range}`,
+    }
+  })
+  function categoryTitle(categoryId: string) {
+    const category = categories.find((item) => item.id === categoryId)
+    const route = routes.find((item) => item.id === category?.route_id)
+    return routes.length > 1 && route ? `${route.name} · ${category?.name}` : category?.name
+  }
   const [acceptedKey, setAcceptedKey] = useState<string | null>(null)
   const [method, setMethod] = useState<PaymentMethod>('CARD')
   const [billing, setBilling] = useState<BillingDetails>({
@@ -463,11 +479,7 @@ export function CompetitionRegistrationForm({ competition, categories }: Props) 
                           {'childId' in selection
                             ? children.data?.find((child) => child.id === selection.childId)?.name
                             : user.name}{' '}
-                          ·{' '}
-                          {
-                            categories.find((category) => category.id === selection.categoryId)
-                              ?.name
-                          }
+                          · {categoryTitle(selection.categoryId)}
                         </span>
                         <strong>
                           {verdictFor(participantKey(selection))?.amount === undefined

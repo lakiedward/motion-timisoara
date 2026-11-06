@@ -103,7 +103,7 @@ export function competitionOfferErrorMessage(error: unknown): string {
     return error.message
   }
   if (error && typeof error === 'object' && 'code' in error && error.code === '23P01') {
-    return 'Intervalul de vârstă se suprapune cu altă categorie.'
+    return 'Intervalul de vârstă se suprapune cu altă categorie a acestui traseu.'
   }
   if (error && typeof error === 'object' && 'code' in error && error.code === '23503') {
     return 'Înregistrarea este folosită în altă parte și nu poate fi ștearsă.'
@@ -153,11 +153,12 @@ export function validateCompetitionCategory(
     offers.categories.some(
       (category) =>
         category.id !== editingId &&
+        category.route_id === input.route_id &&
         input.age_from <= category.age_to &&
         category.age_from <= input.age_to,
     )
   ) {
-    throw new Error('Intervalul de vârstă se suprapune cu altă categorie.')
+    throw new Error('Intervalul de vârstă se suprapune cu altă categorie a acestui traseu.')
   }
   return { ...input, name }
 }
