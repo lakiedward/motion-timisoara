@@ -151,3 +151,54 @@ test('eroarea oferă reîncercare', async () => {
   await user.click(await screen.findByRole('button', { name: 'Reîncearcă' }))
   await waitFor(() => expect(screen.getByText('Niciun concurs încă.')).toBeInTheDocument())
 })
+
+test('adminul: ierarhie H2 → H3 organizator → H4 concurs și aria-controls spre un panou existent', async () => {
+  const user = userEvent.setup()
+  owner.value = { role: 'ADMIN', clubId: null, coachUserId: null }
+  mocked.mockResolvedValue([
+    item({}),
+    item({
+      id: 'k3',
+      title: 'Cupa Anei',
+      club_id: null,
+      coach_id: 'u1',
+      organizer: { key: 'coach:u1', kind: 'coach', name: 'Ana Pop' },
+    }),
+  ])
+  deseneaza('/admin/competitions')
+  await screen.findByRole('region', { name: 'Club Delfin' })
+  expect(screen.getByRole('heading', { level: 2, name: /Cluburi · 1/ })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { level: 3, name: /Club Delfin/ })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { level: 4, name: 'Cupa club' })).toBeInTheDocument()
+  const closed = screen.getByRole('button', { name: /Ana Pop/ })
+  expect(closed).toHaveAttribute('aria-expanded', 'true')
+  await user.click(closed)
+  expect(closed).toHaveAttribute('aria-expanded', 'false')
+  const panel = document.getElementById(closed.getAttribute('aria-controls') ?? '')
+  expect(panel).not.toBeNull()
+  expect(panel).not.toBeVisible()
+  expect(screen.queryByText('Cupa Anei')).not.toBeInTheDocument()
+})
+
+test('contorul „N din M” e o regiune role=status prezentă și înainte de căutare', async () => {
+  const user = userEvent.setup()
+  owner.value = { role: 'ADMIN', clubId: null, coachUserId: null }
+  mocked.mockResolvedValue([
+    item({}),
+    item({ id: 'k2', title: 'Crosul toamnei', location_text: 'Arad' }),
+  ])
+  deseneaza('/admin/competitions')
+  await screen.findByRole('region', { name: 'Club Delfin' })
+  expect(screen.getByRole('status')).toBeEmptyDOMElement()
+  await user.type(screen.getByRole('searchbox'), 'cros')
+  expect(screen.getByRole('status')).toHaveTextContent('1 din 2 concursuri')
+})
+
+test('„Fără trasee” și „Fără categorii” sunt evidențiate', async () => {
+  mocked.mockResolvedValue([item({ routesCount: 0, prices: [] })])
+  deseneaza()
+  const routes = (await screen.findByText('Fără trasee')).closest('li')
+  const categories = screen.getByText('Fără categorii').closest('li')
+  expect(routes).toHaveClass('text-highlight-ink')
+  expect(categories).toHaveClass('text-highlight-ink')
+})

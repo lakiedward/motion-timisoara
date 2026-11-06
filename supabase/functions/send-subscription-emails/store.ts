@@ -21,7 +21,7 @@ export function supabaseEmailStore(db: SupabaseClient): EmailStore {
 
     async subscriptions() {
       const { data, error } = await db.from("subscriptions").select(
-        "id,subscriber_type,coach_user_id,club_id,plan_code,status,trial_end,current_period_end,past_due_since,stripe_subscription_id",
+        "id,subscriber_type,coach_user_id,club_id,plan_code,status,trial_end,current_period_end,past_due_since,cancel_at_period_end,stripe_subscription_id,updated_at",
       );
       fail("subscriptions", error);
       return (data ?? []) as EmailSubscription[];

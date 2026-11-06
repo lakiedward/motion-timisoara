@@ -124,11 +124,11 @@ export default function CompetitionsListPage({ baza }: { baza: CompetitionPortal
             onStatus={(status) => set({ status })}
             onSport={(o) => set({ organizer: o as CompetitionFilters['organizer'] })}
           />
-          {searching && visible.length > 0 && (
-            <p role="status" className="text-muted-foreground mb-3 text-sm">
-              {visible.length} din {countCompetitions(items.length)}
-            </p>
-          )}
+          <p role="status" className="text-muted-foreground mb-3 text-sm empty:hidden">
+            {searching && visible.length > 0
+              ? `${visible.length} din ${countCompetitions(items.length)}`
+              : null}
+          </p>
           {!visible.length ? (
             <StatusView
               state="empty"
