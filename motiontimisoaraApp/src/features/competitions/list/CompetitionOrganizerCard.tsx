@@ -38,7 +38,7 @@ export function CompetitionOrganizerCard({
           aria-expanded={open}
           aria-controls={panelId}
           onClick={() => onOpenChange(!open)}
-          className="hover:bg-accent flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left transition-colors md:px-5"
+          className="hover:bg-accent flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left transition-colors focus-visible:-outline-offset-2 md:px-5"
         >
           <span
             className={cn(
@@ -75,26 +75,28 @@ export function CompetitionOrganizerCard({
         </button>
       </h3>
 
-      {open && (
-        <div id={panelId}>
-          <ul className="divide-y border-t">
-            {shown.map((c) => (
-              <CompetitionRow key={c.id} item={c} baza={baza} />
-            ))}
-          </ul>
-          {hidden > 0 && (
-            <div className="border-t px-4 py-2 md:pl-5">
-              <button
-                type="button"
-                onClick={onExpand}
-                className="text-primary inline-flex min-h-touch-target items-center text-sm font-semibold lg:min-h-8"
-              >
-                Vezi toate cele {countCompetitions(group.items.length)}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      <div id={panelId} hidden={!open}>
+        {open && (
+          <>
+            <ul className="divide-y border-t">
+              {shown.map((c) => (
+                <CompetitionRow key={c.id} item={c} baza={baza} titleAs="h4" />
+              ))}
+            </ul>
+            {hidden > 0 && (
+              <div className="border-t px-4 py-2 md:pl-5">
+                <button
+                  type="button"
+                  onClick={onExpand}
+                  className="text-primary inline-flex min-h-touch-target items-center text-sm font-semibold lg:min-h-8"
+                >
+                  Vezi toate cele {countCompetitions(group.items.length)}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </section>
   )
 }
