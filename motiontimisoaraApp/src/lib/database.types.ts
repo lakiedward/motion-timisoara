@@ -3358,6 +3358,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "subscriptions_checkout_plan_fk"
+            columns: ["checkout_plan_code", "subscriber_type"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["code", "subscriber_type"]
+          },
+          {
             foreignKeyName: "subscriptions_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: true
@@ -3853,6 +3860,10 @@ export type Database = {
             Args: { "": Database["public"]["Tables"]["courses"]["Row"] }
             Returns: boolean
           }
+      hold_club_checkout_plan: {
+        Args: { p_club_id: string; p_expires_at: string; p_plan_code: string }
+        Returns: number
+      }
       join_club_by_invitation: { Args: { p_code: string }; Returns: Json }
       mark_parent_announcements_seen: {
         Args: { p_as_of: string; p_expected_user_id: string }
