@@ -36,7 +36,12 @@ function CompetitionStats({ item }: { item: CompetitionListItem }) {
         <Users aria-hidden="true" className="size-4" />
         {plural(item.registeredCount, 'înscris', 'înscriși')}
       </li>
-      <li className="inline-flex items-center gap-1">
+      <li
+        className={cn(
+          'inline-flex items-center gap-1',
+          item.routesCount === 0 && 'text-highlight-ink',
+        )}
+      >
         <Route aria-hidden="true" className="size-4" />
         {item.routesCount === 0 ? 'Fără trasee' : plural(item.routesCount, 'traseu', 'trasee')}
       </li>
@@ -58,10 +63,12 @@ function CompetitionStats({ item }: { item: CompetitionListItem }) {
 export function CompetitionRow({
   item,
   baza,
+  titleAs: Title = 'h3',
 }: {
   key?: string
   item: CompetitionListItem
   baza: string
+  titleAs?: 'h3' | 'h4'
 }) {
   const price = competitionPrice(item)
   return (
@@ -74,7 +81,7 @@ export function CompetitionRow({
       <div className="min-w-0 flex-1 space-y-2">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <h3 className="font-display min-w-0 font-semibold wrap-anywhere">{item.title}</h3>
+            <Title className="font-display min-w-0 font-semibold wrap-anywhere">{item.title}</Title>
             <CompetitionBadges item={item} />
           </div>
           {price && <span className="font-display shrink-0 font-bold tabular-nums">{price}</span>}

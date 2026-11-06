@@ -25,7 +25,12 @@ import {
   webPushPermission,
 } from './web'
 
-export { needsHomeScreenForPush, promptWebPushPermission, supportsWebPush } from './web'
+export {
+  needsHomeScreenForPush,
+  promptWebPushPermission,
+  supportsWebPush,
+  webPushPermissionGranted,
+} from './web'
 
 export function supportsPush() {
   return supportsNativePush() || supportsWebPush()
