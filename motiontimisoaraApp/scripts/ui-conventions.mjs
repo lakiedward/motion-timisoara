@@ -92,6 +92,8 @@ export function trateazaEroareaDeCitire(sursa) {
   for (const potrivire of legari) {
     const nume = potrivire[1].replace(/[$]/g, '\\$&')
     if (new RegExp(`\\b${nume}\\.(isError|error)\\b`).test(sursa)) return true
+    const inLista = new RegExp(`\\[[^\\]]*\\b${nume}\\b[^\\]]*\\]`).test(sursa)
+    if (inLista && /\(\s*([A-Za-z_$][\w$]*)\s*\)\s*=>\s*\1\.isError\b/.test(sursa)) return true
   }
   return false
 }
