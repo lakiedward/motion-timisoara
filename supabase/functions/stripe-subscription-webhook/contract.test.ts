@@ -36,6 +36,7 @@ function baseRow(overrides: Partial<SubscriptionRow> = {}): SubscriptionRow {
 function world(
   rows: SubscriptionRow[] = [baseRow()],
   recordInvoice?: (invoice: Stripe.Invoice, type: string, owner: SubscriptionRow | null) => Promise<void>,
+  invoice?: (id: string) => Promise<Stripe.Invoice>,
 ) {
   const events = new Map<string, { type: string; processed: boolean; note: string | null }>();
   const writes: { id: string; patch: SubscriptionPatch }[] = [];
@@ -122,6 +123,7 @@ function world(
       return Promise.resolve({ ...stripe });
     },
     recordInvoice,
+    invoice,
   });
 
   return {
@@ -163,6 +165,12 @@ const subscriptionEvent = (id: string, type: string, status = "trialing") =>
   event(id, `customer.subscription.${type}`, { id: "sub_1", customer: "cus_1", status, metadata });
 const invoiceEvent = (id: string, type: string) =>
   event(id, type, { id: `in_${id}`, subscription: "sub_1", customer: "cus_1", subscription_details: { metadata } });
+const newShapeInvoiceEvent = (id: string, type: string) =>
+  event(id, type, {
+    id: `in_${id}`,
+    customer: "cus_1",
+    parent: { type: "subscription_details", subscription_details: { subscription: "sub_1", metadata } },
+  });
 
 function send(handler: (req: Request) => Promise<Response>, body: unknown, signature: string | null = "valid") {
   return handler(new Request("http://local/stripe-subscription-webhook", {
@@ -390,4 +398,58 @@ Deno.test("an invoice history failure asks Stripe to retry the event", async () 
   w.setStripe({ status: "active", current_period_end: T0 + 30 * DAY });
   assertEquals((await send(w.handler, invoiceEvent("evt_paid", "invoice.paid"))).status, 500);
   assertEquals(w.events.get("evt_paid")?.processed, false);
+});
+
+Deno.test("invoice events in the newer Stripe shape still reach the subscription row", async () => {
+  const recorded: [string, string | null][] = [];
+  const w = world([baseRow({ status: "active", stripe_subscription_id: "sub_1", plan_code: "COACH" })], (invoice, _type, owner) => {
+    recorded.push([invoice.id, owner?.id ?? null]);
+    return Promise.resolve();
+  });
+  w.setStripe({ status: "past_due", current_period_end: T0 + 30 * DAY, latest_invoice_at: T0 });
+  const response = await send(w.handler, newShapeInvoiceEvent("evt_fail", "invoice.payment_failed"));
+  assertEquals(response.status, 200);
+  assertEquals((await response.json()).outcome, "updated");
+  assertEquals(w.rows[0].status, "past_due");
+  assertEquals(w.events.get("evt_fail")?.processed, true);
+  assertEquals(recorded, [["in_evt_fail", "row_coach"]]);
+});
+
+Deno.test("invoice events are re-read from Stripe so the history gets the pinned API shape", async () => {
+  const recorded: Stripe.Invoice[] = [];
+  const reads: string[] = [];
+  const w = world(
+    [baseRow({ status: "active", stripe_subscription_id: "sub_1", plan_code: "COACH" })],
+    (invoice) => {
+      recorded.push(invoice);
+      return Promise.resolve();
+    },
+    (id) => {
+      reads.push(id);
+      return Promise.resolve({
+        id,
+        subscription: "sub_1",
+        customer: "cus_1",
+        charge: "ch_1",
+        subscription_details: { metadata },
+      } as unknown as Stripe.Invoice);
+    },
+  );
+  w.setStripe({ status: "active", current_period_end: T0 + 30 * DAY });
+  const event = newShapeInvoiceEvent("evt_paid", "invoice.paid");
+  (event.data.object as Record<string, unknown>).parent = null;
+  assertEquals((await send(w.handler, event)).status, 200);
+  assertEquals(reads, ["in_evt_paid"]);
+  assertEquals(recorded.map((invoice) => [invoice.id, invoice.charge]), [["in_evt_paid", "ch_1"]]);
+});
+
+Deno.test("an invoice that cannot be read from Stripe is retried and writes nothing", async () => {
+  const w = world(
+    [baseRow({ status: "active", stripe_subscription_id: "sub_1", plan_code: "COACH" })],
+    () => Promise.reject(new Error("must not record")),
+    () => Promise.reject(new Error("stripe down")),
+  );
+  assertEquals((await send(w.handler, invoiceEvent("evt_paid", "invoice.paid"))).status, 500);
+  assertEquals(w.events.size, 0);
+  assertEquals(w.writes.length, 0);
 });

@@ -36,7 +36,9 @@ function sub(patch: Partial<EmailSubscription>): EmailSubscription {
     trial_end: null,
     current_period_end: null,
     past_due_since: null,
+    cancel_at_period_end: false,
     stripe_subscription_id: null,
+    updated_at: day(-20),
     ...patch,
   };
 }
@@ -89,6 +91,32 @@ Deno.test("subscription ended: canceled, past grace, trial without card, expired
     [sub({ status: "canceled", current_period_end: day(-1) })], [], NO_LAUNCH, NOW, new Set(["sub-1"]),
   );
   assertEquals(ended.length, 0, "no second end email within the cooldown");
+});
+
+Deno.test("cancellation is confirmed once, while access still runs, and silences trial reminders", () => {
+  const paidCanceled = sub({
+    status: "canceled",
+    current_period_end: day(20),
+    cancel_at_period_end: true,
+    stripe_subscription_id: "sub_X",
+    updated_at: day(-0.1),
+  });
+  assertEquals(kinds([paidCanceled]), ["CANCELLATION_CONFIRMED"], "paid subscription canceled at period end");
+  const [first] = dueSubscriptionEmails([paidCanceled], [], NO_LAUNCH, NOW);
+  assertEquals(first.dedupeKey, `canceled:sub-1:${day(20).slice(0, 10)}`, "one email per access end");
+  assertEquals(first.date, day(20), "the email names the last day of access");
+
+  const trialCanceled = sub({
+    trial_end: day(10),
+    current_period_end: day(10),
+    cancel_at_period_end: true,
+    stripe_subscription_id: "sub_X",
+    updated_at: day(-1),
+  });
+  assertEquals(kinds([trialCanceled]), ["CANCELLATION_CONFIRMED"], "trial with a card canceled: no charge reminder");
+  assertEquals(kinds([{ ...trialCanceled, updated_at: day(-4) }]), [], "old cancellation from before the emails");
+  assertEquals(kinds([{ ...paidCanceled, current_period_end: day(-1) }]), ["SUBSCRIPTION_ENDED"], "after the end only the end email");
+  assertEquals(kinds([sub({ status: "canceled", current_period_end: day(20), updated_at: day(-1) })]), [], "no Stripe subscription");
 });
 
 Deno.test("invoices: paid confirmation and failed payment, recent only", () => {
@@ -152,7 +180,12 @@ Deno.test("templates are Romanian, link to the website and escape names", () => 
 
   const ended = renderSubscriptionEmail({ ...baseContext, kind: "SUBSCRIPTION_ENDED" });
   assertEquals(ended.subject, "Abonamentul tău Motion România s-a încheiat", "ended subject");
-  assertEquals(previewEmails("https://motionromania.ro", NOW, "COACH").length, 5, "five previews");
+  const canceled = renderSubscriptionEmail({ ...baseContext, kind: "CANCELLATION_CONFIRMED", date: "2026-12-08T10:00:00Z" });
+  assertEquals(canceled.subject, "Am înregistrat anularea abonamentului", "cancellation subject");
+  assert(canceled.text.includes("Nu se mai face nicio plată."), "no further charge");
+  assert(canceled.text.includes("Până pe 8 decembrie 2026"), "access end date");
+  assert(canceled.html.includes('href="https://motionromania.ro/club/abonament"'), "cancellation link");
+  assertEquals(previewEmails("https://motionromania.ro", NOW, "COACH").length, 6, "six previews");
 });
 
 function memoryStore(subscriptions: EmailSubscription[], email: string | null) {

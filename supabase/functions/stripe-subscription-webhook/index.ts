@@ -13,6 +13,7 @@ serve(subscriptionWebhookHandler({
     if (!secret) throw new Error("Subscription webhook is not configured");
     return await getStripe().webhooks.constructEventAsync(body, signature, secret);
   },
+  invoice: (id) => getStripe().invoices.retrieve(id),
   subscription: async (id) =>
     toStripeState(await getStripe().subscriptions.retrieve(id, { expand: ["latest_invoice"] })),
   recordInvoice: async (invoice, eventType, owner) => {
