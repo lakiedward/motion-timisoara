@@ -77,6 +77,22 @@ async function countClubCoaches(clubId: string): Promise<number> {
   return count;
 }
 
+async function holdClubCheckoutPlan(
+  clubId: string,
+  planCode: string,
+  expiresAt: string,
+): Promise<number> {
+  const { data, error } = await supabaseAdmin.rpc("hold_club_checkout_plan", {
+    p_club_id: clubId,
+    p_plan_code: planCode,
+    p_expires_at: expiresAt,
+  });
+  if (error || typeof data !== "number") {
+    throw new Error("Checkout plan hold failed");
+  }
+  return data;
+}
+
 export function subscriptionCheckoutDependencies(): SubscriptionCheckoutDependencies {
   return {
     ...lookup,
@@ -93,7 +109,7 @@ export function subscriptionCheckoutDependencies(): SubscriptionCheckoutDependen
       if (error || !data) throw new Error("Subscription settings missing");
       return data as SubscriptionSettings;
     },
-    countClubCoaches,
+    holdClubCheckoutPlan,
     createCustomer: (params, idempotencyKey) =>
       stripeCall(async () =>
         (await stripe().customers.create(params, { idempotencyKey })).id

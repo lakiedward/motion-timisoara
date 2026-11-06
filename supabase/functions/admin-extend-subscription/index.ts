@@ -1,12 +1,12 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { getUser, getUserRole, supabaseAdmin } from "../_shared/supabase.ts";
+import { getActiveUserRole, getUser, supabaseAdmin } from "../_shared/supabase.ts";
 import { getStripe } from "../_shared/stripe.ts";
 import { withCors } from "../_shared/cors.ts";
 import { adminExtendHandler, ExtensionRpcError, type ExtensionPlan } from "./handler.ts";
 
 serve(withCors(adminExtendHandler({
   getUser,
-  getUserRole,
+  getUserRole: getActiveUserRole,
   beginExtension: async (subscriptionId, days) => {
     const { data, error } = await supabaseAdmin.rpc("begin_subscription_extension", {
       p_subscription_id: subscriptionId,

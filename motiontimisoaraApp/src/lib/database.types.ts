@@ -3295,6 +3295,8 @@ export type Database = {
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean
+          checkout_expires_at: string | null
+          checkout_plan_code: string | null
           club_id: string | null
           coach_user_id: string | null
           created_at: string
@@ -3314,6 +3316,8 @@ export type Database = {
         }
         Insert: {
           cancel_at_period_end?: boolean
+          checkout_expires_at?: string | null
+          checkout_plan_code?: string | null
           club_id?: string | null
           coach_user_id?: string | null
           created_at?: string
@@ -3333,6 +3337,8 @@ export type Database = {
         }
         Update: {
           cancel_at_period_end?: boolean
+          checkout_expires_at?: string | null
+          checkout_plan_code?: string | null
           club_id?: string | null
           coach_user_id?: string | null
           created_at?: string
@@ -3351,6 +3357,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "subscriptions_checkout_plan_fk"
+            columns: ["checkout_plan_code", "subscriber_type"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["code", "subscriber_type"]
+          },
           {
             foreignKeyName: "subscriptions_club_id_fkey"
             columns: ["club_id"]
@@ -3847,6 +3860,10 @@ export type Database = {
             Args: { "": Database["public"]["Tables"]["courses"]["Row"] }
             Returns: boolean
           }
+      hold_club_checkout_plan: {
+        Args: { p_club_id: string; p_expires_at: string; p_plan_code: string }
+        Returns: number
+      }
       join_club_by_invitation: { Args: { p_code: string }; Returns: Json }
       mark_parent_announcements_seen: {
         Args: { p_as_of: string; p_expected_user_id: string }
@@ -3896,6 +3913,7 @@ export type Database = {
       }
       my_club_coach_user_ids: { Args: never; Returns: string[] }
       my_club_ids: { Args: never; Returns: string[] }
+      my_covering_club_ids: { Args: never; Returns: string[] }
       my_profile: {
         Args: never
         Returns: {
