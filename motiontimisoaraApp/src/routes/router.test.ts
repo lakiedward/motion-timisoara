@@ -117,3 +117,27 @@ test(
   },
   TIMEOUT_REIMPORT_MS,
 )
+
+test(
+  'fiecare rută din panoul de administrare are titlu propriu de filă',
+  async () => {
+    vi.resetModules()
+    const { router } = await import('./router')
+    type RutaCuTitlu = Ruta & { handle?: { pageTitle?: string } }
+    const adminRoutes: RutaCuTitlu[] = []
+    const colecteaza = (rute: RutaCuTitlu[]) =>
+      rute.forEach((r) => {
+        if (r.path?.startsWith('/admin')) adminRoutes.push(r)
+        colecteaza((r.children ?? []) as RutaCuTitlu[])
+      })
+    colecteaza(router.routes as RutaCuTitlu[])
+    expect(adminRoutes.length).toBeGreaterThan(20)
+    const fara = adminRoutes.filter((r) => !r.handle?.pageTitle).map((r) => r.path)
+    expect(fara).toEqual([])
+    const titluri = Object.fromEntries(adminRoutes.map((r) => [r.path, r.handle?.pageTitle]))
+    expect(titluri['/admin/subscriptions']).toBe('Abonamente')
+    expect(titluri['/admin/payments']).toBe('Plăți')
+    expect(titluri['/admin/courses']).toBe('Cursuri')
+  },
+  TIMEOUT_REIMPORT_MS,
+)

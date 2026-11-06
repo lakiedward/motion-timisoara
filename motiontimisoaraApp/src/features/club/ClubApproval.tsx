@@ -9,6 +9,17 @@ import { StatusView } from '@/components/ui/status-view'
 export function ClubApprovalGate() {
   const clubQuery = useQuery({ queryKey: ['my-club'], queryFn: getMyClub, retry: false })
   if (clubQuery.isPending) return <StatusView state="loading" title="Se încarcă clubul" />
+  if (clubQuery.isError) {
+    return (
+      <StatusView
+        state="error"
+        title="Nu am putut încărca clubul."
+        text="Verifică conexiunea și încearcă din nou."
+        onRetry={() => void clubQuery.refetch()}
+        retrying={clubQuery.isRefetching}
+      />
+    )
+  }
   const club = clubQuery.data
   if (club && !club.approved_at) return <ClubPendingScreen clubName={club.name} />
   return <Outlet />
