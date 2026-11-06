@@ -1,4 +1,5 @@
 import { vi } from 'vitest'
+import { toast } from 'sonner'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -42,4 +43,5 @@ test('confirmarea cash cere alegerea explicită a sumei încasate', async () => 
   await waitFor(() =>
     expect(confirmCompetitionCashPayment).toHaveBeenCalledWith('payment-1', expect.anything()),
   )
+  expect(toast.success).toHaveBeenCalledWith('Încasarea cash a fost confirmată.')
 })
