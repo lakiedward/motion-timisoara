@@ -117,6 +117,20 @@ function content(context: SubscriptionEmailContext): Content {
         cta: "Vezi abonamentul",
         extraLink: invoiceLink,
       };
+    case "CANCELLATION_CONFIRMED":
+      return {
+        subject: "Am înregistrat anularea abonamentului",
+        title: "Abonamentul a fost anulat",
+        paragraphs: [
+          `Am înregistrat anularea pentru ${plan}. Nu se mai face nicio plată.`,
+          date
+            ? `Până pe ${date}, ${offers} rămân vizibile pentru părinți și primesc înscrieri. După această dată nu mai apar, dar datele și ofertele rămân salvate.`
+            : `Până la finalul perioadei plătite, ${offers} rămân vizibile pentru părinți și primesc înscrieri.`,
+          "Te-ai răzgândit? Poți reactiva abonamentul din pagina Abonament, cu „Gestionează abonamentul”, înainte de această dată.",
+        ],
+        cta: "Vezi abonamentul",
+        extraLink: null,
+      };
     case "SUBSCRIPTION_ENDED":
       return {
         subject: "Abonamentul tău Motion România s-a încheiat",
