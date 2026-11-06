@@ -22,7 +22,8 @@ CREATE SCHEMA IF NOT EXISTS private;
 GRANT USAGE ON SCHEMA private TO service_role;
 
 CREATE TABLE public.profiles (
-    id UUID PRIMARY KEY, role TEXT NOT NULL, name TEXT, email TEXT, deleted_at TIMESTAMPTZ
+    id UUID PRIMARY KEY, role TEXT NOT NULL, name TEXT, email TEXT, deleted_at TIMESTAMPTZ,
+    enabled BOOLEAN NOT NULL DEFAULT true
 );
 CREATE OR REPLACE FUNCTION public.get_my_role()
 RETURNS TEXT
@@ -67,6 +68,7 @@ GRANT UPDATE ON public.payments, public.enrollments TO service_role;
 
 \i /tmp/migrations/00119_admin_payments_refunds.sql
 \i /tmp/migrations/00120_admin_payments_receiver.sql
+\i /tmp/migrations/00124_active_admin_guards.sql
 
 INSERT INTO public.profiles (id, role, name, email) VALUES
     ('00000000-0000-0000-0000-0000000000a1', 'ADMIN', 'Laki Admin', 'admin@example.test'),
@@ -284,6 +286,25 @@ DO $$
 BEGIN
     PERFORM pg_temp.expect_error($q$SELECT * FROM public.get_admin_payments('2026-11-01', '2026-11-05')$q$);
     PERFORM pg_temp.expect_error($q$SELECT * FROM public.payment_refunds$q$);
+END;
+$$;
+RESET ROLE;
+
+UPDATE public.profiles SET enabled = false WHERE id = '00000000-0000-0000-0000-0000000000a1';
+SET LOCAL ROLE authenticated;
+DO $$
+BEGIN
+    PERFORM set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000a1', true);
+    PERFORM pg_temp.expect_error($q$SELECT * FROM public.get_admin_payments('2026-11-01', '2026-11-05')$q$, '42501');
+END;
+$$;
+RESET ROLE;
+UPDATE public.profiles SET enabled = true, deleted_at = now() WHERE id = '00000000-0000-0000-0000-0000000000a1';
+SET LOCAL ROLE authenticated;
+DO $$
+BEGIN
+    PERFORM set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000a1', true);
+    PERFORM pg_temp.expect_error($q$SELECT * FROM public.get_admin_payments('2026-11-01', '2026-11-05')$q$, '42501');
 END;
 $$;
 RESET ROLE;

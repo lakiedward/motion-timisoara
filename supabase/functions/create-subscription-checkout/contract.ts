@@ -53,7 +53,11 @@ export type OpenCheckoutSession = {
 export type SubscriptionCheckoutDependencies = BillingLookup & {
   findPlan: (code: string) => Promise<SubscriptionPlan | null>;
   getSettings: () => Promise<SubscriptionSettings>;
-  countClubCoaches: (clubId: string) => Promise<number>;
+  holdClubCheckoutPlan: (
+    clubId: string,
+    planCode: string,
+    expiresAt: string,
+  ) => Promise<number>;
   createCustomer: (
     params: CheckoutCustomerParams,
     idempotencyKey: string,
@@ -126,9 +130,15 @@ export function subscriptionCheckoutHandler(
         return billingFailure("ALREADY_SUBSCRIBED");
       }
 
-      if (subscriber.type === "CLUB" && plan.coach_limit !== null) {
-        const coachCount = await dependencies.countClubCoaches(subscriber.id);
-        if (coachCount > plan.coach_limit) {
+      const now = dependencies.now();
+      const expiresAt = Math.floor(now / 60_000) * 60 + 45 * 60;
+      if (subscriber.type === "CLUB") {
+        const coachCount = await dependencies.holdClubCheckoutPlan(
+          subscriber.id,
+          plan.code,
+          new Date(expiresAt * 1000).toISOString(),
+        );
+        if (plan.coach_limit !== null && coachCount > plan.coach_limit) {
           return billingFailure("PLAN_BELOW_COACH_COUNT", {
             coachCount,
             coachLimit: plan.coach_limit,
@@ -137,7 +147,6 @@ export function subscriptionCheckoutHandler(
         }
       }
 
-      const now = dependencies.now();
       const trial = checkoutTrialEnd(
         subscription,
         await dependencies.getSettings(),
@@ -161,7 +170,6 @@ export function subscriptionCheckoutHandler(
       }
 
       const page = `${origin}${subscriptionPagePath(subscriber.type)}`;
-      const minute = Math.floor(now / 60_000);
       const sessionMetadata = {
         ...metadata,
         plan_code: plan.code,
@@ -193,7 +201,7 @@ export function subscriptionCheckoutHandler(
             ? {}
             : { trial_end: Math.floor(trial.trialEnd / 1000) }),
         },
-        expires_at: minute * 60 + 45 * 60,
+        expires_at: expiresAt,
         success_url:
           `${page}?abonament=reusit&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${page}?abonament=anulat`,

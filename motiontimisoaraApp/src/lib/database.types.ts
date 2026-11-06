@@ -3295,6 +3295,8 @@ export type Database = {
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean
+          checkout_expires_at: string | null
+          checkout_plan_code: string | null
           club_id: string | null
           coach_user_id: string | null
           created_at: string
@@ -3314,6 +3316,8 @@ export type Database = {
         }
         Insert: {
           cancel_at_period_end?: boolean
+          checkout_expires_at?: string | null
+          checkout_plan_code?: string | null
           club_id?: string | null
           coach_user_id?: string | null
           created_at?: string
@@ -3333,6 +3337,8 @@ export type Database = {
         }
         Update: {
           cancel_at_period_end?: boolean
+          checkout_expires_at?: string | null
+          checkout_plan_code?: string | null
           club_id?: string | null
           coach_user_id?: string | null
           created_at?: string
@@ -3896,6 +3902,7 @@ export type Database = {
       }
       my_club_coach_user_ids: { Args: never; Returns: string[] }
       my_club_ids: { Args: never; Returns: string[] }
+      my_covering_club_ids: { Args: never; Returns: string[] }
       my_profile: {
         Args: never
         Returns: {
