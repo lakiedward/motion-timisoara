@@ -467,7 +467,7 @@ test("SIMULATED adult self-registration without children on native viewport", as
   expect(state.unexpectedApi).toEqual([]);
 });
 
-test("SIMULATED associated coach corrects published podium on native viewport", async ({
+test("SIMULATED associated coach cannot change a published podium on native viewport", async ({
   page,
 }, info) => {
   await page.setViewportSize({ width: 375, height: 812 });
@@ -477,23 +477,16 @@ test("SIMULATED associated coach corrects published podium on native viewport", 
     page.getByRole("heading", { name: "Podium · Concurs Simulat" }),
   ).toBeVisible();
   await expect(
-    page.getByText("Publicat. Corecțiile făcute aici sunt vizibile imediat."),
+    page.getByText(
+      "Publicat. După publicare, doar organizatorul mai poate corecta podiumul.",
+    ),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Publică podiumul categoriei" }),
   ).toHaveCount(0);
-  await page.getByLabel("Locul 1").click();
-  await page
-    .locator(`[role="menuitemradio"][data-value="${alternateRegistrationId}"]`)
-    .click();
-  await expect(page.getByLabel("Locul 1")).toHaveAttribute(
-    "data-value",
-    alternateRegistrationId,
-  );
-  await capture(page, info, "published-podium-coach-correction");
-  expect(state.submissions).toMatchObject([
-    { registration_id: alternateRegistrationId },
-  ]);
+  await expect(page.getByLabel("Locul 1")).toBeDisabled();
+  await capture(page, info, "published-podium-coach-locked");
+  expect(state.submissions).toEqual([]);
   expect(state.errors).toEqual([]);
   expect(state.unexpectedApi).toEqual([]);
 });
