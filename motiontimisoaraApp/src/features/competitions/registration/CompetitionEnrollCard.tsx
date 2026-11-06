@@ -1,22 +1,22 @@
-import { Link } from 'react-router-dom'
-
 import { formatCompetitionDateTime } from '@/lib/competition-schedule'
-import { formatRonOffer } from '@/lib/money'
+import { formatRon, formatRonOffer } from '@/lib/money'
+import { plural } from '@/lib/plural'
 
 export function CompetitionEnrollCard({
-  slug,
+  categoriesAnchor,
   deadlineAt,
   prices,
   loading,
   now,
 }: {
-  slug: string
+  categoriesAnchor: string
   deadlineAt: string | null
   prices: number[]
   loading: boolean
   now: number
 }) {
   const lowest = prices.length ? Math.min(...prices) : null
+  const highest = prices.length ? Math.max(...prices) : null
   const closed = deadlineAt !== null && Date.parse(deadlineAt) <= now
   const message = closed
     ? 'Înscrierile la acest concurs s-au încheiat.'
@@ -29,13 +29,24 @@ export function CompetitionEnrollCard({
       data-section="competition-enroll"
       className="bg-card flex flex-col items-center rounded-xl border p-6 text-center"
     >
-      {lowest !== null && (
-        <div className="font-display text-foreground text-3xl font-extrabold whitespace-nowrap">
-          {prices.length > 1 && lowest > 0 && (
-            <span className="text-muted-foreground font-sans text-base font-normal">de la </span>
+      {lowest !== null && highest !== null && (
+        <>
+          <div className="font-display text-foreground text-3xl font-extrabold">
+            {lowest === highest ? (
+              formatRonOffer(lowest)
+            ) : (
+              <>
+                <span className="whitespace-nowrap">{formatRonOffer(lowest)}</span> –{' '}
+                <span className="whitespace-nowrap">{formatRon(highest)}</span>
+              </>
+            )}
+          </div>
+          {prices.length > 1 && (
+            <p className="text-muted-foreground mt-1 text-sm">
+              {plural(prices.length, 'categorie', 'categorii')}, fiecare cu prețul ei
+            </p>
           )}
-          {formatRonOffer(lowest)}
-        </div>
+        </>
       )}
       {deadlineAt && (
         <p className="text-muted-foreground mt-2 text-sm">
@@ -47,12 +58,9 @@ export function CompetitionEnrollCard({
           {message}
         </p>
       ) : (
-        <Link
-          to={`/account/competitions/${slug}/register`}
-          className="btn-cta btn-cta--primary mt-5 w-full"
-        >
-          Înscrie-te
-        </Link>
+        <a href={`#${categoriesAnchor}`} className="btn-cta btn-cta--primary mt-5 w-full">
+          Alege categoria
+        </a>
       )}
     </div>
   )

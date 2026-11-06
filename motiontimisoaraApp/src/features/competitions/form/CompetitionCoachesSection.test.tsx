@@ -23,6 +23,7 @@ vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
 const coach: CompetitionCoach = {
   coachProfileId: 'coach-1',
+  userId: 'user-1',
   name: 'Ana Popescu',
   photoUrl: null,
   status: 'invited',
