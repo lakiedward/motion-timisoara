@@ -15,7 +15,10 @@ import type { CompetitionCategory } from '@/api/competition/competition-offers'
 
 const authRole = vi.hoisted(() => ({ value: 'PARENT' }))
 
-vi.mock('@/api/account', () => ({ getMyChildren: vi.fn() }))
+vi.mock('@/api/account', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/api/account')>()),
+  getMyChildren: vi.fn(),
+}))
 vi.mock('@/api/competition/competition-registration', () => ({
   validateCompetitionRegistration: vi.fn(),
   createCompetitionRegistration: vi.fn(),
