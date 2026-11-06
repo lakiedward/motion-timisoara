@@ -45,6 +45,8 @@ on:
       - 'supabase/tests/*camp-adult*'
       - 'supabase/migrations/00126_camp_enrollments_accepted_coaches.sql'
       - 'supabase/tests/*camp-enrollment-coach-visibility*'
+      - 'supabase/migrations/00129_camp_access_active_accounts.sql'
+      - 'supabase/tests/*camp-access-active-accounts*'
       - 'supabase/migrations/00102_checkout_acceptances.sql'
       - 'supabase/tests/*checkout-acceptances*'
       - 'supabase/functions/_shared/checkout-acceptance*.ts'
@@ -126,6 +128,9 @@ jobs:
       - name: Verify camp enrollments are visible only to accepted coaches
         shell: pwsh
         run: ./supabase/tests/run-camp-enrollment-coach-visibility.ps1
+      - name: Verify disabled accounts lose camp access and declined invitations stay declined
+        shell: pwsh
+        run: ./supabase/tests/run-camp-access-active-accounts.ps1
       - name: Verify enrollment and payment-intent contracts
         run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/price-snapshot.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/bnr-rate-contract.test.ts supabase/functions/_shared/stripe-return-url.test.ts supabase/functions/_shared/stripe.test.ts supabase/functions/_shared/checkout-session.test.ts supabase/functions/_shared/stripe-fee-settlement.test.ts supabase/functions/_shared/active-role.test.ts
       - name: Type-check Stripe Connect function
