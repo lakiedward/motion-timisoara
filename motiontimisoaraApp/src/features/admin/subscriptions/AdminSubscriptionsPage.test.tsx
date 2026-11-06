@@ -120,13 +120,14 @@ test('prelungește gratuit cu motiv, după confirmare', async () => {
   })
   renderPage()
 
-  await user.click(await screen.findByRole('button', { name: 'Detalii abonament Andrei Marin' }))
+  await user.click(await screen.findByRole('button', { name: /^Andrei Marin, / }))
   const sheet = await screen.findByRole('dialog')
   expect(within(sheet).getByText('andrei@test.ro')).toBeInTheDocument()
   expect(within(sheet).getByText(/Mutăm și data din Stripe/)).toBeInTheDocument()
 
   await user.click(within(sheet).getByRole('button', { name: 'Prelungește gratuit' }))
   expect(within(sheet).getByText('Scrie motivul (minim 3 caractere).')).toBeInTheDocument()
+  expect(within(sheet).getByLabelText(/Motiv/)).toHaveFocus()
   expect(extendSubscription).not.toHaveBeenCalled()
 
   await user.click(within(sheet).getByRole('button', { name: '14 zile' }))
@@ -151,7 +152,7 @@ test('arată istoricul prelungirilor și refuză zilele nevalide', async () => {
   const user = userEvent.setup()
   renderPage()
 
-  await user.click(await screen.findByRole('button', { name: 'Detalii abonament Club Delfinii' }))
+  await user.click(await screen.findByRole('button', { name: /^Club Delfinii, / }))
   const sheet = await screen.findByRole('dialog')
   expect(within(sheet).getByText('„Probleme la plată”')).toBeInTheDocument()
   expect(within(sheet).getByText(/Laki/)).toBeInTheDocument()
@@ -180,7 +181,7 @@ test('o perioadă gratuită fără dată de încheiere nu poate fi prelungită',
   ])
   renderPage()
 
-  await user.click(await screen.findByRole('button', { name: 'Detalii abonament Nou Venit' }))
+  await user.click(await screen.findByRole('button', { name: /^Nou Venit, / }))
   const sheet = await screen.findByRole('dialog')
   expect(within(sheet).getByText(/nu are încă o dată de încheiere/)).toBeInTheDocument()
   expect(within(sheet).queryByRole('button', { name: 'Prelungește gratuit' })).not.toBeInTheDocument()

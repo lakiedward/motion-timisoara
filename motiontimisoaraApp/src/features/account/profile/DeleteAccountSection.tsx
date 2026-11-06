@@ -77,7 +77,7 @@ export function DeleteAccountSection({ userId }: { userId: string }) {
             , iar ședințele plătite nu se rambursează automat. Vorbește cu clubul înainte.
           </p>
         ) : null}
-        <label className="flex cursor-pointer items-start gap-3 text-sm">
+        <label className="flex min-h-touch-target cursor-pointer items-center gap-3 text-sm">
           <Checkbox
             checked={understood}
             disabled={pending}

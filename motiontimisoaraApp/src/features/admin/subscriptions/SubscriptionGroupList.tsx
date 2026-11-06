@@ -49,7 +49,14 @@ function SubscriptionRow({
       <button
         type="button"
         onClick={onOpen}
-        aria-label={`Detalii abonament ${subscription.subscriber_name}`}
+        aria-label={[
+          subscription.subscriber_name,
+          STATUS_BADGE[subscription.status],
+          endLine(subscription, now),
+          price !== null ? `${formatRon(price)} pe lună` : null,
+        ]
+          .filter(Boolean)
+          .join(', ')}
         className="hover:bg-secondary [&:hover]:bg-secondary focus-visible:outline-ring flex min-h-touch-target w-full cursor-pointer items-center gap-3 px-4 py-3 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 sm:px-5"
       >
         <span

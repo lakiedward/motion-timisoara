@@ -7,16 +7,16 @@
 Citește-l înainte de a scrie criteriile unei secțiuni noi: ce e mai jos se
 moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întrebare.
 
-6 convenții · 5 respectate · 1 în derivă · 0 fără canonic
+6 convenții · 6 respectate · 0 în derivă · 0 fără canonic
 
-## Stare de eroare ≠ listă goală  [DERIVĂ 2/100]
+## Stare de eroare ≠ listă goală  [RESPECTATĂ]
 
     Orice ecran care încarcă date are trei ieșiri distincte: așteptare,
     eroare cu reîncercare, gol. Nu cad una peste alta — o listă goală
     nu poate fi cum arată o rețea căzută.
 
     canonic  src/features/camps/CampsListPage.tsx
-    plafon   2 ecrane fără ramură de eroare, din 100 — poate doar scădea
+    plafon   0 ecrane fără ramură de eroare, din 100 — poate doar scădea
 
 ## Țintă tactilă  [RESPECTATĂ]
 
