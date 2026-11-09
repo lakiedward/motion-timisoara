@@ -3,6 +3,7 @@ import { Preferences } from '@capacitor/preferences'
 import type { Database } from '@/lib/database.types'
 import { isNative } from '@/lib/platform'
 import { webRecoveryGrant } from '@/lib/auth/recovery-grant'
+import { createAccountDisabledFetch } from '@/lib/auth/account-disabled'
 
 const nativeStorage = {
   getItem: async (key: string) => (await Preferences.get({ key })).value,
@@ -24,6 +25,7 @@ export const supabase: SupabaseClient<Database> = createClient<Database>(url, an
     detectSessionInUrl: !isNative(),
     ...(isNative() ? { storage: nativeStorage as never } : {}),
   },
+  global: { fetch: createAccountDisabledFetch() },
 })
 
 if (!isNative()) {

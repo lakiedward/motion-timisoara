@@ -3,17 +3,24 @@ import { useEffect } from 'react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import type { AppUser, LoadAppUserResult } from '@/api/auth'
 import { AuthProvider, useAuth } from './auth-context'
+import { ACCOUNT_DISABLED_MESSAGE, reportAccountDisabled } from './auth/account-disabled'
 
 const mocks = vi.hoisted(() => ({
   load: vi.fn<() => Promise<LoadAppUserResult>>(),
   native: vi.fn(() => true),
   authCallback: null as null | ((event: string, session: { user: { id: string } } | null) => void),
   foreground: null as null | ((state: { isActive: boolean }) => void),
+  confirmActive: vi.fn(async () => undefined),
+  signOutDisabled: vi.fn(async () => undefined),
+  toastError: vi.fn(),
 }))
 vi.mock('@/api/auth', () => ({
   loadAppUserResult: mocks.load,
   PROFILE_LOAD_ERROR: 'Profile unavailable',
+  confirmAccountActive: mocks.confirmActive,
+  signOutDisabledAccount: mocks.signOutDisabled,
 }))
+vi.mock('sonner', () => ({ toast: { error: mocks.toastError } }))
 vi.mock('./platform', () => ({ isNative: mocks.native }))
 vi.mock('./supabase', () => ({
   supabase: {
@@ -259,4 +266,40 @@ it('a definitive denial discards the verified role before any subsequent offline
   mocks.load.mockResolvedValueOnce(offline())
   await auth('TOKEN_REFRESHED', 'coach-a')
   expect(await screen.findByText('no user|Offline')).toBeInTheDocument()
+})
+
+it('a disabled account report shows the reason once and signs out locally', async () => {
+  mocks.load.mockResolvedValue(verified())
+  mount()
+  await screen.findByText('coach-a|no error')
+
+  let release!: () => void
+  mocks.signOutDisabled.mockImplementationOnce(
+    () => new Promise<undefined>((resolve) => (release = () => resolve(undefined))),
+  )
+  act(() => {
+    reportAccountDisabled()
+    reportAccountDisabled()
+  })
+
+  expect(mocks.toastError).toHaveBeenCalledTimes(1)
+  expect(mocks.toastError).toHaveBeenCalledWith(ACCOUNT_DISABLED_MESSAGE, {
+    id: 'account-disabled',
+    duration: 15_000,
+  })
+  expect(mocks.signOutDisabled).toHaveBeenCalledTimes(1)
+  await act(async () => release())
+})
+
+it('returning to the tab rechecks the signed-in account', async () => {
+  mocks.load.mockResolvedValue(verified())
+  mount()
+  await screen.findByText('coach-a|no error')
+
+  Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' })
+  act(() => {
+    document.dispatchEvent(new Event('visibilitychange'))
+  })
+
+  expect(mocks.confirmActive).toHaveBeenCalledTimes(1)
 })

@@ -5,6 +5,7 @@ import { webRecoveryGrant } from '@/lib/auth/recovery-grant'
 import { isNative } from '@/lib/platform'
 import { authenticateWithPushIsolation, clearPushBeforeSignOut } from './notifications'
 import { coachInvitationErrorMessage } from './coach-registration'
+import { reportAccountDisabled } from '@/lib/auth/account-disabled'
 
 export type Role = 'PARENT' | 'COACH' | 'CLUB' | 'ADMIN'
 
@@ -65,8 +66,13 @@ export async function loadAppUserResult(): Promise<LoadAppUserResult> {
     }
   }
   const profile = (
-    data as Array<Parameters<typeof toAppUser>[0] & { enabled?: boolean }> | null
+    data as Array<
+      Parameters<typeof toAppUser>[0] & { enabled?: boolean; deleted_at?: string | null }
+    > | null
   )?.[0]
+  if (profile?.id === sessionUserId && profile.enabled === false && !profile.deleted_at) {
+    reportAccountDisabled()
+  }
   if (
     !profile ||
     profile.id !== sessionUserId ||
@@ -104,6 +110,23 @@ export async function signUpParent(input: {
       options: { data: { name: input.name, phone: input.phone, role: 'PARENT' } },
     }),
   )
+}
+
+export async function confirmAccountActive() {
+  const { data } = await supabase.auth.getSession()
+  if (!data.session) return
+  const { data: rows } = await supabase.rpc('my_profile')
+  const profile = (
+    rows as Array<{ id: string; enabled?: boolean; deleted_at?: string | null }> | null
+  )?.[0]
+  if (profile?.id === data.session.user.id && profile.enabled === false && !profile.deleted_at) {
+    reportAccountDisabled()
+  }
+}
+
+export async function signOutDisabledAccount() {
+  await clearPushBeforeSignOut().catch(() => undefined)
+  await supabase.auth.signOut({ scope: 'local' })
 }
 
 export function signInWithGoogle(redirectTo: string) {
