@@ -18,6 +18,7 @@
 
   --primary: #2563eb;
   --primary-foreground: #ffffff;
+  --primary-on-white: #2563eb;
 
   --secondary: #f1f5f9;
   --secondary-foreground: #0f172a;
@@ -231,8 +232,8 @@
     border-color: var(--primary);
     color: var(--primary);
   }
-    .btn-cta--white {
-    @apply bg-white text-primary hover:scale-105 focus-visible:outline-white;
+  .btn-cta--white {
+    @apply bg-white text-(--primary-on-white) hover:scale-105 focus-visible:outline-white;
   }
   .btn-cta--on-brand {
     @apply border-2 border-white/70 text-white hover:border-white hover:bg-white/10 focus-visible:outline-white;
