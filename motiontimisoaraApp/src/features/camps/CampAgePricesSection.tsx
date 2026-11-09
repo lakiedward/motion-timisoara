@@ -119,7 +119,7 @@ export default function CampAgePricesSection({
             <Button
               type="button"
               variant="outline"
-              className="h-11 min-h-touch-target"
+              className="h-touch-target min-h-touch-target"
               onClick={() => void reincarcaTaberele()}
             >
               Reîncearcă
@@ -163,7 +163,7 @@ export default function CampAgePricesSection({
         <Button
           type="button"
           variant="outline"
-          className="h-11 min-h-touch-target"
+          className="h-touch-target min-h-touch-target"
           onClick={() => varsteArr.append(categorieNoua())}
         >
           <Plus className="size-4" /> Adaugă o categorie de vârstă
@@ -220,7 +220,7 @@ function CampAgeCategoryEditor({
           <Button
             type="button"
             variant="ghost"
-            className="size-11 min-h-touch-target"
+            className="size-touch-target min-h-touch-target"
             onClick={onRemove}
             aria-label={`Șterge categoria de vârstă ${index + 1}`}
           >

@@ -60,7 +60,7 @@ export function NativeAppShell({ role, children }: { role: Role | null; children
             <Button
               size="icon"
               variant="ghost"
-              className="size-11"
+              className="size-touch-target"
               onClick={goBack}
               aria-label="Înapoi"
             >

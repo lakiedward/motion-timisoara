@@ -95,7 +95,7 @@ export function CoachAnnouncementCard({
           <Button
             type="button"
             variant="outline"
-            className="h-11 lg:h-9"
+            className="h-touch-target lg:h-9"
             disabled={busy}
             aria-label={`${a.pinned ? 'Desprinde' : 'Fixează sus'} anunțul din ${courseName}`}
             onClick={onTogglePin}
@@ -106,7 +106,7 @@ export function CoachAnnouncementCard({
           <Button
             type="button"
             variant="ghost"
-            className="text-destructive h-11 lg:h-9"
+            className="text-destructive h-touch-target lg:h-9"
             disabled={busy}
             aria-label={`Șterge anunțul din ${courseName}`}
             onClick={onDelete}

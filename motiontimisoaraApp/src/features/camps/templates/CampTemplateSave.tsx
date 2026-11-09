@@ -96,7 +96,7 @@ export default function CampTemplateSave({
           <Button
             type="button"
             variant="outline"
-            className="h-11 min-h-touch-target shrink-0"
+            className="h-touch-target min-h-touch-target shrink-0"
             onClick={() => setDeschis(true)}
           >
             Salvează ca șablon
@@ -111,7 +111,7 @@ export default function CampTemplateSave({
               <Button
                 type="button"
                 variant="outline"
-                className="h-11 min-h-touch-target"
+                className="h-touch-target min-h-touch-target"
                 onClick={() => void sabloane.refetch()}
               >
                 Reîncearcă
@@ -147,7 +147,7 @@ export default function CampTemplateSave({
               <div className="flex flex-wrap gap-3">
                 <Button
                   type="button"
-                  className="h-11 min-h-touch-target"
+                  className="h-touch-target min-h-touch-target"
                   disabled={salveaza}
                   onClick={() => void scrie(true)}
                 >
@@ -156,7 +156,7 @@ export default function CampTemplateSave({
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-11 min-h-touch-target"
+                  className="h-touch-target min-h-touch-target"
                   onClick={() => setConfirma(false)}
                 >
                   Renunță
@@ -167,7 +167,7 @@ export default function CampTemplateSave({
             <div className="flex flex-wrap gap-3">
               <Button
                 type="button"
-                className="h-11 min-h-touch-target"
+                className="h-touch-target min-h-touch-target"
                 disabled={salveaza}
                 onClick={salveazaAcum}
               >
@@ -176,7 +176,7 @@ export default function CampTemplateSave({
               <Button
                 type="button"
                 variant="outline"
-                className="h-11 min-h-touch-target"
+                className="h-touch-target min-h-touch-target"
                 onClick={() => {
                   setDeschis(false)
                   setEroare(null)

@@ -248,7 +248,7 @@ test('cu grila strânsă, săgeata trece și prin pozele neafișate', async () =
 test('butonul de „vezi mai mult” poartă tiparul de atingere al casei', () => {
   render(<PhotoGallery urls={MULTE} alt="Tabără" />)
   expect(screen.getByRole('button', { name: 'Vezi toate cele 11 poze' }).className).toContain(
-    'h-11',
+    'h-touch-target',
   )
 })
 

@@ -15,7 +15,7 @@ export function StripeActions({ state }: { state: StripeOnboardingState }) {
         (complete ? (
           <Button
             type="button"
-            className="h-11 min-h-touch-target"
+            className="h-touch-target min-h-touch-target"
             disabled={working}
             onClick={() => void openDashboard()}
           >
@@ -24,14 +24,14 @@ export function StripeActions({ state }: { state: StripeOnboardingState }) {
         ) : (
           <Button
             type="button"
-            className="h-11 min-h-touch-target"
+            className="h-touch-target min-h-touch-target"
             disabled={working}
             onClick={() => void startOnboarding()}
           >
             {phase === 'verified' ? 'Continuă configurarea' : 'Configurează Stripe'}
           </Button>
         ))}
-      <Button asChild variant="outline" className="h-11 min-h-touch-target">
+      <Button asChild variant="outline" className="h-touch-target min-h-touch-target">
         <Link to={config.backTo}>Înapoi la panou</Link>
       </Button>
     </div>

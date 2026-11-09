@@ -124,7 +124,7 @@ export function ClubAnnouncementCard({
         <Button
           type="button"
           variant="outline"
-          className="h-11 lg:h-9"
+          className="h-touch-target lg:h-9"
           aria-label={`Editează anunțul „${a.title}”`}
           onClick={onEdit}
         >
@@ -133,7 +133,7 @@ export function ClubAnnouncementCard({
         <Button
           type="button"
           variant="outline"
-          className="h-11 lg:h-9"
+          className="h-touch-target lg:h-9"
           disabled={seAscunde}
           aria-label={`${a.is_active ? 'Ascunde de părinți' : 'Arată părinților'} anunțul „${a.title}”`}
           onClick={onToggle}
@@ -144,7 +144,7 @@ export function ClubAnnouncementCard({
         <Button
           type="button"
           variant="ghost"
-          className="text-destructive h-11 lg:h-9"
+          className="text-destructive h-touch-target lg:h-9"
           disabled={seSterge}
           aria-label={`Șterge anunțul „${a.title}”`}
           onClick={onDelete}

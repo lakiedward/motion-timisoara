@@ -149,7 +149,7 @@ export default function ParentProfilePage() {
             </p>
           </div>
         </FormSection>
-        <Button type="submit" disabled={isSubmitting} className="h-11 min-h-touch-target">
+        <Button type="submit" disabled={isSubmitting} className="h-touch-target min-h-touch-target">
           {isSubmitting ? 'Se salvează…' : 'Salvează'}
         </Button>
       </form>

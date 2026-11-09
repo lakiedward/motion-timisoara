@@ -127,7 +127,7 @@ export function AdminAnnouncementItem({
         <Button
           type="button"
           variant="outline"
-          className="h-11 lg:h-9"
+          className="h-touch-target lg:h-9"
           disabled={pending}
           aria-label={`${toggleText(a)} anunțul „${label}”`}
           onClick={onToggle}
@@ -138,7 +138,7 @@ export function AdminAnnouncementItem({
         <Button
           type="button"
           variant="ghost"
-          className="text-destructive h-11 lg:h-9"
+          className="text-destructive h-touch-target lg:h-9"
           disabled={pending}
           aria-label={`Șterge anunțul „${label}”`}
           onClick={onDelete}

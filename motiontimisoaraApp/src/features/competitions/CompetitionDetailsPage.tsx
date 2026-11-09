@@ -51,7 +51,7 @@ export default function CompetitionDetailsPage() {
     return (
       <div className="mx-auto max-w-4xl px-6 py-20 text-center" role="alert">
         <p className="text-foreground font-medium">Nu am putut încărca concursul.</p>
-        <Button className="mt-4 h-11 min-h-touch-target" type="button" onClick={() => void refetch()}>
+        <Button className="mt-4 h-touch-target min-h-touch-target" type="button" onClick={() => void refetch()}>
           Reîncearcă
         </Button>
       </div>
@@ -64,7 +64,7 @@ export default function CompetitionDetailsPage() {
         <p className="text-muted-foreground">Concursul nu a fost găsit.</p>
         <Link
           to="/concursuri"
-          className="text-primary mt-4 inline-flex h-11 items-center font-semibold"
+          className="text-primary mt-4 inline-flex h-touch-target items-center font-semibold"
         >
           ← Înapoi la concursuri
         </Link>

@@ -38,7 +38,7 @@ export function AnnouncementScheduleFields({
         <Button
           type="button"
           variant="outline"
-          className="h-11 lg:h-9"
+          className="h-touch-target lg:h-9"
           disabled={disabled}
           aria-expanded={false}
           onClick={() => setOpen(true)}

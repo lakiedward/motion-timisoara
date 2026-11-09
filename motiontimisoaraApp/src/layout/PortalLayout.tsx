@@ -279,7 +279,7 @@ export function PortalLayout({
       <header className="bg-card sticky top-0 z-30 flex h-16 items-center gap-3 border-b px-4 lg:hidden">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="size-11" aria-label="Meniu">
+            <Button variant="ghost" size="icon" className="size-touch-target" aria-label="Meniu">
               <Menu />
             </Button>
           </SheetTrigger>

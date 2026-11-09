@@ -41,7 +41,7 @@ export function CampRulesBody({
         <Button
           type="button"
           variant="link"
-          className="mt-1 flex h-11 min-h-touch-target w-fit px-0 font-semibold"
+          className="mt-1 flex h-touch-target min-h-touch-target w-fit px-0 font-semibold"
           aria-expanded={extins}
           aria-controls={textId}
           onClick={() => setExtins((v) => !v)}

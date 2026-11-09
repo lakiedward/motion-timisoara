@@ -97,7 +97,7 @@ export function CoachAnnouncementList({ items, courses, attachments, onChanged }
             <Button
               type="button"
               variant="outline"
-              className="mt-3 h-11 min-h-touch-target"
+              className="mt-3 h-touch-target min-h-touch-target"
               onClick={() => changeFilters(NO_FILTERS)}
             >
               Șterge filtrele
@@ -141,7 +141,7 @@ export function CoachAnnouncementList({ items, courses, attachments, onChanged }
               <Button
                 type="button"
                 variant="outline"
-                className="h-11 min-h-touch-target"
+                className="h-touch-target min-h-touch-target"
                 onClick={() => setLimit((n) => n + PAGE)}
               >
                 Arată încă {Math.min(PAGE, visible.length - shown.length)}

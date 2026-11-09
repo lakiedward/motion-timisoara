@@ -50,7 +50,7 @@ export function CourseHero({
         />
         <Link
           to="/cursuri"
-          className="absolute top-6 left-6 inline-flex h-11 items-center gap-1.5 rounded-full bg-black/40 px-4 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-black/55"
+          className="absolute top-6 left-6 inline-flex h-touch-target items-center gap-1.5 rounded-full bg-black/40 px-4 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-black/55"
         >
           <ArrowLeft className="size-4" /> Înapoi la cursuri
         </Link>
@@ -70,7 +70,7 @@ export function CourseHero({
     <section data-section="course-hero" className="mx-auto max-w-6xl px-6 pt-8">
       <Link
         to="/cursuri"
-        className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
+        className="text-muted-foreground hover:text-foreground inline-flex h-touch-target items-center gap-1 text-sm"
       >
         <ArrowLeft className="size-4" /> Înapoi la cursuri
       </Link>

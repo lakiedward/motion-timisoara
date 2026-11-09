@@ -555,7 +555,7 @@ export function ClubActivityForm() {
           {isEdit && (
             <Link
               to={`/activitati/${id}`}
-              className="text-primary inline-flex h-11 items-center font-semibold"
+              className="text-primary inline-flex h-touch-target items-center font-semibold"
             >
               Vezi pagina publică
             </Link>

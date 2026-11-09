@@ -506,13 +506,13 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
             <Button
               type="button"
               variant="outline"
-              className="h-11 min-h-touch-target px-6"
+              className="h-touch-target min-h-touch-target px-6"
               onClick={() => inapoiLaPas(step - 1)}
             >
               Înapoi
             </Button>
           )}
-          <Button type="submit" className="h-11 min-h-touch-target px-6" disabled={isSubmitting || faraCurs}>
+          <Button type="submit" className="h-touch-target min-h-touch-target px-6" disabled={isSubmitting || faraCurs}>
             {isSubmitting
               ? 'Se salvează…'
               : step < 2

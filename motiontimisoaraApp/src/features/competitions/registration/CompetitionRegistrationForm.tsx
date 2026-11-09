@@ -545,7 +545,7 @@ export function CompetitionRegistrationForm({ competition, categories, routes }:
                   )}
 
                   <Button
-                    className="h-11 min-h-touch-target"
+                    className="h-touch-target min-h-touch-target"
                     disabled={
                       !pricesReady ||
                       !accepted ||

@@ -35,7 +35,7 @@ export default function ClubDetailPage() {
     return (
       <div className="mx-auto max-w-6xl px-6 py-20 text-center" role="alert">
         <p className="text-foreground font-medium">Nu am putut încărca clubul.</p>
-        <Button className="mt-4 h-11 min-h-touch-target" type="button" onClick={() => refetch()}>
+        <Button className="mt-4 h-touch-target min-h-touch-target" type="button" onClick={() => refetch()}>
           Reîncearcă
         </Button>
       </div>
@@ -47,7 +47,7 @@ export default function ClubDetailPage() {
         <p className="text-muted-foreground">Clubul nu a fost găsit.</p>
         <Link
           to="/cluburi"
-          className="text-primary mt-4 inline-flex h-11 items-center font-semibold"
+          className="text-primary mt-4 inline-flex h-touch-target items-center font-semibold"
         >
           ← Înapoi la cluburi
         </Link>

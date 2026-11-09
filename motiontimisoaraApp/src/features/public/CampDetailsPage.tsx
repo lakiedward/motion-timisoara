@@ -40,7 +40,7 @@ export default function CampDetailsPage() {
     return (
       <div className="mx-auto max-w-4xl px-6 py-20 text-center" role="alert">
         <p className="text-foreground font-medium">Nu am putut încărca tabăra.</p>
-        <Button className="mt-4 h-11 min-h-touch-target" type="button" onClick={() => refetch()}>
+        <Button className="mt-4 h-touch-target min-h-touch-target" type="button" onClick={() => refetch()}>
           Reîncearcă
         </Button>
       </div>
@@ -53,7 +53,7 @@ export default function CampDetailsPage() {
         <p className="text-muted-foreground">Tabăra nu a fost găsită.</p>
         <Link
           to="/tabere"
-          className="text-primary mt-4 inline-flex h-11 items-center font-semibold"
+          className="text-primary mt-4 inline-flex h-touch-target items-center font-semibold"
         >
           ← Înapoi la tabere
         </Link>

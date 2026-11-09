@@ -152,7 +152,7 @@ export function CompetitionCoachesSection({ competitionId }: { competitionId: st
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Scrie cel puțin două litere din nume"
-              className="h-11 lg:h-9"
+              className="h-touch-target lg:h-9"
             />
           </div>
           {search.trim().length >= 2 && (

@@ -118,7 +118,7 @@ export function CurrentLocationSessions({
               <Button
                 type="button"
                 variant="ghost"
-                className="text-primary h-11 min-h-touch-target w-full sm:w-auto"
+                className="text-primary h-touch-target min-h-touch-target w-full sm:w-auto"
                 onClick={() => setShowAll((value) => !value)}
               >
                 {showAll ? 'Arată mai puține' : `Arată toate (${rows.length})`}

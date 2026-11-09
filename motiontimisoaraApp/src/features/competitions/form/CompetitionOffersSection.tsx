@@ -351,7 +351,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
                 value={routeDraft.name}
                 maxLength={120}
                 required
-                className="h-11 lg:h-9"
+                className="h-touch-target lg:h-9"
                 onChange={(event) => setRouteDraft({ ...routeDraft, name: event.target.value })}
               />
             </div>
@@ -492,7 +492,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
                 value={categoryDraft.name}
                 maxLength={120}
                 required
-                className="h-11 lg:h-9"
+                className="h-touch-target lg:h-9"
                 onChange={(event) =>
                   setCategoryDraft({ ...categoryDraft, name: event.target.value })
                 }
@@ -509,7 +509,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
                   step={1}
                   required
                   value={categoryDraft.ageFrom}
-                  className="h-11 lg:h-9"
+                  className="h-touch-target lg:h-9"
                   onChange={(event) =>
                     setCategoryDraft({ ...categoryDraft, ageFrom: event.target.value })
                   }
@@ -525,7 +525,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
                   step={1}
                   required
                   value={categoryDraft.ageTo}
-                  className="h-11 lg:h-9"
+                  className="h-touch-target lg:h-9"
                   onChange={(event) =>
                     setCategoryDraft({ ...categoryDraft, ageTo: event.target.value })
                   }
@@ -549,7 +549,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
                 inputMode="decimal"
                 required
                 value={categoryDraft.priceLei}
-                className="h-11 lg:h-9"
+                className="h-touch-target lg:h-9"
                 onChange={(event) =>
                   setCategoryDraft({ ...categoryDraft, priceLei: event.target.value })
                 }

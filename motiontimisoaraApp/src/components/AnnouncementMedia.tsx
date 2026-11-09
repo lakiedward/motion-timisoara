@@ -85,7 +85,7 @@ function AnnouncementImage({
               type="button"
               variant="secondary"
               size="icon"
-              className="absolute top-4 right-4 size-11"
+              className="absolute top-4 right-4 size-touch-target"
               aria-label="Închide poza"
             >
               <X className="size-5" aria-hidden="true" />

@@ -57,7 +57,7 @@ export default function CampRequirementsSection({ control, register, errors }: P
       <Button
         type="button"
         variant="outline"
-        className="h-11 min-h-touch-target"
+        className="h-touch-target min-h-touch-target"
         onClick={() => categories.append(categorieNecesarNoua())}
       >
         <Plus className="size-4" /> Adaugă categorie
@@ -98,7 +98,7 @@ function CampRequirementCategoryEditor({
         <Button
           type="button"
           variant="ghost"
-          className="size-11 min-h-touch-target shrink-0"
+          className="size-touch-target min-h-touch-target shrink-0"
           onClick={() => (completate > 0 ? setConfirmare(true) : onRemove())}
           aria-label={`Șterge categoria ${categoryIndex + 1}`}
         >
@@ -152,7 +152,7 @@ function CampRequirementCategoryEditor({
             <Button
               type="button"
               variant="ghost"
-              className="mt-[1.375rem] size-11 min-h-touch-target shrink-0"
+              className="mt-[1.375rem] size-touch-target min-h-touch-target shrink-0"
               disabled={items.fields.length <= 1}
               onClick={() => items.remove(itemIndex)}
               aria-label={`Șterge articolul ${itemIndex + 1}, categoria ${categoryIndex + 1}`}
@@ -166,7 +166,7 @@ function CampRequirementCategoryEditor({
       <Button
         type="button"
         variant="outline"
-        className="mt-3 h-11 min-h-touch-target"
+        className="mt-3 h-touch-target min-h-touch-target"
         onClick={() => items.append({ name: '', quantity: '1' })}
       >
         <Plus className="size-4" /> Adaugă articol

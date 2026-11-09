@@ -46,7 +46,7 @@ export default function ActivityDetailPage() {
     return (
       <div className="mx-auto max-w-4xl px-6 py-20 text-center" role="alert">
         <p className="text-foreground font-medium">Nu am putut încărca activitatea.</p>
-        <Button className="mt-4 h-11 min-h-touch-target" type="button" onClick={() => void refetch()}>
+        <Button className="mt-4 h-touch-target min-h-touch-target" type="button" onClick={() => void refetch()}>
           Reîncearcă
         </Button>
       </div>
@@ -58,7 +58,7 @@ export default function ActivityDetailPage() {
         <p className="text-muted-foreground">Activitatea nu a fost găsită.</p>
         <Link
           to="/activitati"
-          className="text-primary mt-4 inline-flex h-11 items-center font-semibold"
+          className="text-primary mt-4 inline-flex h-touch-target items-center font-semibold"
         >
           ← Înapoi la activități
         </Link>

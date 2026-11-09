@@ -67,7 +67,7 @@ test('cardul de profil și prenumele din dreapta duc la profil, nu sunt itemi de
 test('sub 1024px hamburgerul are 44px și meniul se închide la navigare', async () => {
   const user = userEvent.setup()
   renderLayout()
-  expect(screen.getByRole('button', { name: 'Meniu' }).className).toMatch(/size-11/)
+  expect(screen.getByRole('button', { name: 'Meniu' }).className).toMatch(/size-touch-target/)
   await user.click(screen.getByRole('button', { name: 'Meniu' }))
   expect(await screen.findByRole('button', { name: 'Închide' })).toBeInTheDocument()
   const dinMeniu = screen

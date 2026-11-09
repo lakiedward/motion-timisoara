@@ -533,7 +533,7 @@ test('controalele poartă tiparul de atingere al casei', async () => {
     screen.getByRole('button', { name: 'Ascunde de părinți anunțul „Cantonament de vară”' }),
     screen.getByRole('button', { name: 'Șterge anunțul „Cantonament de vară”' }),
   ]
-  for (const c of lista) expect(c.className).toContain('h-11')
+  for (const c of lista) expect(c.className).toContain('h-touch-target')
 })
 test('mesajul de lipsă e legat de câmpul lui', async () => {
   const user = userEvent.setup()

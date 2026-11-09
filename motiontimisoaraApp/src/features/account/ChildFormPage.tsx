@@ -501,7 +501,7 @@ function InapoiLaCopii() {
   return (
     <Link
       to="/account/children"
-      className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
+      className="text-muted-foreground hover:text-foreground inline-flex h-touch-target items-center gap-1 text-sm"
     >
       <ArrowLeft className="size-4" /> Înapoi
     </Link>
