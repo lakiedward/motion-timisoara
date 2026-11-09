@@ -75,18 +75,24 @@ export function toTestimonials(rows: RatingWithAuthor[], limit = 3): HomeTestimo
     }))
 }
 
+export const TESTIMONIAL_SELECT = {
+  course_ratings:
+    'id, comment, created_at, parent:profiles!course_ratings_parent_id_fkey(name)',
+  coach_ratings:
+    'id, comment, created_at, parent:profiles!coach_ratings_parent_id_fkey(name)',
+} as const
+
 export async function getHomeTestimonials(): Promise<HomeTestimonial[]> {
-  const select = 'id, comment, created_at, parent:profiles(name)'
   const [courseRatings, coachRatings] = await Promise.all([
     supabase
       .from('course_ratings')
-      .select(select)
+      .select(TESTIMONIAL_SELECT.course_ratings)
       .not('comment', 'is', null)
       .order('created_at', { ascending: false })
       .limit(6),
     supabase
       .from('coach_ratings')
-      .select(select)
+      .select(TESTIMONIAL_SELECT.coach_ratings)
       .not('comment', 'is', null)
       .order('created_at', { ascending: false })
       .limit(6),
