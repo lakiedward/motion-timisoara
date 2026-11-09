@@ -14,10 +14,10 @@ export default function NotFoundPage() {
         curs pentru copilul tău.
       </p>
       <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-        <Button asChild size="lg" className="h-11">
+        <Button asChild size="lg" className="h-touch-target">
           <Link to="/">Mergi la pagina principală</Link>
         </Button>
-        <Button asChild size="lg" variant="outline" className="h-11">
+        <Button asChild size="lg" variant="outline" className="h-touch-target">
           <Link to="/cursuri">Vezi cursurile</Link>
         </Button>
       </div>

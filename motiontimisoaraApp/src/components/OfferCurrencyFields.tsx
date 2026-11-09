@@ -111,7 +111,7 @@ function CursBnrAutomat({
         <Button
           type="button"
           variant="outline"
-          className="h-11 min-h-touch-target"
+          className="h-touch-target min-h-touch-target"
           onClick={onRetry}
           aria-label="Reîncearcă cursul BNR"
         >

@@ -47,7 +47,7 @@ export function ClubLocationRow({ locatie: l, seComuta, onToggle, editTo, detail
         {details}
       </div>
       <div className="flex shrink-0 gap-2">
-        <Button asChild variant="outline" className="h-11 lg:h-9">
+        <Button asChild variant="outline" className="h-touch-target lg:h-9">
           <Link to={editTo ?? `/club/locations/${l.id}/edit`} aria-label={`Editează ${l.name}`}>
             <Pencil aria-hidden="true" /> Editează
           </Link>
@@ -55,7 +55,7 @@ export function ClubLocationRow({ locatie: l, seComuta, onToggle, editTo, detail
         <Button
           type="button"
           variant="ghost"
-          className="h-11 lg:h-9"
+          className="h-touch-target lg:h-9"
           disabled={seComuta}
           aria-label={`${l.is_active ? 'Dezactivează' : 'Activează'} ${l.name}`}
           onClick={onToggle}

@@ -204,7 +204,7 @@ export default function LocationPicker({
           id="address"
           type="search"
           autoComplete="off"
-          className="h-11 scroll-mt-24 pl-9 lg:h-9"
+          className="h-touch-target scroll-mt-24 pl-9 lg:h-9"
           placeholder="Strada, numărul sau numele locului"
           value={address}
           onChange={(e) => {
@@ -293,7 +293,7 @@ export default function LocationPicker({
           <Button
             type="button"
             variant="outline"
-            className="h-11"
+            className="h-touch-target"
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => void retrySearch()}
           >
@@ -352,7 +352,7 @@ export default function LocationPicker({
           <Button
             type="button"
             variant="outline"
-            className="h-11"
+            className="h-touch-target"
             onClick={() => void punePunctul(value.lat, value.lng)}
           >
             Reîncearcă

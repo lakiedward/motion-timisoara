@@ -151,7 +151,7 @@ export default function AdminDashboard() {
         <div role="alert" className="rounded-xl border border-dashed py-16 text-center">
           <p className="text-foreground font-medium">Nu am putut încărca statisticile.</p>
           <Button
-            className="mt-4 h-11 min-h-touch-target"
+            className="mt-4 h-touch-target min-h-touch-target"
             type="button"
             disabled={retrying}
             onClick={() => void onRetry()}
@@ -167,7 +167,7 @@ export default function AdminDashboard() {
                 Nu am putut încărca: {partialFailed.join(', ')}.
               </p>
               <Button
-                className="mt-3 h-11 min-h-touch-target"
+                className="mt-3 h-touch-target min-h-touch-target"
                 type="button"
                 disabled={retrying}
                 onClick={() => void onRetry()}

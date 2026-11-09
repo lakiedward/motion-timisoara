@@ -94,7 +94,7 @@ export default function CampTemplatePicker({
           <Button
             type="button"
             variant="outline"
-            className="h-11 min-h-touch-target"
+            className="h-touch-target min-h-touch-target"
             onClick={() => {
               reincearcaProprietar?.()
               void sabloane.refetch()
@@ -134,7 +134,7 @@ export default function CampTemplatePicker({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="absolute top-1.5 right-1.5 size-11"
+                className="absolute top-1.5 right-1.5 size-touch-target"
                 aria-label={`Șterge ${sablon.name}`}
                 onClick={() => {
                   setAsteptare(null)
@@ -172,13 +172,13 @@ export default function CampTemplatePicker({
               : 'Înlocuiești câmpurile copiate din șablon? Titlul, adresa paginii și perioada rămân.'}
           </p>
           <div className="flex flex-wrap gap-3">
-            <Button type="button" className="h-11 min-h-touch-target" onClick={confirmaAlegerea}>
+            <Button type="button" className="h-touch-target min-h-touch-target" onClick={confirmaAlegerea}>
               {asteptare === 'gol' ? 'Golește' : 'Înlocuiește'}
             </Button>
             <Button
               type="button"
               variant="outline"
-              className="h-11 min-h-touch-target"
+              className="h-touch-target min-h-touch-target"
               onClick={() => setAsteptare(null)}
             >
               Renunță
@@ -193,7 +193,7 @@ export default function CampTemplatePicker({
             <Button
               type="button"
               variant="destructive"
-              className="h-11 min-h-touch-target"
+              className="h-touch-target min-h-touch-target"
               disabled={sterge}
               onClick={() => void confirmaStergerea()}
             >
@@ -202,7 +202,7 @@ export default function CampTemplatePicker({
             <Button
               type="button"
               variant="outline"
-              className="h-11 min-h-touch-target"
+              className="h-touch-target min-h-touch-target"
               onClick={() => setDeSters(null)}
             >
               Renunță

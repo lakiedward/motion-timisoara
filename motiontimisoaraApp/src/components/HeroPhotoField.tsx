@@ -60,13 +60,13 @@ export function HeroPhotoField({
           <Button
             type="button"
             variant="outline"
-            className="h-11 min-h-touch-target"
+            className="h-touch-target min-h-touch-target"
             onClick={() => void dinGalerie()}
           >
             {afisat ? 'Schimbă poza' : 'Alege din galerie'}
           </Button>
         ) : (
-          <Label className="border-input inline-flex h-11 min-h-touch-target cursor-pointer items-center rounded-md border px-4 text-sm font-medium">
+          <Label className="border-input inline-flex h-touch-target min-h-touch-target cursor-pointer items-center rounded-md border px-4 text-sm font-medium">
             {afisat ? 'Schimbă poza' : 'Alege o poză'}
             <input
               aria-label="Poza din capul paginii"

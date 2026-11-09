@@ -263,7 +263,7 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
                 </Label>
                 <Input
                   id="name"
-                  className="h-11 scroll-mt-24 lg:h-9"
+                  className="h-touch-target scroll-mt-24 lg:h-9"
                   {...register('name')}
                   aria-invalid={!!errors.name}
                   aria-describedby={errors.name ? 'name-error' : undefined}
@@ -380,12 +380,12 @@ export default function ClubLocationFormPage({ portal = 'club' }: { portal?: Loc
         <div className="flex gap-2">
           <Button
             type="submit"
-            className="h-11 lg:h-9"
+            className="h-touch-target lg:h-9"
             disabled={isSubmitting || nearbyCheckRequired || isResolvingAddress}
           >
             {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>
-          <Button type="button" variant="outline" className="h-11 lg:h-9" asChild>
+          <Button type="button" variant="outline" className="h-touch-target lg:h-9" asChild>
             <Link to={listPath}>Anulează</Link>
           </Button>
         </div>

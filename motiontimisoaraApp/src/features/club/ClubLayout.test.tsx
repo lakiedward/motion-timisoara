@@ -96,7 +96,7 @@ test('first name is a profile control, not a seventh nav item', () => {
 test('menu, logout and close meet the 44px tap class; CLUB label is in chrome', async () => {
   const user = userEvent.setup()
   renderLayout()
-  expect(screen.getByRole('button', { name: 'Meniu' }).className).toMatch(/size-11/)
+  expect(screen.getByRole('button', { name: 'Meniu' }).className).toMatch(/size-touch-target/)
   expect(screen.getByRole('button', { name: 'Deconectare' }).className).toMatch(/min-h-touch-target/)
   expect(screen.getByRole('button', { name: 'Deconectare' }).className).toMatch(
     /focus-visible:outline-ring/,

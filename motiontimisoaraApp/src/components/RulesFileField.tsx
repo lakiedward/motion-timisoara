@@ -136,7 +136,7 @@ export default function RulesFileField({
         <Button
           type="button"
           variant="outline"
-          className="h-11 min-h-touch-target"
+          className="h-touch-target min-h-touch-target"
           disabled={ocupat}
           onClick={() => input.current?.click()}
         >
@@ -147,7 +147,7 @@ export default function RulesFileField({
           <Button
             type="button"
             variant="outline"
-            className="h-11 min-h-touch-target"
+            className="h-touch-target min-h-touch-target"
             disabled={ocupat}
             onClick={() => {
               if (!entityId) onLocalFile(null)

@@ -80,7 +80,7 @@ export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
     <div>
       <Link
         to={baza}
-        className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1 text-sm"
+        className="text-muted-foreground hover:text-foreground inline-flex h-touch-target items-center gap-1 text-sm"
       >
         <ArrowLeft className="size-4" /> Înapoi la tabere
       </Link>
@@ -119,7 +119,7 @@ export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
           <Button
             type="button"
             variant="outline"
-            className="h-11 min-h-touch-target"
+            className="h-touch-target min-h-touch-target"
             onClick={() => void sosire.participants.refetch()}
           >
             Reîncearcă prezența

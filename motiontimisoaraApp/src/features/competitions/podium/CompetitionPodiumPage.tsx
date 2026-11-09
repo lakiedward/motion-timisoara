@@ -225,7 +225,7 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
           )}
           {canPublish && !publication && results.length > 0 && (
             <Button
-              className="h-11 min-h-touch-target"
+              className="h-touch-target min-h-touch-target"
               disabled={publish.isPending}
               onClick={() => publish.mutate()}
             >

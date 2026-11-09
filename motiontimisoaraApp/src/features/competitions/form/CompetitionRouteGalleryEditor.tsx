@@ -139,7 +139,7 @@ export function CompetitionRouteGalleryEditor({
                     <Button
                       type="button"
                       variant="ghost"
-                      className="size-11 min-h-touch-target"
+                      className="size-touch-target min-h-touch-target"
                       disabled={busy || index === 0}
                       onClick={() => void movePhoto(index, -1)}
                       aria-label={`Mută poza ${index + 1} mai devreme`}
@@ -149,7 +149,7 @@ export function CompetitionRouteGalleryEditor({
                     <Button
                       type="button"
                       variant="ghost"
-                      className="size-11 min-h-touch-target"
+                      className="size-touch-target min-h-touch-target"
                       disabled={busy}
                       onClick={() => void deletePhoto(index)}
                       aria-label={`Șterge poza ${index + 1}`}
@@ -159,7 +159,7 @@ export function CompetitionRouteGalleryEditor({
                     <Button
                       type="button"
                       variant="ghost"
-                      className="size-11 min-h-touch-target"
+                      className="size-touch-target min-h-touch-target"
                       disabled={busy || index === photos.length - 1}
                       onClick={() => void movePhoto(index, 1)}
                       aria-label={`Mută poza ${index + 1} mai târziu`}

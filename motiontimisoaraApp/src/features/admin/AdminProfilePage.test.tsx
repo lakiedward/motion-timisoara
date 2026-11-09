@@ -64,7 +64,7 @@ test('profilul admin are un singur h1, cardul Date de contact și nota de câmpu
   expect(screen.getByLabelText('Telefon')).toHaveAttribute('type', 'tel')
   const save = screen.getByRole('button', { name: 'Salvează' })
   expect(save.className).toMatch(/min-h-touch-target/)
-  expect(save.className).toMatch(/h-11/)
+  expect(save.className).toMatch(/h-touch-target/)
 })
 
 test('cât user lipsește se vede scheletul anunțat, nu un ecran gol', () => {

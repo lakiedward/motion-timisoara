@@ -63,7 +63,7 @@ test('the hero shows initials, sport badges and a 44px back link, without a rati
   expect(await screen.findByRole('heading', { level: 1, name: 'Ana Pop' })).toBeVisible()
   expect(screen.getByText('AP')).toBeVisible()
   expect(screen.getByText('Înot')).toHaveAttribute('data-slot', 'badge')
-  expect(screen.getByRole('link', { name: /Înapoi la antrenori/ })).toHaveClass('h-11')
+  expect(screen.getByRole('link', { name: /Înapoi la antrenori/ })).toHaveClass('h-touch-target')
   expect(screen.queryByText(/evaluar/)).toBeNull()
 })
 
@@ -96,7 +96,7 @@ test('a parent rates with 44px stars', async () => {
   mocks.submitCoachRating.mockResolvedValue(undefined)
   renderPage()
   const star = await screen.findByRole('radio', { name: '4 stele' })
-  expect(star).toHaveClass('size-11')
+  expect(star).toHaveClass('size-touch-target')
   await userEvent.click(star)
   expect(mocks.submitCoachRating).toHaveBeenCalledWith('coach-1', 4)
 })

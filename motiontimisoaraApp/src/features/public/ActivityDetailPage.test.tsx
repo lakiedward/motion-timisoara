@@ -127,7 +127,7 @@ test('fără poza activității, pagina nu pune degradeul gol, iar titlul stă s
   expect(document.querySelector('.h-32')).not.toBeInTheDocument()
   expect(document.querySelector('.from-primary\\/20')).not.toBeInTheDocument()
   expect(document.querySelector('.md\\:h-96')).not.toBeInTheDocument()
-  expect(link.className).toContain('h-11')
+  expect(link.className).toContain('h-touch-target')
   expect(link.compareDocumentPosition(titlu) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   expect(titlu.className).toContain('mt-4')
   expect(titlu.className).toContain('text-3xl')

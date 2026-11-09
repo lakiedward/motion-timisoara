@@ -103,7 +103,7 @@ export default function CoachCoursesPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="mt-3 h-11 min-h-touch-target"
+                    className="mt-3 h-touch-target min-h-touch-target"
                     onClick={() => setFilters(NO_FILTERS)}
                   >
                     Șterge filtrele
