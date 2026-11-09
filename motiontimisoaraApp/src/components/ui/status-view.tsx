@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 interface StatusViewProps {
   state: 'loading' | 'error' | 'empty' | 'success'
   title?: string
+  titleAs?: 'p' | 'h1' | 'h2'
   text?: React.ReactNode
   onRetry?: () => void
   retryLabel?: string
@@ -21,6 +22,7 @@ interface StatusViewProps {
 function StatusView({
   state,
   title,
+  titleAs: TitleTag = 'p',
   text,
   onRetry,
   retryLabel = 'Reîncearcă',
@@ -67,10 +69,10 @@ function StatusView({
       >
         <Icon aria-hidden="true" className="size-6" />
       </span>
-      <p className="text-foreground text-base font-semibold">
+      <TitleTag className="text-foreground text-base font-semibold">
         {title ??
           (isError ? 'Nu am putut încărca datele.' : isSuccess ? 'Gata.' : 'Nimic aici încă.')}
-      </p>
+      </TitleTag>
       {text ? <p className="text-muted-foreground max-w-100 text-sm">{text}</p> : null}
       {isError && onRetry ? (
         <Button type="button" className="mt-3" onClick={onRetry} disabled={retrying}>

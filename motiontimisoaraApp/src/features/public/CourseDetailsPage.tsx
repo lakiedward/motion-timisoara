@@ -66,6 +66,7 @@ export default function CourseDetailsPage() {
       <div className="mx-auto flex min-h-[55vh] max-w-lg flex-col items-center justify-center px-6 py-20">
         <StatusView
           state="error"
+          titleAs="h1"
           title="Nu am putut încărca cursul."
           text="Verifică conexiunea și încearcă din nou."
           onRetry={() => void refetch()}
@@ -78,9 +79,9 @@ export default function CourseDetailsPage() {
     return (
       <div className="mx-auto flex min-h-[55vh] max-w-lg flex-col items-center justify-center px-6 py-20 text-center">
         <div className="from-primary/15 to-sky/10 w-full rounded-xl border bg-gradient-to-br p-10">
-          <p className="font-display text-foreground text-2xl font-extrabold">
+          <h1 className="font-display text-foreground text-2xl font-extrabold">
             Cursul nu a fost găsit.
-          </p>
+          </h1>
           <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
             Linkul poate fi greșit sau cursul nu mai este disponibil. Poți alege alt curs din listă.
           </p>
