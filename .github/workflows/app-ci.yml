@@ -55,6 +55,8 @@ on:
       - 'supabase/tests/*competition-podium-and-birth-date-access*'
       - 'supabase/migrations/00134_reject_inactive_account_requests.sql'
       - 'supabase/tests/*reject-inactive-account-requests*'
+      - 'supabase/migrations/00135_restrict_anon_profiles.sql'
+      - 'supabase/tests/*restrict-anon-profiles*'
       - 'supabase/migrations/00136_stripe_connect_columns_service_only.sql'
       - 'supabase/tests/*stripe-connect-columns-guard*'
       - 'supabase/migrations/00102_checkout_acceptances.sql'
@@ -153,6 +155,9 @@ jobs:
       - name: Verify disabled and deleted accounts are refused before every Data API request
         shell: pwsh
         run: ./supabase/tests/run-reject-inactive-account-requests.ps1
+      - name: Verify anonymous visitors see only public coach, club and reviewer profiles
+        shell: pwsh
+        run: ./supabase/tests/run-restrict-anon-profiles.ps1
       - name: Verify enrollment and payment-intent contracts
         run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/price-snapshot.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/bnr-rate-contract.test.ts supabase/functions/_shared/stripe-return-url.test.ts supabase/functions/_shared/stripe.test.ts supabase/functions/_shared/checkout-session.test.ts supabase/functions/_shared/stripe-fee-settlement.test.ts supabase/functions/_shared/active-role.test.ts
       - name: Type-check Stripe Connect function
