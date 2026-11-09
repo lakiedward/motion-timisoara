@@ -3,6 +3,7 @@ import { ChevronRight, MapPin, Tent } from 'lucide-react'
 import { formatZi, type TabaraDinLista } from '@/api/camps'
 import type { ActivityListItem, CourseListItem } from '@/api/public'
 import type { Loc } from '@/lib/locuri'
+import { formatAgeRange } from '@/lib/age-range/age-range'
 import { plural } from '@/lib/plural'
 import {
   SPORT_COLOR,
@@ -106,9 +107,7 @@ export default function LocationPopup({
                   sportCode={course.sport?.code}
                   title={course.name}
                   meta={
-                    course.age_from != null && course.age_to != null
-                      ? `${course.age_from}–${course.age_to} ani`
-                      : (course.sport?.name ?? 'Curs')
+                    formatAgeRange(course.age_from, course.age_to) ?? course.sport?.name ?? 'Curs'
                   }
                 />
               ))}

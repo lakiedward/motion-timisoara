@@ -1,5 +1,6 @@
 import type { ClubCourse } from '@/api/club'
 import { fold } from '@/features/admin/courses/course-overview'
+import { formatAgeRange } from '@/lib/age-range/age-range'
 
 export type ClubStatusFilter = 'active' | 'inactive' | 'all'
 
@@ -69,9 +70,4 @@ export function hasFilters({ status, sport, coach, query }: ClubCourseFilters) {
   return status !== 'all' || sport !== '' || coach !== '' || query.trim() !== ''
 }
 
-export function courseAgeLabel(ageFrom: number | null, ageTo: number | null) {
-  if (ageFrom != null && ageTo != null) return `${ageFrom}–${ageTo} ani`
-  if (ageFrom != null) return `de la ${ageFrom} ani`
-  if (ageTo != null) return `până la ${ageTo} ani`
-  return null
-}
+export const courseAgeLabel = formatAgeRange

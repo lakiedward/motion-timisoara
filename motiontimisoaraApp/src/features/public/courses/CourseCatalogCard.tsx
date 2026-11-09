@@ -2,6 +2,7 @@ import { Building2, CalendarDays, Landmark, MapPin, UserRound, Users } from 'luc
 
 import { courseHeroUrl, type CourseCatalogItem } from '@/api/public'
 import { courseSlots, formatCourseSchedule } from '@/lib/course-catalog'
+import { formatAgeRange } from '@/lib/age-range/age-range'
 import { formatMoney } from '@/lib/money'
 import { plural } from '@/lib/plural'
 import { OfferCard, OrganizerLine } from '../components/OfferCard'
@@ -14,10 +15,7 @@ export function CourseCatalogCard({ course }: { course: CourseCatalogItem }) {
     : course.coach?.name
       ? { icon: UserRound, name: course.coach.name }
       : null
-  const ages =
-    course.age_from != null && course.age_to != null
-      ? `${course.age_from}–${course.age_to} ani`
-      : null
+  const ages = formatAgeRange(course.age_from, course.age_to)
 
   return (
     <OfferCard

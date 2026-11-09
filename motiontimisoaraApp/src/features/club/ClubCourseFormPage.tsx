@@ -38,6 +38,7 @@ import { baniToRon } from '@/lib/money'
 import { BackLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
+import { MAX_AGE, validateAgeRangeFields } from '@/lib/age-range/age-range'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -66,6 +67,7 @@ const schema = z
   })
   .superRefine((value, ctx) => {
     validateOfferCurrency(value, ctx)
+    validateAgeRangeFields(value, ctx)
     validateCourseProgramFields(value, ctx)
   })
 type Values = z.infer<typeof schema>
@@ -453,18 +455,38 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
               <Input
                 id="age_from"
                 type="number"
-                aria-describedby="varste-hint"
+                min={0}
+                max={MAX_AGE}
+                step={1}
+                aria-invalid={!!errors.age_from}
+                aria-describedby={[
+                  'varste-hint',
+                  fieldDescription('age_from', undefined, errors.age_from?.message),
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
                 {...register('age_from')}
               />
+              <FieldMessage id="age_from" error={errors.age_from?.message} />
             </div>
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="age_to">Vârstă maximă</Label>
               <Input
                 id="age_to"
                 type="number"
-                aria-describedby="varste-hint"
+                min={0}
+                max={MAX_AGE}
+                step={1}
+                aria-invalid={!!errors.age_to}
+                aria-describedby={[
+                  'varste-hint',
+                  fieldDescription('age_to', undefined, errors.age_to?.message),
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
                 {...register('age_to')}
               />
+              <FieldMessage id="age_to" error={errors.age_to?.message} />
             </div>
             <p id="varste-hint" className="text-muted-foreground text-sm sm:col-span-2">
               Lasă gol dacă nu ai limită. Poți completa doar una.

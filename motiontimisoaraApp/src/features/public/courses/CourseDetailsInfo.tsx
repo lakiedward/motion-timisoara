@@ -3,6 +3,7 @@ import { CalendarDays, MapPin, Users } from 'lucide-react'
 import { COURSE_RULES_FILE_BUCKET, rulesFileAfisabil } from '@/api/camp-rules-file'
 import { galeriePublica } from '@/api/photo-gallery'
 import type { CourseDetail } from '@/api/public'
+import { formatAgeRange } from '@/lib/age-range/age-range'
 import CampRulesDisplay from '@/components/camps/CampRulesDisplay'
 import {
   descriptionParagraphs,
@@ -38,10 +39,7 @@ export function CourseDetailsInfo({
       ? { fel: 'antrenor', nume: coach.nume, link: coach.link, pozaUrl: coach.pozaUrl }
       : null
   const coaches = course.club && coach ? [coach] : []
-  const ages =
-    course.age_from != null && course.age_to != null
-      ? `${course.age_from}–${course.age_to} ani`
-      : '—'
+  const ages = formatAgeRange(course.age_from, course.age_to) ?? '—'
 
   return (
     <div>
