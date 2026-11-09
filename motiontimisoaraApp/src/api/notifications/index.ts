@@ -68,6 +68,14 @@ export async function clearPushBeforeSignOut() {
   if (supportsPush()) await pushNotifications.clearForSignOut()
 }
 
+async function isParentProfile(userId: string) {
+  const { data, error } = await supabase.rpc('my_profile')
+  if (error || !data) return false
+  return data.some(
+    (profile) => profile.id === userId && profile.role === 'PARENT' && profile.enabled,
+  )
+}
+
 export async function authenticateWithPushIsolation<T extends { error: unknown }>(
   work: () => Promise<T>,
 ) {
@@ -78,7 +86,8 @@ export async function authenticateWithPushIsolation<T extends { error: unknown }
     if (result.error) await resume()
     else {
       const { data, error } = await supabase.auth.getSession()
-      if (!error && data.session) await pushNotifications.restore(data.session.user.id)
+      if (!error && data.session && (await isParentProfile(data.session.user.id)))
+        await pushNotifications.restore(data.session.user.id)
       else await pushNotifications.clearForSignOut()
     }
     return result

@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   restore: vi.fn(),
   clear: vi.fn(),
   session: vi.fn(),
+  rpc: vi.fn(),
   supported: true,
 }))
 vi.mock('./coordinator', () => ({
@@ -15,7 +16,9 @@ vi.mock('./coordinator', () => ({
     clearForSignOut: mocks.clear,
   }),
 }))
-vi.mock('@/lib/supabase', () => ({ supabase: { auth: { getSession: mocks.session } } }))
+vi.mock('@/lib/supabase', () => ({
+  supabase: { auth: { getSession: mocks.session }, rpc: mocks.rpc },
+}))
 vi.mock('./native', () => ({
   supportsNativePush: () => mocks.supported,
   MotionPush: {},
@@ -33,6 +36,10 @@ beforeEach(() => {
   mocks.resume.mockResolvedValue(undefined)
   mocks.restore.mockResolvedValue(undefined)
   mocks.clear.mockResolvedValue(undefined)
+  mocks.rpc.mockResolvedValue({
+    data: [{ id: 'same-parent', role: 'PARENT', enabled: true }],
+    error: null,
+  })
 })
 
 it('clears the local binding before authentication and settles a successful same-account login', async () => {
@@ -72,3 +79,25 @@ it('does not invoke native isolation on web', async () => {
   })
   expect(mocks.pause).not.toHaveBeenCalled()
 })
+
+it.each([
+  ['an admin', [{ id: 'admin-user', role: 'ADMIN', enabled: true }], null],
+  ['a disabled parent', [{ id: 'admin-user', role: 'PARENT', enabled: false }], null],
+  ['an unreadable profile', null, { message: 'denied' }],
+])(
+  'clears push instead of reading parent preferences after login as %s',
+  async (_, data, error) => {
+    const { authenticateWithPushIsolation } = await import('./index')
+    mocks.session.mockResolvedValue({
+      data: { session: { user: { id: 'admin-user' } } },
+      error: null,
+    })
+    mocks.rpc.mockResolvedValue({ data, error })
+    expect(await authenticateWithPushIsolation(async () => ({ error: null }))).toEqual({
+      error: null,
+    })
+    expect(mocks.rpc).toHaveBeenCalledExactlyOnceWith('my_profile')
+    expect(mocks.restore).not.toHaveBeenCalled()
+    expect(mocks.clear).toHaveBeenCalledOnce()
+  },
+)
