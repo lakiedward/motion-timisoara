@@ -16,11 +16,23 @@ function dateOr(value: string | null, fallback: string): string {
   return value ? formatShortDate(value) : fallback
 }
 
+const CHARGE_NOW_WINDOW_MS = 48 * 3_600_000
+
+function trialPaymentLine(endsAt: string, now: number): string {
+  return Date.parse(endsAt) - now < CHARGE_NOW_WINDOW_MS
+    ? 'Plata se face acum, la alegerea pachetului.'
+    : 'Plătești abia la finalul perioadei gratuite.'
+}
+
 function launchPeriod(days: number): string {
   return days % 30 === 0 ? `${days / 30} luni` : `${days} de zile`
 }
 
-export function subscriptionCopy(view: SubscriptionView, plan: PlanLabel | null): SubscriptionCopy {
+export function subscriptionCopy(
+  view: SubscriptionView,
+  plan: PlanLabel | null,
+  now: number = Date.now(),
+): SubscriptionCopy {
   const planLine = plan ? `${plan.name} · ${plan.priceLei} lei / lună` : 'Abonament'
   switch (view.kind) {
     case 'missing':
@@ -52,7 +64,7 @@ export function subscriptionCopy(view: SubscriptionView, plan: PlanLabel | null)
               view.daysLeft === 1
                 ? 'Mai ai o zi gratuită'
                 : `Mai ai ${view.daysLeft} zile gratuite`,
-            detail: `Până pe ${formatShortDate(view.endsAt)}. Alege un pachet înainte, ca profilul să rămână vizibil. Plătești abia la finalul perioadei gratuite.`,
+            detail: `Până pe ${formatShortDate(view.endsAt)}. Alege un pachet înainte, ca profilul să rămână vizibil. ${trialPaymentLine(view.endsAt, now)}`,
           }
     case 'active':
       return {

@@ -44,3 +44,14 @@ test('every state has a badge, a title and a detail line', () => {
   ).toContain('20.11.2026')
   expect(subscriptionCopy({ kind: 'expired' }, plan).badge).toBe('Expirat')
 })
+
+test('trial payment line matches when Checkout charges', () => {
+  const now = Date.parse('2026-11-18T10:00:00Z')
+  const view = { kind: 'trialing', daysLeft: 2, paid: false } as const
+  expect(
+    subscriptionCopy({ ...view, endsAt: '2026-11-20T09:00:00Z' }, null, now).detail,
+  ).toContain('Plata se face acum, la alegerea pachetului.')
+  expect(
+    subscriptionCopy({ ...view, endsAt: '2026-11-20T11:00:00Z' }, null, now).detail,
+  ).toContain('Plătești abia la finalul perioadei gratuite.')
+})
