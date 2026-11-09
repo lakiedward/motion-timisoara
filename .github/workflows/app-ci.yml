@@ -55,6 +55,8 @@ on:
       - 'supabase/tests/*competition-podium-and-birth-date-access*'
       - 'supabase/migrations/00134_reject_inactive_account_requests.sql'
       - 'supabase/tests/*reject-inactive-account-requests*'
+      - 'supabase/migrations/00136_stripe_connect_columns_service_only.sql'
+      - 'supabase/tests/*stripe-connect-columns-guard*'
       - 'supabase/migrations/00102_checkout_acceptances.sql'
       - 'supabase/tests/*checkout-acceptances*'
       - 'supabase/functions/_shared/checkout-acceptance*.ts'
@@ -177,6 +179,9 @@ jobs:
       - name: Verify club approval
         shell: pwsh
         run: ./supabase/tests/run-club-approval.ps1
+      - name: Verify Stripe Connect columns are service-only
+        shell: pwsh
+        run: ./supabase/tests/run-stripe-connect-columns-guard.ps1
       - name: Verify test account visibility
         shell: pwsh
         run: ./supabase/tests/run-test-account-visibility.ps1
