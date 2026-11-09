@@ -1,4 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 
 import { cn } from '@/lib/utils'
@@ -49,7 +50,7 @@ function AccountTabs() {
   }, [measure])
 
   return (
-    <nav aria-label="Contul meu" className="border-border mb-8 border-b">
+    <nav aria-label="Contul meu" className="border-border relative mb-8 border-b">
       <div
         ref={scroller}
         onScroll={measure}
@@ -75,6 +76,20 @@ function AccountTabs() {
           )
         })}
       </div>
+      {edges.start && (
+        <ChevronLeft
+          aria-hidden="true"
+          data-testid="account-tabs-more-start"
+          className="text-muted-foreground pointer-events-none absolute top-1/2 left-0 size-4 -translate-y-1/2"
+        />
+      )}
+      {edges.end && (
+        <ChevronRight
+          aria-hidden="true"
+          data-testid="account-tabs-more-end"
+          className="text-muted-foreground pointer-events-none absolute top-1/2 right-0 size-4 -translate-y-1/2"
+        />
+      )}
     </nav>
   )
 }
