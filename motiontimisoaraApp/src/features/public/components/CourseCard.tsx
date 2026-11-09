@@ -1,14 +1,13 @@
 import { MapPin } from 'lucide-react'
 
 import { formatMoney } from '@/lib/money'
+import { formatAgeRange } from '@/lib/age-range/age-range'
 import { courseHeroUrl, type CourseListItem } from '@/api/public'
 import { OfferCard } from './OfferCard'
 
 export function CourseCard({ course }: { course: CourseListItem }) {
-  const ages =
-    course.age_from != null && course.age_to != null
-      ? ` · ${course.age_from}–${course.age_to} ani`
-      : ''
+  const ageRange = formatAgeRange(course.age_from, course.age_to)
+  const ages = ageRange ? ` · ${ageRange}` : ''
 
   return (
     <OfferCard
