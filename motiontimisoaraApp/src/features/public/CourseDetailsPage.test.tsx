@@ -43,7 +43,7 @@ beforeEach(() => vi.clearAllMocks())
 test('un curs inexistent arată „Cursul nu a fost găsit”', async () => {
   mocked.mockResolvedValue(null)
   renderPage()
-  expect(await screen.findByText('Cursul nu a fost găsit.')).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { level: 1, name: 'Cursul nu a fost găsit.' })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Reîncearcă' })).not.toBeInTheDocument()
 })
 
@@ -51,7 +51,7 @@ test('o cădere de rețea arată eroare cu reîncercare, nu „negăsit”', asy
   mocked.mockRejectedValueOnce(new Error('offline'))
   mocked.mockResolvedValueOnce(null)
   renderPage()
-  expect(await screen.findByText('Nu am putut încărca cursul.')).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { level: 1, name: 'Nu am putut încărca cursul.' })).toBeInTheDocument()
   expect(screen.queryByText('Cursul nu a fost găsit.')).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Reîncearcă' }))
   expect(await screen.findByText('Cursul nu a fost găsit.')).toBeInTheDocument()
