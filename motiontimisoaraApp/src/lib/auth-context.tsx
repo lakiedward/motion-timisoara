@@ -1,13 +1,17 @@
 import * as React from 'react'
 import { App } from '@capacitor/app'
+import { toast } from 'sonner'
 import { isNative } from '@/lib/platform'
 import { supabase } from '@/lib/supabase'
 import {
+  confirmAccountActive,
   loadAppUserResult,
   PROFILE_LOAD_ERROR,
+  signOutDisabledAccount,
   type AppUser,
   type LoadAppUserResult,
 } from '@/api/auth'
+import { ACCOUNT_DISABLED_MESSAGE, onAccountDisabled } from '@/lib/auth/account-disabled'
 
 interface AuthContextValue {
   user: AppUser | null
@@ -105,6 +109,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       void listener?.then((handle) => handle.remove())
     }
   }, [needsRecovery, applyResult])
+
+  React.useEffect(() => {
+    let ending = false
+    return onAccountDisabled(() => {
+      if (ending) return
+      ending = true
+      toast.error(ACCOUNT_DISABLED_MESSAGE, { id: 'account-disabled', duration: 15_000 })
+      void signOutDisabledAccount()
+        .catch(() => undefined)
+        .finally(() => {
+          ending = false
+        })
+    })
+  }, [])
+
+  React.useEffect(() => {
+    if (!user) return
+    const check = () => {
+      if (document.visibilityState === 'visible') void confirmAccountActive().catch(() => undefined)
+    }
+    document.addEventListener('visibilitychange', check)
+    return () => document.removeEventListener('visibilitychange', check)
+  }, [user])
 
   React.useEffect(() => {
     mounted.current = true

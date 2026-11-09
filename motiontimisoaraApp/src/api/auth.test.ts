@@ -1,14 +1,23 @@
 import { beforeEach, expect, test, vi } from 'vitest'
 
-import { loadAppUser, loadAppUserResult, PROFILE_LOAD_ERROR } from './auth'
+import {
+  confirmAccountActive,
+  loadAppUser,
+  loadAppUserResult,
+  PROFILE_LOAD_ERROR,
+  signOutDisabledAccount,
+} from './auth'
+import { onAccountDisabled } from '@/lib/auth/account-disabled'
 
 const getSession = vi.fn()
 const rpc = vi.fn()
+const signOut = vi.fn()
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
     auth: {
       getSession: (...args: unknown[]) => getSession(...args),
+      signOut: (...args: unknown[]) => signOut(...args),
     },
     rpc: (...args: unknown[]) => rpc(...args),
   },
@@ -17,6 +26,7 @@ vi.mock('@/lib/supabase', () => ({
 beforeEach(() => {
   getSession.mockReset()
   rpc.mockReset()
+  signOut.mockReset()
 })
 
 test('signed out is distinct from a failed profile fetch', async () => {
@@ -124,4 +134,40 @@ test('my_profile() returns the row, and the app user is built from it', async ()
       needsProfileCompletion: true,
     },
   })
+})
+
+test('a disabled profile is reported so the session can be closed', async () => {
+  const reported = vi.fn()
+  const stop = onAccountDisabled(reported)
+  getSession.mockResolvedValue({ data: { session: { user: { id: 'coach-a' } } } })
+  rpc.mockResolvedValue({
+    data: [{ id: 'coach-a', enabled: false, deleted_at: null, name: 'A', role: 'COACH' }],
+    error: null,
+  })
+  expect((await loadAppUserResult()).status).toBe('error')
+  await confirmAccountActive()
+  expect(reported).toHaveBeenCalledTimes(2)
+
+  rpc.mockResolvedValue({
+    data: [{ id: 'coach-a', enabled: false, deleted_at: '2026-11-09T12:00:00Z', role: 'PARENT' }],
+    error: null,
+  })
+  await loadAppUserResult()
+  await confirmAccountActive()
+  rpc.mockResolvedValue({ data: [{ id: 'coach-a', enabled: true, role: 'COACH' }], error: null })
+  await confirmAccountActive()
+  expect(reported).toHaveBeenCalledTimes(2)
+  stop()
+})
+
+test('the active-account check does nothing without a session', async () => {
+  getSession.mockResolvedValue({ data: { session: null } })
+  await confirmAccountActive()
+  expect(rpc).not.toHaveBeenCalled()
+})
+
+test('a disabled account signs out only on this device', async () => {
+  signOut.mockResolvedValue({ error: null })
+  await signOutDisabledAccount()
+  expect(signOut).toHaveBeenCalledWith({ scope: 'local' })
 })
