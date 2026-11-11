@@ -26,7 +26,7 @@ export function CompetitionEnrollCard({
 
   return (
     <div
-      data-section="competition-enroll"
+      data-section="manual:section:card-inscriere:8559428b-b65f-4302-be16-2b1008f59014"
       className="bg-card flex flex-col items-center rounded-xl border p-6 text-center"
     >
       {lowest !== null && highest !== null && (

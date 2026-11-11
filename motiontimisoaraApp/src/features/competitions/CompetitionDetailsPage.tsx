@@ -51,7 +51,11 @@ export default function CompetitionDetailsPage() {
     return (
       <div className="mx-auto max-w-4xl px-6 py-20 text-center" role="alert">
         <p className="text-foreground font-medium">Nu am putut încărca concursul.</p>
-        <Button className="mt-4 h-touch-target min-h-touch-target" type="button" onClick={() => void refetch()}>
+        <Button
+          className="mt-4 h-touch-target min-h-touch-target"
+          type="button"
+          onClick={() => void refetch()}
+        >
           Reîncearcă
         </Button>
       </div>
@@ -128,7 +132,10 @@ export default function CompetitionDetailsPage() {
             </div>
 
             {data.description && (
-              <section className="bg-card mt-8 rounded-xl border p-5 sm:p-6">
+              <section
+                data-section="manual:section:despre-concurs:c733fd92-c968-4cbd-9755-9c4b11141c87"
+                className="bg-card mt-8 rounded-xl border p-5 sm:p-6"
+              >
                 <h2 className="font-display text-xl font-bold">Despre concurs</h2>
                 <p className="text-muted-foreground mt-3 leading-relaxed whitespace-pre-wrap">
                   {data.description}
@@ -153,7 +160,7 @@ export default function CompetitionDetailsPage() {
             )}
 
             <OrganizerCoaches
-              sectionKey="competition-organizer"
+              sectionKey="manual:section:organizat-de:f3632f7e-dcde-4ec3-a32e-b40dc38b03c2"
               organizerTitle="Organizat de"
               organizator={data.organizator}
               antrenori={[]}
