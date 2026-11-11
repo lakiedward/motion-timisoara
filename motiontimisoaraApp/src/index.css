@@ -45,7 +45,7 @@
   --ring: #2563eb;
   --touch-target: 44px;
 
-  --gradient-primary: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
+  --gradient-primary: linear-gradient(135deg, #2563eb 0%, #0277bd 100%);
   --gradient-warm: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
   --gradient-green: linear-gradient(135deg, #10b981 0%, #34d399 100%);
   --overlay-scrim: rgba(15, 23, 42, 0.88);
