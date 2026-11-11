@@ -321,3 +321,25 @@ test('la antrenor linkurile duc în portalul antrenorului', async () => {
   )
   expect(screen.getByRole('searchbox', { name: /Caută participanți/ })).toBeInTheDocument()
 })
+
+test('o tabără inexistentă arată un singur mesaj „Tabăra nu a fost găsită.”', async () => {
+  camp.mockResolvedValue(null)
+  enrolled.mockResolvedValue([])
+  participants.mockRejectedValue(new Error('Nu ai acces la această tabără.'))
+  renderPage('/coach/camps')
+  expect(await screen.findByText('Tabăra nu a fost găsită.')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /Înapoi la tabere/ })).toHaveAttribute('href', '/coach/camps')
+  expect(screen.queryByText('Niciun participant înscris încă.')).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Reîncearcă prezența' })).not.toBeInTheDocument()
+  expect(screen.queryByText('Nu ai acces la această tabără.')).not.toBeInTheDocument()
+})
+
+test('dacă tabăra nu se poate citi, Reîncearcă repetă citirea', async () => {
+  camp.mockRejectedValueOnce(new Error('offline'))
+  enrolled.mockResolvedValue([])
+  renderPage()
+  expect(await screen.findByText('Nu am putut încărca tabăra.')).toBeInTheDocument()
+  camp.mockResolvedValueOnce(null)
+  fireEvent.click(screen.getByRole('button', { name: 'Reîncearcă' }))
+  expect(await screen.findByText('Tabăra nu a fost găsită.')).toBeInTheDocument()
+})
