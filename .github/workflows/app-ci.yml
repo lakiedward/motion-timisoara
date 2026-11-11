@@ -63,6 +63,8 @@ on:
       - 'supabase/tests/*podium-minor-names*'
       - 'supabase/migrations/00140_restrict_authenticated_profiles.sql'
       - 'supabase/tests/*restrict-authenticated-profiles*'
+      - 'supabase/migrations/00141_photo_bucket_limits_and_active_writes.sql'
+      - 'supabase/tests/*photo-bucket-limits-and-active-writes*'
       - 'supabase/migrations/00102_checkout_acceptances.sql'
       - 'supabase/tests/*checkout-acceptances*'
       - 'supabase/functions/_shared/checkout-acceptance*.ts'
@@ -165,6 +167,9 @@ jobs:
       - name: Verify signed-in accounts see only their own, public and related profiles
         shell: pwsh
         run: ./supabase/tests/run-restrict-authenticated-profiles.ps1
+      - name: Verify photo buckets accept only images and only active owners can write
+        shell: pwsh
+        run: ./supabase/tests/run-photo-bucket-limits-and-active-writes.ps1
       - name: Verify the public podium shows children by first name and initial
         shell: pwsh
         run: ./supabase/tests/run-podium-minor-names.ps1
