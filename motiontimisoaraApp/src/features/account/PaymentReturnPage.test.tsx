@@ -4,11 +4,18 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 
-import { getEnrollmentPayments, type EnrollmentPayment } from '@/api/payments/enrollments'
+import {
+  EnrollmentPaymentUnavailableError,
+  getEnrollmentPayments,
+  type EnrollmentPayment,
+} from '@/api/payments/enrollments'
 import { startStripeCheckout } from '@/api/payments/checkout-session'
 import PaymentReturnPage from './PaymentReturnPage'
 
-vi.mock('@/api/payments/enrollments', () => ({ getEnrollmentPayments: vi.fn() }))
+vi.mock('@/api/payments/enrollments', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/api/payments/enrollments')>()),
+  getEnrollmentPayments: vi.fn(),
+}))
 vi.mock('@/api/payments/checkout-session', () => ({ startStripeCheckout: vi.fn() }))
 
 const load = vi.mocked(getEnrollmentPayments)
@@ -81,4 +88,22 @@ test('a return link without enrollments points back to Înscrieri', () => {
   renderAt('')
   expect(screen.getByText('Nu găsim plata.')).toBeInTheDocument()
   expect(load).not.toHaveBeenCalled()
+})
+
+test('an enrollment from another account stops polling and links to Înscrieri without retry', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true })
+  load.mockRejectedValue(
+    new EnrollmentPaymentUnavailableError('Înscrierea nu este disponibilă în acest cont.'),
+  )
+  renderAt('?rezultat=reusita&inscrieri=foreign')
+  expect(await screen.findByText('Nu putem afișa această plată.')).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Reîncearcă' })).not.toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Vezi înscrierile' })).toHaveAttribute(
+    'href',
+    '/account/enrollments',
+  )
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(10000)
+  })
+  expect(load).toHaveBeenCalledTimes(1)
 })

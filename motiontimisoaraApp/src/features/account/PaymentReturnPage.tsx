@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { getEnrollmentPayments } from '@/api/payments/enrollments'
+import { EnrollmentPaymentUnavailableError, getEnrollmentPayments } from '@/api/payments/enrollments'
 import { startStripeCheckout } from '@/api/payments/checkout-session'
 import { Button } from '@/components/ui/button'
 import { StatusView } from '@/components/ui/status-view'
@@ -30,6 +30,7 @@ export default function PaymentReturnPage() {
     enabled: ids.length > 0,
     retry: false,
     refetchInterval: (query) =>
+      query.state.status === 'error' ||
       query.state.data?.every((row) => row.payments[0].status === 'SUCCEEDED') ? false : 2000,
   })
   const paid = Boolean(payments.data?.every((row) => row.payments[0].status === 'SUCCEEDED'))
@@ -54,6 +55,20 @@ export default function PaymentReturnPage() {
         className="border-0"
         title="Nu găsim plata."
         text="Vezi starea plăților în Înscrieri."
+        action={
+          <div className="mt-3">
+            <EnrollmentsLink />
+          </div>
+        }
+      />
+    )
+  } else if (payments.error instanceof EnrollmentPaymentUnavailableError) {
+    content = (
+      <StatusView
+        state="empty"
+        className="border-0"
+        title="Nu putem afișa această plată."
+        text={payments.error.message}
         action={
           <div className="mt-3">
             <EnrollmentsLink />

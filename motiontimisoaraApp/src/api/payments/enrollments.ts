@@ -29,6 +29,8 @@ export type EnrollmentPayment = Pick<
   >[]
 }
 
+export class EnrollmentPaymentUnavailableError extends Error {}
+
 export async function getEnrollmentPayments(ids: string[]): Promise<EnrollmentPayment[]> {
   if (!ids.length) return []
   const { data, error } = await supabase
@@ -39,11 +41,11 @@ export async function getEnrollmentPayments(ids: string[]): Promise<EnrollmentPa
     .in('id', [...new Set(ids)])
   if (error) throw new Error('Nu am putut verifica plățile. Reîncearcă.', { cause: error })
   if (!data || data.length !== new Set(ids).size) {
-    throw new Error('Înscrierea nu este disponibilă în acest cont.')
+    throw new EnrollmentPaymentUnavailableError('Înscrierea nu este disponibilă în acest cont.')
   }
   const rows = data as EnrollmentPayment[]
   if (rows.some((row) => (!row.child && !row.adult_profile_id) || row.payments.length !== 1)) {
-    throw new Error('Plata are nevoie de verificare. Contactează clubul.')
+    throw new EnrollmentPaymentUnavailableError('Plata are nevoie de verificare. Contactează clubul.')
   }
   return ids.map((id) => rows.find((row) => row.id === id)!)
 }

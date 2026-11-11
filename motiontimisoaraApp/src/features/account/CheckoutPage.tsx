@@ -141,6 +141,7 @@ export default function CheckoutPage() {
       <StatusView
         state="error"
         title="Nu am putut încărca oferta."
+        titleAs="h1"
         text="Verifică conexiunea și încearcă din nou."
         onRetry={() => void refetch()}
         className="mx-auto max-w-lg"
