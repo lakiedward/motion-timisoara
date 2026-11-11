@@ -125,6 +125,12 @@ async function pickCategory(
   )
 }
 
+async function goNext(user: ReturnType<typeof userEvent.setup>) {
+  const button = screen.getByRole('button', { name: /Continuă/ })
+  await waitFor(() => expect(button).toBeEnabled())
+  await user.click(button)
+}
+
 test('categoria eligibilă gratuită se înscrie fără card sau cash', async () => {
   const user = userEvent.setup()
   vi.mocked(validateCompetitionRegistration).mockResolvedValue({
@@ -151,6 +157,10 @@ test('categoria eligibilă gratuită se înscrie fără card sau cash', async ()
   renderRegistration()
   await pickCategory(user, await screen.findByLabelText('Copil Audit'), category)
   expect(await screen.findByText('Preț verificat: Gratuit')).toBeInTheDocument()
+  await goNext(user)
+  expect(screen.getByRole('heading', { name: 'Verifică suma' })).toBeInTheDocument()
+  expect(screen.queryByText('Sumar comandă')).not.toBeInTheDocument()
+  expect(screen.getAllByText('Total')).toHaveLength(1)
   await user.click(screen.getByRole('checkbox', { name: /Confirm categoriile/ }))
   await user.click(screen.getByRole('button', { name: 'Confirmă înscrierea gratuită' }))
   await waitFor(() =>
@@ -163,6 +173,18 @@ test('categoria eligibilă gratuită se înscrie fără card sau cash', async ()
     }),
   )
   expect(await screen.findByText('Înscrieri salvate')).toBeInTheDocument()
+})
+
+test('pașii sunt ca la curs, iar butonul dezactivat spune ce lipsește', async () => {
+  renderRegistration()
+  await screen.findByLabelText('Copil Audit')
+  expect(screen.getByRole('list', { name: 'Pașii înscrierii' })).toHaveTextContent(
+    /Participanți.*Detalii.*Facturare.*Plată/,
+  )
+  expect(screen.getByRole('heading', { name: 'Cine participă?' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /Continuă/ })).toBeDisabled()
+  expect(screen.getByText('Alege cel puțin un participant ca să continui.')).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Înapoi' })).not.toBeInTheDocument()
 })
 
 test('categoria respinsă nu permite înscrierea', async () => {
@@ -184,7 +206,12 @@ test('categoria respinsă nu permite înscrierea', async () => {
   renderRegistration()
   await pickCategory(user, await screen.findByLabelText('Copil Audit'), category)
   expect(await screen.findByRole('alert')).toHaveTextContent('Vârsta la data înscrierii')
-  expect(screen.getByRole('button', { name: 'Finalizează înscrierea' })).toBeDisabled()
+  expect(screen.getByRole('button', { name: /Continuă/ })).toBeDisabled()
+  expect(
+    await screen.findByText(
+      'Alege o categorie potrivită pentru fiecare participant ca să continui.',
+    ),
+  ).toBeInTheDocument()
   expect(createCompetitionRegistration).not.toHaveBeenCalled()
 })
 
@@ -233,6 +260,10 @@ test('adultul fără copii se înscrie gratuit cu data nașterii introdusă doar
     ]),
   )
   expect(await screen.findByText('Preț verificat: Gratuit')).toBeInTheDocument()
+  await goNext(user)
+  expect(screen.getByRole('heading', { name: 'Verifică suma' })).toBeInTheDocument()
+  expect(screen.queryByText('Sumar comandă')).not.toBeInTheDocument()
+  expect(screen.getAllByText('Total')).toHaveLength(1)
   await user.click(screen.getByRole('checkbox', { name: /Confirm categoriile/ }))
   await user.click(screen.getByRole('button', { name: 'Confirmă înscrierea gratuită' }))
   await waitFor(() =>
@@ -283,15 +314,19 @@ test('schimbarea datei nașterii cere un preț nou și reconfirmare', async () =
   await user.type(birthDate, '1990-05-12')
   await pickCategory(user, screen.getByLabelText('Categoria mea'), adultCategory)
   await screen.findByText('Preț verificat: Gratuit')
+  await goNext(user)
   await user.click(screen.getByRole('checkbox', { name: /Confirm categoriile/ }))
   expect(screen.getByRole('button', { name: 'Confirmă înscrierea gratuită' })).toBeEnabled()
-  await user.clear(birthDate)
-  await user.type(birthDate, '1991-05-12')
+  await user.click(screen.getByRole('button', { name: 'Înapoi' }))
+  const changedBirthDate = screen.getByLabelText('Data mea de naștere')
+  await user.clear(changedBirthDate)
+  await user.type(changedBirthDate, '1991-05-12')
   await waitFor(() =>
     expect(validateCompetitionRegistration).toHaveBeenCalledWith(competition.id, [
       { selfBirthDate: '1991-05-12', categoryId: adultCategory.id },
     ]),
   )
+  await goNext(user)
   expect(screen.getByRole('checkbox', { name: /Confirm categoriile/ })).not.toBeChecked()
   expect(screen.getByRole('button', { name: 'Confirmă înscrierea gratuită' })).toBeDisabled()
 })
@@ -346,8 +381,18 @@ test('adultul poate alege plata cash pentru propria înscriere cu preț pozitiv'
   await user.type(screen.getByLabelText('Data mea de naștere'), '1990-05-12')
   await pickCategory(user, screen.getByLabelText('Categoria mea'), adultCategory)
   await screen.findByText('Preț verificat: 120,00 lei')
-  await user.click(screen.getByRole('radio', { name: /Cash, la antrenor/ }))
+  await goNext(user)
   await user.click(screen.getByRole('checkbox', { name: /Confirm categoriile/ }))
+  await goNext(user)
+  expect(
+    screen.getByText('Completează toate datele de facturare ca să continui.'),
+  ).toBeInTheDocument()
+  await user.type(screen.getByLabelText('Adresă'), 'Strada Test 1')
+  await user.type(screen.getByLabelText('Oraș'), 'Timișoara')
+  await user.type(screen.getByLabelText('Cod poștal'), '300001')
+  await goNext(user)
+  expect(screen.getByText('Sumar comandă')).toBeInTheDocument()
+  await user.click(screen.getByRole('radio', { name: /Cash, la antrenor/ }))
   await user.click(screen.getByRole('button', { name: 'Finalizează înscrierea' }))
   await waitFor(() =>
     expect(createCompetitionRegistration).toHaveBeenCalledWith({
@@ -455,6 +500,10 @@ test('prețul schimbat între confirmare și trimitere refuză înscrierea cu me
   renderRegistration()
   await pickCategory(user, await screen.findByLabelText('Copil Audit'), category)
   expect(await screen.findByText('Preț verificat: Gratuit')).toBeInTheDocument()
+  await goNext(user)
+  expect(screen.getByRole('heading', { name: 'Verifică suma' })).toBeInTheDocument()
+  expect(screen.queryByText('Sumar comandă')).not.toBeInTheDocument()
+  expect(screen.getAllByText('Total')).toHaveLength(1)
   await user.click(screen.getByRole('checkbox', { name: /Confirm categoriile/ }))
   await user.click(screen.getByRole('button', { name: 'Confirmă înscrierea gratuită' }))
   await waitFor(() =>
