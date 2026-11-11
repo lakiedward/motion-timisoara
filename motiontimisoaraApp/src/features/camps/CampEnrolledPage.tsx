@@ -34,7 +34,12 @@ export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
   const campId = id as string
   const [filters, setFilters] = useState<ParticipantFilters>(NO_PARTICIPANT_FILTERS)
 
-  const { data: tabara } = useQuery({
+  const {
+    data: tabara,
+    isLoading: seIncarcaTabara,
+    isError: eroareTabara,
+    refetch: reincarcaTabara,
+  } = useQuery({
     queryKey: ['tabara-de-editat', campId],
     queryFn: () => getTabaraDeEditat(campId),
   })
@@ -76,14 +81,47 @@ export default function CampEnrolledPage({ baza }: { baza: CampPortalBaza }) {
     />
   )
 
+  const backLink = (
+    <Link
+      to={baza}
+      className="text-muted-foreground hover:text-foreground inline-flex h-touch-target items-center gap-1 text-sm"
+    >
+      <ArrowLeft className="size-4" /> Înapoi la tabere
+    </Link>
+  )
+
+  if (eroareTabara) {
+    return (
+      <div>
+        {backLink}
+        <StatusView
+          state="error"
+          title="Nu am putut încărca tabăra."
+          text="Verifică conexiunea și încearcă din nou."
+          onRetry={() => void reincarcaTabara()}
+          className="mt-4"
+        />
+      </div>
+    )
+  }
+
+  if (!seIncarcaTabara && !tabara) {
+    return (
+      <div>
+        {backLink}
+        <StatusView
+          state="empty"
+          title="Tabăra nu a fost găsită."
+          text="Poate a fost ștearsă sau linkul nu mai este valabil."
+          className="mt-4"
+        />
+      </div>
+    )
+  }
+
   return (
     <div>
-      <Link
-        to={baza}
-        className="text-muted-foreground hover:text-foreground inline-flex h-touch-target items-center gap-1 text-sm"
-      >
-        <ArrowLeft className="size-4" /> Înapoi la tabere
-      </Link>
+      {backLink}
 
       <h1 className="font-display text-foreground mt-2 text-2xl font-bold">
         Participanți
