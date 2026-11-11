@@ -2,6 +2,7 @@ import { Check, Clock, CloudOff, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { isNative } from '@/lib/platform'
 import { cn } from '@/lib/utils'
 import type { AttendanceQueue, ScanEntry } from './attendance-queue'
 import { formatScanTime, scanCounts, waitingText, type ScanGroup } from './scan-queue'
@@ -90,7 +91,7 @@ export function SyncStatus({
         {snapshot.waiting && pending > 0 && !snapshot.syncing && (
           <p className="text-muted-foreground flex gap-2">
             <CloudOff aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-            {waitingText(pending)}
+            {waitingText(pending, isNative() ? 'pe telefon' : 'în acest browser')}
           </p>
         )}
         {snapshot.syncedAt && (
