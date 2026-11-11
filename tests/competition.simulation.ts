@@ -412,6 +412,10 @@ test("SIMULATED free competition registration on native viewport", async ({
   await page.getByLabel("Copil Simulat").click();
   await page.getByRole("menuitemradio", { name: /^8–10 ani ·/ }).click();
   await expect(page.getByText("Preț verificat: Gratuit")).toBeVisible();
+  await page.getByRole("button", { name: /Continuă/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "Verifică suma" }),
+  ).toBeVisible();
   await page
     .getByRole("checkbox", { name: /Confirm categoriile și suma finală/ })
     .check();
@@ -448,6 +452,10 @@ test("SIMULATED adult self-registration without children on native viewport", as
   await page.getByLabel("Categoria mea").click();
   await page.getByRole("menuitemradio", { name: /^18–39 ani ·/ }).click();
   await expect(page.getByText("Preț verificat: Gratuit")).toBeVisible();
+  await page.getByRole("button", { name: /Continuă/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "Verifică suma" }),
+  ).toBeVisible();
   await page
     .getByRole("checkbox", { name: /Confirm categoriile și suma finală/ })
     .check();
