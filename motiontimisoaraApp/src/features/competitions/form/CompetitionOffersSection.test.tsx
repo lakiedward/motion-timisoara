@@ -69,21 +69,15 @@ beforeEach(() => {
   })
 })
 
-test('shows empty states and requires a GPX before creating a route', async () => {
+test('shows empty states and creates an event without a GPX file', async () => {
   const user = userEvent.setup()
   renderSection()
-  expect(await screen.findByText(/Nu există trasee/)).toBeVisible()
+  expect(await screen.findByText(/Nu există trasee sau probe/)).toBeVisible()
   expect(screen.getByRole('button', { name: 'Adaugă categorie' })).toBeDisabled()
-  await user.click(screen.getByRole('button', { name: 'Adaugă traseu' }))
-  await user.type(screen.getByLabelText('Nume traseu'), route.name)
-  await user.type(screen.getByLabelText('Descriere traseu'), route.description)
-  await user.click(screen.getByRole('button', { name: 'Salvează traseul' }))
-  expect(await screen.findByRole('alert')).toHaveTextContent('Fișierul GPX este obligatoriu')
-  expect(api.createRoute).not.toHaveBeenCalled()
-
-  const file = new File(['<gpx/>'], 'traseu.gpx', { type: 'application/gpx+xml' })
-  await user.upload(screen.getByLabelText(/Fișier GPX/), file)
-  await user.click(screen.getByRole('button', { name: 'Salvează traseul' }))
+  await user.click(screen.getByRole('button', { name: 'Adaugă traseu sau probă' }))
+  await user.type(screen.getByLabelText('Nume traseu sau probă'), route.name)
+  await user.type(screen.getByLabelText('Descriere'), route.description)
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() =>
     expect(api.createRoute).toHaveBeenCalledWith(
       competitionId,
@@ -91,21 +85,39 @@ test('shows empty states and requires a GPX before creating a route', async () =
         id: null,
         name: route.name,
         description: route.description,
-        file,
+        file: null,
       },
-      file,
+      null,
     ),
   )
   expect(await screen.findByText('Traseu parc')).toBeVisible()
   expect(screen.getByRole('button', { name: 'Adaugă categorie' })).toBeEnabled()
 })
 
-test('keeps categories disabled while routes have no saved GPX', async () => {
+test('passes an optional GPX file when creating a route', async () => {
+  const user = userEvent.setup()
+  renderSection()
+  await user.click(await screen.findByRole('button', { name: 'Adaugă traseu sau probă' }))
+  await user.type(screen.getByLabelText('Nume traseu sau probă'), route.name)
+  await user.type(screen.getByLabelText('Descriere'), route.description)
+  const file = new File(['<gpx/>'], 'traseu.gpx', { type: 'application/gpx+xml' })
+  await user.upload(screen.getByLabelText(/Fișier GPX/), file)
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() =>
+    expect(api.createRoute).toHaveBeenCalledWith(
+      competitionId,
+      { id: null, name: route.name, description: route.description, file },
+      file,
+    ),
+  )
+})
+
+test('allows categories on events without a GPX file', async () => {
   offers = { routes: [{ ...route, gpx_storage_path: null }], categories: [] }
   renderSection()
-  expect(await screen.findByText(/traseu incomplet/)).toBeVisible()
-  expect(screen.getByText(/Încarcă un GPX valid/)).toBeVisible()
-  expect(screen.getByRole('button', { name: 'Adaugă categorie' })).toBeDisabled()
+  expect(await screen.findByText(/Fără GPX · fără hartă/)).toBeVisible()
+  expect(screen.queryByText(/Adaugă un traseu sau o probă înainte/)).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Adaugă categorie' })).toBeEnabled()
 })
 
 test('requires a second action before deleting a complete route', async () => {

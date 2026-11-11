@@ -253,13 +253,14 @@ export async function quoteCompetitionRegistration(
           return reject("Categoria nu aparține acestui concurs.");
         }
         const route = routes.get(category.route_id);
+        if (!route || route.competition_id !== competitionId) {
+          return reject("Proba categoriei nu mai este disponibilă.");
+        }
         if (
-          !route ||
-          route.competition_id !== competitionId ||
-          !route.gpx_storage_path ||
+          route.gpx_storage_path &&
           !existingRoutePaths.has(route.gpx_storage_path)
         ) {
-          return reject("Traseul categoriei nu are încă un fișier GPX.");
+          return reject("Fișierul GPX al traseului nu este disponibil.");
         }
         if (
           (self && selfAlreadyRegistered) || (!self && existing.has(childId))
@@ -293,7 +294,7 @@ export async function quoteCompetitionRegistration(
               : childId!,
             categoryId,
             category.route_id,
-            route.gpx_storage_path,
+            route.gpx_storage_path ?? null,
             category.price_bani,
           );
         } catch {

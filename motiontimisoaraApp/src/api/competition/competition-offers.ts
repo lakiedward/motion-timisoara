@@ -130,8 +130,8 @@ export function validateCompetitionCategory(
   const name = input.name.trim()
   if (!name || name.length > 120)
     throw new Error('Numele categoriei trebuie să aibă 1–120 caractere.')
-  if (!offers.routes.some((route) => route.id === input.route_id && route.gpx_storage_path)) {
-    throw new Error('Alege un traseu cu fișier GPX salvat pentru categorie.')
+  if (!offers.routes.some((route) => route.id === input.route_id)) {
+    throw new Error('Alege un traseu sau o probă pentru categorie.')
   }
   if (
     !Number.isInteger(input.age_from) ||
@@ -232,18 +232,18 @@ async function removeRouteGpx(path: string): Promise<boolean> {
 export async function createCompetitionRoute(
   competitionId: string,
   input: CompetitionRouteInput,
-  file: File,
+  file: File | null,
 ): Promise<CompetitionRoute> {
   const values = validateRoute(input)
-  if (!file) throw new Error('Fișierul GPX este obligatoriu pentru un traseu nou.')
-  await readGpxFile(file)
+  if (file) await readGpxFile(file)
   const routeId = crypto.randomUUID()
-  const { error } = await offersDb
+  const { data, error } = await offersDb
     .from('competition_routes')
     .insert({ id: routeId, competition_id: competitionId, ...values, display_order: 0 })
     .select()
     .single()
   if (error) throw error
+  if (!file) return data
   try {
     const path = await uploadRouteGpx(competitionId, routeId, file)
     const result = await offersDb
@@ -284,7 +284,6 @@ export async function updateCompetitionRoute(
   if (currentResult.error) throw currentResult.error
 
   const oldPath = currentResult.data.gpx_storage_path
-  if (!oldPath && !file) throw new Error('Fișierul GPX este obligatoriu pentru traseu.')
   const newPath = file ? await uploadRouteGpx(competitionId, routeId, file) : null
   const nextPath = newPath ?? oldPath
   const result = await offersDb

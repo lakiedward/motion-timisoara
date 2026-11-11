@@ -7,7 +7,7 @@ export interface PriceSnapshot {
   adultBirthDate?: string;
   categoryId?: string;
   routeId?: string;
-  gpxStoragePath?: string;
+  gpxStoragePath?: string | null;
   sourceUnitAmount: number;
   sourceCurrency: "RON" | "EUR";
   quantity: number;
@@ -127,7 +127,7 @@ export async function createCompetitionPriceSnapshot(
   subject: string | { adultProfileId: string; adultBirthDate: string },
   categoryId: string,
   routeId: string,
-  gpxStoragePath: string,
+  gpxStoragePath: string | null,
   priceBani: number,
 ): Promise<PriceSnapshot> {
   const childId = typeof subject === "string" ? subject : null;
@@ -143,7 +143,7 @@ export async function createCompetitionPriceSnapshot(
     (adultProfileId !== null && !validCalendarBirthDate(adultBirthDate)) ||
     !categoryId ||
     !routeId ||
-    !gpxStoragePath ||
+    (gpxStoragePath !== null && !gpxStoragePath) ||
     !Number.isSafeInteger(priceBani) ||
     priceBani < 0 ||
     priceBani > 99_999_999
@@ -211,8 +211,9 @@ export async function readPriceSnapshot(
         !snapshot.categoryId ||
         typeof snapshot.routeId !== "string" ||
         !snapshot.routeId ||
-        typeof snapshot.gpxStoragePath !== "string" ||
-        !snapshot.gpxStoragePath ||
+        (snapshot.gpxStoragePath !== null &&
+          (typeof snapshot.gpxStoragePath !== "string" ||
+            !snapshot.gpxStoragePath)) ||
         snapshot.sourceCurrency !== "RON" ||
         snapshot.eurRonRateMicros !== null ||
         snapshot.amount > 99_999_999)) ||

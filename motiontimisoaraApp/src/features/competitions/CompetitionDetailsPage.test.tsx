@@ -249,3 +249,63 @@ test('după termenul limită categoriile nu mai au buton de înscriere', async (
   await screen.findByText('Copii')
   expect(screen.queryByRole('link', { name: /Înscrie-te la categoria/ })).not.toBeInTheDocument()
 })
+
+test('o probă fără GPX nu arată harta și galeria goală, iar titlul devine „Probe și categorii”', async () => {
+  mocked.mockResolvedValue({ ...CONCURS, registrationDeadlineAt: '2999-01-01T00:00:00Z' })
+  galleryApi.offers.mockResolvedValue({
+    routes: [
+      {
+        id: 'p1',
+        competition_id: 'k1',
+        name: '50 m liber',
+        description: 'Bazin olimpic',
+        gpx_storage_path: null,
+        display_order: 0,
+      },
+    ],
+    categories: [
+      { id: 'c1', route_id: 'p1', name: 'Copii', age_from: 6, age_to: 10, price_bani: 5000 },
+    ],
+  })
+  deseneaza()
+  expect(await screen.findByRole('heading', { level: 2, name: 'Probe și categorii' })).toBeVisible()
+  const proba = (await screen.findByRole('heading', { name: '50 m liber' })).closest('article')
+  await waitFor(() => expect(galleryApi.photos).toHaveBeenCalled())
+  expect(proba).not.toHaveTextContent('Hartă GPX')
+  expect(proba).not.toHaveTextContent('Galerie foto')
+  expect(screen.getByRole('link', { name: 'Înscrie-te la categoria Copii' })).toHaveAttribute(
+    'href',
+    '/account/competitions/cupa/register?categorie=c1',
+  )
+})
+
+test('o probă fără GPX își arată pozele, iar un concurs mixt păstrează „Trasee și categorii”', async () => {
+  mocked.mockResolvedValue(CONCURS)
+  galleryApi.offers.mockResolvedValue({
+    routes: [
+      { ...OFERTE.routes[0]! },
+      {
+        id: 'p2',
+        competition_id: 'k1',
+        name: 'Ștafetă bazin',
+        description: 'Bazin',
+        gpx_storage_path: null,
+        display_order: 1,
+      },
+    ],
+    categories: [],
+  })
+  galleryApi.photos.mockResolvedValue([
+    { id: 'f1', route_id: 'p2', url: 'https://example.test/bazin.jpg' },
+  ])
+  deseneaza()
+  expect(
+    await screen.findByRole('heading', { level: 2, name: 'Trasee și categorii' }),
+  ).toBeVisible()
+  const proba = (await screen.findByRole('heading', { name: 'Ștafetă bazin' })).closest('article')
+  await waitFor(() =>
+    expect(proba?.querySelector('img')).toHaveAttribute('src', 'https://example.test/bazin.jpg'),
+  )
+  expect(proba).not.toHaveTextContent('Hartă GPX')
+  expect(proba).toHaveTextContent('Nicio categorie adăugată pentru această probă.')
+})

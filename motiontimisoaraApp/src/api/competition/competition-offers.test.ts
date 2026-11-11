@@ -145,12 +145,18 @@ test('category intervals are inclusive and cannot overlap on the same route', ()
       { ...offers, routes: [...offers.routes, otherRoute] },
     ).route_id,
   ).toBe(otherRoute.id)
-  expect(() =>
+  expect(
     validateCompetitionCategory(
       { name: 'Copii mari', route_id: routeId, age_from: 10, age_to: 12, price_bani: 0 },
-      { ...offers, routes: [route] },
+      { routes: [route], categories: [] },
+    ).route_id,
+  ).toBe(routeId)
+  expect(() =>
+    validateCompetitionCategory(
+      { name: 'Copii mari', route_id: 'missing', age_from: 10, age_to: 12, price_bani: 0 },
+      offers,
     ),
-  ).toThrow('GPX salvat')
+  ).toThrow('traseu sau o probă')
 })
 
 test('category price stays within the card charge limit', () => {
@@ -190,6 +196,18 @@ test('creates the route before uploading its bounded GPX to the path required by
     { path, options: { contentType: 'application/gpx+xml', upsert: false } },
   ])
   expect(competitionRouteGpxDownloadUrl(path)).toContain('download=1')
+})
+
+test('creates an event without GPX with a single insert and no upload', async () => {
+  state.replies = [{ data: route, error: null }]
+  const saved = await createCompetitionRoute(
+    competitionId,
+    { name: route.name, description: route.description },
+    null,
+  )
+  expect(saved.gpx_storage_path).toBeNull()
+  expect(state.queries.map((query) => query.action)).toEqual(['insert'])
+  expect(state.uploads).toEqual([])
 })
 
 test('rejects invalid GPX before inserting a route', async () => {
