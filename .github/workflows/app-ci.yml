@@ -61,6 +61,8 @@ on:
       - 'supabase/tests/*stripe-connect-columns-guard*'
       - 'supabase/migrations/00138_podium_minor_names.sql'
       - 'supabase/tests/*podium-minor-names*'
+      - 'supabase/migrations/00140_restrict_authenticated_profiles.sql'
+      - 'supabase/tests/*restrict-authenticated-profiles*'
       - 'supabase/migrations/00102_checkout_acceptances.sql'
       - 'supabase/tests/*checkout-acceptances*'
       - 'supabase/functions/_shared/checkout-acceptance*.ts'
@@ -160,6 +162,9 @@ jobs:
       - name: Verify anonymous visitors see only public coach, club and reviewer profiles
         shell: pwsh
         run: ./supabase/tests/run-restrict-anon-profiles.ps1
+      - name: Verify signed-in accounts see only their own, public and related profiles
+        shell: pwsh
+        run: ./supabase/tests/run-restrict-authenticated-profiles.ps1
       - name: Verify the public podium shows children by first name and initial
         shell: pwsh
         run: ./supabase/tests/run-podium-minor-names.ps1
