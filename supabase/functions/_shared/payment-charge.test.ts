@@ -328,3 +328,59 @@ Deno.test("adult competition charge verifies self ownership and frozen birth dat
       adult_profile_id: "other",
     }, payment), 403);
 });
+
+Deno.test("competition charge without GPX matches a registration without GPX", async () => {
+  const enrollment = {
+    id: "enrollment",
+    kind: "COMPETITION",
+    entity_id: "competition",
+    child_id: "child",
+    status: "PENDING",
+  };
+  const pricing_snapshot = await createCompetitionPriceSnapshot(
+    "competition",
+    "child",
+    "category",
+    "route",
+    null,
+    12000,
+  );
+  const payment = {
+    amount: 12000,
+    currency: "RON",
+    status: "PENDING",
+    pricing_snapshot,
+  };
+  let savedPath: string | null = null;
+  const db = {
+    from(table: string) {
+      return {
+        select() {
+          return this;
+        },
+        eq() {
+          return this;
+        },
+        single: () =>
+          Promise.resolve({
+            data: table === "children" ? { parent_id: "parent" } : {
+              competition_id: "competition",
+              category_id: "category",
+              route_id: "route",
+              gpx_storage_path_snapshot: savedPath,
+              accepted_price_bani: 12000,
+            },
+            error: null,
+          }),
+      };
+    },
+  } as unknown as Parameters<typeof authorizedRonCharge>[0];
+  if (await authorizedRonCharge(db, "parent", enrollment, payment) !== 12000) {
+    throw new Error("Competition charge without GPX changed");
+  }
+  savedPath = "competition/route.gpx";
+  await rejected(
+    () => authorizedRonCharge(db, "parent", enrollment, payment),
+    409,
+  );
+});

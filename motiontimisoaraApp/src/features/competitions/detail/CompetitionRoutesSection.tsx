@@ -32,6 +32,9 @@ export function CompetitionRoutesSection({
     queryFn: () => listCompetitionRoutePhotos(competitionId),
   })
 
+  const routes = offers.data?.routes ?? []
+  const onlyEvents = routes.length > 0 && routes.every((route) => !route.gpx_storage_path)
+
   return (
     <section
       id={COMPETITION_ROUTES_ANCHOR}
@@ -40,7 +43,7 @@ export function CompetitionRoutesSection({
       className="mt-8 scroll-mt-24"
     >
       <h2 id="competition-routes-title" className="font-display mb-3 text-xl font-bold">
-        Trasee și categorii
+        {onlyEvents ? 'Probe și categorii' : 'Trasee și categorii'}
       </h2>
       {offers.isLoading ? (
         <div role="status" aria-label="Se încarcă traseele" className="space-y-4">
@@ -61,44 +64,50 @@ export function CompetitionRoutesSection({
               (category) => category.route_id === route.id,
             )
             const photos = (routePhotos.data ?? []).filter((photo) => photo.route_id === route.id)
+            const hasGpx = Boolean(route.gpx_storage_path)
+            const showGallery = hasGpx || photos.length > 0 || routePhotos.isError
             return (
               <article key={route.id} className="bg-card rounded-xl border p-5">
                 <h3 className="font-display text-xl font-bold">{route.name}</h3>
                 <p className="text-muted-foreground mt-2 text-sm whitespace-pre-wrap">
                   {route.description}
                 </p>
-                <div className="mt-4">
-                  <CompetitionRouteMap
-                    routeLabel={route.name}
-                    gpxUrl={competitionRouteGpxUrl(route.gpx_storage_path)}
-                    downloadUrl={competitionRouteGpxDownloadUrl(route.gpx_storage_path)}
-                  />
-                </div>
-                <section className="mt-5" aria-label={`Galeria traseului ${route.name}`}>
-                  <h4 className="font-display text-lg font-semibold">Galerie foto</h4>
-                  {routePhotos.isLoading ? (
-                    <Skeleton className="mt-3 h-32 w-full rounded-xl" />
-                  ) : routePhotos.isError ? (
-                    <div role="alert" className="mt-3 space-y-2 text-sm">
-                      <p>Nu am putut încărca pozele traseului.</p>
-                      <Button variant="outline" onClick={() => void routePhotos.refetch()}>
-                        Reîncearcă
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="mt-3">
-                      <PhotoGallery
-                        urls={photos.map((photo) => photo.url)}
-                        alt={`Galeria traseului ${route.name}`}
-                      />
-                      {!photos.length && (
-                        <p className="text-muted-foreground text-sm">
-                          Organizatorul nu a adăugat încă poze pentru acest traseu.
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </section>
+                {hasGpx && (
+                  <div className="mt-4">
+                    <CompetitionRouteMap
+                      routeLabel={route.name}
+                      gpxUrl={competitionRouteGpxUrl(route.gpx_storage_path)}
+                      downloadUrl={competitionRouteGpxDownloadUrl(route.gpx_storage_path)}
+                    />
+                  </div>
+                )}
+                {showGallery && (
+                  <section className="mt-5" aria-label={`Galeria traseului ${route.name}`}>
+                    <h4 className="font-display text-lg font-semibold">Galerie foto</h4>
+                    {routePhotos.isLoading ? (
+                      <Skeleton className="mt-3 h-32 w-full rounded-xl" />
+                    ) : routePhotos.isError ? (
+                      <div role="alert" className="mt-3 space-y-2 text-sm">
+                        <p>Nu am putut încărca pozele traseului.</p>
+                        <Button variant="outline" onClick={() => void routePhotos.refetch()}>
+                          Reîncearcă
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="mt-3">
+                        <PhotoGallery
+                          urls={photos.map((photo) => photo.url)}
+                          alt={`Galeria traseului ${route.name}`}
+                        />
+                        {!photos.length && (
+                          <p className="text-muted-foreground text-sm">
+                            Organizatorul nu a adăugat încă poze pentru acest traseu.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </section>
+                )}
                 <ul className="mt-5 space-y-2">
                   {categories.map((category) => (
                     <li
@@ -125,7 +134,9 @@ export function CompetitionRoutesSection({
                 </ul>
                 {!categories.length && (
                   <p className="text-muted-foreground mt-5 text-sm">
-                    Nicio categorie adăugată pentru acest traseu.
+                    {hasGpx
+                      ? 'Nicio categorie adăugată pentru acest traseu.'
+                      : 'Nicio categorie adăugată pentru această probă.'}
                   </p>
                 )}
               </article>

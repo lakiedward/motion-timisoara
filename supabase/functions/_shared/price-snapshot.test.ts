@@ -241,6 +241,65 @@ Deno.test(
   },
 );
 
+Deno.test(
+  "competition snapshot without GPX matches the database price version",
+  async () => {
+    const child = await createCompetitionPriceSnapshot(
+      "11111111-1111-1111-1111-111111111111",
+      "22222222-2222-2222-2222-222222222222",
+      "33333333-3333-3333-3333-333333333333",
+      "44444444-4444-4444-4444-444444444444",
+      null,
+      12000,
+    );
+    equal(child.gpxStoragePath, null);
+    equal(
+      child.priceVersion,
+      "5d9c244dd0f9e63b7429cabbc90c5454637df879b3d9f31abeebc329babd8e49",
+    );
+    equal(await readPriceSnapshot(child), child);
+    const adult = await createCompetitionPriceSnapshot(
+      "11111111-1111-1111-1111-111111111111",
+      {
+        adultProfileId: "22222222-2222-2222-2222-222222222222",
+        adultBirthDate: "1985-05-10",
+      },
+      "33333333-3333-3333-3333-333333333333",
+      "44444444-4444-4444-4444-444444444444",
+      null,
+      12000,
+    );
+    equal(
+      adult.priceVersion,
+      "049a765a43032b5fd8e9216974783b33e7c33e2c50324fe53e4f2cbc6414d5e9",
+    );
+    equal(await readPriceSnapshot(adult), adult);
+    for (const gpxStoragePath of ["", undefined, 7, "competition/route.gpx"]) {
+      let rejected = false;
+      try {
+        await readPriceSnapshot({ ...child, gpxStoragePath });
+      } catch {
+        rejected = true;
+      }
+      equal(rejected, true);
+    }
+    let emptyPathRejected = false;
+    try {
+      await createCompetitionPriceSnapshot(
+        "competition",
+        "child",
+        "category",
+        "route",
+        "",
+        12000,
+      );
+    } catch {
+      emptyPathRejected = true;
+    }
+    equal(emptyPathRejected, true);
+  },
+);
+
 Deno.test("adult competition snapshot binds profile and birth date without changing child prices", async () => {
   const child = await createCompetitionPriceSnapshot(
     "competition",
