@@ -44,6 +44,7 @@ export default function CompetitionRegistrationPage() {
       <StatusView
         state="error"
         title="Nu am putut încărca înscrierea la concurs."
+        titleAs="h1"
         text="Verifică conexiunea și încearcă din nou."
         onRetry={() =>
           void (competition.isError
@@ -62,6 +63,7 @@ export default function CompetitionRegistrationPage() {
       <StatusView
         state="empty"
         title="Concursul nu a fost găsit."
+        titleAs="h1"
         text="Poate a fost șters sau linkul e greșit."
         action={
           <Button asChild className="mt-3 h-touch-target min-h-touch-target">

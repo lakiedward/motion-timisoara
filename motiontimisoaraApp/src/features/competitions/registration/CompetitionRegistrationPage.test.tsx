@@ -28,7 +28,9 @@ function renderPage() {
 test('concursul inexistent are stare proprie cu link spre concursuri', async () => {
   vi.mocked(getConcursPublic).mockResolvedValue(null as never)
   renderPage()
-  expect(await screen.findByText('Concursul nu a fost găsit.')).toBeInTheDocument()
+  expect(
+    await screen.findByRole('heading', { level: 1, name: 'Concursul nu a fost găsit.' }),
+  ).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Vezi concursurile' })).toBeInTheDocument()
 })
 
