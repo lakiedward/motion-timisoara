@@ -24,6 +24,8 @@ import { StatusView } from '@/components/ui/status-view'
 import { Textarea } from '@/components/ui/textarea'
 import { SelectMenu, type SelectMenuOption } from '@/components/ui/select-menu'
 
+const NAME_HINT = 'Scrie întâi prenumele, apoi numele de familie.'
+
 const TELEFON = /^\+?[0-9]{8,15}$/
 const doarNumarul = (s: string) => s.replace(/[\s().-]/g, '')
 const eTelefonValid = (s: string) => TELEFON.test(doarNumarul(s))
@@ -268,8 +270,15 @@ export default function ChildFormPage() {
                 <Label htmlFor="name">
                   Nume <Obligatoriu />
                 </Label>
-                <Input id="name" required {...register('name')} {...camp('name')} />
-                <FieldMessage id="name" error={errors.name?.message} />
+                <Input
+                  id="name"
+                  required
+                  placeholder="Ana Popescu"
+                  {...register('name')}
+                  {...camp('name')}
+                  aria-describedby={fieldDescription('name', NAME_HINT, errors.name?.message)}
+                />
+                <FieldMessage id="name" hint={NAME_HINT} error={errors.name?.message} />
               </div>
               <div className="min-w-0 space-y-1.5">
                 <Label htmlFor="birth_date">

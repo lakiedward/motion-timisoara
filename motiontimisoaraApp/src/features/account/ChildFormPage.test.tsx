@@ -410,3 +410,11 @@ test('după salvare, plecarea spre listă nu mai întreabă', async () => {
   expect(await screen.findByText('Lista de copii')).toBeInTheDocument()
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
+
+test('câmpul Nume cere ordinea Prenume Nume', async () => {
+  renderForm('/account/child/new')
+  const nume = await screen.findByLabelText(/Nume/)
+  expect(nume).toHaveAttribute('placeholder', 'Ana Popescu')
+  expect(nume).toHaveAttribute('aria-describedby', 'name-hint')
+  expect(screen.getByText('Scrie întâi prenumele, apoi numele de familie.')).toBeInTheDocument()
+})
