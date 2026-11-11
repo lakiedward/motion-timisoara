@@ -34,13 +34,12 @@ describe('offline scan queue grouping', () => {
     expect(waitingText(1)).toContain('1 scanare este păstrată')
     expect(waitingText(5)).toContain('5 scanări sunt păstrate')
     expect(waitingText(24)).toContain('24 de scanări sunt păstrate')
+    expect(waitingText(1, 'în acest browser')).toContain('păstrată în acest browser')
   })
 
   it('adds the day only for scans from another day', () => {
     const now = new Date('2026-10-20T18:00:00+03:00')
     expect(formatScanTime('2026-10-20T14:05:00Z', now)).toBe('la 17:05')
-    expect(formatScanTime('2026-10-19T06:30:00Z', now)).toBe(
-      'pe 19.10 la 09:30',
-    )
+    expect(formatScanTime('2026-10-19T06:30:00Z', now)).toBe('pe 19.10 la 09:30')
   })
 })

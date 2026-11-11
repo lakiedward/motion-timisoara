@@ -55,8 +55,8 @@ export function scanCounts(pending: number, rejected: number) {
   ].filter((part): part is string => part !== null)
 }
 
-export function waitingText(pending: number) {
+export function waitingText(pending: number, place = 'pe telefon') {
   return pending === 1
-    ? 'Fără conexiune. 1 scanare este păstrată pe telefon și se trimite singură când revine internetul.'
-    : `Fără conexiune. ${plural(pending, 'scanare', 'scanări')} sunt păstrate pe telefon și se trimit singure când revine internetul.`
+    ? `Fără conexiune. 1 scanare este păstrată ${place} și se trimite singură când revine internetul.`
+    : `Fără conexiune. ${plural(pending, 'scanare', 'scanări')} sunt păstrate ${place} și se trimit singure când revine internetul.`
 }

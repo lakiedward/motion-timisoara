@@ -16,7 +16,12 @@ import { cn } from '@/lib/utils'
 export function CoachActivityAttendance() {
   const today = todayInBucharest()
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const { data = [], isLoading, isError, refetch } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['my-activities'],
     queryFn: getMyActivities,
     retry: false,
@@ -45,7 +50,11 @@ export function CoachActivityAttendance() {
   if (isLoading) return <ClubLocationListSkeleton />
   if (isError && !data.length)
     return (
-      <StatusView state="error" title="Nu am putut încărca activitățile." onRetry={() => refetch()} />
+      <StatusView
+        state="error"
+        title="Nu am putut încărca activitățile."
+        onRetry={() => refetch()}
+      />
     )
   if (!list.length)
     return (
@@ -58,10 +67,7 @@ export function CoachActivityAttendance() {
 
   const sel = list.find((a) => a.id === selectedId) ?? list[0]
   const roster = (a: CoachActivity) => (
-    <ActivityRoster
-      activityId={a.id}
-      opensOn={a.activity_date > today ? activityWhen(a) : null}
-    />
+    <ActivityRoster activityId={a.id} opensOn={a.activity_date > today ? activityWhen(a) : null} />
   )
   const groups = [
     { title: 'Azi și trecute', items: list.filter((a) => a.activity_date <= today) },

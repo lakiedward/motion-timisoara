@@ -4,7 +4,6 @@ import { App } from '@capacitor/app'
 import { useQueryClient } from '@tanstack/react-query'
 import { recordAttendance } from '@/api/attendance'
 import { useAuth } from '@/lib/auth-context'
-import { isNative } from '@/lib/platform'
 import { AttendanceQueue } from './attendance-queue'
 import { AttendanceContext } from './attendance-context'
 
@@ -14,7 +13,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
   const qc = useQueryClient()
   const queue = useMemo(() => {
-    if (!user || user.role !== 'COACH' || !isNative()) return null
+    if (!user || user.role !== 'COACH') return null
     const existing = queues.get(user.id)
     if (existing) return existing
     const key = `motion.attendance.v1.${user.id}`

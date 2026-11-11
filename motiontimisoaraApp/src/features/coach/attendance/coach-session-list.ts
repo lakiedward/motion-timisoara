@@ -1,6 +1,11 @@
 import type { AdminSession } from '@/api/attendance/admin-sessions'
 import { PAST_VISIBLE_DAYS, type CoachSession, type CoachSessionGroups } from '@/api/coach'
-import { dayKey, formatDay, formatTime, isStarted } from '@/features/admin/attendance/attendance-overview'
+import {
+  dayKey,
+  formatDay,
+  formatTime,
+  isStarted,
+} from '@/features/admin/attendance/attendance-overview'
 
 export type DayGroup = { key: string; label: string; items: AdminSession[] }
 
@@ -42,7 +47,8 @@ export function nearestSession(items: AdminSession[], now = Date.now()) {
 export const isRetroactive = (s: AdminSession, now = Date.now()) =>
   now - new Date(s.startsAt).getTime() > PAST_VISIBLE_DAYS * 24 * 60 * 60 * 1000
 
-export const sessionWhen = (s: AdminSession) => `${formatDay(s.startsAt)} · ${formatTime(s.startsAt)}`
+export const sessionWhen = (s: AdminSession) =>
+  `${formatDay(s.startsAt)} · ${formatTime(s.startsAt)}`
 
 export function splitByTime(items: AdminSession[], now = Date.now()) {
   const upcoming = items

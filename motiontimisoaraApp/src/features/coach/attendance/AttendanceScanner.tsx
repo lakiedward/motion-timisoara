@@ -2,7 +2,10 @@ import { useRef, useState, useSyncExternalStore } from 'react'
 import { CloudUpload, ScanLine } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { tokenDinCod } from '@/lib/cod-qr'
+import { isNative } from '@/lib/platform'
 import { scanAttendanceCode } from './native-scanner'
+import { WebScannerSheet } from './WebScannerSheet'
 import { useAttendanceQueue } from './attendance-context'
 import type { AttendanceQueue } from './attendance-queue'
 import { GroupCounts, ScanRow, SyncStatus } from './ScanQueueParts'
@@ -48,7 +51,9 @@ function ScannerControls({
 }) {
   const { snapshot, pending, rejected } = useQueueState(queue)
   const [scanning, setScanning] = useState(false)
+  const [webOpen, setWebOpen] = useState(false)
   const scanLock = useRef(false)
+  const native = isNative()
   const entries = snapshot.entries
     .filter((entry) => entry.occurrenceId === occurrenceId)
     .sort((a, b) => Date.parse(b.capturedAt) - Date.parse(a.capturedAt))
@@ -56,7 +61,27 @@ function ScannerControls({
     snapshot.entries.filter((entry) => entry.occurrenceId !== occurrenceId),
   ).filter((group) => group.pending + group.rejected > 0)
 
+  async function saveWebCode(text: string) {
+    setWebOpen(false)
+    const token = tokenDinCod(text)
+    if (!token) {
+      toast.error('Acesta nu este un cod QR Motion valid. Cere codul copilului.')
+      return
+    }
+    try {
+      await queue.enqueue(occurrenceId, label, token)
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Codul nu a putut fi salvat. Reîncearcă.',
+      )
+    }
+  }
+
   async function scan() {
+    if (!native) {
+      setWebOpen(true)
+      return
+    }
     if (scanLock.current) return
     scanLock.current = true
     setScanning(true)
@@ -82,13 +107,26 @@ function ScannerControls({
         <h2 className="font-semibold">Scanează prezența</h2>
         <p className="text-muted-foreground mt-1 text-sm">{label}</p>
       </div>
-      <Button className="w-full" disabled={scanning || locked || !snapshot.ready} onClick={() => void scan()}>
-        <ScanLine aria-hidden="true" /> {scanning ? 'Camera este deschisă…' : 'Scanează cod QR'}
+      <Button
+        className="w-full"
+        disabled={scanning || webOpen || locked || !snapshot.ready}
+        onClick={() => void scan()}
+      >
+        <ScanLine aria-hidden="true" />{' '}
+        {scanning || webOpen ? 'Camera este deschisă…' : 'Scanează cod QR'}
       </Button>
       <p className="text-muted-foreground text-xs">
-        Fără internet, codurile sunt păstrate pe telefon până la confirmarea serverului. Catalogul
-        manual rămâne disponibil.
+        Fără internet, codurile sunt păstrate {native ? 'pe telefon' : 'în acest browser'} până la
+        confirmarea serverului. Catalogul manual rămâne disponibil.
       </p>
+      {!native && (
+        <WebScannerSheet
+          open={webOpen}
+          label={label}
+          onDetected={(text) => void saveWebCode(text)}
+          onClose={() => setWebOpen(false)}
+        />
+      )}
       <SyncStatus queue={queue} snapshot={snapshot} pending={pending} rejected={rejected} />
       {entries.length > 0 && (
         <ul aria-label="Scanările ședinței" className="max-h-64 divide-y overflow-y-auto pr-2">
