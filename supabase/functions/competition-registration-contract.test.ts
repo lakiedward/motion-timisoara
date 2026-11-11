@@ -483,7 +483,7 @@ Deno.test(
 );
 
 Deno.test(
-  "a replaced GPX changes the quote and an unuploaded route cannot accept registrations",
+  "a replaced or removed GPX changes the quote and a route without GPX stays eligible",
   async () => {
     const context = fixture();
     const before = await quoteCompetitionRegistration(
@@ -506,13 +506,18 @@ Deno.test(
       false,
     );
     context.rows.competition_routes[0].gpx_storage_path = null;
-    const missing = await quoteCompetitionRegistration(
+    const withoutGpx = await quoteCompetitionRegistration(
       context.db,
       "parent",
       "competition",
       context.selection.selections,
     );
-    equal(missing.results[0].eligible, false);
+    equal(withoutGpx.results[0].eligible, true);
+    equal(withoutGpx.results[0].pricingSnapshot?.gpxStoragePath, null);
+    equal(
+      withoutGpx.results[0].priceVersion === before.results[0].priceVersion,
+      false,
+    );
   },
 );
 

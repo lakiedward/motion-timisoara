@@ -99,7 +99,8 @@ export async function authorizedRonCharge(
           registration.competition_id !== enrollment.entity_id ||
           registration.category_id !== snapshot.categoryId ||
           registration.route_id !== snapshot.routeId ||
-          registration.gpx_storage_path_snapshot !== snapshot.gpxStoragePath ||
+          (registration.gpx_storage_path_snapshot ?? null) !==
+            (snapshot.gpxStoragePath ?? null) ||
           (registration.adult_profile_id ?? null) !==
             (snapshot.adultProfileId ?? null) ||
           (registration.adult_birth_date ?? null) !==

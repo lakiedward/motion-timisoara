@@ -162,6 +162,7 @@ INSERT INTO public.competitions(id, title, slug, description, club_id) VALUES
 \i /tmp/migrations/00073_competition_podium.sql
 \i /tmp/migrations/00074_competition_route_photos.sql
 \i /tmp/migrations/00075_competition_route_gpx_limit.sql
+\i /tmp/migrations/00139_competition_routes_optional_gpx.sql
 
 DO $$
 BEGIN
@@ -365,6 +366,8 @@ DECLARE
     paid_version TEXT;
     free_snapshot JSONB;
     paid_snapshot JSONB;
+    no_gpx_version TEXT;
+    no_gpx_snapshot JSONB;
     result JSONB;
     route_path TEXT := 'dddddddd-dddd-dddd-dddd-dddddddddddd/routes/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee/ffffffff-ffff-ffff-ffff-ffffffffffff.gpx';
 BEGIN
@@ -408,6 +411,43 @@ BEGIN
         RAISE EXCEPTION 'Competition snapshot validation failed';
     END IF;
 
+    no_gpx_version := public.competition_price_version(
+        'dddddddd-dddd-dddd-dddd-dddddddddddd',
+        '11111111-aaaa-aaaa-aaaa-aaaaaaaaaaaa', free_category,
+        'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', NULL, 0
+    );
+    no_gpx_snapshot := jsonb_set(
+        jsonb_set(free_snapshot, '{gpxStoragePath}', 'null'::JSONB),
+        '{priceVersion}', to_jsonb(no_gpx_version)
+    );
+    IF public.valid_enrollment_price_snapshot(no_gpx_snapshot, 0, 'RON') IS DISTINCT FROM TRUE
+        OR public.valid_enrollment_price_snapshot(no_gpx_snapshot - 'gpxStoragePath', 0, 'RON') IS DISTINCT FROM FALSE
+        OR public.valid_enrollment_price_snapshot(
+            jsonb_set(no_gpx_snapshot, '{gpxStoragePath}', '7'::JSONB), 0, 'RON'
+        ) IS DISTINCT FROM FALSE
+        OR public.valid_enrollment_price_snapshot(
+            jsonb_set(no_gpx_snapshot, '{gpxStoragePath}', '"not-a-path.gpx"'::JSONB), 0, 'RON'
+        ) IS DISTINCT FROM FALSE
+        OR public.valid_enrollment_price_snapshot(
+            jsonb_set(no_gpx_snapshot, '{priceVersion}', to_jsonb(free_version)), 0, 'RON'
+        ) IS DISTINCT FROM FALSE THEN
+        RAISE EXCEPTION 'Competition snapshot without GPX validation failed';
+    END IF;
+
+    BEGIN
+        PERFORM public.save_competition_registration(
+            '44444444-4444-4444-4444-444444444444',
+            'dddddddd-dddd-dddd-dddd-dddddddddddd', 'CARD',
+            jsonb_build_array(jsonb_build_object(
+                'childId', '11111111-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+                'categoryId', free_category, 'amount', 0, 'currency', 'RON',
+                'priceVersion', no_gpx_version, 'snapshot', no_gpx_snapshot
+            )), NULL
+        );
+        RAISE EXCEPTION 'A no-GPX quote should not register on a route with GPX';
+    EXCEPTION WHEN check_violation THEN NULL;
+    END;
+
     UPDATE public.competition_routes SET gpx_storage_path = NULL
     WHERE id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
     BEGIN
@@ -420,8 +460,34 @@ BEGIN
                 'priceVersion', free_version, 'snapshot', free_snapshot
             )), NULL
         );
-        RAISE EXCEPTION 'A route without GPX should not accept registrations';
+        RAISE EXCEPTION 'A GPX quote should not register after the route lost its GPX';
     EXCEPTION WHEN check_violation THEN NULL;
+    END;
+
+    BEGIN
+        result := public.save_competition_registration(
+            '44444444-4444-4444-4444-444444444444',
+            'dddddddd-dddd-dddd-dddd-dddddddddddd', 'CARD',
+            jsonb_build_array(jsonb_build_object(
+                'childId', '11111111-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+                'categoryId', free_category, 'amount', 0, 'currency', 'RON',
+                'priceVersion', no_gpx_version, 'snapshot', no_gpx_snapshot
+            )), NULL
+        );
+        IF jsonb_array_length(result->'enrollmentIds') <> 1
+            OR (SELECT count(*) FROM public.competition_registrations
+                WHERE gpx_storage_path_snapshot IS NULL
+                  AND route_id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee') <> 1
+            OR (SELECT count(*) FROM public.payments
+                WHERE pricing_snapshot->'gpxStoragePath' = 'null'::JSONB
+                  AND status = 'SUCCEEDED') <> 1 THEN
+            RAISE EXCEPTION 'A route without GPX should accept registrations';
+        END IF;
+        RAISE EXCEPTION 'rollback-no-gpx-registration';
+    EXCEPTION WHEN raise_exception THEN
+        IF SQLERRM <> 'rollback-no-gpx-registration' THEN
+            RAISE;
+        END IF;
     END;
     UPDATE public.competition_routes SET gpx_storage_path = route_path
     WHERE id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';

@@ -1874,7 +1874,7 @@ export type Database = {
           category_name_snapshot: string
           competition_id: string
           enrollment_id: string
-          gpx_storage_path_snapshot: string
+          gpx_storage_path_snapshot: string | null
           id: string
           registered_at: string
           route_id: string
@@ -1889,7 +1889,7 @@ export type Database = {
           category_name_snapshot: string
           competition_id: string
           enrollment_id: string
-          gpx_storage_path_snapshot: string
+          gpx_storage_path_snapshot?: string | null
           id?: string
           registered_at?: string
           route_id: string
@@ -1904,7 +1904,7 @@ export type Database = {
           category_name_snapshot?: string
           competition_id?: string
           enrollment_id?: string
-          gpx_storage_path_snapshot?: string
+          gpx_storage_path_snapshot?: string | null
           id?: string
           registered_at?: string
           route_id?: string
