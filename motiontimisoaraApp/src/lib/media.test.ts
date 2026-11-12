@@ -124,6 +124,32 @@ test('o filmare prea lungă e refuzată cu durata ei', async () => {
   expect(refuzate[0]).toContain(`limita e ${MAX_FILM_SECUNDE}`)
 })
 
+test('o poză SVG sau HEIC pe care browserul n-o poate converti e refuzată', async () => {
+  const { pregatite, refuzate } = await pregatesteFisiere([
+    fisier('logo.svg', 'image/svg+xml', 20_000),
+    fisier('IMG_1.heic', 'image/heic', 3 * MB),
+  ])
+  expect(pregatite).toEqual([])
+  expect(refuzate).toHaveLength(2)
+  expect(refuzate[0]).toContain('logo.svg')
+  expect(refuzate[0]).toContain('JPEG, PNG, WebP sau GIF')
+  expect(refuzate[1]).toContain('IMG_1.heic')
+})
+
+test('filmările de pe iPhone (MOV) și WebM trec, alte formate video sunt refuzate', async () => {
+  const { pregatite: mov } = await pregatesteFisiere([fisier('IMG_2.mov', 'video/quicktime', 10 * MB)])
+  expect(mov).toHaveLength(1)
+  expect(mov[0].contentType).toBe('video/quicktime')
+
+  const { pregatite: webm } = await pregatesteFisiere([fisier('clip.webm', 'video/webm', 10 * MB)])
+  expect(webm).toHaveLength(1)
+
+  const { pregatite, refuzate } = await pregatesteFisiere([fisier('vechi.avi', 'video/x-msvideo', 10 * MB)])
+  expect(pregatite).toEqual([])
+  expect(refuzate[0]).toContain('vechi.avi')
+  expect(refuzate[0]).toContain('MP4, MOV sau WebM')
+}, 15_000)
+
 test('un fișier care nu e nici poză nici filmare e refuzat', async () => {
   const { pregatite, refuzate } = await pregatesteFisiere([
     fisier('lista.pdf', 'application/pdf', MB),

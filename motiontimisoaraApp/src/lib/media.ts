@@ -21,6 +21,10 @@ export const LATURA_POZA = 1600
 export const RETENTIE_FILM_ZILE = 30
 /** Cât așteptăm metadatele unei filmări înainte să renunțăm la citirea duratei. */
 export const CITIRE_METADATE_MS = 2500
+export const TIPURI_POZA = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] as const
+export const TIPURI_FILM = ['video/mp4', 'video/quicktime', 'video/webm'] as const
+
+const tipPermis = (lista: readonly string[], tip: string) => lista.includes(tip.toLowerCase())
 
 export type FelAtasament = 'IMAGE' | 'VIDEO'
 
@@ -112,7 +116,7 @@ export async function micsoreazaPoza(f: File): Promise<Blob> {
   try {
     const bitmap = await createImageBitmap(f)
     const scara = Math.min(1, LATURA_POZA / Math.max(bitmap.width, bitmap.height))
-    if (scara === 1 && f.size < 1024 * 1024) {
+    if (scara === 1 && f.size < 1024 * 1024 && tipPermis(TIPURI_POZA, f.type)) {
       bitmap.close()
       return f
     }
@@ -159,12 +163,17 @@ export async function pregatesteFisiere(
         continue
       }
       const continut = await micsoreazaPoza(f)
+      const contentType = continut.type || f.type
+      if (!tipPermis(TIPURI_POZA, contentType)) {
+        refuzate.push(`„${f.name}" e într-un format de poză pe care nu-l putem arăta. Alege o poză JPEG, PNG, WebP sau GIF.`)
+        continue
+      }
       poze += 1
       pregatite.push({
         fel: 'IMAGE',
         continut,
         numeOriginal: f.name,
-        contentType: continut.type || f.type || 'image/jpeg',
+        contentType,
       })
       continue
     }
@@ -172,6 +181,10 @@ export async function pregatesteFisiere(
     if (esteFilm(f)) {
       if (filme >= MAX_FILME) {
         refuzate.push(`„${f.name}" — poți pune o singură filmare la un anunț.`)
+        continue
+      }
+      if (!tipPermis(TIPURI_FILM, f.type)) {
+        refuzate.push(`„${f.name}" e într-un format video pe care nu-l primim. Folosește o filmare MP4, MOV sau WebM.`)
         continue
       }
       if (f.size > MAX_FILM_MB * 1024 * 1024) {
@@ -192,7 +205,7 @@ export async function pregatesteFisiere(
         fel: 'VIDEO',
         continut: f,
         numeOriginal: f.name,
-        contentType: f.type || 'video/mp4',
+        contentType: f.type,
         durata,
       })
       continue
