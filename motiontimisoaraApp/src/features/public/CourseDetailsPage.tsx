@@ -1,6 +1,5 @@
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { courseHeroUrl, getCourse, getCourseSpotsRemaining } from '@/api/public'
@@ -13,6 +12,7 @@ import { CourseDetailsInfo } from '@/features/public/courses/CourseDetailsInfo'
 import { CourseHero } from '@/features/public/courses/CourseHero'
 import { CourseEnrollCard } from '@/features/public/courses/CourseEnrollCard'
 import { useDocumentTitle } from '@/lib/page-title'
+import { DetailNotFound } from '@/features/public/components/DetailNotFound'
 
 export default function CourseDetailsPage() {
   const { id = '' } = useParams()
@@ -77,22 +77,12 @@ export default function CourseDetailsPage() {
   }
   if (!course) {
     return (
-      <div className="mx-auto flex min-h-[55vh] max-w-lg flex-col items-center justify-center px-6 py-20 text-center">
-        <div className="from-primary/15 to-sky/10 w-full rounded-xl border bg-gradient-to-br p-10">
-          <h1 className="font-display text-foreground text-2xl font-extrabold">
-            Cursul nu a fost găsit.
-          </h1>
-          <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
-            Linkul poate fi greșit sau cursul nu mai este disponibil. Poți alege alt curs din listă.
-          </p>
-          <Link
-            to="/cursuri"
-            className="btn-cta btn-cta--primary mt-8 inline-flex items-center justify-center gap-2"
-          >
-            <ArrowLeft className="size-4" /> Înapoi la cursuri
-          </Link>
-        </div>
-      </div>
+      <DetailNotFound
+        title="Cursul nu a fost găsit."
+        text="Linkul poate fi greșit sau cursul nu mai este disponibil. Poți alege alt curs din listă."
+        backTo="/cursuri"
+        backLabel="Înapoi la cursuri"
+      />
     )
   }
 

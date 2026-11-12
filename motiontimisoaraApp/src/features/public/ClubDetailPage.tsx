@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 
 import { getPublicClub } from '@/api/public'
@@ -9,6 +9,7 @@ import { ClubContact } from './club-detail/ClubContact'
 import { ClubHero } from './club-detail/ClubHero'
 import { ClubOffer } from './club-detail/ClubOffer'
 import { useDocumentTitle } from '@/lib/page-title'
+import { DetailNotFound } from '@/features/public/components/DetailNotFound'
 
 export default function ClubDetailPage() {
   const { id = '' } = useParams()
@@ -43,15 +44,12 @@ export default function ClubDetailPage() {
   }
   if (!club) {
     return (
-      <div className="mx-auto max-w-6xl px-6 py-20 text-center">
-        <p className="text-muted-foreground">Clubul nu a fost găsit.</p>
-        <Link
-          to="/cluburi"
-          className="text-primary mt-4 inline-flex h-touch-target items-center font-semibold"
-        >
-          ← Înapoi la cluburi
-        </Link>
-      </div>
+      <DetailNotFound
+        title="Clubul nu a fost găsit."
+        text="Linkul poate fi greșit sau clubul nu mai este disponibil. Poți alege alt club din listă."
+        backTo="/cluburi"
+        backLabel="Înapoi la cluburi"
+      />
     )
   }
 

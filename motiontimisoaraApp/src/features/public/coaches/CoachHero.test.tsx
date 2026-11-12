@@ -86,8 +86,13 @@ test('a load error shows a retry instead of “not found”', async () => {
 test('a missing coach shows “not found” with the back link', async () => {
   mocks.getCoachByUserId.mockResolvedValue(null)
   renderPage()
-  expect(await screen.findByText('Antrenorul nu a fost găsit.')).toBeVisible()
-  expect(screen.getByRole('link', { name: /Înapoi la antrenori/ })).toBeVisible()
+  expect(
+    await screen.findByRole('heading', { level: 1, name: 'Antrenorul nu a fost găsit.' }),
+  ).toBeVisible()
+  expect(screen.getByRole('link', { name: /Înapoi la antrenori/ })).toHaveAttribute(
+    'href',
+    '/antrenori',
+  )
 })
 
 test('a parent rates with 44px stars', async () => {

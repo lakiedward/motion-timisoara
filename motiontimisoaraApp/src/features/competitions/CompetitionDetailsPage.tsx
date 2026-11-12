@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { CalendarDays, Clock, MapPin } from 'lucide-react'
 
@@ -20,6 +20,7 @@ import {
   COMPETITION_ROUTES_ANCHOR,
   CompetitionRoutesSection,
 } from './detail/CompetitionRoutesSection'
+import { DetailNotFound } from '@/features/public/components/DetailNotFound'
 
 const HERO_SECTION = 'motion-react:page:/concursuri/:slug:section:toata-pagina'
 const SCHEDULE_SECTION = 'manual:section:program-si-locatie:f5d67447-2bfe-4917-9325-e0fd16bbe201'
@@ -64,15 +65,12 @@ export default function CompetitionDetailsPage() {
 
   if (!data) {
     return (
-      <div className="mx-auto max-w-4xl px-6 py-20 text-center">
-        <p className="text-muted-foreground">Concursul nu a fost găsit.</p>
-        <Link
-          to="/concursuri"
-          className="text-primary mt-4 inline-flex h-touch-target items-center font-semibold"
-        >
-          ← Înapoi la concursuri
-        </Link>
-      </div>
+      <DetailNotFound
+        title="Concursul nu a fost găsit."
+        text="Linkul poate fi greșit sau concursul nu mai este disponibil. Poți alege alt concurs din listă."
+        backTo="/concursuri"
+        backLabel="Înapoi la concursuri"
+      />
     )
   }
 

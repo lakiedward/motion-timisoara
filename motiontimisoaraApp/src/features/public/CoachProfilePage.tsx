@@ -10,6 +10,7 @@ import { StarRating } from '@/components/StarRating'
 import { CoachOffer } from './coaches/CoachOffer'
 import { CoachBackLink, CoachHero, CoachHeroSkeleton } from './coaches/CoachHero'
 import { useDocumentTitle } from '@/lib/page-title'
+import { DetailNotFound } from '@/features/public/components/DetailNotFound'
 
 export default function CoachProfilePage() {
   const { id = '' } = useParams()
@@ -67,12 +68,12 @@ export default function CoachProfilePage() {
   }
   if (!coach) {
     return (
-      <div className="mx-auto max-w-6xl px-6 py-20 text-center">
-        <p className="text-muted-foreground">Antrenorul nu a fost găsit.</p>
-        <div className="mt-2">
-          <CoachBackLink />
-        </div>
-      </div>
+      <DetailNotFound
+        title="Antrenorul nu a fost găsit."
+        text="Linkul poate fi greșit sau antrenorul nu mai este disponibil. Poți alege alt antrenor din listă."
+        backTo="/antrenori"
+        backLabel="Înapoi la antrenori"
+      />
     )
   }
 

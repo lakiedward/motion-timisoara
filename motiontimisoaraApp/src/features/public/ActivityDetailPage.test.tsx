@@ -112,7 +112,9 @@ test('încărcarea eșuată are Reîncearcă și nu spune că activitatea lipse�
 test('un id lipsă rămâne „nu a fost găsită”, cu linkul înapoi', async () => {
   mocked.mockResolvedValue(null)
   deseneaza()
-  expect(await screen.findByText('Activitatea nu a fost găsită.')).toBeInTheDocument()
+  expect(
+    await screen.findByRole('heading', { level: 1, name: 'Activitatea nu a fost găsită.' }),
+  ).toBeInTheDocument()
   expect(screen.getByRole('link', { name: /Înapoi la activități/ })).toHaveAttribute(
     'href',
     '/activitati',

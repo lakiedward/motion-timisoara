@@ -1,4 +1,4 @@
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 
 import { ACTIVITY_RULES_FILE_BUCKET, rulesFileAfisabil } from '@/api/camp-rules-file'
@@ -18,6 +18,7 @@ import { ActivityEnrollCard } from './activity-detail/ActivityEnrollCard'
 import { ActivityInfoBand } from './activity-detail/ActivityInfoBand'
 import { DetailBackLink } from '@/features/public/components/DetailBackLink'
 import { useDocumentTitle } from '@/lib/page-title'
+import { DetailNotFound } from '@/features/public/components/DetailNotFound'
 
 export default function ActivityDetailPage() {
   const { id = '' } = useParams()
@@ -54,15 +55,12 @@ export default function ActivityDetailPage() {
   }
   if (!a) {
     return (
-      <div className="mx-auto max-w-4xl px-6 py-20 text-center">
-        <p className="text-muted-foreground">Activitatea nu a fost găsită.</p>
-        <Link
-          to="/activitati"
-          className="text-primary mt-4 inline-flex h-touch-target items-center font-semibold"
-        >
-          ← Înapoi la activități
-        </Link>
-      </div>
+      <DetailNotFound
+        title="Activitatea nu a fost găsită."
+        text="Linkul poate fi greșit sau activitatea nu mai este disponibilă. Poți alege altă activitate din listă."
+        backTo="/activitati"
+        backLabel="Înapoi la activități"
+      />
     )
   }
 

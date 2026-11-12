@@ -1,4 +1,4 @@
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 
 import { getTabaraDetaliu, sAIncheiat } from '@/api/camps'
@@ -16,6 +16,7 @@ import { CampInfoBand } from './camp-detail/CampInfoBand'
 import { OrganizerCoaches } from './components/OrganizerCoaches'
 import { DetailBackLink } from '@/features/public/components/DetailBackLink'
 import { useDocumentTitle } from '@/lib/page-title'
+import { DetailNotFound } from '@/features/public/components/DetailNotFound'
 
 export default function CampDetailsPage() {
   const { slug = '' } = useParams()
@@ -49,15 +50,12 @@ export default function CampDetailsPage() {
 
   if (!data) {
     return (
-      <div className="mx-auto max-w-4xl px-6 py-20 text-center">
-        <p className="text-muted-foreground">Tabăra nu a fost găsită.</p>
-        <Link
-          to="/tabere"
-          className="text-primary mt-4 inline-flex h-touch-target items-center font-semibold"
-        >
-          ← Înapoi la tabere
-        </Link>
-      </div>
+      <DetailNotFound
+        title="Tabăra nu a fost găsită."
+        text="Linkul poate fi greșit sau tabăra nu mai este disponibilă. Poți alege altă tabără din listă."
+        backTo="/tabere"
+        backLabel="Înapoi la tabere"
+      />
     )
   }
 
