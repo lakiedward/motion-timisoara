@@ -65,6 +65,8 @@ on:
       - 'supabase/tests/*restrict-authenticated-profiles*'
       - 'supabase/migrations/00141_photo_bucket_limits_and_active_writes.sql'
       - 'supabase/tests/*photo-bucket-limits-and-active-writes*'
+      - 'supabase/migrations/00143_announcement_media_limits.sql'
+      - 'supabase/tests/*announcement-media-limits*'
       - 'supabase/migrations/00042_transactional_attendance.sql'
       - 'supabase/migrations/00105_attendance_after_session_start.sql'
       - 'supabase/migrations/00142_parent_entrance_checkin.sql'
@@ -174,6 +176,9 @@ jobs:
       - name: Verify photo buckets accept only images and only active owners can write
         shell: pwsh
         run: ./supabase/tests/run-photo-bucket-limits-and-active-writes.ps1
+      - name: Verify announcement media accepts only photos and short videos up to 50 MiB
+        shell: pwsh
+        run: ./supabase/tests/run-announcement-media-limits.ps1
       - name: Verify parents check in their own child with the coach entrance code
         shell: pwsh
         run: ./supabase/tests/run-parent-entrance-checkin.ps1
