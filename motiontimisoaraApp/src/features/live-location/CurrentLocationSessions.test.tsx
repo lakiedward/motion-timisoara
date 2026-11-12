@@ -51,7 +51,9 @@ function mount(courses = [curs('course-1', 'Înot începători')], courseSource 
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(getCurrentLocationOccurrences).mockResolvedValue([occurrence('occurrence-1', 'course-1')])
+  vi.mocked(getCurrentLocationOccurrences).mockResolvedValue([
+    occurrence('occurrence-1', 'course-1'),
+  ])
   vi.mocked(getActiveLocationSessions).mockResolvedValue([session('occurrence-1')])
 })
 
@@ -109,7 +111,10 @@ test('rows show course, coach, time range and sharing state, sharing first', asy
     occurrence('occurrence-2', 'course-2', 5),
     occurrence('occurrence-1', 'course-1', 30),
   ])
-  mount([curs('course-1', 'Înot începători'), curs('course-2', 'Atletism juniori', 'Maria Ionescu')])
+  mount([
+    curs('course-1', 'Înot începători'),
+    curs('course-2', 'Atletism juniori', 'Maria Ionescu'),
+  ])
   await screen.findAllByText('Partajează acum')
   const rows = screen.getAllByRole('button', { expanded: false })
   expect(rows[0]).toHaveTextContent('Înot începători')

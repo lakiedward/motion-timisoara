@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { MapPin } from 'lucide-react'
 
-import { cartoTileUrl, openStreetMapTileUrl } from '@/features/public/map/basemap'
+import {
+  cartoTileUrl,
+  openStreetMapTileClassName,
+  openStreetMapTileUrl,
+  useBasemapTheme,
+} from '@/features/public/map/basemap'
+import type { ResolvedTheme } from '@/lib/theme/theme-preference'
 import { cn } from '@/lib/utils'
 
 const ZOOM = 15
@@ -15,8 +21,8 @@ function proiectie(lat: number, lng: number) {
   return { x, y }
 }
 
-function adresaDalei(x: number, y: number) {
-  const carto = cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY)
+function adresaDalei(x: number, y: number, theme: ResolvedTheme) {
+  const carto = cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY, theme)
   if (!carto)
     return openStreetMapTileUrl
       .replace('{z}', String(ZOOM))
@@ -48,6 +54,7 @@ export default function StaticPlaceMap({
 }) {
   const ref = useRef<HTMLAnchorElement>(null)
   const [size, setSize] = useState({ w: 768, h: TILE })
+  const basemapTheme = useBasemapTheme()
   const carto = Boolean(cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY))
 
   useEffect(() => {
@@ -89,11 +96,11 @@ export default function StaticPlaceMap({
         {dale.map((dala) => (
           <img
             key={`${dala.x}-${dala.y}`}
-            src={adresaDalei(dala.x, dala.y)}
+            src={adresaDalei(dala.x, dala.y, basemapTheme)}
             alt=""
             width={TILE}
             height={TILE}
-            className="absolute max-w-none"
+            className={cn('absolute max-w-none', !carto && openStreetMapTileClassName)}
             style={{ left: dala.left, top: dala.top }}
             onError={(e) => {
               e.currentTarget.hidden = true

@@ -3,7 +3,7 @@ import { MapContainer, Marker, TileLayer, useMap } from 'react-leaflet'
 import type { LocationResponse } from '@/api/live-location'
 import { Button } from '@/components/ui/button'
 import { markerIcon } from '@/lib/map-marker'
-import { basemapAttribution, cartoTileUrl } from '@/features/public/map/basemap'
+import { basemapAttribution, cartoTileUrl, useBasemapTheme } from '@/features/public/map/basemap'
 import 'leaflet/dist/leaflet.css'
 
 type Point = NonNullable<LocationResponse['location']>
@@ -17,7 +17,8 @@ function CenterPosition({ point }: { point: Point }) {
 }
 
 export function LiveLocationMap({ point }: { point: Point }) {
-  const url = cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY)
+  const basemapTheme = useBasemapTheme()
+  const url = cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY, basemapTheme)
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
   if (!url || failed)
