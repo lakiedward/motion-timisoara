@@ -120,11 +120,13 @@ function CameraView({
 export function WebScannerSheet({
   open,
   label,
+  hint = 'Încadrează codul QR al copilului',
   onDetected,
   onClose,
 }: {
   open: boolean
   label: string
+  hint?: string
   onDetected: (text: string) => void
   onClose: () => void
 }) {
@@ -142,7 +144,7 @@ export function WebScannerSheet({
       >
         <SheetHeader className="pr-14">
           <SheetTitle className="wrap-anywhere">{label}</SheetTitle>
-          <SheetDescription>Încadrează codul QR al copilului</SheetDescription>
+          <SheetDescription>{hint}</SheetDescription>
         </SheetHeader>
         <div className="px-4">
           {open && (

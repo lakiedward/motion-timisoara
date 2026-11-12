@@ -15,6 +15,7 @@ const SECTION_PREFIXES: [string, string][] = [
   ['/account/plata', '/account/enrollments'],
   ['/account/competitions/', '/account/enrollments'],
   ['/account/attendance', '/account/attendance'],
+  ['/prezenta/', '/account/attendance'],
   ['/account/announcements', '/account/announcements'],
   ['/account/profile', '/account/profile'],
   ['/account/locatie', '/account'],
