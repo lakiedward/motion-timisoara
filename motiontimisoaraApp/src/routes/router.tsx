@@ -172,7 +172,7 @@ export const router = createBrowserRouter([
                   { path: '/account/child/:id', element: <ChildFormPage /> },
                   {
                     path: '/account/child/:id/qr',
-                    element: <ChildQrPage inapoi="/account/children" />,
+                    element: <ChildQrPage inapoi="/account/children" eticheta="Copiii mei" />,
                   },
                   { path: '/account/enrollments', element: <EnrollmentsPage /> },
                   { path: '/account/attendance', element: <AttendancePage /> },
@@ -245,7 +245,7 @@ export const router = createBrowserRouter([
               { path: '/coach/payments', element: <CashPaymentsPage /> },
               {
                 path: '/coach/children/:id/qr',
-                element: <ChildQrPage inapoi="/coach/attendance" />,
+                element: <ChildQrPage inapoi="/coach/attendance" eticheta="Prezență" />,
               },
               { path: '/coach/profile', element: <CoachOwnProfilePage /> },
               { path: '/coach/stripe', element: <CoachStripePage /> },
@@ -455,7 +455,7 @@ export const router = createBrowserRouter([
                     path: '/club/camps/:id/enrolled',
                     element: <CampEnrolledPage baza="/club/camps" />,
                   },
-                  { path: '/club/children/:id/qr', element: <ChildQrPage inapoi="/club/camps" /> },
+                  { path: '/club/children/:id/qr', element: <ChildQrPage inapoi="/club/camps" eticheta="Taberele clubului" /> },
                 ],
               },
             ],

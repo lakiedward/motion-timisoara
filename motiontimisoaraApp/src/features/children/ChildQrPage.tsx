@@ -1,19 +1,20 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import QRCode from 'qrcode'
-import { ArrowLeft, Download, Printer, RefreshCw } from 'lucide-react'
+import { Download, Printer, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { getChild, regenereazaCodulCopilului, type Child } from '@/api/account'
 import { useAuth } from '@/lib/auth-context'
 import { codQr } from '@/lib/cod-qr'
+import { BackLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 
-export default function ChildQrPage({ inapoi }: { inapoi: string }) {
+export default function ChildQrPage({ inapoi, eticheta }: { inapoi: string; eticheta: string }) {
   const { id } = useParams()
   const childId = id as string
   const { user } = useAuth()
@@ -43,7 +44,7 @@ export default function ChildQrPage({ inapoi }: { inapoi: string }) {
 
   if (isError && !copil) {
     return (
-      <Cadru inapoi={inapoi}>
+      <Cadru inapoi={inapoi} eticheta={eticheta}>
         <StatusView
           state="error"
           title="Nu am putut încărca copilul."
@@ -57,7 +58,7 @@ export default function ChildQrPage({ inapoi }: { inapoi: string }) {
 
   if (isPending) {
     return (
-      <Cadru inapoi={inapoi}>
+      <Cadru inapoi={inapoi} eticheta={eticheta}>
         <StatusView
           state="loading"
           title="Se încarcă codul QR"
@@ -71,7 +72,7 @@ export default function ChildQrPage({ inapoi }: { inapoi: string }) {
 
   if (!copil) {
     return (
-      <Cadru inapoi={inapoi}>
+      <Cadru inapoi={inapoi} eticheta={eticheta}>
         <StatusView
           state="empty"
           title="Copilul nu a fost găsit."
@@ -83,7 +84,7 @@ export default function ChildQrPage({ inapoi }: { inapoi: string }) {
   }
 
   return (
-    <Cadru inapoi={inapoi}>
+    <Cadru inapoi={inapoi} eticheta={eticheta}>
       <h1 className="font-display mt-4 text-2xl font-bold">Codul QR al lui {copil.name}</h1>
       <p className="text-muted-foreground mt-1 text-sm">
         Arată-l antrenorului la intrare: îl scanează și pontează prezența. Ține ecranul luminos și
@@ -223,15 +224,18 @@ function ImagineQr({ token, nume }: { token: string; nume: string }) {
   )
 }
 
-function Cadru({ inapoi, children }: { inapoi: string; children: React.ReactNode }) {
+function Cadru({
+  inapoi,
+  eticheta,
+  children,
+}: {
+  inapoi: string
+  eticheta: string
+  children: React.ReactNode
+}) {
   return (
     <div className="mx-auto max-w-2xl">
-      <Link
-        to={inapoi}
-        className="text-muted-foreground hover:text-foreground inline-flex min-h-touch-target items-center gap-1 text-sm"
-      >
-        <ArrowLeft className="size-4" /> Înapoi
-      </Link>
+      <BackLink to={inapoi}>{eticheta}</BackLink>
       {children}
     </div>
   )
