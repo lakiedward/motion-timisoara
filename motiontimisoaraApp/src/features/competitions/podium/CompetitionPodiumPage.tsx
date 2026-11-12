@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
@@ -10,6 +10,7 @@ import {
   publishCompetitionPodiumCategory,
   saveCompetitionPodiumPlace,
 } from '@/api/competition/competition-podium'
+import { BackLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -76,11 +77,7 @@ export default function CompetitionPodiumPage({ baza }: { baza: CompetitionPorta
     onError: (error: Error) => toast.error(error.message || 'Nu am putut publica podiumul.'),
   })
 
-  const backLink = (
-    <Link to={baza} className="text-primary inline-flex min-h-touch-target items-center text-sm font-medium">
-      ← Concursuri
-    </Link>
-  )
+  const backLink = <BackLink to={baza}>Înapoi la concursuri</BackLink>
 
   if (competition.isLoading || categories.isLoading || podium.isLoading) {
     return (
