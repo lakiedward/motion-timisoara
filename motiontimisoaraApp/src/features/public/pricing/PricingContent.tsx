@@ -76,7 +76,7 @@ export function PricingContent() {
           </span>
           <div>
             <h2 className="font-display text-xl font-extrabold md:text-2xl">{PROMO.title}</h2>
-            <p className="mt-1 max-w-3xl text-white/90">{PROMO.text}</p>
+            <p className="mt-1 max-w-3xl text-white">{PROMO.text}</p>
           </div>
         </div>
       </section>
