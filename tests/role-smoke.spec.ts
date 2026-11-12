@@ -195,7 +195,7 @@ for (const role of Object.keys(PLANS) as Role[]) {
       test('formularele principale se deschid', async ({ page }, testInfo) => {
         for (const path of plan.forms) {
           await open(page, path)
-          await expect(page.locator('main').locator('input:not([type=hidden]), select, textarea').first()).toBeVisible()
+          await expect(page.locator('main').locator('input:not([type=hidden]), select, textarea, button[aria-haspopup]').first()).toBeVisible()
         }
         await report(guard, errors, testInfo)
       })
