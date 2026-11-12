@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, QrCode } from 'lucide-react'
 
 import type { AdminSession } from '@/api/attendance/admin-sessions'
 import { getCoachSessions, SESSION_GROUP_LIMIT } from '@/api/coach'
@@ -88,6 +88,11 @@ export default function CoachAttendancePage() {
           <span className="text-muted-foreground ml-2 text-base font-normal">({items.length})</span>
         )}
       </h1>
+      <Button asChild variant="outline" className="h-touch-target min-h-touch-target">
+        <Link to="/coach/attendance/entrance-code">
+          <QrCode aria-hidden="true" /> Codul de la intrare
+        </Link>
+      </Button>
       <FilterSearch
         className="order-last w-full md:order-none md:w-80"
         value={query}

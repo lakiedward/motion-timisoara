@@ -96,6 +96,8 @@ import CoachLocationPage from '@/features/live-location/parent/CoachLocationPage
 import CheckoutPage from '@/features/account/CheckoutPage'
 import PaymentReturnPage from '@/features/account/PaymentReturnPage'
 import ChildQrPage from '@/features/children/ChildQrPage'
+import EntranceCheckinPage from '@/features/account/entrance/EntranceCheckinPage'
+import CoachEntranceCodePage from '@/features/coach/entrance/CoachEntranceCodePage'
 import PrivacyPage from '@/features/public/PrivacyPage'
 import TermsPage from '@/features/public/TermsPage'
 import AccountDeletionPage from '@/features/public/account-deletion/AccountDeletionPage'
@@ -174,6 +176,11 @@ export const router = createBrowserRouter([
                   },
                   { path: '/account/enrollments', element: <EnrollmentsPage /> },
                   { path: '/account/attendance', element: <AttendancePage /> },
+                  {
+                    path: '/prezenta/:token',
+                    element: <EntranceCheckinPage />,
+                    handle: pageTitle('Prezența la intrare'),
+                  },
                   { path: '/account/announcements', element: <AnnouncementsPage /> },
                   { path: '/account/profile', element: <ParentProfilePage /> },
                   { path: '/account/locatie', element: <CoachLocationPage /> },
@@ -234,6 +241,7 @@ export const router = createBrowserRouter([
                 element: <CampEnrolledPage baza="/coach/camps" />,
               },
               { path: '/coach/attendance', element: <CoachAttendancePage /> },
+              { path: '/coach/attendance/entrance-code', element: <CoachEntranceCodePage /> },
               { path: '/coach/payments', element: <CashPaymentsPage /> },
               {
                 path: '/coach/children/:id/qr',

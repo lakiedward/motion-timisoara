@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils'
 import { AttendanceMonths } from '@/features/account/attendance/AttendanceMonths'
 import { attendanceEntries, kindBreakdown } from '@/features/account/attendance/attendance-entries'
 import { LiveLocationBanner } from '@/features/live-location/parent/LiveLocationBanner'
+import { EntranceScanBanner } from '@/features/account/entrance/EntranceScanBanner'
 
 const PONTAJ_VIITOR = 'Apare aici după ce antrenorul pontează prima ședință.'
 
@@ -165,6 +166,7 @@ export default function AttendancePage() {
         )}
       </div>
 
+      {children.length > 0 && <EntranceScanBanner className="mb-6" />}
       <LiveLocationBanner className="mb-6" />
       {seIncarcaCopiii ? (
         <StatusView state="loading" title="Se încarcă prezența" rowHeight={64} />
