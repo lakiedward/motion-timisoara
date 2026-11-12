@@ -450,12 +450,6 @@ test('tile URLs require a nonempty key and encode it as a single query value', (
   expect(cartoTileUrl(' test&key=other ')).toMatch(/\?key=test%26key%3Dother$/)
 })
 
-test('tile URLs use the dark CARTO style only in the dark theme', () => {
-  expect(cartoTileUrl('k')).toContain('/rastertiles/voyager/')
-  expect(cartoTileUrl('k', 'light')).toContain('/rastertiles/voyager/')
-  expect(cartoTileUrl('k', 'dark')).toContain('/rastertiles/dark_all/')
-})
-
 const headquarters = {
   id: 'club-9',
   name: 'Club Sediu Test',

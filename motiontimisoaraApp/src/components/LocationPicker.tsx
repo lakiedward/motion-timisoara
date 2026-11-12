@@ -16,9 +16,7 @@ import {
   basemapAttribution,
   cartoTileUrl,
   openStreetMapAttribution,
-  openStreetMapTileClassName,
   openStreetMapTileUrl,
-  useBasemapTheme,
 } from '@/features/public/map/basemap'
 
 const CENTRU_IMPLICIT: [number, number] = [45.7489, 21.2087]
@@ -85,8 +83,7 @@ export default function LocationPicker({
   error,
   pointRequired = false,
 }: Props) {
-  const basemapTheme = useBasemapTheme()
-  const carto = cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY, basemapTheme)
+  const carto = cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY)
   const [cautareAmanata, setCautareAmanata] = useState('')
   const [listaDeschisa, setListaDeschisa] = useState(false)
   const [indexActiv, setIndexActiv] = useState(-1)
@@ -327,7 +324,6 @@ export default function LocationPicker({
           <TileLayer
             url={carto ?? openStreetMapTileUrl}
             attribution={carto ? basemapAttribution : openStreetMapAttribution}
-            className={carto ? undefined : openStreetMapTileClassName}
           />
           <UrmarestePunctul point={value} />
           <AsculaApasarea onPick={punePunctul} />

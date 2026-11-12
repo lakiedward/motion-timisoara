@@ -9,7 +9,7 @@ import { clubMarkerIcon, getOfferMarkerIcon } from '@/lib/map-marker'
 import ClubHqPopup from './ClubHqPopup'
 import FocusLocation from './FocusLocation'
 import LocationPopup from './LocationPopup'
-import { basemapAttribution, cartoTileUrl, useBasemapTheme } from './basemap'
+import { basemapAttribution, cartoTileUrl } from './basemap'
 
 const offerFilters = [
   { value: 'all', label: 'Toate', icon: MapPin },
@@ -42,8 +42,7 @@ export default function LocationMap({
   clubs: ClubHeadquarters[]
   focusId: string | null
 }) {
-  const basemapTheme = useBasemapTheme()
-  const tileUrl = cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY, basemapTheme)
+  const tileUrl = cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY)
   const [tileStatus, setTileStatus] = useState<'loading' | 'ready' | 'error'>(
     tileUrl ? 'loading' : 'error',
   )

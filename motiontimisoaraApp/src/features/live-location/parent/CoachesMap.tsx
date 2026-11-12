@@ -5,7 +5,7 @@ import type { LocationPoint } from '@/api/live-location'
 import { Button } from '@/components/ui/button'
 import { markerIcon } from '@/lib/map-marker'
 import { cn } from '@/lib/utils'
-import { basemapAttribution, cartoTileUrl, useBasemapTheme } from '@/features/public/map/basemap'
+import { basemapAttribution, cartoTileUrl } from '@/features/public/map/basemap'
 import 'leaflet/dist/leaflet.css'
 
 export type CoachPoint = { key: string; name: string; point: LocationPoint }
@@ -27,8 +27,7 @@ function FitPoints({ points }: { points: CoachPoint[] }) {
 }
 
 export function CoachesMap({ points, className }: { points: CoachPoint[]; className?: string }) {
-  const basemapTheme = useBasemapTheme()
-  const url = cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY, basemapTheme)
+  const url = cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY)
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
   if (!points.length) return null

@@ -10,9 +10,7 @@ import {
   basemapAttribution,
   cartoTileUrl,
   openStreetMapAttribution,
-  openStreetMapTileClassName,
   openStreetMapTileUrl,
-  useBasemapTheme,
 } from '@/features/public/map/basemap'
 import {
   loadCompetitionGpx,
@@ -38,8 +36,7 @@ function FitRoute({ segments }: { segments: GpxPoint[][] }) {
 }
 
 function RouteMapSurface({ routeLabel, gpx }: { routeLabel: string; gpx: CompetitionGpx }) {
-  const basemapTheme = useBasemapTheme()
-  const cartoUrl = cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY, basemapTheme)
+  const cartoUrl = cartoTileUrl(import.meta.env.VITE_CARTO_BASEMAP_API_KEY)
   const tileUrl = cartoUrl ?? (!isNative() ? openStreetMapTileUrl : null)
   const tileAttribution = cartoUrl ? basemapAttribution : openStreetMapAttribution
   const [tileStatus, setTileStatus] = useState<'loading' | 'ready' | 'error'>(
@@ -95,7 +92,6 @@ function RouteMapSurface({ routeLabel, gpx }: { routeLabel: string; gpx: Competi
             <TileLayer
               url={tileUrl}
               attribution={tileAttribution}
-              className={cartoUrl ? undefined : openStreetMapTileClassName}
               eventHandlers={{
                 load: () => setTileStatus('ready'),
                 tileerror: () => setTileStatus('error'),

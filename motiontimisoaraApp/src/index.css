@@ -29,8 +29,8 @@
   --accent: #eff6ff;
   --accent-foreground: #1d4ed8;
 
-  --sky: #0ea5e9;
-  --highlight: #f59e0b;
+    --sky: #0ea5e9;
+    --highlight: #f59e0b;
   --highlight-foreground: #0f172a;
   --highlight-ink: #b45309;
   --success: #22c55e;
@@ -210,7 +210,7 @@
 }
 
 @layer components {
-  .btn-cta {
+      .btn-cta {
     @apply inline-flex items-center justify-center gap-2 min-h-touch-target rounded-full px-7 py-3 text-base font-bold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring;
   }
   .btn-cta--primary {
@@ -259,8 +259,9 @@
 .dark .leaflet-container {
   background: var(--muted);
 }
-.dark .mt-basemap-osm {
-  filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
+.dark .leaflet-tile-pane,
+.dark .mt-basemap-tile {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.95);
 }
 .dark .leaflet-bar a {
   background-color: var(--card);
