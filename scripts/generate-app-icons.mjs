@@ -9,7 +9,7 @@ const res = join(app, 'android', 'app', 'src', 'main', 'res')
 const ios = join(app, 'ios', 'App', 'App', 'Assets.xcassets')
 
 const PATH = 'M3 17 L8 7 L12 13 L16 5 L21 17'
-const GRADIENT = '<linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2563eb"/><stop offset="1" stop-color="#0ea5e9"/></linearGradient>'
+const GRADIENT = '<linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2563eb"/><stop offset="1" stop-color="#0277bd"/></linearGradient>'
 
 function glyph(x, y, size) {
   return `<svg x="${x}" y="${y}" width="${size}" height="${size}" viewBox="0 0 24 24"><path d="${PATH}" transform="translate(0 1)" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`
