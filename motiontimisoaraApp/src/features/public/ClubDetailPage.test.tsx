@@ -144,7 +144,9 @@ test('a load error shows a retry, not "not found"', async () => {
 test('a missing club says it was not found and links back to the list', async () => {
   mocks.getPublicClub.mockResolvedValue(null)
   renderPage()
-  expect(await screen.findByText('Clubul nu a fost găsit.')).toBeVisible()
+  expect(
+    await screen.findByRole('heading', { level: 1, name: 'Clubul nu a fost găsit.' }),
+  ).toBeVisible()
   expect(screen.getByRole('link', { name: /Înapoi la cluburi/ })).toHaveAttribute(
     'href',
     '/cluburi',

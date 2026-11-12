@@ -86,7 +86,13 @@ test('pagina arată titlul, descrierea, organizatorul și poza', async () => {
 test('un slug necunoscut nu arată o eroare de rețea', async () => {
   mocked.mockResolvedValue(null)
   deseneaza()
-  await waitFor(() => expect(screen.getByText('Concursul nu a fost găsit.')).toBeInTheDocument())
+  expect(
+    await screen.findByRole('heading', { level: 1, name: 'Concursul nu a fost găsit.' }),
+  ).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /Înapoi la concursuri/ })).toHaveAttribute(
+    'href',
+    '/concursuri',
+  )
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 })
 

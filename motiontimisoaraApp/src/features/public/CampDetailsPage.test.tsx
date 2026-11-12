@@ -445,7 +445,9 @@ test('o încărcare căzută arată eroare cu reîncercare, nu „nu a fost găs
 test('o tabără inexistentă are mesajul ei, cu drum înapoi', async () => {
   mocked.mockResolvedValue(null as never)
   renderPage()
-  expect(await screen.findByText('Tabăra nu a fost găsită.')).toBeInTheDocument()
+  expect(
+    await screen.findByRole('heading', { level: 1, name: 'Tabăra nu a fost găsită.' }),
+  ).toBeInTheDocument()
   expect(screen.queryByText('Nu am putut încărca tabăra.')).not.toBeInTheDocument()
 })
 test('poza mare și galeria apar când există', async () => {
