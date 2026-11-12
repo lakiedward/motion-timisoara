@@ -93,7 +93,7 @@ export default function StaticPlaceMap({
             alt=""
             width={TILE}
             height={TILE}
-            className="absolute max-w-none"
+            className="mt-basemap-tile absolute max-w-none"
             style={{ left: dala.left, top: dala.top }}
             onError={(e) => {
               e.currentTarget.hidden = true
