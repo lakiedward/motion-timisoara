@@ -101,10 +101,19 @@ test('eroarea de încărcare se poate reîncerca', async () => {
   mocked.mockRejectedValueOnce(new Error('retea')).mockResolvedValueOnce(CONCURS)
   deseneaza()
   await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
+  expect(
+    screen.getByRole('heading', { level: 1, name: 'Nu am putut încărca concursul.' }),
+  ).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Reîncearcă' }))
   await waitFor(() =>
     expect(screen.getByRole('heading', { name: 'Cupa Timișoara' })).toBeInTheDocument(),
   )
+})
+
+test('încărcarea are un nume citit de cititorul de ecran', () => {
+  mocked.mockReturnValue(new Promise(() => {}))
+  deseneaza()
+  expect(screen.getByRole('status', { name: 'Se încarcă concursul' })).toBeInTheDocument()
 })
 
 test('fiecare traseu își păstrează descrierea și propriile poze', async () => {

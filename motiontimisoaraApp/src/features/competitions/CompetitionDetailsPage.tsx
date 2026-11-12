@@ -42,7 +42,11 @@ export default function CompetitionDetailsPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-6xl px-6 py-12">
+      <div
+        className="mx-auto max-w-6xl px-6 py-12"
+        role="status"
+        aria-label="Se încarcă concursul"
+      >
         <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     )
@@ -51,7 +55,7 @@ export default function CompetitionDetailsPage() {
   if (isError) {
     return (
       <div className="mx-auto max-w-4xl px-6 py-20 text-center" role="alert">
-        <p className="text-foreground font-medium">Nu am putut încărca concursul.</p>
+        <h1 className="text-foreground font-medium">Nu am putut încărca concursul.</h1>
         <Button
           className="mt-4 h-touch-target min-h-touch-target"
           type="button"
@@ -166,7 +170,7 @@ export default function CompetitionDetailsPage() {
             />
           </div>
 
-          <aside className="lg:sticky lg:top-24 lg:self-start">
+          <aside className="order-first lg:sticky lg:top-24 lg:order-none lg:self-start">
             <CompetitionEnrollCard
               categoriesAnchor={COMPETITION_ROUTES_ANCHOR}
               deadlineAt={data.registrationDeadlineAt}
