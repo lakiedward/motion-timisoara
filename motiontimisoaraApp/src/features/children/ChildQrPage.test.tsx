@@ -32,11 +32,11 @@ function renderPagina(ruta = '/account/child/c1/qr') {
         <Routes>
           <Route
             path="/account/child/:id/qr"
-            element={<ChildQrPage inapoi="/account/children" />}
+            element={<ChildQrPage inapoi="/account/children" eticheta="Copiii mei" />}
           />
           <Route
             path="/coach/children/:id/qr"
-            element={<ChildQrPage inapoi="/coach/attendance" />}
+            element={<ChildQrPage inapoi="/coach/attendance" eticheta="Prezență" />}
           />
         </Routes>
       </MemoryRouter>
@@ -118,7 +118,7 @@ test('antrenorul vede codul copilului înscris, fără butonul de regenerare', a
 
   expect(await screen.findByRole('img', { name: /Codul QR/ })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /Generează un cod nou/ })).not.toBeInTheDocument()
-  expect(screen.getByRole('link', { name: /Înapoi/ })).toHaveAttribute('href', '/coach/attendance')
+  expect(screen.getByRole('link', { name: 'Prezență' })).toHaveAttribute('href', '/coach/attendance')
 })
 
 test('un copil pe care nu-l vezi nu deschide un cod', async () => {
@@ -156,7 +156,7 @@ test('o reîncărcare căzută nu ascunde codul deja afișat', async () => {
         <Routes>
           <Route
             path="/account/child/:id/qr"
-            element={<ChildQrPage inapoi="/account/children" />}
+            element={<ChildQrPage inapoi="/account/children" eticheta="Copiii mei" />}
           />
         </Routes>
       </MemoryRouter>
