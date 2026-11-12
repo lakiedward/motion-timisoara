@@ -1312,6 +1312,35 @@ export type Database = {
           },
         ]
       }
+      coach_entrance_codes: {
+        Row: {
+          coach_id: string
+          created_at: string
+          rotated_at: string
+          token: string
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          rotated_at?: string
+          token: string
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          rotated_at?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_entrance_codes_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_invitation_codes: {
         Row: {
           code: string
@@ -3688,6 +3717,17 @@ export type Database = {
         Args: { p_entity_id: string; p_kind: string }
         Returns: boolean
       }
+      entrance_checkin: {
+        Args: {
+          p_child_id: string
+          p_occurrence_id: string
+          p_request_id: string
+          p_token: string
+        }
+        Returns: Json
+      }
+      entrance_checkin_options: { Args: { p_token: string }; Returns: Json }
+      entrance_code_owner: { Args: { p_coach_id: string }; Returns: string }
       finish_location_reverse: {
         Args: { p_key: string; p_result: Json; p_token: string }
         Returns: undefined
@@ -3805,6 +3845,7 @@ export type Database = {
           registration_id: string
         }[]
       }
+      get_coach_entrance_code: { Args: { p_coach_id?: string }; Returns: Json }
       get_my_children_camp_attendance: {
         Args: never
         Returns: {
@@ -4062,6 +4103,10 @@ export type Database = {
         }
       }
       revoke_push_device: { Args: { p_binding_id: string }; Returns: undefined }
+      rotate_coach_entrance_code: {
+        Args: { p_coach_id?: string }
+        Returns: Json
+      }
       safe_uuid: { Args: { t: string }; Returns: string }
       salveaza_banii_taberei: {
         Args: { p_camp_id: string; p_categorii: Json; p_price: number }
