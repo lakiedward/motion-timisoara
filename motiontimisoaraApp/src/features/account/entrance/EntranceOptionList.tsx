@@ -48,7 +48,7 @@ export function EntranceOptionList({
         <section
           key={session.occurrenceId}
           aria-label={`${session.courseName}, ${sessionTime(session.startsAt, session.endsAt)}`}
-          className="bg-card rounded-xl border"
+          className="bg-card overflow-hidden rounded-xl border"
         >
           <div className="border-b px-4 py-3">
             <h2 className="font-display font-bold wrap-anywhere">{session.courseName}</h2>
