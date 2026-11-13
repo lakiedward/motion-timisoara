@@ -1,8 +1,15 @@
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { CalendarDays, CreditCard, GraduationCap, MapPin, Plus, Tent, Trophy } from 'lucide-react'
 
 import { useAuth } from '@/lib/auth-context'
-import { getMyActivities, getMyCoachStripeStatus, getMyCourses, getMyLocations } from '@/api/coach'
+import {
+  getCoachSessions,
+  getMyActivities,
+  getMyCoachStripeStatus,
+  getMyCourses,
+  getMyLocations,
+} from '@/api/coach'
 import { getTaberelemele } from '@/api/camps-admin'
 import { getCompetitionList } from '@/api/competition/competition-list'
 import { DashboardGrid, DashboardGroup, DashboardRow } from '@/components/dashboard/DashboardGroups'
@@ -12,6 +19,9 @@ import { CashPaymentsNotice } from '@/features/payments/CashPaymentsNotice'
 import { CoachSubscriptionBanner } from '@/features/coach/subscription/CoachSubscriptionBanner'
 import { NATIVE_BUILD, subscriptionSalesAllowed } from '@/lib/store-compliance'
 import { plural } from '@/lib/plural'
+import { NowSessionCard } from './attendance/quick-scan/NowSessionCard'
+import { useCurrentSession } from './attendance/quick-scan/current-session'
+import { toSessionList } from './attendance/coach-session-list'
 
 export default function CoachDashboard() {
   const { user } = useAuth()
@@ -45,6 +55,13 @@ export default function CoachDashboard() {
     queryFn: getMyCoachStripeStatus,
     retry: false,
   })
+  const sessionsQuery = useQuery({
+    queryKey: ['coach-sessions'],
+    queryFn: getCoachSessions,
+    retry: false,
+  })
+  const sessions = useMemo(() => toSessionList(sessionsQuery.data), [sessionsQuery.data])
+  const nowSession = useCurrentSession(sessions)
   const stripeComplete = stripeQuery.data?.onboardingComplete ?? false
   const stripeLabel = stripeQuery.isPending
     ? 'se încarcă'
@@ -63,6 +80,13 @@ export default function CoachDashboard() {
         </h1>
         <p className="text-muted-foreground mt-1">Panoul tău de antrenor.</p>
       </div>
+
+      {nowSession && (
+        <NowSessionCard
+          session={nowSession}
+          catalogTo={`/coach/attendance?sesiune=${nowSession.id}`}
+        />
+      )}
 
       {!NATIVE_BUILD && subscriptionSalesAllowed() ? <CoachSubscriptionBanner /> : null}
 
