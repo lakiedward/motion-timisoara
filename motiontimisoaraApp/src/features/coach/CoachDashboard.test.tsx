@@ -31,6 +31,12 @@ vi.mock('@/lib/auth-context', () => ({
 }))
 
 vi.mock('@/api/coach', () => ({
+  getCoachSessions: vi.fn().mockResolvedValue({
+    upcoming: [],
+    past: [],
+    pastRecentCount: 0,
+    truncated: false,
+  }),
   getMyCourses: vi.fn(),
   getMyActivities: vi.fn(),
   getMyLocations: vi.fn(),
@@ -199,12 +205,14 @@ test('a coach who finished onboarding sees the configured state', async () => {
   await waitFor(() => expect(stripe).toHaveAccessibleName('Plăți cu cardul, Configurat'))
 })
 
-test('a coach with Stripe sees this month\'s online payments in three figures', async () => {
+test("a coach with Stripe sees this month's online payments in three figures", async () => {
   mockedStripeStatus.mockResolvedValue({ hasProfile: true, onboardingComplete: true })
   renderDashboard()
   const card = await screen.findByTestId('card-payments-month')
   expect(card).toHaveTextContent('Plăți online în noiembrie')
-  expect(await screen.findByText('50 de plăți cu cardul la ofertele tale, până azi')).toBeInTheDocument()
+  expect(
+    await screen.findByText('50 de plăți cu cardul la ofertele tale, până azi'),
+  ).toBeInTheDocument()
   expect(card).toHaveTextContent('Primești tu')
 })
 

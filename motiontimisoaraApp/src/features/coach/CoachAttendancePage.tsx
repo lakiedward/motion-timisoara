@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, QrCode } from 'lucide-react'
 
@@ -23,6 +23,8 @@ import { cn } from '@/lib/utils'
 import { AttendanceOfflineQueue } from './attendance/AttendanceScanner'
 import { CoachActivityAttendance } from './attendance/CoachActivityAttendance'
 import { CoachSessionCatalog } from './attendance/CoachSessionCatalog'
+import { NowSessionCard } from './attendance/quick-scan/NowSessionCard'
+import { useCurrentSession } from './attendance/quick-scan/current-session'
 import { SessionDayList } from './attendance/SessionDayList'
 import {
   nearestSession,
@@ -45,8 +47,10 @@ const DEFAULT_FILTERS = { ...NO_SESSION_FILTERS, status: 'all' as SessionStatus 
 
 export default function CoachAttendancePage() {
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [markingOnPhone, setMarkingOnPhone] = useState(false)
+  const [searchParams] = useSearchParams()
+  const requestedId = searchParams.get('sesiune')
+  const [selectedId, setSelectedId] = useState<string | null>(requestedId)
+  const [markingOnPhone, setMarkingOnPhone] = useState(!!requestedId)
   const [showOlder, setShowOlder] = useState(false)
   const [kind, setKind] = useState<'courses' | 'activities'>('courses')
 
@@ -56,6 +60,7 @@ export default function CoachAttendancePage() {
     retry: false,
   })
   const items = useMemo(() => toSessionList(data), [data])
+  const now = useCurrentSession(items)
 
   const { query, status } = filters
   const searching = query.trim().length > 0
@@ -78,6 +83,11 @@ export default function CoachAttendancePage() {
   const select = (s: AdminSession) => {
     setSelectedId(s.id)
     setMarkingOnPhone(true)
+  }
+  const openCatalog = (s: AdminSession) => {
+    setFilters(DEFAULT_FILTERS)
+    setShowOlder(true)
+    select(s)
   }
 
   const header = (
@@ -227,6 +237,7 @@ export default function CoachAttendancePage() {
     <div>
       {header}
       {kindSwitch}
+      {now && <NowSessionCard session={now} onCatalog={() => openCatalog(now)} />}
       <CoachLocationPanel
         occurrenceId={sel?.id ?? null}
         startsAt={sel?.startsAt}
