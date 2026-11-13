@@ -27,26 +27,28 @@ From the repository root, with `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and
 
 ```sh
 node scripts/sync-subscription-prices.mjs --check
-node scripts/sync-subscription-prices.mjs
+node scripts/sync-subscription-prices.mjs --proba
+node scripts/sync-subscription-prices.mjs --aplica
 ```
 
-It prints the mode and one row per plan with the product, the price and what happened (`created`, `replaced`, `unchanged`, `updated`). It never prints keys or tokens and does not sign the admin out.
+Without `--aplica` the script is a dry run (`--proba` says it explicitly). It sends `GET` to the function, which reads Stripe and `subscription_plans` through the same sync code with every write replaced by a recorder, and returns `dry_run: true` with `planned_writes`: each product or price it would create, update or archive, and each `stripe_price_id` it would set. Nothing is written in Stripe or in the database. A `GET` needs no `confirmLive`, so the dry run also works against the live key before launch. `--aplica` runs the dry run first, prints it, stops if the deployed function answers `405` to `GET` (an old version without dry run) or if nothing would change, and only then sends the real `POST`. It never prints keys or tokens and does not sign the admin out.
 
 Order of operations:
 
 1. Migration 00107 applied (the table with the four plans and empty `stripe_price_id`).
 2. `npx supabase@2.122.0 functions deploy sync-subscription-prices --project-ref ehdzafadshbaaghzdzdo --use-api` (owner's card).
-3. Run the script against TEST (writes `subscription_plans`, so owner's card), then once more to prove it changes nothing.
+3. Run `--proba`, then `--aplica` against TEST (writes `subscription_plans`, so owner's card), then `--proba` once more to prove it plans nothing.
 
 ## Launch (To-Do #232)
 
-The product database is shared by master-- and production, so until launch `stripe_price_id` holds the TEST ids. At launch, after the owner's card for each step: replace `STRIPE_SECRET_KEY` with the live key, then run `node scripts/sync-subscription-prices.mjs --live`. It creates the live products and prices and overwrites the TEST ids in the table. Prices in a new Stripe account always start from scratch, so the live ids differ from the TEST ids.
+The product database is shared by master-- and production, so until launch `stripe_price_id` holds the TEST ids. At launch, after the owner's card for each step: replace `STRIPE_SECRET_KEY` with the live key, then run `node scripts/sync-subscription-prices.mjs --live --proba`, show its planned writes on the card, and run `node scripts/sync-subscription-prices.mjs --live --aplica`. It creates the live products and prices and overwrites the TEST ids in the table. Prices in a new Stripe account always start from scratch, so the live ids differ from the TEST ids.
 
 ## Checks
 
 ```sh
 deno test --no-lock --allow-read=motiontimisoaraApp/src supabase/functions/sync-subscription-prices/contract.test.ts
 deno check --no-lock supabase/functions/sync-subscription-prices/index.ts
+node --test scripts/stripe-scripts.test.mjs
 ```
 
 Both run in the App CI workflow.

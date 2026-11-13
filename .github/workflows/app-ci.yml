@@ -193,6 +193,8 @@ jobs:
         run: deno test --no-lock --allow-read=motiontimisoaraApp/src supabase/functions/sync-subscription-prices/contract.test.ts
       - name: Type-check subscription price sync function
         run: deno check --no-lock supabase/functions/sync-subscription-prices/index.ts
+      - name: Verify Stripe launch scripts write nothing in dry run
+        run: node --test scripts/stripe-scripts.test.mjs
       - name: Verify subscription emails contract
         run: deno test --no-lock supabase/functions/send-subscription-emails/contract.test.ts
       - name: Type-check subscription emails function

@@ -5,6 +5,8 @@ import {
   type NewPrice,
   type PlanStore,
   type StripeCatalog,
+  pendingPriceId,
+  planSubscriptionPrices,
   stripeModeFromKey,
   type SubscriptionPlan,
   syncSubscriptionPrices,
@@ -237,9 +239,87 @@ Deno.test("only an admin may run the sync", async () => {
   assertEquals(stripe.calls, []);
 });
 
-Deno.test("GET is refused", async () => {
+const isWrite = (call: string) => !call.startsWith("retrieveProduct:");
+
+Deno.test("other methods than GET and POST are refused", async () => {
   const { handler } = handlerWith("sk_test_x", true);
-  assertEquals((await handler(new Request("http://localhost/x"))).status, 405);
+  assertEquals((await handler(new Request("http://localhost/x", { method: "PUT" }))).status, 405);
+  assertEquals((await handler(new Request("http://localhost/x", { method: "DELETE" }))).status, 405);
+});
+
+Deno.test("dry run on an empty account lists every write it would make and makes none", async () => {
+  const stripe = new FakeStripe();
+  const store = memoryStore(SPEC_PLANS);
+  const report = await planSubscriptionPrices("live", stripe, store);
+
+  assertEquals(stripe.calls.filter(isWrite), []);
+  assertEquals(store.writes, []);
+  assertEquals(stripe.products.size + stripe.prices.length, 0);
+  assert(store.rows.every((row) => row.stripe_price_id === null));
+  assertEquals(report.dry_run, true);
+  assertEquals(report.mode, "live");
+  assertEquals(report.planned_writes.map((w) => `${w.target}:${w.operation}:${w.id}`), [
+    "stripe:products.create:motion_sub_coach",
+    "stripe:prices.create:(preț nou COACH)",
+    "database:subscription_plans.stripe_price_id:COACH",
+    "stripe:products.create:motion_sub_club_start",
+    "stripe:prices.create:(preț nou CLUB_START)",
+    "database:subscription_plans.stripe_price_id:CLUB_START",
+    "stripe:products.create:motion_sub_club",
+    "stripe:prices.create:(preț nou CLUB)",
+    "database:subscription_plans.stripe_price_id:CLUB",
+    "stripe:products.create:motion_sub_club_pro",
+    "stripe:prices.create:(preț nou CLUB_PRO)",
+    "database:subscription_plans.stripe_price_id:CLUB_PRO",
+  ]);
+  assertEquals(report.planned_writes[1].detail, "100 ron/lună, lookup_key=COACH");
+  assertEquals(report.plans[0].price_id, pendingPriceId("COACH"));
+});
+
+Deno.test("dry run after a price change shows the new price and the archive, and changes nothing", async () => {
+  const stripe = new FakeStripe();
+  const store = memoryStore(SPEC_PLANS);
+  await syncSubscriptionPrices("test", stripe, store);
+  const oldId = store.rows.find((r) => r.code === "CLUB")!.stripe_price_id!;
+  store.rows.find((r) => r.code === "CLUB")!.price_bani = 37900;
+  const snapshot = JSON.stringify([stripe.prices, [...stripe.products], store.rows]);
+  stripe.calls.length = 0;
+  store.writes.length = 0;
+
+  const report = await planSubscriptionPrices("test", stripe, store);
+  assertEquals(stripe.calls.filter(isWrite), []);
+  assertEquals(store.writes, []);
+  assertEquals(JSON.stringify([stripe.prices, [...stripe.products], store.rows]), snapshot);
+  assertEquals(report.planned_writes.map((w) => `${w.operation}:${w.id}`), [
+    "prices.create:(preț nou CLUB)",
+    `prices.update:${oldId}`,
+    "subscription_plans.stripe_price_id:CLUB",
+  ]);
+  assert(report.planned_writes[0].detail.includes("mută lookup_key"));
+});
+
+Deno.test("dry run on a synced account plans nothing", async () => {
+  const stripe = new FakeStripe();
+  const store = memoryStore(SPEC_PLANS);
+  await syncSubscriptionPrices("test", stripe, store);
+  assertEquals((await planSubscriptionPrices("test", stripe, store)).planned_writes, []);
+});
+
+Deno.test("GET is the dry run: admin only, no confirmLive needed on a live key, no write", async () => {
+  const refused = handlerWith("sk_live_x", false);
+  assertEquals((await refused.handler(new Request("http://localhost/x"))).status, 403);
+  assertEquals(refused.stripe.calls, []);
+
+  const live = handlerWith("sk_live_x", true);
+  const response = await live.handler(new Request("http://localhost/x"));
+  assertEquals(response.status, 200);
+  const report = await response.json();
+  assertEquals([report.mode, report.dry_run, report.planned_writes.length], ["live", true, 12]);
+  assertEquals(live.stripe.calls.filter(isWrite), []);
+  assertEquals(live.store.writes, []);
+
+  const missing = handlerWith("pk_live_x", true);
+  assertEquals((await missing.handler(new Request("http://localhost/x"))).status, 503);
 });
 
 Deno.test("a live key needs confirmLive, and confirmLive with a test key is refused", async () => {
