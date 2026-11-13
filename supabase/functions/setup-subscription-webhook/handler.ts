@@ -114,6 +114,52 @@ async function removeEndpoints(api: WebhookEndpointApi, mode: StripeMode, ids: u
   return json({ mode, removed: ids });
 }
 
+function sameEvents(actual: string[] | undefined, wanted: string[]): boolean {
+  const have = [...(actual ?? [])].sort();
+  const want = [...wanted].sort();
+  return have.length === want.length && have.every((event, index) => event === want[index]);
+}
+
+function verificationProblem(found: WebhookEndpoint | undefined, created: CreatedEndpoint, url: string, events: string[]) {
+  if (!/^whsec_/.test(created.secret ?? "")) return "Stripe nu a întors un secret valid.";
+  if (!found) return "Endpointul nou nu apare în lista Stripe.";
+  if (found.url !== url) return `Endpointul nou are alt URL: ${found.url}`;
+  if (found.status && found.status !== "enabled") return `Endpointul nou are starea ${found.status}.`;
+  if (found.enabled_events && !sameEvents(found.enabled_events, events)) return "Endpointul nou are alte evenimente.";
+  return null;
+}
+
+function createPlan(endpoints: WebhookEndpoint[], mode: StripeMode, base: string, kind: WebhookKind, replace: boolean) {
+  const target = WEBHOOK_TARGETS[kind];
+  const url = webhookUrlFor(base, kind);
+  const existing = endpoints.filter((endpoint) => endpoint.url === url);
+  const blocked = existing.length > 0 && !replace;
+  const plannedWrites = blocked ? [] : [
+    { target: "stripe", operation: "webhook_endpoints.create", id: "(endpoint nou)", detail: `${url} (${target.events.length} evenimente${target.connect ? ", Connect" : ""})` },
+    { target: "supabase_secrets", operation: "secrets.set", id: target.secretName, detail: "secretul endpointului nou (nu se afișează)" },
+    ...existing.map((endpoint) => ({
+      target: "stripe",
+      operation: "webhook_endpoints.delete",
+      id: endpoint.id,
+      detail: "după ce endpointul nou e verificat și secretul salvat",
+    })),
+  ];
+  return {
+    mode,
+    kind,
+    url,
+    events: target.events,
+    connect: target.connect,
+    secret_name: target.secretName,
+    existing: existing.map((endpoint) => ({
+      ...publicEndpoint(endpoint),
+      events_match: sameEvents(endpoint.enabled_events, target.events),
+    })),
+    blocked,
+    planned_writes: plannedWrites,
+  };
+}
+
 async function createEndpoint(
   api: WebhookEndpointApi,
   mode: StripeMode,
@@ -132,13 +178,24 @@ async function createEndpoint(
       endpoint_ids: existing.map((endpoint) => endpoint.id),
     }, 409);
   }
-  for (const endpoint of existing) await api.remove(endpoint.id);
   const created = await api.create({
     url,
     events: target.events,
     description: target.description,
     connect: target.connect,
   });
+  const found = (await api.list()).find((endpoint) => endpoint.id === created.id);
+  const problem = verificationProblem(found, created, url, target.events);
+  if (problem) {
+    await api.remove(created.id);
+    return json({
+      error: `${problem} L-am șters pe cel nou; endpointurile vechi au rămas neatinse.`,
+      mode,
+      kind,
+      removed_new: created.id,
+      kept: existing.map((endpoint) => endpoint.id),
+    }, 502);
+  }
   return json({
     mode,
     kind,
@@ -147,20 +204,51 @@ async function createEndpoint(
     events: target.events,
     connect: target.connect,
     secret_name: target.secretName,
-    replaced: existing.map((endpoint) => endpoint.id),
+    pending_removal: existing.map((endpoint) => endpoint.id),
     secret: created.secret,
   });
 }
 
+async function dryRun(api: WebhookEndpointApi, mode: StripeMode, base: string, params: URLSearchParams): Promise<Response> {
+  const action = params.get("action") ?? "create";
+  const endpoints = await api.list();
+  if (action === "remove") {
+    const ids = (params.get("remove") ?? "").split(",").map((id) => id.trim()).filter(Boolean);
+    if (ids.length === 0 || ids.length > 10 || !ids.every((id) => ENDPOINT_ID.test(id))) {
+      return json({ error: "Trimite remove=we_… cu cel mult 10 endpointuri.", dry_run: true }, 400);
+    }
+    const known = new Map(endpoints.map((endpoint) => [endpoint.id, endpoint]));
+    return json({
+      dry_run: true,
+      mode,
+      action,
+      would_remove: ids.filter((id) => known.has(id)).map((id) => publicEndpoint(known.get(id)!)),
+      missing: ids.filter((id) => !known.has(id)),
+    });
+  }
+  if (action !== "create") return json({ error: `Acțiune necunoscută: ${action}`, dry_run: true }, 400);
+  const kind = params.get("kind") ?? "subscriptions";
+  if (!isKind(kind)) return json({ error: `Tip de webhook necunoscut: ${kind}`, dry_run: true }, 400);
+  return json({ dry_run: true, action, ...createPlan(endpoints, mode, base, kind, params.get("replace") === "true") });
+}
+
 export function createSetupHandler(deps: SetupHandlerDeps) {
   return async (req: Request): Promise<Response> => {
-    if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
+    if (req.method !== "POST" && req.method !== "GET") return json({ error: "Method not allowed" }, 405);
     if (!(await deps.requireAdmin(req))) {
       return json({ error: "Doar un administrator poate configura webhook-urile Stripe." }, 403);
     }
     const mode = deps.modeFromKey(deps.stripeKey);
     if (!mode) return json({ error: "Cheia Stripe lipsește sau nu este o cheie secretă." }, 503);
     if (!deps.functionsBaseUrl) return json({ error: "SUPABASE_URL lipsește." }, 503);
+    if (req.method === "GET") {
+      try {
+        return await dryRun(deps.endpoints(), mode, deps.functionsBaseUrl, new URL(req.url).searchParams);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return json({ error: message, mode, dry_run: true }, 500);
+      }
+    }
     const body = await req.json().catch(() => ({}));
     const action = body?.action ?? "create";
     if (!["create", "list", "remove"].includes(action)) return json({ error: `Acțiune necunoscută: ${action}` }, 400);

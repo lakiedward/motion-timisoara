@@ -52,11 +52,17 @@ Deploy: `npx supabase@2.122.0 functions deploy stripe-connect-webhook setup-subs
 ```sh
 node scripts/setup-stripe-webhooks.mjs --check
 node scripts/setup-stripe-webhooks.mjs --list
-node scripts/setup-stripe-webhooks.mjs --kind all --replace --live
-node scripts/setup-stripe-webhooks.mjs --remove we_RAILWAY --live
+node scripts/setup-stripe-webhooks.mjs --kind all --replace --live --proba
+node scripts/setup-stripe-webhooks.mjs --kind all --replace --live --aplica
+node scripts/setup-stripe-webhooks.mjs --remove we_RAILWAY --live --proba
+node scripts/setup-stripe-webhooks.mjs --remove we_RAILWAY --live --aplica
 ```
 
-`node scripts/stripe-inventory.mjs` reads a Stripe account directly with `STRIPE_INVENTORY_KEY`: platform account and its verification requirements, webhooks (labelled Supabase function or dead host), connected accounts, subscription prices by lookup key, Customer Portal configurations, balance and recent payouts. It only sends GET requests and never prints the key. Use a restricted key with read-only rights (Stripe Dashboard, Developers, API keys, Create restricted key: Read on Webhook endpoints, Connect, Products, Prices, Customer portal, Balance, Payouts). A section the key cannot read is reported as an error and the rest still runs. Delete the key after launch.
+Without `--aplica` every action is a dry run. The script sends `GET` to the function, which lists the endpoints and answers with `dry_run: true`: the endpoints that exist for each kind (and whether their events match), whether the kind is blocked (endpoint exists and no `--replace`), and the planned writes (create, secret, delete). For `--remove` it lists what it would delete and which ids do not exist. No secret is created or returned. `--aplica` always runs the dry run first and stops before any write if the function is an old version (`405` on `GET`), if a kind is blocked, if an id is missing or if `--live` does not match the key in Supabase.
+
+`--replace` is create-first: the function creates the new endpoint, lists Stripe again and checks it exists with the right URL, status `enabled`, the expected events and a `whsec_` secret. If that check fails it deletes the new endpoint and answers `502`, so the old one keeps working. Otherwise it returns the secret and `pending_removal` (the old ids) without deleting them. The script stores the secret, and only then removes the old endpoints. If storing the secret fails, the script deletes the new endpoint and the old endpoint and secret stay as they were. If removing the old endpoint fails, the script prints the `--remove … --aplica` command that finishes the job. With `--kind all` it stops at the first failure and prints a summary per kind. For a moment both endpoints exist; deliveries to the old one fail signature once the new secret is stored and Stripe retries the new one, so no event is lost.
+
+`node scripts/stripe-inventory.mjs` reads a Stripe account directly with `STRIPE_INVENTORY_KEY`: platform account and its verification requirements, webhooks (labelled Supabase function or dead host), connected accounts, subscription prices by lookup key, Customer Portal configurations, balance and recent payouts. It only sends GET requests and never prints the key. It accepts only a restricted key (`rk_live_…` or `rk_test_…`); a full secret key `sk_…` is refused before any request. Create it with read-only rights (Stripe Dashboard, Developers, API keys, Create restricted key: Read on Webhook endpoints, Connect, Products, Prices, Customer portal, Balance, Payouts). A section the key cannot read is reported as an error and the rest still runs. Delete the key after launch.
 
 ## Preconditions the owner completes in the Stripe Dashboard (LIVE)
 
@@ -71,13 +77,13 @@ node scripts/setup-stripe-webhooks.mjs --remove we_RAILWAY --live
 Each numbered step is one owner card. Steps 4 to 9 run in one window, without customers paying in between.
 
 1. **Inventory.** `STRIPE_INVENTORY_KEY=rk_live_… node scripts/stripe-inventory.mjs` and save the output with the launch evidence. Confirm the preconditions above.
-2. **Deploy** `stripe-connect-webhook` and `setup-subscription-webhook` from this change (TEST mode is fine).
-3. **TEST cleanup.** Cancel `sub_1UXLwu0lj0kEqgLXBp7aQd0f` (To-Do #230). Remove the two dead TEST webhooks: `node scripts/setup-stripe-webhooks.mjs --list`, then `--remove we_…,we_…` with their ids.
+2. **Deploy** `stripe-connect-webhook`, `setup-subscription-webhook` and `sync-subscription-prices` (the versions with dry run; TEST mode is fine). Check: `--proba` of both scripts answers instead of reporting an old function.
+3. **TEST cleanup.** Cancel `sub_1UXLwu0lj0kEqgLXBp7aQd0f` (To-Do #230). Remove the two dead TEST webhooks: `node scripts/setup-stripe-webhooks.mjs --list`, then `--remove we_…,we_…` with their ids, first as dry run, then with `--aplica`.
 4. **Database cleanup.** Run the SQL below through the Management API, after showing the preview counts on the card.
 5. **Secret key.** The owner pastes the live secret key into Supabase, Edge Functions, Secrets, `STRIPE_SECRET_KEY`. The key never passes through chat or a cloud session.
-6. **Prices.** `node scripts/sync-subscription-prices.mjs --live`. It creates the live products and prices and replaces the four TEST ids in `subscription_plans`.
-7. **Webhooks.** `node scripts/setup-stripe-webhooks.mjs --kind all --replace --live`. It creates the payments, subscriptions and Connect endpoints on the live account and overwrites `STRIPE_WEBHOOK_SECRET`, `STRIPE_SUBSCRIPTION_WEBHOOK_SECRET` and `STRIPE_CONNECT_WEBHOOK_SECRET`. Check with `--list`.
-8. **Old live webhook.** `node scripts/setup-stripe-webhooks.mjs --remove we_<railway id> --live`, once the owner confirms nothing uses the Railway backend.
+6. **Prices.** `node scripts/sync-subscription-prices.mjs --live --proba`; the card shows its planned writes. Then `node scripts/sync-subscription-prices.mjs --live --aplica`. It creates the live products and prices and replaces the four TEST ids in `subscription_plans`.
+7. **Webhooks.** `node scripts/setup-stripe-webhooks.mjs --kind all --replace --live --proba`; the card shows its plan. Then the same command with `--aplica`. It creates the payments, subscriptions and Connect endpoints on the live account and overwrites `STRIPE_WEBHOOK_SECRET`, `STRIPE_SUBSCRIPTION_WEBHOOK_SECRET` and `STRIPE_CONNECT_WEBHOOK_SECRET`. Check with `--list`.
+8. **Old live webhook.** `node scripts/setup-stripe-webhooks.mjs --remove we_<railway id> --live --proba`, then with `--aplica`, once the owner confirms nothing uses the Railway backend.
 9. **Publishable key.** In Netlify (site `22f2a86a-422b-4fe6-a030-30b66012ebdd`), set `VITE_STRIPE_PUBLISHABLE_KEY` to the live `pk_live_…` for all deploy contexts. Rebuild `master` (free branch deploy), then publish `production` by fast-forward (one production deploy, after the owner's "Publică").
 10. **Verify.** Both bundles contain `pk_live_` and no `pk_test_`. One real coach subscription of 100 lei through Checkout, webhook delivered with 200, row updated, then refunded and cancelled. One real small enrollment payment to a live connected account, with the fee settlement, then refunded. Connect onboarding of one real coach or club, and its `account.updated` delivered with 200. All webhook deliveries in the Stripe Dashboard are green.
 11. `subscription_settings.launch_at` and the trial backfill (#616) belong to the launch itself, not to the key switch.
@@ -121,7 +127,7 @@ Why each part matters:
 
 ## Rollback
 
-Put the TEST secret key back in `STRIPE_SECRET_KEY`, the `pk_test_` key back in Netlify, rerun `node scripts/sync-subscription-prices.mjs` and `node scripts/setup-stripe-webhooks.mjs --kind all --replace` in TEST mode (the TEST signing secrets were overwritten in step 7), and publish again. Live connected accounts created in between keep their LIVE ids in the database and must be cleared the same way as in step 4.
+Put the TEST secret key back in `STRIPE_SECRET_KEY`, the `pk_test_` key back in Netlify, rerun `node scripts/sync-subscription-prices.mjs --aplica` and `node scripts/setup-stripe-webhooks.mjs --kind all --replace --aplica` in TEST mode (each after its dry run) (the TEST signing secrets were overwritten in step 7), and publish again. Live connected accounts created in between keep their LIVE ids in the database and must be cleared the same way as in step 4.
 
 ## Adaptive Pricing on one-off payments (decided)
 

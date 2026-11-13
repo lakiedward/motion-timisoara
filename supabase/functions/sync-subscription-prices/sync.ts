@@ -192,3 +192,85 @@ export async function syncSubscriptionPrices(
     skipped_inactive: plans.filter((plan) => !plan.active).map((plan) => plan.code),
   };
 }
+
+export type PlannedWrite = {
+  target: "stripe" | "database";
+  operation: string;
+  id: string;
+  detail: string;
+};
+
+export type DryRunReport = SyncReport & { dry_run: true; planned_writes: PlannedWrite[] };
+
+export function pendingPriceId(lookupKey: string): string {
+  return `(preț nou ${lookupKey})`;
+}
+
+export function planningCatalog(catalog: StripeCatalog, planned: PlannedWrite[]): StripeCatalog {
+  return {
+    retrieveProduct: (id) => catalog.retrieveProduct(id),
+    findPriceByLookupKey: (lookupKey) => catalog.findPriceByLookupKey(lookupKey),
+    createProduct(product) {
+      planned.push({ target: "stripe", operation: "products.create", id: product.id, detail: product.name });
+      return Promise.resolve({ ...product });
+    },
+    updateProduct(id, changes) {
+      planned.push({
+        target: "stripe",
+        operation: "products.update",
+        id,
+        detail: `name=${changes.name ?? "-"}, active=${changes.active ?? "-"}`,
+      });
+      return Promise.resolve({ id, name: changes.name ?? "", active: changes.active ?? true, metadata: changes.metadata ?? {} });
+    },
+    createPrice(price) {
+      const id = pendingPriceId(price.lookup_key);
+      planned.push({
+        target: "stripe",
+        operation: "prices.create",
+        id,
+        detail: `${price.unit_amount / 100} ${price.currency}/lună, lookup_key=${price.lookup_key}` +
+          (price.transfer_lookup_key ? " (mută lookup_key de pe prețul vechi)" : ""),
+      });
+      return Promise.resolve({
+        id,
+        product: price.product,
+        currency: price.currency,
+        unit_amount: price.unit_amount,
+        interval: price.interval,
+        interval_count: 1,
+        tax_behavior: price.tax_behavior,
+        active: true,
+      });
+    },
+    archivePrice(id) {
+      planned.push({ target: "stripe", operation: "prices.update", id, detail: "active=false (arhivat)" });
+      return Promise.resolve();
+    },
+  };
+}
+
+export function planningStore(store: PlanStore, planned: PlannedWrite[]): PlanStore {
+  return {
+    listPlans: () => store.listPlans(),
+    setStripePriceId(code, priceId) {
+      planned.push({
+        target: "database",
+        operation: "subscription_plans.stripe_price_id",
+        id: code,
+        detail: priceId,
+      });
+      return Promise.resolve();
+    },
+  };
+}
+
+export async function planSubscriptionPrices(
+  mode: StripeMode,
+  catalog: StripeCatalog,
+  store: PlanStore,
+): Promise<DryRunReport> {
+  const planned: PlannedWrite[] = [];
+  const report = await syncSubscriptionPrices(mode, planningCatalog(catalog, planned), planningStore(store, planned));
+  return { ...report, dry_run: true, planned_writes: planned };
+}

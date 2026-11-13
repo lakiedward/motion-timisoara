@@ -269,3 +269,9 @@ reorganizing this document; correct obsolete facts with current evidence.
   picks (default 10). `courses.price` is now written equal to `price_per_session` and no screen reads
   it; existing rows keep their old ×8 value until a later cleanup. The owner chose this over a
   program-derived monthly estimate and over a "pachet 8 ședințe" label.
+- 2026-11-13 — The Stripe launch scripts (`sync-subscription-prices.mjs`,
+  `setup-stripe-webhooks.mjs`) are dry runs unless `--aplica` is given; the dry run is a `GET`
+  to the edge function, so an old deploy answers 405 instead of writing. `--replace` creates
+  and verifies the new webhook and stores its secret before deleting the old one.
+  `stripe-inventory.mjs` accepts only restricted `rk_` keys — the cloud Stripe key is LIVE
+  and the 13.11 launch rehearsal found no safety net before 20.11 (To-Do #504).

@@ -1,44 +1,39 @@
 #!/usr/bin/env node
+import { defaultIo, execute, isEntryPoint, UsageError } from './stripe-admin-common.mjs'
 
 const API = 'https://api.stripe.com/v1'
 const KEY_NAME = 'STRIPE_INVENTORY_KEY'
 const PLAN_CODES = ['COACH', 'CLUB_START', 'CLUB', 'CLUB_PRO']
 const DEAD_HOSTS = ['api.motiontimisoara.com', 'triathlonteambe-production.up.railway.app']
 
-function usage(message) {
-  if (message) console.error(message)
-  console.error(
-    [
-      'Folosire:',
-      `  ${KEY_NAME}=rk_live_… node scripts/stripe-inventory.mjs [--json] [--supabase-ref <ref>]`,
-      '',
-      'Inventar DOAR CITIRE al contului Stripe: cont, verificare, webhook-uri, conturi Connect, prețuri abonamente,',
-      'Customer Portal, sold și plăți. Face numai cereri GET. Cheia recomandată este o cheie restricționată',
-      'cu drepturi doar de citire. Cheia nu se afișează.',
-    ].join('\n'),
-  )
-  process.exit(2)
-}
+export const USAGE = [
+  'Folosire:',
+  `  ${KEY_NAME}=rk_live_… node scripts/stripe-inventory.mjs [--json] [--supabase-ref <ref>]`,
+  '',
+  'Inventar DOAR CITIRE al contului Stripe: cont, verificare, webhook-uri, conturi Connect, prețuri abonamente,',
+  'Customer Portal, sold și plăți. Face numai cereri GET și acceptă DOAR o cheie restricționată rk_live_/rk_test_',
+  'creată cu drepturi doar de citire. O cheie secretă completă sk_ este refuzată. Cheia nu se afișează.',
+].join('\n')
 
 function parseArgs(argv) {
   const options = { json: false, ref: 'ehdzafadshbaaghzdzdo' }
   for (let index = 0; index < argv.length; index += 1) {
     if (argv[index] === '--json') options.json = true
     else if (argv[index] === '--supabase-ref' && argv[index + 1]) options.ref = argv[++index]
-    else usage(`Argument necunoscut: ${argv[index]}`)
+    else throw new UsageError(`Argument necunoscut: ${argv[index]}`)
   }
   return options
 }
 
-function modeFromKey(key) {
-  if (/^(sk|rk)_live_/.test(key)) return 'live'
-  if (/^(sk|rk)_test_/.test(key)) return 'test'
+export function modeFromKey(key) {
+  if (/^rk_live_/.test(key)) return 'live'
+  if (/^rk_test_/.test(key)) return 'test'
   return null
 }
 
-async function get(key, path, params = []) {
+async function get(fetchImpl, key, path, params = []) {
   const query = params.length ? `?${new URLSearchParams(params)}` : ''
-  const response = await fetch(`${API}${path}${query}`, {
+  const response = await fetchImpl(`${API}${path}${query}`, {
     method: 'GET',
     headers: { Authorization: `Bearer ${key}`, 'Stripe-Version': '2024-04-10' },
   })
@@ -66,14 +61,14 @@ function webhookSummary(endpoints, ref) {
   })
 }
 
-async function collect(key, ref) {
-  const account = await get(key, '/account')
-  const webhooks = await get(key, '/webhook_endpoints', [['limit', '100']])
-  const connected = await get(key, '/accounts', [['limit', '100']])
-  const prices = await get(key, '/prices', [...PLAN_CODES.map((code) => ['lookup_keys[]', code]), ['limit', '10']])
-  const portals = await get(key, '/billing_portal/configurations', [['limit', '10']])
-  const balance = await get(key, '/balance')
-  const payouts = await get(key, '/payouts', [['limit', '5']])
+async function collect(fetchImpl, key, ref) {
+  const account = await get(fetchImpl, key, '/account')
+  const webhooks = await get(fetchImpl, key, '/webhook_endpoints', [['limit', '100']])
+  const connected = await get(fetchImpl, key, '/accounts', [['limit', '100']])
+  const prices = await get(fetchImpl, key, '/prices', [...PLAN_CODES.map((code) => ['lookup_keys[]', code]), ['limit', '10']])
+  const portals = await get(fetchImpl, key, '/billing_portal/configurations', [['limit', '10']])
+  const balance = await get(fetchImpl, key, '/balance')
+  const payouts = await get(fetchImpl, key, '/payouts', [['limit', '5']])
   return {
     mode: modeFromKey(key),
     account: account.error ? account : {
@@ -136,36 +131,41 @@ async function collect(key, ref) {
   }
 }
 
-function section(title, value) {
-  console.log(`\n## ${title}`)
+function section(log, title, value) {
+  log(`\n## ${title}`)
   if (value?.error) {
-    console.log(`Nu am putut citi: ${value.error}`)
+    log(`Nu am putut citi: ${value.error}`)
     return
   }
-  console.log(JSON.stringify(value, null, 2))
+  log(JSON.stringify(value, null, 2))
 }
 
-async function main() {
-  const options = parseArgs(process.argv.slice(2))
-  const key = process.env[KEY_NAME]
-  if (!key) usage(`Lipsește ${KEY_NAME}.`)
-  if (!modeFromKey(key)) usage(`${KEY_NAME} trebuie să fie o cheie secretă sau restricționată (sk_/rk_).`)
-  const report = await collect(key, options.ref)
+export async function run(argv, io) {
+  const options = parseArgs(argv)
+  const key = io.env[KEY_NAME]
+  if (!key) throw new UsageError(`Lipsește ${KEY_NAME}.`)
+  if (!modeFromKey(key)) {
+    throw new UsageError(
+      `${KEY_NAME} trebuie să fie o cheie restricționată doar de citire (rk_live_… sau rk_test_…). ` +
+        'Cheile sk_ complete pot scrie în Stripe și sunt refuzate. Nu am trimis nicio cerere.',
+    )
+  }
+  const report = await collect(io.fetch, key, options.ref)
   if (options.json) {
-    console.log(JSON.stringify(report, null, 2))
-    return
+    io.log(JSON.stringify(report, null, 2))
+    return 0
   }
-  console.log(`# Inventar Stripe, mod ${report.mode.toUpperCase()}, ${new Date().toISOString()}`)
-  section('Contul platformei', report.account)
-  section('Webhook-uri', report.webhooks)
-  section('Conturi Connect', report.connected_accounts)
-  section('Prețuri abonamente (lookup_key)', report.subscription_prices)
-  section('Customer Portal', report.billing_portal)
-  section('Sold', report.balance)
-  section('Ultimele plăți către bancă', report.recent_payouts)
+  io.log(`# Inventar Stripe, mod ${report.mode.toUpperCase()}, ${new Date().toISOString()}`)
+  section(io.log, 'Contul platformei', report.account)
+  section(io.log, 'Webhook-uri', report.webhooks)
+  section(io.log, 'Conturi Connect', report.connected_accounts)
+  section(io.log, 'Prețuri abonamente (lookup_key)', report.subscription_prices)
+  section(io.log, 'Customer Portal', report.billing_portal)
+  section(io.log, 'Sold', report.balance)
+  section(io.log, 'Ultimele plăți către bancă', report.recent_payouts)
+  return 0
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error)
-  process.exit(1)
-})
+if (isEntryPoint(import.meta.url)) {
+  process.exitCode = await execute(run, USAGE, process.argv.slice(2), defaultIo())
+}

@@ -1,4 +1,10 @@
-import { type PlanStore, type StripeCatalog, type StripeMode, syncSubscriptionPrices } from "./sync.ts";
+import {
+  planSubscriptionPrices,
+  type PlanStore,
+  type StripeCatalog,
+  type StripeMode,
+  syncSubscriptionPrices,
+} from "./sync.ts";
 
 export type SyncHandlerDeps = {
   stripeKey: string | undefined;
@@ -17,12 +23,20 @@ function json(body: unknown, status = 200): Response {
 
 export function createSyncHandler(deps: SyncHandlerDeps) {
   return async (req: Request): Promise<Response> => {
-    if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
+    if (req.method !== "POST" && req.method !== "GET") return json({ error: "Method not allowed" }, 405);
     if (!(await deps.requireAdmin(req))) {
       return json({ error: "Doar un administrator poate sincroniza prețurile." }, 403);
     }
     const mode = deps.modeFromKey(deps.stripeKey);
     if (!mode) return json({ error: "Cheia Stripe lipsește sau nu este o cheie secretă." }, 503);
+    if (req.method === "GET") {
+      try {
+        return json(await planSubscriptionPrices(mode, deps.catalog(), deps.store()));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return json({ error: message, mode, dry_run: true }, 500);
+      }
+    }
     const body = await req.json().catch(() => ({}));
     if (mode === "live" && body?.confirmLive !== true) {
       return json(
