@@ -15,7 +15,9 @@ $$;
 CREATE TABLE public.profiles (
     id UUID PRIMARY KEY, role TEXT NOT NULL, enabled BOOLEAN NOT NULL DEFAULT true, deleted_at TIMESTAMPTZ
 );
-CREATE TABLE public.clubs (id UUID PRIMARY KEY, owner_user_id UUID NOT NULL REFERENCES public.profiles(id));
+CREATE TABLE public.clubs (
+    id UUID PRIMARY KEY, owner_user_id UUID NOT NULL REFERENCES public.profiles(id), approved_at TIMESTAMPTZ
+);
 CREATE TABLE public.activities (
     id UUID PRIMARY KEY, coach_id UUID NOT NULL REFERENCES public.profiles(id),
     club_id UUID REFERENCES public.clubs(id)
@@ -93,17 +95,22 @@ $$;
 INSERT INTO public.profiles (id, role, enabled) VALUES
     (public.test_uuid(1), 'CLUB', true), (public.test_uuid(2), 'CLUB', true), (public.test_uuid(3), 'COACH', true),
     (public.test_uuid(4), 'COACH', true), (public.test_uuid(5), 'ADMIN', true), (public.test_uuid(6), 'PARENT', true),
-    (public.test_uuid(7), 'CLUB', false);
-INSERT INTO public.clubs VALUES (public.test_uuid(11), public.test_uuid(1)), (public.test_uuid(12), public.test_uuid(2)),
-    (public.test_uuid(13), public.test_uuid(7));
+    (public.test_uuid(7), 'CLUB', false), (public.test_uuid(8), 'CLUB', true), (public.test_uuid(9), 'COACH', true);
+UPDATE public.profiles SET deleted_at = now() WHERE id = public.test_uuid(9);
+INSERT INTO public.clubs VALUES (public.test_uuid(11), public.test_uuid(1), now()), (public.test_uuid(12), public.test_uuid(2), now()),
+    (public.test_uuid(13), public.test_uuid(7), now()), (public.test_uuid(14), public.test_uuid(8), NULL);
 INSERT INTO public.activities VALUES (public.test_uuid(21), public.test_uuid(3), public.test_uuid(11)),
-    (public.test_uuid(22), public.test_uuid(4), NULL), (public.test_uuid(23), public.test_uuid(3), public.test_uuid(13));
+    (public.test_uuid(22), public.test_uuid(4), NULL), (public.test_uuid(23), public.test_uuid(3), public.test_uuid(13)),
+    (public.test_uuid(24), public.test_uuid(3), public.test_uuid(14)), (public.test_uuid(25), public.test_uuid(9), NULL);
 INSERT INTO public.children VALUES
     (public.test_uuid(31), public.test_uuid(6), 'Ana', '2016-03-01'), (public.test_uuid(32), public.test_uuid(6), 'Bogdan', '2017-03-01'),
     (public.test_uuid(33), public.test_uuid(6), 'Carla', '2018-03-01'), (public.test_uuid(34), public.test_uuid(6), 'Dan', '2018-03-01');
 INSERT INTO public.enrollments (kind, entity_id, child_id, adult_profile_id, status) VALUES
     ('ACTIVITY', public.test_uuid(21), public.test_uuid(31), NULL, 'ACTIVE'),
     ('ACTIVITY', public.test_uuid(21), public.test_uuid(32), NULL, 'ACTIVE'),
+    ('ACTIVITY', public.test_uuid(21), public.test_uuid(32), NULL, 'ACTIVE'),
+    ('ACTIVITY', public.test_uuid(24), public.test_uuid(34), NULL, 'ACTIVE'),
+    ('ACTIVITY', public.test_uuid(25), public.test_uuid(34), NULL, 'ACTIVE'),
     ('ACTIVITY', public.test_uuid(21), public.test_uuid(33), NULL, 'CANCELLED'),
     ('ACTIVITY', public.test_uuid(21), NULL, public.test_uuid(6), 'ACTIVE'),
     ('COURSE', public.test_uuid(21), public.test_uuid(34), NULL, 'ACTIVE'),
@@ -114,7 +121,7 @@ INSERT INTO public.activity_attendance (activity_id, child_id, status) VALUES
 
 SELECT public.test_assert(NOT has_function_privilege('anon', 'public.activity_attendance_roster(uuid)', 'EXECUTE')
     AND has_function_privilege('authenticated', 'public.activity_attendance_roster(uuid)', 'EXECUTE'), 'roster is for signed-in accounts only');
-SELECT public.test_assert(public.test_roster(1, 21) = 'Ana:-,Bogdan:ABSENT', 'club owner reads active children and their marks');
+SELECT public.test_assert(public.test_roster(1, 21) = 'Ana:-,Bogdan:ABSENT', 'club owner reads each active child once with its mark');
 SELECT public.test_assert(public.test_roster(3, 21) = 'Ana:-,Bogdan:ABSENT', 'activity coach reads the same roster');
 SELECT public.test_assert(public.test_roster(5, 22) = 'Dan:-', 'admin reads any roster');
 SELECT public.test_assert(public.test_roster(2, 21) = 'FORBIDDEN', 'another club is refused');
@@ -122,6 +129,9 @@ SELECT public.test_assert(public.test_roster(1, 22) = 'FORBIDDEN', 'club is refu
 SELECT public.test_assert(public.test_roster(4, 21) = 'FORBIDDEN', 'another coach is refused');
 SELECT public.test_assert(public.test_roster(6, 21) = 'FORBIDDEN', 'parent is refused');
 SELECT public.test_assert(public.test_roster(7, 23) = 'FORBIDDEN', 'disabled club account is refused');
+SELECT public.test_assert(public.test_roster(8, 24) = 'FORBIDDEN', 'unapproved club is refused');
+SELECT public.test_assert(public.test_roster(3, 24) = 'Dan:-', 'coach of an unapproved club activity still reads it');
+SELECT public.test_assert(public.test_roster(9, 25) = 'FORBIDDEN', 'deleted coach account is refused');
 SELECT public.test_assert(public.test_roster(NULL, 21) = 'FORBIDDEN', 'missing session is refused');
 SELECT public.test_assert(public.test_roster(1, 999) = 'FORBIDDEN', 'unknown activity is refused');
 SELECT set_config('request.jwt.claim.sub', public.test_uuid(1)::TEXT, false);

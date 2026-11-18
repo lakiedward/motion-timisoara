@@ -10,7 +10,8 @@
 -- pe `requestId`, blocajele și „pontajul se deschide la începutul ședinței”
 -- rămân exact cele din 00105. Clubul pontează doar manual (un copil sau „Toți
 -- prezenți”); scanarea codului QR rămâne a antrenorului și a adminului, deci o
--- cerere cu `qrToken` de la un club primește FORBIDDEN.
+-- cerere cu `qrToken` de la un club primește FORBIDDEN. Tot FORBIDDEN primește
+-- clubul și pentru o ședință inexistentă, ca să nu afle ce ședințe există.
 --
 -- Funcția e înlocuită doar dacă în bază e exact sursa din 00105. Dacă altă
 -- migrație a schimbat-o între timp, migrația se oprește în loc s-o calce.
@@ -91,7 +92,7 @@ BEGIN
         FROM public.course_occurrences o JOIN public.courses c ON c.id = o.course_id
         WHERE o.id = v_occurrence FOR SHARE OF o, c;
     IF NOT FOUND THEN
-        RAISE EXCEPTION 'OCCURRENCE_NOT_FOUND';
+        RAISE EXCEPTION '%', CASE WHEN v_role = 'CLUB' THEN 'FORBIDDEN' ELSE 'OCCURRENCE_NOT_FOUND' END;
     END IF;
     IF v_role = 'COACH' AND v_coach <> p_actor_id THEN
         RAISE EXCEPTION 'FORBIDDEN';

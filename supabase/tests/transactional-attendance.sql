@@ -248,6 +248,7 @@ SELECT public.test_assert(public.test_record(65, 226, 'PRESENT', false, 105, 8)-
 SELECT public.test_assert(public.test_record(66, 210, 'ABSENT', false, 101, 7)->>'code' = 'FORBIDDEN', 'club is forbidden at an independent coach course');
 SELECT public.test_assert(public.test_record(67, 227, 'PRESENT', false, 106, 9)->>'code' = 'FORBIDDEN', 'disabled club account is forbidden');
 SELECT public.test_assert(public.test_record(68, 228, 'PRESENT', false, 107, 10)->>'code' = 'FORBIDDEN', 'unapproved club is forbidden');
+SELECT public.test_assert(public.test_record(72, 226, 'PRESENT', false, 999, 7)->>'code' = 'FORBIDDEN', 'club cannot probe unknown sessions');
 SELECT public.test_assert(public.test_record(69, 226, 'PRESENT', false, 108, 7)->>'code' = 'TOO_EARLY', 'club cannot mark before the session starts');
 SELECT public.test_assert(public.test_record(70, 226, 'PRESENT', false, 105, 1)->>'outcome' = 'recorded', 'course coach still records at a club course');
 SELECT public.test_assert(public.test_record(71, 226, 'ABSENT', false, 105, 7)->>'outcome' = 'recorded', 'club owner corrects the coach mark');
