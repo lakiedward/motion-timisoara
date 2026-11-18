@@ -16,7 +16,7 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
     nu poate fi cum arată o rețea căzută.
 
     canonic  src/features/camps/CampsListPage.tsx
-    plafon   0 ecrane fără ramură de eroare, din 102 — poate doar scădea
+    plafon   0 ecrane fără ramură de eroare, din 103 — poate doar scădea
 
 ## Țintă tactilă  [RESPECTATĂ]
 
@@ -26,7 +26,7 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
 
     canonic  src/index.css --touch-target
     plafon   0 valori scrise de mână, în 0 fișiere — poate doar scădea
-    folosit  192 fișiere
+    folosit  193 fișiere
 
 ## Forme de așteptare  [RESPECTATĂ]
 

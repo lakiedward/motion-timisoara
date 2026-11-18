@@ -53,6 +53,7 @@ export const clubNavigation: PortalNavItem[] = [
   { to: '/club/competitions', label: 'Concursuri', icon: Trophy, group: 'Oferte' },
   { to: '/club/locations', label: 'Locații', icon: MapPin, group: 'Organizare' },
   { to: '/club/coaches', label: 'Antrenori', icon: Users, group: 'Organizare' },
+  { to: '/club/attendance', label: 'Prezență', icon: ClipboardCheck, group: 'Organizare' },
   { to: '/club/payments', label: 'Încasări cash', icon: Banknote, group: 'Organizare' },
   { to: '/club/announcements', label: 'Anunțuri', icon: Megaphone, group: 'Organizare' },
   ...webOnly([

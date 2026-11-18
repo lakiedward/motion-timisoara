@@ -42,6 +42,7 @@ import ClubDashboard from '@/features/club/ClubDashboard'
 import ClubProfilePage from '@/features/club/profile/ClubProfilePage'
 import ClubCoachesPage from '@/features/club/coaches/ClubCoachesPage'
 import ClubAnnouncementsPage from '@/features/club/ClubAnnouncementsPage'
+import ClubAttendancePage from '@/features/club/attendance/ClubAttendancePage'
 import ClubCoursesPage from '@/features/club/ClubCoursesPage'
 import ClubCourseFormPage from '@/features/club/ClubCourseFormPage'
 import ClubActivitiesPage from '@/features/club/ClubActivitiesPage'
@@ -422,6 +423,7 @@ export const router = createBrowserRouter([
                   { path: '/club/stripe/onboarding/refresh', element: <ClubStripePage /> },
                   { path: '/club/coaches', element: <ClubCoachesPage /> },
                   { path: '/club/announcements', element: <ClubAnnouncementsPage /> },
+                  { path: '/club/attendance', element: <ClubAttendancePage /> },
                   { path: '/club/payments', element: <CashPaymentsPage /> },
                   { path: '/club/courses', element: <ClubCoursesPage /> },
                   { path: '/club/courses/new', element: <ClubCourseFormPage /> },

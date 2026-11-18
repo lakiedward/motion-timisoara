@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import { AttendanceError } from '@/api/attendance'
+import type { RosterEntry } from '@/api/coach'
 import {
   getActivityRoster,
   markActivityAttendance,
@@ -12,14 +13,16 @@ import { RosterList } from '@/features/admin/attendance/RosterList'
 export function ActivityRoster({
   activityId,
   opensOn,
+  loadRoster = getActivityRoster,
 }: {
   activityId: string
   opensOn: string | null
+  loadRoster?: (activityId: string) => Promise<RosterEntry[]>
 }) {
   const qc = useQueryClient()
   const roster = useQuery({
     queryKey: ['activity-roster', activityId],
-    queryFn: () => getActivityRoster(activityId),
+    queryFn: () => loadRoster(activityId),
     retry: false,
   })
   const refresh = () => {

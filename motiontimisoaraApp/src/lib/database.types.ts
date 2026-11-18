@@ -3538,6 +3538,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activity_attendance_roster: {
+        Args: { p_activity_id: string }
+        Returns: {
+          child_birth_date: string
+          child_id: string
+          child_name: string
+          status: string
+        }[]
+      }
       activity_spots_remaining: {
         Args: { p_activity_id: string }
         Returns: number

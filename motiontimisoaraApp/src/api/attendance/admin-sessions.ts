@@ -75,20 +75,25 @@ function tally<K extends string>(rows: Record<K, string>[], key: K) {
   return counts
 }
 
-export async function getAdminSessions(now = Date.now()): Promise<AdminSession[]> {
+export const getAdminSessions = (now = Date.now()) => loadSessions(now, null)
+
+export const getClubSessions = (clubId: string, now = Date.now()) => loadSessions(now, clubId)
+
+async function loadSessions(now: number, clubId: string | null): Promise<AdminSession[]> {
   const span = ADMIN_SESSION_WINDOW_DAYS * 24 * 60 * 60 * 1000
   const from = new Date(now - span).toISOString()
   const to = new Date(now + span).toISOString()
-  const sessions = await allPages<SessionRow>((a, b) =>
-    supabase
+  const sessions = await allPages<SessionRow>((a, b) => {
+    const rows = supabase
       .from('course_occurrences')
       .select(SELECT)
       .gte('starts_at', from)
       .lt('starts_at', to)
+    return (clubId ? rows.eq('course.club_id', clubId) : rows)
       .order('starts_at', { ascending: true })
       .order('id', { ascending: true })
-      .range(a, b),
-  )
+      .range(a, b)
+  })
   if (!sessions.length) return []
 
   const courseIds = [...new Set(sessions.map((s) => s.course!.id))]
@@ -118,7 +123,7 @@ export async function getAdminSessions(now = Date.now()): Promise<AdminSession[]
 
   return sessions.map((s) => {
     const c = s.course!
-    const owner = c.club
+    const owner = c.club && !clubId
       ? { key: `club:${c.club.id}`, kind: 'club' as const, name: nameOf(c.club) }
       : { key: `coach:${c.coach?.id ?? '—'}`, kind: 'coach' as const, name: nameOf(c.coach) }
     return {
