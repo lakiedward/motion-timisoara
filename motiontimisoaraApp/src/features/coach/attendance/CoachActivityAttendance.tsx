@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { MapPin, Users } from 'lucide-react'
 
 import { getActivityMarkedCounts } from '@/api/attendance/activity-attendance'
-import { getMyActivities, type CoachActivity } from '@/api/coach'
+import { getMyActivities, type RosterEntry } from '@/api/coach'
 import { Badge } from '@/components/ui/badge'
 import { StatusView } from '@/components/ui/status-view'
 import { todayInBucharest } from '@/features/admin/activities/activity-overview'
@@ -13,14 +13,50 @@ import { activityWhen } from '@/lib/panel-date'
 import { plural } from '@/lib/plural'
 import { cn } from '@/lib/utils'
 
+type AttendanceActivity = {
+  id: string
+  name: string
+  activity_date: string
+  start_time: string
+  end_time: string
+  enrolled: number
+  location: { name: string } | null
+}
+
 export function CoachActivityAttendance() {
-  const today = todayInBucharest()
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const { data = [], isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['my-activities'],
     queryFn: getMyActivities,
     retry: false,
   })
+  return (
+    <ActivityAttendance
+      activities={data ?? []}
+      isLoading={isLoading}
+      isError={isError}
+      onRetry={() => refetch()}
+      emptyText="Când părinții înscriu copii la activitățile tale, le pontezi aici."
+    />
+  )
+}
+
+export function ActivityAttendance({
+  activities: data,
+  isLoading,
+  isError,
+  onRetry,
+  emptyText,
+  loadRoster,
+}: {
+  activities: AttendanceActivity[]
+  isLoading: boolean
+  isError: boolean
+  onRetry: () => void
+  emptyText: string
+  loadRoster?: (activityId: string) => Promise<RosterEntry[]>
+}) {
+  const today = todayInBucharest()
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const list = useMemo(
     () =>
       data
@@ -45,21 +81,22 @@ export function CoachActivityAttendance() {
   if (isLoading) return <ClubLocationListSkeleton />
   if (isError && !data.length)
     return (
-      <StatusView state="error" title="Nu am putut încărca activitățile." onRetry={() => refetch()} />
+      <StatusView state="error" title="Nu am putut încărca activitățile." onRetry={onRetry} />
     )
   if (!list.length)
     return (
       <StatusView
         state="empty"
         title="Nicio activitate cu copii înscriși."
-        text="Când părinții înscriu copii la activitățile tale, le pontezi aici."
+        text={emptyText}
       />
     )
 
   const sel = list.find((a) => a.id === selectedId) ?? list[0]
-  const roster = (a: CoachActivity) => (
+  const roster = (a: AttendanceActivity) => (
     <ActivityRoster
       activityId={a.id}
+      loadRoster={loadRoster}
       opensOn={a.activity_date > today ? activityWhen(a) : null}
     />
   )

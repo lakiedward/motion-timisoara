@@ -13,8 +13,13 @@ CREATE TABLE public.profiles (
     role TEXT NOT NULL CHECK (role IN ('COACH', 'ADMIN', 'PARENT', 'CLUB')),
     enabled BOOLEAN NOT NULL DEFAULT true
 );
+CREATE TABLE public.clubs (
+    id UUID PRIMARY KEY, owner_user_id UUID NOT NULL REFERENCES public.profiles(id),
+    approved_at TIMESTAMPTZ
+);
 CREATE TABLE public.courses (
-    id UUID PRIMARY KEY, coach_id UUID NOT NULL REFERENCES public.profiles(id)
+    id UUID PRIMARY KEY, coach_id UUID NOT NULL REFERENCES public.profiles(id),
+    club_id UUID REFERENCES public.clubs(id)
 );
 CREATE TABLE public.course_occurrences (
     id UUID PRIMARY KEY, course_id UUID NOT NULL REFERENCES public.courses(id) ON DELETE CASCADE,
@@ -47,6 +52,7 @@ CREATE POLICY attendance_delete ON public.attendance FOR DELETE TO authenticated
 
 \i /tmp/transactional-attendance-migration.sql
 \i /tmp/attendance-after-session-start-migration.sql
+\i /tmp/club-manual-attendance-migration.sql
 
 CREATE FUNCTION public.test_uuid(n INTEGER) RETURNS UUID LANGUAGE sql IMMUTABLE AS $$
     SELECT ('00000000-0000-0000-0000-' || lpad(n::TEXT, 12, '0'))::UUID
@@ -208,4 +214,50 @@ SELECT public.test_assert(public.test_record(55, 219, 'PRESENT', false, 104)->>'
 SELECT public.test_assert(public.test_record(56, 219, null, false, 104)->>'outcome' = 'recorded', 'mark on a moved future session can be cleared');
 SELECT public.test_assert((SELECT remaining_sessions = 3 AND sessions_used = 0 FROM public.enrollments WHERE id = public.test_uuid(1219))
     AND NOT EXISTS (SELECT FROM public.attendance WHERE occurrence_id = public.test_uuid(104)), 'clearing a future mark refunds the session');
+
+INSERT INTO auth.users (id) SELECT public.test_uuid(n) FROM generate_series(7, 10) n;
+INSERT INTO public.profiles VALUES (public.test_uuid(7), 'CLUB', true), (public.test_uuid(8), 'CLUB', true),
+    (public.test_uuid(9), 'CLUB', false), (public.test_uuid(10), 'CLUB', true);
+INSERT INTO public.clubs VALUES (public.test_uuid(31), public.test_uuid(7), now()), (public.test_uuid(32), public.test_uuid(8), now()),
+    (public.test_uuid(33), public.test_uuid(9), now()), (public.test_uuid(34), public.test_uuid(10), NULL);
+INSERT INTO public.courses VALUES (public.test_uuid(13), public.test_uuid(1), public.test_uuid(31)),
+    (public.test_uuid(14), public.test_uuid(1), public.test_uuid(33)), (public.test_uuid(15), public.test_uuid(1), public.test_uuid(34));
+INSERT INTO public.course_occurrences (id, course_id, starts_at) VALUES
+    (public.test_uuid(105), public.test_uuid(13), now() - INTERVAL '1 minute'),
+    (public.test_uuid(106), public.test_uuid(14), now() - INTERVAL '1 minute'),
+    (public.test_uuid(107), public.test_uuid(15), now() - INTERVAL '1 minute'),
+    (public.test_uuid(108), public.test_uuid(13), now() + INTERVAL '7 days');
+INSERT INTO public.enrollments (id, kind, entity_id, child_id, status, remaining_sessions)
+    SELECT public.test_uuid(n + 3000), 'COURSE', public.test_uuid(13), public.test_uuid(n), 'ACTIVE', 3
+    FROM generate_series(223, 226) n;
+INSERT INTO public.enrollments (id, kind, entity_id, child_id, status, remaining_sessions) VALUES
+    (public.test_uuid(4227), 'COURSE', public.test_uuid(14), public.test_uuid(227), 'ACTIVE', 3),
+    (public.test_uuid(4228), 'COURSE', public.test_uuid(15), public.test_uuid(228), 'ACTIVE', 3);
+SELECT public.test_assert(public.test_record(60, 223, 'PRESENT', false, 105, 7)->>'outcome' = 'recorded', 'club owner records present at its course');
+SELECT public.test_assert((SELECT remaining_sessions = 2 AND sessions_used = 1 FROM public.enrollments WHERE id = public.test_uuid(3223)), 'club present debits once');
+SELECT public.test_assert(public.test_record(60, 223, 'PRESENT', false, 105, 7)->>'outcome' = 'recorded', 'club retry returns the receipt');
+SELECT public.test_assert(public.test_record(61, 223, 'ABSENT', false, 105, 7)->>'outcome' = 'recorded', 'club owner corrects to absent');
+SELECT public.test_assert((SELECT remaining_sessions = 3 AND sessions_used = 0 FROM public.enrollments WHERE id = public.test_uuid(3223)), 'club correction refunds the session');
+SELECT public.test_assert(public.test_record(62, 223, null, false, 105, 7)->>'outcome' = 'recorded', 'club owner clears a mark');
+SELECT public.test_assert(public.record_attendance_transaction(public.test_uuid(7), jsonb_build_object(
+    'requestId', public.test_uuid(10063), 'occurrenceId', public.test_uuid(105),
+    'childIds', jsonb_build_array(public.test_uuid(224), public.test_uuid(225)), 'status', 'PRESENT', 'onlyUnmarked', true))->>'outcome' = 'recorded', 'club owner marks all present');
+SELECT public.test_assert((SELECT count(*) = 2 FROM public.attendance WHERE occurrence_id = public.test_uuid(105) AND status = 'PRESENT'), 'club bulk wrote both children');
+SELECT public.test_assert(public.test_record(64, 226, 'PRESENT', true, 105, 7)->>'code' = 'FORBIDDEN', 'club cannot record by QR');
+SELECT public.test_assert(public.test_record(65, 226, 'PRESENT', false, 105, 8)->>'code' = 'FORBIDDEN', 'another club is forbidden');
+SELECT public.test_assert(public.test_record(66, 210, 'ABSENT', false, 101, 7)->>'code' = 'FORBIDDEN', 'club is forbidden at an independent coach course');
+SELECT public.test_assert(public.test_record(67, 227, 'PRESENT', false, 106, 9)->>'code' = 'FORBIDDEN', 'disabled club account is forbidden');
+SELECT public.test_assert(public.test_record(68, 228, 'PRESENT', false, 107, 10)->>'code' = 'FORBIDDEN', 'unapproved club is forbidden');
+SELECT public.test_assert(public.test_record(69, 226, 'PRESENT', false, 108, 7)->>'code' = 'TOO_EARLY', 'club cannot mark before the session starts');
+SELECT public.test_assert(public.test_record(70, 226, 'PRESENT', false, 105, 1)->>'outcome' = 'recorded', 'course coach still records at a club course');
+SELECT public.test_assert(public.test_record(71, 226, 'ABSENT', false, 105, 7)->>'outcome' = 'recorded', 'club owner corrects the coach mark');
+SELECT public.test_assert((SELECT remaining_sessions = 3 AND sessions_used = 0 FROM public.enrollments WHERE id = public.test_uuid(3226)), 'club correction refunds the coach debit');
+SELECT public.test_assert(NOT EXISTS (SELECT FROM public.attendance WHERE occurrence_id IN (public.test_uuid(106), public.test_uuid(107), public.test_uuid(108)))
+    AND (SELECT remaining_sessions = 3 FROM public.enrollments WHERE id = public.test_uuid(4227))
+    AND (SELECT remaining_sessions = 3 FROM public.enrollments WHERE id = public.test_uuid(4228)), 'refused club marks leave no trace');
+UPDATE public.clubs SET owner_user_id = public.test_uuid(8) WHERE id = public.test_uuid(31);
+SELECT public.test_assert(public.test_record(60, 223, 'PRESENT', false, 105, 7)->>'code' = 'FORBIDDEN', 'club receipt replay requires current ownership');
+UPDATE public.clubs SET owner_user_id = public.test_uuid(7) WHERE id = public.test_uuid(31);
+SELECT public.test_assert(NOT has_function_privilege('authenticated', 'public.record_attendance_transaction(uuid,jsonb)', 'EXECUTE')
+    AND NOT has_function_privilege('anon', 'public.record_attendance_transaction(uuid,jsonb)', 'EXECUTE'), 'RPC stays service-role only after 00144');
 SELECT 'Transactional attendance assertions passed' AS result;

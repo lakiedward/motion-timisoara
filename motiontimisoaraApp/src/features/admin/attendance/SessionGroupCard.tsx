@@ -13,6 +13,7 @@ export function SessionGroupCard({
   open,
   expanded,
   query,
+  listKey,
   onOpenChange,
   onExpand,
 }: {
@@ -20,6 +21,7 @@ export function SessionGroupCard({
   open: boolean
   expanded: boolean
   query: string
+  listKey?: string
   onOpenChange: (open: boolean) => void
   onExpand: () => void
 }) {
@@ -78,7 +80,7 @@ export function SessionGroupCard({
         <div id={panelId}>
           <ul className="divide-y border-t">
             {shown.map((s) => (
-              <AdminSessionRow key={s.id} session={s} query={query} />
+              <AdminSessionRow key={s.id} session={s} query={query} listKey={listKey} />
             ))}
           </ul>
           {hidden > 0 && (

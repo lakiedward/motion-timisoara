@@ -1,6 +1,6 @@
 import { beforeEach, expect, test, vi } from 'vitest'
 
-import { getAdminSessions } from './admin-sessions'
+import { getAdminSessions, getClubSessions } from './admin-sessions'
 
 type Call = { table: string; method: string; args: unknown[] }
 let calls: Call[] = []
@@ -82,6 +82,41 @@ test('reads a 30-day window and attributes sessions to clubs or independent coac
     ['coach:u2', 'Ana Rusu', 1, 0],
   ])
   expect(sessions[1]).toMatchObject({ sportId: null, locationName: null, organizerKind: 'coach' })
+  expect(window.some((c) => c.method === 'eq')).toBe(false)
+})
+
+test('reads only the sessions of one club and attributes them to its coaches', async () => {
+  rows = {
+    course_occurrences: [
+      {
+        id: 'o1',
+        starts_at: '2026-10-19T15:00:00Z',
+        ends_at: '2026-10-19T16:00:00Z',
+        course: {
+          id: 'k1',
+          name: 'Înot',
+          location: null,
+          sport: null,
+          club: named('c1', 'Delfinul'),
+          coach: named('u1', 'Radu Stan'),
+        },
+      },
+    ],
+    enrollments: [{ entity_id: 'k1' }],
+  }
+  const sessions = await getClubSessions('c1', Date.parse('2026-10-20T12:00:00Z'))
+
+  expect(
+    calls.find((c) => c.table === 'course_occurrences' && c.method === 'eq')?.args,
+  ).toEqual(['course.club_id', 'c1'])
+  expect(sessions[0]).toMatchObject({
+    organizerKey: 'coach:u1',
+    organizerKind: 'coach',
+    organizerName: 'Radu Stan',
+    coachName: 'Radu Stan',
+    enrolledCount: 1,
+    markedCount: 0,
+  })
 })
 
 test('skips the count queries when there are no sessions', async () => {

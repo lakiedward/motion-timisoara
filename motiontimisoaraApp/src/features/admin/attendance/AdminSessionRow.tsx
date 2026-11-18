@@ -24,7 +24,15 @@ export function MarkBadge({ s }: { s: AdminSession }) {
   return <Badge variant="success">Pontată</Badge>
 }
 
-export function AdminSessionRow({ session: s, query }: { session: AdminSession; query: string }) {
+export function AdminSessionRow({
+  session: s,
+  query,
+  listKey = 'admin-sessions',
+}: {
+  session: AdminSession
+  query: string
+  listKey?: string
+}) {
   const [open, setOpen] = useState(false)
   const started = useSessionStarted(s.startsAt)
   const panelId = `prezenta-${s.id}`
@@ -85,7 +93,7 @@ export function AdminSessionRow({ session: s, query }: { session: AdminSession; 
           <SessionRoster
             courseId={s.courseId}
             occurrenceId={s.id}
-            listKey="admin-sessions"
+            listKey={listKey}
             locked={!started}
           />
         </div>

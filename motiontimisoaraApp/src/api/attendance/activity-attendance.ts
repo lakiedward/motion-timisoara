@@ -40,6 +40,19 @@ export async function getActivityRoster(activityId: string): Promise<RosterEntry
     .sort((a, b) => a.child_name.localeCompare(b.child_name, 'ro'))
 }
 
+export async function getManagedActivityRoster(activityId: string): Promise<RosterEntry[]> {
+  const { data, error } = await supabase.rpc('activity_attendance_roster', {
+    p_activity_id: activityId,
+  })
+  if (error) throw error
+  return (data ?? []).map((r) => ({
+    child_id: r.child_id,
+    child_name: r.child_name,
+    child_birth_date: r.child_birth_date,
+    status: r.status as ActivityAttendanceStatus | null,
+  }))
+}
+
 export async function getActivityMarkedCounts(activityIds: string[]): Promise<Map<string, number>> {
   const counts = new Map<string, number>()
   if (!activityIds.length) return counts
