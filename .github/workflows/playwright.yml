@@ -201,6 +201,9 @@ jobs:
     - name: Test the activity attendance roster for clubs
       shell: pwsh
       run: ./supabase/tests/run-club-activity-attendance-roster.ps1
+    - name: Test the club head coach mark
+      shell: pwsh
+      run: ./supabase/tests/run-club-head-coach.ps1
     - name: Test isolated coach live location access and lifecycle
       shell: pwsh
       run: ./supabase/tests/run-coach-live-location-realtime.ps1

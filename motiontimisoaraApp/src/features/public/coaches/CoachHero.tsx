@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StarRating } from '@/components/StarRating'
-import type { CoachClub } from '@/api/public'
+import type { CoachClubRole } from '@/api/club-team'
 import { initials } from '@/lib/initials'
 import { CoachClubs } from './CoachClubs'
 import { DetailBackLink } from '../components/DetailBackLink'
@@ -45,7 +45,7 @@ export function CoachHero({
   name: string
   photoUrl: string | null
   sports: { id: string; name: string }[]
-  clubs?: CoachClub[]
+  clubs?: CoachClubRole[]
   bio: string | null
   rating: { avg: number; count: number } | undefined
   myRating?: ReactNode

@@ -8,6 +8,7 @@ import { ClubAbout } from './club-detail/ClubAbout'
 import { ClubContact } from './club-detail/ClubContact'
 import { ClubHero } from './club-detail/ClubHero'
 import { ClubOffer } from './club-detail/ClubOffer'
+import { ClubTeam } from './club-detail/ClubTeam'
 import { useDocumentTitle } from '@/lib/page-title'
 import { DetailNotFound } from '@/features/public/components/DetailNotFound'
 
@@ -61,6 +62,7 @@ export default function ClubDetailPage() {
           <ClubAbout club={club} />
           <ClubContact club={club} />
         </div>
+        <ClubTeam clubId={club.id} />
         <ClubOffer clubId={club.id} />
       </div>
     </div>

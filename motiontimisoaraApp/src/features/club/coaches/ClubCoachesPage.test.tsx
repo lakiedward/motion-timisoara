@@ -12,6 +12,13 @@ const mocks = vi.hoisted(() => ({
   deleteCode: vi.fn(),
   createCoach: vi.fn(),
   removeCoach: vi.fn(),
+  getHead: vi.fn(),
+  setHead: vi.fn(),
+}))
+vi.mock('@/api/club-team', async (original) => ({
+  ...(await original<typeof import('@/api/club-team')>()),
+  getClubHeadCoachId: mocks.getHead,
+  setClubHeadCoach: mocks.setHead,
 }))
 vi.mock('@/api/club', async (original) => ({
   ...(await original<typeof import('@/api/club')>()),
@@ -60,6 +67,8 @@ beforeEach(() => {
   mocks.getMyClub.mockResolvedValue({ id: 'club-1' })
   mocks.getCoaches.mockResolvedValue([coach])
   mocks.getCodes.mockResolvedValue([])
+  mocks.getHead.mockResolvedValue(null)
+  mocks.setHead.mockResolvedValue(undefined)
   mocks.generate.mockResolvedValue('NEWC-0DE2')
   mocks.createCoach.mockResolvedValue({
     userId: 'n',
@@ -248,4 +257,14 @@ test('a failed code list shows retry', async () => {
   mocks.getCodes.mockRejectedValue(new Error('boom'))
   renderPage()
   expect(await screen.findByText('Nu am putut încărca codurile.')).toBeVisible()
+})
+
+test('the club marks a coach as founder and can remove the mark', async () => {
+  mocks.getHead.mockResolvedValueOnce(null).mockResolvedValue('cp-1')
+  renderPage()
+  fireEvent.click(await screen.findByRole('button', { name: 'Marchează ca fondator' }))
+  await waitFor(() => expect(mocks.setHead).toHaveBeenCalledWith('club-1', 'cp-1'))
+  expect(await screen.findByText('Fondator')).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: 'Scoate marcajul' }))
+  await waitFor(() => expect(mocks.setHead).toHaveBeenLastCalledWith('club-1', null))
 })

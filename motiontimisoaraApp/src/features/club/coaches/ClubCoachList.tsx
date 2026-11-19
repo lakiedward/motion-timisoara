@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { UserMinus } from 'lucide-react'
+import { Crown, UserMinus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { getClubCoaches, removeClubCoach, type ClubCoach } from '@/api/club'
+import { getClubHeadCoachId, setClubHeadCoach } from '@/api/club-team'
+import { Badge } from '@/components/ui/badge'
+import { HEAD_COACH_LABEL } from '@/features/public/club-detail/head-coach'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -25,7 +28,22 @@ export default function ClubCoachList({ clubId }: { clubId: string | undefined }
     },
     onError: () => toast.error('Nu am putut elimina antrenorul.'),
   })
+  const head = useQuery({
+    queryKey: ['club-head-coach', clubId],
+    queryFn: () => getClubHeadCoachId(clubId!),
+    enabled: !!clubId,
+  })
+  const setHead = useMutation({
+    mutationFn: (coachProfileId: string | null) => setClubHeadCoach(clubId!, coachProfileId),
+    onSuccess: (_data, coachProfileId) => {
+      void qc.invalidateQueries({ queryKey: ['club-head-coach', clubId] })
+      void qc.invalidateQueries({ queryKey: ['club-team', clubId] })
+      toast.success(coachProfileId ? `${HEAD_COACH_LABEL} marcat.` : 'Marcaj scos.')
+    },
+    onError: () => toast.error('Nu am putut salva fondatorul clubului.'),
+  })
   const coaches = query.data ?? []
+  const headId = head.data ?? null
 
   if (query.isPending)
     return (
@@ -71,6 +89,52 @@ export default function ClubCoachList({ clubId }: { clubId: string | undefined }
             <div className="min-w-0 flex-1">
               <div className="truncate font-medium">{c.name}</div>
               <div className="text-muted-foreground truncate text-xs">{c.email}</div>
+              {head.isError && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="min-h-touch-target mt-2"
+                  disabled={head.isFetching}
+                  onClick={() => void head.refetch()}
+                >
+                  Nu am putut încărca fondatorul. Reîncearcă
+                </Button>
+              )}
+              {head.isSuccess && (
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {headId === c.coach_profile_id ? (
+                    <>
+                      <Badge variant="highlight">
+                        <Crown aria-hidden="true" />
+                        {HEAD_COACH_LABEL}
+                      </Badge>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="min-h-touch-target"
+                        disabled={setHead.isPending}
+                        onClick={() => setHead.mutate(null)}
+                      >
+                        Scoate marcajul
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="min-h-touch-target"
+                      disabled={setHead.isPending}
+                      onClick={() => setHead.mutate(c.coach_profile_id)}
+                    >
+                      <Crown aria-hidden="true" />
+                      Marchează ca {HEAD_COACH_LABEL.toLocaleLowerCase('ro')}
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
             <Button
               type="button"
