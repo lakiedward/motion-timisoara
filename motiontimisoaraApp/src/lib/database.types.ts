@@ -1091,14 +1091,17 @@ export type Database = {
         Row: {
           club_id: string
           coach_profile_id: string
+          is_head: boolean
         }
         Insert: {
           club_id: string
           coach_profile_id: string
+          is_head?: boolean
         }
         Update: {
           club_id?: string
           coach_profile_id?: string
+          is_head?: boolean
         }
         Relationships: [
           {
@@ -4236,6 +4239,10 @@ export type Database = {
           p_quotes: Json
         }
         Returns: Json
+      }
+      set_club_head_coach: {
+        Args: { p_club_id: string; p_coach_profile_id: string | null }
+        Returns: undefined
       }
       set_my_push_enabled: { Args: { p_enabled: boolean }; Returns: Json }
       subscriber_has_access: {

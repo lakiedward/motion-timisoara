@@ -177,7 +177,7 @@ export async function getCoaches(): Promise<CoachListItem[]> {
 export type CoachClub = Pick<Tables<'clubs'>, 'id' | 'name' | 'logo_storage_path'>
 
 export type CoachProfileDetail = CoachListItem & {
-  club_coaches: { club: CoachClub | null }[]
+  club_coaches: { is_head?: boolean; club: CoachClub | null }[]
 }
 
 export async function getCoachByUserId(userId: string): Promise<CoachProfileDetail | null> {
@@ -185,18 +185,12 @@ export async function getCoachByUserId(userId: string): Promise<CoachProfileDeta
   const { data, error } = await supabase
     .from('coach_profiles')
     .select(
-      'id, user_id, bio, avatar_url, photo_storage_path, profile:profiles(id,name,avatar_url), coach_sports(sport:sports(id,code,name)), club_coaches(club:clubs(id,name,logo_storage_path))',
+      'id, user_id, bio, avatar_url, photo_storage_path, profile:profiles(id,name,avatar_url), coach_sports(sport:sports(id,code,name)), club_coaches(is_head,club:clubs(id,name,logo_storage_path))',
     )
     .eq('user_id', userId)
     .maybeSingle()
   if (error) throw error
   return data as unknown as CoachProfileDetail | null
-}
-
-export function coachClubs(coach: Pick<CoachProfileDetail, 'club_coaches'>): CoachClub[] {
-  return (coach.club_coaches ?? [])
-    .flatMap((membership) => (membership.club ? [membership.club] : []))
-    .sort((a, b) => a.name.localeCompare(b.name, 'ro'))
 }
 
 export type ClubListItem = Tables<'clubs'> & {

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -130,4 +130,23 @@ test('a coach without a visible club shows no club line', async () => {
   renderPage()
   expect(await screen.findByRole('heading', { level: 1, name: 'Ana Pop' })).toBeVisible()
   expect(screen.queryByText(/Antrenor la/)).toBeNull()
+})
+
+test('the founder sees his club on a separate founder line', async () => {
+  mocks.getCoachByUserId.mockResolvedValue({
+    ...coach,
+    club_coaches: [
+      { is_head: true, club: { id: 'club-1', name: 'Tri Team', logo_storage_path: null } },
+      { is_head: false, club: { id: 'club-2', name: 'Delfinii', logo_storage_path: null } },
+    ],
+  })
+  renderPage()
+  const founder = await screen.findByText(/Fondator la/)
+  expect(within(founder).getByRole('link', { name: 'Tri Team' })).toHaveAttribute(
+    'href',
+    '/cluburi/club-1',
+  )
+  const member = screen.getByText(/Antrenor la/)
+  expect(within(member).getByRole('link', { name: 'Delfinii' })).toBeVisible()
+  expect(within(member).queryByRole('link', { name: 'Tri Team' })).toBeNull()
 })

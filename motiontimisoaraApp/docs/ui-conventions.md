@@ -16,7 +16,7 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
     nu poate fi cum arată o rețea căzută.
 
     canonic  src/features/camps/CampsListPage.tsx
-    plafon   0 ecrane fără ramură de eroare, din 103 — poate doar scădea
+    plafon   0 ecrane fără ramură de eroare, din 104 — poate doar scădea
 
 ## Țintă tactilă  [RESPECTATĂ]
 
@@ -34,7 +34,7 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
 
     canonic  src/components/ui/skeleton.tsx
     blocat   0 animate-pulse în afara primitivei
-    folosit  79 fișiere
+    folosit  80 fișiere
 
 ## Culorile de brand  [RESPECTATĂ]
 
