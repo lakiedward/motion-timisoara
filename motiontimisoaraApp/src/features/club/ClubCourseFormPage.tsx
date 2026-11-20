@@ -46,6 +46,10 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { FormSelectMenu } from '@/components/ui/form-select-menu'
 import { levelOptions } from '@/lib/level'
+import { getCoursePackages, saveCoursePackages } from '@/api/course-packages'
+import { CoursePackagesFields } from '@/components/course-packages/CoursePackagesFields'
+import { saveNewCoursePackages } from '@/components/course-packages/save-new-course-packages'
+import { coursePackagesSchema, packagesToForm } from '@/lib/course-packages/course-packages'
 import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
 import { CourseOwnerField } from './course-form/CourseOwnerField'
 import { useCourseFormOwner, type CourseFormPortal } from './course-form/useCourseFormOwner'
@@ -64,6 +68,7 @@ const schema = z
     price_per_session_lei: offerAmountSchema,
     description: z.string().trim().min(1, 'Descrierea este obligatorie.'),
     program: courseProgramSchema,
+    packages: coursePackagesSchema,
   })
   .superRefine((value, ctx) => {
     validateOfferCurrency(value, ctx)
@@ -91,6 +96,11 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
   } = useQuery({
     queryKey: ['club-course-edit', id],
     queryFn: () => getClubCourseById(id as string),
+    enabled: isEdit,
+  })
+  const pachete = useQuery({
+    queryKey: ['course-packages', id],
+    queryFn: () => getCoursePackages(id as string),
     enabled: isEdit,
   })
   const {
@@ -125,6 +135,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
       capacity: '',
       description: '',
       program: emptyCourseProgram(),
+      packages: [],
     },
   })
   const [fisierLocal, setFisierLocal] = useState<File | null>(null)
@@ -143,7 +154,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
   const cursEur = useWatch({ control, name: 'eur_ron_rate' })
   const faraCurs = eurFaraCurs(currency, cursEur)
   useEffect(() => {
-    if (existing && coachesReady && locationsReady) {
+    if (existing && pachete.data && coachesReady && locationsReady) {
       reset({
         ...offerCurrencyValues(existing),
         name: existing.name,
@@ -157,9 +168,10 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
         price_per_session_lei: String(baniToRon(existing.price_per_session)),
         description: existing.description ?? '',
         program: parseRecurrenceRule(existing.recurrence_rule),
+        packages: packagesToForm(pachete.data),
       })
     }
-  }, [existing, coachesReady, locationsReady, reset])
+  }, [existing, pachete.data, coachesReady, locationsReady, reset])
 
   const verificaOrganizator = () => {
     const lipsa = isAdmin && !hasOwner ? 'Alege organizatorul' : null
@@ -200,6 +212,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
     try {
       if (isEdit) {
         await updateClubCourse(id as string, payload)
+        await saveCoursePackages(id as string, v.packages)
         if (pozaHero) await schimbaPozaOferta('courses', 'course-photos', id as string, pozaHero)
       } else {
         const creat = await createClubCourse(clubId, payload)
@@ -210,6 +223,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
           toast.error('Fără poza din capul paginii cursul nu se salvează.')
           return
         }
+        if (v.packages.length) await saveNewCoursePackages(creat.id, v.packages)
         if (fisierLocal) {
           try {
             await incarcaRegulamentCurs(creat.id, fisierLocal)
@@ -245,7 +259,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
   const backLink = <BackLink to={listPath}>Înapoi la cursuri</BackLink>
   const alAltuiClub = !isAdmin && !!existing && existing.club_id !== owner
 
-  if (isEdit && aEsuatCitirea) {
+  if (isEdit && (aEsuatCitirea || pachete.isError)) {
     return (
       <div className="mx-auto max-w-2xl">
         {backLink}
@@ -253,7 +267,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
           state="error"
           title="Nu am putut încărca cursul."
           text="Verifică conexiunea și încearcă din nou."
-          onRetry={() => void refetch()}
+          onRetry={() => void (aEsuatCitirea ? refetch() : pachete.refetch())}
           className="mt-4"
         />
       </div>
@@ -274,7 +288,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
     )
   }
 
-  if (isEdit && (seIncarca || !ownerReady)) {
+  if (isEdit && (seIncarca || pachete.isPending || !ownerReady)) {
     return (
       <div className="mx-auto max-w-2xl">
         {backLink}
@@ -518,6 +532,13 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
             />
           </div>
         </FormSection>
+        <CoursePackagesFields
+          control={control}
+          register={register}
+          errors={errors}
+          currency={currency}
+        />
+
         <HeroPhotoField
           savedUrl={publicUrl('course-photos', existing?.hero_photo_storage_path)}
           error={eroareHero}

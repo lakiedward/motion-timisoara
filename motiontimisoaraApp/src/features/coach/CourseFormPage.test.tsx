@@ -13,10 +13,15 @@ import {
   updateCourse,
 } from '@/api/coach'
 import { fetchSports } from '@/api/sports'
+import { getCoursePackages, saveCoursePackages } from '@/api/course-packages'
 import { getCursBnr } from '@/api/bnr-rate'
 import { findSelectMenuOption, pickSelectMenuValue } from '@/test/select-menu'
 import { setPickerValue, pickerValue } from '@/test/pickers'
 
+vi.mock('@/api/course-packages', () => ({
+  getCoursePackages: vi.fn().mockResolvedValue([]),
+  saveCoursePackages: vi.fn().mockResolvedValue([]),
+}))
 vi.mock('@/api/coach', () => ({
   getSelectableLocations: vi.fn(),
   getCourseById: vi.fn(),
@@ -443,4 +448,86 @@ test('secțiunile cursului au aceeași ordine ca la club și admin', async () =>
   }
   expect(screen.getByLabelText(/^Descriere/)).toBeRequired()
   expect(screen.getByLabelText('Capacitate')).not.toBeRequired()
+})
+
+test('la editare, pachetele salvate se modifică, se șterg și se adaugă', async () => {
+  const user = userEvent.setup()
+  mockedExisting.mockResolvedValue(cursSalvat() as never)
+  mockedUpdate.mockResolvedValue({ id: 'c1' } as never)
+  vi.mocked(getCoursePackages).mockResolvedValueOnce([
+    { id: 'p1', position: 0, sessions: 5, price: 25000, validity: 'NONE' },
+    { id: 'p2', position: 1, sessions: 10, price: 45000, validity: 'NONE' },
+  ])
+  renderForm('/coach/courses/c1/edit')
+  await screen.findByDisplayValue('Înot avansat')
+  const pachete = screen.getByRole('list', { name: 'Pachete' })
+  expect(within(pachete).getAllByRole('listitem')).toHaveLength(2)
+  expect(screen.getByText('Înseamnă 50,00 lei / ședință.')).toBeInTheDocument()
+  const pret = screen.getByLabelText('Preț total (lei)', { selector: '#package-1-price' })
+  await user.clear(pret)
+  await user.type(pret, '400')
+  await user.click(screen.getByRole('button', { name: 'Șterge pachetul 1' }))
+  await user.click(screen.getByRole('button', { name: 'Adaugă un pachet' }))
+  await user.type(
+    screen.getByLabelText('Număr de ședințe', { selector: '#package-1-sessions' }),
+    '20',
+  )
+  await user.type(
+    screen.getByLabelText('Preț total (lei)', { selector: '#package-1-price' }),
+    '700',
+  )
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() => expect(saveCoursePackages).toHaveBeenCalled())
+  expect(vi.mocked(saveCoursePackages).mock.calls[0]).toEqual([
+    'c1',
+    [
+      { packageId: 'p2', sessions: '10', price: '400' },
+      { sessions: '20', price: '700' },
+    ],
+  ])
+})
+
+test('pachetele au cel mult 4 rânduri și nu se repetă numărul de ședințe', async () => {
+  const user = userEvent.setup()
+  renderForm()
+  const adauga = await screen.findByRole('button', { name: 'Adaugă un pachet' })
+  for (let i = 0; i < 4; i++) await user.click(adauga)
+  expect(adauga).toBeDisabled()
+  expect(screen.getByText('Ai ajuns la 4 pachete, cât permite un curs.')).toBeInTheDocument()
+  await user.type(
+    screen.getByLabelText('Număr de ședințe', { selector: '#package-0-sessions' }),
+    '8',
+  )
+  await user.type(
+    screen.getByLabelText('Număr de ședințe', { selector: '#package-1-sessions' }),
+    '8',
+  )
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  expect(await screen.findByText('Ai deja un pachet de 8 ședințe')).toBeInTheDocument()
+  expect(screen.getAllByText('Scrie prețul pachetului').length).toBeGreaterThan(0)
+  expect(mockedCreate).not.toHaveBeenCalled()
+  expect(saveCoursePackages).not.toHaveBeenCalled()
+})
+
+test('cursul nou își salvează pachetele după ce primește id', async () => {
+  const user = userEvent.setup()
+  mockedCreate.mockResolvedValue({ id: 'c-new' } as never)
+  renderForm()
+  await user.type(await screen.findByLabelText(/^Nume curs/), 'Înot de seară')
+  await pickSelectMenuValue(screen.getByLabelText(/^Sport/), SPORT)
+  await pickSelectMenuValue(screen.getByLabelText(/^Locație/), LOC)
+  await user.type(screen.getByLabelText(/^Preț \/ ședință \(lei\)/), '80')
+  await user.type(screen.getByLabelText(/^Descriere/), 'Înot pentru începători.')
+  await completeazaProgram(user)
+  punePozaHero()
+  await user.click(screen.getByRole('button', { name: 'Adaugă un pachet' }))
+  await user.type(screen.getByLabelText('Număr de ședințe'), '8')
+  await user.type(screen.getByLabelText('Preț total (lei)'), '320')
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() => expect(saveCoursePackages).toHaveBeenCalled())
+  expect(vi.mocked(saveCoursePackages).mock.calls[0]).toEqual([
+    'c-new',
+    [{ sessions: '8', price: '320' }],
+  ])
+  expect(await screen.findByText('Lista cursuri')).toBeInTheDocument()
 })

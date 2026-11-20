@@ -2203,6 +2203,47 @@ export type Database = {
           },
         ]
       }
+      course_packages: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          position: number
+          price: number
+          sessions: number
+          updated_at: string
+          validity: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          position: number
+          price: number
+          sessions: number
+          updated_at?: string
+          validity?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          position?: number
+          price?: number
+          sessions?: number
+          updated_at?: string
+          validity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_packages_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_photos: {
         Row: {
           caption: string | null
@@ -4216,6 +4257,25 @@ export type Database = {
           p_quotes: Json
         }
         Returns: Json
+      }
+      save_course_packages: {
+        Args: { p_course_id: string; p_packages: Json }
+        Returns: {
+          course_id: string
+          created_at: string
+          id: string
+          position: number
+          price: number
+          sessions: number
+          updated_at: string
+          validity: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "course_packages"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       save_enrollment_batch: {
         Args: {
