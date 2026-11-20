@@ -283,7 +283,7 @@ test('a course with packages sells only its packages and sends the chosen packag
     </QueryClientProvider>,
   )
   const eight = await screen.findByRole('radio', { name: /8 ședințe/ })
-  expect(eight).toHaveAttribute('aria-checked', 'true')
+  expect(eight).toBeChecked()
   expect(screen.queryByRole('button', { name: '10 ședințe' })).not.toBeInTheDocument()
   expect(screen.queryByLabelText('Altul')).not.toBeInTheDocument()
   await waitFor(() =>

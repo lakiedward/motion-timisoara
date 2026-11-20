@@ -8,6 +8,7 @@ import {
 } from '@/lib/course-packages/course-packages'
 import { formatMoney } from '@/lib/money'
 import { cn } from '@/lib/utils'
+import { RADIO } from './CheckoutPaymentStep'
 
 const OPTION_FOCUS =
   'focus-visible:outline-ring focus-visible:outline-2 focus-visible:outline-offset-2'
@@ -43,28 +44,32 @@ export function CheckoutPackagePicker({
           {coursePackages.map((item) => {
             const selected = value.packageId === item.id
             return (
-              <button
+              <label
                 key={item.id}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                onClick={() => onChange(packageChoice(item))}
                 className={cn(
-                  'bg-card min-h-touch-target rounded-lg border p-3 text-left transition-colors',
-                  OPTION_FOCUS,
-                  selected ? 'border-primary ring-primary ring-1' : 'hover:border-primary/60',
+                  'bg-card hover:border-primary/60 flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition-colors',
+                  selected && 'border-primary',
                 )}
               >
-                <span className="flex items-center justify-between gap-2">
-                  <span className="font-medium">{sessionsLabel(item.sessions)}</span>
-                  <span className="font-semibold tabular-nums">
-                    {formatMoney(item.price, currency)}
+                <input
+                  type="radio"
+                  name="course-package"
+                  className={RADIO}
+                  checked={selected}
+                  onChange={() => onChange(packageChoice(item))}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="font-medium">{sessionsLabel(item.sessions)}</span>
+                    <span className="font-semibold tabular-nums">
+                      {formatMoney(item.price, currency)}
+                    </span>
+                  </span>
+                  <span className="text-muted-foreground mt-0.5 block text-xs">
+                    {packageNote(item, currency)}
                   </span>
                 </span>
-                <span className="text-muted-foreground mt-0.5 block text-xs">
-                  {packageNote(item, currency)}
-                </span>
-              </button>
+              </label>
             )
           })}
         </div>
