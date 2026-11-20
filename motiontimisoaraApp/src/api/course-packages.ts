@@ -18,6 +18,23 @@ export async function getCoursePackages(courseId: string): Promise<CoursePackage
   return data ?? []
 }
 
+export async function getCoursePackagesByCourse(
+  courseIds: string[],
+): Promise<Record<string, CoursePackage[]>> {
+  if (courseIds.length === 0) return {}
+  const { data, error } = await supabase
+    .from('course_packages')
+    .select(`course_id, ${PACKAGE_COLUMNS}`)
+    .in('course_id', courseIds)
+    .order('position')
+  if (error) throw error
+  const grouped: Record<string, CoursePackage[]> = {}
+  for (const { course_id, ...item } of data ?? []) {
+    ;(grouped[course_id] ??= []).push(item)
+  }
+  return grouped
+}
+
 export async function saveCoursePackages(
   courseId: string,
   drafts: CoursePackageDraft[],

@@ -2,9 +2,11 @@ import type { ReactNode } from 'react'
 import { CircleOff, MapPin, UsersRound } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Highlight } from '@/features/admin/courses/CourseParts'
 import { courseAgeLabel } from '@/features/club/courses/club-course-filters'
 import type { Tables } from '@/lib/database.types'
+import { cheapestPerSession, type CoursePackage } from '@/lib/course-packages/course-packages'
 import { formatMoney } from '@/lib/money'
 import { cn } from '@/lib/utils'
 
@@ -22,6 +24,8 @@ export function CourseListRow({
   showCoach = false,
   query = '',
   enrollment,
+  packages = [],
+  priceLoading = false,
   note,
   actions,
 }: {
@@ -30,6 +34,8 @@ export function CourseListRow({
   showCoach?: boolean
   query?: string
   enrollment?: ReactNode
+  packages?: CoursePackage[]
+  priceLoading?: boolean
   note?: ReactNode
   actions: ReactNode
 }) {
@@ -67,9 +73,20 @@ export function CourseListRow({
             </span>
           )}
           {enrollment}
-          <span className="text-foreground font-semibold">
-            {formatMoney(c.price_per_session, c.currency)} / ședință
-          </span>
+          {priceLoading ? (
+            <Skeleton className="h-4 w-24" aria-label="Se încarcă prețul" />
+          ) : (
+            <span className="text-foreground font-semibold">
+              {packages.length > 0 && (
+                <span className="text-muted-foreground font-normal">de la </span>
+              )}
+              {formatMoney(
+                packages.length > 0 ? cheapestPerSession(packages) : c.price_per_session,
+                c.currency,
+              )}{' '}
+              / ședință
+            </span>
+          )}
         </p>
         {showCoach && (
           <p className="text-muted-foreground mt-1 text-sm wrap-anywhere">

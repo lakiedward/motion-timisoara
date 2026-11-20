@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -10,6 +10,15 @@ import { getMyCourses, type CoachCourse } from '@/api/coach'
 vi.mock('@/api/coach', () => ({
   getMyCourses: vi.fn(),
   setCourseActive: vi.fn(),
+}))
+
+vi.mock('@/api/course-packages', () => ({
+  getCoursePackagesByCourse: vi.fn().mockResolvedValue({
+    'c-pk': [
+      { id: 'p1', position: 0, sessions: 4, price: 12000, validity: 'NONE' },
+      { id: 'p2', position: 1, sessions: 8, price: 18000, validity: 'NONE' },
+    ],
+  }),
 }))
 
 const mockedGetMyCourses = vi.mocked(getMyCourses)
@@ -168,7 +177,7 @@ test('filled rows show title, sport and status badges, location, age, price and 
   expect(screen.getByText('Alergare')).toBeInTheDocument()
   expect(screen.getByText('Inactiv')).toBeInTheDocument()
   expect(screen.getAllByText('Activ')).toHaveLength(2)
-  expect(screen.getByText('48,00 lei / ședință')).toBeInTheDocument()
+  expect(await screen.findByText('48,00 lei / ședință')).toBeInTheDocument()
   expect(screen.getByText('60,00 lei / ședință')).toBeInTheDocument()
   expect(screen.getByText('40,00 lei / ședință')).toBeInTheDocument()
   const rows = screen.getAllByRole('listitem')
@@ -278,4 +287,18 @@ test('search, status pills and sport pills narrow the list and can be cleared', 
   await user.click(screen.getByRole('button', { name: /^Alergare\s*1$/ }))
   expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(1)
   expect(screen.getByLabelText('Sport', { selector: 'button' })).toHaveTextContent(/^Alergare/)
+})
+
+test('course with packages shows "de la" cheapest price per session, others keep their own price', async () => {
+  mockedGetMyCourses.mockResolvedValue([
+    course({ id: 'c-pk', name: 'Cu pachete', price_per_session: 3000 }),
+    course({ id: 'c-plain', name: 'Fără pachete', price_per_session: 4000 }),
+  ])
+  renderPage()
+  const withPackages = (await screen.findByRole('heading', { name: 'Cu pachete' })).closest('li')!
+  await waitFor(() => expect(withPackages).toHaveTextContent('de la 22,50'))
+  expect(withPackages).not.toHaveTextContent('30,00')
+  const plain = screen.getByRole('heading', { name: 'Fără pachete' }).closest('li')!
+  expect(plain).toHaveTextContent('40,00')
+  expect(plain).not.toHaveTextContent('de la')
 })
