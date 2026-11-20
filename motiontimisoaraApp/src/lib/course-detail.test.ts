@@ -49,11 +49,17 @@ describe('upcomingSessions', () => {
     expect(session?.time).toBe('15:00')
   })
 
-  test('returns at most eight sessions', () => {
-    const many = Array.from({ length: 12 }, (_, i) =>
-      occurrence(String(i), `2026-10-${20 + (i % 9)}T12:0${i % 10}:00Z`, null),
+  test('keeps only the sessions within seven days of the first upcoming one', () => {
+    const weekly = Array.from({ length: 8 }, (_, i) =>
+      occurrence(String(i), `2026-10-${19 + i * 7}T12:00:00Z`, null),
     )
-    expect(upcomingSessions(many, now)).toHaveLength(8)
+    expect(upcomingSessions(weekly, now).map((s) => s.id)).toEqual(['0'])
+    const twice = [
+      occurrence('a', '2026-10-19T12:00:00Z', null),
+      occurrence('b', '2026-10-22T12:00:00Z', null),
+      occurrence('c', '2026-10-26T12:00:00Z', null),
+    ]
+    expect(upcomingSessions(twice, now).map((s) => s.id)).toEqual(['a', 'b'])
   })
 
   test('is empty when every session is in the past', () => {
