@@ -17,6 +17,7 @@ import {
   needsPayment,
   paymentLabel,
   sessionsLine,
+  sessionsLines,
 } from './enrollment-display'
 
 export const CARD =
@@ -60,8 +61,18 @@ export function WhenLine({ e }: { e: EnrollmentRow }) {
 }
 
 export function SessionsLeft({ e }: { e: EnrollmentRow }) {
-  const line = e.offer?.schedule ? sessionsLine(e) : null
-  return line ? <p className="text-muted-foreground text-sm">{line}</p> : null
+  const lines = sessionsLines(e).slice(scheduleLabel(e.offer?.schedule ?? null) ? 0 : 1)
+  if (!lines.length) return null
+  return (
+    <ul
+      className="text-muted-foreground space-y-0.5 text-sm"
+      data-section="account-enrollment-sessions"
+    >
+      {lines.map((line, index) => (
+        <li key={`${index}:${line}`}>{line}</li>
+      ))}
+    </ul>
+  )
 }
 
 export function PaymentSummary({ e, className }: { e: EnrollmentRow; className?: string }) {

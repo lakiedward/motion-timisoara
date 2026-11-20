@@ -1,5 +1,7 @@
-import type { EnrollmentRow } from '@/api/account'
+import type { EnrollmentRow, MonthlyPackage } from '@/api/account'
 import { enrollmentPayable } from '@/api/payments/enrollments'
+import { dateLabel, monthName } from '@/lib/course-packages/package-month'
+import { plural } from '@/lib/plural'
 
 export const KIND_LABEL: Record<string, string> = {
   COURSE: 'Curs',
@@ -37,16 +39,50 @@ export function participantName(e: EnrollmentRow) {
   return e.child?.name ?? (e.adult_profile_id ? 'Tu' : '')
 }
 
-export function sessionsLine(e: {
+type SessionsSource = {
   kind: string
   status: string
   purchased_sessions: number
   remaining_sessions: number
-}) {
-  if (e.kind !== 'COURSE') return null
+  monthly_packages?: MonthlyPackage[]
+}
+
+export function bucharestToday(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Bucharest' }).format(now)
+}
+
+function monthlyLine(item: MonthlyPackage, today: string): string {
+  const month = monthName(item.valid_from.slice(0, 7))
+  if (item.valid_from > today)
+    return `Pachet lunar ${month}: ${plural(item.sessions, 'ședință', 'ședințe')}, începe pe ${dateLabel(item.valid_from)}`
+  return `Pachet lunar ${month}: ${item.sessions - item.sessions_used} rămase din ${item.sessions}, expiră pe ${dateLabel(item.valid_until)}`
+}
+
+export function sessionsLines(e: SessionsSource, today: string = bucharestToday()): string[] {
+  if (e.kind !== 'COURSE') return []
+  const monthly = [...(e.monthly_packages ?? [])].sort((a, b) =>
+    a.valid_from.localeCompare(b.valid_from),
+  )
+  const running = monthly.filter((item) => item.valid_until >= today)
+  const lines: string[] = []
   if (e.purchased_sessions > 0)
-    return `Ședințe: ${e.remaining_sessions} rămase din ${e.purchased_sessions}`
-  return e.status === 'PENDING' ? 'Începe după confirmarea plății' : null
+    lines.push(
+      monthly.length
+        ? `Ședințe fără expirare: ${e.remaining_sessions} rămase din ${e.purchased_sessions}`
+        : `Ședințe: ${e.remaining_sessions} rămase din ${e.purchased_sessions}`,
+    )
+  lines.push(...running.map((item) => monthlyLine(item, today)))
+  const expired = monthly.at(-1)
+  if (!running.length && expired)
+    lines.push(
+      `Pachetul lunar din ${monthName(expired.valid_from.slice(0, 7))} a expirat pe ${dateLabel(expired.valid_until)}`,
+    )
+  if (!lines.length && e.status === 'PENDING') lines.push('Începe după confirmarea plății')
+  return lines
+}
+
+export function sessionsLine(e: SessionsSource, today?: string): string | null {
+  return sessionsLines(e, today)[0] ?? null
 }
 
 export function needsPayment(e: EnrollmentRow) {

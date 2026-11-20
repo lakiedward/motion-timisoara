@@ -481,8 +481,41 @@ test('la editare, pachetele salvate se modifică, se șterg și se adaugă', asy
   expect(vi.mocked(saveCoursePackages).mock.calls[0]).toEqual([
     'c1',
     [
-      { packageId: 'p2', sessions: '10', price: '400' },
-      { sessions: '20', price: '700' },
+      { packageId: 'p2', sessions: '10', price: '400', validity: 'NONE' },
+      { sessions: '20', price: '700', validity: 'NONE' },
+    ],
+  ])
+})
+
+test('valabilitatea se alege o dată pentru toate pachetele cursului', async () => {
+  const user = userEvent.setup()
+  mockedExisting.mockResolvedValue(cursSalvat() as never)
+  mockedUpdate.mockResolvedValue({ id: 'c1' } as never)
+  vi.mocked(getCoursePackages).mockResolvedValueOnce([
+    { id: 'p1', position: 0, sessions: 8, price: 32000, validity: 'NONE' },
+    { id: 'p2', position: 1, sessions: 12, price: 45000, validity: 'NONE' },
+  ])
+  renderForm('/coach/courses/c1/edit')
+  await screen.findByDisplayValue('Înot avansat')
+  await pickSelectMenuValue(screen.getByLabelText('Valabilitatea pachetelor'), 'CALENDAR_MONTH')
+  expect(screen.getByText(/Toate pachetele cursului sunt lunare/)).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Adaugă un pachet' }))
+  await user.type(
+    screen.getByLabelText('Număr de ședințe', { selector: '#package-2-sessions' }),
+    '4',
+  )
+  await user.type(
+    screen.getByLabelText('Preț total (lei)', { selector: '#package-2-price' }),
+    '180',
+  )
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() => expect(saveCoursePackages).toHaveBeenCalled())
+  expect(vi.mocked(saveCoursePackages).mock.calls[0]).toEqual([
+    'c1',
+    [
+      { packageId: 'p1', sessions: '8', price: '320', validity: 'CALENDAR_MONTH' },
+      { packageId: 'p2', sessions: '12', price: '450', validity: 'CALENDAR_MONTH' },
+      { sessions: '4', price: '180', validity: 'CALENDAR_MONTH' },
     ],
   ])
 })
@@ -527,7 +560,7 @@ test('cursul nou își salvează pachetele după ce primește id', async () => {
   await waitFor(() => expect(saveCoursePackages).toHaveBeenCalled())
   expect(vi.mocked(saveCoursePackages).mock.calls[0]).toEqual([
     'c-new',
-    [{ sessions: '8', price: '320' }],
+    [{ sessions: '8', price: '320', validity: 'NONE' }],
   ])
   expect(await screen.findByText('Lista cursuri')).toBeInTheDocument()
 })

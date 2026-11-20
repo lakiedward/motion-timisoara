@@ -7,7 +7,7 @@ import { offerAcceptsEnrollments, SUBSCRIPTION_INACTIVE_MESSAGE } from "../_shar
 export async function validateRenewal(
   db: SupabaseClient,
   parentId: string,
-  body: { renewEnrollmentId?: unknown; sessionPackageSize?: unknown; coursePackageId?: unknown },
+  body: { renewEnrollmentId?: unknown; sessionPackageSize?: unknown; coursePackageId?: unknown; packageMonth?: unknown },
 ): Promise<Response> {
   const quantity = body.sessionPackageSize ?? 1;
   if (!validRenewalRequest(body.renewEnrollmentId, quantity)) {

@@ -24,7 +24,11 @@ export class AttendanceError extends Error {
 
 const messages: Record<string, string> = {
   MANUAL_OVERRIDE: 'Prezența a fost modificată manual. Verifică în catalog.',
-  NO_REMAINING_SESSIONS: 'Copilul nu mai are ședințe disponibile. Verifică abonamentul.',
+  NO_REMAINING_SESSIONS: 'Copilul nu mai are ședințe disponibile. Părintele cumpără un pachet nou din Înscrieri.',
+  PACKAGE_EXPIRED:
+    'Pachetul lunar al copilului a expirat. Părintele cumpără pachetul pentru luna ședinței din Înscrieri.',
+  PACKAGE_NOT_STARTED:
+    'Pachetul lunar al copilului începe luna viitoare, nu acoperă ședința aceasta.',
   NOT_ENROLLED: 'Copilul nu are o înscriere activă la acest curs.',
   INVALID_QR: 'Codul nu mai este valabil. Cere codul actual al copilului.',
   FORBIDDEN: 'Nu ai acces la această ședință.',

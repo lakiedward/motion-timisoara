@@ -161,6 +161,8 @@ Deno.test("definitive business rejections and duplicates have stable response co
       "NOT_ENROLLED",
       "AMBIGUOUS_ENROLLMENT",
       "NO_REMAINING_SESSIONS",
+      "PACKAGE_EXPIRED",
+      "PACKAGE_NOT_STARTED",
       "REQUEST_CONFLICT",
       "TOO_EARLY",
     ]

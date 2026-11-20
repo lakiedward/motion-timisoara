@@ -1,5 +1,6 @@
 import { AcceptedPriceDetails } from '@/components/AcceptedPriceDetails'
 import { Badge } from '@/components/ui/badge'
+import { monthRange } from '@/lib/course-packages/package-month'
 import { formatRonOffer } from '@/lib/money'
 
 export type SummaryLine = {
@@ -46,18 +47,21 @@ export function CheckoutOrderSummary({
   title,
   kindLabel,
   packageSize,
+  packageMonth,
   lines,
   total,
 }: {
   title: string
   kindLabel: string
   packageSize?: number
+  packageMonth?: string
   lines: SummaryLine[]
   total?: number
 }) {
   const meta = [
     participantLabel(lines),
     packageSize !== undefined && `pachet de ${packageSize} ședințe`,
+    packageMonth && `valabil ${monthRange(packageMonth)}`,
   ]
     .filter(Boolean)
     .join(' · ')

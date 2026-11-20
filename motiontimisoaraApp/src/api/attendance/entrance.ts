@@ -22,6 +22,8 @@ export type EntranceOptionState =
   | 'ALREADY_PRESENT'
   | 'MANUAL_OVERRIDE'
   | 'NO_REMAINING_SESSIONS'
+  | 'PACKAGE_EXPIRED'
+  | 'PACKAGE_NOT_STARTED'
   | 'AMBIGUOUS_ENROLLMENT'
 
 export type EntranceOption = {

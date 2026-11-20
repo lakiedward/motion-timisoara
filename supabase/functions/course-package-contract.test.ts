@@ -19,11 +19,14 @@ const ACTIVE = "00000000-0000-0000-0000-000000000501";
 
 class Query implements PromiseLike<{ data: unknown; error: null; count?: number }> {
   private filters: [string, unknown[]][] = [];
+  private ranges: ((row: Row) => boolean)[] = [];
   private one = false;
   constructor(private db: FakeDb, private table: string) {}
   select() { return this; }
   eq(column: string, value: unknown) { this.filters.push([column, [value]]); return this; }
   in(column: string, values: unknown[]) { this.filters.push([column, values]); return this; }
+  lte(column: string, value: string) { this.ranges.push((row) => String(row[column]) <= value); return this; }
+  gte(column: string, value: string) { this.ranges.push((row) => String(row[column]) >= value); return this; }
   single() { this.one = true; return this; }
   maybeSingle() { this.one = true; return this; }
   then<A = { data: unknown; error: null }, B = never>(
@@ -31,7 +34,8 @@ class Query implements PromiseLike<{ data: unknown; error: null; count?: number 
     fail?: ((reason: unknown) => B | PromiseLike<B>) | null,
   ): PromiseLike<A | B> {
     const rows = (this.db.tables[this.table] ?? []).filter((row) =>
-      this.filters.every(([column, values]) => values.includes(row[column]))
+      this.filters.every(([column, values]) => values.includes(row[column])) &&
+      this.ranges.every((match) => match(row))
     ).map((row) => this.table === "enrollments"
       ? { ...row, child: this.db.tables.children.find((child) => child.id === row.child_id) ?? null }
       : row);
@@ -109,8 +113,8 @@ const offers = (): CoursePackageOffer[] => [
 ];
 
 Deno.test("a course without packages keeps the per-session choice", () => {
-  equal(chooseCourseOffer([], { sessionPackageSize: 5 }), { quantity: 5, coursePackage: null }, "Sessions");
-  equal(chooseCourseOffer([], {}), { quantity: 1, coursePackage: null }, "Default");
+  equal(chooseCourseOffer([], { sessionPackageSize: 5 }), { quantity: 5, coursePackage: null, month: null }, "Sessions");
+  equal(chooseCourseOffer([], {}), { quantity: 1, coursePackage: null, month: null }, "Default");
   equal(refusal(() => chooseCourseOffer([], { sessionPackageSize: 0 })).status, 400, "Zero sessions");
 });
 
@@ -124,7 +128,7 @@ Deno.test("a course with packages sells only one of its current no-expiry packag
   equal([unknown.status, (await unknown.body).code], [409, PACKAGE_CHANGED], "Unknown package");
   const gone = refusal(() => chooseCourseOffer([], { coursePackageId: PACKAGE_8 }));
   equal([gone.status, (await gone.body).code], [409, PACKAGE_CHANGED], "Course lost its packages");
-  equal(refusal(() => chooseCourseOffer(offers(), { coursePackageId: MONTHLY })).status, 409, "Monthly waits for #698");
+  equal(refusal(() => chooseCourseOffer(offers(), { coursePackageId: MONTHLY })).status, 400, "Monthly needs its month");
   equal(refusal(() => chooseCourseOffer(offers(), { coursePackageId: PACKAGE_8, sessionPackageSize: 5 })).status, 400,
     "Mismatched size");
   equal(refusal(() => chooseCourseOffer(offers(), { coursePackageId: "8 ședințe" })).status, 400, "Bad id");
@@ -141,7 +145,7 @@ Deno.test("a package snapshot converts the package total once and binds the pack
   const other = await createCoursePackageSnapshot("course", "child-a", { ...pkg, id: PACKAGE_4 }, "EUR", 4975000);
   equal(other.priceVersion === eur.priceVersion, false, "Version binds the package id");
   for (const tampered of [{ ...eur, amount: 1 }, { ...eur, quantity: 9 }, { ...eur, sourceUnitAmount: 1000 },
-    { ...eur, validity: "CALENDAR_MONTH" }]) {
+    { ...eur, validity: "CALENDAR_MONTH" }, { ...eur, validMonth: "2026-11" }]) {
     let refused = false;
     try {
       await readPriceSnapshot(tampered);

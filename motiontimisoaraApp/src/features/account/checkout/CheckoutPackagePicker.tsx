@@ -6,6 +6,7 @@ import {
   sessionsLabel,
   type CoursePackage,
 } from '@/lib/course-packages/course-packages'
+import { MONTHLY, packageMonthOptions } from '@/lib/course-packages/package-month'
 import { formatMoney } from '@/lib/money'
 import { cn } from '@/lib/utils'
 import { RADIO } from './CheckoutPaymentStep'
@@ -27,6 +28,10 @@ export function CheckoutPackagePicker({
   onChange: (choice: CheckoutChoice) => void
 }) {
   if (coursePackages.length > 0) {
+    const chosen = coursePackages.find((item) => item.id === value.packageId)
+    const monthly = chosen?.validity === MONTHLY
+    const months = packageMonthOptions()
+    const month = months.find((option) => option.value === value.month) ?? months[0]
     return (
       <section
         aria-labelledby="checkout-package"
@@ -56,7 +61,7 @@ export function CheckoutPackagePicker({
                   name="course-package"
                   className={RADIO}
                   checked={selected}
-                  onChange={() => onChange(packageChoice(item))}
+                  onChange={() => onChange(packageChoice(item, value.month))}
                 />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center justify-between gap-2">
@@ -73,6 +78,51 @@ export function CheckoutPackagePicker({
             )
           })}
         </div>
+        {chosen && monthly && (
+          <div className="space-y-2" data-section="checkout-package-month">
+            <h4 id="checkout-package-month" className="text-sm font-semibold">
+              Luna pachetului
+            </h4>
+            <div
+              role="radiogroup"
+              aria-labelledby="checkout-package-month"
+              aria-describedby="checkout-package-month-rule"
+              className="grid gap-2 sm:grid-cols-2"
+            >
+              {months.map((option) => {
+                const selected = option.value === month.value
+                return (
+                  <label
+                    key={option.value}
+                    className={cn(
+                      'bg-card hover:border-primary/60 flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition-colors',
+                      selected && 'border-primary',
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="course-package-month"
+                      className={RADIO}
+                      checked={selected}
+                      onChange={() => onChange(packageChoice(chosen, option.value))}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-medium">{option.label}</span>
+                      <span className="text-muted-foreground mt-0.5 block text-xs">
+                        Valabil {option.range}
+                      </span>
+                    </span>
+                  </label>
+                )
+              })}
+            </div>
+            <p id="checkout-package-month-rule" className="text-muted-foreground text-sm">
+              Plătești prețul întreg al pachetului, oricând l-ai cumpăra. Pachetul e valabil până pe{' '}
+              <strong className="text-foreground">{month.lastDay}</strong>; ședințele nefolosite se
+              pierd la sfârșitul lunii.
+            </p>
+          </div>
+        )}
       </section>
     )
   }

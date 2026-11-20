@@ -393,6 +393,6 @@ test('clubul definește pachete la cursul nou', async () => {
   await waitFor(() => expect(saveCoursePackages).toHaveBeenCalled())
   expect(vi.mocked(saveCoursePackages).mock.calls[0]).toEqual([
     'c-nou',
-    [{ sessions: '4', price: '300' }],
+    [{ sessions: '4', price: '300', validity: 'NONE' }],
   ])
 })

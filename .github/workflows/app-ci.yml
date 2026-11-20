@@ -77,6 +77,10 @@ on:
       - 'supabase/tests/*course-session-renewal*'
       - 'supabase/migrations/00149_course_package_checkout.sql'
       - 'supabase/tests/*course-package-checkout*'
+      - 'supabase/migrations/00150_course_monthly_packages.sql'
+      - 'supabase/migrations/00151_course_monthly_package_attendance.sql'
+      - 'supabase/tests/*course-monthly-packages*'
+      - 'supabase/functions/course-monthly-package-contract.test.ts'
       - 'supabase/functions/_shared/course-package*.ts'
       - 'supabase/functions/create-checkout-session/**'
       - 'supabase/functions/_shared/course-renewal*.ts'
@@ -194,7 +198,7 @@ jobs:
         shell: pwsh
         run: ./supabase/tests/run-podium-minor-names.ps1
       - name: Verify enrollment and payment-intent contracts
-        run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/price-snapshot.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/bnr-rate-contract.test.ts supabase/functions/_shared/stripe-return-url.test.ts supabase/functions/_shared/stripe.test.ts supabase/functions/_shared/checkout-session.test.ts supabase/functions/_shared/stripe-fee-settlement.test.ts supabase/functions/_shared/active-role.test.ts supabase/functions/_shared/payment-current.test.ts supabase/functions/course-renewal-contract.test.ts supabase/functions/course-package-contract.test.ts
+        run: deno test --no-lock supabase/functions/enrollment-contract.test.ts supabase/functions/_shared/price-snapshot.test.ts supabase/functions/_shared/payment-intent.test.ts supabase/functions/_shared/payment-charge.test.ts supabase/functions/bnr-rate-contract.test.ts supabase/functions/_shared/stripe-return-url.test.ts supabase/functions/_shared/stripe.test.ts supabase/functions/_shared/checkout-session.test.ts supabase/functions/_shared/stripe-fee-settlement.test.ts supabase/functions/_shared/active-role.test.ts supabase/functions/_shared/payment-current.test.ts supabase/functions/course-renewal-contract.test.ts supabase/functions/course-package-contract.test.ts supabase/functions/course-monthly-package-contract.test.ts
       - name: Type-check Stripe Connect function
         run: deno check --no-lock supabase/functions/stripe-connect/index.ts supabase/functions/stripe-webhook/index.ts supabase/functions/create-enrollment/index.ts supabase/functions/validate-enrollment/index.ts supabase/functions/create-payment-intent/index.ts supabase/functions/create-checkout-session/index.ts
       - name: Verify subscription price sync contract
@@ -236,6 +240,9 @@ jobs:
       - name: Verify course package checkout
         shell: pwsh
         run: ./supabase/tests/run-course-package-checkout.ps1
+      - name: Verify monthly course packages and attendance consumption
+        shell: pwsh
+        run: ./supabase/tests/run-course-monthly-packages.ps1
       - name: Verify cash payments list access
         shell: pwsh
         run: ./supabase/tests/run-cash-payments-list.ps1

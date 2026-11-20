@@ -67,12 +67,18 @@ export async function deleteChild(id: string) {
   if (error) throw error
 }
 
+export type MonthlyPackage = Pick<
+  Tables<'enrollment_monthly_packages'>,
+  'id' | 'sessions' | 'sessions_used' | 'valid_from' | 'valid_until'
+>
+
 export type EnrollmentRow = Tables<'enrollments'> & {
   child: Pick<Tables<'children'>, 'id' | 'name'> | null
   payments: Pick<
     Tables<'payments'>,
     'id' | 'created_at' | 'amount' | 'currency' | 'pricing_snapshot' | 'status' | 'method' | 'paid_at'
   >[]
+  monthly_packages?: MonthlyPackage[]
   offerTitle: string | null
   offerPath: string | null
   offer: EnrollmentOffer | null
@@ -99,7 +105,7 @@ export async function getMyEnrollments(): Promise<EnrollmentRow[]> {
   const { data, error } = await supabase
     .from('enrollments')
     .select(
-      '*, child:children(id,name), payments(id,created_at,amount,currency,pricing_snapshot,status,method,paid_at), competition_registration:competition_registrations(category_name_snapshot,route_name_snapshot)',
+      '*, child:children(id,name), payments(id,created_at,amount,currency,pricing_snapshot,status,method,paid_at), monthly_packages:enrollment_monthly_packages(id,sessions,sessions_used,valid_from,valid_until), competition_registration:competition_registrations(category_name_snapshot,route_name_snapshot)',
     )
     .or(participantFilter)
     .order('created_at', { ascending: false })

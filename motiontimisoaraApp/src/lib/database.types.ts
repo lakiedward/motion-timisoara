@@ -322,6 +322,7 @@ export type Database = {
           child_id: string
           created_at: string
           debit_enrollment_id: string | null
+          debit_monthly_package_id: string | null
           id: string
           manual_override: boolean
           occurrence_id: string
@@ -332,6 +333,7 @@ export type Database = {
           child_id: string
           created_at?: string
           debit_enrollment_id?: string | null
+          debit_monthly_package_id?: string | null
           id?: string
           manual_override?: boolean
           occurrence_id: string
@@ -342,6 +344,7 @@ export type Database = {
           child_id?: string
           created_at?: string
           debit_enrollment_id?: string | null
+          debit_monthly_package_id?: string | null
           id?: string
           manual_override?: boolean
           occurrence_id?: string
@@ -361,6 +364,13 @@ export type Database = {
             columns: ["debit_enrollment_id"]
             isOneToOne: false
             referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_accounting_debit_monthly_package_id_fkey"
+            columns: ["debit_monthly_package_id"]
+            isOneToOne: false
+            referencedRelation: "enrollment_monthly_packages"
             referencedColumns: ["id"]
           },
           {
@@ -2453,6 +2463,64 @@ export type Database = {
           },
         ]
       }
+enrollment_monthly_packages: {
+        Row: {
+          created_at: string
+          enrollment_id: string
+          id: string
+          package_id: string | null
+          payment_id: string
+          sessions: number
+          sessions_used: number
+          valid_from: string
+          valid_until: string
+        }
+        Insert: {
+          created_at?: string
+          enrollment_id: string
+          id?: string
+          package_id?: string | null
+          payment_id: string
+          sessions: number
+          sessions_used?: number
+          valid_from: string
+          valid_until: string
+        }
+        Update: {
+          created_at?: string
+          enrollment_id?: string
+          id?: string
+          package_id?: string | null
+          payment_id?: string
+          sessions?: number
+          sessions_used?: number
+          valid_from?: string
+          valid_until?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollment_monthly_packages_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollment_monthly_packages_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "course_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollment_monthly_packages_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: true
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enrollments: {
         Row: {
           adult_profile_id: string | null
@@ -3661,6 +3729,7 @@ export type Database = {
         Args: { p_id: string; p_kind: string }
         Returns: string
       }
+      bucharest_date: { Args: { p_at: string }; Returns: string }
       camp_enrolled_child_ids: { Args: never; Returns: string[] }
       camp_rules_file_content_type_permis: {
         Args: { p_type: string }
@@ -3758,6 +3827,22 @@ export type Database = {
       course_quote_matches_offer: {
         Args: { p_course_id: string; p_snapshot: Json }
         Returns: boolean
+      }
+      course_session_credit: {
+        Args: { p_enrollment_id: string; p_monthly_package_id: string }
+        Returns: undefined
+      }
+      course_session_debit: {
+        Args: { p_enrollment_id: string; p_session_date: string }
+        Returns: string
+      }
+      course_session_shortage: {
+        Args: { p_enrollment_id: string; p_session_date: string }
+        Returns: string
+      }
+      course_sessions_available: {
+        Args: { p_enrollment_id: string; p_session_date: string }
+        Returns: number
       }
       course_spots_remaining: { Args: { p_course_id: string }; Returns: number }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
