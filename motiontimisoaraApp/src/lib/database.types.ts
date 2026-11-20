@@ -4305,6 +4305,17 @@ export type Database = {
         Returns: undefined
       }
       set_my_push_enabled: { Args: { p_enabled: boolean }; Returns: Json }
+      start_course_renewal: {
+        Args: {
+          p_acceptance: Json
+          p_billing: Json
+          p_enrollment_id: string
+          p_method: string
+          p_parent_id: string
+          p_quote: Json
+        }
+        Returns: Json
+      }
       subscriber_has_access: {
         Args: { p_club_id: string; p_coach_user_id: string }
         Returns: boolean
