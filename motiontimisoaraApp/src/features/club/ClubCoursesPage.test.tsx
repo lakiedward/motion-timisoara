@@ -23,6 +23,11 @@ vi.mock('@/api/club', () => ({
   getClubCourses: vi.fn(),
   setClubCourseActive: vi.fn(),
 }))
+vi.mock('@/api/course-packages', () => ({
+  getCoursePackagesByCourse: vi.fn().mockResolvedValue({
+    'c-pk': [{ id: 'p1', position: 0, sessions: 4, price: 12000, validity: 'NONE' }],
+  }),
+}))
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 const mockedClub = vi.mocked(getMyClub)
@@ -79,6 +84,20 @@ test('antetul ține „Curs nou” sub titlu pe telefon, ca pe celelalte liste d
   expect(link.className).toMatch(/min-h-touch-target/)
   expect(link.className).toMatch(/w-full/)
   expect(link.className).toMatch(/sm:w-auto/)
+})
+
+test('cursul cu pachete arată „de la” prețul minim pe ședință, cel fără pachete rămâne neschimbat', async () => {
+  mockedCourses.mockResolvedValue([
+    curs({ id: 'c-pk', name: 'Cu pachete', price_per_session: 5000 }),
+    curs({ id: 'c-plain', name: 'Fără pachete', price_per_session: 4000 }),
+  ])
+  renderPage()
+  const withPackages = (await screen.findByRole('heading', { name: 'Cu pachete' })).closest('li')!
+  await waitFor(() => expect(withPackages).toHaveTextContent('de la 30,00'))
+  expect(withPackages).not.toHaveTextContent('50,00')
+  const plain = screen.getByRole('heading', { name: 'Fără pachete' }).closest('li')!
+  expect(plain).toHaveTextContent('40,00')
+  expect(plain).not.toHaveTextContent('de la')
 })
 
 test('locația apare în zona titlului, deci două cursuri omonime nu mai arată identic', async () => {
