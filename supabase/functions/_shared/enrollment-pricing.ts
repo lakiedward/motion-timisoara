@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { createCoursePackageSnapshot, createPriceSnapshot, type PriceSnapshot, readPriceSnapshot } from "./price-snapshot.ts";
-import { type CourseChoice, monthLabel, snapshotMatchesChoice } from "./course-package.ts";
+import { type CourseChoice, monthLabel, snapshotMatchesChoice, snapshotMonthEnded } from "./course-package.ts";
 
 export interface EnrollmentServices {
   db: SupabaseClient;
@@ -176,7 +176,9 @@ export async function getEnrollmentChildPrices(
         if (!snapshotMatchesChoice(snapshot, choice)) {
           return {
             childId,
-            reason: snapshot.validMonth
+            reason: snapshot.validMonth && snapshotMonthEnded(snapshot, new Date())
+              ? `Plata pentru pachetul lunar din ${monthLabel(snapshot.validMonth)} nu a fost făcută, iar luna s-a încheiat. Contactează clubul ca să anuleze plata, apoi alege din nou.`
+              : snapshot.validMonth
               ? `Ai o plată începută pentru pachetul lunar din ${monthLabel(snapshot.validMonth)}. Finalizeaz-o din Înscrieri.`
               : snapshot.packageId || coursePackage
               ? `Ai o plată începută pentru un pachet de ${snapshot.quantity} ședințe. Finalizeaz-o din Înscrieri.`

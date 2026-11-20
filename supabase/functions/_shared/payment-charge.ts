@@ -121,10 +121,10 @@ export async function authorizedRonCharge(
       );
     }
   }
-  if (endedMonth && !payment.gateway_txn_id && payment.status !== "SUCCEEDED") {
+  if (endedMonth && payment.status !== "SUCCEEDED") {
     throw enrollmentJson(
       {
-        error: `Pachetul lunar ales era pentru ${monthLabel(endedMonth)}, iar luna s-a încheiat. Alege din nou pachetul din pagina cursului.`,
+        error: `Pachetul lunar ales era pentru ${monthLabel(endedMonth)}, iar luna s-a încheiat, așa că nu mai poate fi plătit. Dacă ai plătit deja, plata se confirmă singură în Înscrieri. Altfel, contactează clubul ca să anuleze plata.`,
         code: "MONTH_ENDED",
       },
       409,

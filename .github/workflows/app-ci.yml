@@ -78,6 +78,7 @@ on:
       - 'supabase/migrations/00149_course_package_checkout.sql'
       - 'supabase/tests/*course-package-checkout*'
       - 'supabase/migrations/00150_course_monthly_packages.sql'
+      - 'supabase/migrations/00151_course_monthly_package_attendance.sql'
       - 'supabase/tests/*course-monthly-packages*'
       - 'supabase/functions/course-monthly-package-contract.test.ts'
       - 'supabase/functions/_shared/course-package*.ts'

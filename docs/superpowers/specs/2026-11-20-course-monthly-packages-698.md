@@ -26,16 +26,19 @@ Card: a payment for a month that has ended cannot start (`authorizedRonCharge` r
 
 ## Release order
 
-1. Apply 00150. A guard checks the live md5 of the seven replaced functions first. Production had 0 packages, 0 v3 payments and 0 active course enrollments when this was written.
-2. Deploy `validate-enrollment`, `create-enrollment`, `create-payment-intent`, `create-checkout-session` from the merged commit. The old functions refuse monthly packages, so nothing can be sold as monthly before this step.
+1. Apply 00150 and 00151 together (00150: table, balance helpers, payment side; 00151: the three attendance functions). Each starts with a guard on the live md5 of the functions it replaces. Production had 0 packages, 0 v3 payments and 0 active course enrollments when this was written.
+2. Deploy `validate-enrollment`, `create-enrollment`, `create-payment-intent`, `create-checkout-session` and `record-attendance` from the merged commit. The old functions refuse monthly packages, so nothing can be sold as monthly before this step.
 3. Publish the app.
 
-Rollback: redeploy the four functions from #697, then `verificari/pachete-lunare-698/revenire-00150.sql`, which refuses while monthly packages or monthly payments exist. Tested locally: after it, every public function has the md5 it had before 00150.
+Rollback: redeploy the four functions from #697, then `verificari/pachete-lunare-698/revenire-00150-00151.sql` (both migrations at once), which refuses while monthly packages or monthly payments exist. Tested locally: after it, every public function has the md5 it had before 00150.
+
+The record-attendance function also returns the two new refusal codes as 409, so it is deployed with the four payment functions.
 
 ## Known limits
 
-- A card payment started at Stripe for a month that then ends stays open; the parent cannot start another renewal until it is cleared. It needs the last day of the month and an unfinished card payment.
-- A first-enrollment payment created for a month that ends before it is paid cannot be re-quoted for another month by the parent; renewal can.
+- Once the month has ended, an unpaid monthly payment can no longer be charged or resumed at Stripe (409 `MONTH_ENDED`); a payment Stripe already completed is still applied by the webhook. The unpaid payment stays open: the parent is told to contact the club, and an admin has to cancel it before a new first enrollment or renewal for that child can start. Letting the parent replace it directly needs a change to `create_enrollment_atomic`, proposed as a follow-up.
+- A card confirmation that the parent's browser sends to Stripe after midnight on the last day can still succeed and create a package for the ended month.
+- A cash payment confirmed after its month ended creates an already expired package, as decided (the month chosen at checkout never changes).
 
 ## Checks
 

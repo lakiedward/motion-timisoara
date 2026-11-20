@@ -68,8 +68,8 @@ export function SessionsLeft({ e }: { e: EnrollmentRow }) {
       className="text-muted-foreground space-y-0.5 text-sm"
       data-section="account-enrollment-sessions"
     >
-      {lines.map((line) => (
-        <li key={line}>{line}</li>
+      {lines.map((line, index) => (
+        <li key={`${index}:${line}`}>{line}</li>
       ))}
     </ul>
   )

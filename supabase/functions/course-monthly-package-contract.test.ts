@@ -114,7 +114,7 @@ Deno.test("the monthly snapshot binds its month and stays readable", async () =>
   equal(snapshotMonthEnded(december, DEC_1_EARLY), false, "December is running");
 });
 
-Deno.test("a card payment cannot start for a month that has ended", async () => {
+Deno.test("a card payment cannot start or resume for a month that has ended", async () => {
   const pkg = { id: MONTHLY, sessions: 12, price: 60000, validity: "CALENDAR_MONTH" };
   const snapshot = await createCoursePackageSnapshot("course", "child-a", pkg, "RON", null, "2026-11");
   const db = {
@@ -125,6 +125,10 @@ Deno.test("a card payment cannot start for a month that has ended", async () => 
   equal(await authorizedRonCharge(db, "parent", enrollment, payment, NOV_30_LATE), 60000, "before the month ends");
   const ended = await rejects(() => authorizedRonCharge(db, "parent", enrollment, payment, DEC_1_EARLY));
   equal([ended.status, (await ended.json()).code], [409, "MONTH_ENDED"], "after the month ends");
-  equal(await authorizedRonCharge(db, "parent", enrollment, { ...payment, gateway_txn_id: "pi_started" }, DEC_1_EARLY), 60000,
-    "a payment already started at Stripe can still be reconciled");
+  const started = await rejects(() =>
+    authorizedRonCharge(db, "parent", enrollment, { ...payment, gateway_txn_id: "pi_started" }, DEC_1_EARLY)
+  );
+  equal([started.status, (await started.json()).code], [409, "MONTH_ENDED"], "a started charge cannot be retried");
+  equal(await authorizedRonCharge(db, "parent", enrollment, { ...payment, status: "SUCCEEDED", gateway_txn_id: "pi_paid" }, DEC_1_EARLY), 60000,
+    "a paid package is still recognised");
 });

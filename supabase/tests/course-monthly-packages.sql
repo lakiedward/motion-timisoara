@@ -90,6 +90,7 @@ CREATE FUNCTION public.pot_administra_curs(p_course_id UUID) RETURNS BOOLEAN LAN
 \i /tmp/migrations/00148_course_packages.sql
 \i /tmp/migrations/00149_course_package_checkout.sql
 \i /tmp/migrations/00150_course_monthly_packages.sql
+\i /tmp/migrations/00151_course_monthly_package_attendance.sql
 
 CREATE FUNCTION public.test_uuid(v INTEGER) RETURNS UUID LANGUAGE sql IMMUTABLE AS $$
     SELECT ('00000000-0000-0000-0000-' || lpad(v::TEXT,12,'0'))::UUID
