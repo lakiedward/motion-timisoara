@@ -29,6 +29,7 @@ import {
   choiceKey,
   choiceRequest,
   effectiveChoice,
+  type CheckoutChoice,
 } from '@/lib/course-packages/checkout-choice'
 
 import type { Offering } from '../CheckoutPage'
@@ -76,7 +77,7 @@ export default function CheckoutWizard({
   const [step, setStep] = useState(0)
   const [selected, setSelected] = useState<string[]>([])
   const [includeSelf, setIncludeSelf] = useState(false)
-  const [chosen, setChoice] = useState({ sessions: DEFAULT_SESSION_COUNT })
+  const [chosen, setChoice] = useState<CheckoutChoice>({ sessions: DEFAULT_SESSION_COUNT })
   const choice = effectiveChoice(offering.coursePackages, chosen)
   const [accepted, setAccepted] = useState(false)
   const [acceptedPrices, setAcceptedPrices] = useState<string | null>(null)
@@ -266,8 +267,8 @@ export default function CheckoutWizard({
       if (e instanceof EnrollmentRequestError && acceptanceResetCode(e.code)) {
         setAccepted(false)
         setStep(1)
+        void qc.invalidateQueries({ queryKey: ['checkout-offering'] })
         if (e.code === 'PRICE_CHANGED') void refetchValidation()
-        else void qc.invalidateQueries({ queryKey: ['checkout-offering'] })
       }
       setProgress(null)
       toast.error(e.message)

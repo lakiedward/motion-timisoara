@@ -27,9 +27,13 @@ Edge functions resolve the choice from `course_packages` (`_shared/course-packag
 - Checkout and renewal: on a package course the picker is a radio list of package cards (`data-section="checkout-course-packages"`) with total, price per session and „fără expirare”. There is no „Altul” and no free number. Courses without packages keep the session chips.
 - Course form: the explanation says the parent can buy only the packages, at enrollment and renewal.
 
+## Accepted prices are honoured
+
+A first-enrollment payment that was already created keeps its accepted snapshot, as with any later price edit. If a parent created a per-session payment before the coach added packages, or the package price changed afterwards, the parent can still finish that payment from „Înscrieri”. The checkout tells the parent to do so instead of quoting the new package. Renewal is stricter: a renewal payment that Stripe has not started is replaced by the new choice. Production had no course payments and no packages when this shipped.
+
 ## Release order
 
-Apply 00147, then 00149, then deploy `validate-enrollment` and `create-enrollment`, then publish the app. The published client sends a session count, so on a course with packages it gets „Acest curs se plătește pe pachete” until the new app is published. Rollback: `verificari/checkout-pachet-697/revenire-00149.sql`, which refuses while v3 payments exist.
+Apply 00149 (00147 must be live; the guard checks the live bodies of the three replaced functions). Right after it, deploy the four functions that read price snapshots: `validate-enrollment`, `create-enrollment`, `create-payment-intent` and `create-checkout-session`. An old function rejects a v3 snapshot, and an old migration rejects a package purchase, so the two steps go back to back. Then publish the app. Until then, the published client sends a session count, so on a course with packages it gets „Acest curs se plătește acum pe pachete. Reîncarcă pagina…”. Rollback: `verificari/checkout-pachet-697/revenire-00149.sql`, which refuses while v3 payments exist.
 
 ## Checks
 

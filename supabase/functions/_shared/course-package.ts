@@ -49,7 +49,7 @@ export function chooseCourseOffer(
   }
   if (coursePackageId === undefined) {
     throw enrollmentJson({
-      error: "Acest curs se plătește pe pachete. Alege unul dintre pachetele cursului.",
+      error: "Acest curs se plătește acum pe pachete. Reîncarcă pagina și alege unul dintre pachetele cursului.",
       code: PACKAGE_CHANGED,
     }, 409);
   }

@@ -53,6 +53,13 @@ GRANT EXECUTE ON FUNCTION public.enrollment_camp_offer(UUID, UUID) TO service_ro
 \i /tmp/migrations/00060_atomic_enrollment_creation.sql
 \i /tmp/migrations/00061_free_enrollment_fulfillment.sql
 \i /tmp/migrations/00068_camp_adult_enrollment.sql
+DO $load72$
+DECLARE
+    v_file TEXT := pg_read_file('/tmp/migrations/00072_competition_registrations.sql');
+BEGIN
+    EXECUTE substring(v_file FROM '(CREATE OR REPLACE FUNCTION public\.valid_enrollment_price_snapshot\(.*?\n\$\$;)');
+END
+$load72$;
 \i /tmp/migrations/00102_checkout_acceptances.sql
 CREATE TABLE public.test_inactive_offers(id UUID PRIMARY KEY);
 GRANT SELECT, INSERT, DELETE ON public.test_inactive_offers TO service_role;

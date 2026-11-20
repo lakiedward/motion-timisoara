@@ -30,6 +30,7 @@ import {
   DEFAULT_SESSION_COUNT,
   choiceKey,
   effectiveChoice,
+  type CheckoutChoice,
 } from '@/lib/course-packages/checkout-choice'
 
 const MAX_RENEWAL_SESSIONS = 100
@@ -65,7 +66,7 @@ export default function RenewalWizard({
   useEffect(() => () => attempt.current?.abort(), [user?.id])
 
   const [step, setStep] = useState(0)
-  const [chosen, setChoice] = useState({ sessions: DEFAULT_SESSION_COUNT })
+  const [chosen, setChoice] = useState<CheckoutChoice>({ sessions: DEFAULT_SESSION_COUNT })
   const choice = effectiveChoice(offering.coursePackages, chosen)
   const [accepted, setAccepted] = useState(false)
   const [acceptedVersion, setAcceptedVersion] = useState<string | null>(null)

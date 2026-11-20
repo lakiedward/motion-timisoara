@@ -1,31 +1,9 @@
--- Feature TT #697: a parent buys one of the course's packages (course_packages,
--- 00148) at checkout, by card or cash, for a first enrollment or a renewal
--- (00147). One payments row = one purchased package; its accepted price
--- snapshot is the purchase record that #698 (monthly validity) builds on.
---
--- Package purchases carry price snapshot schemaVersion 3: packageId, validity,
--- sourcePackageAmount (the package's total price in the course currency, minor
--- units), quantity (= package sessions, which apply_enrollment_payment_result
--- already adds to the enrollment on confirmation) and the converted RON amount.
--- The total is not a per-session price, so it has its own key instead of
--- sourceUnitAmount and older readers never multiply it.
---
--- course_quote_matches_offer() is the server-side price check for courses:
--- where a course has packages, only a version-3 snapshot of one of its current
--- packages is accepted (price, sessions and validity re-read from
--- course_packages, never trusted from the client); a course without packages
--- keeps the per-session version-1 snapshot exactly as before. Courses lock
--- their row in save_enrollment_batch (FOR UPDATE) and start_course_renewal
--- (FOR SHARE), and save_course_packages locks it FOR NO KEY UPDATE, so packages
--- cannot change between the check and the payment insert.
---
--- Only NONE (no expiry) packages are sold: the monthly validity belongs to
--- #698, which will extend valid_course_package_price_snapshot and the match.
---
--- save_enrollment_batch is 00068 with the course price check replaced (live
--- md5 matched 00068 before this change); start_course_renewal is 00147 with
--- the same replacement; valid_enrollment_price_snapshot is 00072 plus the
--- version-3 dispatch.
+-- Feature TT #697: a parent buys one of the course's packages (00148) at checkout
+-- or renewal (00147). One payment = one package; its v3 price snapshot (packageId,
+-- validity, sourcePackageAmount = package total, quantity = sessions) is the record
+-- #698 builds on. course_quote_matches_offer() re-reads the package from
+-- course_packages under the course row lock; courses without packages keep v1.
+-- Bodies: 00068, 00147 and 00072, each changed only in the course price check.
 
 DO $guard$
 DECLARE
@@ -40,6 +18,11 @@ BEGIN
     WHERE n.nspname = 'public' AND p.proname = 'start_course_renewal';
     IF v_md5 IS DISTINCT FROM '079fb697c43b993d4023c71f41ab1a82' THEN
         RAISE EXCEPTION 'start_course_renewal differs from 00147 (md5 %); apply 00147 first or compare', v_md5;
+    END IF;
+    SELECT md5(p.prosrc) INTO v_md5 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname = 'valid_enrollment_price_snapshot';
+    IF v_md5 IS NULL OR v_md5 NOT IN ('83183e934bdb220e477b53f4e9702bb0', '2626577e7645135824740e967f9b4979') THEN
+        RAISE EXCEPTION 'valid_enrollment_price_snapshot differs from 00072 (md5 %); stop and compare', v_md5;
     END IF;
     IF to_regclass('public.course_packages') IS NULL THEN
         RAISE EXCEPTION 'course_packages (00148) is missing';
