@@ -127,9 +127,9 @@ export function stateLabel(state: EntranceOptionState): string | null {
     case 'NO_REMAINING_SESSIONS':
       return 'Fără ședințe rămase'
     case 'PACKAGE_EXPIRED':
-      return 'Pachetul lunar a expirat'
+      return 'Pachet expirat'
     case 'PACKAGE_NOT_STARTED':
-      return 'Pachetul începe luna viitoare'
+      return 'Începe luna viitoare'
     case 'AMBIGUOUS_ENROLLMENT':
       return 'De verificat de antrenor'
     default:
