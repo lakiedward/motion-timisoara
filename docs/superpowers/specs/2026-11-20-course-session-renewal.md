@@ -14,8 +14,10 @@ A parent with an ACTIVE course enrollment can buy more sessions for the same chi
 
 ## Rules and limits
 
-- An open renewal can be resumed or switched between card and cash only while no Stripe session exists; its amount and package cannot change, because accepted pricing snapshots are immutable (`guard_enrollment_price_snapshot`). A different package needs the open payment to be confirmed or cancelled first.
-- A failed card renewal stays the open payment and can only be resumed.
+- An open renewal that Stripe has not started (no gateway id and no prepared payment intent) is replaced when the parent picks another package or method: the unpaid row is deleted and a new one inserted in the same transaction. No sessions are added before confirmation, so nothing is lost. If the parent already handed the cash to the coach, they should wait for the coach's confirmation; the wizard says so.
+- Once Stripe has a session or intent for the open payment, it can only be resumed (create-checkout-session reopens or recreates the session); its amount and package cannot change, because accepted pricing snapshots are immutable (`guard_enrollment_price_snapshot`).
+- At most 100 sessions per purchase.
+- Database refusals reach the parent only for the function's own Romanian messages (DETAIL codes); any other database text is replaced by a generic message.
 - Refunds do not remove sessions (existing behaviour). Free courses (price 0) have nothing to renew.
 
 ## Building on it

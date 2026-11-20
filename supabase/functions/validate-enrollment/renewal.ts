@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enrollmentJson } from "../_shared/enrollment-pricing.ts";
-import { loadRenewalTarget, renewalQuote, validRenewalRequest } from "../_shared/course-renewal.ts";
+import { loadRenewalTarget, MAX_RENEWAL_SESSIONS, renewalQuote, validRenewalRequest } from "../_shared/course-renewal.ts";
 import { offerAcceptsEnrollments, SUBSCRIPTION_INACTIVE_MESSAGE } from "../_shared/subscription-access.ts";
 
 export async function validateRenewal(
@@ -10,7 +10,10 @@ export async function validateRenewal(
 ): Promise<Response> {
   const quantity = body.sessionPackageSize ?? 1;
   if (!validRenewalRequest(body.renewEnrollmentId, quantity)) {
-    return enrollmentJson({ error: "Numărul de ședințe nu este valid." }, 400);
+    const tooMany = typeof quantity === "number" && quantity > MAX_RENEWAL_SESSIONS;
+    return enrollmentJson({
+      error: tooMany ? `Poți cumpăra cel mult ${MAX_RENEWAL_SESSIONS} de ședințe odată.` : "Numărul de ședințe nu este valid.",
+    }, 400);
   }
   const target = await loadRenewalTarget(db, parentId, body.renewEnrollmentId);
   let accepts: boolean;

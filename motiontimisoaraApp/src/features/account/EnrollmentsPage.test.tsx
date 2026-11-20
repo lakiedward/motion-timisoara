@@ -317,7 +317,7 @@ test('a photo that fails to load falls back to the sport illustration', async ()
   expect(card.querySelector('img')).toBeNull()
 })
 
-test('an active course offers more sessions, and an open renewal shows instead of a second purchase', async () => {
+test('an active course offers more sessions, a cash request can be changed and a card payment must be finished', async () => {
   load.mockResolvedValue([
     row({
       id: 'enr-active',
@@ -343,7 +343,7 @@ test('an active course offers more sessions, and an open renewal shows instead o
           currency: 'RON',
           pricing_snapshot: null,
           status: 'PENDING',
-          method: 'CASH',
+          method: 'CARD',
           paid_at: null,
         },
         {
@@ -358,6 +358,27 @@ test('an active course offers more sessions, and an open renewal shows instead o
         },
       ],
     }),
+    row({
+      id: 'enr-cash',
+      kind: 'COURSE',
+      entity_id: 'course-9',
+      child: { id: 'c3', name: 'Copil Cash 695' },
+      offerTitle: 'Curs de tenis',
+      purchased_sessions: 5,
+      remaining_sessions: 0,
+      payments: [
+        {
+          id: 'cash-renewal',
+          created_at: '2026-11-20T10:00:00Z',
+          amount: 5000,
+          currency: 'RON',
+          pricing_snapshot: null,
+          status: 'PENDING',
+          method: 'CASH',
+          paid_at: null,
+        },
+      ],
+    }),
   ])
   renderPage()
 
@@ -366,6 +387,11 @@ test('an active course offers more sessions, and an open renewal shows instead o
   expect(buy).toHaveAttribute('href', '/account/checkout?kind=COURSE&id=course-7&renew=enr-active')
   const renewing = screen.getByRole('article', { name: 'Curs de baschet' })
   expect(within(renewing).queryByRole('link', { name: 'Cumpără ședințe' })).not.toBeInTheDocument()
-  expect(within(renewing).getByText('Plată în așteptare')).toBeInTheDocument()
   expect(within(renewing).getByText('Activ')).toBeInTheDocument()
+  const cash = screen.getByRole('article', { name: 'Curs de tenis' })
+  expect(within(cash).getByText('Plată în așteptare')).toBeInTheDocument()
+  expect(within(cash).getByRole('link', { name: 'Cumpără ședințe' })).toHaveAttribute(
+    'href',
+    '/account/checkout?kind=COURSE&id=course-9&renew=enr-cash',
+  )
 })

@@ -138,17 +138,37 @@ test('a card renewal collects billing and opens Stripe for the same enrollment',
   })
 })
 
-test('an open payment is shown instead of a second purchase', async () => {
+test('a started card payment must be finished before buying again', async () => {
   mocks.validate.mockResolvedValue(
     quote(10, {
-      openPayment: { id: 'pay-1', method: 'CASH', status: 'PENDING', amount: 7500, sessions: 5, started: false },
+      openPayment: { id: 'pay-1', method: 'CARD', status: 'PENDING', amount: 7500, sessions: 5, started: true },
     }),
   )
   renderWizard('CASH')
-  expect(await screen.findByText(/Ai deja o plată în așteptare pentru 5 ședințe/)).toBeInTheDocument()
+  expect(await screen.findByText(/Ai o plată cu cardul începută pentru 5 ședințe/)).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Mergi la Înscrieri' })).toHaveAttribute('href', '/account/enrollments')
   expect(screen.queryByRole('checkbox', { name: /Confirm suma finală/ })).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Continuă' })).toBeDisabled()
+})
+
+test('an unpaid cash request can be replaced by another package', async () => {
+  mocks.validate.mockImplementation((_id: string, size: number) =>
+    Promise.resolve(
+      quote(size, {
+        openPayment: { id: 'pay-1', method: 'CASH', status: 'PENDING', amount: 7500, sessions: 5, started: false },
+      }),
+    ),
+  )
+  const user = userEvent.setup()
+  renderWizard('CASH')
+  expect(await screen.findByText(/Ai deja o plată în așteptare pentru 5 ședințe/)).toBeInTheDocument()
+  expect(screen.getByText(/cererea de mai sus se înlocuiește/)).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: '20 ședințe' }))
+  await waitFor(() => expect(mocks.validate).toHaveBeenLastCalledWith('enr-1', 20))
+  await user.click(await screen.findByRole('checkbox', { name: /Confirm suma finală/ }))
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  await user.click(screen.getByRole('button', { name: 'Finalizează' }))
+  await waitFor(() => expect(mocks.renew).toHaveBeenCalledWith(expect.objectContaining({ sessionPackageSize: 20 })))
 })
 
 test('a changed price sends the parent back to confirm the new amount', async () => {

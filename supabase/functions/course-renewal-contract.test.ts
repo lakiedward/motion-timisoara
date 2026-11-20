@@ -53,6 +53,7 @@ class FakeDb {
       { id: "enr-other", kind: "COURSE", entity_id: "course", child_id: "child-x", status: "ACTIVE", remaining_sessions: 2 },
     ],
     payments: [],
+    payment_intent_requests: [],
   };
   from(table: string) { return new Query(this, table); }
   channel(_name: string) { return { send: (message: unknown) => { this.broadcasts.push(message); return Promise.resolve(); } }; }
@@ -180,4 +181,31 @@ Deno.test("an offer without platform access and database refusals keep their cod
   equal((await inactive.json()).code, "SUBSCRIPTION_INACTIVE", "No access code");
   const quoteWithoutAccess = await (await validate({ renewEnrollmentId: UUIDS["enr-active"], sessionPackageSize: 5 })).json();
   equal(quoteWithoutAccess.renewal.eligible, false, "Quote shows the offer is closed");
+  db.access = true;
+  db.rpcError = { code: "23514", message: "new row violates check constraint \"payments_amount_check\"" };
+  const raw = await create(body);
+  equal(raw.status, 409, "Unknown refusal status");
+  equal(await raw.json(), { error: "Nu am putut salva cumpărarea. Reîncearcă." }, "Database text stays on the server");
+});
+
+Deno.test("more than 100 sessions at once is refused before any write", async () => {
+  const { create, validate, db } = setup();
+  const quote = await validate({ renewEnrollmentId: UUIDS["enr-active"], sessionPackageSize: 101 });
+  equal(quote.status, 400, "Quote status");
+  equal((await quote.json()).error, "Poți cumpăra cel mult 100 de ședințe odată.", "Quote message");
+  const created = await create({ renewEnrollmentId: UUIDS["enr-active"], sessionPackageSize: 101, paymentMethod: "CASH",
+    priceVersion: "x", acceptance: { termsVersion: TERMS_VERSION, rulesFingerprint: "none" } });
+  equal(created.status, 400, "Create status");
+  equal(db.rpcCalls.filter((call) => call.name === "start_course_renewal").length, 0, "No database write");
+});
+
+Deno.test("an open card payment with a prepared Stripe intent counts as started", async () => {
+  const { validate, db } = setup();
+  db.tables.payments.push({ id: "pay-open", enrollment_id: UUIDS["enr-active"], method: "CARD", status: "PENDING", amount: 7500,
+    gateway_txn_id: null, pricing_snapshot: { quantity: 5 } });
+  const unstarted = (await (await validate({ renewEnrollmentId: UUIDS["enr-active"], sessionPackageSize: 5 })).json()).renewal;
+  equal(unstarted.openPayment.started, false, "No Stripe request yet");
+  db.tables.payment_intent_requests.push({ id: "pay-open" });
+  const prepared = (await (await validate({ renewEnrollmentId: UUIDS["enr-active"], sessionPackageSize: 5 })).json()).renewal;
+  equal(prepared.openPayment.started, true, "Prepared intent");
 });

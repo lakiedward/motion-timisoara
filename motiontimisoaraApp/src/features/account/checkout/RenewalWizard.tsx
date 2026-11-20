@@ -28,6 +28,7 @@ import { advanceHint, quoteIsPriced, STEP_COPY } from './checkout-flow'
 import { usePaymentAdapter } from './usePaymentAdapter'
 
 const DEFAULT_PACKAGE = 10
+const MAX_RENEWAL_SESSIONS = 100
 
 const RENEWAL_COPY = {
   title: 'Câte ședințe cumperi?',
@@ -78,7 +79,8 @@ export default function RenewalWizard({
   })
   const quote = validation.data?.renewal
   const open = quote?.openPayment ?? null
-  const priced = quoteIsPriced(quote) && !open && !validation.isPlaceholderData
+  const blocked = open?.started === true
+  const priced = quoteIsPriced(quote) && !blocked && !validation.isPlaceholderData
   const total = priced ? quote!.amount! : 0
   const allowCash = validation.data?.allowCash ?? true
   const paymentAvailable = stripeConfigured || allowCash
@@ -216,16 +218,14 @@ export default function RenewalWizard({
         Pentru <strong>{quote.name}</strong>, care {sessionsLeft(quote.remainingSessions)} la acest
         curs.
       </p>
-      {open ? (
+      {open && blocked ? (
         <div role="status" className="bg-muted space-y-3 rounded-xl p-4 text-sm sm:p-5">
           <p className="font-semibold">
-            Ai deja o plată în așteptare
+            Ai o plată cu cardul începută
             {open.sessions ? ` pentru ${open.sessions} ședințe` : ''} ({formatRonOffer(open.amount)}).
           </p>
           <p className="text-muted-foreground">
-            {open.method === 'CASH'
-              ? 'Antrenorul o confirmă când primește banii. După confirmare poți cumpăra din nou.'
-              : 'Finalizează plata cu cardul din Înscrieri. După confirmare poți cumpăra din nou.'}
+            Finalizeaz-o din Înscrieri. După confirmare poți cumpăra din nou.
           </p>
           <Button asChild variant="outline">
             <Link to="/account/enrollments">Mergi la Înscrieri</Link>
@@ -237,11 +237,24 @@ export default function RenewalWizard({
         </p>
       ) : (
         <>
+          {open && (
+            <div role="status" className="bg-muted space-y-1 rounded-xl p-4 text-sm sm:p-5">
+              <p className="font-semibold">
+                Ai deja o plată în așteptare
+                {open.sessions ? ` pentru ${open.sessions} ședințe` : ''} ({formatRonOffer(open.amount)}).
+              </p>
+              <p className="text-muted-foreground">
+                {open.method === 'CASH'
+                  ? 'Dacă ai dat deja banii antrenorului, așteaptă să confirme. Dacă alegi acum alt pachet, cererea de mai sus se înlocuiește.'
+                  : 'Dacă alegi acum alt pachet sau altă metodă, cererea de mai sus se înlocuiește.'}
+              </p>
+            </div>
+          )}
           <CheckoutPackagePicker
             packages={offering.packages}
             value={packageSize}
             onChange={(size) => {
-              setPackageSize(size)
+              setPackageSize(Math.min(size, MAX_RENEWAL_SESSIONS))
               setAccepted(false)
             }}
           />

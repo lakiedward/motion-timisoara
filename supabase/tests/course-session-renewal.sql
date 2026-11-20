@@ -19,6 +19,8 @@ CREATE TABLE public.payments(id UUID PRIMARY KEY DEFAULT gen_random_uuid(), enro
     gateway_txn_id TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     paid_at TIMESTAMPTZ, billing_name TEXT, billing_email TEXT, billing_address_line1 TEXT, billing_city TEXT,
     billing_postal_code TEXT, billing_country TEXT);
+CREATE TABLE public.payment_intent_requests(id UUID PRIMARY KEY REFERENCES public.payments(id) ON DELETE CASCADE,
+    params JSONB NOT NULL DEFAULT '{}'::JSONB);
 CREATE SCHEMA IF NOT EXISTS auth;
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS UUID LANGUAGE sql STABLE AS $$
     SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid
@@ -139,18 +141,18 @@ SELECT public.test_assert(public.test_try_save(200,'CASH',5) LIKE '23514:Există
 SELECT public.test_assert(public.test_try_save(200,'CARD',5) LIKE '23514:Înscrierea este deja procesată%',
     'before #695 a card purchase on an active enrollment is refused');
 
-SELECT public.test_assert(public.test_try_renew(2,500,'CASH',public.test_quote(200,5)) = '42501', 'another parent is refused');
-SELECT public.test_assert(public.test_try_renew(3,500,'CASH',public.test_quote(200,5)) = '42501', 'a coach is refused');
-SELECT public.test_assert(public.test_try_renew(1,501,'CASH',public.test_quote(201,5)) = '23514', 'a pending enrollment is refused');
-SELECT public.test_assert(public.test_try_renew(1,999,'CASH',public.test_quote(200,5)) = 'P0002', 'an unknown enrollment is refused');
-SELECT public.test_assert(public.test_try_renew(1,500,'CASH',public.test_quote(201,5)) = '23514', 'a snapshot for another child is refused');
-SELECT public.test_assert(public.test_try_renew(1,500,'CASH',public.test_quote(200,5,101)) = '23514', 'a snapshot for another course is refused');
+SELECT public.test_assert(public.test_try_renew(2,500,'CASH',public.test_quote(200,5)) = '42501:RENEWAL_REFUSED', 'another parent is refused');
+SELECT public.test_assert(public.test_try_renew(3,500,'CASH',public.test_quote(200,5)) = '42501:RENEWAL_REFUSED', 'a coach is refused');
+SELECT public.test_assert(public.test_try_renew(1,501,'CASH',public.test_quote(201,5)) = '23514:RENEWAL_REFUSED', 'a pending enrollment is refused');
+SELECT public.test_assert(public.test_try_renew(1,999,'CASH',public.test_quote(200,5)) = 'P0002:RENEWAL_REFUSED', 'an unknown enrollment is refused');
+SELECT public.test_assert(public.test_try_renew(1,500,'CASH',public.test_quote(201,5)) = '23514:RENEWAL_REFUSED', 'a snapshot for another child is refused');
+SELECT public.test_assert(public.test_try_renew(1,500,'CASH',public.test_quote(200,5,101)) = '23514:RENEWAL_REFUSED', 'a snapshot for another course is refused');
 SELECT public.test_assert(public.test_try_renew(1,500,'CASH',public.test_quote(200,5,100,900)) = '23514:PRICE_CHANGED',
     'a stale price is refused');
-SELECT public.test_assert(public.test_try_renew(1,500,'CASH',public.test_quote(200,5,100,0)) = '23514', 'a free renewal is refused');
-SELECT public.test_assert(public.test_try_renew(1,500,'CASH',public.test_quote(200,5) || '{"amount":4000}') = '23514',
+SELECT public.test_assert(public.test_try_renew(1,500,'CASH',public.test_quote(200,5,100,0)) = '23514:RENEWAL_REFUSED', 'a free renewal is refused');
+SELECT public.test_assert(public.test_try_renew(1,500,'CASH',public.test_quote(200,5) || '{"amount":4000}') = '23514:RENEWAL_REFUSED',
     'an amount that does not match the snapshot is refused');
-SELECT public.test_assert(public.test_try_renew(1,500,'BANK',public.test_quote(200,5)) = '22023', 'an unknown method is refused');
+SELECT public.test_assert(public.test_try_renew(1,500,'BANK',public.test_quote(200,5)) = '22023:RENEWAL_REFUSED', 'an unknown method is refused');
 
 DO $$
 DECLARE v_state TEXT;
@@ -166,7 +168,7 @@ END;
 $$;
 
 UPDATE public.courses SET active = false WHERE id = public.test_uuid(100);
-SELECT public.test_assert(public.test_try_renew(1,500,'CASH',public.test_quote(200,5)) = '23514', 'an inactive course is refused');
+SELECT public.test_assert(public.test_try_renew(1,500,'CASH',public.test_quote(200,5)) = '23514:RENEWAL_REFUSED', 'an inactive course is refused');
 UPDATE public.courses SET active = true WHERE id = public.test_uuid(100);
 INSERT INTO public.test_inactive_offers VALUES(public.test_uuid(100));
 SELECT public.test_assert(public.test_try_renew(1,500,'CASH',public.test_quote(200,5)) = '23514:SUBSCRIPTION_INACTIVE',
@@ -176,7 +178,7 @@ SELECT public.test_assert((SELECT count(*) FROM public.payments WHERE enrollment
     'refused renewals write no payment');
 
 DO $$
-DECLARE v_result JSONB;
+DECLARE v_result JSONB; v_old UUID;
 BEGIN
     v_result := public.test_renew(1,500,'CASH',public.test_quote(200,5));
     PERFORM public.test_assert(v_result->>'enrollmentId' = public.test_uuid(500)::TEXT, 'renewal returns the same enrollment');
@@ -196,15 +198,26 @@ BEGIN
     PERFORM public.test_assert((SELECT count(*) FROM public.payments WHERE enrollment_id = public.test_uuid(500)) = 2,
         'no duplicate payment');
 
-    PERFORM public.test_assert(public.test_try_renew(1,500,'CASH',public.test_quote(200,4)) = '23514:RENEWAL_IN_PROGRESS',
-        'a different package waits until the open cash payment is confirmed');
-    PERFORM public.test_assert(public.test_try_renew(1,500,'CARD',public.test_quote(200,4)) = '23514:RENEWAL_IN_PROGRESS',
-        'accepted pricing is never rewritten');
-    PERFORM public.test_assert(public.test_renew(1,500,'CARD',public.test_quote(200,5))->>'paymentId' = v_result->>'paymentId',
-        'switching an untouched renewal to card keeps the same payment');
+    v_old := (v_result->>'paymentId')::UUID;
+    v_result := public.test_renew(1,500,'CASH',public.test_quote(200,4));
+    PERFORM public.test_assert((v_result->>'replaced')::BOOLEAN AND (v_result->>'paymentId')::UUID <> v_old,
+        'another package replaces the unpaid cash renewal');
+    PERFORM public.test_assert(NOT EXISTS (SELECT 1 FROM public.payments WHERE id = v_old)
+        AND (SELECT count(*) FROM public.payments WHERE enrollment_id = public.test_uuid(500)) = 2
+        AND (SELECT remaining_sessions FROM public.enrollments WHERE id = public.test_uuid(500)) = 0,
+        'the replaced payment is gone and no session was added');
+    v_result := public.test_renew(1,500,'CARD',public.test_quote(200,5));
+    PERFORM public.test_assert((v_result->>'replaced')::BOOLEAN, 'switching an unstarted renewal to card replaces it');
     PERFORM public.test_assert(EXISTS (SELECT 1 FROM public.payments WHERE id = (v_result->>'paymentId')::UUID
         AND method = 'CARD' AND amount = 5000 AND billing_name = 'Ana Părinte' AND billing_country = 'RO'
         AND pricing_snapshot = public.test_quote(200,5)->'snapshot'), 'the open payment now waits for the card');
+    PERFORM public.test_assert(public.test_try_renew(1,500,'CASH',public.test_quote(200,101)) = '22023:RENEWAL_REFUSED',
+        'more than 100 sessions at once is refused');
+
+    INSERT INTO public.payment_intent_requests(id) VALUES ((v_result->>'paymentId')::UUID);
+    PERFORM public.test_assert(public.test_try_renew(1,500,'CASH',public.test_quote(200,5)) = '23514:RENEWAL_IN_PROGRESS',
+        'a card payment with a prepared Stripe intent cannot be replaced');
+    DELETE FROM public.payment_intent_requests;
 
     UPDATE public.payments SET gateway_txn_id = 'cs_test_renewal' WHERE id = (v_result->>'paymentId')::UUID;
     PERFORM public.test_assert(public.test_try_renew(1,500,'CASH',public.test_quote(200,5)) = '23514:RENEWAL_IN_PROGRESS',

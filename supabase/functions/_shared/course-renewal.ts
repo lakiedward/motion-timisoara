@@ -31,8 +31,11 @@ export interface RenewalQuote {
   snapshot: PriceSnapshot;
 }
 
+export const MAX_RENEWAL_SESSIONS = 100;
+
 export function validRenewalRequest(enrollmentId: unknown, quantity: unknown): enrollmentId is string {
-  return typeof enrollmentId === "string" && UUID.test(enrollmentId) && validQuantity(quantity);
+  return typeof enrollmentId === "string" && UUID.test(enrollmentId) && validQuantity(quantity) &&
+    quantity <= MAX_RENEWAL_SESSIONS;
 }
 
 export async function loadRenewalTarget(
@@ -60,8 +63,8 @@ export async function loadRenewalTarget(
     .eq("id", enrollment.entity_id)
     .maybeSingle();
   if (courseError) throw enrollmentJson({ error: "Nu am putut citi cursul. Reîncearcă." }, 500);
-  if (!course) throw enrollmentJson({ error: "Course not found" }, 404);
-  if (!course.active) throw enrollmentJson({ error: "Course is not active" }, 409);
+  if (!course) throw enrollmentJson({ error: "Cursul nu a fost găsit." }, 404);
+  if (!course.active) throw enrollmentJson({ error: "Cursul nu mai primește înscrieri." }, 409);
   const { data: open, error: paymentError } = await db
     .from("payments")
     .select("id, method, status, amount, gateway_txn_id, pricing_snapshot")
@@ -72,6 +75,12 @@ export async function loadRenewalTarget(
     throw enrollmentJson({ error: "Plata are nevoie de verificare. Contactează clubul." }, 409);
   }
   const payment = open?.[0];
+  let prepared = false;
+  if (payment && !payment.gateway_txn_id) {
+    const request = await db.from("payment_intent_requests").select("id").eq("id", payment.id).maybeSingle();
+    if (request.error) throw enrollmentJson({ error: "Nu am putut verifica plățile existente." }, 500);
+    prepared = Boolean(request.data);
+  }
   return {
     enrollmentId: enrollment.id,
     childId: enrollment.child_id,
@@ -86,7 +95,7 @@ export async function loadRenewalTarget(
         status: payment.status,
         amount: payment.amount,
         sessions: typeof payment.pricing_snapshot?.quantity === "number" ? payment.pricing_snapshot.quantity : null,
-        started: Boolean(payment.gateway_txn_id),
+        started: Boolean(payment.gateway_txn_id) || prepared,
       }
       : null,
   };

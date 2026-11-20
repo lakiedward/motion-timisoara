@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enrollmentJson } from "../_shared/enrollment-pricing.ts";
-import { loadRenewalTarget, renewalQuote, validRenewalRequest } from "../_shared/course-renewal.ts";
+import { loadRenewalTarget, MAX_RENEWAL_SESSIONS, renewalQuote, validRenewalRequest } from "../_shared/course-renewal.ts";
 import { buildCheckoutAcceptance, type ClientAcceptance } from "../_shared/checkout-acceptance.ts";
 import { offerAcceptsEnrollments, subscriptionInactiveBody } from "../_shared/subscription-access.ts";
 
@@ -15,6 +15,7 @@ interface RenewalRequest {
 
 const BILLING_FIELDS = ["name", "email", "addressLine1", "city", "postalCode"];
 const KNOWN_CODES = ["PRICE_CHANGED", "SUBSCRIPTION_INACTIVE", "RENEWAL_IN_PROGRESS"];
+const SHOWN_DETAILS = [...KNOWN_CODES, "RENEWAL_REFUSED"];
 
 function validBilling(value: unknown): value is Record<string, string> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
@@ -27,7 +28,11 @@ export async function createRenewal(db: SupabaseClient, parentId: string, body: 
   const quantity = body.sessionPackageSize ?? 1;
   const method = body.paymentMethod;
   if (!validRenewalRequest(body.renewEnrollmentId, quantity) || (method !== "CARD" && method !== "CASH")) {
-    return enrollmentJson({ error: "Cererea de reînnoire nu este validă." }, 400);
+    return enrollmentJson({
+      error: typeof quantity === "number" && quantity > MAX_RENEWAL_SESSIONS
+        ? `Poți cumpăra cel mult ${MAX_RENEWAL_SESSIONS} de ședințe odată.`
+        : "Cererea de reînnoire nu este validă.",
+    }, 400);
   }
   if (method === "CARD" && !validBilling(body.billingDetails)) {
     return enrollmentJson({ error: "Completează datele de facturare" }, 400);
@@ -62,7 +67,7 @@ export async function createRenewal(db: SupabaseClient, parentId: string, body: 
   if (error) {
     const status = error.code === "42501" ? 403 : error.code === "22023" ? 400 : ["23514", "P0002"].includes(error.code) ? 409 : 500;
     return enrollmentJson({
-      error: status === 500 ? "Nu am putut salva cumpărarea. Reîncearcă." : error.message,
+      error: status !== 500 && SHOWN_DETAILS.includes(error.details) ? error.message : "Nu am putut salva cumpărarea. Reîncearcă.",
       ...(KNOWN_CODES.includes(error.details) ? { code: error.details } : {}),
     }, status);
   }
@@ -81,6 +86,6 @@ export async function createRenewal(db: SupabaseClient, parentId: string, body: 
       await db.removeChannel(channel).catch(() => undefined);
     }
   }
-  const { reused: _reused, sessions: _sessions, ...response } = data;
+  const { reused: _reused, replaced: _replaced, sessions: _sessions, ...response } = data;
   return enrollmentJson(response);
 }

@@ -62,7 +62,9 @@ export function canBuySessions(e: EnrollmentRow) {
     e.kind === 'COURSE' &&
     e.status === 'ACTIVE' &&
     Boolean(e.child) &&
-    !e.payments.some((payment) => ['PENDING', 'FAILED'].includes(payment.status))
+    !e.payments.some(
+      (payment) => ['PENDING', 'FAILED'].includes(payment.status) && payment.method !== 'CASH',
+    )
   )
 }
 
