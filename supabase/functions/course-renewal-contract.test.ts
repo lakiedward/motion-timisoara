@@ -14,11 +14,14 @@ function equal(actual: unknown, expected: unknown, label: string) {
 
 class Query implements PromiseLike<{ data: unknown; error: { message: string } | null }> {
   private filters: [string, unknown[]][] = [];
+  private ranges: ((row: Row) => boolean)[] = [];
   private one = false;
   constructor(private db: FakeDb, private table: string) {}
   select() { return this; }
   eq(column: string, value: unknown) { this.filters.push([column, [value]]); return this; }
   in(column: string, values: unknown[]) { this.filters.push([column, values]); return this; }
+  lte(column: string, value: string) { this.ranges.push((row) => String(row[column]) <= value); return this; }
+  gte(column: string, value: string) { this.ranges.push((row) => String(row[column]) >= value); return this; }
   single() { this.one = true; return this; }
   maybeSingle() { this.one = true; return this; }
   then<A = { data: unknown; error: null }, B = never>(
@@ -26,7 +29,8 @@ class Query implements PromiseLike<{ data: unknown; error: { message: string } |
     fail?: ((reason: unknown) => B | PromiseLike<B>) | null,
   ): PromiseLike<A | B> {
     const rows = (this.db.tables[this.table] ?? []).filter((row) =>
-      this.filters.every(([column, values]) => values.includes(row[column]))
+      this.filters.every(([column, values]) => values.includes(row[column])) &&
+      this.ranges.every((match) => match(row))
     ).map((row) => this.table === "enrollments"
       ? { ...row, child: this.db.tables.children.find((child) => child.id === row.child_id) ?? null }
       : row);

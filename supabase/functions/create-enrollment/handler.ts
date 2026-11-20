@@ -13,6 +13,7 @@ interface EnrollmentRequest {
   paymentMethod: "CARD" | "CASH";
   sessionPackageSize?: number;
   coursePackageId?: string;
+  packageMonth?: string;
   priceVersions?: Record<string, string>;
   billingDetails?: {
     name: string;
@@ -90,7 +91,7 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
     const { kind, entityId, paymentMethod, billingDetails } = body;
     const childIds = Array.isArray(body.childIds) ? body.childIds : [];
     const includeSelf = body.includeSelf === true;
-    if (kind !== "COURSE" && (body.coursePackageId !== undefined ||
+    if (kind !== "COURSE" && (body.coursePackageId !== undefined || body.packageMonth !== undefined ||
       (body.sessionPackageSize !== undefined && body.sessionPackageSize !== 1))) {
       return enrollmentJson({ error: "Numărul de ședințe nu este valid." }, 400);
     }

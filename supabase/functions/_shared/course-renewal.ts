@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enrollmentJson } from "./enrollment-pricing.ts";
 import { createCoursePackageSnapshot, createPriceSnapshot, type PriceSnapshot, validQuantity } from "./price-snapshot.ts";
-import type { CourseChoice } from "./course-package.ts";
+import { bucharestToday, type CourseChoice } from "./course-package.ts";
 import { OPEN_PAYMENT_STATUSES } from "./payment-current.ts";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -66,6 +66,15 @@ export async function loadRenewalTarget(
   if (courseError) throw enrollmentJson({ error: "Nu am putut citi cursul. Reîncearcă." }, 500);
   if (!course) throw enrollmentJson({ error: "Cursul nu a fost găsit." }, 404);
   if (!course.active) throw enrollmentJson({ error: "Cursul nu mai primește înscrieri." }, 409);
+  const today = bucharestToday(new Date());
+  const { data: monthly, error: monthlyError } = await db
+    .from("enrollment_monthly_packages")
+    .select("sessions, sessions_used")
+    .eq("enrollment_id", enrollment.id)
+    .lte("valid_from", today)
+    .gte("valid_until", today);
+  if (monthlyError) throw enrollmentJson({ error: "Nu am putut verifica pachetele lunare." }, 500);
+  const monthlyLeft = (monthly ?? []).reduce((sum, row) => sum + row.sessions - row.sessions_used, 0);
   const { data: open, error: paymentError } = await db
     .from("payments")
     .select("id, method, status, amount, gateway_txn_id, pricing_snapshot")
@@ -87,7 +96,7 @@ export async function loadRenewalTarget(
     childId: enrollment.child_id,
     childName: child.name,
     courseId: enrollment.entity_id,
-    remainingSessions: enrollment.remaining_sessions ?? 0,
+    remainingSessions: Math.max(enrollment.remaining_sessions ?? 0, 0) + monthlyLeft,
     course,
     openPayment: payment
       ? {
@@ -103,7 +112,7 @@ export async function loadRenewalTarget(
 }
 
 export async function renewalQuote(target: RenewalTarget, choice: CourseChoice): Promise<RenewalQuote> {
-  const { quantity, coursePackage } = choice;
+  const { quantity, coursePackage, month } = choice;
   if (
     !coursePackage &&
     (!Number.isSafeInteger(target.course.price_per_session) || target.course.price_per_session <= 0)
@@ -119,6 +128,7 @@ export async function renewalQuote(target: RenewalTarget, choice: CourseChoice):
         coursePackage,
         target.course.currency,
         target.course.eur_ron_rate_micros ?? null,
+        month,
       )
       : await createPriceSnapshot(
       "COURSE",

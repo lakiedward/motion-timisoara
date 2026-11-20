@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enrollmentJson } from "./enrollment-pricing.ts";
 import { readPriceSnapshot } from "./price-snapshot.ts";
+import { monthLabel, snapshotMonthEnded } from "./course-package.ts";
 
 export async function authorizedRonCharge(
   db: SupabaseClient,
@@ -20,6 +21,7 @@ export async function authorizedRonCharge(
     gateway_txn_id?: string | null;
     pricing_snapshot?: unknown;
   },
+  now: Date = new Date(),
 ): Promise<number> {
   const childEnrollment = Boolean(enrollment.child_id) &&
     !enrollment.adult_profile_id;
@@ -69,9 +71,11 @@ export async function authorizedRonCharge(
       409,
     );
   }
+  let endedMonth: string | null = null;
   if (payment.pricing_snapshot != null) {
     try {
       const snapshot = await readPriceSnapshot(payment.pricing_snapshot);
+      if (snapshotMonthEnded(snapshot, now)) endedMonth = snapshot.validMonth!;
       if (
         snapshot.kind !== enrollment.kind ||
         snapshot.entityId !== enrollment.entity_id ||
@@ -116,6 +120,15 @@ export async function authorizedRonCharge(
         409,
       );
     }
+  }
+  if (endedMonth && !payment.gateway_txn_id && payment.status !== "SUCCEEDED") {
+    throw enrollmentJson(
+      {
+        error: `Pachetul lunar ales era pentru ${monthLabel(endedMonth)}, iar luna s-a încheiat. Alege din nou pachetul din pagina cursului.`,
+        code: "MONTH_ENDED",
+      },
+      409,
+    );
   }
   return payment.amount;
 }

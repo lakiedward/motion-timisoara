@@ -8,7 +8,7 @@ import { offerAcceptsEnrollments, subscriptionInactiveBody } from "../_shared/su
 interface RenewalRequest {
   renewEnrollmentId?: unknown;
   sessionPackageSize?: unknown;
-  coursePackageId?: unknown;
+  coursePackageId?: unknown; packageMonth?: unknown;
   paymentMethod?: unknown;
   priceVersion?: unknown;
   billingDetails?: unknown;

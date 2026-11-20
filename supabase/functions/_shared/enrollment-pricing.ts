@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { createCoursePackageSnapshot, createPriceSnapshot, type PriceSnapshot, readPriceSnapshot } from "./price-snapshot.ts";
-import type { CourseChoice } from "./course-package.ts";
+import { type CourseChoice, monthLabel, snapshotMatchesChoice } from "./course-package.ts";
 
 export interface EnrollmentServices {
   db: SupabaseClient;
@@ -104,7 +104,7 @@ export async function getEnrollmentChildPrices(
   existing: ExistingEnrollment[],
   choice: CourseChoice,
 ): Promise<EnrollmentChildPrice[]> {
-  const { quantity, coursePackage } = choice;
+  const { quantity, coursePackage, month } = choice;
   const pendingIds = existing
     .filter((row) => row.status === "PENDING")
     .map((row) => row.id);
@@ -173,10 +173,12 @@ export async function getEnrollmentChildPrices(
             500,
           );
         }
-        if (snapshot.quantity !== quantity || (snapshot.packageId ?? null) !== (coursePackage?.id ?? null)) {
+        if (!snapshotMatchesChoice(snapshot, choice)) {
           return {
             childId,
-            reason: snapshot.packageId || coursePackage
+            reason: snapshot.validMonth
+              ? `Ai o plată începută pentru pachetul lunar din ${monthLabel(snapshot.validMonth)}. Finalizeaz-o din Înscrieri.`
+              : snapshot.packageId || coursePackage
               ? `Ai o plată începută pentru un pachet de ${snapshot.quantity} ședințe. Finalizeaz-o din Înscrieri.`
               : `Pachetul salvat are ${snapshot.quantity} ședințe. Alege acest număr pentru a relua plata confirmată inițial.`,
           };
@@ -242,7 +244,7 @@ export async function getEnrollmentChildPrices(
       }
       try {
         const snapshot = coursePackage
-          ? await createCoursePackageSnapshot(entityId, childId, coursePackage, sourceCurrency, sourceRate)
+          ? await createCoursePackageSnapshot(entityId, childId, coursePackage, sourceCurrency, sourceRate, month)
           : await createPriceSnapshot(
             kind,
             entityId,

@@ -10,7 +10,8 @@ export interface PriceSnapshot {
   gpxStoragePath?: string | null;
   sourceUnitAmount?: number;
   packageId?: string;
-  validity?: "NONE";
+  validity?: PackageValidity;
+  validMonth?: string;
   sourcePackageAmount?: number;
   sourceCurrency: "RON" | "EUR";
   quantity: number;
@@ -18,6 +19,14 @@ export interface PriceSnapshot {
   amount: number;
   currency: "RON";
   priceVersion: string;
+}
+
+export type PackageValidity = "NONE" | "CALENDAR_MONTH";
+
+const PACKAGE_MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+export function validPackageMonth(value: unknown): value is string {
+  return typeof value === "string" && PACKAGE_MONTH.test(value);
 }
 
 export function validQuantity(value: unknown): value is number {
@@ -73,6 +82,7 @@ export async function snapshotVersion(
       snapshot.childId,
       snapshot.packageId,
       snapshot.validity,
+      ...(snapshot.validity === "CALENDAR_MONTH" ? [snapshot.validMonth] : []),
       snapshot.sourcePackageAmount,
       snapshot.sourceCurrency,
       snapshot.quantity,
@@ -165,9 +175,13 @@ export async function createCoursePackageSnapshot(
   coursePackage: { id: string; sessions: number; price: number; validity: string },
   sourceCurrency: string,
   eurRonRateMicros: number | null,
+  validMonth: string | null = null,
 ): Promise<PriceSnapshot> {
+  const monthly = coursePackage.validity === "CALENDAR_MONTH";
   if (
-    !courseId || !childId || !coursePackage.id || coursePackage.validity !== "NONE" ||
+    !courseId || !childId || !coursePackage.id ||
+    (coursePackage.validity !== "NONE" && !monthly) ||
+    (monthly ? !validPackageMonth(validMonth) : validMonth !== null) ||
     !validQuantity(coursePackage.sessions) || coursePackage.sessions > MAX_PACKAGE_SESSIONS ||
     !validQuantity(coursePackage.price) || coursePackage.price > MAX_PACKAGE_PRICE
   ) {
@@ -179,7 +193,8 @@ export async function createCoursePackageSnapshot(
     entityId: courseId,
     childId,
     packageId: coursePackage.id,
-    validity: "NONE",
+    validity: coursePackage.validity as PackageValidity,
+    ...(monthly ? { validMonth: validMonth! } : {}),
     sourcePackageAmount: coursePackage.price,
     sourceCurrency: sourceCurrency as PriceSnapshot["sourceCurrency"],
     quantity: coursePackage.sessions,
@@ -192,14 +207,17 @@ export async function createCoursePackageSnapshot(
 
 async function readCoursePackageSnapshot(snapshot: PriceSnapshot): Promise<PriceSnapshot> {
   const keys = Object.keys(snapshot);
+  const monthly = snapshot.validity === "CALENDAR_MONTH";
+  const expected = monthly ? [...PACKAGE_SNAPSHOT_KEYS, "validMonth"] : PACKAGE_SNAPSHOT_KEYS;
   if (
-    keys.length !== PACKAGE_SNAPSHOT_KEYS.length ||
-    !PACKAGE_SNAPSHOT_KEYS.every((key) => keys.includes(key)) ||
+    keys.length !== expected.length ||
+    !expected.every((key) => keys.includes(key)) ||
+    (monthly && !validPackageMonth(snapshot.validMonth)) ||
     snapshot.kind !== "COURSE" ||
     typeof snapshot.entityId !== "string" || !snapshot.entityId ||
     typeof snapshot.childId !== "string" || !snapshot.childId ||
     typeof snapshot.packageId !== "string" || !snapshot.packageId ||
-    snapshot.validity !== "NONE" ||
+    (snapshot.validity !== "NONE" && !monthly) ||
     !validQuantity(snapshot.quantity) || snapshot.quantity > MAX_PACKAGE_SESSIONS ||
     !validQuantity(snapshot.sourcePackageAmount) || snapshot.sourcePackageAmount > MAX_PACKAGE_PRICE ||
     snapshot.currency !== "RON" ||

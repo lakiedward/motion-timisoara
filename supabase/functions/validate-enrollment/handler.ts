@@ -10,6 +10,7 @@ interface ValidateRequest {
   childIds: string[];
   sessionPackageSize?: number;
   coursePackageId?: string;
+  packageMonth?: string;
 }
 
 type Severity = "error" | "warning";
@@ -75,7 +76,7 @@ export function createValidationHandler({ db: supabaseAdmin, getUser, getUserRol
     if (kind !== "CAMP" && childIds.length === 0) {
       return json({ error: "kind, entityId and childIds are required" }, 400);
     }
-    if (kind !== "COURSE" && (body.coursePackageId !== undefined ||
+    if (kind !== "COURSE" && (body.coursePackageId !== undefined || body.packageMonth !== undefined ||
       (body.sessionPackageSize !== undefined && body.sessionPackageSize !== 1))) {
       return json({ error: "Numărul de ședințe nu este valid." }, 400);
     }

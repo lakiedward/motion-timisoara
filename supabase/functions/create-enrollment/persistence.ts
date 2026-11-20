@@ -2,7 +2,7 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enrollmentJson, type EnrollmentChildPrice, type ExistingEnrollment } from "../_shared/enrollment-pricing.ts";
 import { readPriceSnapshot, type PriceSnapshot } from "../_shared/price-snapshot.ts";
 import type { CheckoutAcceptance } from "../_shared/checkout-acceptance.ts";
-import type { CourseChoice } from "../_shared/course-package.ts";
+import { type CourseChoice, snapshotMatchesChoice } from "../_shared/course-package.ts";
 
 export async function completedEnrollmentPrices(
   db: SupabaseClient, kind: PriceSnapshot["kind"], entityId: string,
@@ -31,7 +31,7 @@ export async function completedEnrollmentPrices(
       (enrollment.child_id
         ? snapshot.childId !== enrollment.child_id
         : snapshot.adultProfileId !== enrollment.adult_profile_id) ||
-      snapshot.quantity !== choice.quantity || (snapshot.packageId ?? null) !== (choice.coursePackage?.id ?? null) ||
+      !snapshotMatchesChoice(snapshot, choice) ||
       snapshot.amount !== payment.amount || payment.currency !== "RON") {
       throw enrollmentJson({ error: "Înscrierea este deja procesată. Verifică în Înscrieri." }, 409);
     }
