@@ -14,7 +14,6 @@ import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-  COURSE_PACKAGES_ON_SALE,
   MAX_COURSE_PACKAGES,
   MAX_PACKAGE_SESSIONS,
   emptyCoursePackage,
@@ -50,14 +49,8 @@ export function CoursePackagesFields<T extends PackagesForm>({
     <div data-section="course-form-packages">
       <FormSection
         title="Pachete"
-        description={`Opțional. Până la ${MAX_COURSE_PACKAGES} pachete, de exemplu 8 ședințe la un preț total. Unde cursul are pachete, părintele alege unul dintre ele în locul prețului pe ședință.`}
+        description={`Opțional. Până la ${MAX_COURSE_PACKAGES} pachete, de exemplu 8 ședințe la un preț total. Unde cursul are pachete, părintele poate cumpăra doar unul dintre ele, la înscriere și la reînnoire, fără alt număr de ședințe.`}
       >
-        {!COURSE_PACKAGES_ON_SALE && (
-          <p className="bg-muted text-muted-foreground rounded-lg px-4 py-3 text-sm">
-            Pachetele se salvează acum și apar pe pagina cursului când pornește plata pe pachete.
-            Până atunci părintele plătește prețul pe ședință.
-          </p>
-        )}
         {fields.length === 0 ? (
           <p className="text-muted-foreground text-sm">
             Fără pachete, părintele alege la înscriere câte ședințe plătește, la prețul pe ședință.

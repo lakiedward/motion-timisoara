@@ -3755,6 +3755,10 @@ export type Database = {
           is_full: boolean
         }[]
       }
+      course_quote_matches_offer: {
+        Args: { p_course_id: string; p_snapshot: Json }
+        Returns: boolean
+      }
       course_spots_remaining: { Args: { p_course_id: string }; Returns: number }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       delete_my_account: { Args: never; Returns: Json }
@@ -4325,6 +4329,10 @@ export type Database = {
         Returns: number
       }
       valid_competition_price_snapshot: {
+        Args: { p_amount: number; p_currency: string; p_snapshot: Json }
+        Returns: boolean
+      }
+      valid_course_package_price_snapshot: {
         Args: { p_amount: number; p_currency: string; p_snapshot: Json }
         Returns: boolean
       }

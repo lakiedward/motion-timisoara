@@ -1,5 +1,5 @@
 import {
-  pricePerSession,
+  packageNote,
   sessionsLabel,
   type CoursePackage,
 } from '@/lib/course-packages/course-packages'
@@ -28,9 +28,7 @@ export function CoursePackagesOffer({
                 {formatMoney(item.price, currency)}
               </span>
             </div>
-            <p className="text-muted-foreground mt-0.5 text-xs">
-              {formatMoney(pricePerSession(item), currency)} / ședință · fără expirare
-            </p>
+            <p className="text-muted-foreground mt-0.5 text-xs">{packageNote(item, currency)}</p>
           </li>
         ))}
     </ul>

@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import type { PriceSnapshot } from '../../../supabase/functions/_shared/price-snapshot'
+import { choiceRequest, type CheckoutChoice } from '@/lib/course-packages/checkout-choice'
 
 export type EnrollmentKind = 'COURSE' | 'CAMP' | 'ACTIVITY'
 export type PaymentMethod = 'CARD' | 'CASH'
@@ -138,13 +139,13 @@ export function validateEnrollment(
   kind: EnrollmentKind,
   entityId: string,
   childIds: string[],
-  sessionPackageSize = 1,
+  choice: CheckoutChoice = { sessions: 1 },
 ): Promise<ValidationResponse> {
   return invokeCheckoutFunction<ValidationResponse>('validate-enrollment', {
     kind,
     entityId,
     childIds,
-    sessionPackageSize,
+    ...choiceRequest(choice),
   })
 }
 
@@ -155,6 +156,7 @@ export async function createEnrollment(input: {
   includeSelf?: boolean
   paymentMethod: PaymentMethod
   sessionPackageSize?: number
+  coursePackageId?: string
   priceVersions?: Record<string, string>
   billingDetails?: BillingDetails
   acceptance?: { termsVersion: string; rulesFingerprint?: string }

@@ -88,3 +88,31 @@ export function CheckoutOrderSummary({
     </section>
   )
 }
+
+export function CheckoutPriceReview({ lines, total }: { lines: SummaryLine[]; total?: number }) {
+  return (
+    <div className="rounded-xl border p-4">
+      {lines.map((line) => (
+        <div key={line.id} className="flex items-center justify-between gap-3 py-1 text-sm">
+          <div className="min-w-0">
+            <span>
+              {line.name}
+              {line.adult && (
+                <>
+                  {' '}
+                  <Badge variant="outline">Adult</Badge>
+                </>
+              )}
+            </span>
+            <AcceptedPriceDetails snapshot={line.snapshot} />
+          </div>
+          <span className="shrink-0 font-medium tabular-nums">{price(line.amount)}</span>
+        </div>
+      ))}
+      <div className="mt-3 flex items-center justify-between gap-3 border-t pt-3 font-semibold">
+        <span>Total</span>
+        <span className="shrink-0 tabular-nums">{price(total)}</span>
+      </div>
+    </div>
+  )
+}

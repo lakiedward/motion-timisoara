@@ -1,12 +1,13 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enrollmentJson } from "../_shared/enrollment-pricing.ts";
 import { loadRenewalTarget, MAX_RENEWAL_SESSIONS, renewalQuote, validRenewalRequest } from "../_shared/course-renewal.ts";
+import { resolveCourseChoice } from "../_shared/course-package.ts";
 import { offerAcceptsEnrollments, SUBSCRIPTION_INACTIVE_MESSAGE } from "../_shared/subscription-access.ts";
 
 export async function validateRenewal(
   db: SupabaseClient,
   parentId: string,
-  body: { renewEnrollmentId?: unknown; sessionPackageSize?: unknown },
+  body: { renewEnrollmentId?: unknown; sessionPackageSize?: unknown; coursePackageId?: unknown },
 ): Promise<Response> {
   const quantity = body.sessionPackageSize ?? 1;
   if (!validRenewalRequest(body.renewEnrollmentId, quantity)) {
@@ -36,7 +37,7 @@ export async function validateRenewal(
       allowCash: true,
     });
   }
-  const quote = await renewalQuote(target, quantity as number);
+  const quote = await renewalQuote(target, await resolveCourseChoice(db, target.courseId, body));
   return enrollmentJson({
     renewal: {
       ...base,

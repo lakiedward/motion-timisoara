@@ -4,6 +4,7 @@ import {
   type ChildValidation,
   type PaymentMethod,
 } from '@/api/checkout'
+import { choiceRequest, type CheckoutChoice } from '@/lib/course-packages/checkout-choice'
 
 export interface OpenRenewalPayment {
   id: string
@@ -35,17 +36,17 @@ export interface RenewalResult {
 
 export function validateRenewal(
   enrollmentId: string,
-  sessionPackageSize: number,
+  choice: CheckoutChoice,
 ): Promise<RenewalValidation> {
   return invokeCheckoutFunction<RenewalValidation>('validate-enrollment', {
     renewEnrollmentId: enrollmentId,
-    sessionPackageSize,
+    ...choiceRequest(choice),
   })
 }
 
 export function renewEnrollment(input: {
   enrollmentId: string
-  sessionPackageSize: number
+  choice: CheckoutChoice
   paymentMethod: PaymentMethod
   priceVersion: string
   billingDetails?: BillingDetails
@@ -53,7 +54,7 @@ export function renewEnrollment(input: {
 }): Promise<RenewalResult> {
   return invokeCheckoutFunction<RenewalResult>('create-enrollment', {
     renewEnrollmentId: input.enrollmentId,
-    sessionPackageSize: input.sessionPackageSize,
+    ...choiceRequest(input.choice),
     paymentMethod: input.paymentMethod,
     priceVersion: input.priceVersion,
     billingDetails: input.billingDetails,

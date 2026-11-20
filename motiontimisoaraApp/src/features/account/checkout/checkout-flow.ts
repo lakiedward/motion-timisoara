@@ -1,7 +1,10 @@
-import type { PaymentMethod } from '@/api/checkout'
-import type { ChildValidation } from '@/api/checkout'
+import type { BillingDetails, ChildValidation, PaymentMethod } from '@/api/checkout'
 
-export function checkoutStepLabels(free: boolean, method: PaymentMethod, forCamp = false): string[] {
+export function checkoutStepLabels(
+  free: boolean,
+  method: PaymentMethod,
+  forCamp = false,
+): string[] {
   const first = forCamp ? 'Participanți' : 'Copii'
   if (free) return [first, 'Detalii']
   if (method === 'CARD') return [first, 'Detalii', 'Facturare', 'Plată']
@@ -50,4 +53,14 @@ export const STEP_COPY: Record<string, { title: string; text: string }> = {
   Detalii: { title: 'Verifică suma', text: 'Confirmă prețul înainte de plată.' },
   Facturare: { title: 'Date de facturare', text: 'Le folosim pentru chitanța plății cu cardul.' },
   Plată: { title: 'Cum plătești?', text: 'Alege metoda de plată și finalizează înscrierea.' },
+}
+
+export function billingIsValid(billing: BillingDetails): boolean {
+  return (
+    billing.name.trim().length > 1 &&
+    /\S+@\S+\.\S+/.test(billing.email) &&
+    billing.addressLine1.trim().length > 2 &&
+    billing.city.trim().length > 1 &&
+    billing.postalCode.trim().length > 2
+  )
 }

@@ -1,5 +1,5 @@
 export interface PriceSnapshot {
-  schemaVersion: 1 | 2;
+  schemaVersion: 1 | 2 | 3;
   kind: "COURSE" | "CAMP" | "ACTIVITY" | "COMPETITION";
   entityId: string;
   childId: string | null;
@@ -8,7 +8,10 @@ export interface PriceSnapshot {
   categoryId?: string;
   routeId?: string;
   gpxStoragePath?: string | null;
-  sourceUnitAmount: number;
+  sourceUnitAmount?: number;
+  packageId?: string;
+  validity?: "NONE";
+  sourcePackageAmount?: number;
   sourceCurrency: "RON" | "EUR";
   quantity: number;
   eurRonRateMicros: number | null;
@@ -62,7 +65,22 @@ function snapshotSubjectId(
 export async function snapshotVersion(
   snapshot: Omit<PriceSnapshot, "priceVersion">,
 ): Promise<string> {
-  const canonical = [
+  const canonical = snapshot.schemaVersion === 3
+    ? [
+      snapshot.schemaVersion,
+      snapshot.kind,
+      snapshot.entityId,
+      snapshot.childId,
+      snapshot.packageId,
+      snapshot.validity,
+      snapshot.sourcePackageAmount,
+      snapshot.sourceCurrency,
+      snapshot.quantity,
+      snapshot.eurRonRateMicros,
+      snapshot.amount,
+      snapshot.currency,
+    ]
+    : [
     snapshot.schemaVersion,
     snapshot.kind,
     snapshot.entityId,
@@ -79,7 +97,7 @@ export async function snapshotVersion(
     snapshot.eurRonRateMicros,
     snapshot.amount,
     snapshot.currency,
-  ];
+    ];
   const digest = await crypto.subtle.digest(
     "SHA-256",
     new TextEncoder().encode(JSON.stringify(canonical)),
@@ -120,6 +138,77 @@ export async function createPriceSnapshot(
     ...(adultProfileId ? { adultProfileId } : {}),
   };
   return { ...snapshot, priceVersion: await snapshotVersion(snapshot) };
+}
+
+export const PACKAGE_SNAPSHOT_KEYS = [
+  "schemaVersion",
+  "kind",
+  "entityId",
+  "childId",
+  "packageId",
+  "validity",
+  "sourcePackageAmount",
+  "sourceCurrency",
+  "quantity",
+  "eurRonRateMicros",
+  "amount",
+  "currency",
+  "priceVersion",
+];
+
+const MAX_PACKAGE_SESSIONS = 100;
+const MAX_PACKAGE_PRICE = 10_000_000;
+
+export async function createCoursePackageSnapshot(
+  courseId: string,
+  childId: string,
+  coursePackage: { id: string; sessions: number; price: number; validity: string },
+  sourceCurrency: string,
+  eurRonRateMicros: number | null,
+): Promise<PriceSnapshot> {
+  if (
+    !courseId || !childId || !coursePackage.id || coursePackage.validity !== "NONE" ||
+    !validQuantity(coursePackage.sessions) || coursePackage.sessions > MAX_PACKAGE_SESSIONS ||
+    !validQuantity(coursePackage.price) || coursePackage.price > MAX_PACKAGE_PRICE
+  ) {
+    throw new Error("Invalid course package");
+  }
+  const snapshot: Omit<PriceSnapshot, "priceVersion"> = {
+    schemaVersion: 3,
+    kind: "COURSE",
+    entityId: courseId,
+    childId,
+    packageId: coursePackage.id,
+    validity: "NONE",
+    sourcePackageAmount: coursePackage.price,
+    sourceCurrency: sourceCurrency as PriceSnapshot["sourceCurrency"],
+    quantity: coursePackage.sessions,
+    eurRonRateMicros,
+    amount: convertToRon(coursePackage.price, sourceCurrency, eurRonRateMicros, 1),
+    currency: "RON",
+  };
+  return { ...snapshot, priceVersion: await snapshotVersion(snapshot) };
+}
+
+async function readCoursePackageSnapshot(snapshot: PriceSnapshot): Promise<PriceSnapshot> {
+  const keys = Object.keys(snapshot);
+  if (
+    keys.length !== PACKAGE_SNAPSHOT_KEYS.length ||
+    !PACKAGE_SNAPSHOT_KEYS.every((key) => keys.includes(key)) ||
+    snapshot.kind !== "COURSE" ||
+    typeof snapshot.entityId !== "string" || !snapshot.entityId ||
+    typeof snapshot.childId !== "string" || !snapshot.childId ||
+    typeof snapshot.packageId !== "string" || !snapshot.packageId ||
+    snapshot.validity !== "NONE" ||
+    !validQuantity(snapshot.quantity) || snapshot.quantity > MAX_PACKAGE_SESSIONS ||
+    !validQuantity(snapshot.sourcePackageAmount) || snapshot.sourcePackageAmount > MAX_PACKAGE_PRICE ||
+    snapshot.currency !== "RON" ||
+    snapshot.amount !== convertToRon(snapshot.sourcePackageAmount, snapshot.sourceCurrency, snapshot.eurRonRateMicros, 1) ||
+    snapshot.priceVersion !== (await snapshotVersion(snapshot))
+  ) {
+    throw new Error("Invalid price snapshot");
+  }
+  return snapshot;
 }
 
 export async function createCompetitionPriceSnapshot(
@@ -188,6 +277,7 @@ export async function readPriceSnapshot(
     throw new Error("Missing price snapshot");
   }
   const snapshot = value as PriceSnapshot;
+  if (snapshot.schemaVersion === 3) return await readCoursePackageSnapshot(snapshot);
   const hasChild = typeof snapshot.childId === "string" &&
     snapshot.childId.length > 0;
   const hasAdult = typeof snapshot.adultProfileId === "string" &&
@@ -226,7 +316,7 @@ export async function readPriceSnapshot(
     snapshot.currency !== "RON" ||
     snapshot.amount !==
       convertToRon(
-        snapshot.sourceUnitAmount,
+        snapshot.sourceUnitAmount!,
         snapshot.sourceCurrency,
         snapshot.eurRonRateMicros,
         snapshot.quantity,

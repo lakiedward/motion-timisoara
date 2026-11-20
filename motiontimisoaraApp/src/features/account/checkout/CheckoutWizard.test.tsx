@@ -27,7 +27,9 @@ vi.mock('@/api/account', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/account')>()),
   getMyChildren: mocks.children,
 }))
-vi.mock('@/lib/auth-context', () => ({ useAuth: () => ({ user: { id: 'parent', name: 'Părinte' } }) }))
+vi.mock('@/lib/auth-context', () => ({
+  useAuth: () => ({ user: { id: 'parent', name: 'Părinte' } }),
+}))
 vi.mock('@/lib/stripe', () => ({ stripeConfigured: true }))
 vi.mock('./usePaymentAdapter', () => ({
   usePaymentAdapter: () => ({ ready: true, android: false, adapter: { confirm: vi.fn() } }),
@@ -39,13 +41,22 @@ vi.mock('react-router-dom', async (importOriginal) => ({
 }))
 
 function renderWizard(extra: Partial<Offering> = {}) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter>
         <CheckoutWizard
           kind="CAMP"
-          offering={{ id: 'camp-1', title: 'Tabără de munte', perSession: false, packages: [], ...extra }}
+          offering={{
+            id: 'camp-1',
+            title: 'Tabără de munte',
+            perSession: false,
+            packages: [],
+            coursePackages: [],
+            ...extra,
+          }}
           initialMethod="CARD"
         />
       </MemoryRouter>
@@ -111,7 +122,9 @@ test('a free camp child can confirm Gratuit and enroll without card billing', as
     includeSelf: false,
   })
   await waitFor(() =>
-    expect(mocks.toast.success).toHaveBeenCalledWith('Înscriere confirmată. Nu este nevoie de plată.'),
+    expect(mocks.toast.success).toHaveBeenCalledWith(
+      'Înscriere confirmată. Nu este nevoie de plată.',
+    ),
   )
 })
 
@@ -171,7 +184,14 @@ test('a paid card order goes to one Stripe Checkout page for every saved enrollm
     allowCash: false,
     capacity: { available: 10, requested: 1, sufficient: true },
     results: [
-      { childId: 'bebe', name: 'Bebe', eligible: true, amount: 40000, currency: 'RON', priceVersion: 'a'.repeat(64) },
+      {
+        childId: 'bebe',
+        name: 'Bebe',
+        eligible: true,
+        amount: 40000,
+        currency: 'RON',
+        priceVersion: 'a'.repeat(64),
+      },
     ],
   })
   mocks.create.mockResolvedValue({
@@ -215,7 +235,81 @@ test('the order carries the accepted terms version and rules fingerprint, and ch
     termsVersion: TERMS_VERSION,
     rulesFingerprint: 'text:abc',
   })
-  await waitFor(() => expect(mocks.toast.error).toHaveBeenCalledWith('Regulamentul ofertei s-a schimbat.'))
+  await waitFor(() =>
+    expect(mocks.toast.error).toHaveBeenCalledWith('Regulamentul ofertei s-a schimbat.'),
+  )
   expect(screen.getByRole('checkbox', { name: /Confirm suma finală/ })).not.toBeChecked()
   expect(screen.getByRole('button', { name: 'Finalizează' })).toBeDisabled()
+})
+
+test('a course with packages sells only its packages and sends the chosen package', async () => {
+  mocks.validate.mockResolvedValue({
+    allowCash: true,
+    capacity: { available: 10, requested: 1, sufficient: true },
+    results: [
+      {
+        childId: 'bebe',
+        name: 'Bebe',
+        eligible: true,
+        amount: 18000,
+        currency: 'RON',
+        priceVersion: 'b'.repeat(64),
+      },
+    ],
+  })
+  const user = userEvent.setup()
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
+  render(
+    <QueryClientProvider client={client}>
+      <MemoryRouter>
+        <CheckoutWizard
+          kind="COURSE"
+          offering={{
+            id: 'course-1',
+            title: 'Înot',
+            perSession: true,
+            packages: [5, 10, 20],
+            currency: 'RON',
+            coursePackages: [
+              { id: 'pkg-8', position: 0, sessions: 8, price: 32000, validity: 'NONE' },
+              { id: 'pkg-4', position: 1, sessions: 4, price: 18000, validity: 'NONE' },
+            ],
+          }}
+          initialMethod="CASH"
+        />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  )
+  const eight = await screen.findByRole('radio', { name: /8 ședințe/ })
+  expect(eight).toBeChecked()
+  expect(screen.queryByRole('button', { name: '10 ședințe' })).not.toBeInTheDocument()
+  expect(screen.queryByLabelText('Altul')).not.toBeInTheDocument()
+  await waitFor(() =>
+    expect(mocks.validate).toHaveBeenLastCalledWith('COURSE', 'course-1', ['bebe'], {
+      sessions: 8,
+      packageId: 'pkg-8',
+    }),
+  )
+  await user.click(screen.getByRole('radio', { name: /4 ședințe/ }))
+  await waitFor(() =>
+    expect(mocks.validate).toHaveBeenLastCalledWith('COURSE', 'course-1', ['bebe'], {
+      sessions: 4,
+      packageId: 'pkg-4',
+    }),
+  )
+  await user.click(await screen.findByRole('checkbox', { name: /Bebe/ }))
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  await user.click(await screen.findByRole('checkbox', { name: /Confirm suma finală/ }))
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  expect(await screen.findByText(/pachet de 4 ședințe/)).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Finalizează' }))
+  await waitFor(() => expect(mocks.create).toHaveBeenCalled())
+  expect(mocks.create.mock.calls[0][0]).toMatchObject({
+    kind: 'COURSE',
+    paymentMethod: 'CASH',
+    coursePackageId: 'pkg-4',
+  })
+  expect(mocks.create.mock.calls[0][0]).not.toHaveProperty('sessionPackageSize')
 })

@@ -12,6 +12,8 @@ vi.mock('@/api/public', async (importOriginal) => ({
   getCourse: vi.fn(),
 }))
 
+vi.mock('@/api/course-packages', () => ({ getCoursePackages: vi.fn(() => Promise.resolve([])) }))
+
 let utilizator: { id: string; role: string } | null = null
 vi.mock('@/lib/auth-context', () => ({ useAuth: () => ({ user: utilizator }) }))
 

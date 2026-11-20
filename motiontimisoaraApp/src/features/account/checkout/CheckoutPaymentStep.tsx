@@ -5,7 +5,7 @@ import { formatRonOffer } from '@/lib/money'
 import { stripeConfigured } from '@/lib/stripe'
 import type { PaymentMethod } from '@/api/checkout'
 
-const RADIO =
+export const RADIO =
   'accent-primary focus-visible:outline-ring size-4 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2'
 
 export function CheckoutPaymentStep({

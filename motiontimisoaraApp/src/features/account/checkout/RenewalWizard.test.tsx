@@ -67,6 +67,7 @@ function renderWizard(initialMethod: 'CARD' | 'CASH' = 'CASH') {
             title: 'Înot pentru începători',
             perSession: true,
             packages: [5, 10, 20],
+            coursePackages: [],
             rulesFingerprint: 'none',
           }}
           initialMethod={initialMethod}
@@ -78,7 +79,9 @@ function renderWizard(initialMethod: 'CARD' | 'CASH' = 'CASH') {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mocks.validate.mockImplementation((_id: string, size: number) => Promise.resolve(quote(size)))
+  mocks.validate.mockImplementation((_id: string, choice: { sessions: number }) =>
+    Promise.resolve(quote(choice.sessions)),
+  )
   mocks.renew.mockResolvedValue({
     enrollmentId: 'enr-1',
     enrollmentIds: ['enr-1'],
@@ -93,7 +96,7 @@ test('a parent buys five more sessions in cash for the same enrollment', async (
   renderWizard('CASH')
   expect(await screen.findByText(/nu mai are ședințe/)).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: '5 ședințe' }))
-  await waitFor(() => expect(mocks.validate).toHaveBeenLastCalledWith('enr-1', 5))
+  await waitFor(() => expect(mocks.validate).toHaveBeenLastCalledWith('enr-1', { sessions: 5 }))
   expect(await screen.findAllByText('75,00 lei')).not.toHaveLength(0)
   expect(screen.getByRole('button', { name: 'Continuă' })).toBeDisabled()
   await user.click(screen.getByRole('checkbox', { name: /Confirm suma finală/ }))
@@ -103,7 +106,7 @@ test('a parent buys five more sessions in cash for the same enrollment', async (
   await waitFor(() =>
     expect(mocks.renew).toHaveBeenCalledWith({
       enrollmentId: 'enr-1',
-      sessionPackageSize: 5,
+      choice: { sessions: 5 },
       paymentMethod: 'CASH',
       priceVersion: version(5),
       billingDetails: undefined,
@@ -133,7 +136,7 @@ test('a card renewal collects billing and opens Stripe for the same enrollment',
   await waitFor(() => expect(mocks.checkout).toHaveBeenCalledWith(['enr-1']))
   expect(mocks.renew.mock.calls[0][0]).toMatchObject({
     paymentMethod: 'CARD',
-    sessionPackageSize: 10,
+    choice: { sessions: 10 },
     billingDetails: { name: 'Ana Părinte', city: 'Timișoara' },
   })
 })
@@ -141,38 +144,63 @@ test('a card renewal collects billing and opens Stripe for the same enrollment',
 test('a started card payment must be finished before buying again', async () => {
   mocks.validate.mockResolvedValue(
     quote(10, {
-      openPayment: { id: 'pay-1', method: 'CARD', status: 'PENDING', amount: 7500, sessions: 5, started: true },
+      openPayment: {
+        id: 'pay-1',
+        method: 'CARD',
+        status: 'PENDING',
+        amount: 7500,
+        sessions: 5,
+        started: true,
+      },
     }),
   )
   renderWizard('CASH')
-  expect(await screen.findByText(/Ai o plată cu cardul începută pentru 5 ședințe/)).toBeInTheDocument()
-  expect(screen.getByRole('link', { name: 'Mergi la Înscrieri' })).toHaveAttribute('href', '/account/enrollments')
+  expect(
+    await screen.findByText(/Ai o plată cu cardul începută pentru 5 ședințe/),
+  ).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Mergi la Înscrieri' })).toHaveAttribute(
+    'href',
+    '/account/enrollments',
+  )
   expect(screen.queryByRole('checkbox', { name: /Confirm suma finală/ })).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Continuă' })).toBeDisabled()
 })
 
 test('an unpaid cash request can be replaced by another package', async () => {
-  mocks.validate.mockImplementation((_id: string, size: number) =>
+  mocks.validate.mockImplementation((_id: string, choice: { sessions: number }) =>
     Promise.resolve(
-      quote(size, {
-        openPayment: { id: 'pay-1', method: 'CASH', status: 'PENDING', amount: 7500, sessions: 5, started: false },
+      quote(choice.sessions, {
+        openPayment: {
+          id: 'pay-1',
+          method: 'CASH',
+          status: 'PENDING',
+          amount: 7500,
+          sessions: 5,
+          started: false,
+        },
       }),
     ),
   )
   const user = userEvent.setup()
   renderWizard('CASH')
-  expect(await screen.findByText(/Ai deja o plată în așteptare pentru 5 ședințe/)).toBeInTheDocument()
+  expect(
+    await screen.findByText(/Ai deja o plată în așteptare pentru 5 ședințe/),
+  ).toBeInTheDocument()
   expect(screen.getByText(/cererea de mai sus se înlocuiește/)).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: '20 ședințe' }))
-  await waitFor(() => expect(mocks.validate).toHaveBeenLastCalledWith('enr-1', 20))
+  await waitFor(() => expect(mocks.validate).toHaveBeenLastCalledWith('enr-1', { sessions: 20 }))
   await user.click(await screen.findByRole('checkbox', { name: /Confirm suma finală/ }))
   await user.click(screen.getByRole('button', { name: 'Continuă' }))
   await user.click(screen.getByRole('button', { name: 'Finalizează' }))
-  await waitFor(() => expect(mocks.renew).toHaveBeenCalledWith(expect.objectContaining({ sessionPackageSize: 20 })))
+  await waitFor(() =>
+    expect(mocks.renew).toHaveBeenCalledWith(expect.objectContaining({ choice: { sessions: 20 } })),
+  )
 })
 
 test('a changed price sends the parent back to confirm the new amount', async () => {
-  mocks.renew.mockRejectedValueOnce(new EnrollmentRequestError('Prețul s-a schimbat.', 'PRICE_CHANGED'))
+  mocks.renew.mockRejectedValueOnce(
+    new EnrollmentRequestError('Prețul s-a schimbat.', 'PRICE_CHANGED'),
+  )
   const user = userEvent.setup()
   renderWizard('CASH')
   await user.click(await screen.findByRole('checkbox', { name: /Confirm suma finală/ }))
@@ -181,4 +209,49 @@ test('a changed price sends the parent back to confirm the new amount', async ()
   await waitFor(() => expect(mocks.toast.error).toHaveBeenCalledWith('Prețul s-a schimbat.'))
   expect(await screen.findByRole('checkbox', { name: /Confirm suma finală/ })).not.toBeChecked()
   expect(mocks.navigate).not.toHaveBeenCalled()
+})
+
+test('on a course with packages a renewal buys one of the packages', async () => {
+  mocks.validate.mockImplementation((_id: string, choice: { sessions: number }) =>
+    Promise.resolve(quote(choice.sessions)),
+  )
+  const user = userEvent.setup()
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
+  render(
+    <QueryClientProvider client={client}>
+      <MemoryRouter>
+        <RenewalWizard
+          enrollmentId="enr-1"
+          offering={{
+            id: 'course-1',
+            title: 'Înot pentru începători',
+            perSession: true,
+            packages: [5, 10, 20],
+            currency: 'RON',
+            coursePackages: [
+              { id: 'pkg-8', position: 0, sessions: 8, price: 32000, validity: 'NONE' },
+              { id: 'pkg-4', position: 1, sessions: 4, price: 18000, validity: 'NONE' },
+            ],
+            rulesFingerprint: 'none',
+          }}
+          initialMethod="CASH"
+        />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  )
+  expect(await screen.findByRole('heading', { name: 'Ce pachet cumperi?' })).toBeInTheDocument()
+  await user.click(await screen.findByRole('radio', { name: /4 ședințe/ }))
+  await waitFor(() =>
+    expect(mocks.validate).toHaveBeenLastCalledWith('enr-1', { sessions: 4, packageId: 'pkg-4' }),
+  )
+  await user.click(await screen.findByRole('checkbox', { name: /Confirm suma finală/ }))
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  await user.click(screen.getByRole('button', { name: 'Finalizează' }))
+  await waitFor(() =>
+    expect(mocks.renew).toHaveBeenCalledWith(
+      expect.objectContaining({ choice: { sessions: 4, packageId: 'pkg-4' } }),
+    ),
+  )
 })

@@ -1,3 +1,4 @@
+import { PACKAGE_CHANGED } from '@/lib/course-packages/checkout-choice'
 import { TERMS_VERSION } from '@/features/public/terms/terms-sections'
 
 export { TERMS_VERSION }
@@ -22,5 +23,10 @@ export function termsTextForHash(text: string): string {
 }
 
 export function acceptanceResetCode(code: string | undefined): boolean {
-  return code === 'PRICE_CHANGED' || code === 'RULES_CHANGED' || code === 'TERMS_CHANGED'
+  return (
+    code === 'PRICE_CHANGED' ||
+    code === PACKAGE_CHANGED ||
+    code === 'RULES_CHANGED' ||
+    code === 'TERMS_CHANGED'
+  )
 }

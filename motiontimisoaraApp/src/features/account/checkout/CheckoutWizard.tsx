@@ -1,4 +1,3 @@
-import { AcceptedPriceDetails } from '@/components/AcceptedPriceDetails'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -20,11 +19,18 @@ import { stripeConfigured } from '@/lib/stripe'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { CheckoutPaymentStep } from './CheckoutPaymentStep'
-import { CheckoutOrderSummary, type SummaryLine } from './CheckoutOrderSummary'
+import { CheckoutOrderSummary, CheckoutPriceReview, type SummaryLine } from './CheckoutOrderSummary'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { CheckoutSteps } from './CheckoutSteps'
 import { CheckoutPackagePicker } from './CheckoutPackagePicker'
+import {
+  DEFAULT_SESSION_COUNT,
+  choiceKey,
+  choiceRequest,
+  effectiveChoice,
+  type CheckoutChoice,
+} from '@/lib/course-packages/checkout-choice'
 
 import type { Offering } from '../CheckoutPage'
 import { AddChildInline, CheckoutAdultRow, CheckoutChildRow } from './CheckoutFormFields'
@@ -39,6 +45,7 @@ import {
   checkoutParticipantCount,
   STEP_COPY,
   advanceHint,
+  billingIsValid,
   checkoutStepLabels,
   enrollmentNeedsCardPayment,
   quoteIsPriced,
@@ -49,8 +56,6 @@ const KIND_LABEL: Record<EnrollmentKind, string> = {
   CAMP: 'Tabără',
   ACTIVITY: 'Activitate',
 }
-
-const DEFAULT_PACKAGE = 10
 
 export default function CheckoutWizard({
   kind,
@@ -72,7 +77,8 @@ export default function CheckoutWizard({
   const [step, setStep] = useState(0)
   const [selected, setSelected] = useState<string[]>([])
   const [includeSelf, setIncludeSelf] = useState(false)
-  const [packageSize, setPackageSize] = useState(DEFAULT_PACKAGE)
+  const [chosen, setChoice] = useState<CheckoutChoice>({ sessions: DEFAULT_SESSION_COUNT })
+  const choice = effectiveChoice(offering.coursePackages, chosen)
   const [accepted, setAccepted] = useState(false)
   const [acceptedPrices, setAcceptedPrices] = useState<string | null>(null)
   const [chosenMethod, setMethod] = useState<PaymentMethod>(
@@ -110,10 +116,15 @@ export default function CheckoutWizard({
       kind,
       offering.id,
       childIds,
-      offering.perSession ? packageSize : 1,
+      offering.perSession ? choiceKey(choice) : 1,
     ],
     queryFn: () =>
-      validateEnrollment(kind, offering.id, childIds, offering.perSession ? packageSize : 1),
+      validateEnrollment(
+        kind,
+        offering.id,
+        childIds,
+        offering.perSession ? choice : { sessions: 1 },
+      ),
     enabled: kind === 'CAMP' || childIds.length > 0,
   })
 
@@ -149,12 +160,7 @@ export default function CheckoutWizard({
   const currentPrices = JSON.stringify(priceVersions)
   const hasAccepted = accepted && acceptedPrices === currentPrices
 
-  const billingValid =
-    billing.name.trim().length > 1 &&
-    /\S+@\S+\.\S+/.test(billing.email) &&
-    billing.addressLine1.trim().length > 2 &&
-    billing.city.trim().length > 1 &&
-    billing.postalCode.trim().length > 2
+  const billingValid = billingIsValid(billing)
 
   const capacityOk = (() => {
     if (validation?.capacity.available == null) return true
@@ -212,7 +218,7 @@ export default function CheckoutWizard({
         includeSelf: selfSelected,
         paymentMethod: isFree ? 'CARD' : method,
         priceVersions,
-        sessionPackageSize: offering.perSession ? packageSize : undefined,
+        ...(offering.perSession ? choiceRequest(choice) : {}),
         billingDetails: isFree || method !== 'CARD' ? undefined : billing,
         acceptance: { termsVersion: TERMS_VERSION, rulesFingerprint: offering.rulesFingerprint },
       })
@@ -261,8 +267,8 @@ export default function CheckoutWizard({
       if (e instanceof EnrollmentRequestError && acceptanceResetCode(e.code)) {
         setAccepted(false)
         setStep(1)
+        void qc.invalidateQueries({ queryKey: ['checkout-offering'] })
         if (e.code === 'PRICE_CHANGED') void refetchValidation()
-        else void qc.invalidateQueries({ queryKey: ['checkout-offering'] })
       }
       setProgress(null)
       toast.error(e.message)
@@ -352,8 +358,10 @@ export default function CheckoutWizard({
       {step <= 1 && offering.perSession && (
         <CheckoutPackagePicker
           packages={offering.packages}
-          value={packageSize}
-          onChange={setPackageSize}
+          coursePackages={offering.coursePackages}
+          currency={offering.currency}
+          value={choice}
+          onChange={setChoice}
         />
       )}
       {step === 0 && (
@@ -404,7 +412,15 @@ export default function CheckoutWizard({
                 Nu am putut verifica eligibilitatea:{' '}
                 {validationError instanceof Error ? validationError.message : 'încearcă din nou.'}
               </p>
-              <Button type="button" variant="outline" size="sm" onClick={() => refetchValidation()}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  void qc.invalidateQueries({ queryKey: ['checkout-offering'] })
+                  void refetchValidation()
+                }}
+              >
                 Reîncearcă
               </Button>
             </div>
@@ -424,43 +440,7 @@ export default function CheckoutWizard({
       )}
       {step === 1 && (
         <section className="space-y-5">
-          <div className="rounded-xl border p-4">
-            {selected.map((cid) => {
-              const child = children.find((c) => c.id === cid)
-              return (
-                <div key={cid} className="flex items-center justify-between gap-3 py-1 text-sm">
-                  <div className="min-w-0">
-                    <span>{child?.name}</span>
-                    <AcceptedPriceDetails snapshot={verdictFor(cid)?.pricingSnapshot} />
-                  </div>
-                  <span className="shrink-0 font-medium tabular-nums">
-                    {priceFor(cid) === undefined
-                      ? 'Preț indisponibil'
-                      : formatRonOffer(priceFor(cid)!)}
-                  </span>
-                </div>
-              )
-            })}
-            {selfSelected && adult && (
-              <div className="flex items-center justify-between gap-3 py-1 text-sm">
-                <div className="min-w-0">
-                  <span>
-                    {adult.name} <Badge variant="outline">Adult</Badge>
-                  </span>
-                  <AcceptedPriceDetails snapshot={adult.pricingSnapshot} />
-                </div>
-                <span className="shrink-0 font-medium tabular-nums">
-                  {adult.amount === undefined ? 'Preț indisponibil' : formatRonOffer(adult.amount)}
-                </span>
-              </div>
-            )}
-            <div className="mt-3 flex items-center justify-between gap-3 border-t pt-3 font-semibold">
-              <span>Total</span>
-              <span className="shrink-0 tabular-nums">
-                {pricesReady ? formatRonOffer(total) : 'Preț indisponibil'}
-              </span>
-            </div>
-          </div>
+          <CheckoutPriceReview lines={summaryLines} total={pricesReady ? total : undefined} />
 
           <CheckoutRulesConsent
             kind={kind}
@@ -483,7 +463,7 @@ export default function CheckoutWizard({
             <CheckoutOrderSummary
               title={offering.title}
               kindLabel={KIND_LABEL[kind]}
-              packageSize={offering.perSession ? packageSize : undefined}
+              packageSize={offering.perSession ? choice.sessions : undefined}
               lines={summaryLines}
               total={pricesReady ? total : undefined}
             />
