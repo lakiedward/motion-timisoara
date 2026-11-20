@@ -111,6 +111,7 @@ async function simulate(page: Page, scenario: Scenario = 'by-age', role: 'PARENT
     ]);
     if (path === '/rest/v1/camp_adult_prices') return respond([]);
     if (path === '/rest/v1/course_occurrences') return respond([]);
+    if (path === '/rest/v1/course_packages') return respond([]);
     if (['/rest/v1/camp_coaches', '/rest/v1/camp_photos'].includes(path)) return respond([]);
     if (path === '/rest/v1/rpc/camp_spots_remaining') return respond(20);
     if (path === '/rest/v1/enrollments') return respond(created ? quote().map((item, index) => ({
