@@ -2,10 +2,14 @@ import { Link } from 'react-router-dom'
 
 import { OfferExchangeNote } from '@/components/OfferExchangeNote'
 import { StarRating } from '@/components/StarRating'
+import { Skeleton } from '@/components/ui/skeleton'
+import { cheapestPerSession, type CoursePackage } from '@/lib/course-packages/course-packages'
 import { formatMoney } from '@/lib/money'
 import { cn } from '@/lib/utils'
+import { CoursePackagesOffer } from './CoursePackagesOffer'
 
-const FOCUS_RING = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring'
+const FOCUS_RING =
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring'
 
 type EnrollCourse = {
   price_per_session: number
@@ -22,6 +26,8 @@ export function CourseEnrollCard({
   showMyRating,
   myRating,
   onRate,
+  packages = [],
+  packagesPending = false,
 }: {
   course: EnrollCourse
   isFull: boolean
@@ -31,19 +37,37 @@ export function CourseEnrollCard({
   showMyRating: boolean
   myRating: number
   onRate: (value: number) => void
+  packages?: CoursePackage[]
+  packagesPending?: boolean
 }) {
-  const free = course.price_per_session === 0
+  const withPackages = packages.length > 0
+  const free = !withPackages && course.price_per_session === 0
 
   return (
     <div
       data-section="course-enroll"
       className="bg-card flex flex-col items-center rounded-xl border p-6 text-center"
     >
-      <div className="font-display text-foreground text-3xl font-extrabold">
-        {free ? 'Gratuit' : formatMoney(course.price_per_session, course.currency)}
-        {!free && <span className="text-muted-foreground text-base font-normal"> / ședință</span>}
-      </div>
-      {!free && <p className="text-muted-foreground mt-1 text-sm">Alegi pachetul la înscriere</p>}
+      {packagesPending ? (
+        <Skeleton className="h-9 w-48" aria-label="Se încarcă prețul" />
+      ) : (
+        <div className="font-display text-foreground text-3xl font-extrabold">
+          {withPackages && (
+            <span className="text-muted-foreground text-base font-normal">de la </span>
+          )}
+          {free
+            ? 'Gratuit'
+            : formatMoney(
+                withPackages ? cheapestPerSession(packages) : course.price_per_session,
+                course.currency,
+              )}
+          {!free && <span className="text-muted-foreground text-base font-normal"> / ședință</span>}
+        </div>
+      )}
+      {!free && !packagesPending && (
+        <p className="text-muted-foreground mt-1 text-sm">Alegi pachetul la înscriere</p>
+      )}
+      {withPackages && <CoursePackagesOffer packages={packages} currency={course.currency} />}
       <OfferExchangeNote offer={course} className="text-xs" />
 
       {canEnroll ? (

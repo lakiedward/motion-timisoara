@@ -54,6 +54,10 @@ import { StatusView } from '@/components/ui/status-view'
 import { Textarea } from '@/components/ui/textarea'
 import { FormSelectMenu } from '@/components/ui/form-select-menu'
 import { levelOptions } from '@/lib/level'
+import { getCoursePackages } from '@/api/course-packages'
+import { CoursePackagesFields } from '@/components/course-packages/CoursePackagesFields'
+import { storeCoursePackages } from '@/components/course-packages/store-course-packages'
+import { coursePackagesSchema, packagesToForm } from '@/lib/course-packages/course-packages'
 
 const NOTA_SPORT = 'Sportul rămâne cel salvat: cursul are înscrieri.'
 const NOTA_LOCATIE = 'Locația rămâne cea salvată: cursul are înscrieri.'
@@ -72,6 +76,7 @@ const schema = z
     price_per_session_lei: offerAmountSchema,
     description: z.string().trim().min(1, 'Descrierea este obligatorie.'),
     program: courseProgramSchema,
+    packages: coursePackagesSchema,
   })
   .superRefine((value, ctx) => {
     validateOfferCurrency(value, ctx)
@@ -102,6 +107,11 @@ export default function CourseFormPage() {
     queryFn: () => getCourseById(id as string),
     enabled: isEdit,
   })
+  const pachete = useQuery({
+    queryKey: ['course-packages', id],
+    queryFn: () => getCoursePackages(id as string),
+    enabled: isEdit,
+  })
   const { data: areInscrieri = false } = useQuery({
     queryKey: ['course-has-enrollments', id],
     queryFn: () => cursulAreInscrieri(id as string),
@@ -124,6 +134,7 @@ export default function CourseFormPage() {
       capacity: '',
       description: '',
       program: emptyCourseProgram(),
+      packages: [],
     },
   })
   const [fisierLocal, setFisierLocal] = useState<File | null>(null)
@@ -158,7 +169,7 @@ export default function CourseFormPage() {
   }
 
   useEffect(() => {
-    if (existing) {
+    if (existing && pachete.data) {
       reset({
         ...offerCurrencyValues(existing),
         name: existing.name,
@@ -171,9 +182,10 @@ export default function CourseFormPage() {
         price_per_session_lei: String(baniToRon(existing.price_per_session)),
         description: existing.description ?? '',
         program: parseRecurrenceRule(existing.recurrence_rule),
+        packages: packagesToForm(pachete.data),
       })
     }
-  }, [existing, reset])
+  }, [existing, pachete.data, reset])
 
   const onSubmit = async (v: Values) => {
     const lipsa = mesajHeroLipsa(pozaHero, existing?.hero_photo_storage_path ?? null)
@@ -196,6 +208,7 @@ export default function CourseFormPage() {
       if (isEdit) {
         await updateCourse(id as string, payload)
         if (pozaHero) await schimbaPozaOferta('courses', 'course-photos', id as string, pozaHero)
+        if (!(await storeCoursePackages(qc, id as string, v.packages, 'edit'))) return
       } else {
         const creat = await createCourse(payload)
         try {
@@ -205,6 +218,7 @@ export default function CourseFormPage() {
           toast.error('Fără poza din capul paginii cursul nu se salvează.')
           return
         }
+        if (v.packages.length) await storeCoursePackages(qc, creat.id, v.packages, 'new')
         if (fisierLocal) {
           try {
             await incarcaRegulamentCurs(creat.id, fisierLocal)
@@ -230,7 +244,7 @@ export default function CourseFormPage() {
     }
   }
 
-  if (isEdit && aEsuatCitirea) {
+  if (isEdit && (aEsuatCitirea || pachete.isError)) {
     return (
       <div className="mx-auto max-w-2xl">
         <InapoiLaCursuri />
@@ -238,7 +252,7 @@ export default function CourseFormPage() {
           state="error"
           title="Nu am putut încărca cursul."
           text="Verifică conexiunea și încearcă din nou."
-          onRetry={() => void refetch()}
+          onRetry={() => void (aEsuatCitirea ? refetch() : pachete.refetch())}
           className="mt-4"
         />
       </div>
@@ -259,7 +273,7 @@ export default function CourseFormPage() {
     )
   }
 
-  if (isEdit && seIncarca) {
+  if (isEdit && (seIncarca || pachete.isPending)) {
     return (
       <div className="mx-auto max-w-2xl">
         <InapoiLaCursuri />
@@ -457,6 +471,13 @@ export default function CourseFormPage() {
             />
           </div>
         </FormSection>
+
+        <CoursePackagesFields
+          control={control}
+          register={register}
+          errors={errors}
+          currency={currency}
+        />
 
         <HeroPhotoField
           savedUrl={publicUrl('course-photos', existing?.hero_photo_storage_path)}

@@ -13,10 +13,15 @@ import {
   getMyClub,
 } from '@/api/club'
 import { fetchSports } from '@/api/sports'
+import { saveCoursePackages } from '@/api/course-packages'
 import { getCursBnr } from '@/api/bnr-rate'
 import { findSelectMenuOption, pickSelectMenuValue } from '@/test/select-menu'
 import { setPickerValue } from '@/test/pickers'
 
+vi.mock('@/api/course-packages', () => ({
+  getCoursePackages: vi.fn().mockResolvedValue([]),
+  saveCoursePackages: vi.fn().mockResolvedValue([]),
+}))
 vi.mock('@/api/offer-hero', () => ({
   schimbaPozaOferta: vi.fn().mockResolvedValue('c/hero/a.jpg'),
   renuntaLaOfertaFaraHero: vi.fn(),
@@ -168,7 +173,14 @@ test('validarea marchează toate câmpurile greșite și leagă fiecare mesaj de
   await screen.findByLabelText(/^Nume curs/)
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
 
-  for (const eticheta of ['Nume curs', 'Antrenor', 'Sport', 'Locație', 'Descriere', 'Preț / ședință (lei)']) {
+  for (const eticheta of [
+    'Nume curs',
+    'Antrenor',
+    'Sport',
+    'Locație',
+    'Descriere',
+    'Preț / ședință (lei)',
+  ]) {
     const camp = screen.getByLabelText(new RegExp(`^${eticheta.replace(/[()/]/g, '\\$&')}`))
     await waitFor(() => expect(camp).toHaveAttribute('aria-invalid', 'true'))
     const id = camp.getAttribute('aria-describedby')
@@ -342,7 +354,14 @@ test('dacă cursul nu se poate citi, Reîncearcă repetă citirea', async () => 
 test('secțiunile cursului au aceeași ordine ca la antrenor', async () => {
   renderForm()
   await screen.findByLabelText(/^Nume curs/)
-  const titluri = ['Cine îl organizează', 'Despre curs', 'Program', 'Copii și locuri', 'Preț', 'Poza din capul paginii']
+  const titluri = [
+    'Cine îl organizează',
+    'Despre curs',
+    'Program',
+    'Copii și locuri',
+    'Preț',
+    'Poza din capul paginii',
+  ]
   const noduri = titluri.map((t) => screen.getByText(t, { selector: '[data-slot="card-title"]' }))
   for (let i = 1; i < noduri.length; i += 1) {
     expect(
@@ -352,4 +371,28 @@ test('secțiunile cursului au aceeași ordine ca la antrenor', async () => {
   }
   expect(screen.getByLabelText(/^Descriere/)).toBeRequired()
   expect(screen.getByLabelText('Capacitate')).not.toBeRequired()
+})
+
+test('clubul definește pachete la cursul nou', async () => {
+  const user = userEvent.setup()
+  vi.mocked(createClubCourse).mockResolvedValue({ id: 'c-nou' } as never)
+  renderForm()
+  await user.type(await screen.findByLabelText(/^Nume curs/), 'Curs nou de test')
+  await pickSelectMenuValue(screen.getByLabelText(/^Antrenor/), ANTRENOR)
+  await pickSelectMenuValue(screen.getByLabelText(/^Sport/), SPORT)
+  await pickSelectMenuValue(screen.getByLabelText(/^Locație/), LOC_COMUNA)
+  await user.type(screen.getByLabelText(/^Preț \/ ședință \(lei\)/), '80')
+  await completeazaProgram(user)
+  punePozaHero()
+  await user.type(screen.getByLabelText(/^Descriere/), 'Înot pentru începători.')
+  await user.click(screen.getByRole('button', { name: 'Adaugă un pachet' }))
+  await user.type(screen.getByLabelText('Număr de ședințe'), '4')
+  await user.type(screen.getByLabelText('Preț total (lei)'), '300')
+  expect(screen.getByText('Înseamnă 75,00 lei / ședință.')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() => expect(saveCoursePackages).toHaveBeenCalled())
+  expect(vi.mocked(saveCoursePackages).mock.calls[0]).toEqual([
+    'c-nou',
+    [{ sessions: '4', price: '300' }],
+  ])
 })

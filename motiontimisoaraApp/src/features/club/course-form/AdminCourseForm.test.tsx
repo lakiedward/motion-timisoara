@@ -23,6 +23,10 @@ import {
 } from '@/test/select-menu'
 import { setPickerValue } from '@/test/pickers'
 
+vi.mock('@/api/course-packages', () => ({
+  getCoursePackages: vi.fn().mockResolvedValue([]),
+  saveCoursePackages: vi.fn().mockResolvedValue([]),
+}))
 vi.mock('@/api/offer-hero', () => ({
   schimbaPozaOferta: vi.fn().mockResolvedValue('c/hero/a.jpg'),
   renuntaLaOfertaFaraHero: vi.fn(),

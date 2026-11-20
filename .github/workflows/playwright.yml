@@ -204,6 +204,9 @@ jobs:
     - name: Test the club head coach mark
       shell: pwsh
       run: ./supabase/tests/run-club-head-coach.ps1
+    - name: Test course packages
+      shell: pwsh
+      run: ./supabase/tests/run-course-packages.ps1
     - name: Test isolated coach live location access and lifecycle
       shell: pwsh
       run: ./supabase/tests/run-coach-live-location-realtime.ps1
