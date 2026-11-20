@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import { courseHeroUrl, getCourse, getCourseSpotsRemaining } from '@/api/public'
+import { getCoursePackages } from '@/api/course-packages'
+import { COURSE_PACKAGES_ON_SALE } from '@/lib/course-packages/course-packages'
 import { getCourseRatingSummary, getMyCourseRating, submitCourseRating } from '@/api/ratings'
 import { formatLevel } from '@/lib/level'
 import { useAuth } from '@/lib/auth-context'
@@ -29,6 +31,11 @@ export default function CourseDetailsPage() {
     queryFn: () => getCourse(id),
   })
   useDocumentTitle(course?.name, 'Cursuri')
+  const packages = useQuery({
+    queryKey: ['course-packages', id],
+    queryFn: () => getCoursePackages(id),
+    enabled: COURSE_PACKAGES_ON_SALE && Boolean(id),
+  })
   const { data: spotsRemaining } = useQuery({
     queryKey: ['course-spots', id],
     queryFn: () => getCourseSpotsRemaining(id),
@@ -124,6 +131,8 @@ export default function CourseDetailsPage() {
               showMyRating={user?.role === 'PARENT'}
               myRating={myRating ?? 0}
               onRate={(r) => rate.mutate(r)}
+              packages={packages.data}
+              packagesPending={COURSE_PACKAGES_ON_SALE && packages.isPending}
             />
           </aside>
         </div>
@@ -131,4 +140,3 @@ export default function CourseDetailsPage() {
     </div>
   )
 }
-

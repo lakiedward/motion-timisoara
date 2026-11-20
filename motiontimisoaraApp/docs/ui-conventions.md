@@ -26,7 +26,7 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
 
     canonic  src/index.css --touch-target
     plafon   0 valori scrise de mână, în 0 fișiere — poate doar scădea
-    folosit  193 fișiere
+    folosit  194 fișiere
 
 ## Forme de așteptare  [RESPECTATĂ]
 
@@ -34,7 +34,7 @@ moștenește, nu se re-decide. Ce nu e mai jos e chiar nou și merită o întreb
 
     canonic  src/components/ui/skeleton.tsx
     blocat   0 animate-pulse în afara primitivei
-    folosit  80 fișiere
+    folosit  81 fișiere
 
 ## Culorile de brand  [RESPECTATĂ]
 

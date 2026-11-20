@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
 
@@ -43,7 +43,10 @@ test('a full course disables the button and links to other courses without repea
   renderCard({ isFull: true })
   expect(screen.getByRole('button', { name: 'Locuri epuizate' })).toBeDisabled()
   expect(screen.getAllByText('Locuri epuizate')).toHaveLength(1)
-  expect(screen.getByRole('link', { name: 'Vezi alte cursuri' })).toHaveAttribute('href', '/cursuri')
+  expect(screen.getByRole('link', { name: 'Vezi alte cursuri' })).toHaveAttribute(
+    'href',
+    '/cursuri',
+  )
 })
 
 test('a free course reads Gratuit without a per-session price', () => {
@@ -63,4 +66,28 @@ test('an account that is not a parent sees a note instead of the button', () => 
   renderCard({ canEnroll: false })
   expect(screen.queryByRole('button')).not.toBeInTheDocument()
   expect(screen.getByText('Înscrierile se fac dintr-un cont de părinte.')).toBeInTheDocument()
+})
+
+test('with packages the card starts from the cheapest session and lists every package', () => {
+  renderCard({
+    packages: [
+      { id: 'p2', position: 1, sessions: 10, price: 40000, validity: 'NONE' },
+      { id: 'p1', position: 0, sessions: 5, price: 25000, validity: 'NONE' },
+    ],
+  })
+  expect(screen.getByText('de la')).toBeInTheDocument()
+  expect(screen.getByText(/^40,00 lei$/)).toBeInTheDocument()
+  const list = screen.getByRole('list', { name: 'Pachete de ședințe' })
+  const rows = within(list).getAllByRole('listitem')
+  expect(rows.map((row) => row.textContent)).toEqual([
+    '5 ședințe250,00 lei50,00 lei / ședință · fără expirare',
+    '10 ședințe400,00 lei40,00 lei / ședință · fără expirare',
+  ])
+  expect(screen.queryByText(/60,00 lei/)).not.toBeInTheDocument()
+})
+
+test('while packages load the price waits instead of showing the per-session price', () => {
+  renderCard({ packagesPending: true })
+  expect(screen.getByLabelText('Se încarcă prețul')).toBeInTheDocument()
+  expect(screen.queryByText(/60,00 lei/)).not.toBeInTheDocument()
 })
