@@ -268,6 +268,12 @@ SELECT public.test_assert(public.test_try($q$SELECT * FROM public.save_course_pa
     '[{"sessions":8,"price":30000,"validity":"DAYS","validityDays":45},{"sessions":4,"price":18000,"validity":"DAYS","validityDays":30}]')$q$) = '22023',
     'all DAYS packages of a course have the same number of days');
 SELECT public.test_assert(public.test_try($q$SELECT * FROM public.save_course_packages(public.test_uuid(101),
+    '[{"sessions":8,"price":30000,"validity":"CALENDAR_MONTH"},{"sessions":4,"price":18000,"validity":"NONE"}]')$q$) = '22023',
+    'monthly packages cannot be mixed with packages without expiry either');
+SELECT public.test_assert((SELECT count(*) FROM public.save_course_packages(public.test_uuid(101),
+    '[{"sessions":8,"price":30000,"validity":"CALENDAR_MONTH"},{"sessions":4,"price":18000,"validity":"CALENDAR_MONTH"}]')) = 2,
+    'a list with one validity still saves');
+SELECT public.test_assert(public.test_try($q$SELECT * FROM public.save_course_packages(public.test_uuid(101),
     '[{"sessions":8,"price":30000,"validity":"DAYS"}]')$q$) LIKE '23514%', 'DAYS needs a number of days');
 SELECT public.test_assert(public.test_try($q$SELECT * FROM public.save_course_packages(public.test_uuid(101),
     '[{"sessions":8,"price":30000,"validity":"DAYS","validityDays":6}]')$q$) LIKE '23514%'

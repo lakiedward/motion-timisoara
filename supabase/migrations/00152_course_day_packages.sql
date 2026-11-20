@@ -6,8 +6,10 @@
 -- own expiry, so a renewal never moves the sessions left in an older package.
 -- Unused sessions are lost, as for monthly packages.
 --
---   * course_packages.validity gains 'DAYS' and validity_days (7..365). A
---     course with a DAYS package has only DAYS packages, all with the same N.
+--   * course_packages.validity gains 'DAYS' and validity_days (7..365).
+--     save_course_packages now refuses a list that mixes validities (owner
+--     card 11:49Z: one validity for all packages of a course) or DAYS
+--     packages with different N.
 --   * the v3 price snapshot of a DAYS package has a 14th key, validDays.
 --   * a confirmed DAYS payment creates one enrollment_monthly_packages row with
 --     validity 'DAYS', valid_from = the Bucharest date of the confirmation and
@@ -189,10 +191,9 @@ BEGIN
                    (NULLIF(e.value->>'validityDays', ''))::smallint AS validity_days
             FROM jsonb_array_elements(p_packages) AS e(value))
         SELECT 1 FROM i
-        HAVING bool_or(i.validity = 'DAYS')
-           AND count(DISTINCT (i.validity, i.validity_days)) > 1
+        HAVING count(DISTINCT (i.validity, i.validity_days)) > 1
     ) THEN
-        RAISE EXCEPTION 'Pachetele care expiră după un număr de zile au toate același număr de zile'
+        RAISE EXCEPTION 'Pachetele unui curs au toate aceeași valabilitate și același număr de zile'
             USING ERRCODE = '22023';
     END IF;
 

@@ -10,7 +10,7 @@ Already decided and unchanged: unused sessions are lost; the name is „pachet�
 
 ## What the coach or club sets
 
-„Valabilitatea pachetelor” in the course form (`data-section="course-form-packages"`) gets a third option, „Expiră după un număr de zile” (`DAYS`), and a „Număr de zile” field (`data-section="course-form-package-days"`). The number applies to every package of the course. `course_packages.validity_days` (SMALLINT) is set only for `DAYS`, 7–365 (CHECK). `save_course_packages` takes `validityDays` per package and refuses a list where a `DAYS` package sits next to another validity or another N.
+„Valabilitatea pachetelor” in the course form (`data-section="course-form-packages"`) gets a third option, „Expiră după un număr de zile” (`DAYS`), and a „Număr de zile” field (`data-section="course-form-package-days"`). The number applies to every package of the course. `course_packages.validity_days` (SMALLINT) is set only for `DAYS`, 7–365 (CHECK). `save_course_packages` takes `validityDays` per package and refuses (22023) any list that mixes validities or `DAYS` packages with different N. The owner confirmed one validity per course on a card at 11:49Z; #698 enforced it only in the client.
 
 ## What the parent buys
 
