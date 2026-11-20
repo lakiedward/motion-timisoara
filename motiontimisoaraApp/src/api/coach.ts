@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { attendancePackageNote, type ExpiringPackage } from '@/lib/course-packages/package-expiry'
 import type { Tables } from '@/lib/database.types'
 import { regenerateCourseOccurrences } from '@/api/course-occurrences'
 import type { ClubLocation } from '@/api/club'
@@ -423,9 +424,14 @@ export interface RosterEntry {
   child_name: string
   child_birth_date: string
   status: 'PRESENT' | 'ABSENT' | null
+  package_note?: string | null
 }
 
-type EnrolledChild = { child: { id: string; name: string; birth_date: string } | null }
+type EnrolledChild = {
+  child: { id: string; name: string; birth_date: string } | null
+  remaining_sessions: number | null
+  monthly_packages: ExpiringPackage[] | null
+}
 
 export async function getSessionRoster(
   courseId: string,
@@ -434,7 +440,9 @@ export async function getSessionRoster(
   const [enrollmentsRes, attendanceRes] = await Promise.all([
     supabase
       .from('enrollments')
-      .select('child:children(id, name, birth_date)')
+      .select(
+        'remaining_sessions, child:children(id, name, birth_date), monthly_packages:enrollment_monthly_packages(sessions, sessions_used, valid_from, valid_until)',
+      )
       .eq('kind', 'COURSE')
       .eq('entity_id', courseId)
       .eq('status', 'ACTIVE'),
@@ -451,6 +459,7 @@ export async function getSessionRoster(
       child_name: e.child!.name,
       child_birth_date: e.child!.birth_date,
       status: (attMap.get(e.child!.id) as 'PRESENT' | 'ABSENT' | undefined) ?? null,
+      package_note: attendancePackageNote(e.monthly_packages, e.remaining_sessions ?? 0),
     }))
     .sort((a, b) => a.child_name.localeCompare(b.child_name, 'ro'))
 }
