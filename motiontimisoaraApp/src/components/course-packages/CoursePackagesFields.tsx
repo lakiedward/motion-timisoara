@@ -47,123 +47,136 @@ export function CoursePackagesFields<T extends PackagesForm>({
   const formControl = control as unknown as Control<CoursePackagesFormValues>
   const formRegister = register as unknown as UseFormRegister<CoursePackagesFormValues>
   const packageErrors = (errors as FieldErrors<CoursePackagesFormValues>).packages
-  const { fields, append, remove } = useFieldArray({ control: formControl, name: 'packages' })
+  const { fields, append, remove, update } = useFieldArray({
+    control: formControl,
+    name: 'packages',
+  })
   const values = useWatch({ control: formControl, name: 'packages' })
   const unit = currency === 'EUR' ? 'EUR' : 'lei'
   const full = fields.length >= MAX_COURSE_PACKAGES
+  const validity = values?.[0]?.validity === MONTHLY ? MONTHLY : 'NONE'
+  const syncValidity = (next: string) => {
+    values?.forEach((item, index) => {
+      if (index > 0 && item.validity !== next) {
+        update(index, { ...item, validity: next === MONTHLY ? MONTHLY : 'NONE' })
+      }
+    })
+  }
 
   return (
     <div data-section="course-form-packages">
       <FormSection
         title="Pachete"
-        description={`Opțional. Până la ${MAX_COURSE_PACKAGES} pachete, de exemplu 8 ședințe la un preț total. Unde cursul are pachete, părintele poate cumpăra doar unul dintre ele, la înscriere și la reînnoire, fără alt număr de ședințe. Un pachet lunar e valabil de la 1 la ultima zi a lunii alese de părinte; ședințele nefolosite se pierd.`}
+        description={`Opțional. Până la ${MAX_COURSE_PACKAGES} pachete, de exemplu 8 ședințe la un preț total. Unde cursul are pachete, părintele poate cumpăra doar unul dintre ele, la înscriere și la reînnoire, fără alt număr de ședințe. Pachetele unui curs sunt toate lunare sau toate fără expirare. Un pachet lunar e valabil de la 1 la ultima zi a lunii alese de părinte; ședințele nefolosite se pierd.`}
       >
         {fields.length === 0 ? (
           <p className="text-muted-foreground text-sm">
             Fără pachete, părintele alege la înscriere câte ședințe plătește, la prețul pe ședință.
           </p>
         ) : (
-          <ul className="space-y-3" aria-label="Pachete">
-            {fields.map((field, index) => {
-              const fieldErrors = packageErrors?.[index]
-              const sessionsId = `package-${index}-sessions`
-              const priceId = `package-${index}-price`
-              const validityId = `package-${index}-validity`
-              const current = values?.[index]
-              const sessions = Number(current?.sessions)
-              const price = parseScaledDecimal(current?.price ?? '', 2)
-              const perSession =
-                Number.isInteger(sessions) && sessions > 0 && price
-                  ? formatMoney(pricePerSession({ sessions, price }), currency)
-                  : null
-              return (
-                <li
-                  key={field.id}
-                  className="rounded-xl border p-4"
-                  aria-label={`Pachetul ${index + 1}`}
-                >
-                  <div className="mb-3 flex items-center justify-between gap-2">
-                    <h3 className="font-semibold">
-                      Pachetul {index + 1}
-                      {Number.isInteger(sessions) && sessions > 0
-                        ? ` · ${sessionsLabel(sessions)}`
-                        : ''}
-                    </h3>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="size-touch-target min-h-touch-target"
-                      onClick={() => remove(index)}
-                      aria-label={`Șterge pachetul ${index + 1}`}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="min-w-0 space-y-1.5">
-                      <Label htmlFor={sessionsId}>Număr de ședințe</Label>
-                      <Input
-                        id={sessionsId}
-                        type="number"
-                        inputMode="numeric"
-                        min={1}
-                        max={MAX_PACKAGE_SESSIONS}
-                        step={1}
-                        aria-invalid={!!fieldErrors?.sessions}
-                        aria-describedby={fieldDescription(
-                          sessionsId,
-                          undefined,
-                          fieldErrors?.sessions?.message,
-                        )}
-                        {...formRegister(`packages.${index}.sessions`)}
-                      />
-                      <FieldMessage id={sessionsId} error={fieldErrors?.sessions?.message} />
+          <>
+            <div className="min-w-0 space-y-1.5">
+              <Label htmlFor="packages-validity">Valabilitatea pachetelor</Label>
+              <FormSelectMenu
+                control={formControl}
+                name="packages.0.validity"
+                id="packages-validity"
+                aria-describedby={fieldDescription('packages-validity', 'hint', undefined)}
+                options={VALIDITY_OPTIONS}
+                onValueChange={syncValidity}
+              />
+              <FieldMessage
+                id="packages-validity"
+                hint={
+                  validity === MONTHLY
+                    ? 'Toate pachetele cursului sunt lunare: părintele alege luna aceasta sau luna următoare și plătește prețul întreg. Ședințele nefolosite se pierd la sfârșitul lunii.'
+                    : 'Toate pachetele cursului sunt fără expirare: ședințele rămân până le folosește copilul.'
+                }
+              />
+            </div>
+            <ul className="space-y-3" aria-label="Pachete">
+              {fields.map((field, index) => {
+                const fieldErrors = packageErrors?.[index]
+                const sessionsId = `package-${index}-sessions`
+                const priceId = `package-${index}-price`
+                const current = values?.[index]
+                const sessions = Number(current?.sessions)
+                const price = parseScaledDecimal(current?.price ?? '', 2)
+                const perSession =
+                  Number.isInteger(sessions) && sessions > 0 && price
+                    ? formatMoney(pricePerSession({ sessions, price }), currency)
+                    : null
+                return (
+                  <li
+                    key={field.id}
+                    className="rounded-xl border p-4"
+                    aria-label={`Pachetul ${index + 1}`}
+                  >
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <h3 className="font-semibold">
+                        Pachetul {index + 1}
+                        {Number.isInteger(sessions) && sessions > 0
+                          ? ` · ${sessionsLabel(sessions)}`
+                          : ''}
+                      </h3>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="size-touch-target min-h-touch-target"
+                        onClick={() => remove(index)}
+                        aria-label={`Șterge pachetul ${index + 1}`}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
                     </div>
-                    <div className="min-w-0 space-y-1.5">
-                      <Label htmlFor={priceId}>Preț total ({unit})</Label>
-                      <Input
-                        id={priceId}
-                        type="number"
-                        inputMode="decimal"
-                        step="0.01"
-                        min={0}
-                        aria-invalid={!!fieldErrors?.price}
-                        aria-describedby={fieldDescription(
-                          priceId,
-                          perSession ? `${perSession} / ședință` : undefined,
-                          fieldErrors?.price?.message,
-                        )}
-                        {...formRegister(`packages.${index}.price`)}
-                      />
-                      <FieldMessage
-                        id={priceId}
-                        hint={perSession ? `Înseamnă ${perSession} / ședință.` : undefined}
-                        error={fieldErrors?.price?.message}
-                      />
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="min-w-0 space-y-1.5">
+                        <Label htmlFor={sessionsId}>Număr de ședințe</Label>
+                        <Input
+                          id={sessionsId}
+                          type="number"
+                          inputMode="numeric"
+                          min={1}
+                          max={MAX_PACKAGE_SESSIONS}
+                          step={1}
+                          aria-invalid={!!fieldErrors?.sessions}
+                          aria-describedby={fieldDescription(
+                            sessionsId,
+                            undefined,
+                            fieldErrors?.sessions?.message,
+                          )}
+                          {...formRegister(`packages.${index}.sessions`)}
+                        />
+                        <FieldMessage id={sessionsId} error={fieldErrors?.sessions?.message} />
+                      </div>
+                      <div className="min-w-0 space-y-1.5">
+                        <Label htmlFor={priceId}>Preț total ({unit})</Label>
+                        <Input
+                          id={priceId}
+                          type="number"
+                          inputMode="decimal"
+                          step="0.01"
+                          min={0}
+                          aria-invalid={!!fieldErrors?.price}
+                          aria-describedby={fieldDescription(
+                            priceId,
+                            perSession ? `${perSession} / ședință` : undefined,
+                            fieldErrors?.price?.message,
+                          )}
+                          {...formRegister(`packages.${index}.price`)}
+                        />
+                        <FieldMessage
+                          id={priceId}
+                          hint={perSession ? `Înseamnă ${perSession} / ședință.` : undefined}
+                          error={fieldErrors?.price?.message}
+                        />
+                      </div>
                     </div>
-                    <div className="min-w-0 space-y-1.5 sm:col-span-2">
-                      <Label htmlFor={validityId}>Valabilitate</Label>
-                      <FormSelectMenu
-                        control={formControl}
-                        name={`packages.${index}.validity`}
-                        id={validityId}
-                        aria-describedby={fieldDescription(validityId, 'hint', undefined)}
-                        options={VALIDITY_OPTIONS}
-                      />
-                      <FieldMessage
-                        id={validityId}
-                        hint={
-                          current?.validity === MONTHLY
-                            ? 'Părintele alege luna aceasta sau luna următoare și plătește prețul întreg. Ședințele nefolosite se pierd la sfârșitul lunii.'
-                            : 'Ședințele rămân până le folosește copilul.'
-                        }
-                      />
-                    </div>
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
+                  </li>
+                )
+              })}
+            </ul>
+          </>
         )}
         {typeof packageErrors?.message === 'string' && (
           <p className="text-destructive text-sm" role="alert">
@@ -177,7 +190,7 @@ export function CoursePackagesFields<T extends PackagesForm>({
             className="h-touch-target min-h-touch-target"
             disabled={full}
             aria-describedby={full ? 'packages-full' : undefined}
-            onClick={() => append(emptyCoursePackage())}
+            onClick={() => append({ ...emptyCoursePackage(), validity })}
           >
             <Plus className="size-4" /> Adaugă un pachet
           </Button>

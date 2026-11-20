@@ -61,6 +61,13 @@ export const coursePackagesSchema = z
   )
   .max(MAX_COURSE_PACKAGES, `Cel mult ${MAX_COURSE_PACKAGES} pachete`)
   .superRefine((packages, ctx) => {
+    if (new Set(packages.map((item) => item.validity)).size > 1) {
+      ctx.addIssue({
+        code: 'custom',
+        path: [],
+        message: 'Pachetele unui curs sunt toate lunare sau toate fără expirare.',
+      })
+    }
     const seen = new Set<string>()
     packages.forEach((item, index) => {
       const sessions = Number(item.sessions)

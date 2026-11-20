@@ -48,9 +48,9 @@ test('the schema refuses empty, zero, fractional and repeated values', () => {
   expect(
     issues([
       { sessions: '8', price: '320', validity: 'NONE' },
-      { sessions: '8', price: '300', validity: 'CALENDAR_MONTH' },
+      { sessions: '12', price: '450', validity: 'CALENDAR_MONTH' },
     ]),
-  ).toEqual([])
+  ).toEqual(['Pachetele unui curs sunt toate lunare sau toate fără expirare.'])
   expect(
     issues([
       { sessions: '8', price: '320', validity: 'CALENDAR_MONTH' },
