@@ -51,3 +51,22 @@ test('an expired package says so the day after the month ends', () => {
     'Pachetul lunar din noiembrie 2026 a expirat pe 30 noiembrie 2026',
   ])
 })
+
+test('a package that expires after N days shows its purchase date and its own expiry', () => {
+  const first = {
+    id: 'd1',
+    sessions: 8,
+    sessions_used: 6,
+    valid_from: '2026-11-20',
+    valid_until: '2027-01-03',
+    validity: 'DAYS',
+  }
+  const second = { ...first, id: 'd2', sessions_used: 0, valid_from: '2026-12-28', valid_until: '2027-02-10' }
+  expect(sessionsLines({ ...base, monthly_packages: [second, first] }, '2026-12-28')).toEqual([
+    'Pachet din 20 noiembrie 2026: 2 rămase din 8, expiră pe 3 ianuarie 2027',
+    'Pachet din 28 decembrie 2026: 8 rămase din 8, expiră pe 10 februarie 2027',
+  ])
+  expect(sessionsLines({ ...base, monthly_packages: [first] }, '2027-01-04')).toEqual([
+    'Pachetul din 20 noiembrie 2026 a expirat pe 3 ianuarie 2027',
+  ])
+})

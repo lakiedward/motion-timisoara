@@ -79,9 +79,9 @@ const rejectionMessages: Record<string, string> = {
     "Copilul are mai multe înscrieri active. Contactează administratorul.",
   NO_REMAINING_SESSIONS: "Copilul nu mai are ședințe disponibile.",
   PACKAGE_EXPIRED:
-    "Pachetul lunar al copilului a expirat. Părintele cumpără pachetul pentru luna ședinței din Înscrieri.",
+    "Pachetul copilului a expirat. Părintele cumpără un pachet nou din Înscrieri.",
   PACKAGE_NOT_STARTED:
-    "Pachetul lunar al copilului începe luna viitoare, nu acoperă ședința aceasta.",
+    "Pachetul copilului începe după data ședinței, nu acoperă ședința aceasta.",
   TOO_EARLY: "Pontajul se deschide la începutul ședinței.",
   INVALID_BALANCE: "Soldul ședințelor trebuie verificat de administrator.",
   UNAUTHORIZED: "Sesiunea a expirat. Autentifică-te din nou.",

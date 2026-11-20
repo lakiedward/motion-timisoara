@@ -273,8 +273,8 @@ test('a course with packages sells only its packages and sends the chosen packag
             packages: [5, 10, 20],
             currency: 'RON',
             coursePackages: [
-              { id: 'pkg-8', position: 0, sessions: 8, price: 32000, validity: 'NONE' },
-              { id: 'pkg-4', position: 1, sessions: 4, price: 18000, validity: 'NONE' },
+              { id: 'pkg-8', position: 0, sessions: 8, price: 32000, validity: 'NONE', validity_days: null },
+              { id: 'pkg-4', position: 1, sessions: 4, price: 18000, validity: 'NONE', validity_days: null },
             ],
           }}
           initialMethod="CASH"

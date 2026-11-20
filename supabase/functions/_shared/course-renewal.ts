@@ -73,7 +73,7 @@ export async function loadRenewalTarget(
     .eq("enrollment_id", enrollment.id)
     .lte("valid_from", today)
     .gte("valid_until", today);
-  if (monthlyError) throw enrollmentJson({ error: "Nu am putut verifica pachetele lunare." }, 500);
+  if (monthlyError) throw enrollmentJson({ error: "Nu am putut verifica pachetele cu termen de valabilitate." }, 500);
   const monthlyLeft = (monthly ?? []).reduce((sum, row) => sum + row.sessions - row.sessions_used, 0);
   const { data: open, error: paymentError } = await db
     .from("payments")

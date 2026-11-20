@@ -1,12 +1,13 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enrollmentJson } from "./enrollment-pricing.ts";
-import { type PriceSnapshot, validPackageMonth, validQuantity } from "./price-snapshot.ts";
+import { type PriceSnapshot, validPackageMonth, validQuantity, validValidityDays } from "./price-snapshot.ts";
 
 export interface CoursePackageOffer {
   id: string;
   sessions: number;
   price: number;
   validity: string;
+  validity_days?: number | null;
 }
 
 export interface CourseChoice {
@@ -23,7 +24,7 @@ export interface CourseChoiceRequest {
 
 export const PACKAGE_CHANGED = "PACKAGE_CHANGED";
 export const MONTH_CHANGED = "MONTH_CHANGED";
-const SOLD_VALIDITIES = ["NONE", "CALENDAR_MONTH"];
+const SOLD_VALIDITIES = ["NONE", "CALENDAR_MONTH", "DAYS"];
 
 export function bucharestMonth(now: Date, offset = 0): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -127,7 +128,14 @@ export function chooseCourseOffer(
     }
     month = packageMonth as string;
   } else if (packageMonth !== undefined) {
-    throw enrollmentJson({ error: "Acest pachet nu expiră; nu are o lună de ales." }, 400);
+    throw enrollmentJson({
+      error: chosen.validity === "DAYS"
+        ? "Acest pachet expiră după un număr de zile; nu are o lună de ales."
+        : "Acest pachet nu expiră; nu are o lună de ales.",
+    }, 400);
+  }
+  if (chosen.validity === "DAYS" ? !validValidityDays(chosen.validity_days) : chosen.validity_days != null) {
+    throw enrollmentJson({ error: "Pachetul nu este valid. Contactează clubul." }, 409);
   }
   if (
     !validQuantity(chosen.sessions) || chosen.sessions > 100 ||
@@ -148,17 +156,20 @@ export async function resolveCourseChoice(
 ): Promise<CourseChoice> {
   const { data, error } = await db
     .from("course_packages")
-    .select("id, sessions, price, validity")
+    .select("id, sessions, price, validity, validity_days")
     .eq("course_id", courseId);
   if (error) throw enrollmentJson({ error: "Nu am putut citi pachetele cursului. Reîncearcă." }, 500);
   return chooseCourseOffer((data ?? []) as CoursePackageOffer[], request);
 }
 
 export function snapshotMatchesChoice(
-  snapshot: { quantity: number; packageId?: string; validMonth?: string },
+  snapshot: { quantity: number; packageId?: string; validMonth?: string; validDays?: number },
   choice: CourseChoice,
 ): boolean {
   return snapshot.quantity === choice.quantity &&
     (snapshot.packageId ?? null) === (choice.coursePackage?.id ?? null) &&
-    (snapshot.validMonth ?? null) === choice.month;
+    (snapshot.validMonth ?? null) === choice.month &&
+    (snapshot.validDays ?? null) === (choice.coursePackage?.validity === "DAYS"
+      ? choice.coursePackage.validity_days ?? null
+      : null);
 }

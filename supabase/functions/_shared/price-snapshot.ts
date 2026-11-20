@@ -12,6 +12,7 @@ export interface PriceSnapshot {
   packageId?: string;
   validity?: PackageValidity;
   validMonth?: string;
+  validDays?: number;
   sourcePackageAmount?: number;
   sourceCurrency: "RON" | "EUR";
   quantity: number;
@@ -21,7 +22,15 @@ export interface PriceSnapshot {
   priceVersion: string;
 }
 
-export type PackageValidity = "NONE" | "CALENDAR_MONTH";
+export type PackageValidity = "NONE" | "CALENDAR_MONTH" | "DAYS";
+
+export const MIN_VALIDITY_DAYS = 7;
+export const MAX_VALIDITY_DAYS = 365;
+
+export function validValidityDays(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) &&
+    value >= MIN_VALIDITY_DAYS && value <= MAX_VALIDITY_DAYS;
+}
 
 const PACKAGE_MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 
@@ -83,6 +92,7 @@ export async function snapshotVersion(
       snapshot.packageId,
       snapshot.validity,
       ...(snapshot.validity === "CALENDAR_MONTH" ? [snapshot.validMonth] : []),
+      ...(snapshot.validity === "DAYS" ? [snapshot.validDays] : []),
       snapshot.sourcePackageAmount,
       snapshot.sourceCurrency,
       snapshot.quantity,
@@ -172,16 +182,18 @@ const MAX_PACKAGE_PRICE = 10_000_000;
 export async function createCoursePackageSnapshot(
   courseId: string,
   childId: string,
-  coursePackage: { id: string; sessions: number; price: number; validity: string },
+  coursePackage: { id: string; sessions: number; price: number; validity: string; validity_days?: number | null },
   sourceCurrency: string,
   eurRonRateMicros: number | null,
   validMonth: string | null = null,
 ): Promise<PriceSnapshot> {
   const monthly = coursePackage.validity === "CALENDAR_MONTH";
+  const days = coursePackage.validity === "DAYS";
   if (
     !courseId || !childId || !coursePackage.id ||
-    (coursePackage.validity !== "NONE" && !monthly) ||
+    (coursePackage.validity !== "NONE" && !monthly && !days) ||
     (monthly ? !validPackageMonth(validMonth) : validMonth !== null) ||
+    (days ? !validValidityDays(coursePackage.validity_days) : coursePackage.validity_days != null) ||
     !validQuantity(coursePackage.sessions) || coursePackage.sessions > MAX_PACKAGE_SESSIONS ||
     !validQuantity(coursePackage.price) || coursePackage.price > MAX_PACKAGE_PRICE
   ) {
@@ -195,6 +207,7 @@ export async function createCoursePackageSnapshot(
     packageId: coursePackage.id,
     validity: coursePackage.validity as PackageValidity,
     ...(monthly ? { validMonth: validMonth! } : {}),
+    ...(days ? { validDays: coursePackage.validity_days! } : {}),
     sourcePackageAmount: coursePackage.price,
     sourceCurrency: sourceCurrency as PriceSnapshot["sourceCurrency"],
     quantity: coursePackage.sessions,
@@ -208,16 +221,22 @@ export async function createCoursePackageSnapshot(
 async function readCoursePackageSnapshot(snapshot: PriceSnapshot): Promise<PriceSnapshot> {
   const keys = Object.keys(snapshot);
   const monthly = snapshot.validity === "CALENDAR_MONTH";
-  const expected = monthly ? [...PACKAGE_SNAPSHOT_KEYS, "validMonth"] : PACKAGE_SNAPSHOT_KEYS;
+  const days = snapshot.validity === "DAYS";
+  const expected = monthly
+    ? [...PACKAGE_SNAPSHOT_KEYS, "validMonth"]
+    : days
+    ? [...PACKAGE_SNAPSHOT_KEYS, "validDays"]
+    : PACKAGE_SNAPSHOT_KEYS;
   if (
     keys.length !== expected.length ||
     !expected.every((key) => keys.includes(key)) ||
     (monthly && !validPackageMonth(snapshot.validMonth)) ||
+    (days && !validValidityDays(snapshot.validDays)) ||
     snapshot.kind !== "COURSE" ||
     typeof snapshot.entityId !== "string" || !snapshot.entityId ||
     typeof snapshot.childId !== "string" || !snapshot.childId ||
     typeof snapshot.packageId !== "string" || !snapshot.packageId ||
-    (snapshot.validity !== "NONE" && !monthly) ||
+    (snapshot.validity !== "NONE" && !monthly && !days) ||
     !validQuantity(snapshot.quantity) || snapshot.quantity > MAX_PACKAGE_SESSIONS ||
     !validQuantity(snapshot.sourcePackageAmount) || snapshot.sourcePackageAmount > MAX_PACKAGE_PRICE ||
     snapshot.currency !== "RON" ||

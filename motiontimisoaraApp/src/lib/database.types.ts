@@ -2223,6 +2223,7 @@ export type Database = {
           sessions: number
           updated_at: string
           validity: string
+          validity_days: number | null
         }
         Insert: {
           course_id: string
@@ -2233,6 +2234,7 @@ export type Database = {
           sessions: number
           updated_at?: string
           validity?: string
+          validity_days?: number | null
         }
         Update: {
           course_id?: string
@@ -2243,6 +2245,7 @@ export type Database = {
           sessions?: number
           updated_at?: string
           validity?: string
+          validity_days?: number | null
         }
         Relationships: [
           {
@@ -2474,6 +2477,7 @@ enrollment_monthly_packages: {
           sessions_used: number
           valid_from: string
           valid_until: string
+          validity: string
         }
         Insert: {
           created_at?: string
@@ -2485,6 +2489,7 @@ enrollment_monthly_packages: {
           sessions_used?: number
           valid_from: string
           valid_until: string
+          validity?: string
         }
         Update: {
           created_at?: string
@@ -2496,6 +2501,7 @@ enrollment_monthly_packages: {
           sessions_used?: number
           valid_from?: string
           valid_until?: string
+          validity?: string
         }
         Relationships: [
           {
@@ -4358,6 +4364,7 @@ enrollment_monthly_packages: {
           sessions: number
           updated_at: string
           validity: string
+          validity_days: number | null
         }[]
         SetofOptions: {
           from: "*"

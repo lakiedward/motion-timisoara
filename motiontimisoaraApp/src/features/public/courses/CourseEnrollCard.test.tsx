@@ -71,8 +71,8 @@ test('an account that is not a parent sees a note instead of the button', () => 
 test('with packages the card starts from the cheapest session and lists every package', () => {
   renderCard({
     packages: [
-      { id: 'p2', position: 1, sessions: 10, price: 40000, validity: 'NONE' },
-      { id: 'p1', position: 0, sessions: 5, price: 25000, validity: 'NONE' },
+      { id: 'p2', position: 1, sessions: 10, price: 40000, validity: 'NONE', validity_days: null },
+      { id: 'p1', position: 0, sessions: 5, price: 25000, validity: 'NONE', validity_days: null },
     ],
   })
   expect(screen.getByText('de la')).toBeInTheDocument()

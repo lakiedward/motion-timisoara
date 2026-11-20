@@ -89,8 +89,8 @@ export function checkinProblem(code: string): EntranceMessage {
       }
     case 'PACKAGE_EXPIRED':
       return {
-        title: 'Pachetul lunar a expirat',
-        text: 'Pachetul lunar al copilului era pentru o lună încheiată. Cumpără pachetul pentru luna aceasta din Înscrieri sau plătește antrenorului.',
+        title: 'Pachetul a expirat',
+        text: 'Valabilitatea pachetului copilului s-a încheiat. Cumpără un pachet nou din Înscrieri sau plătește antrenorului.',
       }
     case 'PACKAGE_NOT_STARTED':
       return {

@@ -15,12 +15,17 @@ import { FormSelectMenu } from '@/components/ui/form-select-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
+  DAYS,
   MAX_COURSE_PACKAGES,
   MAX_PACKAGE_SESSIONS,
+  MAX_VALIDITY_DAYS,
+  MIN_VALIDITY_DAYS,
+  daysLabel,
   emptyCoursePackage,
   pricePerSession,
   sessionsLabel,
   type CoursePackagesFormValues,
+  type PackageValidity,
 } from '@/lib/course-packages/course-packages'
 import { MONTHLY } from '@/lib/course-packages/package-month'
 import { formatMoney } from '@/lib/money'
@@ -31,7 +36,20 @@ type PackagesForm = FieldValues & CoursePackagesFormValues
 const VALIDITY_OPTIONS = [
   { value: 'NONE', label: 'Fără expirare' },
   { value: MONTHLY, label: 'Lunar – expiră la sfârșitul lunii' },
+  { value: DAYS, label: 'Expiră după un număr de zile' },
 ]
+
+function asValidity(value: string | undefined): PackageValidity {
+  return value === MONTHLY || value === DAYS ? value : 'NONE'
+}
+
+function validityHint(validity: PackageValidity, days: number | null): string {
+  if (validity === MONTHLY)
+    return 'Toate pachetele cursului sunt lunare: părintele alege luna aceasta sau luna următoare și plătește prețul întreg. Ședințele nefolosite se pierd la sfârșitul lunii.'
+  if (validity === DAYS)
+    return `Toate pachetele cursului expiră după ${days ? daysLabel(days) : 'numărul de zile ales'}, numărate de la confirmarea plății (ziua plății e prima zi). Fiecare pachet cumpărat își păstrează data lui; ședințele nefolosite se pierd la expirare.`
+  return 'Toate pachetele cursului sunt fără expirare: ședințele rămân până le folosește copilul.'
+}
 
 export function CoursePackagesFields<T extends PackagesForm>({
   control,
@@ -54,11 +72,16 @@ export function CoursePackagesFields<T extends PackagesForm>({
   const values = useWatch({ control: formControl, name: 'packages' })
   const unit = currency === 'EUR' ? 'EUR' : 'lei'
   const full = fields.length >= MAX_COURSE_PACKAGES
-  const validity = values?.[0]?.validity === MONTHLY ? MONTHLY : 'NONE'
-  const syncValidity = (next: string) => {
+  const validity = asValidity(values?.[0]?.validity)
+  const validityDays = values?.[0]?.validityDays
+  const parsedDays = /^\d+$/.test(validityDays?.trim() ?? '') ? Number(validityDays) : null
+  const daysError = packageErrors?.[0]?.validityDays?.message
+  const syncValidity = (next: string, days = validityDays) => {
     values?.forEach((item, index) => {
-      if (index > 0 && item.validity !== next) {
-        update(index, { ...item, validity: next === MONTHLY ? MONTHLY : 'NONE' })
+      const nextValidity = asValidity(next)
+      const nextDays = nextValidity === DAYS ? days : undefined
+      if (index > 0 && (item.validity !== nextValidity || item.validityDays !== nextDays)) {
+        update(index, { ...item, validity: nextValidity, validityDays: nextDays })
       }
     })
   }
@@ -67,7 +90,7 @@ export function CoursePackagesFields<T extends PackagesForm>({
     <div data-section="course-form-packages">
       <FormSection
         title="Pachete"
-        description={`Opțional. Până la ${MAX_COURSE_PACKAGES} pachete, de exemplu 8 ședințe la un preț total. Unde cursul are pachete, părintele poate cumpăra doar unul dintre ele, la înscriere și la reînnoire, fără alt număr de ședințe. Pachetele unui curs sunt toate lunare sau toate fără expirare. Un pachet lunar e valabil de la 1 la ultima zi a lunii alese de părinte; ședințele nefolosite se pierd.`}
+        description={`Opțional. Până la ${MAX_COURSE_PACKAGES} pachete, de exemplu 8 ședințe la un preț total. Unde cursul are pachete, părintele poate cumpăra doar unul dintre ele, la înscriere și la reînnoire, fără alt număr de ședințe. Pachetele unui curs au toate aceeași valabilitate: fără expirare, lunare sau un număr de zile ales de tine. Un pachet lunar e valabil de la 1 la ultima zi a lunii alese de părinte; ședințele nefolosite se pierd.`}
       >
         {fields.length === 0 ? (
           <p className="text-muted-foreground text-sm">
@@ -85,15 +108,36 @@ export function CoursePackagesFields<T extends PackagesForm>({
                 options={VALIDITY_OPTIONS}
                 onValueChange={syncValidity}
               />
-              <FieldMessage
-                id="packages-validity"
-                hint={
-                  validity === MONTHLY
-                    ? 'Toate pachetele cursului sunt lunare: părintele alege luna aceasta sau luna următoare și plătește prețul întreg. Ședințele nefolosite se pierd la sfârșitul lunii.'
-                    : 'Toate pachetele cursului sunt fără expirare: ședințele rămân până le folosește copilul.'
-                }
-              />
+              <FieldMessage id="packages-validity" hint={validityHint(validity, parsedDays)} />
             </div>
+            {validity === DAYS && (
+              <div className="min-w-0 space-y-1.5 sm:max-w-xs" data-section="course-form-package-days">
+                <Label htmlFor="packages-validity-days">Număr de zile</Label>
+                <Input
+                  id="packages-validity-days"
+                  type="number"
+                  inputMode="numeric"
+                  min={MIN_VALIDITY_DAYS}
+                  max={MAX_VALIDITY_DAYS}
+                  step={1}
+                  aria-invalid={!!daysError}
+                  aria-describedby={fieldDescription(
+                    'packages-validity-days',
+                    'hint',
+                    daysError,
+                  )}
+                  {...formRegister('packages.0.validityDays', {
+                    onChange: (event: { target: { value: string } }) =>
+                      syncValidity(DAYS, event.target.value),
+                  })}
+                />
+                <FieldMessage
+                  id="packages-validity-days"
+                  hint={`Între ${MIN_VALIDITY_DAYS} și ${MAX_VALIDITY_DAYS} de zile, de exemplu 45.`}
+                  error={daysError}
+                />
+              </div>
+            )}
             <ul className="space-y-3" aria-label="Pachete">
               {fields.map((field, index) => {
                 const fieldErrors = packageErrors?.[index]
@@ -190,7 +234,13 @@ export function CoursePackagesFields<T extends PackagesForm>({
             className="h-touch-target min-h-touch-target"
             disabled={full}
             aria-describedby={full ? 'packages-full' : undefined}
-            onClick={() => append({ ...emptyCoursePackage(), validity })}
+            onClick={() =>
+              append({
+                ...emptyCoursePackage(),
+                validity,
+                ...(validity === DAYS ? { validityDays } : {}),
+              })
+            }
           >
             <Plus className="size-4" /> Adaugă un pachet
           </Button>

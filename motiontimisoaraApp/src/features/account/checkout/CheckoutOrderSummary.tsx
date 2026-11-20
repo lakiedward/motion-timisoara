@@ -1,5 +1,6 @@
 import { AcceptedPriceDetails } from '@/components/AcceptedPriceDetails'
 import { Badge } from '@/components/ui/badge'
+import { daysLabel } from '@/lib/course-packages/course-packages'
 import { monthRange } from '@/lib/course-packages/package-month'
 import { formatRonOffer } from '@/lib/money'
 
@@ -48,6 +49,7 @@ export function CheckoutOrderSummary({
   kindLabel,
   packageSize,
   packageMonth,
+  packageDays,
   lines,
   total,
 }: {
@@ -55,6 +57,7 @@ export function CheckoutOrderSummary({
   kindLabel: string
   packageSize?: number
   packageMonth?: string
+  packageDays?: number
   lines: SummaryLine[]
   total?: number
 }) {
@@ -62,6 +65,7 @@ export function CheckoutOrderSummary({
     participantLabel(lines),
     packageSize !== undefined && `pachet de ${packageSize} ședințe`,
     packageMonth && `valabil ${monthRange(packageMonth)}`,
+    packageDays && `valabil ${daysLabel(packageDays)} de la plată`,
   ]
     .filter(Boolean)
     .join(' · ')

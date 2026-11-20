@@ -51,11 +51,17 @@ export function bucharestToday(now: Date = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Bucharest' }).format(now)
 }
 
+function packageName(item: MonthlyPackage): string {
+  return item.validity === 'DAYS'
+    ? `Pachet din ${dateLabel(item.valid_from)}`
+    : `Pachet lunar ${monthName(item.valid_from.slice(0, 7))}`
+}
+
 function monthlyLine(item: MonthlyPackage, today: string): string {
-  const month = monthName(item.valid_from.slice(0, 7))
+  const name = packageName(item)
   if (item.valid_from > today)
-    return `Pachet lunar ${month}: ${plural(item.sessions, 'ședință', 'ședințe')}, începe pe ${dateLabel(item.valid_from)}`
-  return `Pachet lunar ${month}: ${item.sessions - item.sessions_used} rămase din ${item.sessions}, expiră pe ${dateLabel(item.valid_until)}`
+    return `${name}: ${plural(item.sessions, 'ședință', 'ședințe')}, începe pe ${dateLabel(item.valid_from)}`
+  return `${name}: ${item.sessions - item.sessions_used} rămase din ${item.sessions}, expiră pe ${dateLabel(item.valid_until)}`
 }
 
 export function sessionsLines(e: SessionsSource, today: string = bucharestToday()): string[] {
@@ -75,7 +81,9 @@ export function sessionsLines(e: SessionsSource, today: string = bucharestToday(
   const expired = monthly.at(-1)
   if (!running.length && expired)
     lines.push(
-      `Pachetul lunar din ${monthName(expired.valid_from.slice(0, 7))} a expirat pe ${dateLabel(expired.valid_until)}`,
+      expired.validity === 'DAYS'
+        ? `Pachetul din ${dateLabel(expired.valid_from)} a expirat pe ${dateLabel(expired.valid_until)}`
+        : `Pachetul lunar din ${monthName(expired.valid_from.slice(0, 7))} a expirat pe ${dateLabel(expired.valid_until)}`,
     )
   if (!lines.length && e.status === 'PENDING') lines.push('Începe după confirmarea plății')
   return lines

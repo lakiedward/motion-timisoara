@@ -2,10 +2,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { packageChoice, type CheckoutChoice } from '@/lib/course-packages/checkout-choice'
 import {
+  DAYS,
+  daysLabel,
   packageNote,
   sessionsLabel,
   type CoursePackage,
 } from '@/lib/course-packages/course-packages'
+import { daysPackageLastDay } from '@/lib/course-packages/package-days'
 import { MONTHLY, packageMonthOptions } from '@/lib/course-packages/package-month'
 import { formatMoney } from '@/lib/money'
 import { cn } from '@/lib/utils'
@@ -30,6 +33,7 @@ export function CheckoutPackagePicker({
   if (coursePackages.length > 0) {
     const chosen = coursePackages.find((item) => item.id === value.packageId)
     const monthly = chosen?.validity === MONTHLY
+    const days = chosen?.validity === DAYS ? chosen.validity_days : null
     const months = packageMonthOptions()
     const month = months.find((option) => option.value === value.month) ?? months[0]
     return (
@@ -44,6 +48,7 @@ export function CheckoutPackagePicker({
         <div
           role="radiogroup"
           aria-labelledby="checkout-package"
+          aria-describedby={days ? 'checkout-package-days-rule' : undefined}
           className="grid gap-2 sm:grid-cols-2"
         >
           {coursePackages.map((item) => {
@@ -123,6 +128,14 @@ export function CheckoutPackagePicker({
             </p>
           </div>
         )}
+        {days ? (
+          <p id="checkout-package-days-rule" className="text-muted-foreground text-sm">
+            Pachetul e valabil <strong className="text-foreground">{daysLabel(days)}</strong> de la
+            confirmarea plății, ziua plății fiind prima zi. Plătit azi cu cardul, e valabil până pe{' '}
+            <strong className="text-foreground">{daysPackageLastDay(days)}</strong>. La plata cash,
+            zilele încep când antrenorul confirmă plata. Ședințele nefolosite se pierd la expirare.
+          </p>
+        ) : null}
       </section>
     )
   }

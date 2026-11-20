@@ -9,20 +9,31 @@ import { MONTHLY } from './package-month'
 
 export type CoursePackage = Pick<
   Tables<'course_packages'>,
-  'id' | 'position' | 'sessions' | 'price' | 'validity'
+  'id' | 'position' | 'sessions' | 'price' | 'validity' | 'validity_days'
 >
 
 export const MAX_COURSE_PACKAGES = 4
 export const MAX_PACKAGE_SESSIONS = 100
 const MAX_PACKAGE_PRICE = 10_000_000
 
-export type PackageValidity = 'NONE' | 'CALENDAR_MONTH'
+export const DAYS = 'DAYS'
+export const MIN_VALIDITY_DAYS = 7
+export const MAX_VALIDITY_DAYS = 365
+
+export type PackageValidity = 'NONE' | 'CALENDAR_MONTH' | 'DAYS'
 
 export type CoursePackageDraft = {
   packageId?: string
   sessions: string
   price: string
   validity: PackageValidity
+  validityDays?: string
+}
+
+function validDays(value: string | undefined): boolean {
+  const text = (value ?? '').trim()
+  const days = Number(text)
+  return /^\d+$/.test(text) && days >= MIN_VALIDITY_DAYS && days <= MAX_VALIDITY_DAYS
 }
 
 const sessionsSchema = z
@@ -56,7 +67,8 @@ export const coursePackagesSchema = z
       packageId: z.string().optional(),
       sessions: sessionsSchema,
       price: priceSchema,
-      validity: z.enum(['NONE', 'CALENDAR_MONTH']),
+      validity: z.enum(['NONE', 'CALENDAR_MONTH', 'DAYS']),
+      validityDays: z.string().optional(),
     }),
   )
   .max(MAX_COURSE_PACKAGES, `Cel mult ${MAX_COURSE_PACKAGES} pachete`)
@@ -65,8 +77,26 @@ export const coursePackagesSchema = z
       ctx.addIssue({
         code: 'custom',
         path: [],
-        message: 'Pachetele unui curs sunt toate lunare sau toate fără expirare.',
+        message: 'Pachetele unui curs au toate aceeași valabilitate.',
       })
+    } else if (packages[0]?.validity === DAYS) {
+      if (!validDays(packages[0].validityDays)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [0, 'validityDays'],
+          message: `Scrie un număr de zile între ${MIN_VALIDITY_DAYS} și ${MAX_VALIDITY_DAYS}`,
+        })
+      } else if (
+        packages.some(
+          (item) => (item.validityDays ?? '').trim() !== (packages[0].validityDays ?? '').trim(),
+        )
+      ) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [],
+          message: 'Pachetele unui curs expiră toate după același număr de zile.',
+        })
+      }
     }
     const seen = new Set<string>()
     packages.forEach((item, index) => {
@@ -93,6 +123,10 @@ export function emptyCoursePackage(): CoursePackageDraft {
   return { sessions: '', price: '', validity: 'NONE' }
 }
 
+function draftValidity(validity: string): PackageValidity {
+  return validity === MONTHLY || validity === DAYS ? validity : 'NONE'
+}
+
 export function packagesToForm(packages: CoursePackage[] | undefined): CoursePackageDraft[] {
   return [...(packages ?? [])]
     .sort((a, b) => a.position - b.position)
@@ -100,7 +134,10 @@ export function packagesToForm(packages: CoursePackage[] | undefined): CoursePac
       packageId: item.id,
       sessions: String(item.sessions),
       price: String(baniToRon(item.price)),
-      validity: item.validity === MONTHLY ? MONTHLY : 'NONE',
+      validity: draftValidity(item.validity),
+      ...(item.validity === DAYS && item.validity_days
+        ? { validityDays: String(item.validity_days) }
+        : {}),
     }))
 }
 
@@ -110,6 +147,7 @@ export function packagesToPayload(drafts: CoursePackageDraft[]) {
     sessions: Number(item.sessions.trim()),
     price: parseScaledDecimal(item.price, 2)!,
     validity: item.validity,
+    validityDays: item.validity === DAYS ? Number((item.validityDays ?? '').trim()) : null,
   }))
 }
 
@@ -125,13 +163,19 @@ export function cheapestPerSession(packages: Pick<CoursePackage, 'sessions' | 'p
   return Math.min(...packages.map(pricePerSession))
 }
 
-export function validityLabel(validity: string): string {
-  return validity === MONTHLY ? 'pachet lunar, expiră la sfârșitul lunii' : 'fără expirare'
+export function daysLabel(days: number): string {
+  return plural(days, 'zi', 'zile')
+}
+
+export function validityLabel(validity: string, days?: number | null): string {
+  if (validity === MONTHLY) return 'pachet lunar, expiră la sfârșitul lunii'
+  if (validity === DAYS && days) return `valabil ${daysLabel(days)} de la plată`
+  return 'fără expirare'
 }
 
 export function packageNote(
-  item: Pick<CoursePackage, 'sessions' | 'price' | 'validity'>,
+  item: Pick<CoursePackage, 'sessions' | 'price' | 'validity'> & { validity_days?: number | null },
   currency: string,
 ): string {
-  return `${formatMoney(pricePerSession(item), currency)} / ședință · ${validityLabel(item.validity)}`
+  return `${formatMoney(pricePerSession(item), currency)} / ședință · ${validityLabel(item.validity, item.validity_days)}`
 }
