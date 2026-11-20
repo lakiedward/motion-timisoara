@@ -481,8 +481,8 @@ test('la editare, pachetele salvate se modifică, se șterg și se adaugă', asy
   expect(vi.mocked(saveCoursePackages).mock.calls[0]).toEqual([
     'c1',
     [
-      { packageId: 'p2', sessions: '10', price: '400' },
-      { sessions: '20', price: '700' },
+      { packageId: 'p2', sessions: '10', price: '400', validity: 'NONE' },
+      { sessions: '20', price: '700', validity: 'NONE' },
     ],
   ])
 })
@@ -527,7 +527,7 @@ test('cursul nou își salvează pachetele după ce primește id', async () => {
   await waitFor(() => expect(saveCoursePackages).toHaveBeenCalled())
   expect(vi.mocked(saveCoursePackages).mock.calls[0]).toEqual([
     'c-new',
-    [{ sessions: '8', price: '320' }],
+    [{ sessions: '8', price: '320', validity: 'NONE' }],
   ])
   expect(await screen.findByText('Lista cursuri')).toBeInTheDocument()
 })

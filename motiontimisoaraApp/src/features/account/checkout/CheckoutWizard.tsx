@@ -464,6 +464,7 @@ export default function CheckoutWizard({
               title={offering.title}
               kindLabel={KIND_LABEL[kind]}
               packageSize={offering.perSession ? choice.sessions : undefined}
+              packageMonth={offering.perSession ? choice.month : undefined}
               lines={summaryLines}
               total={pricesReady ? total : undefined}
             />

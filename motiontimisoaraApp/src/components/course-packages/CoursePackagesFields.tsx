@@ -11,6 +11,7 @@ import {
 import { FormSection } from '@/components/FormSection'
 import { Button } from '@/components/ui/button'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
+import { FormSelectMenu } from '@/components/ui/form-select-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -21,10 +22,16 @@ import {
   sessionsLabel,
   type CoursePackagesFormValues,
 } from '@/lib/course-packages/course-packages'
+import { MONTHLY } from '@/lib/course-packages/package-month'
 import { formatMoney } from '@/lib/money'
 import { parseScaledDecimal } from '@/lib/pricing/offer-currency'
 
 type PackagesForm = FieldValues & CoursePackagesFormValues
+
+const VALIDITY_OPTIONS = [
+  { value: 'NONE', label: 'Fără expirare' },
+  { value: MONTHLY, label: 'Lunar – expiră la sfârșitul lunii' },
+]
 
 export function CoursePackagesFields<T extends PackagesForm>({
   control,
@@ -49,7 +56,7 @@ export function CoursePackagesFields<T extends PackagesForm>({
     <div data-section="course-form-packages">
       <FormSection
         title="Pachete"
-        description={`Opțional. Până la ${MAX_COURSE_PACKAGES} pachete, de exemplu 8 ședințe la un preț total. Unde cursul are pachete, părintele poate cumpăra doar unul dintre ele, la înscriere și la reînnoire, fără alt număr de ședințe.`}
+        description={`Opțional. Până la ${MAX_COURSE_PACKAGES} pachete, de exemplu 8 ședințe la un preț total. Unde cursul are pachete, părintele poate cumpăra doar unul dintre ele, la înscriere și la reînnoire, fără alt număr de ședințe. Un pachet lunar e valabil de la 1 la ultima zi a lunii alese de părinte; ședințele nefolosite se pierd.`}
       >
         {fields.length === 0 ? (
           <p className="text-muted-foreground text-sm">
@@ -61,6 +68,7 @@ export function CoursePackagesFields<T extends PackagesForm>({
               const fieldErrors = packageErrors?.[index]
               const sessionsId = `package-${index}-sessions`
               const priceId = `package-${index}-price`
+              const validityId = `package-${index}-validity`
               const current = values?.[index]
               const sessions = Number(current?.sessions)
               const price = parseScaledDecimal(current?.price ?? '', 2)
@@ -131,6 +139,24 @@ export function CoursePackagesFields<T extends PackagesForm>({
                         id={priceId}
                         hint={perSession ? `Înseamnă ${perSession} / ședință.` : undefined}
                         error={fieldErrors?.price?.message}
+                      />
+                    </div>
+                    <div className="min-w-0 space-y-1.5 sm:col-span-2">
+                      <Label htmlFor={validityId}>Valabilitate</Label>
+                      <FormSelectMenu
+                        control={formControl}
+                        name={`packages.${index}.validity`}
+                        id={validityId}
+                        aria-describedby={fieldDescription(validityId, 'hint', undefined)}
+                        options={VALIDITY_OPTIONS}
+                      />
+                      <FieldMessage
+                        id={validityId}
+                        hint={
+                          current?.validity === MONTHLY
+                            ? 'Părintele alege luna aceasta sau luna următoare și plătește prețul întreg. Ședințele nefolosite se pierd la sfârșitul lunii.'
+                            : 'Ședințele rămân până le folosește copilul.'
+                        }
                       />
                     </div>
                   </div>

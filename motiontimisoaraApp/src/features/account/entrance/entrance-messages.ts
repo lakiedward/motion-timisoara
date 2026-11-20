@@ -87,6 +87,16 @@ export function checkinProblem(code: string): EntranceMessage {
         title: 'Nu mai are ședințe rămase',
         text: 'Pachetul de ședințe s-a consumat. Cumpără ședințe noi din Înscrieri sau plătește antrenorului.',
       }
+    case 'PACKAGE_EXPIRED':
+      return {
+        title: 'Pachetul lunar a expirat',
+        text: 'Pachetul lunar al copilului era pentru o lună încheiată. Cumpără pachetul pentru luna aceasta din Înscrieri sau plătește antrenorului.',
+      }
+    case 'PACKAGE_NOT_STARTED':
+      return {
+        title: 'Pachetul începe luna viitoare',
+        text: 'Pachetul cumpărat e valabil de la 1 ale lunii următoare. Pentru ședința de azi cumpără pachetul pentru luna aceasta din Înscrieri sau plătește antrenorului.',
+      }
     case 'NOT_ENROLLED':
       return {
         title: 'Copilul nu e înscris la acest curs',
@@ -116,6 +126,10 @@ export function stateLabel(state: EntranceOptionState): string | null {
       return 'Corectat de antrenor'
     case 'NO_REMAINING_SESSIONS':
       return 'Fără ședințe rămase'
+    case 'PACKAGE_EXPIRED':
+      return 'Pachetul lunar a expirat'
+    case 'PACKAGE_NOT_STARTED':
+      return 'Pachetul începe luna viitoare'
     case 'AMBIGUOUS_ENROLLMENT':
       return 'De verificat de antrenor'
     default:

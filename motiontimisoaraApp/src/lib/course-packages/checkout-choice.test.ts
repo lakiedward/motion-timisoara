@@ -16,8 +16,8 @@ const packages: CoursePackage[] = [
 ]
 
 describe('checkout package choice', () => {
-  test('only no-expiry packages are sold, in the coach order', () => {
-    expect(saleablePackages(packages).map((item) => item.id)).toEqual(['pkg-8', 'pkg-4'])
+  test('packages with and without expiry are sold, in the coach order', () => {
+    expect(saleablePackages(packages).map((item) => item.id)).toEqual(['pkg-8', 'pkg-4', 'pkg-m'])
     expect(saleablePackages(undefined)).toEqual([])
   })
 
@@ -42,5 +42,27 @@ describe('checkout package choice', () => {
     expect(choiceRequest({ sessions: 5 })).toEqual({ sessionPackageSize: 5 })
     expect(choiceKey(chosen)).toBe('pkg-8')
     expect(choiceKey({ sessions: 5 })).toBe('5')
+  })
+
+  test('a monthly package carries the current or next Bucharest month', () => {
+    const sold = saleablePackages(packages)
+    const lateNovember = new Date('2026-11-30T21:30:00Z')
+    const earlyDecember = new Date('2026-11-30T22:30:00Z')
+    expect(effectiveChoice(sold, { sessions: 12, packageId: 'pkg-m' }, lateNovember)).toEqual({
+      sessions: 12,
+      packageId: 'pkg-m',
+      month: '2026-11',
+    })
+    expect(
+      effectiveChoice(sold, { sessions: 12, packageId: 'pkg-m', month: '2026-12' }, lateNovember)
+        .month,
+    ).toBe('2026-12')
+    expect(
+      effectiveChoice(sold, { sessions: 12, packageId: 'pkg-m', month: '2026-11' }, earlyDecember)
+        .month,
+    ).toBe('2026-12')
+    const chosen: CheckoutChoice = { sessions: 12, packageId: 'pkg-m', month: '2026-12' }
+    expect(choiceRequest(chosen)).toEqual({ coursePackageId: 'pkg-m', packageMonth: '2026-12' })
+    expect(choiceKey(chosen)).toBe('pkg-m:2026-12')
   })
 })

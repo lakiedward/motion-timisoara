@@ -5,6 +5,8 @@ import { baniToRon, formatMoney } from '@/lib/money'
 import { plural } from '@/lib/plural'
 import { parseScaledDecimal } from '@/lib/pricing/offer-currency'
 
+import { MONTHLY } from './package-month'
+
 export type CoursePackage = Pick<
   Tables<'course_packages'>,
   'id' | 'position' | 'sessions' | 'price' | 'validity'
@@ -14,7 +16,14 @@ export const MAX_COURSE_PACKAGES = 4
 export const MAX_PACKAGE_SESSIONS = 100
 const MAX_PACKAGE_PRICE = 10_000_000
 
-export type CoursePackageDraft = { packageId?: string; sessions: string; price: string }
+export type PackageValidity = 'NONE' | 'CALENDAR_MONTH'
+
+export type CoursePackageDraft = {
+  packageId?: string
+  sessions: string
+  price: string
+  validity: PackageValidity
+}
 
 const sessionsSchema = z
   .string()
@@ -43,29 +52,38 @@ const priceSchema = z
 
 export const coursePackagesSchema = z
   .array(
-    z.object({ packageId: z.string().optional(), sessions: sessionsSchema, price: priceSchema }),
+    z.object({
+      packageId: z.string().optional(),
+      sessions: sessionsSchema,
+      price: priceSchema,
+      validity: z.enum(['NONE', 'CALENDAR_MONTH']),
+    }),
   )
   .max(MAX_COURSE_PACKAGES, `Cel mult ${MAX_COURSE_PACKAGES} pachete`)
   .superRefine((packages, ctx) => {
-    const seen = new Set<number>()
+    const seen = new Set<string>()
     packages.forEach((item, index) => {
       const sessions = Number(item.sessions)
       if (!/^\d+$/.test(item.sessions.trim())) return
-      if (seen.has(sessions)) {
+      const key = `${sessions}:${item.validity}`
+      if (seen.has(key)) {
         ctx.addIssue({
           code: 'custom',
           path: [index, 'sessions'],
-          message: `Ai deja un pachet de ${sessions} ședințe`,
+          message:
+            item.validity === MONTHLY
+              ? `Ai deja un pachet lunar de ${sessions} ședințe`
+              : `Ai deja un pachet de ${sessions} ședințe`,
         })
       }
-      seen.add(sessions)
+      seen.add(key)
     })
   })
 
 export type CoursePackagesFormValues = { packages: CoursePackageDraft[] }
 
 export function emptyCoursePackage(): CoursePackageDraft {
-  return { sessions: '', price: '' }
+  return { sessions: '', price: '', validity: 'NONE' }
 }
 
 export function packagesToForm(packages: CoursePackage[] | undefined): CoursePackageDraft[] {
@@ -75,6 +93,7 @@ export function packagesToForm(packages: CoursePackage[] | undefined): CoursePac
       packageId: item.id,
       sessions: String(item.sessions),
       price: String(baniToRon(item.price)),
+      validity: item.validity === MONTHLY ? MONTHLY : 'NONE',
     }))
 }
 
@@ -83,7 +102,7 @@ export function packagesToPayload(drafts: CoursePackageDraft[]) {
     ...(item.packageId ? { id: item.packageId } : {}),
     sessions: Number(item.sessions.trim()),
     price: parseScaledDecimal(item.price, 2)!,
-    validity: 'NONE' as const,
+    validity: item.validity,
   }))
 }
 
@@ -99,9 +118,13 @@ export function cheapestPerSession(packages: Pick<CoursePackage, 'sessions' | 'p
   return Math.min(...packages.map(pricePerSession))
 }
 
+export function validityLabel(validity: string): string {
+  return validity === MONTHLY ? 'pachet lunar, expiră la sfârșitul lunii' : 'fără expirare'
+}
+
 export function packageNote(
-  item: Pick<CoursePackage, 'sessions' | 'price'>,
+  item: Pick<CoursePackage, 'sessions' | 'price' | 'validity'>,
   currency: string,
 ): string {
-  return `${formatMoney(pricePerSession(item), currency)} / ședință · fără expirare`
+  return `${formatMoney(pricePerSession(item), currency)} / ședință · ${validityLabel(item.validity)}`
 }

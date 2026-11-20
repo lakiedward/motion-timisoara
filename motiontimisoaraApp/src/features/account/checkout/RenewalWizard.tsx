@@ -291,6 +291,7 @@ export default function RenewalWizard({
             title={offering.title}
             kindLabel="Curs"
             packageSize={choice.sessions}
+            packageMonth={choice.month}
             lines={quote ? [{ id: quote.childId, name: quote.name, amount: total, snapshot: quote.pricingSnapshot }] : []}
             total={priced ? total : undefined}
           />
