@@ -101,6 +101,7 @@ class FakeDatabase {
     profiles: [{ id: "parent", name: "Ana Părinte" }],
     camps: [{ id: "camp", price: 99999, pricing_mode: "by_age", currency: "RON", capacity: null, allow_cash: true }],
     courses: [{ id: "course", price_per_session: 1500, currency: "RON", capacity: null, active: true, age_from: null, age_to: null }],
+    course_packages: [],
     activities: [{ id: "activity", price: 2500, currency: "RON", capacity: null, active: true }],
     enrollments: [],
     payments: [],

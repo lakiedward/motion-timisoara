@@ -1,5 +1,6 @@
 import { getEnrollmentAdultPrice, getEnrollmentChildPrices, validChildIds, type EnrollmentServices, type EnrollmentOffer, type ExistingEnrollment } from "../_shared/enrollment-pricing.ts";
-import { validQuantity, type PriceSnapshot } from "../_shared/price-snapshot.ts";
+import type { PriceSnapshot } from "../_shared/price-snapshot.ts";
+import { type CourseChoice, resolveCourseChoice, sessionsChoice } from "../_shared/course-package.ts";
 import { offerAcceptsEnrollments, SUBSCRIPTION_INACTIVE_MESSAGE } from "../_shared/subscription-access.ts";
 import { validateRenewal } from "./renewal.ts";
 
@@ -8,6 +9,7 @@ interface ValidateRequest {
   entityId: string;
   childIds: string[];
   sessionPackageSize?: number;
+  coursePackageId?: string;
 }
 
 type Severity = "error" | "warning";
@@ -65,7 +67,7 @@ export function createValidationHandler({ db: supabaseAdmin, getUser, getUserRol
 
     const body = await req.json();
     if (body?.renewEnrollmentId !== undefined) return await validateRenewal(supabaseAdmin, user.id, body);
-    const { kind, entityId, childIds = [], sessionPackageSize = 1 }: ValidateRequest = body;
+    const { kind, entityId, childIds = [] }: ValidateRequest = body;
     if (!["CAMP", "COURSE", "ACTIVITY"].includes(String(kind)) || typeof entityId !== "string" || !entityId ||
       !validChildIds(childIds)) {
       return json({ error: "kind, entityId and childIds are required" }, 400);
@@ -73,9 +75,11 @@ export function createValidationHandler({ db: supabaseAdmin, getUser, getUserRol
     if (kind !== "CAMP" && childIds.length === 0) {
       return json({ error: "kind, entityId and childIds are required" }, 400);
     }
-    if (!validQuantity(sessionPackageSize) || (kind !== "COURSE" && sessionPackageSize !== 1)) {
+    if (kind !== "COURSE" && (body.coursePackageId !== undefined ||
+      (body.sessionPackageSize !== undefined && body.sessionPackageSize !== 1))) {
       return json({ error: "Numărul de ședințe nu este valid." }, 400);
     }
+    let choice: CourseChoice = sessionsChoice(1);
 
     let children: { id: string; name: string; birth_date: string; parent_id: string }[] = [];
     if (childIds.length) {
@@ -104,6 +108,7 @@ export function createValidationHandler({ db: supabaseAdmin, getUser, getUserRol
       ageTo = course.age_to;
       capacity = course.capacity;
       offer = course;
+      choice = await resolveCourseChoice(supabaseAdmin, entityId, body);
     } else if (kind === "CAMP") {
       const { data: camp } = await supabaseAdmin
         .from("camps")
@@ -157,7 +162,7 @@ export function createValidationHandler({ db: supabaseAdmin, getUser, getUserRol
     const ownedIds = children.filter((child) => child.parent_id === user.id).map((child) => child.id);
     const childPrices = ownedIds.length
       ? await getEnrollmentChildPrices(supabaseAdmin, kind, entityId, ownedIds, offer,
-        existing.filter((row) => row.child_id), sessionPackageSize)
+        existing.filter((row) => row.child_id), choice)
       : [];
     const byChild = new Map<string, string[]>();
     for (const e of existing) {

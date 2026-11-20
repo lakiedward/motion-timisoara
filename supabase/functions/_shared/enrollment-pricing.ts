@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createPriceSnapshot, type PriceSnapshot, readPriceSnapshot } from "./price-snapshot.ts";
+import { createCoursePackageSnapshot, createPriceSnapshot, type PriceSnapshot, readPriceSnapshot } from "./price-snapshot.ts";
+import type { CourseChoice } from "./course-package.ts";
 
 export interface EnrollmentServices {
   db: SupabaseClient;
@@ -101,8 +102,9 @@ export async function getEnrollmentChildPrices(
   childIds: string[],
   offer: EnrollmentOffer,
   existing: ExistingEnrollment[],
-  quantity: number,
+  choice: CourseChoice,
 ): Promise<EnrollmentChildPrice[]> {
+  const { quantity, coursePackage } = choice;
   const pendingIds = existing
     .filter((row) => row.status === "PENDING")
     .map((row) => row.id);
@@ -171,11 +173,12 @@ export async function getEnrollmentChildPrices(
             500,
           );
         }
-        if (snapshot.quantity !== quantity) {
+        if (snapshot.quantity !== quantity || (snapshot.packageId ?? null) !== (coursePackage?.id ?? null)) {
           return {
             childId,
-            reason:
-              `Pachetul salvat are ${snapshot.quantity} ședințe. Alege acest număr pentru a relua plata confirmată inițial.`,
+            reason: snapshot.packageId || coursePackage
+              ? `Ai o plată începută pentru un pachet de ${snapshot.quantity} ședințe. Finalizeaz-o din Înscrieri.`
+              : `Pachetul salvat are ${snapshot.quantity} ședințe. Alege acest număr pentru a relua plata confirmată inițial.`,
           };
         }
         return {
@@ -238,15 +241,17 @@ export async function getEnrollmentChildPrices(
         sourceRate = result.data.eur_ron_rate_micros;
       }
       try {
-        const snapshot = await createPriceSnapshot(
-          kind,
-          entityId,
-          childId,
-          sourceAmount!,
-          sourceCurrency,
-          sourceRate,
-          quantity,
-        );
+        const snapshot = coursePackage
+          ? await createCoursePackageSnapshot(entityId, childId, coursePackage, sourceCurrency, sourceRate)
+          : await createPriceSnapshot(
+            kind,
+            entityId,
+            childId,
+            sourceAmount!,
+            sourceCurrency,
+            sourceRate,
+            quantity,
+          );
         return {
           childId,
           amount: snapshot.amount,

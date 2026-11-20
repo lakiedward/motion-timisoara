@@ -75,6 +75,9 @@ on:
       - 'supabase/tests/*checkout-acceptances*'
       - 'supabase/migrations/00147_course_session_renewal.sql'
       - 'supabase/tests/*course-session-renewal*'
+      - 'supabase/migrations/00149_course_package_checkout.sql'
+      - 'supabase/tests/*course-package-checkout*'
+      - 'supabase/functions/_shared/course-package*.ts'
       - 'supabase/functions/create-checkout-session/**'
       - 'supabase/functions/_shared/course-renewal*.ts'
       - 'supabase/functions/course-renewal-contract.test.ts'
@@ -230,6 +233,9 @@ jobs:
       - name: Verify course session renewal
         shell: pwsh
         run: ./supabase/tests/run-course-session-renewal.ps1
+      - name: Verify course package checkout
+        shell: pwsh
+        run: ./supabase/tests/run-course-package-checkout.ps1
       - name: Verify cash payments list access
         shell: pwsh
         run: ./supabase/tests/run-cash-payments-list.ps1

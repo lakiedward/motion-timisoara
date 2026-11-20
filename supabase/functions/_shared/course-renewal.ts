@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enrollmentJson } from "./enrollment-pricing.ts";
-import { createPriceSnapshot, type PriceSnapshot, validQuantity } from "./price-snapshot.ts";
+import { createCoursePackageSnapshot, createPriceSnapshot, type PriceSnapshot, validQuantity } from "./price-snapshot.ts";
+import type { CourseChoice } from "./course-package.ts";
 import { OPEN_PAYMENT_STATUSES } from "./payment-current.ts";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -101,13 +102,25 @@ export async function loadRenewalTarget(
   };
 }
 
-export async function renewalQuote(target: RenewalTarget, quantity: number): Promise<RenewalQuote> {
-  if (!Number.isSafeInteger(target.course.price_per_session) || target.course.price_per_session <= 0) {
+export async function renewalQuote(target: RenewalTarget, choice: CourseChoice): Promise<RenewalQuote> {
+  const { quantity, coursePackage } = choice;
+  if (
+    !coursePackage &&
+    (!Number.isSafeInteger(target.course.price_per_session) || target.course.price_per_session <= 0)
+  ) {
     throw enrollmentJson({ error: "Cursul nu are un preț pe ședință. Vorbește cu antrenorul." }, 409);
   }
   let snapshot: PriceSnapshot;
   try {
-    snapshot = await createPriceSnapshot(
+    snapshot = coursePackage
+      ? await createCoursePackageSnapshot(
+        target.courseId,
+        target.childId,
+        coursePackage,
+        target.course.currency,
+        target.course.eur_ron_rate_micros ?? null,
+      )
+      : await createPriceSnapshot(
       "COURSE",
       target.courseId,
       target.childId,

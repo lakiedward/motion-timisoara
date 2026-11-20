@@ -1,6 +1,6 @@
 import { getEnrollmentAdultPrice, getEnrollmentChildPrices, quoteSubjectKey, validSelection, enrollmentJson, type EnrollmentServices, type EnrollmentOffer, type ExistingEnrollment } from "../_shared/enrollment-pricing.ts";
 import { completedEnrollmentPrices, notifyCashEnrollments, saveEnrollmentBatch } from "./persistence.ts";
-import { validQuantity } from "../_shared/price-snapshot.ts";
+import { type CourseChoice, resolveCourseChoice, sessionsChoice } from "../_shared/course-package.ts";
 import { buildCheckoutAcceptance, type ClientAcceptance } from "../_shared/checkout-acceptance.ts";
 import { offerAcceptsEnrollments, subscriptionInactiveBody } from "../_shared/subscription-access.ts";
 import { createRenewal } from "./renewal.ts";
@@ -12,6 +12,7 @@ interface EnrollmentRequest {
   includeSelf?: boolean;
   paymentMethod: "CARD" | "CASH";
   sessionPackageSize?: number;
+  coursePackageId?: string;
   priceVersions?: Record<string, string>;
   billingDetails?: {
     name: string;
@@ -89,10 +90,11 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
     const { kind, entityId, paymentMethod, billingDetails } = body;
     const childIds = Array.isArray(body.childIds) ? body.childIds : [];
     const includeSelf = body.includeSelf === true;
-    const sessionPackageSize = body.sessionPackageSize === undefined ? 1 : body.sessionPackageSize;
-    if (!validQuantity(sessionPackageSize) || (kind !== "COURSE" && sessionPackageSize !== 1)) {
+    if (kind !== "COURSE" && (body.coursePackageId !== undefined ||
+      (body.sessionPackageSize !== undefined && body.sessionPackageSize !== 1))) {
       return enrollmentJson({ error: "Numărul de ședințe nu este valid." }, 400);
     }
+    let choice: CourseChoice = sessionsChoice(1);
 
     if (!validSelection(kind, entityId, childIds, includeSelf) || !["CARD", "CASH"].includes(paymentMethod)) {
       return new Response(
@@ -193,6 +195,7 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
         }
       }
       offer = course;
+      choice = await resolveCourseChoice(supabaseAdmin, entityId, body);
       if (newEnrollmentCount > 0 && course.capacity != null) {
         const { count, error: capacityError } = await supabaseAdmin
           .from("enrollments")
@@ -300,12 +303,12 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
     }
 
     const completed = paymentMethod === "CARD"
-      ? await completedEnrollmentPrices(supabaseAdmin, kind, entityId, existingEnrollments, sessionPackageSize)
+      ? await completedEnrollmentPrices(supabaseAdmin, kind, entityId, existingEnrollments, choice)
       : [];
     const completedChildIds = new Set(completed.map((price) => price.childId).filter((id): id is string => !!id));
     const quotes = [
       ...await getEnrollmentChildPrices(supabaseAdmin, kind, entityId, childIds.filter((id) => !completedChildIds.has(id)), offer,
-        existingEnrollments.filter((row) => row.child_id && !completedChildIds.has(row.child_id)), sessionPackageSize),
+        existingEnrollments.filter((row) => row.child_id && !completedChildIds.has(row.child_id)), choice),
       ...completed.filter((price) => price.childId),
     ];
     if (includeSelf) {
@@ -324,7 +327,7 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
       parentId: user.id, kind, entityId, paymentMethod, quotes, billingDetails, acceptance,
     });
     if (paymentMethod === "CASH" && batch.prices.some((price) => price.amount > 0)) {
-      await notifyCashEnrollments(supabaseAdmin, batch, { kind, entityId, sessionPackageSize, children });
+      await notifyCashEnrollments(supabaseAdmin, batch, { kind, entityId, sessionPackageSize: choice.quantity, children });
     }
     const { createdEnrollmentIds: _createdEnrollmentIds, ...response } = batch;
     return enrollmentJson(response);

@@ -2,11 +2,13 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enrollmentJson } from "../_shared/enrollment-pricing.ts";
 import { loadRenewalTarget, MAX_RENEWAL_SESSIONS, renewalQuote, validRenewalRequest } from "../_shared/course-renewal.ts";
 import { buildCheckoutAcceptance, type ClientAcceptance } from "../_shared/checkout-acceptance.ts";
+import { resolveCourseChoice } from "../_shared/course-package.ts";
 import { offerAcceptsEnrollments, subscriptionInactiveBody } from "../_shared/subscription-access.ts";
 
 interface RenewalRequest {
   renewEnrollmentId?: unknown;
   sessionPackageSize?: unknown;
+  coursePackageId?: unknown;
   paymentMethod?: unknown;
   priceVersion?: unknown;
   billingDetails?: unknown;
@@ -45,7 +47,7 @@ export async function createRenewal(db: SupabaseClient, parentId: string, body: 
     return enrollmentJson({ error: "Nu am putut verifica oferta. Reîncearcă." }, 503);
   }
   if (!accepts) return enrollmentJson(subscriptionInactiveBody(), 409);
-  const quote = await renewalQuote(target, quantity as number);
+  const quote = await renewalQuote(target, await resolveCourseChoice(db, target.courseId, body));
   if (body.priceVersion !== quote.priceVersion) {
     return enrollmentJson({ error: "Prețul s-a schimbat. Revino la Detalii și verifică din nou suma.", code: "PRICE_CHANGED" }, 409);
   }
@@ -78,7 +80,7 @@ export async function createRenewal(db: SupabaseClient, parentId: string, body: 
       await channel.send({
         type: "broadcast",
         event: "pending_cash_payment",
-        payload: { enrollmentId: target.enrollmentId, sessionCount: quantity, courseId: target.courseId },
+        payload: { enrollmentId: target.enrollmentId, sessionCount: quote.snapshot.quantity, courseId: target.courseId },
       });
     } catch {
       console.error("Cash renewal saved; realtime notification could not be delivered");
