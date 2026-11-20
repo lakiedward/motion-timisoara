@@ -6,7 +6,7 @@ import {
   weekdayLabel,
 } from '@/lib/course-program/recurrence'
 
-export const COURSE_SESSION_LIMIT = 8
+export const COURSE_SESSION_WINDOW_DAYS = 7
 
 type Occurrence = { id: string; starts_at: string; ends_at: string | null }
 
@@ -42,7 +42,7 @@ function timeRange(start: Date, end: Date | null): string {
 export function upcomingSessions(
   occurrences: Occurrence[] | null | undefined,
   now = new Date(),
-  limit = COURSE_SESSION_LIMIT,
+  windowDays = COURSE_SESSION_WINDOW_DAYS,
 ): CourseSession[] {
   return (occurrences ?? [])
     .map((occurrence) => ({
@@ -53,7 +53,7 @@ export function upcomingSessions(
     .filter((s): s is { id: string; start: Date; end: Date | null } => s.start !== null)
     .filter((s) => (s.end && s.end > s.start ? s.end : s.start) > now)
     .sort((a, b) => +a.start - +b.start)
-    .slice(0, limit)
+    .filter((s, _index, all) => +s.start < +all[0]!.start + windowDays * 86_400_000)
     .map((s) => ({
       id: s.id,
       weekday: weekdayLabel(isoWeekdayFromCivilDate(civilDateInZone(s.start, COURSE_TIME_ZONE))),
