@@ -256,8 +256,13 @@ BEGIN
         FROM public.course_packages WHERE course_id = public.test_uuid(101)));
     PERFORM public.test_assert((SELECT bool_and(validity_days = 60) FROM public.course_packages WHERE course_id = public.test_uuid(101)),
         'changing N updates every package of the course');
+    PERFORM public.test_assert(public.test_try(format('SELECT * FROM public.save_course_packages(%L, %L)', public.test_uuid(101), (
+        SELECT jsonb_agg(jsonb_build_object('id', id, 'sessions', sessions, 'price', price, 'validity', 'NONE') ORDER BY position)
+        FROM public.course_packages WHERE course_id = public.test_uuid(101)))) = '22023'
+        AND (SELECT bool_and(validity = 'DAYS') FROM public.course_packages WHERE course_id = public.test_uuid(101)),
+        'an old client without validityDays cannot turn DAYS packages into packages without expiry');
     SELECT count(*) INTO v_rows FROM public.save_course_packages(public.test_uuid(101),
-        '[{"sessions":8,"price":30000,"validity":"NONE"}]');
+        '[{"sessions":8,"price":30000,"validity":"NONE","validityDays":null}]');
     PERFORM public.test_assert((SELECT validity_days IS NULL AND validity = 'NONE' FROM public.course_packages
         WHERE course_id = public.test_uuid(101)), 'going back to no expiry clears the days');
 END $$;

@@ -147,7 +147,7 @@ export function packagesToPayload(drafts: CoursePackageDraft[]) {
     sessions: Number(item.sessions.trim()),
     price: parseScaledDecimal(item.price, 2)!,
     validity: item.validity,
-    ...(item.validity === DAYS ? { validityDays: Number((item.validityDays ?? '').trim()) } : {}),
+    validityDays: item.validity === DAYS ? Number((item.validityDays ?? '').trim()) : null,
   }))
 }
 

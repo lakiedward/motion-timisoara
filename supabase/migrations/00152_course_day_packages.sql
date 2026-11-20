@@ -9,7 +9,9 @@
 --   * course_packages.validity gains 'DAYS' and validity_days (7..365).
 --     save_course_packages now refuses a list that mixes validities (owner
 --     card 11:49Z: one validity for all packages of a course) or DAYS
---     packages with different N.
+--     packages with different N. Clients from before #699 do not send the
+--     validityDays key and would save DAYS packages back as NONE, so a course
+--     that has DAYS packages refuses a list without that key on every element.
 --   * the v3 price snapshot of a DAYS package has a 14th key, validDays.
 --   * a confirmed DAYS payment creates one enrollment_monthly_packages row with
 --     validity 'DAYS', valid_from = the Bucharest date of the confirmation and
@@ -194,6 +196,12 @@ BEGIN
         HAVING count(DISTINCT (i.validity, i.validity_days)) > 1
     ) THEN
         RAISE EXCEPTION 'Pachetele unui curs au toate aceeași valabilitate și același număr de zile'
+            USING ERRCODE = '22023';
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM public.course_packages p WHERE p.course_id = p_course_id AND p.validity = 'DAYS')
+        AND EXISTS (SELECT 1 FROM jsonb_array_elements(p_packages) AS e(value) WHERE NOT e.value ? 'validityDays') THEN
+        RAISE EXCEPTION 'Pagina cursului e veche. Reîncarcă pagina și salvează din nou pachetele.'
             USING ERRCODE = '22023';
     END IF;
 

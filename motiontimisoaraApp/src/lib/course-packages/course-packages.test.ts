@@ -75,9 +75,9 @@ test('saved packages round-trip through the form in position order', () => {
       { sessions: ' 20 ', price: '700,25', validity: 'CALENDAR_MONTH' },
     ]),
   ).toEqual([
-    { id: 'a', sessions: 5, price: 25000, validity: 'NONE' },
-    { id: 'b', sessions: 10, price: 45050, validity: 'NONE' },
-    { sessions: 20, price: 70025, validity: 'CALENDAR_MONTH' },
+    { id: 'a', sessions: 5, price: 25000, validity: 'NONE', validityDays: null },
+    { id: 'b', sessions: 10, price: 45050, validity: 'NONE', validityDays: null },
+    { sessions: 20, price: 70025, validity: 'CALENDAR_MONTH', validityDays: null },
   ])
   expect(packagesToForm(undefined)).toEqual([])
 })
@@ -138,7 +138,7 @@ test('the days round-trip through the form and reach the payload only for DAYS',
     { sessions: 4, price: 18000, validity: 'DAYS', validityDays: 45 },
   ])
   expect(packagesToPayload([{ sessions: '4', price: '180', validity: 'NONE', validityDays: '45' }])).toEqual([
-    { sessions: 4, price: 18000, validity: 'NONE' },
+    { sessions: 4, price: 18000, validity: 'NONE', validityDays: null },
   ])
   expect(packageNote({ sessions: 8, price: 32000, validity: 'DAYS', validity_days: 45 }, 'RON')).toContain(
     'valabil 45 de zile de la plată',

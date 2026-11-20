@@ -33,10 +33,12 @@ The app reads the new columns (`course_packages.validity_days`, `enrollment_mont
 3. Deploy `validate-enrollment`, `create-enrollment`, `create-payment-intent`, `create-checkout-session` and `record-attendance` from the merged commit. Until then the old functions refuse `DAYS` packages, so nothing can be sold as `DAYS` early.
 4. Merge, verify on master--, publish with the day's publish card.
 
-Rollback: redeploy the functions from before #699, then `verificari/expirare-zile/revenire-00152.sql`, which refuses while any `DAYS` package or payment exists. Tested in an isolated database (`test-revenire-00152.sql`): after it every public function, constraint and column of the two tables is as after 00151.
+Rollback: first put the web app back on a version without #699 (the app reads the new columns and fails once they are dropped; no rollback after a native build with #699 ships), redeploy the functions from before #699, then `verificari/expirare-zile/revenire-00152.sql`, which refuses while any `DAYS` package or payment exists. Tested in an isolated database (`test-revenire-00152.sql`): after it every public function, constraint and column of the two tables is as after 00151.
 
 ## Known limits
 
+- Clients from before #699 (a stale tab, an old build) would save DAYS packages back as „fără expirare”; `save_course_packages` refuses their list on a course that has DAYS packages, because only the new client sends the `validityDays` key. Old clients also do not offer DAYS packages at checkout; the server answers PACKAGE_CHANGED.
+- For card payments the start day is the Bucharest date when the webhook is applied, normally seconds after Stripe confirms; a webhook retried after midnight starts the package a day later.
 - A cash payment confirmed days after the session it was meant for does not cover that earlier session (the days start at confirmation, as decided).
 - Manual extension of a package by the coach, a reminder before expiry and a report of who has not renewed are later slices, as for monthly packages.
 
