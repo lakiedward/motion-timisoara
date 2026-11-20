@@ -1,4 +1,4 @@
-import type { CoursePackage } from './course-packages'
+import { DAYS, type CoursePackage } from './course-packages'
 import { MONTHLY, packageMonthOptions } from './package-month'
 
 export const DEFAULT_SESSION_COUNT = 10
@@ -7,7 +7,7 @@ export const MONTH_CHANGED = 'MONTH_CHANGED'
 
 export type CheckoutChoice = { sessions: number; packageId?: string; month?: string }
 
-const SOLD = ['NONE', MONTHLY]
+const SOLD = ['NONE', MONTHLY, DAYS]
 
 export function saleablePackages(packages: CoursePackage[] | undefined): CoursePackage[] {
   return [...(packages ?? [])]
@@ -46,6 +46,11 @@ export function choiceRequest(choice: CheckoutChoice) {
   return choice.month
     ? { coursePackageId: choice.packageId, packageMonth: choice.month }
     : { coursePackageId: choice.packageId }
+}
+
+export function choiceDays(packages: CoursePackage[], choice: CheckoutChoice): number | undefined {
+  const chosen = packages.find((item) => item.id === choice.packageId)
+  return chosen?.validity === DAYS ? (chosen.validity_days ?? undefined) : undefined
 }
 
 export function choiceKey(choice: CheckoutChoice): string {

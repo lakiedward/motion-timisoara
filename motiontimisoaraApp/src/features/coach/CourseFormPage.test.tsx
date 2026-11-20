@@ -455,8 +455,8 @@ test('la editare, pachetele salvate se modifică, se șterg și se adaugă', asy
   mockedExisting.mockResolvedValue(cursSalvat() as never)
   mockedUpdate.mockResolvedValue({ id: 'c1' } as never)
   vi.mocked(getCoursePackages).mockResolvedValueOnce([
-    { id: 'p1', position: 0, sessions: 5, price: 25000, validity: 'NONE' },
-    { id: 'p2', position: 1, sessions: 10, price: 45000, validity: 'NONE' },
+    { id: 'p1', position: 0, sessions: 5, price: 25000, validity: 'NONE', validity_days: null },
+    { id: 'p2', position: 1, sessions: 10, price: 45000, validity: 'NONE', validity_days: null },
   ])
   renderForm('/coach/courses/c1/edit')
   await screen.findByDisplayValue('Înot avansat')
@@ -492,8 +492,8 @@ test('valabilitatea se alege o dată pentru toate pachetele cursului', async () 
   mockedExisting.mockResolvedValue(cursSalvat() as never)
   mockedUpdate.mockResolvedValue({ id: 'c1' } as never)
   vi.mocked(getCoursePackages).mockResolvedValueOnce([
-    { id: 'p1', position: 0, sessions: 8, price: 32000, validity: 'NONE' },
-    { id: 'p2', position: 1, sessions: 12, price: 45000, validity: 'NONE' },
+    { id: 'p1', position: 0, sessions: 8, price: 32000, validity: 'NONE', validity_days: null },
+    { id: 'p2', position: 1, sessions: 12, price: 45000, validity: 'NONE', validity_days: null },
   ])
   renderForm('/coach/courses/c1/edit')
   await screen.findByDisplayValue('Înot avansat')
@@ -516,6 +516,43 @@ test('valabilitatea se alege o dată pentru toate pachetele cursului', async () 
       { packageId: 'p1', sessions: '8', price: '320', validity: 'CALENDAR_MONTH' },
       { packageId: 'p2', sessions: '12', price: '450', validity: 'CALENDAR_MONTH' },
       { sessions: '4', price: '180', validity: 'CALENDAR_MONTH' },
+    ],
+  ])
+})
+
+test('pachetele pot expira după un număr de zile ales pentru tot cursul', async () => {
+  const user = userEvent.setup()
+  mockedExisting.mockResolvedValue(cursSalvat() as never)
+  mockedUpdate.mockResolvedValue({ id: 'c1' } as never)
+  vi.mocked(getCoursePackages).mockResolvedValueOnce([
+    { id: 'p1', position: 0, sessions: 8, price: 32000, validity: 'NONE', validity_days: null },
+    { id: 'p2', position: 1, sessions: 12, price: 45000, validity: 'NONE', validity_days: null },
+  ])
+  renderForm('/coach/courses/c1/edit')
+  await screen.findByDisplayValue('Înot avansat')
+  await pickSelectMenuValue(screen.getByLabelText('Valabilitatea pachetelor'), 'DAYS')
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  expect(await screen.findByText('Scrie un număr de zile între 7 și 365')).toBeInTheDocument()
+  expect(saveCoursePackages).not.toHaveBeenCalled()
+  await user.type(screen.getByLabelText('Număr de zile'), '45')
+  expect(screen.getByText(/expiră după 45 de zile, numărate de la confirmarea plății/)).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Adaugă un pachet' }))
+  await user.type(
+    screen.getByLabelText('Număr de ședințe', { selector: '#package-2-sessions' }),
+    '4',
+  )
+  await user.type(
+    screen.getByLabelText('Preț total (lei)', { selector: '#package-2-price' }),
+    '180',
+  )
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() => expect(saveCoursePackages).toHaveBeenCalled())
+  expect(vi.mocked(saveCoursePackages).mock.calls[0]).toEqual([
+    'c1',
+    [
+      { packageId: 'p1', sessions: '8', price: '320', validity: 'DAYS', validityDays: '45' },
+      { packageId: 'p2', sessions: '12', price: '450', validity: 'DAYS', validityDays: '45' },
+      { sessions: '4', price: '180', validity: 'DAYS', validityDays: '45' },
     ],
   ])
 })

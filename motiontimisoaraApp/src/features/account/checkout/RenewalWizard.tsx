@@ -28,6 +28,7 @@ import { advanceHint, billingIsValid, quoteIsPriced, STEP_COPY } from './checkou
 import { usePaymentAdapter } from './usePaymentAdapter'
 import {
   DEFAULT_SESSION_COUNT,
+  choiceDays,
   choiceKey,
   effectiveChoice,
   type CheckoutChoice,
@@ -292,6 +293,7 @@ export default function RenewalWizard({
             kindLabel="Curs"
             packageSize={choice.sessions}
             packageMonth={choice.month}
+            packageDays={choiceDays(offering.coursePackages, choice)}
             lines={quote ? [{ id: quote.childId, name: quote.name, amount: total, snapshot: quote.pricingSnapshot }] : []}
             total={priced ? total : undefined}
           />

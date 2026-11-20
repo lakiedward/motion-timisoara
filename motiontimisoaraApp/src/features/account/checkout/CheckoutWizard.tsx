@@ -26,6 +26,7 @@ import { CheckoutSteps } from './CheckoutSteps'
 import { CheckoutPackagePicker } from './CheckoutPackagePicker'
 import {
   DEFAULT_SESSION_COUNT,
+  choiceDays,
   choiceKey,
   choiceRequest,
   effectiveChoice,
@@ -465,6 +466,7 @@ export default function CheckoutWizard({
               kindLabel={KIND_LABEL[kind]}
               packageSize={offering.perSession ? choice.sessions : undefined}
               packageMonth={offering.perSession ? choice.month : undefined}
+              packageDays={offering.perSession ? choiceDays(offering.coursePackages, choice) : undefined}
               lines={summaryLines}
               total={pricesReady ? total : undefined}
             />

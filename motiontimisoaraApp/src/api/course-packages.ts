@@ -5,7 +5,7 @@ import {
   type CoursePackageDraft,
 } from '@/lib/course-packages/course-packages'
 
-const PACKAGE_COLUMNS = 'id, position, sessions, price, validity'
+const PACKAGE_COLUMNS = 'id, position, sessions, price, validity, validity_days'
 
 export async function getCoursePackages(courseId: string): Promise<CoursePackage[]> {
   const { data, error } = await supabase
