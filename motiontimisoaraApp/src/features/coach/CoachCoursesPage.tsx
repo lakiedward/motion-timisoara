@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { getMyCourses, setCourseActive } from '@/api/coach'
 import { PageHeader, PageNewLink } from '@/components/page-header/PageHeader'
 import { CourseListRow } from '@/components/panel-list/CourseListRow'
+import { useCoursePackages } from '@/components/panel-list/useCoursePackages'
 import { PanelEditAction, PanelToggleAction } from '@/components/panel-list/PanelRowActions'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -35,6 +36,7 @@ export default function CoachCoursesPage() {
     retry: false,
   })
   const visible = filterCoachCourses(courses, filters)
+  const { packages, pending: packagesPending } = useCoursePackages(courses.map((c) => c.id))
 
   const toggle = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) => setCourseActive(id, active),
@@ -79,6 +81,8 @@ export default function CoachCoursesPage() {
                   key={c.id}
                   course={c}
                   query={filters.query}
+                  packages={packages[c.id]}
+                  priceLoading={packagesPending}
                   actions={
                     <>
                       <PanelEditAction to={`/coach/courses/${c.id}/edit`} name={c.name} />

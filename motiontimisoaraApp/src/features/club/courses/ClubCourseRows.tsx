@@ -1,4 +1,5 @@
 import { CourseListRow } from '@/components/panel-list/CourseListRow'
+import { useCoursePackages } from '@/components/panel-list/useCoursePackages'
 import { PanelEditAction, PanelToggleAction } from '@/components/panel-list/PanelRowActions'
 import type { ClubCourse } from '@/api/club'
 
@@ -11,6 +12,7 @@ export function ClubCourseRows({
   pendingId: string | null
   onToggle: (course: ClubCourse) => void
 }) {
+  const { packages, pending: packagesPending } = useCoursePackages(courses.map((c) => c.id))
   const groups = [
     { title: 'Active', items: courses.filter((c) => c.active) },
     { title: 'Inactive', items: courses.filter((c) => !c.active) },
@@ -28,6 +30,8 @@ export function ClubCourseRows({
                 key={c.id}
                 course={c}
                 showCoach
+                packages={packages[c.id]}
+                priceLoading={packagesPending}
                 actions={
                   <>
                     <PanelEditAction to={`/club/courses/${c.id}/edit`} name={c.name} />

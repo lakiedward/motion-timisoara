@@ -107,6 +107,7 @@ async function simulate(page: Page, role: Role) {
     if (url.pathname === '/rest/v1/rpc/my_club') return respond([{ id: ids.club, owner_user_id: ids.clubOwner, name: 'Club Simulat', approved_at: '2026-09-01T00:00:00Z' }]);
     if (url.pathname === '/rest/v1/children') return respond([child]);
     if (url.pathname === '/rest/v1/courses') return respond([course]);
+    if (url.pathname === '/rest/v1/course_packages') return respond([]);
     if (url.pathname === '/rest/v1/course_occurrences') {
       const future = url.searchParams.get('starts_at')?.startsWith('gte.');
       return respond(future ? [] : [occurrence]);
