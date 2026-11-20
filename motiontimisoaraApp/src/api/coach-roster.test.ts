@@ -98,3 +98,32 @@ test('starea de pontare a fiecărui copil vine din prezențele ședinței', asyn
   expect(roster.find((r) => r.child_id === 'c2')?.status).toBeNull()
   expect(roster[0].child_birth_date).toBe('2016-05-01')
 })
+
+test('rândul copilului poartă data expirării pachetului consumat primul', async () => {
+  const azi = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Bucharest' }).format(new Date())
+  const anul = Number(azi.slice(0, 4)) + 1
+  raspuns = {
+    enrollments: {
+      data: [
+        {
+          ...inscris('c1', 'Ana Dumitrescu'),
+          remaining_sessions: 0,
+          monthly_packages: [
+            {
+              sessions: 4,
+              sessions_used: 1,
+              valid_from: '2000-01-01',
+              valid_until: `${anul}-12-31`,
+            },
+          ],
+        },
+        { ...inscris('c2', 'Luca Georgescu'), remaining_sessions: 6, monthly_packages: [] },
+      ],
+      error: null,
+    },
+    attendance: { data: [], error: null },
+  }
+  const roster = await getSessionRoster('curs', 'sedinta')
+  expect(roster[0].package_note).toBe(`expiră pe 31 decembrie ${anul}`)
+  expect(roster[1].package_note).toBeNull()
+})

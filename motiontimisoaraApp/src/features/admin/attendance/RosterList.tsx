@@ -125,6 +125,7 @@ export function RosterList({
                   <div className="truncate font-medium">{r.child_name}</div>
                   <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 text-sm">
                     <span>{childAge(r.child_birth_date)} ani</span>
+                    {r.package_note && <span>{r.package_note}</span>}
                     {qr}
                   </div>
                 </div>
