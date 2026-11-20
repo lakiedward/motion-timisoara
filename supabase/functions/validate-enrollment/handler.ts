@@ -1,6 +1,7 @@
 import { getEnrollmentAdultPrice, getEnrollmentChildPrices, validChildIds, type EnrollmentServices, type EnrollmentOffer, type ExistingEnrollment } from "../_shared/enrollment-pricing.ts";
 import { validQuantity, type PriceSnapshot } from "../_shared/price-snapshot.ts";
 import { offerAcceptsEnrollments, SUBSCRIPTION_INACTIVE_MESSAGE } from "../_shared/subscription-access.ts";
+import { validateRenewal } from "./renewal.ts";
 
 interface ValidateRequest {
   kind: "COURSE" | "CAMP" | "ACTIVITY";
@@ -62,7 +63,9 @@ export function createValidationHandler({ db: supabaseAdmin, getUser, getUserRol
       return json({ error: "Only parents can enroll children" }, 403);
     }
 
-    const { kind, entityId, childIds = [], sessionPackageSize = 1 }: ValidateRequest = await req.json();
+    const body = await req.json();
+    if (body?.renewEnrollmentId !== undefined) return await validateRenewal(supabaseAdmin, user.id, body);
+    const { kind, entityId, childIds = [], sessionPackageSize = 1 }: ValidateRequest = body;
     if (!["CAMP", "COURSE", "ACTIVITY"].includes(String(kind)) || typeof entityId !== "string" || !entityId ||
       !validChildIds(childIds)) {
       return json({ error: "kind, entityId and childIds are required" }, 400);

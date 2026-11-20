@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { getEnrollmentPayments, enrollmentPayable } from './enrollments'
+import { currentFirst, getEnrollmentPayments, enrollmentPayable } from './enrollments'
 
 const { query, select, from } = vi.hoisted(() => {
   const query = vi.fn()
@@ -93,5 +93,41 @@ describe('payment recovery eligibility', () => {
     },
   ])('blocks recovery for an ineligible or ambiguous enrollment', (enrollment) => {
     expect(enrollmentPayable(enrollment)).toBe(false)
+  })
+})
+
+describe('several purchases on one course enrollment', () => {
+  const renewal = {
+    id: 'first',
+    status: 'ACTIVE',
+    kind: 'COURSE',
+    child: { id: 'child-first', name: 'Copil Audit' },
+    payments: [
+      { id: 'old', status: 'SUCCEEDED', method: 'CARD', created_at: '2026-11-01T10:00:00Z' },
+      { id: 'new', status: 'PENDING', method: 'CARD', created_at: '2026-11-20T10:00:00Z' },
+    ],
+  }
+
+  it('reads the open renewal as the current payment', async () => {
+    query.mockResolvedValue({ data: [renewal], error: null })
+    const [enrollment] = await getEnrollmentPayments(['first'])
+    expect(enrollment.payments.map((payment) => payment.id)).toEqual(['new', 'old'])
+    expect(select.mock.calls[0][0]).toContain('created_at')
+  })
+
+  it('lets the parent resume a card renewal on an active course', () => {
+    expect(enrollmentPayable(renewal)).toBe(false)
+    expect(enrollmentPayable({ ...renewal, payments: currentFirst(renewal.payments) })).toBe(true)
+    expect(
+      enrollmentPayable({ ...renewal, kind: 'ACTIVITY', payments: currentFirst(renewal.payments) }),
+    ).toBe(false)
+  })
+
+  it('orders the newest payment first once nothing is open', () => {
+    const ordered = currentFirst([
+      { id: 'old', status: 'SUCCEEDED', created_at: '2026-11-01T10:00:00Z' },
+      { id: 'new', status: 'SUCCEEDED', created_at: '2026-11-20T10:00:00Z' },
+    ])
+    expect(ordered.map((payment) => payment.id)).toEqual(['new', 'old'])
   })
 })

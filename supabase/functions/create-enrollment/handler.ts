@@ -3,6 +3,7 @@ import { completedEnrollmentPrices, notifyCashEnrollments, saveEnrollmentBatch }
 import { validQuantity } from "../_shared/price-snapshot.ts";
 import { buildCheckoutAcceptance, type ClientAcceptance } from "../_shared/checkout-acceptance.ts";
 import { offerAcceptsEnrollments, subscriptionInactiveBody } from "../_shared/subscription-access.ts";
+import { createRenewal } from "./renewal.ts";
 
 interface EnrollmentRequest {
   kind: "COURSE" | "CAMP" | "ACTIVITY";
@@ -20,6 +21,7 @@ interface EnrollmentRequest {
     postalCode: string;
   };
   acceptance?: ClientAcceptance;
+  renewEnrollmentId?: string;
 }
 
 function ageOf(birthDate: string): number {
@@ -83,6 +85,7 @@ export function createEnrollmentHandler({ db: supabaseAdmin, getUser, getUserRol
     }
 
     const body: EnrollmentRequest = await req.json();
+    if (body?.renewEnrollmentId !== undefined) return await createRenewal(supabaseAdmin, user.id, body);
     const { kind, entityId, paymentMethod, billingDetails } = body;
     const childIds = Array.isArray(body.childIds) ? body.childIds : [];
     const includeSelf = body.includeSelf === true;

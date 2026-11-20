@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import CheckoutWizard from './checkout/CheckoutWizard'
+import RenewalWizard from './checkout/RenewalWizard'
 import type { OfferingRules } from './checkout/CheckoutRulesConsent'
 import {
   ACTIVITY_RULES_FILE_BUCKET,
@@ -53,6 +54,7 @@ export default function CheckoutPage() {
   const kind = (params.get('kind') ?? 'COURSE').toUpperCase() as EnrollmentKind
   const id = params.get('id')
   const slug = params.get('slug')
+  const renew = kind === 'COURSE' ? params.get('renew') : null
   const { user } = useAuth()
   const parentAccount = user?.role === 'PARENT'
 
@@ -153,6 +155,17 @@ export default function CheckoutPage() {
       <Invalid
         title="Nu am găsit acest program"
         message="Poate a fost șters sau linkul e greșit. Caută altul din listă."
+      />
+    )
+  }
+
+  if (renew) {
+    return (
+      <RenewalWizard
+        key={`renew:${renew}`}
+        enrollmentId={renew}
+        offering={offering}
+        initialMethod={readMethod(params.get('payment'))}
       />
     )
   }

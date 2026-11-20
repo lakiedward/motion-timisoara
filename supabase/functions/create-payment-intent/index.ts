@@ -3,6 +3,7 @@ import { getUser, supabaseAdmin } from "../_shared/supabase.ts";
 import { authorizedRonCharge } from "../_shared/payment-charge.ts";
 import { paymentRecipient } from "../_shared/payment-recipient.ts";
 import { preparePaymentIntent } from "../_shared/payment-intent.ts";
+import { currentPayment } from "../_shared/payment-current.ts";
 import { withCors } from "../_shared/cors.ts";
 import { getStripe, stripeFeeCeiling } from "../_shared/stripe.ts";
 
@@ -18,12 +19,12 @@ serve(
     const user = await getUser(req);
     const { enrollmentId } = await req.json();
 
-    const { data: payment, error: payErr } = await supabaseAdmin
+    const { data: payments, error: payErr } = await supabaseAdmin
       .from("payments")
       .select("*")
-      .eq("enrollment_id", enrollmentId)
-      .single();
-    if (payErr || !payment) {
+      .eq("enrollment_id", enrollmentId);
+    const payment = payErr ? null : currentPayment(payments ?? []);
+    if (!payment) {
       return new Response(
         JSON.stringify({ error: "Payment not initialized" }),
         { status: 400, headers: { "Content-Type": "application/json" } },

@@ -16,6 +16,7 @@ export type EnrollmentPayment = Pick<
   payments: Pick<
     Tables<'payments'>,
     | 'id'
+    | 'created_at'
     | 'amount'
     | 'currency'
     | 'status'
@@ -36,18 +37,44 @@ export async function getEnrollmentPayments(ids: string[]): Promise<EnrollmentPa
   const { data, error } = await supabase
     .from('enrollments')
     .select(
-      'id,status,kind,entity_id,purchased_sessions,remaining_sessions,adult_profile_id,child:children(id,name),payments(id,amount,currency,status,method,pricing_snapshot,billing_name,billing_email,billing_address_line1,billing_city,billing_postal_code)',
+      'id,status,kind,entity_id,purchased_sessions,remaining_sessions,adult_profile_id,child:children(id,name),payments(id,created_at,amount,currency,status,method,pricing_snapshot,billing_name,billing_email,billing_address_line1,billing_city,billing_postal_code)',
     )
     .in('id', [...new Set(ids)])
   if (error) throw new Error('Nu am putut verifica plățile. Reîncearcă.', { cause: error })
   if (!data || data.length !== new Set(ids).size) {
     throw new EnrollmentPaymentUnavailableError('Înscrierea nu este disponibilă în acest cont.')
   }
-  const rows = data as EnrollmentPayment[]
-  if (rows.some((row) => (!row.child && !row.adult_profile_id) || row.payments.length !== 1)) {
+  const rows = (data as EnrollmentPayment[]).map((row) => ({
+    ...row,
+    payments: currentFirst(row.payments),
+  }))
+  if (
+    rows.some(
+      (row) =>
+        (!row.child && !row.adult_profile_id) ||
+        row.payments.length === 0 ||
+        openPayments(row.payments) > 1,
+    )
+  ) {
     throw new EnrollmentPaymentUnavailableError('Plata are nevoie de verificare. Contactează clubul.')
   }
   return ids.map((id) => rows.find((row) => row.id === id)!)
+}
+
+const OPEN = ['PENDING', 'FAILED']
+
+function openPayments(payments: { status: string }[]) {
+  return payments.filter((payment) => OPEN.includes(payment.status)).length
+}
+
+export function currentFirst<T extends { status: string; created_at?: string | null }>(
+  payments: T[],
+): T[] {
+  const time = (payment: T) => Date.parse(payment.created_at ?? '') || 0
+  return [...payments].sort(
+    (a, b) =>
+      Number(OPEN.includes(b.status)) - Number(OPEN.includes(a.status)) || time(b) - time(a),
+  )
 }
 
 export function paymentBilling(row: EnrollmentPayment): BillingDetails {
@@ -67,12 +94,15 @@ export function enrollmentPaid(row: EnrollmentPayment) {
 
 export function enrollmentPayable(row: {
   status: string
+  kind?: string
   payments: { method: string; status: string }[]
 }) {
+  const renewal = row.status === 'ACTIVE' && row.kind === 'COURSE'
   return (
-    row.status === 'PENDING' &&
-    row.payments.length === 1 &&
+    (row.status === 'PENDING' || renewal) &&
+    openPayments(row.payments) === 1 &&
+    (renewal || row.payments.length === 1) &&
     row.payments[0].method === 'CARD' &&
-    ['PENDING', 'FAILED'].includes(row.payments[0].status)
+    OPEN.includes(row.payments[0].status)
   )
 }

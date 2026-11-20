@@ -7,6 +7,7 @@ import { SportIllustration } from '@/components/sport/SportIllustration'
 import { cn } from '@/lib/utils'
 import { KIND_LABEL, byAttention, needsPayment, participantName } from './enrollment-display'
 import {
+  BuySessionsButton,
   CARD,
   CardTitle,
   EnrolledOn,
@@ -88,6 +89,7 @@ export function EnrollmentPhotoCards({ enrollments, paymentId, setPaymentId }: P
               ) : (
                 <PayButton e={e} onOpen={() => setPaymentId(e.id)} className="mt-2 w-full" />
               )}
+              <BuySessionsButton e={e} className="mt-2 w-full" />
             </div>
           </article>
         )

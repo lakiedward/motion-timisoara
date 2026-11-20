@@ -56,3 +56,19 @@ export function needsPayment(e: EnrollmentRow) {
 export function byAttention(rows: EnrollmentRow[]) {
   return [...rows].sort((a, b) => Number(needsPayment(b)) - Number(needsPayment(a)))
 }
+
+export function canBuySessions(e: EnrollmentRow) {
+  return (
+    e.kind === 'COURSE' &&
+    e.status === 'ACTIVE' &&
+    Boolean(e.child) &&
+    !e.payments.some(
+      (payment) => ['PENDING', 'FAILED'].includes(payment.status) && payment.method !== 'CASH',
+    )
+  )
+}
+
+export function buySessionsPath(e: EnrollmentRow) {
+  const params = new URLSearchParams({ kind: 'COURSE', id: e.entity_id, renew: e.id })
+  return `/account/checkout?${params.toString()}`
+}

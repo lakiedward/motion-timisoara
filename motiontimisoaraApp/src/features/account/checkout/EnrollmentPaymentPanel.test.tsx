@@ -45,6 +45,7 @@ function enrollment(paid = false): EnrollmentPayment {
     payments: [
       {
         id: 'saved-payment',
+        created_at: '2026-11-01T10:00:00Z',
         amount: 31612,
         currency: 'RON',
         status: paid ? 'SUCCEEDED' : 'FAILED',
