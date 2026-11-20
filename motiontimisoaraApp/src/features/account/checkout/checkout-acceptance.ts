@@ -22,5 +22,10 @@ export function termsTextForHash(text: string): string {
 }
 
 export function acceptanceResetCode(code: string | undefined): boolean {
-  return code === 'PRICE_CHANGED' || code === 'RULES_CHANGED' || code === 'TERMS_CHANGED'
+  return (
+    code === 'PRICE_CHANGED' ||
+    code === 'PACKAGE_CHANGED' ||
+    code === 'RULES_CHANGED' ||
+    code === 'TERMS_CHANGED'
+  )
 }

@@ -7,6 +7,9 @@ import {
   type PaymentMethod,
 } from '@/api/checkout'
 import { getActivity, getCourse } from '@/api/public'
+import { getCoursePackages } from '@/api/course-packages'
+import type { CoursePackage } from '@/lib/course-packages/course-packages'
+import { saleablePackages } from '@/lib/course-packages/checkout-choice'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
@@ -30,6 +33,8 @@ export interface Offering {
   title: string
   perSession: boolean
   packages: number[]
+  coursePackages: CoursePackage[]
+  currency?: string
   rules?: OfferingRules
   rulesFingerprint?: string
 }
@@ -74,6 +79,7 @@ export default function CheckoutPage() {
               title: camp.title,
               perSession: false,
               packages: [],
+              coursePackages: [],
               rules: {
                 text: campRulesForDisplay(camp.rules),
                 file: rulesFileAfisabil(CAMP_RULES_FILE_BUCKET, camp),
@@ -90,19 +96,22 @@ export default function CheckoutPage() {
               title: activity.name,
               perSession: false,
               packages: [],
+              coursePackages: [],
               rules: { text: null, file: rulesFileAfisabil(ACTIVITY_RULES_FILE_BUCKET, activity) },
               rulesFingerprint: await rulesFingerprint(activity.rules_file_storage_path, null),
             }
           : null
       }
       if (kind === 'COURSE' && id) {
-        const course = await getCourse(id)
+        const [course, coursePackages] = await Promise.all([getCourse(id), getCoursePackages(id)])
         return course
           ? {
               id: course.id,
               title: course.name,
               perSession: true,
               packages: parsePackages(course.package_options),
+              coursePackages: saleablePackages(coursePackages),
+              currency: course.currency,
               rules: { text: null, file: rulesFileAfisabil(COURSE_RULES_FILE_BUCKET, course) },
               rulesFingerprint: await rulesFingerprint(course.rules_file_storage_path, null),
             }

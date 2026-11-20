@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import type { Tables } from '@/lib/database.types'
-import { baniToRon } from '@/lib/money'
+import { baniToRon, formatMoney } from '@/lib/money'
 import { plural } from '@/lib/plural'
 import { parseScaledDecimal } from '@/lib/pricing/offer-currency'
 
@@ -13,8 +13,6 @@ export type CoursePackage = Pick<
 export const MAX_COURSE_PACKAGES = 4
 export const MAX_PACKAGE_SESSIONS = 100
 const MAX_PACKAGE_PRICE = 10_000_000
-
-export const COURSE_PACKAGES_ON_SALE = false
 
 export type CoursePackageDraft = { packageId?: string; sessions: string; price: string }
 
@@ -99,4 +97,11 @@ export function sessionsLabel(sessions: number): string {
 
 export function cheapestPerSession(packages: Pick<CoursePackage, 'sessions' | 'price'>[]): number {
   return Math.min(...packages.map(pricePerSession))
+}
+
+export function packageNote(
+  item: Pick<CoursePackage, 'sessions' | 'price'>,
+  currency: string,
+): string {
+  return `${formatMoney(pricePerSession(item), currency)} / ședință · fără expirare`
 }

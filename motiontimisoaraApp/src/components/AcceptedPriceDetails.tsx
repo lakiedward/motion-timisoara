@@ -5,10 +5,22 @@ export function AcceptedPriceDetails({ snapshot }: { snapshot: unknown }) {
   if (!snapshot || typeof snapshot !== 'object') return null
   const price = snapshot as {
     sourceUnitAmount?: number
+    sourcePackageAmount?: number
     sourceCurrency?: string
     quantity?: number
     eurRonRateMicros?: number
   }
+  if (
+    price.sourceCurrency === 'EUR' &&
+    Number.isSafeInteger(price.sourcePackageAmount) &&
+    Number.isSafeInteger(price.eurRonRateMicros)
+  )
+    return (
+      <p className="text-muted-foreground mt-1 text-sm">
+        {formatMoney(price.sourcePackageAmount!, 'EUR')}
+        {' · '}1 EUR = {formatExchangeRate(price.eurRonRateMicros!)} lei
+      </p>
+    )
   if (
     price.sourceCurrency !== 'EUR' ||
     !Number.isSafeInteger(price.sourceUnitAmount) ||

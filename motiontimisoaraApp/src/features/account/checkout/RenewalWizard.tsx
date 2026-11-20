@@ -24,16 +24,22 @@ import { CheckoutPaymentStep } from './CheckoutPaymentStep'
 import { CheckoutRulesConsent } from './CheckoutRulesConsent'
 import { CheckoutSteps } from './CheckoutSteps'
 import { TERMS_VERSION, acceptanceResetCode } from './checkout-acceptance'
-import { advanceHint, quoteIsPriced, STEP_COPY } from './checkout-flow'
+import { advanceHint, billingIsValid, quoteIsPriced, STEP_COPY } from './checkout-flow'
 import { usePaymentAdapter } from './usePaymentAdapter'
+import {
+  DEFAULT_SESSION_COUNT,
+  choiceKey,
+  effectiveChoice,
+} from '@/lib/course-packages/checkout-choice'
 
-const DEFAULT_PACKAGE = 10
 const MAX_RENEWAL_SESSIONS = 100
 
 const RENEWAL_COPY = {
   title: 'Câte ședințe cumperi?',
   text: 'Ședințele noi se adaugă la cele rămase, după ce plata este confirmată.',
 }
+
+const PACKAGE_RENEWAL_COPY = { ...RENEWAL_COPY, title: 'Ce pachet cumperi?' }
 
 function sessionsLeft(count: number) {
   if (count === 1) return 'mai are o ședință'
@@ -59,7 +65,8 @@ export default function RenewalWizard({
   useEffect(() => () => attempt.current?.abort(), [user?.id])
 
   const [step, setStep] = useState(0)
-  const [packageSize, setPackageSize] = useState(DEFAULT_PACKAGE)
+  const [chosen, setChoice] = useState({ sessions: DEFAULT_SESSION_COUNT })
+  const choice = effectiveChoice(offering.coursePackages, chosen)
   const [accepted, setAccepted] = useState(false)
   const [acceptedVersion, setAcceptedVersion] = useState<string | null>(null)
   const [method, setMethod] = useState<PaymentMethod>(stripeConfigured ? initialMethod : 'CASH')
@@ -73,8 +80,8 @@ export default function RenewalWizard({
   const [progress, setProgress] = useState<string | null>(null)
 
   const validation = useQuery({
-    queryKey: ['validate-renewal', enrollmentId, packageSize],
-    queryFn: () => validateRenewal(enrollmentId, packageSize),
+    queryKey: ['validate-renewal', enrollmentId, choiceKey(choice)],
+    queryFn: () => validateRenewal(enrollmentId, choice),
     placeholderData: keepPreviousData,
   })
   const quote = validation.data?.renewal
@@ -87,12 +94,7 @@ export default function RenewalWizard({
   const steps = method === 'CARD' ? ['Pachet', 'Facturare', 'Plată'] : ['Pachet', 'Plată']
   const lastStep = steps.length - 1
   const hasAccepted = accepted && acceptedVersion === (quote?.priceVersion ?? null)
-  const billingValid =
-    billing.name.trim().length > 1 &&
-    /\S+@\S+\.\S+/.test(billing.email) &&
-    billing.addressLine1.trim().length > 2 &&
-    billing.city.trim().length > 1 &&
-    billing.postalCode.trim().length > 2
+  const billingValid = billingIsValid(billing)
   const canAdvance =
     step === 0 ? priced && hasAccepted : steps[step] === 'Facturare' ? billingValid : true
 
@@ -109,7 +111,7 @@ export default function RenewalWizard({
       setProgress('Se salvează cumpărarea…')
       const created = await renewEnrollment({
         enrollmentId,
-        sessionPackageSize: packageSize,
+        choice,
         paymentMethod: method,
         priceVersion: quote.priceVersion!,
         billingDetails: method === 'CARD' ? billing : undefined,
@@ -159,7 +161,12 @@ export default function RenewalWizard({
   })
 
   const busy = finalize.isPending || Boolean(finalize.data && 'redirected' in finalize.data)
-  const copy = step === 0 ? RENEWAL_COPY : STEP_COPY[steps[step]]
+  const copy =
+    step > 0
+      ? STEP_COPY[steps[step]]
+      : offering.coursePackages.length
+        ? PACKAGE_RENEWAL_COPY
+        : RENEWAL_COPY
   const hint =
     step < lastStep && !canAdvance && !open && quote?.eligible !== false
       ? advanceHint(step === 0 ? 'Detalii' : steps[step], 1, hasAccepted)
@@ -210,7 +217,10 @@ export default function RenewalWizard({
       state="error"
       title="Nu am putut pregăti cumpărarea."
       text={validation.error instanceof Error ? validation.error.message : 'Încearcă din nou.'}
-      onRetry={() => void validation.refetch()}
+      onRetry={() => {
+        void qc.invalidateQueries({ queryKey: ['checkout-offering'] })
+        void validation.refetch()
+      }}
     />
   ) : quote ? (
     <section className="space-y-5" data-section="renewal-package">
@@ -252,9 +262,13 @@ export default function RenewalWizard({
           )}
           <CheckoutPackagePicker
             packages={offering.packages}
-            value={packageSize}
-            onChange={(size) => {
-              setPackageSize(Math.min(size, MAX_RENEWAL_SESSIONS))
+            coursePackages={offering.coursePackages}
+            currency={offering.currency}
+            value={choice}
+            onChange={(next) => {
+              setChoice(
+                next.packageId ? next : { sessions: Math.min(next.sessions, MAX_RENEWAL_SESSIONS) },
+              )
               setAccepted(false)
             }}
           />
@@ -275,7 +289,7 @@ export default function RenewalWizard({
           <CheckoutOrderSummary
             title={offering.title}
             kindLabel="Curs"
-            packageSize={packageSize}
+            packageSize={choice.sessions}
             lines={quote ? [{ id: quote.childId, name: quote.name, amount: total, snapshot: quote.pricingSnapshot }] : []}
             total={priced ? total : undefined}
           />
