@@ -9,7 +9,15 @@ import { formatMoney } from '@/lib/money'
 import { scheduleLabel } from '@/lib/enrollment-schedule'
 import { cn } from '@/lib/utils'
 import { EnrollmentPaymentPanel } from '../checkout/EnrollmentPaymentPanel'
-import { STATUS, enrollmentTitle, needsPayment, paymentLabel, sessionsLine } from './enrollment-display'
+import {
+  STATUS,
+  buySessionsPath,
+  canBuySessions,
+  enrollmentTitle,
+  needsPayment,
+  paymentLabel,
+  sessionsLine,
+} from './enrollment-display'
 
 export const CARD =
   'bg-card relative rounded-xl border transition-[border-color] duration-200 motion-reduce:transition-none'
@@ -89,6 +97,15 @@ export function PayButton({
   return (
     <Button className={cn('relative', className)} onClick={onOpen}>
       Finalizează plata
+    </Button>
+  )
+}
+
+export function BuySessionsButton({ e, className }: { e: EnrollmentRow; className?: string }) {
+  if (!canBuySessions(e)) return null
+  return (
+    <Button asChild variant="outline" className={cn('relative', className)}>
+      <Link to={buySessionsPath(e)}>Cumpără ședințe</Link>
     </Button>
   )
 }

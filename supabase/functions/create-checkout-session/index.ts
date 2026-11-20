@@ -4,6 +4,7 @@ import { authorizedRonCharge } from "../_shared/payment-charge.ts";
 import { paymentRecipient } from "../_shared/payment-recipient.ts";
 import { MAX_CHECKOUT_LINES, prepareCheckoutSession } from "../_shared/checkout-session.ts";
 import { enrollmentJson } from "../_shared/enrollment-pricing.ts";
+import { currentPayment } from "../_shared/payment-current.ts";
 import { stripeReturnBase } from "../_shared/stripe-return-url.ts";
 import { withCors } from "../_shared/cors.ts";
 import { getStripe } from "../_shared/stripe.ts";
@@ -55,9 +56,8 @@ serve(
 
     const lines = [];
     for (const enrollment of enrollments) {
-      const rows = payments?.filter((row) => row.enrollment_id === enrollment.id) ?? [];
-      const payment = rows[0];
-      if (rows.length !== 1 || payment.method !== "CARD") {
+      const payment = currentPayment(payments?.filter((row) => row.enrollment_id === enrollment.id) ?? []);
+      if (!payment || payment.method !== "CARD") {
         return enrollmentJson({ error: "Înscrierea nu are o plată cu cardul de reluat." }, 409);
       }
       await authorizedRonCharge(supabaseAdmin, user.id, enrollment, payment);

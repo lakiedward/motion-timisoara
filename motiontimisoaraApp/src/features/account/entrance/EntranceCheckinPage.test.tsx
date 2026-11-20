@@ -78,7 +78,7 @@ test('un singur copil în fereastră e ales deja; o apăsare marchează prezenț
   await userEvent.click(screen.getByRole('button', { name: 'Marchează prezent' }))
 
   expect(await screen.findByText('Prezență salvată pentru Maria')).toBeInTheDocument()
-  expect(screen.getByText(/Mai are 3 ședințe în abonament/)).toBeInTheDocument()
+  expect(screen.getByText(/Mai are 3 ședințe în pachet/)).toBeInTheDocument()
   expect(entranceCheckin).toHaveBeenCalledWith(
     expect.objectContaining({ token: TOKEN, occurrenceId: 'o1', childId: 'ch1' }),
   )
@@ -198,8 +198,8 @@ test('o eroare de rețea la verificare oferă reîncercarea', async () => {
 
 test('ședințele rămase se spun corect la singular și plural', async () => {
   const { remainingText } = await import('./entrance-messages')
-  expect(remainingText(1)).toBe('Mai are o ședință în abonament.')
-  expect(remainingText(21)).toBe('Mai are 21 de ședințe în abonament.')
+  expect(remainingText(1)).toBe('Mai are o ședință în pachet.')
+  expect(remainingText(21)).toBe('Mai are 21 de ședințe în pachet.')
   expect(remainingText(0)).toBe('Nu mai are ședințe rămase.')
   expect(remainingText(null)).toBeNull()
 })

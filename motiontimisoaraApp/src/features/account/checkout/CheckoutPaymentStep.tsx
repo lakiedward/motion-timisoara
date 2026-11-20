@@ -17,6 +17,7 @@ export function CheckoutPaymentStep({
   cashBlocked,
   paymentAvailable,
   switchMethod,
+  cashNote = 'Înscrierea rămâne în așteptare până când antrenorul confirmă încasarea sumei de',
 }: {
   summary: ReactNode
   childCount: number
@@ -26,6 +27,7 @@ export function CheckoutPaymentStep({
   cashBlocked: boolean
   paymentAvailable: boolean
   switchMethod: (method: PaymentMethod) => void
+  cashNote?: string
 }) {
   return (
     <section className="space-y-6">
@@ -69,7 +71,7 @@ export function CheckoutPaymentStep({
         <PaymentEntry childCount={childCount} />
       ) : (
         <p className="bg-muted text-muted-foreground rounded-xl p-5 text-sm">
-          Înscrierea rămâne în așteptare până când antrenorul confirmă încasarea sumei de{' '}
+          {cashNote}{' '}
           <strong>{total !== undefined ? formatRonOffer(total) : 'Preț indisponibil'}</strong>.
         </p>
       )}

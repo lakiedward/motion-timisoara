@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { enrollmentOffers, type EnrollmentOffer } from '@/api/enrollment-offers'
+import { currentFirst } from '@/api/payments/enrollments'
 import type { Tables, TablesInsert } from '@/lib/database.types'
 
 export type Child = Tables<'children'>
@@ -70,7 +71,7 @@ export type EnrollmentRow = Tables<'enrollments'> & {
   child: Pick<Tables<'children'>, 'id' | 'name'> | null
   payments: Pick<
     Tables<'payments'>,
-    'amount' | 'currency' | 'pricing_snapshot' | 'status' | 'method' | 'paid_at'
+    'id' | 'created_at' | 'amount' | 'currency' | 'pricing_snapshot' | 'status' | 'method' | 'paid_at'
   >[]
   offerTitle: string | null
   offerPath: string | null
@@ -98,7 +99,7 @@ export async function getMyEnrollments(): Promise<EnrollmentRow[]> {
   const { data, error } = await supabase
     .from('enrollments')
     .select(
-      '*, child:children(id,name), payments(amount,currency,pricing_snapshot,status,method,paid_at), competition_registration:competition_registrations(category_name_snapshot,route_name_snapshot)',
+      '*, child:children(id,name), payments(id,created_at,amount,currency,pricing_snapshot,status,method,paid_at), competition_registration:competition_registrations(category_name_snapshot,route_name_snapshot)',
     )
     .or(participantFilter)
     .order('created_at', { ascending: false })
@@ -108,7 +109,13 @@ export async function getMyEnrollments(): Promise<EnrollmentRow[]> {
   const offers = await enrollmentOffers(rows)
   return rows.map((row) => {
     const offer = offers.get(`${row.kind}:${row.entity_id}`) ?? null
-    return { ...row, offerTitle: offer?.title || null, offerPath: offer?.path ?? null, offer }
+    return {
+      ...row,
+      payments: currentFirst(row.payments ?? []),
+      offerTitle: offer?.title || null,
+      offerPath: offer?.path ?? null,
+      offer,
+    }
   })
 }
 

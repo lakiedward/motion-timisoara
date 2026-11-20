@@ -31,6 +31,8 @@ function row(partial: Partial<EnrollmentRow> & Pick<EnrollmentRow, 'id' | 'kind'
     child: null,
     payments: [
       {
+        id: 'payment-1',
+        created_at: '2026-11-01T10:00:00Z',
         amount: 0,
         currency: 'RON',
         pricing_snapshot: null,
@@ -84,6 +86,8 @@ test('the offer name leads the card and keeps the person and amount', async () =
       remaining_sessions: 5,
       payments: [
         {
+          id: 'payment-2',
+          created_at: '2026-11-01T10:00:00Z',
           amount: 31612,
           currency: 'RON',
           pricing_snapshot: {
@@ -172,6 +176,8 @@ test('a pending card payment offers to finish the payment instead of an empty se
       offerPath: '/cursuri/c-1',
       payments: [
         {
+          id: 'payment-3',
+          created_at: '2026-11-01T10:00:00Z',
           amount: 48000,
           currency: 'RON',
           pricing_snapshot: null,
@@ -198,6 +204,8 @@ test('an unknown payment status is not shown as a raw code', async () => {
       offerTitle: 'Tură',
       payments: [
         {
+          id: 'payment-4',
+          created_at: '2026-11-01T10:00:00Z',
           amount: 9000,
           currency: 'RON',
           pricing_snapshot: null,
@@ -262,6 +270,8 @@ test('a payment to finish comes first and the card shows when the offer happens'
       },
       payments: [
         {
+          id: 'payment-5',
+          created_at: '2026-11-01T10:00:00Z',
           amount: 9000,
           currency: 'RON',
           pricing_snapshot: null,
@@ -305,4 +315,57 @@ test('a photo that fails to load falls back to the sport illustration', async ()
   fireEvent.error(photo)
   expect(await within(card).findByRole('img', { name: /Ilustrație/ })).toBeInTheDocument()
   expect(card.querySelector('img')).toBeNull()
+})
+
+test('an active course offers more sessions, and an open renewal shows instead of a second purchase', async () => {
+  load.mockResolvedValue([
+    row({
+      id: 'enr-active',
+      kind: 'COURSE',
+      entity_id: 'course-7',
+      child: { id: 'c1', name: 'Copil Spec 520' },
+      offerTitle: 'Curs de înot',
+      purchased_sessions: 5,
+      remaining_sessions: 0,
+    }),
+    row({
+      id: 'enr-renewing',
+      kind: 'COURSE',
+      child: { id: 'c2', name: 'Copil Audit 152' },
+      offerTitle: 'Curs de baschet',
+      purchased_sessions: 5,
+      remaining_sessions: 1,
+      payments: [
+        {
+          id: 'renewal',
+          created_at: '2026-11-20T10:00:00Z',
+          amount: 7500,
+          currency: 'RON',
+          pricing_snapshot: null,
+          status: 'PENDING',
+          method: 'CASH',
+          paid_at: null,
+        },
+        {
+          id: 'first',
+          created_at: '2026-11-01T10:00:00Z',
+          amount: 7500,
+          currency: 'RON',
+          pricing_snapshot: null,
+          status: 'SUCCEEDED',
+          method: 'CASH',
+          paid_at: '2026-11-01T10:00:00Z',
+        },
+      ],
+    }),
+  ])
+  renderPage()
+
+  const active = await screen.findByRole('article', { name: 'Curs de înot' })
+  const buy = within(active).getByRole('link', { name: 'Cumpără ședințe' })
+  expect(buy).toHaveAttribute('href', '/account/checkout?kind=COURSE&id=course-7&renew=enr-active')
+  const renewing = screen.getByRole('article', { name: 'Curs de baschet' })
+  expect(within(renewing).queryByRole('link', { name: 'Cumpără ședințe' })).not.toBeInTheDocument()
+  expect(within(renewing).getByText('Plată în așteptare')).toBeInTheDocument()
+  expect(within(renewing).getByText('Activ')).toBeInTheDocument()
 })

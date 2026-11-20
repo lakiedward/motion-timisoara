@@ -85,7 +85,7 @@ export function checkinProblem(code: string): EntranceMessage {
     case 'NO_REMAINING_SESSIONS':
       return {
         title: 'Nu mai are ședințe rămase',
-        text: 'Abonamentul s-a consumat. Reînnoiește-l din Înscrieri sau plătește antrenorului.',
+        text: 'Pachetul de ședințe s-a consumat. Cumpără ședințe noi din Înscrieri sau plătește antrenorului.',
       }
     case 'NOT_ENROLLED':
       return {
@@ -126,6 +126,6 @@ export function stateLabel(state: EntranceOptionState): string | null {
 export function remainingText(remaining: number | null): string | null {
   if (remaining === null) return null
   if (remaining === 0) return 'Nu mai are ședințe rămase.'
-  if (remaining === 1) return 'Mai are o ședință în abonament.'
-  return `Mai are ${plural(remaining, 'ședință', 'ședințe')} în abonament.`
+  if (remaining === 1) return 'Mai are o ședință în pachet.'
+  return `Mai are ${plural(remaining, 'ședință', 'ședințe')} în pachet.`
 }
