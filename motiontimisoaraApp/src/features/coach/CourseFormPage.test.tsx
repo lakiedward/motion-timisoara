@@ -531,3 +531,24 @@ test('cursul nou își salvează pachetele după ce primește id', async () => {
   ])
   expect(await screen.findByText('Lista cursuri')).toBeInTheDocument()
 })
+
+test('dacă pachetele nu se salvează, cursul rămâne deschis și mesajul spune ce s-a salvat', async () => {
+  const user = userEvent.setup()
+  mockedExisting.mockResolvedValue(cursSalvat() as never)
+  mockedUpdate.mockResolvedValue({ id: 'c1' } as never)
+  vi.mocked(saveCoursePackages).mockRejectedValueOnce(new Error('P0002'))
+  renderForm('/coach/courses/c1/edit')
+  await screen.findByDisplayValue('Înot avansat')
+  await user.click(screen.getByRole('button', { name: 'Adaugă un pachet' }))
+  await user.type(screen.getByLabelText('Număr de ședințe'), '8')
+  await user.type(screen.getByLabelText('Preț total (lei)'), '320')
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  const { toast } = await import('sonner')
+  await waitFor(() =>
+    expect(toast.error).toHaveBeenCalledWith(
+      'Cursul s-a salvat, dar pachetele nu. Verifică pachetele și apasă din nou Salvează.',
+    ),
+  )
+  expect(toast.success).not.toHaveBeenCalled()
+  expect(screen.queryByText('Lista cursuri')).not.toBeInTheDocument()
+})

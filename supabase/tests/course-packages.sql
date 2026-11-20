@@ -90,13 +90,14 @@ INSERT INTO public.profiles (id, role, enabled, deleted_at) VALUES
     (public.test_uuid(1), 'COACH', true, NULL), (public.test_uuid(2), 'COACH', true, NULL),
     (public.test_uuid(3), 'CLUB', true, NULL), (public.test_uuid(4), 'CLUB', true, NULL),
     (public.test_uuid(5), 'ADMIN', true, NULL), (public.test_uuid(6), 'PARENT', true, NULL),
-    (public.test_uuid(7), 'COACH', false, NULL);
+    (public.test_uuid(7), 'COACH', false, NULL), (public.test_uuid(8), 'COACH', true, now());
 INSERT INTO public.clubs VALUES (public.test_uuid(13), public.test_uuid(3)), (public.test_uuid(14), public.test_uuid(4));
 INSERT INTO public.courses (id, coach_id, club_id, active) VALUES
     (public.test_uuid(21), public.test_uuid(1), NULL, true),
     (public.test_uuid(22), public.test_uuid(2), public.test_uuid(13), true),
     (public.test_uuid(23), public.test_uuid(7), NULL, true),
-    (public.test_uuid(24), public.test_uuid(1), NULL, false);
+    (public.test_uuid(24), public.test_uuid(1), NULL, false),
+    (public.test_uuid(25), public.test_uuid(8), NULL, true);
 
 SELECT public.test_assert(NOT has_function_privilege('anon', 'public.save_course_packages(uuid, jsonb)', 'EXECUTE')
     AND has_function_privilege('authenticated', 'public.save_course_packages(uuid, jsonb)', 'EXECUTE'),
@@ -118,6 +119,13 @@ SELECT public.test_assert(public.test_save(5, 21, format('[{"id":"%s","sessions"
 SELECT public.test_assert(public.test_save(1, 21, format('[{"id":"%s","sessions":10,"price":34000},{"sessions":20,"price":60000}]',
     public.test_id(21, 0))::jsonb) = 'OK'
     AND public.test_list(21) = '0:10x34000,1:20x60000', 'a missing package is deleted and a new one added');
+SELECT public.test_assert(public.test_save(1, 21, '[{"sessions":5,"price":100},{"sessions":10,"price":200}]') = 'OK', 'setup for a sessions swap');
+SELECT public.test_assert(public.test_save(1, 21, format('[{"id":"%s","sessions":10,"price":100},{"id":"%s","sessions":5,"price":200}]',
+    public.test_id(21, 0), public.test_id(21, 1))::jsonb) = 'OK'
+    AND public.test_list(21) = '0:10x100,1:5x200', 'two packages can swap their session counts');
+SELECT public.test_assert(public.test_save(1, 21, format('[{"id":"%s","sessions":10,"price":100},{"id":"%s","sessions":6,"price":200}]',
+    public.test_id(21, 0), public.test_id(21, 0))::jsonb) = 'UNKNOWN'
+    AND public.test_list(21) = '0:10x100,1:5x200', 'the same id twice is refused');
 SELECT public.test_assert(public.test_save(1, 21, '[]') = 'OK' AND public.test_list(21) = '-', 'an empty list removes every package');
 
 SELECT public.test_assert(public.test_save(2, 21, '[{"sessions":5,"price":20000}]') = 'FORBIDDEN', 'another coach is refused');
@@ -125,6 +133,15 @@ SELECT public.test_assert(public.test_save(4, 22, '[{"sessions":5,"price":20000}
 SELECT public.test_assert(public.test_save(6, 21, '[{"sessions":5,"price":20000}]') = 'FORBIDDEN', 'parent is refused');
 SELECT public.test_assert(public.test_save(7, 23, '[{"sessions":5,"price":20000}]') = 'FORBIDDEN', 'disabled coach is refused');
 SELECT public.test_assert(public.test_save(NULL, 21, '[{"sessions":5,"price":20000}]') = 'FORBIDDEN', 'missing session is refused');
+SELECT public.test_assert(public.test_save(8, 25, '[{"sessions":5,"price":20000}]') = 'FORBIDDEN', 'deleted coach account is refused');
+SELECT public.test_assert(public.test_save(5, 99, '[{"sessions":5,"price":20000}]') = 'UNKNOWN', 'admin on a missing course gets not found');
+DO $$ BEGIN
+    SET LOCAL ROLE anon;
+    PERFORM public.save_course_packages(public.test_uuid(21), '[]'::jsonb);
+    RAISE EXCEPTION 'Assertion failed: anon could call the save function';
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END $$;
+RESET ROLE;
 
 SELECT public.test_assert(public.test_save(1, 21,
     '[{"sessions":1,"price":1},{"sessions":2,"price":2},{"sessions":3,"price":3},{"sessions":4,"price":4}]') = 'OK',

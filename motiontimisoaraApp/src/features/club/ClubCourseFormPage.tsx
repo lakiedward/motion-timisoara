@@ -46,9 +46,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { FormSelectMenu } from '@/components/ui/form-select-menu'
 import { levelOptions } from '@/lib/level'
-import { getCoursePackages, saveCoursePackages } from '@/api/course-packages'
+import { getCoursePackages } from '@/api/course-packages'
 import { CoursePackagesFields } from '@/components/course-packages/CoursePackagesFields'
-import { saveNewCoursePackages } from '@/components/course-packages/save-new-course-packages'
+import { storeCoursePackages } from '@/components/course-packages/store-course-packages'
 import { coursePackagesSchema, packagesToForm } from '@/lib/course-packages/course-packages'
 import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
 import { CourseOwnerField } from './course-form/CourseOwnerField'
@@ -212,8 +212,8 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
     try {
       if (isEdit) {
         await updateClubCourse(id as string, payload)
-        await saveCoursePackages(id as string, v.packages)
         if (pozaHero) await schimbaPozaOferta('courses', 'course-photos', id as string, pozaHero)
+        if (!(await storeCoursePackages(qc, id as string, v.packages, 'edit'))) return
       } else {
         const creat = await createClubCourse(clubId, payload)
         try {
@@ -223,7 +223,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
           toast.error('Fără poza din capul paginii cursul nu se salvează.')
           return
         }
-        if (v.packages.length) await saveNewCoursePackages(creat.id, v.packages)
+        if (v.packages.length) await storeCoursePackages(qc, creat.id, v.packages, 'new')
         if (fisierLocal) {
           try {
             await incarcaRegulamentCurs(creat.id, fisierLocal)

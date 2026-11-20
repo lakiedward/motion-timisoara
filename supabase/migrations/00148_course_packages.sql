@@ -4,7 +4,8 @@
 -- read its packages. Clients cannot write the table directly: the course
 -- owner (pot_administra_curs: course coach, club owner or admin, active
 -- account) replaces the whole list through save_course_packages, in one
--- transaction. courses.package_options stays untouched (legacy session
+-- transaction, after locking the course row (NO KEY UPDATE, so enrollment
+-- foreign keys are not blocked). courses.package_options stays untouched (legacy session
 -- counts read by the current checkout).
 --
 -- validity already holds the two owner-approved kinds (NONE = no expiry,
@@ -42,80 +43,97 @@ VOLATILE
 SECURITY DEFINER
 SET search_path = ''
 AS $$
-DECLARE
-    v_count INTEGER;
 BEGIN
+    PERFORM 1 FROM public.courses c WHERE c.id = p_course_id FOR NO KEY UPDATE;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Cursul nu există' USING ERRCODE = 'P0002';
+    END IF;
+
     IF NOT COALESCE((SELECT public.pot_administra_curs(p_course_id)), false) THEN
         RAISE EXCEPTION 'Doar cursul propriu' USING ERRCODE = '42501';
     END IF;
 
-    PERFORM 1 FROM public.courses c WHERE c.id = p_course_id FOR UPDATE;
-
     IF p_packages IS NULL OR jsonb_typeof(p_packages) <> 'array' THEN
         RAISE EXCEPTION 'Lista de pachete lipsește' USING ERRCODE = '22023';
     END IF;
-    v_count := jsonb_array_length(p_packages);
-    IF v_count > 4 THEN
+    IF jsonb_array_length(p_packages) > 4 THEN
         RAISE EXCEPTION 'Cel mult 4 pachete' USING ERRCODE = '22023';
     END IF;
 
-    CREATE TEMP TABLE pg_temp.course_packages_input (
-        id UUID,
-        position SMALLINT NOT NULL,
-        sessions INTEGER,
-        price BIGINT,
-        validity TEXT
-    ) ON COMMIT DROP;
-
-    INSERT INTO pg_temp.course_packages_input (id, position, sessions, price, validity)
-    SELECT NULLIF(e.value->>'id', '')::uuid,
-           (e.ordinality - 1)::smallint,
-           (e.value->>'sessions')::integer,
-           (e.value->>'price')::bigint,
-           COALESCE(NULLIF(e.value->>'validity', ''), 'NONE')
-    FROM jsonb_array_elements(p_packages) WITH ORDINALITY AS e(value, ordinality);
-
-    IF EXISTS (SELECT 1 FROM pg_temp.course_packages_input WHERE validity = 'CALENDAR_MONTH') THEN
+    IF EXISTS (
+        WITH i AS (SELECT NULLIF(e.value->>'id', '')::uuid AS id,
+                   (e.ordinality - 1)::smallint AS position,
+                   (e.value->>'sessions')::integer AS sessions,
+                   (e.value->>'price')::bigint AS price,
+                   COALESCE(NULLIF(e.value->>'validity', ''), 'NONE') AS validity
+            FROM jsonb_array_elements(p_packages) WITH ORDINALITY AS e(value, ordinality))
+        SELECT 1 FROM i WHERE i.validity = 'CALENDAR_MONTH'
+    ) THEN
         RAISE EXCEPTION 'Pachetele lunare nu sunt încă disponibile' USING ERRCODE = '0A000';
     END IF;
 
     IF EXISTS (
-        SELECT 1 FROM pg_temp.course_packages_input i
+        WITH i AS (SELECT NULLIF(e.value->>'id', '')::uuid AS id,
+                   (e.ordinality - 1)::smallint AS position,
+                   (e.value->>'sessions')::integer AS sessions,
+                   (e.value->>'price')::bigint AS price,
+                   COALESCE(NULLIF(e.value->>'validity', ''), 'NONE') AS validity
+            FROM jsonb_array_elements(p_packages) WITH ORDINALITY AS e(value, ordinality))
+        SELECT 1 FROM i
         WHERE i.id IS NOT NULL
           AND NOT EXISTS (
               SELECT 1 FROM public.course_packages p
               WHERE p.id = i.id AND p.course_id = p_course_id
           )
     ) OR (
-        SELECT count(*) <> count(DISTINCT i.id) FROM pg_temp.course_packages_input i WHERE i.id IS NOT NULL
+        WITH i AS (SELECT NULLIF(e.value->>'id', '')::uuid AS id,
+                   (e.ordinality - 1)::smallint AS position,
+                   (e.value->>'sessions')::integer AS sessions,
+                   (e.value->>'price')::bigint AS price,
+                   COALESCE(NULLIF(e.value->>'validity', ''), 'NONE') AS validity
+            FROM jsonb_array_elements(p_packages) WITH ORDINALITY AS e(value, ordinality))
+        SELECT count(*) <> count(DISTINCT i.id) FROM i WHERE i.id IS NOT NULL
     ) THEN
         RAISE EXCEPTION 'Pachet necunoscut pentru acest curs' USING ERRCODE = 'P0002';
     END IF;
 
     DELETE FROM public.course_packages p
     WHERE p.course_id = p_course_id
-      AND NOT EXISTS (SELECT 1 FROM pg_temp.course_packages_input i WHERE i.id = p.id);
+      AND NOT EXISTS (
+          SELECT 1 FROM jsonb_array_elements(p_packages) AS e(value)
+          WHERE NULLIF(e.value->>'id', '')::uuid = p.id
+      );
 
+    WITH i AS (SELECT NULLIF(e.value->>'id', '')::uuid AS id,
+                   (e.ordinality - 1)::smallint AS position,
+                   (e.value->>'sessions')::integer AS sessions,
+                   (e.value->>'price')::bigint AS price,
+                   COALESCE(NULLIF(e.value->>'validity', ''), 'NONE') AS validity
+            FROM jsonb_array_elements(p_packages) WITH ORDINALITY AS e(value, ordinality))
     UPDATE public.course_packages p
        SET position = i.position,
            sessions = i.sessions,
            price = i.price,
            validity = i.validity,
            updated_at = now()
-      FROM pg_temp.course_packages_input i
+      FROM i
      WHERE p.id = i.id
        AND p.course_id = p_course_id
        AND (p.position, p.sessions, p.price, p.validity)
            IS DISTINCT FROM (i.position, i.sessions, i.price, i.validity);
 
+    WITH i AS (SELECT NULLIF(e.value->>'id', '')::uuid AS id,
+                   (e.ordinality - 1)::smallint AS position,
+                   (e.value->>'sessions')::integer AS sessions,
+                   (e.value->>'price')::bigint AS price,
+                   COALESCE(NULLIF(e.value->>'validity', ''), 'NONE') AS validity
+            FROM jsonb_array_elements(p_packages) WITH ORDINALITY AS e(value, ordinality))
     INSERT INTO public.course_packages (course_id, position, sessions, price, validity)
     SELECT p_course_id, i.position, i.sessions, i.price, i.validity
-    FROM pg_temp.course_packages_input i
+    FROM i
     WHERE i.id IS NULL;
 
     SET CONSTRAINTS public.course_packages_position_key, public.course_packages_offer_key IMMEDIATE;
-
-    DROP TABLE pg_temp.course_packages_input;
 
     RETURN QUERY
         SELECT p.* FROM public.course_packages p

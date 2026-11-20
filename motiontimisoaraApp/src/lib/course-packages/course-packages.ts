@@ -36,8 +36,12 @@ const priceSchema = z
   .refine((value) => {
     if (value === '') return true
     const amount = parseScaledDecimal(value, 2)
-    return amount !== null && amount > 0 && amount <= MAX_PACKAGE_PRICE
+    return amount !== null && amount > 0
   }, 'Introdu o sumă mai mare decât zero, cu cel mult două zecimale')
+  .refine(
+    (value) => (parseScaledDecimal(value, 2) ?? 0) <= MAX_PACKAGE_PRICE,
+    'Prețul unui pachet poate fi cel mult 100.000',
+  )
 
 export const coursePackagesSchema = z
   .array(

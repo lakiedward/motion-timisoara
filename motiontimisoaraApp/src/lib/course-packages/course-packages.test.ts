@@ -28,6 +28,9 @@ test('the schema refuses empty, zero, fractional and repeated values', () => {
   ])
   expect(issues([{ sessions: '2.5', price: '10.555' }])).toHaveLength(2)
   expect(issues([{ sessions: '101', price: '10' }])).toEqual(['Între 1 și 100 ședințe'])
+  expect(issues([{ sessions: '10', price: '100000.01' }])).toEqual([
+    'Prețul unui pachet poate fi cel mult 100.000',
+  ])
   expect(
     issues([
       { sessions: '8', price: '320' },
