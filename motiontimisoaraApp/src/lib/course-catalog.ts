@@ -1,4 +1,5 @@
 import { civilDateInZone, isoWeekdayFromCivilDate } from '@/lib/course-program/occurrences'
+import { cheapestPerSession, type CoursePackage } from '@/lib/course-packages/course-packages'
 import {
   COURSE_TIME_ZONE,
   COURSE_WEEKDAYS,
@@ -12,6 +13,7 @@ export type CatalogCourseFields = {
   recurrence_rule: string | null
   occurrences: { starts_at: string }[] | null
   price_per_session: number
+  course_packages?: Pick<CoursePackage, 'sessions' | 'price'>[]
   currency: string
   eur_ron_rate_micros: number | null
   sport: { code: string; name: string } | null
@@ -94,12 +96,21 @@ export function formatCourseSchedule(slots: CourseSlot[]): string | null {
     .join('; ')
 }
 
+type CatalogPrice = Pick<CatalogCourseFields, 'price_per_session' | 'course_packages'>
+
+export function catalogPricePerSession(course: CatalogPrice): number {
+  return course.course_packages?.length
+    ? cheapestPerSession(course.course_packages)
+    : course.price_per_session
+}
+
 export function sessionPriceInRonBani(
-  course: Pick<CatalogCourseFields, 'price_per_session' | 'currency' | 'eur_ron_rate_micros'>,
+  course: CatalogPrice & Pick<CatalogCourseFields, 'currency' | 'eur_ron_rate_micros'>,
 ): number | null {
-  if (course.currency === 'RON') return course.price_per_session
+  const price = catalogPricePerSession(course)
+  if (course.currency === 'RON') return price
   if (course.currency === 'EUR' && course.eur_ron_rate_micros && course.eur_ron_rate_micros > 0)
-    return Math.round((course.price_per_session * course.eur_ron_rate_micros) / 1_000_000)
+    return Math.round((price * course.eur_ron_rate_micros) / 1_000_000)
   return null
 }
 

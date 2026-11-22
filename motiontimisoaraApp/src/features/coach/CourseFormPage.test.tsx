@@ -10,6 +10,7 @@ import {
   cursulAreInscrieri,
   getCourseById,
   getSelectableLocations,
+  setCourseActive,
   updateCourse,
 } from '@/api/coach'
 import { fetchSports } from '@/api/sports'
@@ -26,6 +27,7 @@ vi.mock('@/api/coach', () => ({
   getSelectableLocations: vi.fn(),
   getCourseById: vi.fn(),
   createCourse: vi.fn(),
+  setCourseActive: vi.fn(),
   updateCourse: vi.fn(),
   cursulAreInscrieri: vi.fn(),
 }))
@@ -542,9 +544,10 @@ test('pachetele au cel mult 4 rânduri și nu se repetă numărul de ședințe',
   expect(saveCoursePackages).not.toHaveBeenCalled()
 })
 
-test('cursul nou își salvează pachetele după ce primește id', async () => {
+test('cursul nou rămâne inactiv dacă pachetele eșuează și reîncearcă pe același curs', async () => {
   const user = userEvent.setup()
   mockedCreate.mockResolvedValue({ id: 'c-new' } as never)
+  vi.mocked(saveCoursePackages).mockRejectedValueOnce(new Error('P0002'))
   renderForm()
   await user.type(await screen.findByLabelText(/^Nume curs/), 'Înot de seară')
   await pickSelectMenuValue(screen.getByLabelText(/^Sport/), SPORT)
@@ -557,8 +560,17 @@ test('cursul nou își salvează pachetele după ce primește id', async () => {
   await user.type(screen.getByLabelText('Număr de ședințe'), '8')
   await user.type(screen.getByLabelText('Preț total (lei)'), '320')
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
-  await waitFor(() => expect(saveCoursePackages).toHaveBeenCalled())
-  expect(vi.mocked(saveCoursePackages).mock.calls[0]).toEqual([
+  const { toast } = await import('sonner')
+  await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1))
+  expect(toast.success).not.toHaveBeenCalled()
+  expect(setCourseActive).not.toHaveBeenCalled()
+  expect(mockedCreate.mock.calls[0][1]).toBe(false)
+  expect(screen.getByLabelText('Preț total (lei)')).toHaveValue(320)
+  await user.click(await screen.findByRole('button', { name: 'Salvează' }))
+  await waitFor(() => expect(saveCoursePackages).toHaveBeenCalledTimes(2))
+  expect(mockedCreate).toHaveBeenCalledTimes(1)
+  await waitFor(() => expect(setCourseActive).toHaveBeenCalledWith('c-new', true))
+  expect(vi.mocked(saveCoursePackages).mock.calls[1]).toEqual([
     'c-new',
     [{ sessions: '8', price: '320', validity: 'NONE' }],
   ])

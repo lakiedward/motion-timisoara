@@ -93,11 +93,12 @@ beforeEach(() => {
 
 test('a parent buys five more sessions in cash for the same enrollment', async () => {
   const user = userEvent.setup()
-  renderWizard('CASH')
+  renderWizard('CARD')
   expect(await screen.findByText(/nu mai are ședințe/)).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: '5 ședințe' }))
   await waitFor(() => expect(mocks.validate).toHaveBeenLastCalledWith('enr-1', { sessions: 5 }))
   expect(await screen.findAllByText('75,00 lei')).not.toHaveLength(0)
+  await user.click(screen.getByRole('radio', { name: /Cash, la antrenor/ }))
   expect(screen.getByRole('button', { name: 'Continuă' })).toBeDisabled()
   await user.click(screen.getByRole('checkbox', { name: /Confirm suma finală/ }))
   await user.click(screen.getByRole('button', { name: 'Continuă' }))
@@ -231,8 +232,22 @@ test('on a course with packages a renewal buys one of the packages', async () =>
             packages: [5, 10, 20],
             currency: 'RON',
             coursePackages: [
-              { id: 'pkg-8', position: 0, sessions: 8, price: 32000, validity: 'NONE', validity_days: null },
-              { id: 'pkg-4', position: 1, sessions: 4, price: 18000, validity: 'NONE', validity_days: null },
+              {
+                id: 'pkg-8',
+                position: 0,
+                sessions: 8,
+                price: 32000,
+                validity: 'NONE',
+                validity_days: null,
+              },
+              {
+                id: 'pkg-4',
+                position: 1,
+                sessions: 4,
+                price: 18000,
+                validity: 'NONE',
+                validity_days: null,
+              },
             ],
             rulesFingerprint: 'none',
           }}

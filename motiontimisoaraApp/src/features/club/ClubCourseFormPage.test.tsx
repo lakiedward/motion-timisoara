@@ -33,6 +33,7 @@ vi.mock('@/api/club', () => ({
   getClubRosterForSelect: vi.fn(),
   getClubCourseById: vi.fn(),
   createClubCourse: vi.fn(),
+  setClubCourseActive: vi.fn(),
   updateClubCourse: vi.fn(),
 }))
 vi.mock('@/api/sports', () => ({ fetchSports: vi.fn() }))

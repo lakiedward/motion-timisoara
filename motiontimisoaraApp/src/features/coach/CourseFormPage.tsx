@@ -26,12 +26,14 @@ import { toast } from 'sonner'
 
 import { LeaveFormDialog } from '@/components/leave-form/LeaveFormDialog'
 import { incarcaRegulamentCurs, stergeRegulamentCurs } from '@/api/camp-rules-file'
-import { renuntaLaOfertaFaraHero, schimbaPozaOferta } from '@/api/offer-hero'
+import { schimbaPozaOferta } from '@/api/offer-hero'
+import { useCourseCreation } from '@/components/course-packages/use-course-creation'
 import {
   createCourse,
   cursulAreInscrieri,
   getCourseById,
   getSelectableLocations,
+  setCourseActive,
   updateCourse,
 } from '@/api/coach'
 import { publicUrl } from '@/api/public'
@@ -56,7 +58,10 @@ import { FormSelectMenu } from '@/components/ui/form-select-menu'
 import { levelOptions } from '@/lib/level'
 import { getCoursePackages } from '@/api/course-packages'
 import { CoursePackagesFields } from '@/components/course-packages/CoursePackagesFields'
-import { storeCoursePackages } from '@/components/course-packages/store-course-packages'
+import {
+  refreshPublicCourses,
+  storeCoursePackages,
+} from '@/components/course-packages/store-course-packages'
 import { coursePackagesSchema, packagesToForm } from '@/lib/course-packages/course-packages'
 
 const NOTA_SPORT = 'Sportul rămâne cel salvat: cursul are înscrieri.'
@@ -139,6 +144,7 @@ export default function CourseFormPage() {
   })
   const [fisierLocal, setFisierLocal] = useState<File | null>(null)
   const [pozaHero, setPozaHero] = useState<File | null>(null)
+  const { hasDraft, saveCourse } = useCourseCreation()
   const [eroareHero, setEroareHero] = useState<string | null>(null)
   const [fisierSuprascris, setFisierSuprascris] = useState<CampRulesFileMeta | null | undefined>(
     undefined,
@@ -153,7 +159,7 @@ export default function CourseFormPage() {
   const currency = useWatch({ control, name: 'currency' })
   const cursEur = useWatch({ control, name: 'eur_ron_rate' })
   const faraCurs = eurFaraCurs(currency, cursEur)
-  const areModificari = isEdit && (isDirty || pozaHero !== null)
+  const areModificari = (isEdit || hasDraft) && (isDirty || pozaHero !== null)
 
   const camp = (nume: keyof Values, nota?: string) => ({
     'aria-invalid': !!errors[nume],
@@ -188,7 +194,9 @@ export default function CourseFormPage() {
   }, [existing, pachete.data, reset])
 
   const onSubmit = async (v: Values) => {
-    const lipsa = mesajHeroLipsa(pozaHero, existing?.hero_photo_storage_path ?? null)
+    const lipsa = hasDraft
+      ? null
+      : mesajHeroLipsa(pozaHero, existing?.hero_photo_storage_path ?? null)
     setEroareHero(lipsa)
     if (lipsa) return
     const payload = {
@@ -208,22 +216,31 @@ export default function CourseFormPage() {
       if (isEdit) {
         await updateCourse(id as string, payload)
         if (pozaHero) await schimbaPozaOferta('courses', 'course-photos', id as string, pozaHero)
-        if (!(await storeCoursePackages(qc, id as string, v.packages, 'edit'))) return
-      } else {
-        const creat = await createCourse(payload)
-        try {
-          await schimbaPozaOferta('courses', 'course-photos', creat.id, pozaHero as File)
-        } catch {
-          await renuntaLaOfertaFaraHero('courses', creat.id)
-          toast.error('Fără poza din capul paginii cursul nu se salvează.')
+        if (!(await storeCoursePackages(qc, id as string, v.packages, 'edit'))) {
+          refreshPublicCourses(qc)
+          void qc.invalidateQueries({ queryKey: ['my-courses'] })
+          void qc.invalidateQueries({ queryKey: ['coach-sessions'] })
           return
         }
-        if (v.packages.length) await storeCoursePackages(qc, creat.id, v.packages, 'new')
+      } else {
+        const courseId = await saveCourse({
+          create: (active) => createCourse(payload, active),
+          update: (courseId) => updateCourse(courseId, payload),
+          activate: (courseId) => setCourseActive(courseId, true),
+          refreshLists: () => {
+            void qc.invalidateQueries({ queryKey: ['my-courses'] })
+            void qc.invalidateQueries({ queryKey: ['coach-sessions'] })
+          },
+          hero: pozaHero,
+          packages: v.packages,
+        })
+        if (!courseId) return
         if (fisierLocal) {
           try {
-            await incarcaRegulamentCurs(creat.id, fisierLocal)
+            await incarcaRegulamentCurs(courseId, fisierLocal)
           } catch {
             toast.error('Cursul a fost creat, dar fișierul regulamentului nu a putut fi urcat.')
+            refreshPublicCourses(qc)
             qc.invalidateQueries({ queryKey: ['my-courses'] })
             qc.invalidateQueries({ queryKey: ['coach-sessions'] })
             navigate('/coach/courses')
@@ -231,8 +248,9 @@ export default function CourseFormPage() {
           }
         }
       }
-      qc.invalidateQueries({ queryKey: ['my-courses'] })
+      await qc.invalidateQueries({ queryKey: ['my-courses'], refetchType: 'all' })
       qc.invalidateQueries({ queryKey: ['coach-sessions'] })
+      refreshPublicCourses(qc)
       toast.success(
         isEdit
           ? 'Curs actualizat. Ședințele viitoare urmează programul.'

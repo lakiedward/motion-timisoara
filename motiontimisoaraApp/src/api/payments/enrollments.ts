@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { Tables } from '@/lib/database.types'
 import type { BillingDetails } from '@/api/checkout'
+import { bucharestMonth, MONTHLY } from '@/lib/course-packages/package-month'
 
 export type EnrollmentPayment = Pick<
   Tables<'enrollments'>,
@@ -56,7 +57,9 @@ export async function getEnrollmentPayments(ids: string[]): Promise<EnrollmentPa
         openPayments(row.payments) > 1,
     )
   ) {
-    throw new EnrollmentPaymentUnavailableError('Plata are nevoie de verificare. Contactează clubul.')
+    throw new EnrollmentPaymentUnavailableError(
+      'Plata are nevoie de verificare. Contactează clubul.',
+    )
   }
   return ids.map((id) => rows.find((row) => row.id === id)!)
 }
@@ -92,10 +95,26 @@ export function enrollmentPaid(row: EnrollmentPayment) {
   return row.payments[0]?.status === 'SUCCEEDED'
 }
 
+export function expiredCardPayment(
+  payment: { method: string; status: string; pricing_snapshot?: unknown } | undefined,
+  now = new Date(),
+): boolean {
+  if (payment?.method !== 'CARD' || !OPEN.includes(payment.status)) return false
+  const snapshot = payment.pricing_snapshot
+  if (!snapshot || typeof snapshot !== 'object') return false
+  const { validity, validMonth } = snapshot as { validity?: string; validMonth?: string }
+  return (
+    validity === MONTHLY &&
+    typeof validMonth === 'string' &&
+    /^\d{4}-(0[1-9]|1[0-2])$/.test(validMonth) &&
+    validMonth < bucharestMonth(now)
+  )
+}
+
 export function enrollmentPayable(row: {
   status: string
   kind?: string
-  payments: { method: string; status: string }[]
+  payments: { method: string; status: string; pricing_snapshot?: unknown }[]
 }) {
   const renewal = row.status === 'ACTIVE' && row.kind === 'COURSE'
   return (
@@ -103,6 +122,7 @@ export function enrollmentPayable(row: {
     openPayments(row.payments) === 1 &&
     (renewal || row.payments.length === 1) &&
     row.payments[0].method === 'CARD' &&
-    OPEN.includes(row.payments[0].status)
+    OPEN.includes(row.payments[0].status) &&
+    !expiredCardPayment(row.payments[0])
   )
 }

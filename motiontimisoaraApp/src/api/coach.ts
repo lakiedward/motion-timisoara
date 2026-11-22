@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import { attendancePackageNote, type ExpiringPackage } from '@/lib/course-packages/package-expiry'
+import { civilDateInZone } from '@/lib/course-program/occurrences'
+import { COURSE_TIME_ZONE } from '@/lib/course-program/recurrence'
 import type { Tables } from '@/lib/database.types'
 import { regenerateCourseOccurrences } from '@/api/course-occurrences'
 import type { ClubLocation } from '@/api/club'
@@ -70,7 +72,10 @@ export interface CourseFormInput {
   recurrence_rule: string
 }
 
-export async function createCourse(input: CourseFormInput): Promise<Tables<'courses'>> {
+export async function createCourse(
+  input: CourseFormInput,
+  active = true,
+): Promise<Tables<'courses'>> {
   const coachId = await uid()
   const { data, error } = await supabase
     .from('courses')
@@ -78,7 +83,7 @@ export async function createCourse(input: CourseFormInput): Promise<Tables<'cour
       ...input,
       coach_id: coachId,
       price: input.price_per_session,
-      active: true,
+      active,
     })
     .select()
     .single()
@@ -436,6 +441,7 @@ type EnrolledChild = {
 export async function getSessionRoster(
   courseId: string,
   occurrenceId: string,
+  startsAt: string,
 ): Promise<RosterEntry[]> {
   const [enrollmentsRes, attendanceRes] = await Promise.all([
     supabase
@@ -452,6 +458,7 @@ export async function getSessionRoster(
   if (attendanceRes.error) throw attendanceRes.error
 
   const attMap = new Map((attendanceRes.data ?? []).map((a) => [a.child_id, a.status]))
+  const sessionDate = civilDateInZone(new Date(startsAt), COURSE_TIME_ZONE)
   return ((enrollmentsRes.data ?? []) as unknown as EnrolledChild[])
     .filter((e) => e.child)
     .map((e) => ({
@@ -459,7 +466,11 @@ export async function getSessionRoster(
       child_name: e.child!.name,
       child_birth_date: e.child!.birth_date,
       status: (attMap.get(e.child!.id) as 'PRESENT' | 'ABSENT' | undefined) ?? null,
-      package_note: attendancePackageNote(e.monthly_packages, e.remaining_sessions ?? 0),
+      package_note: attendancePackageNote(
+        e.monthly_packages,
+        e.remaining_sessions ?? 0,
+        sessionDate,
+      ),
     }))
     .sort((a, b) => a.child_name.localeCompare(b.child_name, 'ro'))
 }

@@ -13,6 +13,7 @@ export interface OpenRenewalPayment {
   amount: number
   sessions: number | null
   started: boolean
+  expiredMonth?: boolean
 }
 
 export type RenewalQuote = ChildValidation & {

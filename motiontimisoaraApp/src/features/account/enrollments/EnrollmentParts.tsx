@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { CalendarDays } from 'lucide-react'
 
 import type { EnrollmentRow } from '@/api/account'
+import { expiredCardPayment } from '@/api/payments/enrollments'
 import { AcceptedPriceDetails } from '@/components/AcceptedPriceDetails'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -25,7 +26,15 @@ export const CARD =
 export const LINKED =
   'hover:border-primary/40 has-[a[data-card-link]:focus-visible]:outline-2 has-[a[data-card-link]:focus-visible]:outline-offset-2 has-[a[data-card-link]:focus-visible]:outline-ring'
 
-export function CardTitle({ e, id, className }: { e: EnrollmentRow; id: string; className?: string }) {
+export function CardTitle({
+  e,
+  id,
+  className,
+}: {
+  e: EnrollmentRow
+  id: string
+  className?: string
+}) {
   const title = enrollmentTitle(e)
   return (
     <h2 id={id} className={cn('font-display text-lg font-bold', className)}>
@@ -81,14 +90,21 @@ export function PaymentSummary({ e, className }: { e: EnrollmentRow; className?:
   return (
     <div className={cn('flex items-start justify-between gap-3 text-sm', className)}>
       <span
-        className={cn(
-          needsPayment(e) ? 'text-foreground font-semibold' : 'text-muted-foreground',
-        )}
+        className={cn(needsPayment(e) ? 'text-foreground font-semibold' : 'text-muted-foreground')}
       >
-        {paymentLabel(payment.status)}
+        {expiredCardPayment(payment) ? (
+          <>
+            Pachet lunar expirat. Dacă ai plătit deja, așteaptă confirmarea.
+            {e.status === 'PENDING' && ' Altfel, contactează clubul ca să alegi altă lună.'}
+          </>
+        ) : (
+          paymentLabel(payment.status)
+        )}
       </span>
       <div className="text-right">
-        <span className="text-base font-semibold">{formatMoney(payment.amount, payment.currency)}</span>
+        <span className="text-base font-semibold">
+          {formatMoney(payment.amount, payment.currency)}
+        </span>
         <AcceptedPriceDetails snapshot={payment.pricing_snapshot} />
       </div>
     </div>

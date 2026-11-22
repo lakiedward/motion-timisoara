@@ -1,4 +1,4 @@
-import { createPaymentIntent, type BillingDetails } from '@/api/checkout'
+import { createPaymentIntent, EnrollmentRequestError, type BillingDetails } from '@/api/checkout'
 import {
   enrollmentPaid,
   enrollmentPayable,
@@ -27,6 +27,7 @@ export interface PaymentResult {
   completed: number
   total: number
   message?: string
+  code?: string
 }
 
 interface PaymentDependencies {
@@ -53,6 +54,7 @@ export async function processEnrollmentPayments(
   let rows = await services.read(selected)
   let stopped: 'canceled' | 'failed' | null = null
   let message: string | undefined
+  let code: string | undefined
   for (const [index, id] of selected.entries()) {
     if (signal?.aborted) break
     const row = rows.find((item) => item.id === id)!
@@ -87,6 +89,7 @@ export async function processEnrollmentPayments(
     } catch (error) {
       stopped = 'failed'
       message = error instanceof Error ? error.message : 'Plata nu a putut fi finalizată.'
+      if (error instanceof EnrollmentRequestError) code = error.code
       break
     }
   }
@@ -103,9 +106,11 @@ export async function processEnrollmentPayments(
       completed: rows.filter(enrollmentPaid).length,
       total: selected.length,
       message: 'Nu am putut verifica confirmarea. Verifică starea înainte de a relua plata.',
+      ...(code ? { code } : {}),
     }
   }
-  return resultFor(rows, stopped, message)
+  const result = resultFor(rows, stopped, message)
+  return code && result.outcome !== 'ready' ? { ...result, code } : result
 }
 
 function resultFor(

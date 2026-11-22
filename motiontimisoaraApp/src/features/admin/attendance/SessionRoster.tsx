@@ -8,20 +8,22 @@ import { RosterList } from './RosterList'
 export function SessionRoster({
   courseId,
   occurrenceId,
+  startsAt,
   listKey,
   locked = false,
   qrLinks = false,
 }: {
   courseId: string
   occurrenceId: string
+  startsAt: string
   listKey: string
   locked?: boolean
   qrLinks?: boolean
 }) {
   const qc = useQueryClient()
   const roster = useQuery({
-    queryKey: ['roster', occurrenceId],
-    queryFn: () => getSessionRoster(courseId, occurrenceId),
+    queryKey: ['roster', occurrenceId, startsAt],
+    queryFn: () => getSessionRoster(courseId, occurrenceId, startsAt),
     retry: false,
   })
 
@@ -61,9 +63,7 @@ export function SessionRoster({
       locked={locked}
       qrLinks={qrLinks}
       emptyText="Niciun copil înscris la acest curs încă. Înscrierile le fac părinții din contul lor."
-      onMark={(r, status) =>
-        mark.mutate({ childId: r.child_id, childName: r.child_name, status })
-      }
+      onMark={(r, status) => mark.mutate({ childId: r.child_id, childName: r.child_name, status })}
       onMarkAll={(ids) => markAll.mutate(ids)}
     />
   )

@@ -3,16 +3,22 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CircleCheck, Loader2, Lock } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/auth-context'
+import { EnrollmentRequestError } from '@/api/checkout'
 import { formatOfferPrice } from '@/lib/money'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   enrollmentPaid,
   enrollmentPayable,
+  expiredCardPayment,
   getEnrollmentPayments,
 } from '@/api/payments/enrollments'
 import { startStripeCheckout } from '@/api/payments/checkout-session'
-import { paymentResultMessage, processEnrollmentPayments } from '@/api/payments/process'
+import {
+  paymentResultMessage,
+  processEnrollmentPayments,
+  type PaymentResult,
+} from '@/api/payments/process'
 import { PaymentEntry } from './PaymentEntry'
 import { usePaymentAdapter } from './usePaymentAdapter'
 
@@ -35,7 +41,7 @@ export function EnrollmentPaymentPanel({
     refetchOnWindowFocus: true,
   })
   const pay = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<PaymentResult | null> => {
       if (!payment.ready) throw new Error('Plata nu este pregătită. Reîncearcă.')
       attempt.current = new AbortController()
       if (!payment.android) {
@@ -62,7 +68,11 @@ export function EnrollmentPaymentPanel({
   })
   const enrollment = state.data?.[0]
   const saved = enrollment?.payments[0]
-  const canPay = enrollment && enrollmentPayable(enrollment)
+  const monthEnded =
+    expiredCardPayment(saved) ||
+    (pay.error instanceof EnrollmentRequestError && pay.error.code === 'MONTH_ENDED') ||
+    pay.data?.code === 'MONTH_ENDED'
+  const canPay = !monthEnded && enrollment && enrollmentPayable(enrollment)
   const paid = enrollment ? enrollmentPaid(enrollment) : false
   const showPay = Boolean(enrollment && saved && !paid && canPay)
   const redirecting = pay.isPending || (pay.isSuccess && pay.data === null)
@@ -110,12 +120,16 @@ export function EnrollmentPaymentPanel({
         ) : canPay ? (
           <PaymentEntry framed={false} />
         ) : (
-          <p role="status" className="text-muted-foreground text-sm">
-            Această înscriere nu mai poate fi plătită. Verifică starea sau contactează clubul.
-          </p>
+          !failure && (
+            <p role="status" className="text-muted-foreground text-sm">
+              {monthEnded
+                ? 'Luna pachetului s-a încheiat. Dacă ai plătit deja, așteaptă confirmarea. Altfel, contactează clubul.'
+                : 'Această înscriere nu mai poate fi plătită. Verifică starea sau contactează clubul.'}
+            </p>
+          )
         )
       ) : null}
-      {failure && (
+      {!paid && failure && (
         <p role="alert" className="text-destructive text-sm">
           {failure}
         </p>
@@ -140,7 +154,9 @@ export function EnrollmentPaymentPanel({
             {redirecting ? (
               <>
                 <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-                <span>{payment.android ? 'Verificăm și confirmăm plata…' : 'Te ducem la Stripe…'}</span>
+                <span>
+                  {payment.android ? 'Verificăm și confirmăm plata…' : 'Te ducem la Stripe…'}
+                </span>
               </>
             ) : (
               <span>
