@@ -5,18 +5,18 @@ import type { AdminSession } from '@/api/attendance/admin-sessions'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Highlight } from '@/features/admin/courses/CourseParts'
-import { attendanceOpensAt } from '@/lib/attendance-window'
 import { plural } from '@/lib/plural'
 import { cn } from '@/lib/utils'
 import { SessionOpensNotice } from './SessionOpensNotice'
 import { SessionRoster } from './SessionRoster'
-import { formatDay, formatTime, isUnmarked } from './attendance-overview'
+import { formatDay, formatTime } from './attendance-overview'
 import { useAttendanceOpen } from './use-attendance-open'
 
 export function MarkBadge({ s }: { s: AdminSession }) {
-  if (Date.now() < attendanceOpensAt(s.startsAt)) return <Badge variant="outline">Urmează</Badge>
+  const attendanceOpen = useAttendanceOpen(s.startsAt)
+  if (!attendanceOpen) return <Badge variant="outline">Urmează</Badge>
   if (!s.enrolledCount) return <Badge variant="outline">Fără copii</Badge>
-  if (isUnmarked(s))
+  if (s.markedCount < s.enrolledCount)
     return (
       <Badge variant="highlight">
         {s.markedCount ? `${s.markedCount} din ${s.enrolledCount} pontați` : 'Nepontată'}
