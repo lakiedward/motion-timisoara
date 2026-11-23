@@ -39,6 +39,12 @@ export type CompetitionOffers = {
 }
 
 export type CompetitionRouteInput = Pick<CompetitionRoute, 'name' | 'description'>
+export class CompetitionGpxConflictError extends Error {
+  constructor() {
+    super('Fișierul GPX s-a schimbat. Închide editorul și deschide din nou traseul.')
+  }
+}
+
 export type CompetitionCategoryInput = Pick<
   CompetitionAgeCategory,
   'name' | 'route_id' | 'age_from' | 'age_to' | 'price_bani'
@@ -273,6 +279,7 @@ export async function updateCompetitionRoute(
   routeId: string,
   input: CompetitionRouteInput,
   file: File | null,
+  detachGpx?: string,
 ): Promise<{ route: CompetitionRoute; cleanupFailed: boolean }> {
   const values = validateRoute(input)
   const currentResult = await offersDb
@@ -284,21 +291,29 @@ export async function updateCompetitionRoute(
   if (currentResult.error) throw currentResult.error
 
   const oldPath = currentResult.data.gpx_storage_path
+  if (detachGpx && detachGpx !== oldPath) {
+    throw new CompetitionGpxConflictError()
+  }
   const newPath = file ? await uploadRouteGpx(competitionId, routeId, file) : null
-  const nextPath = newPath ?? oldPath
-  const result = await offersDb
+  const gpxChanged = Boolean(newPath || detachGpx)
+  const update = offersDb
     .from('competition_routes')
-    .update({ ...values, gpx_storage_path: nextPath })
+    .update(gpxChanged ? { ...values, gpx_storage_path: newPath } : values)
     .eq('competition_id', competitionId)
     .eq('id', routeId)
-    .select()
-    .single()
-  if (result.error) {
+  const guardedUpdate = gpxChanged
+    ? oldPath
+      ? update.eq('gpx_storage_path', oldPath)
+      : update.is('gpx_storage_path', null)
+    : update
+  const selected = guardedUpdate.select()
+  const result = await (gpxChanged ? selected.maybeSingle() : selected.single())
+  if (result.error || !result.data) {
     if (newPath) await removeRouteGpx(newPath)
-    throw result.error
+    throw result.error ?? new CompetitionGpxConflictError()
   }
 
-  const cleanupFailed = oldPath && oldPath !== nextPath ? await removeRouteGpx(oldPath) : false
+  const cleanupFailed = oldPath && gpxChanged ? await removeRouteGpx(oldPath) : false
   return { route: result.data, cleanupFailed }
 }
 

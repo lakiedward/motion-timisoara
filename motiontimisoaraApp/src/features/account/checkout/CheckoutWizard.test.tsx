@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, expect, test, vi } from 'vitest'
 import CheckoutWizard from './CheckoutWizard'
-import { EnrollmentRequestError } from '@/api/checkout'
+import { EnrollmentRequestError, type EnrollmentKind } from '@/api/checkout'
 import type { Offering } from '../CheckoutPage'
 import { TERMS_VERSION } from './checkout-acceptance'
 
@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   toast: { success: vi.fn(), message: vi.fn(), error: vi.fn() },
   navigate: vi.fn(),
   checkout: vi.fn(),
+  payment: { ready: true, android: false },
 }))
 vi.mock('@/api/payments/checkout-session', () => ({ startStripeCheckout: mocks.checkout }))
 
@@ -32,7 +33,7 @@ vi.mock('@/lib/auth-context', () => ({
 }))
 vi.mock('@/lib/stripe', () => ({ stripeConfigured: true }))
 vi.mock('./usePaymentAdapter', () => ({
-  usePaymentAdapter: () => ({ ready: true, android: false, adapter: { confirm: vi.fn() } }),
+  usePaymentAdapter: () => ({ ...mocks.payment, adapter: { confirm: vi.fn() } }),
 }))
 vi.mock('sonner', () => ({ toast: mocks.toast }))
 vi.mock('react-router-dom', async (importOriginal) => ({
@@ -40,7 +41,7 @@ vi.mock('react-router-dom', async (importOriginal) => ({
   useNavigate: () => mocks.navigate,
 }))
 
-function renderWizard(extra: Partial<Offering> = {}) {
+function renderWizard(extra: Partial<Offering> = {}, kind: EnrollmentKind = 'CAMP') {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
@@ -48,7 +49,7 @@ function renderWizard(extra: Partial<Offering> = {}) {
     <QueryClientProvider client={client}>
       <MemoryRouter>
         <CheckoutWizard
-          kind="CAMP"
+          kind={kind}
           offering={{
             id: 'camp-1',
             title: 'Tabără de munte',
@@ -66,6 +67,8 @@ function renderWizard(extra: Partial<Offering> = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  mocks.payment.ready = true
+  mocks.payment.android = false
   mocks.children.mockResolvedValue([{ id: 'bebe', name: 'Bebe', birth_date: '2025-01-01' }])
   mocks.validate.mockResolvedValue({
     allowCash: false,
@@ -127,6 +130,47 @@ test('a free camp child can confirm Gratuit and enroll without card billing', as
     ),
   )
 })
+
+test.each([
+  { kind: 'ACTIVITY', android: false },
+  { kind: 'CAMP', android: false },
+  { kind: 'COURSE', android: false },
+  { kind: 'ACTIVITY', android: true },
+] as const)(
+  'offers cash before billing for a paid $kind (unavailable Android card: $android)',
+  async ({ kind, android }) => {
+    mocks.payment.android = android
+    mocks.payment.ready = !android
+    mocks.validate.mockResolvedValue({
+      allowCash: true,
+      capacity: { available: 10 },
+      results: [{
+        childId: 'bebe', eligible: true, amount: 10000, currency: 'RON', priceVersion: 'b'.repeat(64),
+      }],
+    })
+    const user = userEvent.setup()
+    renderWizard({}, kind)
+    await user.click(await screen.findByRole('checkbox', { name: /Bebe/ }))
+    await user.click(screen.getByRole('button', { name: 'Continuă' }))
+    const cash = screen.getByRole('radio', { name: /Cash, la antrenor/ })
+    if (android) {
+      expect(screen.getByRole('radio', { name: /Card bancar/ })).toBeDisabled()
+      expect(cash).toBeChecked()
+    } else {
+      await user.click(cash)
+    }
+    await user.click(screen.getByRole('checkbox', { name: /Confirm suma finală/ }))
+    await user.click(screen.getByRole('button', { name: 'Continuă' }))
+    expect(screen.queryByText('Facturare')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Finalizează' }))
+    await waitFor(() => expect(mocks.create).toHaveBeenCalled())
+    expect(mocks.create.mock.calls[0][0]).toMatchObject({
+      paymentMethod: 'CASH',
+      billingDetails: undefined,
+      childIds: ['bebe'],
+    })
+  },
+)
 
 test('a parent can enroll themselves as an adult without selecting a child', async () => {
   mocks.validate.mockResolvedValue({

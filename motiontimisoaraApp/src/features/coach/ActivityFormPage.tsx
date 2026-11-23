@@ -248,11 +248,9 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
           try {
             await incarcaRegulamentActivitate(creata.id, fisierLocal)
           } catch {
-            toast.error(
-              'Activitatea a fost creată, dar fișierul regulamentului nu a putut fi urcat.',
-            )
+            toast.error('Activitatea a fost creată. Încarcă din nou regulamentul din editare.')
             qc.invalidateQueries({ queryKey: [listQueryKey] })
-            navigate(listPath)
+            navigate(`${listPath}/${creata.id}/edit`)
             return
           }
         }
@@ -530,6 +528,9 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
           remove={stergeRegulamentActivitate}
           intro="Fișierul apare pe pagina publică a activității. Părinții îl pot deschide; nu trebuie să îl accepte la înscriere."
         />
+        {!isEdit && (
+          <p className="text-muted-foreground text-sm">Activitatea devine vizibilă public după salvare.</p>
+        )}
         <div className="flex gap-2 pt-2">
           <Button type="submit" disabled={isSubmitting || faraCurs}>
             {isSubmitting ? 'Se salvează…' : 'Salvează'}

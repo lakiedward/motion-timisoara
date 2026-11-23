@@ -2,7 +2,11 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { vi } from 'vitest'
-import type { CompetitionOffers, CompetitionRoute } from '@/api/competition/competition-offers'
+import {
+  CompetitionGpxConflictError,
+  type CompetitionOffers,
+  type CompetitionRoute,
+} from '@/api/competition/competition-offers'
 import { CompetitionOffersSection } from './CompetitionOffersSection'
 
 const api = vi.hoisted(() => ({
@@ -15,7 +19,8 @@ const api = vi.hoisted(() => ({
   deleteCategory: vi.fn(),
 }))
 
-vi.mock('@/api/competition/competition-offers', () => ({
+vi.mock('@/api/competition/competition-offers', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/api/competition/competition-offers')>()),
   listCompetitionOffers: api.list,
   createCompetitionRoute: api.createRoute,
   updateCompetitionRoute: api.updateRoute,
@@ -82,10 +87,8 @@ test('shows empty states and creates an event without a GPX file', async () => {
     expect(api.createRoute).toHaveBeenCalledWith(
       competitionId,
       {
-        id: null,
         name: route.name,
         description: route.description,
-        file: null,
       },
       null,
     ),
@@ -106,10 +109,53 @@ test('passes an optional GPX file when creating a route', async () => {
   await waitFor(() =>
     expect(api.createRoute).toHaveBeenCalledWith(
       competitionId,
-      { id: null, name: route.name, description: route.description, file },
+      { name: route.name, description: route.description },
       file,
     ),
   )
+})
+
+test('focuses the route error next to the selected GPX and keeps the draft for retry', async () => {
+  api.createRoute.mockRejectedValueOnce(new Error('Fișierul GPX conține coordonate invalide.'))
+  const user = userEvent.setup()
+  renderSection()
+  await user.click(await screen.findByRole('button', { name: 'Adaugă traseu sau probă' }))
+  await user.type(screen.getByLabelText('Nume traseu sau probă'), route.name)
+  await user.type(screen.getByLabelText('Descriere'), route.description)
+  const file = new File(['<gpx/>'], 'traseu.gpx')
+  await user.upload(screen.getByLabelText(/Fișier GPX/), file)
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  const alert = await screen.findByRole('alert')
+  expect(alert).toHaveTextContent('Fișierul GPX conține coordonate invalide.')
+  expect(alert).toHaveFocus()
+  expect(screen.getByText('traseu.gpx')).toBeVisible()
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  expect(await screen.findByText(route.name)).toBeVisible()
+})
+
+test('detaches a saved GPX only on save and keeps its route', async () => {
+  offers = { routes: [route], categories: [] }
+  api.updateRoute.mockImplementationOnce(async () => {
+    const updated = { ...route, gpx_storage_path: null }
+    offers = { ...offers, routes: [updated] }
+    return { route: updated, cleanupFailed: false }
+  })
+  const user = userEvent.setup()
+  renderSection()
+  await user.click(await screen.findByRole('button', { name: 'Editează' }))
+  await user.click(screen.getByRole('button', { name: 'Elimină GPX-ul atașat' }))
+  expect(api.updateRoute).not.toHaveBeenCalled()
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  await waitFor(() =>
+    expect(api.updateRoute).toHaveBeenCalledWith(
+      competitionId,
+      route.id,
+      { name: route.name, description: route.description },
+      null,
+      route.gpx_storage_path,
+    ),
+  )
+  expect(await screen.findByText(/Fără GPX · fără hartă/)).toBeVisible()
 })
 
 test('allows categories on events without a GPX file', async () => {
@@ -118,6 +164,24 @@ test('allows categories on events without a GPX file', async () => {
   expect(await screen.findByText(/Fără GPX · fără hartă/)).toBeVisible()
   expect(screen.queryByText(/Adaugă un traseu sau o probă înainte/)).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Adaugă categorie' })).toBeEnabled()
+})
+
+test('refreshes the route list after a GPX conflict so reopening uses the latest attachment', async () => {
+  offers = { routes: [route], categories: [] }
+  api.updateRoute.mockImplementationOnce(async () => {
+    offers = { ...offers, routes: [{ ...route, gpx_storage_path: null }] }
+    throw new CompetitionGpxConflictError()
+  })
+  const user = userEvent.setup()
+  renderSection()
+  await user.click(await screen.findByRole('button', { name: 'Editează' }))
+  await user.click(screen.getByRole('button', { name: 'Elimină GPX-ul atașat' }))
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('Fișierul GPX s-a schimbat.')
+  expect(await screen.findByText(/Fără GPX · fără hartă/)).toBeVisible()
+  await user.click(screen.getByRole('button', { name: 'Renunță' }))
+  await user.click(screen.getByRole('button', { name: 'Editează' }))
+  expect(screen.queryByRole('button', { name: 'Elimină GPX-ul atașat' })).not.toBeInTheDocument()
 })
 
 test('requires a second action before deleting a complete route', async () => {

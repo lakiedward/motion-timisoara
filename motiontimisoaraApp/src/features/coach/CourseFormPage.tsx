@@ -239,11 +239,11 @@ export default function CourseFormPage() {
           try {
             await incarcaRegulamentCurs(courseId, fisierLocal)
           } catch {
-            toast.error('Cursul a fost creat, dar fișierul regulamentului nu a putut fi urcat.')
+            toast.error('Cursul a fost creat. Încarcă din nou regulamentul din editare.')
             refreshPublicCourses(qc)
             qc.invalidateQueries({ queryKey: ['my-courses'] })
             qc.invalidateQueries({ queryKey: ['coach-sessions'] })
-            navigate('/coach/courses')
+            navigate(`/coach/courses/${courseId}/edit`)
             return
           }
         }
@@ -520,6 +520,9 @@ export default function CourseFormPage() {
           remove={stergeRegulamentCurs}
           intro="Fișierul apare pe pagina publică a cursului. Părinții îl pot deschide; nu trebuie să îl accepte la înscriere."
         />
+        {!isEdit && (
+          <p className="text-muted-foreground text-sm">Cursul devine vizibil public după salvare.</p>
+        )}
         <div className="flex flex-wrap gap-2 pt-2">
           <Button type="submit" disabled={isSubmitting || faraCurs}>
             {isSubmitting ? 'Se salvează…' : 'Salvează'}

@@ -253,12 +253,10 @@ export function ClubActivityForm() {
           try {
             await incarcaRegulamentActivitate(creata.id, fisierLocal)
           } catch {
-            toast.error(
-              'Activitatea a fost creată, dar fișierul regulamentului nu a putut fi urcat.',
-            )
+            toast.error('Activitatea a fost creată. Încarcă din nou regulamentul din editare.')
             qc.invalidateQueries({ queryKey: ['club-activities'] })
             plecare.allowLeave()
-            navigate('/club/activities')
+            navigate(`/club/activities/${creata.id}/edit`)
             return
           }
         }
@@ -567,6 +565,9 @@ export function ClubActivityForm() {
           remove={stergeRegulamentActivitate}
           intro="Fișierul apare pe pagina publică a activității. Părinții îl pot deschide; nu trebuie să îl accepte la înscriere."
         />
+        {!isEdit && (
+          <p className="text-muted-foreground text-sm">Activitatea devine vizibilă public după salvare.</p>
+        )}
         <div className="flex flex-wrap gap-2 pt-2">
           <Button type="submit" disabled={isSubmitting || faraCurs}>
             {isSubmitting ? 'Se salvează…' : 'Salvează'}

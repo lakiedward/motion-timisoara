@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Download, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
-  competitionRouteGpxDownloadUrl,
+  CompetitionGpxConflictError,
   competitionOfferErrorMessage,
   createCompetitionCategory,
   createCompetitionRoute,
@@ -19,22 +19,14 @@ import {
   type CompetitionRoute,
 } from '@/api/competition/competition-offers'
 import { Button } from '@/components/ui/button'
-import { FilePicker } from '@/components/ui/file-picker'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { formSelectMenuClassName } from '@/components/ui/field-styles'
 import { SelectMenu } from '@/components/ui/select-menu'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Textarea } from '@/components/ui/textarea'
 import { baniToRon, formatRonOffer, ronToBani } from '@/lib/money'
 import { CompetitionRouteGalleryEditor } from './CompetitionRouteGalleryEditor'
-
-type RouteDraft = {
-  id: string | null
-  name: string
-  description: string
-  file: File | null
-}
+import { CompetitionRouteEditor, type RouteDraft } from './CompetitionRouteEditor'
 
 type CategoryDraft = {
   id: string | null
@@ -50,6 +42,8 @@ function routeDraftFrom(route?: CompetitionRoute): RouteDraft {
     id: route?.id ?? null,
     name: route?.name ?? '',
     description: route?.description ?? '',
+    gpxPath: route?.gpx_storage_path ?? null,
+    detachGpx: false,
     file: null,
   }
 }
@@ -99,6 +93,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
   const [categoryDraft, setCategoryDraft] = useState<CategoryDraft | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [routeError, setRouteError] = useState<string | null>(null)
   const [confirmRouteId, setConfirmRouteId] = useState<string | null>(null)
   const [confirmCategoryId, setConfirmCategoryId] = useState<string | null>(null)
 
@@ -116,25 +111,30 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
     if (!routeDraft) return
     setBusy('route-save')
     setError(null)
+    setRouteError(null)
+    const { id, name, description, file, gpxPath, detachGpx } = routeDraft
+    const input = { name, description }
     try {
-      if (routeDraft.id) {
+      if (id) {
         const result = await updateCompetitionRoute(
           competitionId,
-          routeDraft.id,
-          routeDraft,
-          routeDraft.file,
+          id,
+          input,
+          file,
+          detachGpx ? (gpxPath ?? undefined) : undefined,
         )
         if (result.cleanupFailed)
           toast.warning('Am salvat modificările, dar fișierul GPX vechi nu a putut fi șters.')
         else toast.success('Am salvat modificările.')
       } else {
-        await createCompetitionRoute(competitionId, routeDraft, routeDraft.file)
+        await createCompetitionRoute(competitionId, input, file)
         toast.success('Am adăugat traseul sau proba.')
       }
       setRouteDraft(null)
       await invalidateOffers()
     } catch (saveError) {
-      setError(competitionOfferErrorMessage(saveError))
+      setRouteError(competitionOfferErrorMessage(saveError))
+      if (saveError instanceof CompetitionGpxConflictError) await offersQuery.refetch()
     } finally {
       setBusy(null)
     }
@@ -256,6 +256,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
             onClick={() => {
               setRouteDraft(routeDraftFrom())
               setError(null)
+              setRouteError(null)
             }}
           >
             <Plus aria-hidden="true" className="size-4" /> Adaugă traseu sau probă
@@ -271,7 +272,6 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
               const categoryCount = categories.filter(
                 (category) => category.route_id === route.id,
               ).length
-              const downloadUrl = competitionRouteGpxDownloadUrl(route.gpx_storage_path)
               return (
                 <li key={route.id} className="bg-muted/40 space-y-2 rounded-xl p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -282,22 +282,10 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
                       </p>
                       <p className="text-muted-foreground mt-1 text-xs">
                         {categoryCount} {categoryCount === 1 ? 'categorie' : 'categorii'} ·{' '}
-                        {downloadUrl ? 'GPX atașat' : 'Fără GPX · fără hartă'}
+                        {route.gpx_storage_path ? 'GPX atașat' : 'Fără GPX · fără hartă'}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {downloadUrl && (
-                        <Button
-                          asChild
-                          type="button"
-                          variant="outline"
-                          className="min-h-touch-target"
-                        >
-                          <a href={downloadUrl} download>
-                            <Download aria-hidden="true" className="size-4" /> GPX
-                          </a>
-                        </Button>
-                      )}
                       <Button
                         type="button"
                         variant="outline"
@@ -306,6 +294,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
                         onClick={() => {
                           setRouteDraft(routeDraftFrom(route))
                           setError(null)
+                          setRouteError(null)
                         }}
                       >
                         Editează
@@ -342,63 +331,18 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
         )}
 
         {routeDraft && (
-          <form
+          <CompetitionRouteEditor
             key={routeDraft.id ?? 'new-route'}
-            onSubmit={(event) => void saveRoute(event)}
-            className="space-y-4 rounded-xl border p-4"
-          >
-            <h4 className="font-semibold">
-              {routeDraft.id ? 'Editează traseul sau proba' : 'Traseu sau probă nouă'}
-            </h4>
-            <div className="space-y-2">
-              <Label htmlFor="competition-route-name">Nume traseu sau probă</Label>
-              <Input
-                id="competition-route-name"
-                value={routeDraft.name}
-                maxLength={120}
-                required
-                className="h-touch-target lg:h-9"
-                onChange={(event) => setRouteDraft({ ...routeDraft, name: event.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="competition-route-description">Descriere</Label>
-              <Textarea
-                id="competition-route-description"
-                value={routeDraft.description}
-                maxLength={4000}
-                required
-                rows={3}
-                onChange={(event) =>
-                  setRouteDraft({ ...routeDraft, description: event.target.value })
-                }
-              />
-            </div>
-            <FilePicker
-              id="competition-route-file"
-              label="Fișier GPX (opțional)"
-              hint="Doar pentru trasee în aer liber; o probă în bazin sau în sală nu are nevoie de GPX. Maximum 12 MB."
-              accept=".gpx,application/gpx+xml,application/xml,text/xml"
-              file={routeDraft.file}
-              chooseLabel="Alege fișierul GPX"
-              disabled={busy !== null}
-              onFileChange={(file) => setRouteDraft({ ...routeDraft, file })}
-            />
-            <div className="flex flex-wrap gap-2">
-              <Button type="submit" className="min-h-touch-target" disabled={busy !== null}>
-                Salvează
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="min-h-touch-target"
-                disabled={busy !== null}
-                onClick={() => setRouteDraft(null)}
-              >
-                Renunță
-              </Button>
-            </div>
-          </form>
+            draft={routeDraft}
+            busy={busy !== null}
+            error={routeError}
+            onSave={(event) => void saveRoute(event)}
+            onChange={(draft) => {
+              setRouteDraft(draft)
+              setRouteError(null)
+            }}
+            onCancel={() => setRouteDraft(null)}
+          />
         )}
       </div>
 

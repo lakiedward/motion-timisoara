@@ -13,6 +13,7 @@ import {
   openStreetMapTileUrl,
 } from '@/features/public/map/basemap'
 import {
+  CompetitionGpxValidationError,
   loadCompetitionGpx,
   publicCompetitionGpxUrl,
   type CompetitionGpx,
@@ -133,7 +134,7 @@ export function CompetitionRouteMap({
 }) {
   const url = publicCompetitionGpxUrl(gpxUrl)
   const downloadHref = publicCompetitionGpxUrl(downloadUrl ?? null) ?? url
-  const { data, isPending, isError, refetch } = useQuery({
+  const { data, error, isPending, isError, refetch } = useQuery({
     queryKey: ['competition-gpx', url],
     queryFn: ({ signal }) => loadCompetitionGpx(url!, signal),
     enabled: Boolean(url),
@@ -165,7 +166,7 @@ export function CompetitionRouteMap({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-foreground font-medium">Traseul {routeLabel}</p>
-        {url && (
+        {data && !isError && (
           <Button asChild variant="outline" className="min-h-touch-target">
             <a href={downloadHref ?? undefined} download={filename} onClick={downloadFile}>
               <Download aria-hidden="true" className="size-4" /> Descarcă GPX
@@ -186,6 +187,7 @@ export function CompetitionRouteMap({
       ) : isError ? (
         <div role="alert" className="bg-muted space-y-3 rounded-xl p-4 text-sm">
           <p>Nu am putut afișa traseul GPX.</p>
+          {error instanceof CompetitionGpxValidationError && <p>{error.message}</p>}
           <Button
             type="button"
             variant="outline"

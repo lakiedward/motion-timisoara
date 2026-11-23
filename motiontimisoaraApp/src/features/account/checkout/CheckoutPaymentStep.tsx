@@ -12,6 +12,7 @@ type PaymentMethodsProps = {
   allowCash: boolean
   cashBlocked: boolean
   paymentAvailable: boolean
+  cardAvailable?: boolean
   switchMethod: (method: PaymentMethod) => void
 }
 
@@ -20,6 +21,7 @@ export function CheckoutPaymentMethods({
   allowCash,
   cashBlocked,
   paymentAvailable,
+  cardAvailable = stripeConfigured,
   switchMethod,
 }: PaymentMethodsProps) {
   return (
@@ -31,10 +33,10 @@ export function CheckoutPaymentMethods({
           name="payment-method"
           className={RADIO}
           checked={method === 'CARD'}
-          disabled={!stripeConfigured}
+          disabled={!cardAvailable}
           onChange={() => switchMethod('CARD')}
         />
-        <span>Card bancar {!stripeConfigured && '(indisponibil — Stripe neconfigurat)'}</span>
+        <span>Card bancar {!cardAvailable && '(indisponibil)'}</span>
       </label>
       {allowCash && (
         <label className="min-h-touch-target flex items-center gap-3 text-sm">

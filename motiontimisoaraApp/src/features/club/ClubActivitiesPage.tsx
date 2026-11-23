@@ -5,6 +5,8 @@ import { ClubActivityList } from './activities/ClubActivityList'
 
 export default function ClubActivitiesPage() {
   const { pathname } = useLocation()
-  if (pathname.endsWith('/new') || pathname.endsWith('/edit')) return <ClubActivityForm />
+  if (pathname.endsWith('/new') || pathname.endsWith('/edit')) {
+    return <ClubActivityForm key={pathname} />
+  }
   return <ClubActivityList />
 }

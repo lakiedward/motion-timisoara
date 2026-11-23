@@ -17,16 +17,15 @@ import { processEnrollmentPayments, paymentResultMessage } from '@/api/payments/
 import { startStripeCheckout } from '@/api/payments/checkout-session'
 import { useAuth } from '@/lib/auth-context'
 import { formatRonOffer } from '@/lib/money'
-import { stripeConfigured } from '@/lib/stripe'
 import { BackLink } from '@/components/page-header/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { StatusView } from '@/components/ui/status-view'
 import { CheckoutBillingFields } from '@/features/account/checkout/CheckoutBillingFields'
-import { CheckoutPaymentStep } from '@/features/account/checkout/CheckoutPaymentStep'
+import { CheckoutPaymentMethods, CheckoutPaymentStep } from '@/features/account/checkout/CheckoutPaymentStep'
 import { CheckoutOrderSummary } from '@/features/account/checkout/CheckoutOrderSummary'
 import { CheckoutSteps } from '@/features/account/checkout/CheckoutSteps'
-import { STEP_COPY, checkoutStepLabels } from '@/features/account/checkout/checkout-flow'
+import { STEP_COPY, billingIsValid, checkoutStepLabels } from '@/features/account/checkout/checkout-flow'
 import { usePaymentAdapter } from '@/features/account/checkout/usePaymentAdapter'
 import { useCompetitionClock } from '../useCompetitionClock'
 import { CompetitionParticipantsStep } from './CompetitionParticipantsStep'
@@ -57,7 +56,11 @@ export function CompetitionRegistrationForm({ competition, categories, routes }:
   const [includeSelfChoice, setIncludeSelf] = useState<boolean | null>(null)
   const [selfBirthDate, setSelfBirthDate] = useState('')
   const [selfCategoryChoice, setSelfCategoryId] = useState<string | null>(null)
-  const categoryOptions = categories.map((category) => {
+  const requestedCategory = categories.find((category) => category.id === searchParams.get('categorie'))
+  const orderedCategories = requestedCategory
+    ? [requestedCategory, ...categories.filter((category) => category.id !== requestedCategory.id)]
+    : categories
+  const categoryOptions = orderedCategories.map((category) => {
     const route = routes.find((item) => item.id === category.route_id)
     const range = `${category.age_from}–${category.age_to} ani · ${formatRonOffer(category.price_bani)}`
     return {
@@ -74,7 +77,7 @@ export function CompetitionRegistrationForm({ competition, categories, routes }:
     return routes.length > 1 && route ? `${route.name} · ${category?.name}` : category?.name
   }
   const [acceptedKey, setAcceptedKey] = useState<string | null>(null)
-  const [method, setMethod] = useState<PaymentMethod>('CARD')
+  const [chosenMethod, setMethod] = useState<PaymentMethod | null>(null)
   const [billing, setBilling] = useState<BillingDetails>({
     name: user?.name ?? '',
     email: user?.email ?? '',
@@ -89,13 +92,12 @@ export function CompetitionRegistrationForm({ competition, categories, routes }:
     queryFn: getMyChildren,
     enabled: user?.role === 'PARENT',
   })
-  const presetCategoryId = categories.find(
-    (category) => category.id === searchParams.get('categorie'),
-  )?.id
-  const presetChildId = presetCategoryId ? children.data?.[0]?.id : undefined
+  const presetCategoryId = requestedCategory?.id
+  const presetChildId =
+    presetCategoryId && children.data?.length === 1 ? children.data[0].id : undefined
   const presetSelf = Boolean(presetCategoryId) && children.isSuccess && !children.data.length
   const includeSelf = includeSelfChoice ?? presetSelf
-  const selfCategoryId = selfCategoryChoice ?? (presetSelf ? (presetCategoryId ?? '') : '')
+  const selfCategoryId = selfCategoryChoice ?? presetCategoryId ?? ''
   const effectiveChoice: Record<string, string> =
     presetChildId && presetCategoryId && !(presetChildId in choice)
       ? { [presetChildId]: presetCategoryId, ...choice }
@@ -150,15 +152,18 @@ export function CompetitionRegistrationForm({ competition, categories, routes }:
   const currentKey = selectionKey(selections, versions)
   const accepted = acceptedKey === currentKey
   const allowCash = validation.data?.allowCash ?? competition.allowCash
+  const method = chosenMethod ?? (!payment.ready && allowCash ? 'CASH' : 'CARD')
   const paymentMethod: PaymentMethod = free ? 'CARD' : method
-  const billingValid =
-    billing.name.trim().length > 1 &&
-    /\S+@\S+\.\S+/.test(billing.email) &&
-    billing.addressLine1.trim().length > 2 &&
-    billing.city.trim().length > 1 &&
-    billing.postalCode.trim().length > 2
-  const methodAvailable =
-    free || (paymentMethod === 'CASH' ? allowCash : stripeConfigured && payment.ready)
+  const billingValid = billingIsValid(billing)
+  const methodAvailable = free || (paymentMethod === 'CASH' ? allowCash : payment.ready)
+  const paymentMethods = {
+    method,
+    allowCash,
+    cashBlocked: false,
+    cardAvailable: payment.ready,
+    paymentAvailable: allowCash || payment.ready,
+    switchMethod: setMethod,
+  }
   const closed = Boolean(
     competition.registrationDeadlineAt && Date.parse(competition.registrationDeadlineAt) <= now,
   )
@@ -266,7 +271,7 @@ export function CompetitionRegistrationForm({ competition, categories, routes }:
     stepName === 'Participanți'
       ? selections.length > 0 && selfComplete && pricesReady && !checking
       : stepName === 'Detalii'
-        ? pricesReady && accepted
+        ? pricesReady && accepted && methodAvailable
         : stepName === 'Facturare'
           ? billingValid
           : true
@@ -322,7 +327,10 @@ export function CompetitionRegistrationForm({ competition, categories, routes }:
       <Button
         className="w-full sm:w-auto"
         size="lg"
-        onClick={() => setStep(step + 1)}
+        onClick={() => {
+          if (stepName === 'Detalii' && !free) setMethod(method)
+          setStep(step + 1)
+        }}
         disabled={!canAdvance}
         aria-describedby={hint ? 'competition-advance-hint' : undefined}
       >
@@ -390,6 +398,7 @@ export function CompetitionRegistrationForm({ competition, categories, routes }:
                     resetAcceptance()
                   }}
                   categoryOptions={categoryOptions}
+                  requestedCategory={requestedCategory ? categoryTitle(requestedCategory.id) : undefined}
                   verdictFor={verdictFor}
                   includeSelf={includeSelf}
                   onIncludeSelf={(value) => {
@@ -411,17 +420,20 @@ export function CompetitionRegistrationForm({ competition, categories, routes }:
                 />
               )}
               {stepName === 'Detalii' && (
-                <CompetitionPriceStep
-                  lines={selections.map((selection) => ({
-                    key: participantKey(selection),
-                    label: `${participantName(selection)} · ${categoryTitle(selection.categoryId)}`,
-                    amount: verdictFor(participantKey(selection))?.amount,
-                  }))}
-                  total={pricesReady ? total : undefined}
-                  accepted={accepted}
-                  disabled={!pricesReady}
-                  onAcceptedChange={(value) => setAcceptedKey(value ? currentKey : null)}
-                />
+                <>
+                  <CompetitionPriceStep
+                    lines={selections.map((selection) => ({
+                      key: participantKey(selection),
+                      label: `${participantName(selection)} · ${categoryTitle(selection.categoryId)}`,
+                      amount: verdictFor(participantKey(selection))?.amount,
+                    }))}
+                    total={pricesReady ? total : undefined}
+                    accepted={accepted}
+                    disabled={!pricesReady}
+                    onAcceptedChange={(value) => setAcceptedKey(value ? currentKey : null)}
+                  />
+                  {pricesReady && !free && <CheckoutPaymentMethods {...paymentMethods} />}
+                </>
               )}
               {stepName === 'Facturare' && (
                 <CheckoutBillingFields billing={billing} setBilling={setBilling} />
@@ -444,10 +456,7 @@ export function CompetitionRegistrationForm({ competition, categories, routes }:
                   }
                   childCount={selections.length}
                   total={pricesReady ? total : undefined}
-                  method={method}
-                  allowCash={allowCash}
-                  cashBlocked={false}
-                  paymentAvailable={allowCash || stripeConfigured}
+                  {...paymentMethods}
                   switchMethod={switchMethod}
                 />
               )}

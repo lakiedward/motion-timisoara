@@ -245,10 +245,10 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
           try {
             await incarcaRegulamentCurs(courseId, fisierLocal)
           } catch {
-            toast.error('Cursul a fost creat, dar fișierul regulamentului nu a putut fi urcat.')
+            toast.error('Cursul a fost creat. Încarcă din nou regulamentul din editare.')
             refreshPublicCourses(qc)
-            qc.invalidateQueries({ queryKey: [listQueryKey] })
-            navigate(listPath)
+            void qc.invalidateQueries({ queryKey: [listQueryKey] })
+            navigate(`${listPath}/${courseId}/edit`)
             return
           }
         }
@@ -582,17 +582,17 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
           intro="Fișierul apare pe pagina publică a cursului. Părinții îl pot deschide; nu trebuie să îl accepte la înscriere."
         />
         <div className="flex flex-wrap items-center gap-2 pt-2">
+          {(optiuniSeIncarca || !isEdit) && (
+            <p role={optiuniSeIncarca ? 'status' : undefined} className="text-muted-foreground basis-full text-sm">
+              {optiuniSeIncarca ? 'Se încarcă opțiunile…' : 'Cursul devine vizibil public după salvare.'}
+            </p>
+          )}
           <Button type="submit" disabled={isSubmitting || faraCurs || optiuniSeIncarca}>
             {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>
           <Button type="button" variant="outline" asChild>
             <Link to={listPath}>Anulează</Link>
           </Button>
-          {optiuniSeIncarca && (
-            <p role="status" className="text-muted-foreground text-sm">
-              Se încarcă opțiunile…
-            </p>
-          )}
         </div>
       </form>
     </div>

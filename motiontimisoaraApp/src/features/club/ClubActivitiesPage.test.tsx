@@ -16,6 +16,7 @@ import {
   getMyClub,
   updateClubActivity,
 } from '@/api/club'
+import { incarcaRegulamentActivitate } from '@/api/camp-rules-file'
 import { fetchSports } from '@/api/sports'
 import { toast } from 'sonner'
 import { findSelectMenuOption, pickSelectMenuValue } from '@/test/select-menu'
@@ -38,6 +39,10 @@ vi.mock('@/api/club', () => ({
   setClubActivityActive: vi.fn(),
 }))
 vi.mock('@/api/sports', () => ({ fetchSports: vi.fn() }))
+vi.mock('@/api/camp-rules-file', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/api/camp-rules-file')>()),
+  incarcaRegulamentActivitate: vi.fn(),
+}))
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 const mockedClub = vi.mocked(getMyClub)
@@ -124,10 +129,7 @@ test('eroarea de listă oferă reîncercarea', async () => {
   expect(screen.getByRole('button', { name: 'Reîncearcă' })).toBeInTheDocument()
 })
 
-test('formularul nou cere un antrenor din club și salvează regulamentul pe formular', async () => {
-  const user = userEvent.setup()
-  mockedCreate.mockResolvedValue({ id: 'act-nou' } as never)
-  renderPage('/club/activities/new')
+async function completeNewActivity(user: ReturnType<typeof userEvent.setup>) {
   await findSelectMenuOption(await screen.findByLabelText(/^Antrenor/), 'Audit Antrenor')
   expect(screen.getByText('Fișierul regulamentului')).toBeInTheDocument()
   await user.type(screen.getByLabelText(/^Nume/), 'Atelier club')
@@ -142,6 +144,13 @@ test('formularul nou cere un antrenor din club și salvează regulamentul pe for
   fireEvent.change(screen.getByLabelText('Poza din capul paginii'), {
     target: { files: [new File(['poza'], 'hero.jpg', { type: 'image/jpeg' })] },
   })
+}
+
+test('formularul nou cere un antrenor din club și salvează regulamentul pe formular', async () => {
+  const user = userEvent.setup()
+  mockedCreate.mockResolvedValue({ id: 'act-nou' } as never)
+  renderPage('/club/activities/new')
+  await completeNewActivity(user)
   await user.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() => expect(mockedCreate).toHaveBeenCalled())
   expect(mockedCreate.mock.calls[0][0]).toBe('club-1')
@@ -156,6 +165,38 @@ test('formularul nou cere un antrenor din club și salvează regulamentul pe for
     age_from: null,
     age_to: null,
   })
+})
+
+test('editarea deschisă după un upload eșuat protejează modificările nesalvate', async () => {
+  const user = userEvent.setup()
+  const saved = {
+    id: 'act-nou',
+    club_id: 'club-1',
+    name: 'Atelier club',
+    sport_id: SPORT,
+    location_id: LOC,
+    coach_id: ANTRENOR,
+    activity_date: '2026-10-20',
+    start_time: '10:00:00',
+    end_time: '11:00:00',
+    price: 4000,
+    currency: 'RON',
+    description: 'Atelier pentru copii',
+  }
+  mockedCreate.mockResolvedValue(saved as never)
+  vi.mocked(getClubActivityById).mockResolvedValue(saved as never)
+  vi.mocked(incarcaRegulamentActivitate).mockRejectedValueOnce(new Error('Upload indisponibil'))
+  renderPage('/club/activities/new')
+  await completeNewActivity(user)
+  await user.upload(
+    screen.getByLabelText('Fișierul regulamentului'),
+    new File(['regulament'], 'regulament.pdf', { type: 'application/pdf' }),
+  )
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  await screen.findByRole('heading', { name: 'Editează activitatea' })
+  await user.type(await screen.findByDisplayValue(saved.name), ' nou')
+  await user.click(screen.getByRole('link', { name: /Înapoi/ }))
+  expect(await screen.findByText('Renunți la modificări?')).toBeInTheDocument()
 })
 
 test('editarea încarcă activitatea clubului', async () => {
