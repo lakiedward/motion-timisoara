@@ -172,15 +172,13 @@ test('the offer name leads the card and keeps the person and amount', async () =
   expect(within(course).getByText('316,12 lei')).toBeInTheDocument()
   expect(within(course).getByText(/1 EUR = 5,123456 lei/)).toBeInTheDocument()
   expect(within(course).getByText('Ședințe: 5 rămase din 8')).toBeInTheDocument()
-  expect(within(course).getByRole('link', { name: 'Vezi prezența' })).toHaveAttribute(
-    'href',
-    '/account/attendance?copil=c1',
-  )
-  expect(within(child).getByRole('link', { name: 'Vezi prezența' })).toHaveAttribute(
-    'href',
-    '/account/attendance?copil=c1',
-  )
-  expect(within(adult).queryByRole('link', { name: 'Vezi prezența' })).not.toBeInTheDocument()
+  expect(
+    within(course).getByRole('link', { name: 'Vezi prezența pentru Copil Spec 520' }),
+  ).toHaveAttribute('href', '/account/attendance?copil=c1')
+  expect(
+    within(child).getByRole('link', { name: 'Vezi prezența pentru Copil Spec 520' }),
+  ).toHaveAttribute('href', '/account/attendance?copil=c1')
+  expect(within(adult).queryByRole('link', { name: /Vezi prezența/ })).not.toBeInTheDocument()
   expect(
     within(course)
       .getByRole('heading', { name: 'Curs de înot' })

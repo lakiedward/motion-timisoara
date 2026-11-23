@@ -95,7 +95,10 @@ export function EnrollmentPhotoCards({ enrollments, paymentId, setPaymentId }: P
               <BuySessionsButton e={e} className="mt-2 w-full" />
               {childId && e.kind !== 'COMPETITION' && (
                 <Button asChild variant="outline" className="relative mt-2 w-full">
-                  <Link to={`/account/attendance?copil=${encodeURIComponent(childId)}`}>
+                  <Link
+                    to={`/account/attendance?copil=${encodeURIComponent(childId)}`}
+                    aria-label={e.child?.name ? `Vezi prezența pentru ${e.child.name}` : undefined}
+                  >
                     Vezi prezența
                   </Link>
                 </Button>

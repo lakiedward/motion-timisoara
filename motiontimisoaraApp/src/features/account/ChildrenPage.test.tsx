@@ -43,6 +43,10 @@ test('a failed load shows the error with retry, not the empty state', async () =
   expect(screen.queryByText('Niciun copil adăugat încă.')).not.toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Reîncearcă' }))
   expect(await screen.findByText('Ana Spec')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Vezi prezența pentru Ana Spec' })).toHaveAttribute(
+    'href',
+    '/account/attendance?copil=c1',
+  )
 })
 
 test('the empty state explains why and links to the new child form', async () => {

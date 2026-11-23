@@ -143,7 +143,12 @@ function ChildCard({
       )}
       <div className="mt-auto grid grid-cols-2 gap-2 lg:flex lg:flex-wrap">
         <Button asChild variant="outline">
-          <Link to={`/account/attendance?copil=${encodeURIComponent(c.id)}`}>Vezi prezența</Link>
+          <Link
+            to={`/account/attendance?copil=${encodeURIComponent(c.id)}`}
+            aria-label={`Vezi prezența pentru ${c.name}`}
+          >
+            Vezi prezența
+          </Link>
         </Button>
         <Button asChild variant="outline">
           <Link to={`/account/child/${c.id}/qr`}>
