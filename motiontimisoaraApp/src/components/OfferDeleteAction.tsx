@@ -11,7 +11,11 @@ const offers = {
   courses: {
     name: 'cursul',
     success: 'Cursul a fost șters.',
-    keys: ['my-courses', 'club-courses', 'admin-courses', 'courses', 'course-catalog', 'course', 'course-edit', 'club-course-edit', 'coach-courses', 'coach-sessions'],
+    keys: [
+      'my-courses', 'club-courses', 'admin-courses', 'courses', 'course-catalog', 'course',
+      'course-edit', 'club-course-edit', 'coach-courses', 'coach-sessions', 'admin-coach-courses',
+      'club-audiences',
+    ],
   },
   activities: {
     name: 'activitatea',
