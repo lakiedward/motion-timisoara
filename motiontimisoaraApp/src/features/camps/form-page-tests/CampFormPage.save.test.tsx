@@ -124,6 +124,28 @@ test('a lost rollback response keeps the ID until the database confirms deletion
   expect(retry.slice(1)).toEqual(initial.slice(1))
 })
 
+test('creation keeps the original ID if someone else deleted the camp after an uncertain save', async () => {
+  const user = userEvent.setup()
+  vi.mocked(saveCampOffer)
+    .mockRejectedValueOnce(new Error('Răspuns pierdut'))
+    .mockRejectedValue(new CampDeletedError())
+  renderForm()
+  await laVerificare(user)
+  const create = () => user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
+  await create()
+  await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Răspuns pierdut'))
+  await create()
+  await waitFor(() =>
+    expect(toast.error).toHaveBeenCalledWith('Tabăra a fost ștearsă. Revino la lista de tabere.'),
+  )
+  await create()
+  await waitFor(() => expect(saveCampOffer).toHaveBeenCalledTimes(3))
+  const [initial, uncertain, retry] = vi.mocked(saveCampOffer).mock.calls
+  expect(uncertain).toEqual(initial)
+  expect(retry).toEqual(initial)
+  expect(stergeTabara).not.toHaveBeenCalled()
+})
+
 test('salvarea trimite location_id, regulamentul și necesar fără preț global', async () => {
   const user = userEvent.setup()
   renderForm()
