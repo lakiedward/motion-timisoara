@@ -39,6 +39,24 @@ on the remote (verified by md5).
 `00017` and `00018` are both kept on purpose: `00018` replaced `00017` in production
 62 seconds after it was applied, and the ledger records what actually ran.
 
+**Course package renewal validation (PR #473).** `validate-enrollment` v24
+was deployed from commit `40b69120` to the Motion project
+`ehdzafadshbaaghzdzdo`. The renewal validation response now
+flags an open card payment for an ended package month. This release required
+no database migration.
+
+Supabase reported the function as ACTIVE with JWT verification enabled.
+All 12 deployed source files matched the merged commit. The live endpoint
+returned HTTP 401 for both a request without authorization and a request
+with the public anon key. With isolated data, the handler returned
+`renewal.openPayment.expiredMonth: true` for a card payment from the previous
+month and omitted the flag for a current-month card payment and an expired
+cash payment. Authenticated renewal with an expired payment remains
+unverified in production.
+
+To roll back the function, redeploy `validate-enrollment` from `9f6e99a9`
+with JWT verification enabled.
+
 `00043` and `00044` were applied on 2026-09-10 after the owner explicitly approved
 both migrations, their access rules, the Edge deployment and temporary test data.
 The `coach-live-location` Edge Function was deployed as version 1 with JWT verification.
