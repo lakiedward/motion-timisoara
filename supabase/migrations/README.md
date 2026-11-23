@@ -48,8 +48,14 @@ no database migration.
 Supabase reported the function as ACTIVE with JWT verification enabled.
 All 12 deployed source files matched the merged commit. The live endpoint
 returned HTTP 401 for both a request without authorization and a request
-with the public anon key. To roll back the function, redeploy
-`validate-enrollment` from `9f6e99a9` with JWT verification enabled.
+with the public anon key. With isolated data, the handler returned
+`renewal.openPayment.expiredMonth: true` for a card payment from the previous
+month and omitted the flag for a current-month card payment and an expired
+cash payment. Authenticated renewal with an expired payment remains
+unverified in production.
+
+To roll back the function, redeploy `validate-enrollment` from `9f6e99a9`
+with JWT verification enabled.
 
 `00043` and `00044` were applied on 2026-09-10 after the owner explicitly approved
 both migrations, their access rules, the Edge deployment and temporary test data.
