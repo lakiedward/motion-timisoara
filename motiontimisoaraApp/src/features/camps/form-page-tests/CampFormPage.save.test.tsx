@@ -10,7 +10,9 @@ import {
   getTabaraDeEditat,
   listeazaSabloaneTabara,
   salveazaSablonTabara,
+  schimbaPozaHero,
   saveCampOffer,
+  stergeTabara,
 } from '@/api/camps-admin'
 import { pickSelectMenuValue } from '@/test/select-menu'
 import {
@@ -77,6 +79,22 @@ test('retry after an uncertain save reuses the camp identity and complete offer'
   await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
   await waitFor(() => expect(saveCampOffer).toHaveBeenCalledTimes(2))
   expect(vi.mocked(saveCampOffer).mock.calls[0]).toEqual(vi.mocked(saveCampOffer).mock.calls[1])
+})
+
+test('retry after removing a camp with a failed hero upload creates it with a fresh ID', async () => {
+  const user = userEvent.setup()
+  vi.mocked(schimbaPozaHero).mockRejectedValueOnce(new Error('Încărcarea a eșuat'))
+  renderForm()
+  await laVerificare(user)
+  await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
+  await waitFor(() =>
+    expect(toast.error).toHaveBeenCalledWith('Fără poza din capul paginii tabăra nu se salvează.'),
+  )
+  const firstId = vi.mocked(saveCampOffer).mock.calls[0][0]
+  expect(stergeTabara).toHaveBeenCalledWith(firstId)
+  await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
+  await waitFor(() => expect(saveCampOffer).toHaveBeenCalledTimes(2))
+  expect(vi.mocked(saveCampOffer).mock.calls[1][0]).not.toBe(firstId)
 })
 
 test('salvarea trimite location_id, regulamentul și necesar fără preț global', async () => {

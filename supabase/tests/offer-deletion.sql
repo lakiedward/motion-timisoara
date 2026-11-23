@@ -95,6 +95,19 @@ BEGIN
 END;
 $$;
 
+DO $$
+BEGIN
+    BEGIN
+        INSERT INTO public.camps (id) VALUES (public.test_uuid(801)) ON CONFLICT (id) DO NOTHING;
+        RAISE EXCEPTION 'Camp ID stayed reusable after deletion' USING ERRCODE = 'XX000';
+    EXCEPTION WHEN raise_exception THEN
+        IF SQLERRM <> 'CAMP_DELETED' THEN
+            RAISE;
+        END IF;
+    END;
+END;
+$$;
+
 INSERT INTO public.courses (id) VALUES (public.test_uuid(810));
 INSERT INTO public.courses (id) VALUES (public.test_uuid(811)), (public.test_uuid(812));
 INSERT INTO public.course_announcements (course_id) VALUES (public.test_uuid(811));

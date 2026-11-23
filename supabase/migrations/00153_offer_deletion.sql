@@ -61,3 +61,31 @@ CREATE TRIGGER camps_delete_history_guard
 CREATE TRIGGER competitions_delete_history_guard
     BEFORE DELETE ON public.competitions FOR EACH ROW
     EXECUTE FUNCTION private.prevent_offer_history_deletion('COMPETITION');
+
+CREATE TABLE private.deleted_camp_ids (
+    id UUID PRIMARY KEY,
+    deleted_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE private.deleted_camp_ids ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE private.deleted_camp_ids FROM PUBLIC, anon, authenticated;
+
+CREATE FUNCTION private.guard_deleted_camp_id()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        INSERT INTO private.deleted_camp_ids (id) VALUES (OLD.id);
+    ELSIF EXISTS (SELECT 1 FROM private.deleted_camp_ids WHERE id = NEW.id) THEN
+        RAISE EXCEPTION 'CAMP_DELETED';
+    END IF;
+    RETURN NULL;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION private.guard_deleted_camp_id() FROM PUBLIC, anon, authenticated;
+CREATE TRIGGER camps_guard_deleted_id
+    AFTER DELETE OR INSERT ON public.camps FOR EACH ROW
+    EXECUTE FUNCTION private.guard_deleted_camp_id();

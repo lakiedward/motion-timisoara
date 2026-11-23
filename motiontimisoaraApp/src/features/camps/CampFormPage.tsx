@@ -65,7 +65,7 @@ import {
 export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   const { id } = useParams()
   const eEditare = !!id
-  const [newCampId] = useState(() => crypto.randomUUID())
+  const [newCampId, setNewCampId] = useState(() => crypto.randomUUID())
   const navigate = useNavigate()
   const qc = useQueryClient()
   const { proprietar, gata, eClub, eroare, reincearca } = useProprietarTabere()
@@ -279,6 +279,7 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
           await schimbaPozaHero(campId, pozaHero)
         } catch {
           await stergeTabara(campId)
+          setNewCampId(crypto.randomUUID())
           toast.error('Fără poza din capul paginii tabăra nu se salvează.')
           return
         }
