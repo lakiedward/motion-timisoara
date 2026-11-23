@@ -2,7 +2,11 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { vi } from 'vitest'
-import type { CompetitionOffers, CompetitionRoute } from '@/api/competition/competition-offers'
+import {
+  CompetitionGpxConflictError,
+  type CompetitionOffers,
+  type CompetitionRoute,
+} from '@/api/competition/competition-offers'
 import { CompetitionOffersSection } from './CompetitionOffersSection'
 
 const api = vi.hoisted(() => ({
@@ -15,7 +19,8 @@ const api = vi.hoisted(() => ({
   deleteCategory: vi.fn(),
 }))
 
-vi.mock('@/api/competition/competition-offers', () => ({
+vi.mock('@/api/competition/competition-offers', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/api/competition/competition-offers')>()),
   listCompetitionOffers: api.list,
   createCompetitionRoute: api.createRoute,
   updateCompetitionRoute: api.updateRoute,
@@ -159,6 +164,24 @@ test('allows categories on events without a GPX file', async () => {
   expect(await screen.findByText(/Fără GPX · fără hartă/)).toBeVisible()
   expect(screen.queryByText(/Adaugă un traseu sau o probă înainte/)).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Adaugă categorie' })).toBeEnabled()
+})
+
+test('refreshes the route list after a GPX conflict so reopening uses the latest attachment', async () => {
+  offers = { routes: [route], categories: [] }
+  api.updateRoute.mockImplementationOnce(async () => {
+    offers = { ...offers, routes: [{ ...route, gpx_storage_path: null }] }
+    throw new CompetitionGpxConflictError()
+  })
+  const user = userEvent.setup()
+  renderSection()
+  await user.click(await screen.findByRole('button', { name: 'Editează' }))
+  await user.click(screen.getByRole('button', { name: 'Elimină GPX-ul atașat' }))
+  await user.click(screen.getByRole('button', { name: 'Salvează' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('Fișierul GPX s-a schimbat.')
+  expect(await screen.findByText(/Fără GPX · fără hartă/)).toBeVisible()
+  await user.click(screen.getByRole('button', { name: 'Renunță' }))
+  await user.click(screen.getByRole('button', { name: 'Editează' }))
+  expect(screen.queryByRole('button', { name: 'Elimină GPX-ul atașat' })).not.toBeInTheDocument()
 })
 
 test('requires a second action before deleting a complete route', async () => {

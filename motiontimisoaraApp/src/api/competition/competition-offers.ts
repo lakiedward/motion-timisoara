@@ -39,6 +39,12 @@ export type CompetitionOffers = {
 }
 
 export type CompetitionRouteInput = Pick<CompetitionRoute, 'name' | 'description'>
+export class CompetitionGpxConflictError extends Error {
+  constructor() {
+    super('Fișierul GPX s-a schimbat. Închide editorul și deschide din nou traseul.')
+  }
+}
+
 export type CompetitionCategoryInput = Pick<
   CompetitionAgeCategory,
   'name' | 'route_id' | 'age_from' | 'age_to' | 'price_bani'
@@ -286,7 +292,7 @@ export async function updateCompetitionRoute(
 
   const oldPath = currentResult.data.gpx_storage_path
   if (detachGpx && detachGpx !== oldPath) {
-    throw new Error('Fișierul GPX s-a schimbat. Închide editorul și deschide din nou traseul.')
+    throw new CompetitionGpxConflictError()
   }
   const newPath = file ? await uploadRouteGpx(competitionId, routeId, file) : null
   const gpxChanged = Boolean(newPath || detachGpx)
@@ -300,10 +306,11 @@ export async function updateCompetitionRoute(
       ? update.eq('gpx_storage_path', oldPath)
       : update.is('gpx_storage_path', null)
     : update
-  const result = await guardedUpdate.select().single()
-  if (result.error) {
+  const selected = guardedUpdate.select()
+  const result = await (gpxChanged ? selected.maybeSingle() : selected.single())
+  if (result.error || !result.data) {
     if (newPath) await removeRouteGpx(newPath)
-    throw result.error
+    throw result.error ?? new CompetitionGpxConflictError()
   }
 
   const cleanupFailed = oldPath && gpxChanged ? await removeRouteGpx(oldPath) : false

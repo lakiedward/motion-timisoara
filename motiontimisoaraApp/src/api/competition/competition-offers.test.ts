@@ -1,5 +1,6 @@
 import { vi } from 'vitest'
 import {
+  CompetitionGpxConflictError,
   competitionRouteGpxDownloadUrl,
   createCompetitionRoute,
   deleteCompetitionRoute,
@@ -44,6 +45,7 @@ vi.mock('@/lib/supabase', () => {
         return query
       },
       single: async () => nextReply(),
+      maybeSingle: async () => nextReply(),
       then: (resolve: (value: unknown) => unknown) => Promise.resolve(nextReply()).then(resolve),
     }
     return query
@@ -296,8 +298,20 @@ test('keeps the current GPX if it was replaced after the editor opened', async (
   state.replies = [{ data: { ...route, gpx_storage_path: path }, error: null }]
   await expect(
     updateCompetitionRoute(competitionId, routeId, route, null, 'previous.gpx'),
-  ).rejects.toThrow('Fișierul GPX s-a schimbat.')
+  ).rejects.toBeInstanceOf(CompetitionGpxConflictError)
   expect(state.queries.map(({ action }) => action)).toEqual(['select'])
+  expect(state.removed).toEqual([])
+})
+
+test('reports a GPX conflict if the guarded update matches no row', async () => {
+  const path = `${competitionId}/routes/${routeId}/${fileId}.gpx`
+  state.replies = [
+    { data: { ...route, gpx_storage_path: path }, error: null },
+    { data: null, error: null },
+  ]
+  await expect(
+    updateCompetitionRoute(competitionId, routeId, route, null, path),
+  ).rejects.toBeInstanceOf(CompetitionGpxConflictError)
   expect(state.removed).toEqual([])
 })
 

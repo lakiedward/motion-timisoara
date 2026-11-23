@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
+  CompetitionGpxConflictError,
   competitionOfferErrorMessage,
   createCompetitionCategory,
   createCompetitionRoute,
@@ -133,6 +134,7 @@ export function CompetitionOffersSection({ competitionId }: { competitionId: str
       await invalidateOffers()
     } catch (saveError) {
       setRouteError(competitionOfferErrorMessage(saveError))
+      if (saveError instanceof CompetitionGpxConflictError) await offersQuery.refetch()
     } finally {
       setBusy(null)
     }
