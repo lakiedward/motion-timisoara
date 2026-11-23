@@ -4,6 +4,15 @@ ALTER POLICY courses_delete ON public.courses
 ALTER POLICY activities_delete ON public.activities
     USING (public.pot_administra_activitate(id));
 
+ALTER TABLE public.course_announcements
+    DROP CONSTRAINT course_announcements_course_id_fkey,
+    ADD CONSTRAINT course_announcements_course_id_fkey
+        FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE RESTRICT;
+ALTER TABLE public.course_ratings
+    DROP CONSTRAINT course_ratings_course_id_fkey,
+    ADD CONSTRAINT course_ratings_course_id_fkey
+        FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE RESTRICT;
+
 CREATE FUNCTION private.prevent_offer_history_deletion()
 RETURNS TRIGGER
 LANGUAGE plpgsql

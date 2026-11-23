@@ -11,6 +11,12 @@ CREATE TABLE public.competition_podium_publications (
 CREATE TABLE public.competition_podium_results (
     competition_id UUID NOT NULL REFERENCES public.competitions(id) ON DELETE CASCADE
 );
+CREATE TABLE public.course_announcements (
+    course_id UUID NOT NULL REFERENCES public.courses(id) ON DELETE CASCADE
+);
+CREATE TABLE public.course_ratings (
+    course_id UUID NOT NULL REFERENCES public.courses(id) ON DELETE CASCADE
+);
 
 ALTER TABLE public.courses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.activities ENABLE ROW LEVEL SECURITY;
@@ -90,6 +96,9 @@ END;
 $$;
 
 INSERT INTO public.courses (id) VALUES (public.test_uuid(810));
+INSERT INTO public.courses (id) VALUES (public.test_uuid(811)), (public.test_uuid(812));
+INSERT INTO public.course_announcements (course_id) VALUES (public.test_uuid(811));
+INSERT INTO public.course_ratings (course_id) VALUES (public.test_uuid(812));
 INSERT INTO public.activities (id) VALUES (public.test_uuid(810));
 INSERT INTO public.competitions (id) VALUES (public.test_uuid(810));
 INSERT INTO public.competitions (id) VALUES (public.test_uuid(811));
@@ -110,6 +119,11 @@ BEGIN
         OR pg_temp.try_offer_delete('competitions', 1, 811) <> 'OFFER_HAS_HISTORY'
     THEN
         RAISE EXCEPTION 'Attendance or published results without enrollments were not protected';
+    END IF;
+    IF pg_temp.try_offer_delete('courses', 1, 811) NOT LIKE '%course_announcements_course_id_fkey%'
+        OR pg_temp.try_offer_delete('courses', 1, 812) NOT LIKE '%course_ratings_course_id_fkey%'
+    THEN
+        RAISE EXCEPTION 'Course announcements or ratings without enrollments were not protected';
     END IF;
 END;
 $$;
