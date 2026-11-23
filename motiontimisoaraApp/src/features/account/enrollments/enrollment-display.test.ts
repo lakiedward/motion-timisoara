@@ -41,6 +41,7 @@ test('a pending monthly payment uses the same reference date as the package line
     payments: [
       {
         id: 'payment',
+        created_at: '2026-11-01T00:00:00Z',
         method: 'CASH',
         status: 'PENDING',
         amount: 20000,
