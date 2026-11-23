@@ -10,10 +10,10 @@ import {
   getTabaraDeEditat,
   listeazaSabloaneTabara,
   salveazaSablonTabara,
-  schimbaPozaHero,
   saveCampOffer,
   stergeTabara,
 } from '@/api/camps-admin'
+import { schimbaPozaHero } from '@/api/camp-photos'
 import { pickSelectMenuValue } from '@/test/select-menu'
 import {
   CABANA,

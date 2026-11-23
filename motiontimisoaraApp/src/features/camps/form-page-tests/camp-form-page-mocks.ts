@@ -13,6 +13,7 @@ vi.mock('@/api/camps-admin', async () => {
     salveazaSablonTabara: vi.fn(),
     saveCampOffer: vi.fn(),
     stergeSablonTabara: vi.fn(),
+    stergeTabara: vi.fn().mockResolvedValue(undefined),
   }
 })
 vi.mock('@/api/bnr-rate', async () => {
