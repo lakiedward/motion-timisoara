@@ -611,5 +611,6 @@ BEGIN
 END
 $$;
 
+\i /tmp/offer-deletion.sql
 ROLLBACK;
 \echo 'staff access for active accounts: ok'

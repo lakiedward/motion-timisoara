@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { deleteOffer } from '@/api/offer-deletion'
 import type { Database, Tables } from '@/lib/database.types'
 import { readCampRequirements, type CampRequirementCategory } from '@/lib/camp-requirements'
 
@@ -204,8 +205,7 @@ export async function getCategoriile(campId: string): Promise<CategoriePret[]> {
 }
 
 export async function stergeTabara(id: string): Promise<void> {
-  const { error } = await supabase.from('camps').delete().eq('id', id).select().single()
-  if (error) throw error
+  await deleteOffer('camps', id)
 }
 
 export async function getPreturilePeVarsta(campId: string): Promise<PretPeVarsta[]> {

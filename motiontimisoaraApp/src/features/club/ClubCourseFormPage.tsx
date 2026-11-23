@@ -43,6 +43,7 @@ import { campRulesFileFromRow, type CampRulesFileMeta } from '@/lib/camp-rules'
 import { baniToRon } from '@/lib/money'
 import { BackLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
+import { OfferDeleteAction } from '@/components/OfferDeleteAction'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { MAX_AGE, validateAgeRangeFields } from '@/lib/age-range/age-range'
 import { Input } from '@/components/ui/input'
@@ -85,9 +86,7 @@ const schema = z
     validateCourseProgramFields(value, ctx)
   })
 type Values = z.infer<typeof schema>
-
 const num = (s: string | undefined) => (s && s.trim() ? Number(s) : null)
-
 export default function ClubCourseFormPage({ portal = 'club' }: { portal?: CourseFormPortal }) {
   const { id } = useParams()
   const isEdit = !!id
@@ -590,6 +589,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
           <Button type="submit" disabled={isSubmitting || faraCurs || optiuniSeIncarca}>
             {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>
+          {id && existing && <OfferDeleteAction table="courses" id={id} listPath={listPath} disabled={isSubmitting} />}
           <Button type="button" variant="outline" asChild>
             <Link to={listPath}>Anulează</Link>
           </Button>

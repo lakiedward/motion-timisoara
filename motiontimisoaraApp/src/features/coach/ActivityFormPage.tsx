@@ -35,6 +35,7 @@ import { campRulesFileFromRow, type CampRulesFileMeta } from '@/lib/camp-rules'
 import { baniToRon } from '@/lib/money'
 import { BackLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
+import { OfferDeleteAction } from '@/components/OfferDeleteAction'
 import { ActivityScheduleFields } from '@/components/ActivityScheduleFields'
 import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
@@ -531,10 +532,11 @@ export default function ActivityFormPage({ portal = 'coach' }: { portal?: Activi
         {!isEdit && (
           <p className="text-muted-foreground text-sm">Activitatea devine vizibilă public după salvare.</p>
         )}
-        <div className="flex gap-2 pt-2">
+        <div className="flex flex-wrap gap-2 pt-2">
           <Button type="submit" disabled={isSubmitting || faraCurs}>
             {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>
+          {id && existing && <OfferDeleteAction table="activities" id={id} listPath={listPath} disabled={isSubmitting} />}
           <Button type="button" variant="outline" asChild>
             <Link to={listPath} onClick={pleaca}>
               Anulează

@@ -36,6 +36,7 @@ import GalleryPhotosSection from '@/features/photo-gallery/GalleryPhotosSection'
 import { OfferRulesFieldset } from '@/components/RulesFileField'
 import { BackLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
+import { OfferDeleteAction } from '@/components/OfferDeleteAction'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { MAX_AGE, validateAgeRangeFields } from '@/lib/age-range/age-range'
 import { Input } from '@/components/ui/input'
@@ -92,7 +93,6 @@ type Values = z.infer<typeof schema>
 const NOTA_SPORT = 'Sportul rămâne cel salvat: activitatea are înscrieri.'
 const NOTA_LOCATIE = 'Locația rămâne cea salvată: activitatea are înscrieri.'
 const NOTA_PRET = 'Prețul rămâne cel salvat: activitatea are înscrieri.'
-
 const num = (s: string | undefined) => (s && s.trim() ? Number(s) : null)
 
 export function ClubActivityForm() {
@@ -572,6 +572,15 @@ export function ClubActivityForm() {
           <Button type="submit" disabled={isSubmitting || faraCurs}>
             {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>
+          {id && existing && (
+            <OfferDeleteAction
+              table="activities"
+              id={id}
+              listPath="/club/activities"
+              disabled={isSubmitting}
+              allowLeave={plecare.allowLeave}
+            />
+          )}
           <Button type="button" variant="outline" asChild>
             <Link to="/club/activities">Anulează</Link>
           </Button>

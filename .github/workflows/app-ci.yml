@@ -51,6 +51,8 @@ on:
       - 'supabase/tests/*payments-organizer-access*'
       - 'supabase/migrations/00132_staff_access_active_accounts.sql'
       - 'supabase/tests/*staff-access-active-accounts*'
+      - 'supabase/migrations/00153_offer_deletion.sql'
+      - 'supabase/tests/offer-deletion.sql'
       - 'supabase/migrations/00133_competition_podium_and_birth_date_access.sql'
       - 'supabase/tests/*competition-podium-and-birth-date-access*'
       - 'supabase/migrations/00134_reject_inactive_account_requests.sql'

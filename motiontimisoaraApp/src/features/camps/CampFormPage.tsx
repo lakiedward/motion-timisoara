@@ -42,6 +42,7 @@ import {
 import { incarcaRegulamentFisier } from '@/api/camp-rules-file'
 import { BackLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
+import { OfferDeleteAction } from '@/components/OfferDeleteAction'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { cn } from '@/lib/utils'
@@ -528,6 +529,7 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
                   ? 'Salvează tabăra'
                   : 'Creează tabăra'}
           </Button>
+          {id && tabara && <OfferDeleteAction table="camps" id={id} listPath={baza} disabled={isSubmitting} />}
         </div>
       </form>
     </div>

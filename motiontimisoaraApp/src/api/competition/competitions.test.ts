@@ -12,7 +12,6 @@ import { getCompetitionList, toCompetitionListItem } from './competition-list'
 
 let raspuns: Record<string, { data: unknown; error: unknown }> = {}
 let cereri: Record<string, string[]> = {}
-let fisiereSterse: string[] = []
 
 function tabela(nume: string) {
   const proxy: unknown = new Proxy(() => undefined, {
@@ -38,12 +37,8 @@ vi.mock('@/lib/supabase', () => ({
   supabase: {
     from: (nume: string) => tabela(nume),
     storage: {
-      from: (bucket: string) => ({
+      from: () => ({
         getPublicUrl: (cale: string) => ({ data: { publicUrl: `https://public/${cale}` } }),
-        remove: (cai: string[]) => {
-          fisiereSterse.push(`${bucket}:${cai.join(',')}`)
-          return Promise.resolve({ data: null, error: null })
-        },
       }),
     },
   },
@@ -52,7 +47,6 @@ vi.mock('@/lib/supabase', () => ({
 beforeEach(() => {
   raspuns = {}
   cereri = {}
-  fisiereSterse = []
 })
 
 test('proprietarul este clubul, antrenorul sau nimeni la admin', () => {
@@ -166,15 +160,10 @@ test('crearea pune slugul și proprietarul clubului', async () => {
   expect(insert).toContain('"location_text":"Timișoara"')
 })
 
-test('ștergerea scoate poza cât timp rândul încă există', async () => {
-  raspuns.competitions = {
-    data: { hero_photo_storage_path: 'id-1/hero/a.jpg' },
-    error: null,
-  }
+test('ștergerea cere confirmarea rândului șters din baza de date', async () => {
+  raspuns.competitions = { data: { id: 'id-1' }, error: null }
   await stergeConcurs('id-1')
-  expect(fisiereSterse).toEqual(['competition-photos:id-1/hero/a.jpg'])
-  const jurnal = cereri.competitions.join(' ')
-  expect(jurnal.indexOf('select(')).toBeLessThan(jurnal.indexOf('delete('))
+  expect(cereri.competitions).toEqual(['delete()', 'eq(id,id-1)', 'select(id)', 'maybeSingle()'])
 })
 
 test('rândul din listă aduce organizatorul, prețurile și doar înscrierile active', () => {
