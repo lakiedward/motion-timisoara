@@ -59,11 +59,13 @@ try {
         '../migrations/00045_camp_live_location_access.sql' = '00045_camp_live_location_access.sql'
         '../migrations/00046_camp_live_location_transaction.sql' = '00046_camp_live_location_transaction.sql'
         '../migrations/00047_camp_live_location_discovery.sql' = '00047_camp_live_location_discovery.sql'
+        '../migrations/00155_manual_attendance_live_location.sql' = '00155_manual_attendance_live_location.sql'
         'coach-live-location-realtime-bootstrap.sql' = 'coach-live-location-realtime-bootstrap.sql'
         'coach-live-location-realtime-install.sql' = 'coach-live-location-migration.sql'
         'camp-live-location-bootstrap.sql' = 'camp-live-location-bootstrap.sql'
         'camp-live-location.sql' = 'camp-live-location.sql'
         'camp-live-location-consent.sql' = 'camp-live-location-consent.sql'
+        'manual-attendance-live-location.sql' = 'manual-attendance-live-location.sql'
     }
     foreach ($entry in $files.GetEnumerator()) {
         Invoke-TestDocker -DockerArguments @('cp', (Join-Path $PSScriptRoot $entry.Key), "${containerName}:/tmp/$($entry.Value)")
@@ -74,7 +76,7 @@ try {
     $baseSql = $baseSql.Insert($assertionStart, "\i /tmp/camp-live-location-bootstrap.sql`n")
     [System.IO.File]::WriteAllText($baseSqlPath, $baseSql)
     Invoke-TestDocker -DockerArguments @('cp', $baseSqlPath, "${containerName}:/tmp/coach-live-location.sql")
-    foreach ($testFile in @('coach-live-location.sql', 'camp-live-location.sql')) {
+    foreach ($testFile in @('coach-live-location.sql', 'manual-attendance-live-location.sql', 'camp-live-location.sql')) {
         Invoke-TestDocker -DockerArguments @('exec', $containerName, 'psql', '-X', '-U', 'supabase_admin', '-d', $database, '-v', 'ON_ERROR_STOP=1', '-f', "/tmp/$testFile")
     }
     Invoke-TestSql -Sql "INSERT INTO public.enrollments(id,kind,entity_id,child_id,status) VALUES(public.test_uuid(2299),'CAMP',public.test_uuid(302),public.test_uuid(204),'ACTIVE'); SET ROLE service_role; SELECT public.test_assert(public.test_camp(1,'start',302,jsonb_build_object('requestId',public.test_uuid(8999),'consent',true))->>'success'='true','concurrent camp fixture starts explicitly'); SELECT public.test_camp(1,'update',302,public.test_camp_session(302)||public.test_point()); RESET ROLE; CREATE TABLE public.test_camp_concurrent_session AS SELECT id FROM public.coach_live_location_sessions WHERE camp_id=public.test_uuid(302) AND coach_id=public.test_uuid(1); GRANT SELECT ON public.test_camp_concurrent_session TO service_role;"
