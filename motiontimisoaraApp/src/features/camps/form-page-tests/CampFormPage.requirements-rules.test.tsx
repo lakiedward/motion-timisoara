@@ -165,6 +165,32 @@ test('la editare, fișierul salvat se vede lângă text', async () => {
   expect(screen.getByText(/PDF · 2 KB/)).toBeInTheDocument()
 })
 
+test('după un upload eșuat, editarea taberei începe la Detalii și permite reîncărcarea', async () => {
+  const user = userEvent.setup()
+  const pdf = new File(['regulament'], 'regulament-nou.pdf', { type: 'application/pdf' })
+  vi.mocked(getTabaraDeEditat).mockImplementation(async (id) => ({ ...TABARA, id }) as never)
+  vi.mocked(getCategoriile).mockResolvedValue([])
+  vi.mocked(incarcaRegulamentFisier).mockRejectedValueOnce(new Error('Upload unavailable'))
+  renderForm()
+  await completeazaDetalii(user)
+  await user.upload(screen.getByLabelText('Fișierul regulamentului'), pdf)
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  await screen.findByRole('heading', { name: 'Categorii și costuri' })
+  await completeazaCategorie(user, randuriCategorii()[0], '6', '8', [{ name: 'Cazare', lei: '400' }])
+  await user.click(screen.getByRole('button', { name: 'Continuă' }))
+  await user.click(await screen.findByRole('button', { name: 'Creează tabăra' }))
+
+  await screen.findByRole('heading', { name: 'Editează tabăra' })
+  const input = await screen.findByLabelText('Fișierul regulamentului')
+  expect(screen.queryByText(/regulament-nou\.pdf/)).not.toBeInTheDocument()
+  const campId = vi.mocked(saveCampOffer).mock.calls[0][0]
+  expect(getTabaraDeEditat).toHaveBeenCalledWith(campId)
+  await user.upload(input, pdf)
+  await waitFor(() => expect(incarcaRegulamentFisier).toHaveBeenNthCalledWith(2, campId, pdf))
+  await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Fișierul regulamentului a fost urcat.'))
+  expect(saveCampOffer).toHaveBeenCalledTimes(1)
+})
+
 test('la editare, un PDF se urcă imediat, fără să aștepte salvarea', async () => {
   const user = userEvent.setup()
   vi.mocked(getTabaraDeEditat).mockResolvedValue({ ...TABARA } as never)

@@ -208,7 +208,7 @@ export default function CampFormReviewStep({
           Verificare
         </h2>
         <p className="text-muted-foreground mt-1 text-sm">
-          Verifică datele și prețurile, apoi creează tabăra.
+          Verifică datele și prețurile înainte de salvare.
         </p>
       </div>
       <Bloc titlu="Detalii" pas={0} onModifica={onModifica}>

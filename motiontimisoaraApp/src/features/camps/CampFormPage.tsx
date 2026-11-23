@@ -186,7 +186,7 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   const titluViu = useWatch({ control, name: 'title' })
   const faraCurs = eurFaraCurs(currency, cursEur)
   const fisierSalvat = tabara ? campRulesFileFromRow(tabara) : null
-  const fisierRegulament = fisierLocal
+  const fisierRegulament = !eEditare && fisierLocal
     ? {
         name: fisierLocal.name,
         eticheta: campRulesFileKindLabel(campRulesFileContentType(fisierLocal) ?? ''),
@@ -288,6 +288,8 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
         } catch {
           toast.error('Tabăra a fost creată. Încarcă din nou regulamentul din editare.')
           void qc.invalidateQueries({ queryKey: ['taberele-mele'] })
+          setFisierLocal(null)
+          setStep(0)
           navigate(`${baza}/${campId}/edit`)
           return
         }
