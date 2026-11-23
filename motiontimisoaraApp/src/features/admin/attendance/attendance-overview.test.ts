@@ -1,5 +1,3 @@
-import { vi } from 'vitest'
-
 import type { AdminSession } from '@/api/attendance/admin-sessions'
 import {
   dayKey,
@@ -132,13 +130,13 @@ describe('attendance overview', () => {
   })
 
   it('uses a stable ISO day key even when the locale formatter uses slashes', () => {
-    const formatted = vi
-      .spyOn(Intl.DateTimeFormat.prototype, 'format', 'get')
-      .mockReturnValue(() => '10/21/2026')
+    const prototype = Intl.DateTimeFormat.prototype
+    const format = Object.getOwnPropertyDescriptor(prototype, 'format')!
+    Object.defineProperty(prototype, 'format', { ...format, get: () => () => '10/21/2026' })
     try {
       expect(dayKey('2026-10-20T22:30:00Z')).toBe('2026-10-21')
     } finally {
-      formatted.mockRestore()
+      Object.defineProperty(prototype, 'format', format)
     }
   })
 })
