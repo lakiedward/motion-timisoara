@@ -16,8 +16,8 @@ A "Ședința de acum" card appears at the top of both the coach Panou (`/coach`)
 
 ## Rules
 
-- A session is "current" from 15 minutes before its start until its end. This matches the window of the parent entrance check-in. When several sessions overlap, the one that started earliest is shown.
-- Scanning stays disabled until the start, as in the catalog, with the text "Scanarea se deschide la HH:MM".
+- A session is "current" from one hour before its start until its end. This matches the window of the parent entrance check-in. When several sessions overlap, the one with the earliest scheduled start is shown.
+- Scanning becomes available when attendance opens. When the dashboard switches occurrences, the web scanner closes and the coach opens it again for the new session.
 - The card is not shown when there is no current session or no coach queue (non-coach roles).
 - Courses only; activities have no scan.
 
