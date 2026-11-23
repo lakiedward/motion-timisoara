@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   toast: { success: vi.fn(), message: vi.fn(), error: vi.fn() },
   navigate: vi.fn(),
   checkout: vi.fn(),
+  payment: { ready: true, android: false },
 }))
 vi.mock('@/api/payments/checkout-session', () => ({ startStripeCheckout: mocks.checkout }))
 
@@ -32,7 +33,7 @@ vi.mock('@/lib/auth-context', () => ({
 }))
 vi.mock('@/lib/stripe', () => ({ stripeConfigured: true }))
 vi.mock('./usePaymentAdapter', () => ({
-  usePaymentAdapter: () => ({ ready: true, android: false, adapter: { confirm: vi.fn() } }),
+  usePaymentAdapter: () => ({ ...mocks.payment, adapter: { confirm: vi.fn() } }),
 }))
 vi.mock('sonner', () => ({ toast: mocks.toast }))
 vi.mock('react-router-dom', async (importOriginal) => ({
@@ -66,6 +67,8 @@ function renderWizard(extra: Partial<Offering> = {}, kind: EnrollmentKind = 'CAM
 
 beforeEach(() => {
   vi.clearAllMocks()
+  mocks.payment.ready = true
+  mocks.payment.android = false
   mocks.children.mockResolvedValue([{ id: 'bebe', name: 'Bebe', birth_date: '2025-01-01' }])
   mocks.validate.mockResolvedValue({
     allowCash: false,
@@ -128,9 +131,16 @@ test('a free camp child can confirm Gratuit and enroll without card billing', as
   )
 })
 
-test.each(['ACTIVITY', 'CAMP', 'COURSE'] as const)(
-  'offers cash before billing for a paid %s',
-  async (kind) => {
+test.each([
+  { kind: 'ACTIVITY', android: false },
+  { kind: 'CAMP', android: false },
+  { kind: 'COURSE', android: false },
+  { kind: 'ACTIVITY', android: true },
+] as const)(
+  'offers cash before billing for a paid $kind (unavailable Android card: $android)',
+  async ({ kind, android }) => {
+    mocks.payment.android = android
+    mocks.payment.ready = !android
     mocks.validate.mockResolvedValue({
       allowCash: true,
       capacity: { available: 10 },
@@ -142,7 +152,13 @@ test.each(['ACTIVITY', 'CAMP', 'COURSE'] as const)(
     renderWizard({}, kind)
     await user.click(await screen.findByRole('checkbox', { name: /Bebe/ }))
     await user.click(screen.getByRole('button', { name: 'Continuă' }))
-    await user.click(screen.getByRole('radio', { name: /Cash, la antrenor/ }))
+    const cash = screen.getByRole('radio', { name: /Cash, la antrenor/ })
+    if (android) {
+      expect(screen.getByRole('radio', { name: /Card bancar/ })).toBeDisabled()
+      expect(cash).toBeChecked()
+    } else {
+      await user.click(cash)
+    }
     await user.click(screen.getByRole('checkbox', { name: /Confirm suma finală/ }))
     await user.click(screen.getByRole('button', { name: 'Continuă' }))
     expect(screen.queryByText('Facturare')).not.toBeInTheDocument()
