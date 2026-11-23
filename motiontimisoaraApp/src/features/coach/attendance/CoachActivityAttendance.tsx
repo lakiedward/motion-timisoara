@@ -9,6 +9,8 @@ import { StatusView } from '@/components/ui/status-view'
 import { todayInBucharest } from '@/features/admin/activities/activity-overview'
 import { ClubLocationListSkeleton } from '@/features/club/locations/ClubLocationListSkeleton'
 import { ActivityRoster } from '@/features/coach/activities/ActivityRoster'
+import { zonedCivilTimeToUtc } from '@/lib/course-program/occurrences'
+import { COURSE_TIME_ZONE } from '@/lib/course-program/recurrence'
 import { activityWhen } from '@/lib/panel-date'
 import { plural } from '@/lib/plural'
 import { cn } from '@/lib/utils'
@@ -97,7 +99,7 @@ export function ActivityAttendance({
     <ActivityRoster
       activityId={a.id}
       loadRoster={loadRoster}
-      opensOn={a.activity_date > today ? activityWhen(a) : null}
+      startsAt={zonedCivilTimeToUtc(a.activity_date, a.start_time, COURSE_TIME_ZONE).toISOString()}
     />
   )
   const groups = [

@@ -81,6 +81,7 @@ on:
       - 'supabase/tests/*course-package-checkout*'
       - 'supabase/migrations/00150_course_monthly_packages.sql'
       - 'supabase/migrations/00151_course_monthly_package_attendance.sql'
+      - 'supabase/migrations/00154_attendance_opening_window.sql'
       - 'supabase/tests/*course-monthly-packages*'
       - 'supabase/functions/course-monthly-package-contract.test.ts'
       - 'supabase/migrations/00152_course_day_packages.sql'

@@ -61,7 +61,7 @@ function ScannerControls({
       </Button>
       <p className="text-muted-foreground text-xs">
         Fără internet, codurile sunt păstrate {native ? 'pe telefon' : 'în acest browser'} până la
-        confirmarea serverului. Catalogul manual rămâne disponibil.
+        confirmarea serverului.{!locked && ' Catalogul manual rămâne disponibil.'}
       </p>
       {sheet}
       <SyncStatus queue={queue} snapshot={snapshot} pending={pending} rejected={rejected} />

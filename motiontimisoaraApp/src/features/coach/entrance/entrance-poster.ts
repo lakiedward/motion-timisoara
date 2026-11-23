@@ -5,7 +5,7 @@ export const POSTER_STEPS = [
 ]
 
 export const POSTER_WINDOW =
-  'Prezența se marchează de la 15 minute înainte de ședință până la final.'
+  'Prezența se poate marca cu cel mult o oră înainte de ședință și până la final.'
 
 const PAGE_CSS = `
 @page { size: A4 portrait; margin: 16mm; }

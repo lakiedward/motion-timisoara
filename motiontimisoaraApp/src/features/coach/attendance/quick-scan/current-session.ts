@@ -1,25 +1,19 @@
-import { useEffect, useState } from 'react'
 import type { AdminSession } from '@/api/attendance/admin-sessions'
 
-export const SCAN_LEAD_MS = 15 * 60 * 1000
+import { useAttendanceClock } from '@/features/admin/attendance/use-attendance-open'
+import { attendanceOpensAt } from '@/lib/attendance-window'
 
 export function currentSession(items: AdminSession[], now = Date.now()) {
   return (
     items
       .filter((s) => {
-        const start = Date.parse(s.startsAt)
         const end = Date.parse(s.endsAt)
-        return start - SCAN_LEAD_MS <= now && now < end
+        return attendanceOpensAt(s.startsAt) <= now && now < end
       })
       .sort((x, y) => x.startsAt.localeCompare(y.startsAt))[0] ?? null
   )
 }
 
 export function useCurrentSession(items: AdminSession[]) {
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 30_000)
-    return () => window.clearInterval(timer)
-  }, [])
-  return currentSession(items, now)
+  return currentSession(items, useAttendanceClock(items))
 }

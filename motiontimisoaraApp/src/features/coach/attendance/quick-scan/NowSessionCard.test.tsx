@@ -37,14 +37,15 @@ async function renderCard(session: AdminSession, onCatalog = vi.fn()) {
     vi.fn(),
   )
   await queue.load()
-  render(
+  const card = (selected: AdminSession) => (
     <MemoryRouter>
       <AttendanceContext.Provider value={queue}>
-        <NowSessionCard session={session} onCatalog={onCatalog} />
+        <NowSessionCard session={selected} onCatalog={onCatalog} />
       </AttendanceContext.Provider>
-    </MemoryRouter>,
+    </MemoryRouter>
   )
-  return onCatalog
+  const { rerender } = render(card(session))
+  return { onCatalog, setSession: (selected: AdminSession) => rerender(card(selected)) }
 }
 
 it('opens the web scanner for the current session', async () => {
@@ -56,18 +57,38 @@ it('opens the web scanner for the current session', async () => {
 })
 
 it('opens the catalog of the session', async () => {
-  const onCatalog = await renderCard(base)
+  const { onCatalog } = await renderCard(base)
   await userEvent.click(screen.getByRole('button', { name: /Catalogul/ }))
   expect(onCatalog).toHaveBeenCalledOnce()
 })
 
-it('keeps scanning closed until the session starts', async () => {
+it('closes the previous camera when the dashboard switches occurrences', async () => {
+  const { setSession } = await renderCard(base)
+  await userEvent.click(screen.getByRole('button', { name: /Scanează cod QR/ }))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+  setSession({ ...base, id: 'occ-2', courseName: 'Următorul curs' })
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: /Scanează cod QR/ }))
+  expect(screen.getByRole('dialog', { name: /Următorul curs/ })).toBeInTheDocument()
+})
+
+it('keeps scanning closed until one hour before the start', async () => {
   await renderCard({
     ...base,
-    startsAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+    startsAt: new Date(Date.now() + 61 * 60_000).toISOString(),
+    endsAt: new Date(Date.now() + 121 * 60_000).toISOString(),
   })
   expect(screen.getByRole('button', { name: /Scanează cod QR/ })).toBeDisabled()
   expect(screen.getByText(/Scanarea se deschide la/)).toBeInTheDocument()
+})
+
+it('allows scanning before the session once attendance opens', async () => {
+  await renderCard({
+    ...base,
+    startsAt: new Date(Date.now() + 55 * 60_000).toISOString(),
+    endsAt: new Date(Date.now() + 115 * 60_000).toISOString(),
+  })
+  expect(screen.getByRole('button', { name: /Scanează cod QR/ })).toBeEnabled()
 })
 
 it('renders nothing without a coach attendance queue', () => {

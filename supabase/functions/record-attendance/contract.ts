@@ -82,7 +82,7 @@ const rejectionMessages: Record<string, string> = {
     "Pachetul copilului a expirat. Părintele cumpără un pachet nou din Înscrieri.",
   PACKAGE_NOT_STARTED:
     "Pachetul copilului începe după data ședinței, nu acoperă ședința aceasta.",
-  TOO_EARLY: "Pontajul se deschide la începutul ședinței.",
+  TOO_EARLY: "Pontajul se deschide cu o oră înainte de ședință.",
   INVALID_BALANCE: "Soldul ședințelor trebuie verificat de administrator.",
   UNAUTHORIZED: "Sesiunea a expirat. Autentifică-te din nou.",
   SERVER_ERROR: "Prezența nu a putut fi sincronizată. Vom reîncerca.",

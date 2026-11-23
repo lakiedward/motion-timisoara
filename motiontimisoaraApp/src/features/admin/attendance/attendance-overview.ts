@@ -1,5 +1,7 @@
 import type { AdminSession } from '@/api/attendance/admin-sessions'
 import { fold } from '@/features/admin/courses/course-overview'
+import { attendanceOpensAt } from '@/lib/attendance-window'
+import { bucharestDate } from '@/lib/course-packages/package-days'
 import { plural } from '@/lib/plural'
 
 export type SessionStatus = 'today' | 'unmarked' | 'upcoming' | 'past' | 'all'
@@ -20,12 +22,6 @@ export const NO_SESSION_FILTERS: SessionFilters = { status: 'unmarked', sport: '
 export const countSessions = (n: number) => plural(n, 'ședință', 'ședințe')
 
 const TZ = 'Europe/Bucharest'
-const dayKeyFormat = new Intl.DateTimeFormat('en-CA', {
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  timeZone: TZ,
-})
 const timeFormat = new Intl.DateTimeFormat('ro-RO', { hour: '2-digit', minute: '2-digit', timeZone: TZ })
 const dateFormat = new Intl.DateTimeFormat('ro-RO', {
   weekday: 'long',
@@ -34,7 +30,7 @@ const dateFormat = new Intl.DateTimeFormat('ro-RO', {
   timeZone: TZ,
 })
 
-export const dayKey = (iso: string | number) => dayKeyFormat.format(new Date(iso))
+export const dayKey = (iso: string | number) => bucharestDate(new Date(iso))
 
 export const formatTime = (iso: string) => timeFormat.format(new Date(iso))
 
@@ -53,7 +49,7 @@ export const isStarted = (s: AdminSession, now = Date.now()) =>
   new Date(s.startsAt).getTime() <= now
 
 export const isUnmarked = (s: AdminSession, now = Date.now()) =>
-  isStarted(s, now) && s.enrolledCount > 0 && s.markedCount < s.enrolledCount
+  attendanceOpensAt(s.startsAt) <= now && s.enrolledCount > 0 && s.markedCount < s.enrolledCount
 
 export function matchesStatus(s: AdminSession, status: SessionStatus, now = Date.now()) {
   if (status === 'today') return dayKey(s.startsAt) === dayKey(now)

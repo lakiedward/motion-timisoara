@@ -7,6 +7,7 @@ import { CourseFilterBar, type FilterOption } from '@/features/admin/courses/Cou
 import { ClubLocationListSkeleton } from '@/features/club/locations/ClubLocationListSkeleton'
 import { plural } from '@/lib/plural'
 import { SessionGroupCard } from './SessionGroupCard'
+import { useAttendanceClock } from './use-attendance-open'
 import {
   NO_SESSION_FILTERS,
   countSessions,
@@ -58,21 +59,22 @@ export function SessionsOverview({
   const [filters, setFilters] = useState(NO_SESSION_FILTERS)
   const [toggled, setToggled] = useState<Record<string, boolean>>({})
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const now = useAttendanceClock(items)
 
   const { query, status } = filters
   const searching = query.trim().length > 0
-  const counts = useMemo(() => sessionStatusCounts(items), [items])
+  const counts = useMemo(() => sessionStatusCounts(items, now), [items, now])
   const sports = useMemo(
-    () => sportCounts(filterSessions(items, { status, sport: '', query: '' })),
-    [items, status],
+    () => sportCounts(filterSessions(items, { status, sport: '', query: '' }, now)),
+    [items, status, now],
   )
-  const visible = useMemo(() => filterSessions(items, filters), [items, filters])
+  const visible = useMemo(() => filterSessions(items, filters, now), [items, filters, now])
   const elsewhere = searching
-    ? filterSessions(items, { ...filters, status: 'all' }).length - visible.length
+    ? filterSessions(items, { ...filters, status: 'all' }, now).length - visible.length
     : 0
   const groups = useMemo(
-    () => groupSessionsByOrganizer(items, visible, status),
-    [items, visible, status],
+    () => groupSessionsByOrganizer(items, visible, status, now),
+    [items, visible, status, now],
   )
   const firstOpen = new Set(
     (['club', 'coach'] as const).map((k) => groups.find((g) => g.kind === k)?.key),

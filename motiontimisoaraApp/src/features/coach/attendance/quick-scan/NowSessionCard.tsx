@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
 import { ClipboardList, ScanLine } from 'lucide-react'
 import type { AdminSession } from '@/api/attendance/admin-sessions'
+import { attendanceOpensAt } from '@/lib/attendance-window'
 import { Button } from '@/components/ui/button'
 import { formatTime } from '@/features/admin/attendance/attendance-overview'
-import { useSessionStarted } from '@/features/admin/attendance/use-session-started'
+import { useAttendanceOpen } from '@/features/admin/attendance/use-attendance-open'
 import { useAttendanceQueue } from '../attendance-context'
 import type { AttendanceQueue } from '../attendance-queue'
 import { sessionWhen } from '../coach-session-list'
@@ -20,7 +21,7 @@ function Card({
   ...catalog
 }: { queue: AttendanceQueue; session: AdminSession } & CatalogAction) {
   const label = `${session.courseName} · ${sessionWhen(session)}`
-  const started = useSessionStarted(session.startsAt)
+  const attendanceOpen = useAttendanceOpen(session.startsAt)
   const { snapshot, pending, rejected } = useQueueState(queue)
   const { scan, cameraOpen, sheet } = useSessionScan(queue, session.id, label)
   const entries = snapshot.entries
@@ -65,7 +66,7 @@ function Card({
           <Button
             type="button"
             className="w-full sm:w-auto"
-            disabled={cameraOpen || !started || !snapshot.ready}
+            disabled={cameraOpen || !attendanceOpen || !snapshot.ready}
             onClick={scan}
           >
             <ScanLine aria-hidden="true" />{' '}
@@ -73,9 +74,9 @@ function Card({
           </Button>
         </div>
       </div>
-      {!started && (
+      {!attendanceOpen && (
         <p className="text-muted-foreground text-sm">
-          Scanarea se deschide la {formatTime(session.startsAt)}.
+          Scanarea se deschide la {formatTime(new Date(attendanceOpensAt(session.startsAt)).toISOString())}.
         </p>
       )}
       {sheet}
@@ -98,5 +99,5 @@ function Card({
 
 export function NowSessionCard(props: { session: AdminSession } & CatalogAction) {
   const queue = useAttendanceQueue()
-  return queue ? <Card {...props} queue={queue} /> : null
+  return queue ? <Card key={props.session.id} {...props} queue={queue} /> : null
 }

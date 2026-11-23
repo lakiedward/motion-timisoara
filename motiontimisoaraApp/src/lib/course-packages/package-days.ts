@@ -1,12 +1,14 @@
 import { dateLabel } from './package-month'
 
+const bucharestDateFormat = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Europe/Bucharest',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+})
+
 export function bucharestDate(now: Date = new Date()): string {
-  const parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Europe/Bucharest',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(now)
+  const parts = bucharestDateFormat.formatToParts(now)
   const { year, month, day } = Object.fromEntries(parts.map(({ type, value }) => [type, value]))
   return `${year}-${month}-${day}`
 }

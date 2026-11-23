@@ -9,17 +9,20 @@ import {
   type ActivityAttendanceStatus,
 } from '@/api/attendance/activity-attendance'
 import { RosterList } from '@/features/admin/attendance/RosterList'
+import { SessionOpensNotice } from '@/features/admin/attendance/SessionOpensNotice'
+import { useAttendanceOpen } from '@/features/admin/attendance/use-attendance-open'
 
 export function ActivityRoster({
   activityId,
-  opensOn,
+  startsAt,
   loadRoster = getActivityRoster,
 }: {
   activityId: string
-  opensOn: string | null
+  startsAt: string
   loadRoster?: (activityId: string) => Promise<RosterEntry[]>
 }) {
   const qc = useQueryClient()
+  const attendanceOpen = useAttendanceOpen(startsAt)
   const roster = useQuery({
     queryKey: ['activity-roster', activityId],
     queryFn: () => loadRoster(activityId),
@@ -45,17 +48,14 @@ export function ActivityRoster({
 
   return (
     <div className="space-y-3">
-      {opensOn && (
-        <p className="bg-muted text-muted-foreground rounded-xl px-4 py-3 text-sm">
-          Pontajul se deschide în ziua activității, {opensOn}.
-        </p>
-      )}
+      {!attendanceOpen && <SessionOpensNotice startsAt={startsAt} />}
       <RosterList
         rows={roster.data ?? []}
         loading={roster.isLoading}
         error={roster.isError}
         onRetry={() => roster.refetch()}
-        busy={mark.isPending || !!opensOn}
+        busy={mark.isPending}
+        locked={!attendanceOpen}
         emptyText="Niciun copil înscris la această activitate încă. Înscrierile le fac părinții din contul lor."
         onMark={(r, status) =>
           mark.mutate({ childIds: [r.child_id], childName: r.child_name, status })

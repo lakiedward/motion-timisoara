@@ -67,7 +67,7 @@ test('o ședință viitoare explică de când se poate ponta și nu lasă marcar
   renderCatalog(session('2026-11-03T16:00:00.000Z'))
   expect(await screen.findByText('Ana Pop')).toBeInTheDocument()
   expect(
-    screen.getByText(/Pontajul se deschide la începutul ședinței, Marți 3 noiembrie/),
+    screen.getByText(/Pontajul se deschide Marți 3 noiembrie · 17:00/),
   ).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Prezent: Ana Pop' })).toBeDisabled()
   expect(screen.getByRole('button', { name: 'Absent: Dan Ionescu' })).toBeDisabled()
@@ -93,9 +93,9 @@ test('o ședință începută se pontează normal, fără mesaj', async () => {
   expect(screen.getByRole('button', { name: 'Toți prezenți' })).toBeEnabled()
 })
 
-test('pontajul se deschide singur la ora de început, fără reîncărcare', async () => {
+test('pontajul se deschide singur cu o oră înainte, fără reîncărcare', async () => {
   vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'], now: NOW })
-  renderCatalog(session('2026-10-28T13:01:00.000Z'))
+  renderCatalog(session('2026-10-28T14:01:00.000Z'))
   await act(async () => {
     await vi.advanceTimersByTimeAsync(100)
   })

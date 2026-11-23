@@ -1,5 +1,6 @@
 import type { AdminSession } from '@/api/attendance/admin-sessions'
 import {
+  dayKey,
   filterSessions,
   formatDay,
   formatTime,
@@ -52,12 +53,20 @@ const items = [
 ]
 
 describe('attendance overview', () => {
-  it('treats only started sessions with unmarked children as unmarked', () => {
+  it('treats open sessions with unmarked children as unmarked', () => {
     expect(items.filter((s) => isUnmarked(s, NOW)).map((s) => s.id)).toEqual([
       'past-unmarked',
       'past-partial',
       'today-early',
     ])
+  })
+
+  it('includes a session in the default filter at the attendance opening time', () => {
+    const startsAt = at('2026-10-20T13:00:00')
+    const eligible = session({ id: 'opens-now', startsAt })
+    const filter = { status: 'unmarked' as const, sport: '', query: '' }
+    expect(filterSessions([eligible], filter, NOW - 1)).toEqual([])
+    expect(filterSessions([eligible], filter, NOW)).toEqual([eligible])
   })
 
   it('counts every status', () => {
@@ -118,5 +127,16 @@ describe('attendance overview', () => {
     expect(formatTime('2026-10-27T15:00:00Z')).toBe('17:00')
     expect(formatTime('2026-10-20T14:00:00Z')).toBe('17:00')
     expect(formatDay('2026-10-20T22:30:00Z', NOW)).toBe('Mâine, miercuri 21 octombrie')
+  })
+
+  it('uses a stable ISO day key even when the locale formatter uses slashes', () => {
+    const prototype = Intl.DateTimeFormat.prototype
+    const format = Object.getOwnPropertyDescriptor(prototype, 'format')!
+    Object.defineProperty(prototype, 'format', { ...format, get: () => () => '10/21/2026' })
+    try {
+      expect(dayKey('2026-10-20T22:30:00Z')).toBe('2026-10-21')
+    } finally {
+      Object.defineProperty(prototype, 'format', format)
+    }
   })
 })

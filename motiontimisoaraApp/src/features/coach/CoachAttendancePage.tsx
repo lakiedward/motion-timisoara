@@ -16,6 +16,7 @@ import {
   sportCounts,
   type SessionStatus,
 } from '@/features/admin/attendance/attendance-overview'
+import { useAttendanceClock } from '@/features/admin/attendance/use-attendance-open'
 import { CourseFilterBar, type FilterOption } from '@/features/admin/courses/CourseFilterBar'
 import { ClubLocationListSkeleton } from '@/features/club/locations/ClubLocationListSkeleton'
 import { CoachLocationPanel } from '@/features/live-location/CoachLocationPanel'
@@ -24,7 +25,7 @@ import { AttendanceOfflineQueue } from './attendance/AttendanceScanner'
 import { CoachActivityAttendance } from './attendance/CoachActivityAttendance'
 import { CoachSessionCatalog } from './attendance/CoachSessionCatalog'
 import { NowSessionCard } from './attendance/quick-scan/NowSessionCard'
-import { useCurrentSession } from './attendance/quick-scan/current-session'
+import { currentSession } from './attendance/quick-scan/current-session'
 import { SessionDayList } from './attendance/SessionDayList'
 import {
   nearestSession,
@@ -60,24 +61,25 @@ export default function CoachAttendancePage() {
     retry: false,
   })
   const items = useMemo(() => toSessionList(data), [data])
-  const now = useCurrentSession(items)
+  const now = useAttendanceClock(items)
+  const scanSession = useMemo(() => currentSession(items, now), [items, now])
 
   const { query, status } = filters
   const searching = query.trim().length > 0
-  const counts = useMemo(() => sessionStatusCounts(items), [items])
+  const counts = useMemo(() => sessionStatusCounts(items, now), [items, now])
   const sports = useMemo(
-    () => sportCounts(filterSessions(items, { status, sport: '', query: '' })),
-    [items, status],
+    () => sportCounts(filterSessions(items, { status, sport: '', query: '' }, now)),
+    [items, status, now],
   )
-  const visible = useMemo(() => filterSessions(items, filters), [items, filters])
-  const { upcoming, past } = splitByTime(visible)
+  const visible = useMemo(() => filterSessions(items, filters, now), [items, filters, now])
+  const { upcoming, past } = splitByTime(visible, now)
   const recent = recentPast(past)
   const fold = !showOlder && !searching && status !== 'unmarked' && recent.length < past.length
   const shownPast = fold && (upcoming.length || recent.length) ? recent : past
   const olderCount = past.length - shownPast.length
   const listed = [...upcoming, ...shownPast]
 
-  const sel = listed.find((s) => s.id === selectedId) ?? nearestSession(listed)
+  const sel = listed.find((s) => s.id === selectedId) ?? nearestSession(listed, now)
 
   const set = (patch: Partial<typeof filters>) => setFilters((f) => ({ ...f, ...patch }))
   const select = (s: AdminSession) => {
@@ -237,7 +239,9 @@ export default function CoachAttendancePage() {
     <div>
       {header}
       {kindSwitch}
-      {now && <NowSessionCard session={now} onCatalog={() => openCatalog(now)} />}
+      {scanSession && (
+        <NowSessionCard session={scanSession} onCatalog={() => openCatalog(scanSession)} />
+      )}
       <CoachLocationPanel
         occurrenceId={sel?.id ?? null}
         startsAt={sel?.startsAt}

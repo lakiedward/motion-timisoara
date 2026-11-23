@@ -9,13 +9,14 @@ import { plural } from '@/lib/plural'
 import { cn } from '@/lib/utils'
 import { SessionOpensNotice } from './SessionOpensNotice'
 import { SessionRoster } from './SessionRoster'
-import { formatDay, formatTime, isStarted, isUnmarked } from './attendance-overview'
-import { useSessionStarted } from './use-session-started'
+import { formatDay, formatTime } from './attendance-overview'
+import { useAttendanceOpen } from './use-attendance-open'
 
 export function MarkBadge({ s }: { s: AdminSession }) {
-  if (!isStarted(s)) return <Badge variant="outline">Urmează</Badge>
+  const attendanceOpen = useAttendanceOpen(s.startsAt)
+  if (!attendanceOpen) return <Badge variant="outline">Urmează</Badge>
   if (!s.enrolledCount) return <Badge variant="outline">Fără copii</Badge>
-  if (isUnmarked(s))
+  if (s.markedCount < s.enrolledCount)
     return (
       <Badge variant="highlight">
         {s.markedCount ? `${s.markedCount} din ${s.enrolledCount} pontați` : 'Nepontată'}
@@ -34,7 +35,7 @@ export function AdminSessionRow({
   listKey?: string
 }) {
   const [open, setOpen] = useState(false)
-  const started = useSessionStarted(s.startsAt)
+  const attendanceOpen = useAttendanceOpen(s.startsAt)
   const panelId = `prezenta-${s.id}`
 
   return (
@@ -89,13 +90,13 @@ export function AdminSessionRow({
       </div>
       {open && (
         <div id={panelId} className="mt-3 space-y-3">
-          {!started && <SessionOpensNotice startsAt={s.startsAt} />}
+          {!attendanceOpen && <SessionOpensNotice startsAt={s.startsAt} />}
           <SessionRoster
             courseId={s.courseId}
             occurrenceId={s.id}
             startsAt={s.startsAt}
             listKey={listKey}
-            locked={!started}
+            locked={!attendanceOpen}
           />
         </div>
       )}

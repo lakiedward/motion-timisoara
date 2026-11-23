@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -20,8 +20,12 @@ vi.mock('@/api/coach', () => ({
 const mockedGetCoachSessions = vi.mocked(getCoachSessions)
 const mockedGetSessionRoster = vi.mocked(getSessionRoster)
 
-function renderPage() {
+function renderPage(initial?: ReturnType<typeof groups>) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  if (initial) {
+    queryClient.setQueryDefaults(['coach-sessions'], { staleTime: Infinity })
+    queryClient.setQueryData(['coach-sessions'], initial)
+  }
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>
@@ -302,7 +306,7 @@ test('căutarea găsește ședințele după curs sau locație și spune câte di
   expect(screen.getByRole('button', { name: /Alergare/ })).toBeInTheDocument()
 })
 
-test('filtrul Nepontate lasă doar ședințele începute cu copii nepontați', async () => {
+test('filtrul Nepontate lasă doar ședințele deschise cu copii nepontați', async () => {
   mockedGetCoachSessions.mockResolvedValue(
     groups({
       upcoming: [session({ id: 'viitoare' })],
@@ -321,4 +325,30 @@ test('filtrul Nepontate lasă doar ședințele începute cu copii nepontați', a
   expect(screen.getByText('Nepontată')).toBeInTheDocument()
   expect(screen.queryByText('Pontată')).not.toBeInTheDocument()
   expect(screen.queryByText('Urmează')).not.toBeInTheDocument()
+})
+
+test('Nepontate includes a session when attendance opens without refreshing', () => {
+  vi.useRealTimers()
+  vi.useFakeTimers({ now: new Date('2026-08-20T12:59:00Z') })
+  renderPage(groups({ upcoming: [session({ id: 's1' })] }))
+  fireEvent.click(screen.getByRole('button', { name: 'Nepontate 0' }))
+  expect(screen.getByText('Nicio ședință pentru filtrele alese.')).toBeInTheDocument()
+
+  act(() => vi.advanceTimersByTime(60_000))
+
+  expect(screen.getByRole('button', { name: 'Nepontate 1' })).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getByText('1 ședință')).toBeInTheDocument()
+})
+
+test('Azi rolls over at Bucharest midnight between session boundaries', () => {
+  vi.useRealTimers()
+  vi.useFakeTimers({ now: new Date('2026-08-19T20:59:00Z') })
+  renderPage(groups({ upcoming: [session({ id: 's1' })] }))
+  fireEvent.click(screen.getByRole('button', { name: 'Azi 0' }))
+  expect(screen.getByText('Nicio ședință pentru filtrele alese.')).toBeInTheDocument()
+
+  act(() => vi.advanceTimersByTime(60_000))
+
+  expect(screen.getByRole('button', { name: 'Azi 1' })).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getByText('1 ședință')).toBeInTheDocument()
 })
