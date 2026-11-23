@@ -15,7 +15,6 @@ import {
 import { createChild, getMyChildren } from '@/api/account'
 import { useAuth } from '@/lib/auth-context'
 import { formatRonOffer } from '@/lib/money'
-import { stripeConfigured } from '@/lib/stripe'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { CheckoutPaymentMethods, CheckoutPaymentStep } from './CheckoutPaymentStep'
@@ -82,9 +81,7 @@ export default function CheckoutWizard({
   const choice = effectiveChoice(offering.coursePackages, chosen)
   const [accepted, setAccepted] = useState(false)
   const [acceptedPrices, setAcceptedPrices] = useState<string | null>(null)
-  const [chosenMethod, setMethod] = useState<PaymentMethod>(
-    stripeConfigured ? initialMethod : 'CASH',
-  )
+  const [chosenMethod, setMethod] = useState<PaymentMethod | null>(null)
   const [billing, setBilling] = useState<BillingDetails>(() => ({
     name: user?.name ?? '',
     email: user?.email ?? '',
@@ -136,10 +133,17 @@ export default function CheckoutWizard({
   const cashBlocked =
     selected.some((cid) => verdictFor(cid)?.severity === 'warning') ||
     (selfSelected && adult?.severity === 'warning')
-  const cashUnavailable = (cashBlocked || !allowCash) && stripeConfigured
-  const method: PaymentMethod = cashUnavailable && chosenMethod === 'CASH' ? 'CARD' : chosenMethod
-
-  const paymentAvailable = stripeConfigured || (allowCash && !cashBlocked)
+  const cashAvailable = allowCash && !cashBlocked
+  const preferredMethod = chosenMethod ?? (payment.ready ? initialMethod : 'CASH')
+  const method = preferredMethod === 'CASH' && !cashAvailable ? 'CARD' : preferredMethod
+  const selectedMethodAvailable = method === 'CARD' ? payment.ready : cashAvailable
+  const paymentMethods = {
+    method,
+    allowCash,
+    cashBlocked,
+    cardAvailable: payment.ready,
+    paymentAvailable: payment.ready || cashAvailable,
+  }
 
   const priceFor = (childId: string) => verdictFor(childId)?.amount
   const childrenPriced = selected.every((childId) => quoteIsPriced(verdictFor(childId)))
@@ -151,7 +155,6 @@ export default function CheckoutWizard({
       (selfSelected ? (adult?.amount ?? 0) : 0)
     : 0
   const isFree = checkoutIsFree(participantCount, pricesReady, total)
-  const canPayWithoutStripe = isFree || paymentAvailable
   const steps = checkoutStepLabels(isFree, method, kind === 'CAMP')
   const lastStep = steps.length - 1
   const priceVersions = Object.fromEntries([
@@ -177,7 +180,7 @@ export default function CheckoutWizard({
       if ((kind === 'CAMP' || childIds.length > 0) && !validationReady) return false
       return capacityOk && pricesReady
     }
-    if (step === 1) return hasAccepted && pricesReady
+    if (step === 1) return hasAccepted && pricesReady && (isFree || selectedMethodAvailable)
     if (steps[step] === 'Facturare') return billingValid
     return true
   })()
@@ -196,9 +199,6 @@ export default function CheckoutWizard({
             ? 'Există o înscriere neplătită; alege plata cu cardul.'
             : 'Plata cash nu este disponibilă pentru această ofertă.',
         )
-      }
-      if (!canPayWithoutStripe) {
-        throw new Error('Nu există o metodă de plată disponibilă pentru această înscriere.')
       }
       if (!capacityOk) {
         throw new Error('Nu mai sunt locuri suficiente pentru selecția ta.')
@@ -315,7 +315,10 @@ export default function CheckoutWizard({
       : []),
   ]
 
-  const goNext = () => setStep((s) => Math.min(s + 1, lastStep))
+  const goNext = () => {
+    if (step === 1 && !isFree) setMethod(method)
+    setStep((s) => Math.min(s + 1, lastStep))
+  }
   const goBack = () => setStep((s) => Math.max(s - 1, 0))
 
   function switchMethod(next: PaymentMethod) {
@@ -462,14 +465,8 @@ export default function CheckoutWizard({
               setAcceptedPrices(currentPrices ?? null)
             }}
           />
-          {kind === 'COURSE' && !isFree && allowCash && !cashBlocked && stripeConfigured && (
-            <CheckoutPaymentMethods
-              method={method}
-              allowCash={allowCash}
-              cashBlocked={cashBlocked}
-              paymentAvailable={paymentAvailable}
-              switchMethod={setMethod}
-            />
+          {pricesReady && !isFree && (
+            <CheckoutPaymentMethods {...paymentMethods} switchMethod={setMethod} />
           )}
         </section>
       )}
@@ -493,10 +490,7 @@ export default function CheckoutWizard({
           }
           childCount={participantCount}
           total={pricesReady ? total : undefined}
-          method={method}
-          allowCash={allowCash}
-          cashBlocked={cashBlocked}
-          paymentAvailable={paymentAvailable}
+          {...paymentMethods}
           switchMethod={switchMethod}
         />
       )}
@@ -550,8 +544,7 @@ export default function CheckoutWizard({
         disabled={
           busy ||
           participantCount === 0 ||
-          !canPayWithoutStripe ||
-          (!isFree && method === 'CARD' && !payment.ready) ||
+          (!isFree && !selectedMethodAvailable) ||
           !validationReady ||
           !pricesReady ||
           !hasAccepted

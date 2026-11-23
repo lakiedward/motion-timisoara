@@ -203,12 +203,6 @@ export default function CompetitionFormPage({ baza }: { baza: CompetitionPortalB
         {id ? 'Editează concursul' : 'Concurs nou'}
       </h1>
       <RequiredFieldsNote />
-      {!id && (
-        <p className="text-muted-foreground mt-1 text-sm">
-          Traseele, categoriile și antrenorii se adaugă după prima salvare.
-        </p>
-      )}
-
       <form className="mt-6 space-y-6" onSubmit={(e) => void salveaza(e)} noValidate>
         <FormSection
           title="Despre concurs"
@@ -265,8 +259,18 @@ export default function CompetitionFormPage({ baza }: { baza: CompetitionPortalB
           }}
         />
 
+        {!id && (
+          <p id="competition-publication-note" className="text-muted-foreground text-sm">
+            Prima salvare face concursul vizibil public. Apoi poți adăuga trasee, categorii și
+            antrenori. Înscrierile se deschid după ce adaugi o categorie, dacă termenul nu a trecut.
+          </p>
+        )}
         <div className="flex flex-wrap gap-2 pt-2">
-          <Button type="submit" disabled={isSubmitting || sterge.isPending}>
+          <Button
+            type="submit"
+            disabled={isSubmitting || sterge.isPending}
+            aria-describedby={id ? undefined : 'competition-publication-note'}
+          >
             {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>
           <Button type="button" variant="outline" asChild>

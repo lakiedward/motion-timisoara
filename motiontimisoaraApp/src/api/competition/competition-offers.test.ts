@@ -26,6 +26,7 @@ vi.mock('@/lib/supabase', () => {
     const query = {
       select: () => query,
       eq: () => query,
+      is: () => query,
       order: () => query,
       limit: () => query,
       insert: (value: unknown) => {
@@ -270,6 +271,34 @@ test('refuses route deletion while a category references it', async () => {
   state.replies = [{ data: [{ id: 'category-1' }], error: null }]
   await expect(deleteCompetitionRoute(competitionId, routeId)).rejects.toThrow('Șterge sau mută')
   expect(state.queries.map((query) => query.action)).toEqual(['select'])
+})
+
+test('detaches a GPX without deleting the route or touching categories', async () => {
+  const path = `${competitionId}/routes/${routeId}/${fileId}.gpx`
+  state.replies = [
+    { data: { ...route, gpx_storage_path: path }, error: null },
+    { data: route, error: null },
+  ]
+  const input = { name: route.name, description: route.description }
+  await expect(updateCompetitionRoute(competitionId, routeId, input, null, path)).resolves.toEqual({
+    route,
+    cleanupFailed: false,
+  })
+  expect(state.queries).toEqual([
+    { table: 'competition_routes', action: 'select', payload: undefined },
+    { table: 'competition_routes', action: 'update', payload: { ...input, gpx_storage_path: null } },
+  ])
+  expect(state.removed).toEqual([[path]])
+})
+
+test('keeps the current GPX if it was replaced after the editor opened', async () => {
+  const path = `${competitionId}/routes/${routeId}/${fileId}.gpx`
+  state.replies = [{ data: { ...route, gpx_storage_path: path }, error: null }]
+  await expect(
+    updateCompetitionRoute(competitionId, routeId, route, null, 'previous.gpx'),
+  ).rejects.toThrow('Fișierul GPX s-a schimbat.')
+  expect(state.queries.map(({ action }) => action)).toEqual(['select'])
+  expect(state.removed).toEqual([])
 })
 
 test('deletes route gallery files and GPX only after deleting the route', async () => {

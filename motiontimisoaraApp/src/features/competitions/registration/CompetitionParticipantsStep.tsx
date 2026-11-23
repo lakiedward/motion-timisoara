@@ -24,6 +24,7 @@ type Props = {
   choice: Record<string, string>
   onChoice: (childId: string, categoryId: string) => void
   categoryOptions: Option[]
+  requestedCategory?: string
   verdictFor: (key: string) => CompetitionRegistrationVerdict | undefined
   includeSelf: boolean
   onIncludeSelf: (value: boolean) => void
@@ -48,6 +49,12 @@ export function CompetitionParticipantsStep(props: Props) {
   const self = props.verdictFor('self')
   return (
     <section className="space-y-4" aria-label="Copii și categorii">
+      {props.requestedCategory && (props.children?.length ?? 0) > 1 && (
+        <p className="text-muted-foreground text-sm">
+          Ai ales categoria <strong>{props.requestedCategory}</strong>. Alege categoria în dreptul
+          copilului pe care vrei să-l înscrii.
+        </p>
+      )}
       {props.showChildren &&
         (props.childrenLoading ? (
           <Skeleton className="h-20 rounded-xl" />

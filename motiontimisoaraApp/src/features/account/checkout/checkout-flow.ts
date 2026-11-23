@@ -48,7 +48,7 @@ export function advanceHint(step: string, participantCount: number, accepted: bo
 }
 
 export const STEP_COPY: Record<string, { title: string; text: string }> = {
-  Copii: { title: 'Cine participă?', text: 'Alege pachetul și copiii pe care îi înscrii.' },
+  Copii: { title: 'Cine participă?', text: 'Alege copiii pe care îi înscrii.' },
   Participanți: { title: 'Cine participă?', text: 'Alege cine merge în tabără.' },
   Detalii: { title: 'Verifică suma', text: 'Confirmă prețul înainte de plată.' },
   Facturare: { title: 'Date de facturare', text: 'Le folosim pentru chitanța plății cu cardul.' },

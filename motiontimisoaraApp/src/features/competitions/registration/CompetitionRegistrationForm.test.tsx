@@ -15,6 +15,7 @@ import type { PublicCompetition } from '@/api/competition/competitions'
 import type { CompetitionCategory, CompetitionRoute } from '@/api/competition/competition-offers'
 
 const authRole = vi.hoisted(() => ({ value: 'PARENT' }))
+const card = vi.hoisted(() => ({ ready: false }))
 
 vi.mock('@/api/account', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/account')>()),
@@ -35,7 +36,7 @@ vi.mock('@/lib/auth-context', () => ({
   }),
 }))
 vi.mock('@/features/account/checkout/usePaymentAdapter', () => ({
-  usePaymentAdapter: () => ({ adapter: { confirm: vi.fn() }, ready: false }),
+  usePaymentAdapter: () => ({ adapter: { confirm: vi.fn() }, ready: card.ready }),
 }))
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), message: vi.fn() } }))
 
@@ -102,6 +103,7 @@ function renderRegistration(availableCategories = [category], query = '', routes
 
 beforeEach(() => {
   authRole.value = 'PARENT'
+  card.ready = false
   vi.mocked(getMyChildren).mockReset()
   vi.mocked(validateCompetitionRegistration).mockReset()
   vi.mocked(createCompetitionRegistration).mockReset()
@@ -343,7 +345,8 @@ test('antrenorul poate selecta propria înscriere fără încărcarea copiilor',
   expect(getMyChildren).not.toHaveBeenCalled()
 })
 
-test('adultul poate alege plata cash pentru propria înscriere cu preț pozitiv', async () => {
+test('adultul poate alege numerar înainte de facturare pentru înscrierea cu taxă', async () => {
+  card.ready = true
   const user = userEvent.setup()
   vi.mocked(getMyChildren).mockResolvedValue([])
   const adultCategory = {
@@ -382,17 +385,12 @@ test('adultul poate alege plata cash pentru propria înscriere cu preț pozitiv'
   await pickCategory(user, screen.getByLabelText('Categoria mea'), adultCategory)
   await screen.findByText('Preț verificat: 120,00 lei')
   await goNext(user)
+  expect(screen.getByRole('radio', { name: /Card bancar/ })).toBeChecked()
+  await user.click(screen.getByRole('radio', { name: /Cash, la antrenor/ }))
   await user.click(screen.getByRole('checkbox', { name: /Confirm categoriile/ }))
   await goNext(user)
-  expect(
-    screen.getByText('Completează toate datele de facturare ca să continui.'),
-  ).toBeInTheDocument()
-  await user.type(screen.getByLabelText('Adresă'), 'Strada Test 1')
-  await user.type(screen.getByLabelText('Oraș'), 'Timișoara')
-  await user.type(screen.getByLabelText('Cod poștal'), '300001')
-  await goNext(user)
+  expect(screen.queryByLabelText('Adresă')).not.toBeInTheDocument()
   expect(screen.getByText('Sumar comandă')).toBeInTheDocument()
-  await user.click(screen.getByRole('radio', { name: /Cash, la antrenor/ }))
   await user.click(screen.getByRole('button', { name: 'Finalizează înscrierea' }))
   await waitFor(() =>
     expect(createCompetitionRegistration).toHaveBeenCalledWith({
@@ -405,7 +403,7 @@ test('adultul poate alege plata cash pentru propria înscriere cu preț pozitiv'
   )
 })
 
-test('?categorie= preselectează categoria pentru primul copil, fără să o forțeze', async () => {
+test('?categorie= preselectează categoria când părintele are un singur copil', async () => {
   const user = userEvent.setup()
   const other = { ...category, id: 'category-2', name: '11–13 ani', age_from: 11, age_to: 13 }
   vi.mocked(validateCompetitionRegistration).mockResolvedValue({
@@ -432,6 +430,27 @@ test('?categorie= preselectează categoria pentru primul copil, fără să o for
   ])
   await pickCategory(user, trigger, category)
   await waitFor(() => expect(trigger).toHaveTextContent('8–10 ani'))
+})
+
+test('?categorie= păstrează categoria și cere alegerea copilului dacă sunt mai mulți', async () => {
+  vi.mocked(getMyChildren).mockResolvedValue([
+    { id: 'child-1', name: 'Copil Audit', birth_date: '2017-10-01' },
+    { id: 'child-2', name: 'Al doilea copil', birth_date: '2017-06-01' },
+  ] as never)
+  const user = userEvent.setup()
+  renderRegistration([category], '?categorie=category-1')
+  expect(await screen.findByText(/Ai ales categoria/)).toHaveTextContent(category.name)
+  expect(screen.getByLabelText('Copil Audit')).toHaveTextContent('Nu înscrie acest copil')
+  const second = screen.getByLabelText('Al doilea copil')
+  expect(second).toHaveTextContent('Nu înscrie acest copil')
+  expect(validateCompetitionRegistration).not.toHaveBeenCalled()
+  vi.mocked(validateCompetitionRegistration).mockResolvedValue({ results: [], allowCash: false })
+  await pickCategory(user, second, category)
+  await waitFor(() =>
+    expect(validateCompetitionRegistration).toHaveBeenCalledWith(competition.id, [
+      { childId: 'child-2', categoryId: category.id },
+    ]),
+  )
 })
 
 test('?categorie= necunoscută nu preselectează nimic', async () => {

@@ -286,9 +286,9 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
         try {
           await incarcaRegulamentFisier(campId, fisierLocal)
         } catch {
-          toast.error('Tabăra a fost creată, dar fișierul regulamentului nu a putut fi urcat.')
+          toast.error('Tabăra a fost creată. Încarcă din nou regulamentul din editare.')
           void qc.invalidateQueries({ queryKey: ['taberele-mele'] })
-          navigate(baza)
+          navigate(`${baza}/${campId}/edit`)
           return
         }
       }
@@ -501,6 +501,11 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
           />
         )}
 
+        {!eEditare && step === 2 && (
+          <p className="text-muted-foreground text-sm">
+            Tabăra devine vizibilă public după salvare.
+          </p>
+        )}
         <div className="flex flex-wrap gap-3">
           {step > 0 && (
             <Button

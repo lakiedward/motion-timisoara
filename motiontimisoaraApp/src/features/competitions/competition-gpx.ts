@@ -10,6 +10,8 @@ export const maxCompetitionGpxBytes = 12 * 1024 * 1024
 export const maxCompetitionGpxPoints = 125_000
 export const maxCompetitionMapPoints = 20_000
 
+export class CompetitionGpxValidationError extends Error {}
+
 function childrenNamed(element: Element, name: string): Element[] {
   return Array.from(element.children).filter((child) => child.localName === name)
 }
@@ -30,7 +32,7 @@ function pointFromElement(element: Element): GpxPoint {
     longitude < -180 ||
     longitude > 180
   ) {
-    throw new Error('Fișierul GPX conține coordonate invalide.')
+    throw new CompetitionGpxValidationError('Fișierul GPX conține coordonate invalide.')
   }
 
   return [latitude, longitude]
@@ -41,14 +43,14 @@ export function parseCompetitionGpx(
   mapPointLimit = maxCompetitionMapPoints,
 ): CompetitionGpx {
   if (new TextEncoder().encode(xml).byteLength > maxCompetitionGpxBytes) {
-    throw new Error('Fișierul GPX depășește limita de 12 MB.')
+    throw new CompetitionGpxValidationError('Fișierul GPX depășește limita de 12 MB.')
   }
   if (/<!\s*(?:DOCTYPE|ENTITY)\b/i.test(xml)) {
-    throw new Error('Fișierul GPX conține o declarație XML nepermisă.')
+    throw new CompetitionGpxValidationError('Fișierul GPX conține o declarație XML nepermisă.')
   }
   const pointTags = xml.match(/<(?:[\w.-]+:)?(?:trkpt|rtept)(?=[\s/>])/gi)
   if (pointTags && pointTags.length > maxCompetitionGpxPoints) {
-    throw new Error('Traseul GPX are prea multe puncte pentru hartă.')
+    throw new CompetitionGpxValidationError('Traseul GPX are prea multe puncte pentru hartă.')
   }
 
   const document = new DOMParser().parseFromString(xml, 'application/xml')
@@ -56,7 +58,7 @@ export function parseCompetitionGpx(
     document.documentElement.localName !== 'gpx' ||
     document.getElementsByTagName('parsererror').length > 0
   ) {
-    throw new Error('Fișierul GPX nu este valid.')
+    throw new CompetitionGpxValidationError('Fișierul GPX nu este valid.')
   }
 
   const sourceSegments: Element[][] = []
@@ -66,11 +68,11 @@ export function parseCompetitionGpx(
     if (elements.length === 0) return
     pointCount += elements.length
     if (pointCount > maxCompetitionGpxPoints) {
-      throw new Error('Traseul GPX are prea multe puncte pentru hartă.')
+      throw new CompetitionGpxValidationError('Traseul GPX are prea multe puncte pentru hartă.')
     }
     sourceSegments.push(elements)
     if (sourceSegments.length > 500) {
-      throw new Error('Traseul GPX are prea multe segmente pentru hartă.')
+      throw new CompetitionGpxValidationError('Traseul GPX are prea multe segmente pentru hartă.')
     }
   }
 
@@ -84,7 +86,7 @@ export function parseCompetitionGpx(
   }
 
   if (pointCount === 0) {
-    throw new Error('Fișierul GPX nu conține un traseu.')
+    throw new CompetitionGpxValidationError('Fișierul GPX nu conține un traseu.')
   }
 
   const displayStride = Math.max(
@@ -130,7 +132,7 @@ export async function loadCompetitionGpx(
   if (!reader) {
     const buffer = await response.arrayBuffer()
     if (buffer.byteLength > maxCompetitionGpxBytes) {
-      throw new Error('Fișierul GPX depășește limita de 12 MB.')
+      throw new CompetitionGpxValidationError('Fișierul GPX depășește limita de 12 MB.')
     }
     return parseCompetitionGpx(new TextDecoder('utf-8', { fatal: true }).decode(buffer))
   }
@@ -145,7 +147,7 @@ export async function loadCompetitionGpx(
       bytesRead += value.byteLength
       if (bytesRead > maxCompetitionGpxBytes) {
         await reader.cancel()
-        throw new Error('Fișierul GPX depășește limita de 12 MB.')
+        throw new CompetitionGpxValidationError('Fișierul GPX depășește limita de 12 MB.')
       }
       xml += decoder.decode(value, { stream: true })
     }

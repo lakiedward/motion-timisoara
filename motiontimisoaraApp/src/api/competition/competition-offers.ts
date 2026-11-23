@@ -273,6 +273,7 @@ export async function updateCompetitionRoute(
   routeId: string,
   input: CompetitionRouteInput,
   file: File | null,
+  detachGpx?: string,
 ): Promise<{ route: CompetitionRoute; cleanupFailed: boolean }> {
   const values = validateRoute(input)
   const currentResult = await offersDb
@@ -284,21 +285,28 @@ export async function updateCompetitionRoute(
   if (currentResult.error) throw currentResult.error
 
   const oldPath = currentResult.data.gpx_storage_path
+  if (detachGpx && detachGpx !== oldPath) {
+    throw new Error('Fișierul GPX s-a schimbat. Închide editorul și deschide din nou traseul.')
+  }
   const newPath = file ? await uploadRouteGpx(competitionId, routeId, file) : null
-  const nextPath = newPath ?? oldPath
-  const result = await offersDb
+  const gpxChanged = Boolean(newPath || detachGpx)
+  const update = offersDb
     .from('competition_routes')
-    .update({ ...values, gpx_storage_path: nextPath })
+    .update(gpxChanged ? { ...values, gpx_storage_path: newPath } : values)
     .eq('competition_id', competitionId)
     .eq('id', routeId)
-    .select()
-    .single()
+  const guardedUpdate = gpxChanged
+    ? oldPath
+      ? update.eq('gpx_storage_path', oldPath)
+      : update.is('gpx_storage_path', null)
+    : update
+  const result = await guardedUpdate.select().single()
   if (result.error) {
     if (newPath) await removeRouteGpx(newPath)
     throw result.error
   }
 
-  const cleanupFailed = oldPath && oldPath !== nextPath ? await removeRouteGpx(oldPath) : false
+  const cleanupFailed = oldPath && gpxChanged ? await removeRouteGpx(oldPath) : false
   return { route: result.data, cleanupFailed }
 }
 

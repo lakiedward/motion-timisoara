@@ -55,7 +55,8 @@ test('renders route geometry, fits the map, and offers the GPX download', async 
   vi.stubEnv('VITE_CARTO_BASEMAP_API_KEY', 'test-only')
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(gpx, { status: 200 })))
   renderRoute('https://example.test/route.gpx', 'https://example.test/route.gpx?download=true')
-  expect(screen.getByRole('link', { name: /Descarcă GPX/ })).toHaveAttribute(
+  expect(screen.queryByRole('link', { name: /Descarcă GPX/ })).not.toBeInTheDocument()
+  expect(await screen.findByRole('link', { name: /Descarcă GPX/ })).toHaveAttribute(
     'href',
     'https://example.test/route.gpx?download=true',
   )
@@ -72,6 +73,13 @@ test('renders route geometry, fits the map, and offers the GPX download', async 
     { padding: [16, 16], maxZoom: 15 },
   )
   expect(screen.getByRole('region', { name: 'Harta traseului Copii 8-10 ani' })).toBeVisible()
+})
+
+test('does not offer a corrupt GPX for download', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('<gpx><invalid>')))
+  renderRoute('https://example.test/corupt.gpx')
+  expect(await screen.findByRole('alert')).toHaveTextContent('Fișierul GPX nu este valid.')
+  expect(screen.queryByRole('link', { name: /Descarcă GPX/ })).not.toBeInTheDocument()
 })
 
 test('uses OpenStreetMap tiles when the CARTO key is missing', async () => {
