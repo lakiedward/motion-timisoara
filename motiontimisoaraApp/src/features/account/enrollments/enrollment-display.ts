@@ -4,6 +4,7 @@ import {
   expiredCardPayment,
   expiredMonthlyPayment,
 } from '@/api/payments/enrollments'
+import { bucharestDate } from '@/lib/course-packages/package-days'
 import { dateLabel, monthName } from '@/lib/course-packages/package-month'
 import { plural } from '@/lib/plural'
 
@@ -52,10 +53,6 @@ type SessionsSource = {
   payments?: EnrollmentRow['payments']
 }
 
-export function bucharestToday(now: Date = new Date()): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Bucharest' }).format(now)
-}
-
 function packageName(item: MonthlyPackage): string {
   return item.validity === 'DAYS'
     ? `Pachet din ${dateLabel(item.valid_from)}`
@@ -69,7 +66,7 @@ function monthlyLine(item: MonthlyPackage, today: string): string {
   return `${name}: ${item.sessions - item.sessions_used} rămase din ${item.sessions}, expiră pe ${dateLabel(item.valid_until)}`
 }
 
-export function sessionsLines(e: SessionsSource, today: string = bucharestToday()): string[] {
+export function sessionsLines(e: SessionsSource, today: string = bucharestDate()): string[] {
   if (e.kind !== 'COURSE') return []
   const monthly = [...(e.monthly_packages ?? [])].sort((a, b) =>
     a.valid_from.localeCompare(b.valid_from),

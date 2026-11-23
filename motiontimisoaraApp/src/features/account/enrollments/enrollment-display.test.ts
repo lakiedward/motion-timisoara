@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 
 import { sessionsLines } from './enrollment-display'
 
@@ -34,25 +34,42 @@ test('a running monthly package shows what is left and when it expires', () => {
   ])
 })
 
+const pendingMonthly = {
+  ...base,
+  status: 'PENDING',
+  payments: [
+    {
+      id: 'payment',
+      created_at: '2026-11-01T00:00:00Z',
+      method: 'CASH',
+      status: 'PENDING',
+      amount: 20000,
+      currency: 'RON',
+      paid_at: null,
+      pricing_snapshot: { validity: 'CALENDAR_MONTH', validMonth: '2026-11' },
+    },
+  ],
+}
+
 test('a pending monthly payment uses the same reference date as the package lines', () => {
-  const enrollment = {
-    ...base,
-    status: 'PENDING',
-    payments: [
-      {
-        id: 'payment',
-        created_at: '2026-11-01T00:00:00Z',
-        method: 'CASH',
-        status: 'PENDING',
-        amount: 20000,
-        currency: 'RON',
-        paid_at: null,
-        pricing_snapshot: { validity: 'CALENDAR_MONTH', validMonth: '2026-11' },
-      },
-    ],
+  expect(sessionsLines(pendingMonthly, '2026-11-30')).toEqual(['Începe după confirmarea plății'])
+  expect(sessionsLines(pendingMonthly, '2026-12-01')).toEqual([])
+})
+
+test('the default package date works when the browser formats dates with slashes', () => {
+  vi.useFakeTimers({ now: new Date('2026-11-30T21:59:59Z') })
+  const format = vi.spyOn(Intl.DateTimeFormat.prototype as { format: unknown }, 'format', 'get')
+  try {
+    format.mockReturnValue(() => '11/30/2026')
+    expect(sessionsLines(pendingMonthly)).toEqual(['Începe după confirmarea plății'])
+
+    vi.setSystemTime(new Date('2026-11-30T22:00:00Z'))
+    format.mockReturnValue(() => '12/1/2026')
+    expect(sessionsLines(pendingMonthly)).toEqual([])
+  } finally {
+    format.mockRestore()
+    vi.useRealTimers()
   }
-  expect(sessionsLines(enrollment, '2026-11-30')).toEqual(['Începe după confirmarea plății'])
-  expect(sessionsLines(enrollment, '2026-12-01')).toEqual([])
 })
 
 test('sessions that never expire are named apart from the monthly package', () => {
