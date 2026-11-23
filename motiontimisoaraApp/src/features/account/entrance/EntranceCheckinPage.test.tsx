@@ -95,6 +95,86 @@ test('cu doi copii, părintele alege înainte să marcheze', async () => {
   expect(button).toBeEnabled()
 })
 
+test('after check-in the remaining child requires a new explicit selection', async () => {
+  offer([maria, ion])
+  vi.mocked(entranceCheckin).mockImplementation(async ({ childId }) => {
+    offer([{ ...maria, state: 'ALREADY_PRESENT' }, ion])
+    return {
+      success: true,
+      outcome: 'recorded',
+      occurrenceId: 'o1',
+      childId,
+      childName: childId === maria.childId ? 'Maria' : 'Ion',
+      courseName: SESSION.courseName,
+      startsAt: SESSION.startsAt,
+      remainingSessions: 1,
+    }
+  })
+  renderPage()
+  await userEvent.click(await screen.findByRole('radio', { name: /Maria/ }))
+  await userEvent.click(screen.getByRole('button', { name: 'Marchează prezent' }))
+
+  expect(await screen.findByText('Prezență salvată pentru Maria')).toBeInTheDocument()
+  await waitFor(() => expect(screen.getByRole('radio', { name: /Maria/ })).toBeDisabled())
+  const button = screen.getByRole('button', { name: 'Marchează prezent' })
+  expect(screen.getByRole('radio', { name: /Ion/ })).not.toBeChecked()
+  expect(button).toBeDisabled()
+  await userEvent.click(button)
+  expect(entranceCheckin).toHaveBeenCalledTimes(1)
+
+  await userEvent.click(screen.getByRole('radio', { name: /Ion/ }))
+  expect(button).toBeEnabled()
+  await userEvent.click(button)
+  await screen.findByText('Prezență salvată pentru Ion')
+  expect(entranceCheckin).toHaveBeenLastCalledWith(
+    expect.objectContaining({ childId: ion.childId }),
+  )
+})
+
+test('reopening an entrance sheet leaves the remaining eligible child unselected', async () => {
+  offer([{ ...maria, state: 'ALREADY_PRESENT' }, ion])
+  renderPage()
+
+  const remaining = await screen.findByRole('radio', { name: /Ion/ })
+  const hint = screen.getByText('Alege copilul și ședința, apoi marchează prezența.')
+  const button = screen.getByRole('button', { name: 'Marchează prezent' })
+  expect(remaining).not.toBeChecked()
+  expect(button).toBeDisabled()
+
+  await userEvent.click(remaining)
+  expect(remaining).toBeChecked()
+  expect(button).toBeEnabled()
+  expect(hint).toBeVisible()
+  expect(entranceCheckin).not.toHaveBeenCalled()
+})
+
+test.each(['NO_REMAINING_SESSIONS', 'PACKAGE_EXPIRED', 'PACKAGE_NOT_STARTED'] as const)(
+  'a %s package offers enrollment recovery before submission',
+  async (state) => {
+    offer([{ ...maria, state }])
+    renderPage()
+    expect(await screen.findByRole('link', { name: 'Vezi înscrierile' })).toHaveAttribute(
+      'href',
+      '/account/enrollments',
+    )
+    expect(screen.getByRole('radio', { name: /Maria/ })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: 'Marchează prezent' })).not.toBeInTheDocument()
+  },
+)
+
+test('an expired package reported on submit links to enrollments and clears selection', async () => {
+  offer([maria])
+  vi.mocked(entranceCheckin).mockResolvedValue({ success: false, code: 'PACKAGE_EXPIRED' })
+  renderPage()
+  await userEvent.click(await screen.findByRole('button', { name: 'Marchează prezent' }))
+  expect(await screen.findByText('Pachetul a expirat')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Vezi înscrierile' })).toHaveAttribute(
+    'href',
+    '/account/enrollments',
+  )
+  expect(screen.getByRole('button', { name: 'Marchează prezent' })).toBeDisabled()
+})
+
 test('copiii deja prezenți sau corectați de antrenor nu pot fi aleși', async () => {
   offer([
     { ...maria, state: 'ALREADY_PRESENT' },

@@ -23,9 +23,11 @@ let cameraMount = 0
 function CameraView({
   onDetected,
   onRetry,
+  fallbackText,
 }: {
   onDetected: (text: string) => void
   onRetry: () => void
+  fallbackText: string
 }) {
   const hostRef = useRef<HTMLDivElement>(null)
   const [problem, setProblem] = useState<CameraProblem | null>(() =>
@@ -92,7 +94,7 @@ function CameraView({
       <StatusView
         state="error"
         title={copy.title}
-        text={copy.text}
+        text={`${copy.text} ${fallbackText}`}
         onRetry={problem === 'unsupported' || problem === 'no-camera' ? undefined : onRetry}
         className="py-8"
       />
@@ -121,12 +123,14 @@ export function WebScannerSheet({
   open,
   label,
   hint = 'Încadrează codul QR al copilului',
+  fallbackText = 'Poți ponta și din catalogul manual.',
   onDetected,
   onClose,
 }: {
   open: boolean
   label: string
   hint?: string
+  fallbackText?: string
   onDetected: (text: string) => void
   onClose: () => void
 }) {
@@ -152,6 +156,7 @@ export function WebScannerSheet({
               key={attempt}
               onDetected={onDetected}
               onRetry={() => setAttempt((value) => value + 1)}
+              fallbackText={fallbackText}
             />
           )}
         </div>

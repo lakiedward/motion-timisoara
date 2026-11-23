@@ -1,5 +1,9 @@
 import type { EnrollmentRow, MonthlyPackage } from '@/api/account'
-import { enrollmentPayable, expiredCardPayment } from '@/api/payments/enrollments'
+import {
+  enrollmentPayable,
+  expiredCardPayment,
+  expiredMonthlyPayment,
+} from '@/api/payments/enrollments'
 import { dateLabel, monthName } from '@/lib/course-packages/package-month'
 import { plural } from '@/lib/plural'
 
@@ -45,6 +49,7 @@ type SessionsSource = {
   purchased_sessions: number
   remaining_sessions: number
   monthly_packages?: MonthlyPackage[]
+  payments?: EnrollmentRow['payments']
 }
 
 export function bucharestToday(now: Date = new Date()): string {
@@ -85,7 +90,8 @@ export function sessionsLines(e: SessionsSource, today: string = bucharestToday(
         ? `Pachetul din ${dateLabel(expired.valid_from)} a expirat pe ${dateLabel(expired.valid_until)}`
         : `Pachetul lunar din ${monthName(expired.valid_from.slice(0, 7))} a expirat pe ${dateLabel(expired.valid_until)}`,
     )
-  if (!lines.length && e.status === 'PENDING') lines.push('Începe după confirmarea plății')
+  if (!lines.length && e.status === 'PENDING' && !expiredMonthlyPayment(e.payments?.[0]))
+    lines.push('Începe după confirmarea plății')
   return lines
 }
 

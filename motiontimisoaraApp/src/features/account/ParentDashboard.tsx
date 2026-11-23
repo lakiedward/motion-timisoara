@@ -13,6 +13,7 @@ import { PushSettingsCard } from '@/features/notifications/PushSettingsCard'
 import { LiveLocationBanner } from '@/features/live-location/parent/LiveLocationBanner'
 import { DashboardChildrenList } from './DashboardChildrenList'
 import { ProfileCompletionCard } from './ProfileCompletionCard'
+import { EntranceScanBanner } from './entrance/EntranceScanBanner'
 
 export default function ParentDashboard() {
   const { user } = useAuth()
@@ -33,6 +34,8 @@ export default function ParentDashboard() {
         </h1>
         <p className="text-muted-foreground mt-1">Gestionează copiii și înscrierile lor.</p>
       </div>
+
+      {children.length > 0 && <EntranceScanBanner />}
 
       <LiveLocationBanner />
 

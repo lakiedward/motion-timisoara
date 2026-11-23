@@ -17,6 +17,8 @@ import { EntranceOptionList } from './EntranceOptionList'
 
 type Outcome = Extract<EntranceCheckinResult, { success: true }>
 
+const PACKAGE_BLOCKS = ['NO_REMAINING_SESSIONS', 'PACKAGE_EXPIRED', 'PACKAGE_NOT_STARTED']
+
 function Recorded({ result }: { result: Outcome }) {
   const remaining = remainingText(result.remainingSessions)
   return (
@@ -94,9 +96,14 @@ export default function EntranceCheckinPage() {
 
   const list = options.data?.success ? options.data.options : []
   const available = list.filter((o) => o.state === 'AVAILABLE')
-  const onlyOne = available.length === 1 ? optionKey(available[0]) : null
+  const onlyOne =
+    last === null && list.length === 1 && available.length === 1 ? optionKey(available[0]) : null
   const selected = picked && available.some((o) => optionKey(o) === picked) ? picked : onlyOne
   const coachName = options.data?.coachName ?? null
+  const needsPackage =
+    list.some((o) => PACKAGE_BLOCKS.includes(o.state)) ||
+    (last?.success === false &&
+      (PACKAGE_BLOCKS.includes(last.code) || last.code === 'NOT_ENROLLED'))
 
   let body
   if (!validToken) {
@@ -149,7 +156,7 @@ export default function EntranceCheckinPage() {
   } else {
     body = (
       <div className="space-y-4">
-        {available.length > 1 && (
+        {available.length > 0 && !onlyOne && (
           <p className="text-sm">Alege copilul și ședința, apoi marchează prezența.</p>
         )}
         {available.length === 0 && !last && (
@@ -163,6 +170,18 @@ export default function EntranceCheckinPage() {
           disabled={checkin.isPending}
           onSelect={setPicked}
         />
+        {needsPackage && (
+          <div className="space-y-2">
+            <p className="text-muted-foreground text-sm">
+              Pentru pachete expirate, epuizate sau care încă nu au început, verifică înscrierea și
+              cumpără ședințe valabile pentru data de azi. Dacă ai plătit deja, cere confirmarea
+              antrenorului.
+            </p>
+            <Button asChild variant="outline" className="min-h-touch-target w-full sm:w-auto">
+              <Link to="/account/enrollments">Vezi înscrierile</Link>
+            </Button>
+          </div>
+        )}
         {checkin.isError && (
           <StatusView
             state="error"
