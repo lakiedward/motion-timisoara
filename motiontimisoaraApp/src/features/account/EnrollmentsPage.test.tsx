@@ -63,6 +63,45 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
+test.each(['PENDING', 'ACTIVE'] as const)(
+  'an expired monthly cash request explains the historical validity for %s enrollments',
+  async (status) => {
+    load.mockResolvedValue([
+      row({
+        id: 'expired-cash',
+        kind: 'COURSE',
+        status,
+        child: { id: 'child', name: 'Ana' },
+        offerTitle: 'Curs lunar',
+        payments: [
+          {
+            id: 'cash',
+            created_at: '2020-01-01T10:00:00Z',
+            amount: 20000,
+            currency: 'RON',
+            status: 'PENDING',
+            method: 'CASH',
+            paid_at: null,
+            pricing_snapshot: { validity: 'CALENDAR_MONTH', validMonth: '2020-01' },
+          },
+        ],
+      }),
+    ])
+    renderPage()
+    const card = await screen.findByRole('article', { name: 'Curs lunar' })
+    expect(
+      within(card).getByText(/Numerarul așteaptă confirmarea organizatorului/),
+    ).toHaveTextContent('ședințele rămân expirate după confirmare')
+    expect(within(card).queryByText('Începe după confirmarea plății')).not.toBeInTheDocument()
+    expect(
+      within(card).queryByRole('button', { name: 'Finalizează plata' }),
+    ).not.toBeInTheDocument()
+    expect(within(card).queryByRole('link', { name: 'Cumpără ședințe' }) !== null).toBe(
+      status === 'ACTIVE',
+    )
+  },
+)
+
 test('the offer name leads the card and keeps the person and amount', async () => {
   load.mockResolvedValue([
     row({
@@ -133,6 +172,13 @@ test('the offer name leads the card and keeps the person and amount', async () =
   expect(within(course).getByText('316,12 lei')).toBeInTheDocument()
   expect(within(course).getByText(/1 EUR = 5,123456 lei/)).toBeInTheDocument()
   expect(within(course).getByText('Ședințe: 5 rămase din 8')).toBeInTheDocument()
+  expect(
+    within(course).getByRole('link', { name: 'Vezi prezența pentru Copil Spec 520' }),
+  ).toHaveAttribute('href', '/account/attendance?copil=c1')
+  expect(
+    within(child).getByRole('link', { name: 'Vezi prezența pentru Copil Spec 520' }),
+  ).toHaveAttribute('href', '/account/attendance?copil=c1')
+  expect(within(adult).queryByRole('link', { name: /Vezi prezența/ })).not.toBeInTheDocument()
   expect(
     within(course)
       .getByRole('heading', { name: 'Curs de înot' })

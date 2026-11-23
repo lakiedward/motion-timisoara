@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { UserRound } from 'lucide-react'
 
 import type { EnrollmentRow } from '@/api/account'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { SportIllustration } from '@/components/sport/SportIllustration'
 import { cn } from '@/lib/utils'
 import { KIND_LABEL, byAttention, needsPayment, participantName } from './enrollment-display'
@@ -46,6 +48,7 @@ export function EnrollmentPhotoCards({ enrollments, paymentId, setPaymentId }: P
       {byAttention(enrollments).map((e) => {
         const titleId = `inscriere-${e.id}`
         const person = participantName(e)
+        const childId = e.child_id ?? e.child?.id
         return (
           <article
             key={e.id}
@@ -90,6 +93,16 @@ export function EnrollmentPhotoCards({ enrollments, paymentId, setPaymentId }: P
                 <PayButton e={e} onOpen={() => setPaymentId(e.id)} className="mt-2 w-full" />
               )}
               <BuySessionsButton e={e} className="mt-2 w-full" />
+              {childId && e.kind !== 'COMPETITION' && (
+                <Button asChild variant="outline" className="relative mt-2 w-full">
+                  <Link
+                    to={`/account/attendance?copil=${encodeURIComponent(childId)}`}
+                    aria-label={e.child?.name ? `Vezi prezența pentru ${e.child.name}` : undefined}
+                  >
+                    Vezi prezența
+                  </Link>
+                </Button>
+              )}
             </div>
           </article>
         )

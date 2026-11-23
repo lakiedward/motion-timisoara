@@ -1,7 +1,14 @@
 import { dateLabel } from './package-month'
 
 export function bucharestDate(now: Date = new Date()): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Bucharest' }).format(now)
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Bucharest',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(now)
+  const { year, month, day } = Object.fromEntries(parts.map(({ type, value }) => [type, value]))
+  return `${year}-${month}-${day}`
 }
 
 export function addDays(isoDate: string, days: number): string {

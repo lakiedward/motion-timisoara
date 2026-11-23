@@ -1,7 +1,7 @@
 import { SelectMenu } from '@/components/ui/select-menu'
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Users } from 'lucide-react'
 
 import {
@@ -22,7 +22,7 @@ import { attendanceEntries, kindBreakdown } from '@/features/account/attendance/
 import { LiveLocationBanner } from '@/features/live-location/parent/LiveLocationBanner'
 import { EntranceScanBanner } from '@/features/account/entrance/EntranceScanBanner'
 
-const PONTAJ_VIITOR = 'Apare aici după ce antrenorul pontează prima ședință.'
+const PONTAJ_VIITOR = 'Apare aici după prima ședință pontată de tine la intrare sau de antrenor.'
 
 const TOTI = 'toti'
 
@@ -37,7 +37,16 @@ export default function AttendancePage() {
     queryKey: ['children'],
     queryFn: getMyChildren,
   })
-  const [selected, setSelected] = useState<string>(TOTI)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const selected = searchParams.get('copil') ?? TOTI
+  const setSelected = (childId: string) => {
+    if (childId === selected) return
+    setSearchParams((params) => {
+      if (childId === TOTI) params.delete('copil')
+      else params.set('copil', childId)
+      return params
+    })
+  }
   const [perioada, setPerioada] = useState<Perioada>('toate')
   const alegereValida = selected === TOTI || children.some((c) => c.id === selected)
   const ales = alegereValida ? selected : TOTI
@@ -103,7 +112,7 @@ export default function AttendancePage() {
   const cuActivitati = toate.some((r) => r.kind === 'ACTIVITY')
   const cuTipuri = cuTabere || cuActivitati
   const ceSeNumara = [
-    'ședințele pontate de antrenor',
+    'ședințele pontate de tine la intrare sau de antrenor',
     cuActivitati && 'activitățile pontate',
     cuTabere && 'sosirile la tabără',
   ].filter(Boolean)
@@ -206,7 +215,7 @@ export default function AttendancePage() {
             <p className="text-muted-foreground mt-1 text-xs">
               {cuTipuri
                 ? `Se numără ${ceSeNumara.slice(0, -1).join(', ')} și ${ceSeNumara.at(-1)}.`
-                : 'Se numără doar ședințele pontate de antrenor.'}
+                : 'Se numără ședințele pontate de tine la intrare sau de antrenor.'}
             </p>
           </div>
 

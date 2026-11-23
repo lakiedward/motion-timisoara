@@ -36,12 +36,13 @@ export function EntranceScanButton({ className }: { className?: string }) {
         disabled={open}
         onClick={() => setOpen(true)}
       >
-        <ScanLine aria-hidden="true" /> Scanează codul de la intrare
+        <ScanLine aria-hidden="true" /> Marchează prezența
       </Button>
       <WebScannerSheet
         open={open}
         label="Codul de la intrare"
         hint="Încadrează codul de pe foaia lipită la intrare"
+        fallbackText="Dacă nu poți scana, cere-i antrenorului să marcheze prezența copilului."
         onDetected={handle}
         onClose={() => setOpen(false)}
       />

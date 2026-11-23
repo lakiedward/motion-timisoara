@@ -1,5 +1,10 @@
 import type { EnrollmentRow, MonthlyPackage } from '@/api/account'
-import { enrollmentPayable, expiredCardPayment } from '@/api/payments/enrollments'
+import {
+  enrollmentPayable,
+  expiredCardPayment,
+  expiredMonthlyPayment,
+} from '@/api/payments/enrollments'
+import { bucharestDate } from '@/lib/course-packages/package-days'
 import { dateLabel, monthName } from '@/lib/course-packages/package-month'
 import { plural } from '@/lib/plural'
 
@@ -45,10 +50,7 @@ type SessionsSource = {
   purchased_sessions: number
   remaining_sessions: number
   monthly_packages?: MonthlyPackage[]
-}
-
-export function bucharestToday(now: Date = new Date()): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Bucharest' }).format(now)
+  payments?: EnrollmentRow['payments']
 }
 
 function packageName(item: MonthlyPackage): string {
@@ -64,7 +66,7 @@ function monthlyLine(item: MonthlyPackage, today: string): string {
   return `${name}: ${item.sessions - item.sessions_used} rămase din ${item.sessions}, expiră pe ${dateLabel(item.valid_until)}`
 }
 
-export function sessionsLines(e: SessionsSource, today: string = bucharestToday()): string[] {
+export function sessionsLines(e: SessionsSource, today: string = bucharestDate()): string[] {
   if (e.kind !== 'COURSE') return []
   const monthly = [...(e.monthly_packages ?? [])].sort((a, b) =>
     a.valid_from.localeCompare(b.valid_from),
@@ -85,7 +87,12 @@ export function sessionsLines(e: SessionsSource, today: string = bucharestToday(
         ? `Pachetul din ${dateLabel(expired.valid_from)} a expirat pe ${dateLabel(expired.valid_until)}`
         : `Pachetul lunar din ${monthName(expired.valid_from.slice(0, 7))} a expirat pe ${dateLabel(expired.valid_until)}`,
     )
-  if (!lines.length && e.status === 'PENDING') lines.push('Începe după confirmarea plății')
+  if (
+    !lines.length &&
+    e.status === 'PENDING' &&
+    !expiredMonthlyPayment(e.payments?.[0], today.slice(0, 7))
+  )
+    lines.push('Începe după confirmarea plății')
   return lines
 }
 

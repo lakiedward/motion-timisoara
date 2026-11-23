@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { CalendarDays } from 'lucide-react'
 
 import type { EnrollmentRow } from '@/api/account'
-import { expiredCardPayment } from '@/api/payments/enrollments'
+import { expiredMonthlyPayment } from '@/api/payments/enrollments'
 import { AcceptedPriceDetails } from '@/components/AcceptedPriceDetails'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -87,12 +87,15 @@ export function SessionsLeft({ e }: { e: EnrollmentRow }) {
 export function PaymentSummary({ e, className }: { e: EnrollmentRow; className?: string }) {
   const payment = e.payments?.[0]
   if (!payment) return null
+  const monthEnded = expiredMonthlyPayment(payment)
   return (
     <div className={cn('flex items-start justify-between gap-3 text-sm', className)}>
       <span
         className={cn(needsPayment(e) ? 'text-foreground font-semibold' : 'text-muted-foreground')}
       >
-        {expiredCardPayment(payment) ? (
+        {monthEnded && payment.method === 'CASH' ? (
+          'Pachet lunar expirat. Numerarul așteaptă confirmarea organizatorului, iar ședințele rămân expirate după confirmare. Contactează organizatorul pentru un pachet valabil.'
+        ) : monthEnded ? (
           <>
             Pachet lunar expirat. Dacă ai plătit deja, așteaptă confirmarea.
             {e.status === 'PENDING' && ' Altfel, contactează clubul ca să alegi altă lună.'}

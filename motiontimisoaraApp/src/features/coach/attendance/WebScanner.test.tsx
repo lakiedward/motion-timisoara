@@ -5,6 +5,7 @@ import { AttendanceScanner } from './AttendanceScanner'
 import { AttendanceContext } from './attendance-context'
 import { AttendanceQueue } from './attendance-queue'
 import { classifyCameraError } from './web-camera'
+import { WebScannerSheet } from './WebScannerSheet'
 
 const mocks = vi.hoisted(() => ({
   start: vi.fn(),
@@ -155,6 +156,29 @@ it('a browser without camera support never starts the reader', async () => {
   expect(await screen.findByRole('alert')).toHaveTextContent('Browserul nu permite camera')
   expect(screen.queryByRole('button', { name: 'Reîncearcă' })).not.toBeInTheDocument()
   expect(mocks.start).not.toHaveBeenCalled()
+})
+
+it.each([
+  ['NotAllowedError', 'Camera nu are permisiune'],
+  ['NotFoundError', 'Dispozitivul nu are cameră'],
+  ['NotReadableError', 'Camera este folosită de altă aplicație'],
+  ['NotSupportedError', 'Browserul nu permite camera'],
+  ['Error', 'Camera nu a putut fi deschisă'],
+])('parent camera failure %s offers a parent action', async (name, title) => {
+  mocks.start.mockRejectedValueOnce(new DOMException('camera error', name))
+  render(
+    <WebScannerSheet
+      open
+      label="Prezența la intrare"
+      fallbackText="Dacă nu poți scana, cere-i antrenorului să marcheze prezența copilului."
+      onDetected={vi.fn()}
+      onClose={vi.fn()}
+    />,
+  )
+  const alert = await screen.findByRole('alert')
+  expect(alert).toHaveTextContent(title)
+  expect(alert).toHaveTextContent('cere-i antrenorului să marcheze prezența copilului')
+  expect(alert).not.toHaveTextContent('catalog')
 })
 
 it('classifies browser camera errors', () => {

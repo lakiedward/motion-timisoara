@@ -2,7 +2,7 @@ import { vi } from 'vitest'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom'
 
 import AttendancePage from './AttendancePage'
 import { pickFilter } from '@/test/pick-filter'
@@ -43,7 +43,6 @@ const copii = [
   { id: COPIL_B, name: 'Bogdan' },
 ]
 
-/** Azi e fixat în teste ca să nu se schimbe rezultatul filtrului odată cu luna. */
 const AZI = new Date('2026-08-26T09:00:00Z')
 
 const rand = (
@@ -61,12 +60,24 @@ const rand = (
   occurrence: { starts_at: zi, course: curs ? { name: curs } : null },
 })
 
-function renderPage(client?: QueryClient) {
+function HistoryNavigation() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  return (
+    <>
+      <span data-testid="attendance-url">{location.search}</span>
+      <button onClick={() => navigate(-1)}>Back</button>
+    </>
+  )
+}
+
+function renderPage(client?: QueryClient, path = '/account/attendance') {
   const queryClient = client ?? new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const utils = render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
         <AttendancePage />
+        <HistoryNavigation />
       </MemoryRouter>
     </QueryClientProvider>,
   )
@@ -83,7 +94,6 @@ beforeEach(() => {
     rand('r2', '2026-07-20T15:00:00Z', 'ABSENT', null, 'A anunțat că e răcit.'),
     rand('r3', '2026-07-10T14:00:00Z', 'PRESENT', 'Înot — audit UI'),
   ]
-  // Pagina pornește pe „Toți copiii", deci cererea implicită e cea combinată.
   mockedPrezentaToti.mockResolvedValue(implicite as never)
   mockedPrezenta.mockResolvedValue(implicite as never)
   mockedTabere.mockResolvedValue([])
@@ -93,8 +103,29 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-// Regresie (criteriul 1): starea de încărcare a copiilor nu era citită deloc, deci
-// un părinte care ARE copii vedea o clipă îndemnul să adauge unul.
+test('a child attendance link filters history and browser back restores that filter', async () => {
+  renderPage(undefined, `/account/attendance?copil=${COPIL_B}`)
+  await waitFor(() => expect(mockedPrezenta).toHaveBeenCalledWith(COPIL_B))
+  expect(mockedPrezentaToti).not.toHaveBeenCalled()
+  expect(screen.getByTestId('attendance-url')).toHaveTextContent(`?copil=${COPIL_B}`)
+  const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+  await user.click(screen.getByRole('button', { name: 'Ana' }))
+  await waitFor(() => expect(mockedPrezenta).toHaveBeenCalledWith(COPIL_A))
+  expect(screen.getByTestId('attendance-url')).toHaveTextContent(`?copil=${COPIL_A}`)
+  await user.click(screen.getByRole('button', { name: 'Ana' }))
+  await user.click(screen.getByRole('button', { name: 'Back' }))
+  await waitFor(() =>
+    expect(screen.getByTestId('attendance-url')).toHaveTextContent(`?copil=${COPIL_B}`),
+  )
+  expect(screen.getByRole('button', { name: 'Bogdan' })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('an unknown child in the URL falls back to the current parent children', async () => {
+  renderPage(undefined, '/account/attendance?copil=unknown')
+  await waitFor(() => expect(mockedPrezentaToti).toHaveBeenCalledWith([COPIL_A, COPIL_B]))
+  expect(mockedPrezenta).not.toHaveBeenCalled()
+})
+
 test('cât timp se încarcă lista de copii nu apare îndemnul de a adăuga un copil', () => {
   mockedCopii.mockReturnValue(new Promise(() => {}) as never)
   const { container } = renderPage()
@@ -108,8 +139,6 @@ test('un cont fără copii vede îndemnul de a adăuga unul', async () => {
   expect(await screen.findByText('Adaugă un copil pentru a vedea prezența.')).toBeInTheDocument()
 })
 
-// Regresie (criteriul 217 al secțiunii vecine, aprobat din 11 august și niciodată
-// construit): o cădere de rețea afișa exact mesajul de istoric gol.
 test('o citire căzută arată eroare cu reîncercare, nu mesajul de istoric gol', async () => {
   mockedPrezentaToti.mockRejectedValue(new Error('network'))
   renderPage()
@@ -135,15 +164,12 @@ test('ședințele sunt grupate pe lună, cea mai recentă lună prima', async ()
   expect(screen.getByText('1 prezență din 2')).toBeInTheDocument()
 })
 
-// Criteriul 218 al secțiunii vecine: data singură nu deosebește două ședințe din
-// aceeași zi.
 test('fiecare rând arată și ora ședinței', async () => {
   renderPage()
   const randuri = await screen.findAllByRole('listitem')
   expect(randuri[0].textContent).toMatch(/Joi, 20 august 2026, \d{2}:\d{2}/)
 })
 
-// Criteriul 216: nota antrenorului era citită din baza de date și aruncată.
 test('nota antrenorului se vede sub rândul ei', async () => {
   renderPage()
   const randuri = await screen.findAllByRole('listitem')
@@ -160,7 +186,6 @@ test('rezumatul respectă acordul la număr', async () => {
   expect(rezumat.textContent).toContain('1 prezență din 1 ședință înregistrată.')
 })
 
-// Criteriul 2: filtrul de perioadă taie lista, iar rezumatul se recalculează.
 test('filtrul de perioadă taie ședințele din afara intervalului', async () => {
   renderPage()
   expect(await screen.findAllByRole('listitem')).toHaveLength(3)
@@ -170,7 +195,6 @@ test('filtrul de perioadă taie ședințele din afara intervalului', async () =>
   expect(screen.getByText(/ședință înregistrată/).textContent).toContain('1 prezență din 1')
 })
 
-// Criteriul 3: „nu ai nimic în perioada asta" nu e totuna cu „nu ai nimic deloc".
 test('când filtrul goleste lista, mesajul spune că e vorba de perioadă', async () => {
   const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
   mockedPrezentaToti.mockResolvedValue([
@@ -194,16 +218,10 @@ test('un copil fără nicio pontare vede mesajul de istoric gol, cu rezumat la z
   expect(screen.getByText(/ședințe înregistrate/).textContent).toContain('0 prezențe din 0')
 })
 
-// Regresie (criteriul 4): alegerea era ținută separat de lista de copii și nu era
-// verificată niciodată. După ștergerea copilului ales din „Copiii mei", cererea
-// pleca pe un id mort, iar selectorul arăta vizual alt copil. Acum revenirea se
-// face pe „Toți copiii", nu pe un copil ales arbitrar.
 test('un copil șters între timp nu mai rămâne selectat', async () => {
   const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   renderPage(queryClient)
-  // Întâi se așază pagina: interacțiunea înainte ca lista de copii să ajungă
-  // găsește un selector care încă nu există.
   await screen.findAllByRole('listitem')
 
   await user.click(screen.getByRole('button', { name: 'Bogdan' }))
@@ -215,8 +233,6 @@ test('un copil șters între timp nu mai rămâne selectat', async () => {
 
   await waitFor(() => expect(mockedPrezentaToti).toHaveBeenCalledWith([COPIL_A]))
   expect(mockedPrezenta).not.toHaveBeenCalledWith(COPIL_B)
-  // Cu un singur copil rămas, selectorul dispare cu totul — nu mai are între ce
-  // să comute. Ce contează e că cererea a plecat pe copilul real, nu pe id-ul mort.
   expect(screen.queryByRole('group', { name: 'Copil' })).not.toBeInTheDocument()
 })
 
@@ -231,8 +247,6 @@ test('pagina pornește pe „Toți copiii", primul buton din filtru', async () =
   expect(mockedPrezenta).not.toHaveBeenCalled()
 })
 
-// Criteriul 14: în lista comună trebuie să se știe al cui e fiecare ședință, dar
-// filtrat pe un copil același nume repetat pe fiecare rând ar fi doar zgomot.
 test('numele copilului apare pe rânduri doar în vederea combinată', async () => {
   const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
   mockedPrezentaToti.mockResolvedValue([
@@ -254,7 +268,6 @@ test('numele copilului apare pe rânduri doar în vederea combinată', async () 
   expect(dupaFiltrare[0]).not.toHaveTextContent('Ana')
 })
 
-// Criteriul 15: rezumatul și filtrul lucrează peste ședințele tuturor copiilor.
 test('rezumatul numără prezențele tuturor copiilor în vederea combinată', async () => {
   mockedPrezentaToti.mockResolvedValue([
     rand('r1', '2026-08-20T14:00:00Z', 'PRESENT', 'Înot', null, COPIL_A),
@@ -266,10 +279,6 @@ test('rezumatul numără prezențele tuturor copiilor în vederea combinată', a
   expect(screen.getByText(/ședințe înregistrate/).textContent).toContain('2 prezențe din 3')
 })
 
-// ===== Secțiunea UI #3082 „Filtru copil", criterii aprobate 2026-09-01 =====
-
-// Criteriul 1 + 2: cu un singur copil selectorul dispare, iar numele nu mai are
-// ce dezambiguiza — până acum se repeta pe fiecare rând, deși nu exista selector.
 test('cu un singur copil nu există selector, iar numele nu se repetă pe rânduri', async () => {
   mockedCopii.mockResolvedValue([{ id: COPIL_A, name: 'Ana' }] as never)
   mockedPrezentaToti.mockResolvedValue([
@@ -298,9 +307,6 @@ test('filtrul pe copil e un grup de butoane cu nume întreg, iar alegerea se ved
   await waitFor(() => expect(mockedPrezenta).toHaveBeenCalledWith(COPIL_A))
 })
 
-// Criteriul 3: un copil ales fără pontări cădea pe mesajul general, fără nicio
-// cale înapoi — spre deosebire de filtrul de perioadă, care numește cauza și
-// oferă întoarcerea. Acum îl oglindește.
 test('un copil ales fără pontări e numit în mesaj și se poate reveni la toți', async () => {
   const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
   mockedPrezenta.mockResolvedValue([] as never)
@@ -370,7 +376,9 @@ test('rezumatul numără separat ședințele de curs și taberele', async () => 
     '3 prezențe din 4 înregistrări: 3 ședințe de curs, 1 tabără.',
   )
   expect(
-    screen.getByText('Se numără ședințele pontate de antrenor și sosirile la tabără.'),
+    screen.getByText(
+      'Se numără ședințele pontate de tine la intrare sau de antrenor și sosirile la tabără.',
+    ),
   ).toBeInTheDocument()
 })
 
@@ -419,7 +427,7 @@ test('activitatea pontată apare cu insigna Activitate și intră în rezumat', 
   )
   expect(
     screen.getByText(
-      'Se numără ședințele pontate de antrenor, activitățile pontate și sosirile la tabără.',
+      'Se numără ședințele pontate de tine la intrare sau de antrenor, activitățile pontate și sosirile la tabără.',
     ),
   ).toBeInTheDocument()
   const rand = screen.getByText('Ștafeta de vară').closest('li')!

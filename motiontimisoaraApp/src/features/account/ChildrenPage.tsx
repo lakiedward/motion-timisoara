@@ -97,8 +97,8 @@ export default function ChildrenPage() {
       >
         {pendingOffers.length ? (
           <p role="alert" className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
-            {pendingDelete?.name} are înscrieri active: {pendingOffers.join(', ')}. Dacă îl ștergi, se
-            șterg și înscrierile și prezența lui.
+            {pendingDelete?.name} are înscrieri active: {pendingOffers.join(', ')}. Dacă îl ștergi,
+            se șterg și înscrierile și prezența lui.
           </p>
         ) : enrollments.isError ? (
           <p role="alert" className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
@@ -141,7 +141,15 @@ function ChildCard({
           {c.emergency_phone && <div>Contact urgență: {c.emergency_phone}</div>}
         </div>
       )}
-      <div className="mt-auto grid grid-cols-3 gap-2 lg:flex lg:flex-wrap">
+      <div className="mt-auto grid grid-cols-2 gap-2 lg:flex lg:flex-wrap">
+        <Button asChild variant="outline">
+          <Link
+            to={`/account/attendance?copil=${encodeURIComponent(c.id)}`}
+            aria-label={`Vezi prezența pentru ${c.name}`}
+          >
+            Vezi prezența
+          </Link>
+        </Button>
         <Button asChild variant="outline">
           <Link to={`/account/child/${c.id}/qr`}>
             <QrCode className="hidden lg:inline" /> Cod QR

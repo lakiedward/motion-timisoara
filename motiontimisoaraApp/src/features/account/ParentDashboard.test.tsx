@@ -96,11 +96,16 @@ test('populated responses count only active enrollments and keep the child list 
   expect(
     within(screen.getByRole('group', { name: 'Înscrieri active' })).getByText('2'),
   ).toBeInTheDocument()
-  expect(screen.getByRole('link', { name: /Copil Test/ })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: /^Copil Test/ })).toHaveAttribute(
     'href',
     '/account/child/child-520',
   )
   expect(screen.queryByRole('link', { name: 'Adaugă primul copil' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Marchează prezența' })).toBeEnabled()
+  expect(screen.getByRole('link', { name: 'Vezi prezența pentru Copil Test' })).toHaveAttribute(
+    'href',
+    '/account/attendance?copil=child-520',
+  )
 })
 
 test('a failed child list keeps the error in place of the list and retry brings the children back', async () => {
@@ -127,7 +132,7 @@ test('a failed child list keeps the error in place of the list and retry brings 
     recovered.resolve([child])
   })
 
-  expect(await screen.findByRole('link', { name: /Copil Test/ })).toHaveAttribute(
+  expect(await screen.findByRole('link', { name: /^Copil Test/ })).toHaveAttribute(
     'href',
     '/account/child/child-520',
   )
@@ -170,7 +175,7 @@ test('retry refetches only the failed request and disables its action while pend
   await act(async () => {
     recovered.resolve([child])
   })
-  expect(await screen.findByRole('link', { name: /Copil Test/ })).toBeInTheDocument()
+  expect(await screen.findByRole('link', { name: /^Copil Test/ })).toBeInTheDocument()
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 })
 
@@ -185,14 +190,14 @@ test('an enrollment failure preserves children and can recover to a true zero', 
       within(screen.getByRole('group', { name: 'Înscrieri active' })).getByText('0'),
     ).toBeInTheDocument(),
   )
-  expect(screen.getByRole('link', { name: /Copil Test/ })).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /^Copil Test/ })).toBeInTheDocument()
   expect(childrenRequest).toHaveBeenCalledTimes(1)
 })
 
 test('a failed refresh displays an error instead of a stale count, and retry stays single-flight', async () => {
   childrenRequest.mockResolvedValueOnce([child]).mockRejectedValueOnce(new Error('Refresh failed'))
   const client = renderDashboard()
-  await screen.findByRole('link', { name: /Copil Test/ })
+  await screen.findByRole('link', { name: /^Copil Test/ })
   await act(async () => {
     await client.invalidateQueries({ queryKey: ['children'] })
   })

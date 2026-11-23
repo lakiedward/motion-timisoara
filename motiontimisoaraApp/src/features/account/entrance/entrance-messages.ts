@@ -55,7 +55,7 @@ export function optionsProblem(
     case 'INVALID_CODE':
       return {
         title: 'Codul nu mai e valabil',
-        text: 'Poate antrenorul a printat o foaie nouă. Scanează codul de pe foaia de la intrare sau cere-i antrenorului să-l ponteze din catalog.',
+        text: 'Poate antrenorul a printat o foaie nouă. Scanează codul de pe foaia de la intrare sau cere-i antrenorului să marcheze prezența copilului.',
       }
     case 'FORBIDDEN':
       return {
@@ -65,7 +65,7 @@ export function optionsProblem(
     default:
       return {
         title: 'Nu am putut verifica ședințele',
-        text: 'Reîncearcă. Dacă nu merge, antrenorul te poate ponta din catalog.',
+        text: 'Reîncearcă. Dacă nu merge, cere-i antrenorului să marcheze prezența copilului.',
       }
   }
 }
@@ -75,7 +75,7 @@ export function checkinProblem(code: string): EntranceMessage {
     case 'OUTSIDE_WINDOW':
       return {
         title: 'Fereastra ședinței s-a închis',
-        text: 'Prezența se marchează de la 15 minute înainte de ședință până la final. Cere-i antrenorului să-l ponteze din catalog.',
+        text: 'Prezența se marchează de la 15 minute înainte de ședință până la final. Cere-i antrenorului să marcheze prezența copilului.',
       }
     case 'MANUAL_OVERRIDE':
       return {
@@ -85,17 +85,17 @@ export function checkinProblem(code: string): EntranceMessage {
     case 'NO_REMAINING_SESSIONS':
       return {
         title: 'Nu mai are ședințe rămase',
-        text: 'Pachetul de ședințe s-a consumat. Cumpără ședințe noi din Înscrieri sau plătește antrenorului.',
+        text: 'Pachetul de ședințe s-a consumat. Cumpără ședințe noi din Înscrieri. Pentru numerar, antrenorul trebuie să confirme încasarea.',
       }
     case 'PACKAGE_EXPIRED':
       return {
         title: 'Pachetul a expirat',
-        text: 'Valabilitatea pachetului copilului s-a încheiat. Cumpără un pachet nou din Înscrieri sau plătește antrenorului.',
+        text: 'Valabilitatea pachetului copilului s-a încheiat. Cumpără un pachet nou din Înscrieri. Pentru numerar, antrenorul trebuie să confirme încasarea.',
       }
     case 'PACKAGE_NOT_STARTED':
       return {
-        title: 'Pachetul începe luna viitoare',
-        text: 'Pachetul cumpărat e valabil de la 1 ale lunii următoare. Pentru ședința de azi cumpără pachetul pentru luna aceasta din Înscrieri sau plătește antrenorului.',
+        title: 'Pachetul încă nu a început',
+        text: 'Pachetul cumpărat nu este încă valabil. Verifică perioada în Înscrieri și alege un pachet valabil pentru ședința de azi.',
       }
     case 'NOT_ENROLLED':
       return {
@@ -105,7 +105,7 @@ export function checkinProblem(code: string): EntranceMessage {
     case 'AMBIGUOUS_ENROLLMENT':
       return {
         title: 'Înscrierea are nevoie de verificare',
-        text: 'Copilul are două înscrieri active la același curs. Antrenorul îl pontează din catalog până când se rezolvă.',
+        text: 'Copilul are două înscrieri active la același curs. Cere-i antrenorului să verifice înscrierile și să marcheze prezența.',
       }
     case 'INVALID_CODE':
     case 'FORBIDDEN':
@@ -113,7 +113,7 @@ export function checkinProblem(code: string): EntranceMessage {
     default:
       return {
         title: 'Prezența nu a fost salvată',
-        text: 'Reîncearcă. Dacă nu merge, antrenorul te poate ponta din catalog.',
+        text: 'Reîncearcă. Dacă nu merge, cere-i antrenorului să marcheze prezența copilului.',
       }
   }
 }
@@ -129,7 +129,7 @@ export function stateLabel(state: EntranceOptionState): string | null {
     case 'PACKAGE_EXPIRED':
       return 'Pachet expirat'
     case 'PACKAGE_NOT_STARTED':
-      return 'Începe luna viitoare'
+      return 'Încă nu a început'
     case 'AMBIGUOUS_ENROLLMENT':
       return 'De verificat de antrenor'
     default:

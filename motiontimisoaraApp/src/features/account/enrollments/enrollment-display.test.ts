@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 
 import { sessionsLines } from './enrollment-display'
 
@@ -34,6 +34,44 @@ test('a running monthly package shows what is left and when it expires', () => {
   ])
 })
 
+const pendingMonthly = {
+  ...base,
+  status: 'PENDING',
+  payments: [
+    {
+      id: 'payment',
+      created_at: '2026-11-01T00:00:00Z',
+      method: 'CASH',
+      status: 'PENDING',
+      amount: 20000,
+      currency: 'RON',
+      paid_at: null,
+      pricing_snapshot: { validity: 'CALENDAR_MONTH', validMonth: '2026-11' },
+    },
+  ],
+}
+
+test('a pending monthly payment uses the same reference date as the package lines', () => {
+  expect(sessionsLines(pendingMonthly, '2026-11-30')).toEqual(['Începe după confirmarea plății'])
+  expect(sessionsLines(pendingMonthly, '2026-12-01')).toEqual([])
+})
+
+test('the default package date works when the browser formats dates with slashes', () => {
+  vi.useFakeTimers({ now: new Date('2026-11-30T21:59:59Z') })
+  const format = vi.spyOn(Intl.DateTimeFormat.prototype as { format: unknown }, 'format', 'get')
+  try {
+    format.mockReturnValue(() => '11/30/2026')
+    expect(sessionsLines(pendingMonthly)).toEqual(['Începe după confirmarea plății'])
+
+    vi.setSystemTime(new Date('2026-11-30T22:00:00Z'))
+    format.mockReturnValue(() => '12/1/2026')
+    expect(sessionsLines(pendingMonthly)).toEqual([])
+  } finally {
+    format.mockRestore()
+    vi.useRealTimers()
+  }
+})
+
 test('sessions that never expire are named apart from the monthly package', () => {
   expect(
     sessionsLines(
@@ -61,7 +99,13 @@ test('a package that expires after N days shows its purchase date and its own ex
     valid_until: '2027-01-03',
     validity: 'DAYS',
   }
-  const second = { ...first, id: 'd2', sessions_used: 0, valid_from: '2026-12-28', valid_until: '2027-02-10' }
+  const second = {
+    ...first,
+    id: 'd2',
+    sessions_used: 0,
+    valid_from: '2026-12-28',
+    valid_until: '2027-02-10',
+  }
   expect(sessionsLines({ ...base, monthly_packages: [second, first] }, '2026-12-28')).toEqual([
     'Pachet din 20 noiembrie 2026: 2 rămase din 8, expiră pe 3 ianuarie 2027',
     'Pachet din 28 decembrie 2026: 8 rămase din 8, expiră pe 10 februarie 2027',

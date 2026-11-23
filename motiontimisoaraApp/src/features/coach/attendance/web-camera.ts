@@ -7,23 +7,23 @@ export interface CameraSession {
 export const cameraProblemText: Record<CameraProblem, { title: string; text: string }> = {
   permission: {
     title: 'Camera nu are permisiune',
-    text: 'Permite accesul la cameră din setările browserului, apoi reîncearcă. Poți ponta și din catalogul manual.',
+    text: 'Permite accesul la cameră din setările browserului, apoi reîncearcă.',
   },
   'no-camera': {
     title: 'Dispozitivul nu are cameră',
-    text: 'Nu am găsit nicio cameră pe acest dispozitiv. Folosește catalogul manual sau scanează de pe telefon.',
+    text: 'Nu am găsit nicio cameră pe acest dispozitiv. Scanează de pe un telefon cu cameră.',
   },
   unsupported: {
     title: 'Browserul nu permite camera',
-    text: 'Deschide site-ul într-un browser actual (Chrome, Safari, Edge sau Firefox) ori folosește catalogul manual.',
+    text: 'Deschide site-ul într-un browser actual (Chrome, Safari, Edge sau Firefox).',
   },
   busy: {
     title: 'Camera este folosită de altă aplicație',
-    text: 'Închide aplicația care folosește camera, apoi reîncearcă. Poți ponta și din catalogul manual.',
+    text: 'Închide aplicația care folosește camera, apoi reîncearcă.',
   },
   unknown: {
     title: 'Camera nu a putut fi deschisă',
-    text: 'Reîncearcă sau folosește catalogul manual.',
+    text: 'Verifică accesul la cameră și reîncearcă.',
   },
 }
 

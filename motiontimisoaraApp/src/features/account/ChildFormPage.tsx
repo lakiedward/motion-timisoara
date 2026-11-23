@@ -241,11 +241,18 @@ export default function ChildFormPage() {
           {isEdit ? 'Editează copil' : bunVenit ? 'Adaugă-ți copilul' : 'Adaugă copil'}
         </h1>
         {isEdit && (
-          <Button asChild variant="outline">
-            <Link to={`/account/child/${id}/qr`}>
-              <QrCode className="size-4" aria-hidden="true" /> Cod QR
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link to={`/account/attendance?copil=${encodeURIComponent(id ?? '')}`}>
+                Vezi prezența
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to={`/account/child/${id}/qr`}>
+                <QrCode className="size-4" aria-hidden="true" /> Cod QR
+              </Link>
+            </Button>
+          </div>
         )}
       </div>
       {bunVenit && (
@@ -451,7 +458,10 @@ export default function ChildFormPage() {
                     ['nu', 'Nu, fără poze și video cu copilul'],
                   ] as const
                 ).map(([valoare, eticheta]) => (
-                  <label key={valoare} className="flex min-h-touch-target items-center gap-3 text-sm">
+                  <label
+                    key={valoare}
+                    className="flex min-h-touch-target items-center gap-3 text-sm"
+                  >
                     <input
                       type="radio"
                       value={valoare}
