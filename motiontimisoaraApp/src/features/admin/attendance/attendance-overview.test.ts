@@ -52,12 +52,20 @@ const items = [
 ]
 
 describe('attendance overview', () => {
-  it('treats only started sessions with unmarked children as unmarked', () => {
+  it('treats open sessions with unmarked children as unmarked', () => {
     expect(items.filter((s) => isUnmarked(s, NOW)).map((s) => s.id)).toEqual([
       'past-unmarked',
       'past-partial',
       'today-early',
     ])
+  })
+
+  it('includes a session in the default filter at the attendance opening time', () => {
+    const startsAt = at('2026-10-20T13:00:00')
+    const eligible = session({ id: 'opens-now', startsAt })
+    const filter = { status: 'unmarked' as const, sport: '', query: '' }
+    expect(filterSessions([eligible], filter, NOW - 1)).toEqual([])
+    expect(filterSessions([eligible], filter, NOW)).toEqual([eligible])
   })
 
   it('counts every status', () => {

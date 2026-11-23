@@ -1,5 +1,6 @@
 import type { AdminSession } from '@/api/attendance/admin-sessions'
 import { fold } from '@/features/admin/courses/course-overview'
+import { attendanceOpensAt } from '@/lib/attendance-window'
 import { plural } from '@/lib/plural'
 
 export type SessionStatus = 'today' | 'unmarked' | 'upcoming' | 'past' | 'all'
@@ -53,7 +54,7 @@ export const isStarted = (s: AdminSession, now = Date.now()) =>
   new Date(s.startsAt).getTime() <= now
 
 export const isUnmarked = (s: AdminSession, now = Date.now()) =>
-  isStarted(s, now) && s.enrolledCount > 0 && s.markedCount < s.enrolledCount
+  attendanceOpensAt(s.startsAt) <= now && s.enrolledCount > 0 && s.markedCount < s.enrolledCount
 
 export function matchesStatus(s: AdminSession, status: SessionStatus, now = Date.now()) {
   if (status === 'today') return dayKey(s.startsAt) === dayKey(now)

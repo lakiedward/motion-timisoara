@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
 import type { AdminSession } from '@/api/attendance/admin-sessions'
 
+import { useAttendanceClock } from '@/features/admin/attendance/use-attendance-open'
 import { attendanceOpensAt } from '@/lib/attendance-window'
 
 export function currentSession(items: AdminSession[], now = Date.now()) {
@@ -15,10 +15,5 @@ export function currentSession(items: AdminSession[], now = Date.now()) {
 }
 
 export function useCurrentSession(items: AdminSession[]) {
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 30_000)
-    return () => window.clearInterval(timer)
-  }, [])
-  return currentSession(items, now)
+  return currentSession(items, useAttendanceClock(items))
 }
