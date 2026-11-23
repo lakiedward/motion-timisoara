@@ -15,6 +15,12 @@ export type PretAdultDeSalvat = {
   components: { name: string; amount: number }[]
 }
 
+export class CampDeletedError extends Error {
+  constructor() {
+    super('Tabăra a fost ștearsă. Revino la lista de tabere.')
+  }
+}
+
 export async function saveCampOffer(
   campId: string,
   amount: number,
@@ -40,7 +46,7 @@ export async function saveCampOffer(
     p_adult_price: adultPrice,
   })
   if (error?.code === 'P0001' && error.message === 'CAMP_DELETED') {
-    throw new Error('Tabăra a fost ștearsă. Revino la lista de tabere.')
+    throw new CampDeletedError()
   }
   if (error) throw error
 }

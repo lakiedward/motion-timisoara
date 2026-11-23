@@ -5,6 +5,7 @@ import { vi } from 'vitest'
 import { toast } from 'sonner'
 
 import {
+  CampDeletedError,
   getCategoriile,
   getPreturilePeVarsta,
   getTabaraDeEditat,
@@ -95,6 +96,32 @@ test('retry after removing a camp with a failed hero upload creates it with a fr
   await user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
   await waitFor(() => expect(saveCampOffer).toHaveBeenCalledTimes(2))
   expect(vi.mocked(saveCampOffer).mock.calls[1][0]).not.toBe(firstId)
+})
+
+test('a lost rollback response keeps the ID until the database confirms deletion', async () => {
+  const user = userEvent.setup()
+  vi.mocked(schimbaPozaHero).mockRejectedValueOnce(new Error('Încărcarea a eșuat'))
+  vi.mocked(stergeTabara).mockRejectedValueOnce(new Error('Răspuns pierdut'))
+  vi.mocked(saveCampOffer)
+    .mockResolvedValueOnce(undefined)
+    .mockRejectedValueOnce(new CampDeletedError())
+  renderForm()
+  await laVerificare(user)
+  const create = () => user.click(screen.getByRole('button', { name: 'Creează tabăra' }))
+  await create()
+  await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Răspuns pierdut'))
+  await create()
+  await waitFor(() =>
+    expect(toast.error).toHaveBeenCalledWith(
+      'Salvarea anterioară a fost anulată. Apasă din nou pe „Creează tabăra”.',
+    ),
+  )
+  await create()
+  await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Tabără creată.'))
+  const [initial, uncertain, retry] = vi.mocked(saveCampOffer).mock.calls
+  expect(uncertain).toEqual(initial)
+  expect(retry[0]).not.toBe(initial[0])
+  expect(retry.slice(1)).toEqual(initial.slice(1))
 })
 
 test('salvarea trimite location_id, regulamentul și necesar fără preț global', async () => {

@@ -19,6 +19,7 @@ import { Check } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
+  CampDeletedError,
   getCategoriile,
   getPretulAdult,
   getPreturilePeVarsta,
@@ -314,6 +315,11 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
       toast.success(eEditare ? 'Tabără actualizată.' : 'Tabără creată.')
       navigate(baza)
     } catch (e) {
+      if (!eEditare && e instanceof CampDeletedError) {
+        setNewCampId(crypto.randomUUID())
+        toast.error('Salvarea anterioară a fost anulată. Apasă din nou pe „Creează tabăra”.')
+        return
+      }
       const mesaj = e instanceof Error ? e.message : ''
       toast.error(mesaj || 'Nu am putut salva tabăra.')
     }
