@@ -40,6 +40,7 @@ export default function AttendancePage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const selected = searchParams.get('copil') ?? TOTI
   const setSelected = (childId: string) => {
+    if (childId === selected) return
     setSearchParams((params) => {
       if (childId === TOTI) params.delete('copil')
       else params.set('copil', childId)

@@ -112,6 +112,7 @@ test('a child attendance link filters history and browser back restores that fil
   await user.click(screen.getByRole('button', { name: 'Ana' }))
   await waitFor(() => expect(mockedPrezenta).toHaveBeenCalledWith(COPIL_A))
   expect(screen.getByTestId('attendance-url')).toHaveTextContent(`?copil=${COPIL_A}`)
+  await user.click(screen.getByRole('button', { name: 'Ana' }))
   await user.click(screen.getByRole('button', { name: 'Back' }))
   await waitFor(() =>
     expect(screen.getByTestId('attendance-url')).toHaveTextContent(`?copil=${COPIL_B}`),
