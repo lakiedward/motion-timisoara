@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase'
 import type { Tables, TablesInsert, TablesUpdate } from '@/lib/database.types'
 import { slugDinTitlu } from '@/api/camps-admin'
 import type { CompetitionSchedule } from '@/lib/competition-schedule'
-import { getCompetitionRoutes } from '@/api/competition/competition-offers'
+import { deleteOffer } from '@/api/offer-deletion'
 
 export type Competition = Tables<'competitions'> & {
   start_at: string | null
@@ -199,23 +199,5 @@ export async function updateConcurs(id: string, input: CompetitionInput): Promis
 }
 
 export async function stergeConcurs(id: string): Promise<void> {
-  const routes = await getCompetitionRoutes(id)
-  if (routes.length > 0) {
-    throw new Error('Șterge mai întâi categoriile și traseele concursului.')
-  }
-  const { data, error: citire } = await supabase
-    .from('competitions')
-    .select('hero_photo_storage_path')
-    .eq('id', id)
-    .single()
-  if (citire) throw citire
-
-  const cale = data?.hero_photo_storage_path
-  if (cale) {
-    const { error: fisier } = await supabase.storage.from('competition-photos').remove([cale])
-    if (fisier) throw fisier
-  }
-
-  const { error } = await supabase.from('competitions').delete().eq('id', id).select().single()
-  if (error) throw error
+  await deleteOffer('competitions', id)
 }

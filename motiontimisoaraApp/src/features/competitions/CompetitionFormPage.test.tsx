@@ -7,6 +7,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
 import CompetitionFormPage from './CompetitionFormPage'
 import { createConcurs, getConcurs, stergeConcurs } from '@/api/competition/competitions'
+import { deleteOffer } from '@/api/offer-deletion'
 import { schimbaPozaConcurs } from '@/api/competition/competition-hero'
 import { setPickerValue } from '@/test/pickers'
 
@@ -24,6 +25,7 @@ vi.mock('@/api/competition/competition-hero', () => ({
   schimbaPozaConcurs: vi.fn().mockResolvedValue('k1/hero/a.jpg'),
   scoatePozaConcurs: vi.fn(),
 }))
+vi.mock('@/api/offer-deletion', () => ({ deleteOffer: vi.fn() }))
 
 vi.mock('@/api/club', () => ({ getClubSelectableLocations: vi.fn().mockResolvedValue([]) }))
 vi.mock('@/api/coach', () => ({ getSelectableLocations: vi.fn().mockResolvedValue([]) }))
@@ -223,16 +225,21 @@ test('ștergerea cere confirmare în dialogul comun și Anulează păstrează co
     location_text: 'Timișoara',
     allow_cash: false,
   })
-  vi.mocked(stergeConcurs).mockResolvedValue(undefined)
+  vi.mocked(deleteOffer)
+    .mockRejectedValueOnce(new Error('Oferta are înscrieri, prezențe sau rezultate salvate.'))
+    .mockResolvedValueOnce(undefined)
   deseneazaEditare()
   await user.click(await screen.findByRole('button', { name: 'Șterge concursul' }))
   const dialog = await screen.findByRole('alertdialog')
   expect(dialog).toHaveTextContent('Ștergi concursul?')
   await user.click(screen.getByRole('button', { name: 'Anulează' }))
-  expect(stergeConcurs).not.toHaveBeenCalled()
+  expect(deleteOffer).not.toHaveBeenCalled()
   await user.click(screen.getByRole('button', { name: 'Șterge concursul' }))
   const confirm = await screen.findByRole('alertdialog')
   await user.click(within(confirm).getByRole('button', { name: 'Șterge concursul' }))
-  await waitFor(() => expect(stergeConcurs).toHaveBeenCalledWith('k1'))
+  expect(await within(confirm).findByRole('alert')).toHaveTextContent('Oferta are înscrieri')
+  expect(screen.queryByText('lista concursuri')).not.toBeInTheDocument()
+  await user.click(within(confirm).getByRole('button', { name: 'Șterge concursul' }))
+  await waitFor(() => expect(deleteOffer).toHaveBeenCalledWith('competitions', 'k1'))
   expect(await screen.findByText('lista concursuri')).toBeInTheDocument()
 })

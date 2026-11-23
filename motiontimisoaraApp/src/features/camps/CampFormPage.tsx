@@ -10,7 +10,7 @@ import {
 } from './camp-form-schema'
 import { ofertaDinDraft, varsteDinDateSalvate } from './camp-form-totals'
 import { eurFaraCurs, offerCurrencyValues } from '@/lib/pricing/offer-currency'
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm, useWatch, type FieldErrors } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -19,6 +19,7 @@ import { Check } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
+  CampDeletedError,
   getCategoriile,
   getPretulAdult,
   getPreturilePeVarsta,
@@ -42,6 +43,7 @@ import {
 import { incarcaRegulamentFisier } from '@/api/camp-rules-file'
 import { BackLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
+import { OfferDeleteAction } from '@/components/OfferDeleteAction'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
 import { cn } from '@/lib/utils'
@@ -64,7 +66,8 @@ import {
 export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
   const { id } = useParams()
   const eEditare = !!id
-  const [newCampId] = useState(() => crypto.randomUUID())
+  const [newCampId, setNewCampId] = useState(() => crypto.randomUUID())
+  const rollbackCampId = useRef<string | null>(null)
   const navigate = useNavigate()
   const qc = useQueryClient()
   const { proprietar, gata, eClub, eroare, reincearca } = useProprietarTabere()
@@ -277,7 +280,9 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
         try {
           await schimbaPozaHero(campId, pozaHero)
         } catch {
+          rollbackCampId.current = campId
           await stergeTabara(campId)
+          setNewCampId(crypto.randomUUID())
           toast.error('Fără poza din capul paginii tabăra nu se salvează.')
           return
         }
@@ -312,6 +317,11 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
       toast.success(eEditare ? 'Tabără actualizată.' : 'Tabără creată.')
       navigate(baza)
     } catch (e) {
+      if (!eEditare && e instanceof CampDeletedError && rollbackCampId.current === newCampId) {
+        setNewCampId(crypto.randomUUID())
+        toast.error('Salvarea anterioară a fost anulată. Apasă din nou pe „Creează tabăra”.')
+        return
+      }
       const mesaj = e instanceof Error ? e.message : ''
       toast.error(mesaj || 'Nu am putut salva tabăra.')
     }
@@ -528,6 +538,7 @@ export default function CampFormPage({ baza }: { baza: CampPortalBaza }) {
                   ? 'Salvează tabăra'
                   : 'Creează tabăra'}
           </Button>
+          {id && tabara && <OfferDeleteAction table="camps" id={id} listPath={baza} disabled={isSubmitting} />}
         </div>
       </form>
     </div>

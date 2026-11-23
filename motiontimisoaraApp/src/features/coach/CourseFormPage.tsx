@@ -46,6 +46,7 @@ import { campRulesFileFromRow, type CampRulesFileMeta } from '@/lib/camp-rules'
 import { baniToRon } from '@/lib/money'
 import { BackLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
+import { OfferDeleteAction } from '@/components/OfferDeleteAction'
 import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { MAX_AGE, validateAgeRangeFields } from '@/lib/age-range/age-range'
@@ -527,6 +528,7 @@ export default function CourseFormPage() {
           <Button type="submit" disabled={isSubmitting || faraCurs}>
             {isSubmitting ? 'Se salvează…' : 'Salvează'}
           </Button>
+          {id && existing && <OfferDeleteAction table="courses" id={id} listPath="/coach/courses" disabled={isSubmitting} />}
           <Button type="button" variant="outline" asChild>
             <Link to="/coach/courses" onClick={pleaca}>
               Anulează

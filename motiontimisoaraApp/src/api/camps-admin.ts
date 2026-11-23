@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { deleteOffer } from '@/api/offer-deletion'
 import type { Database, Tables } from '@/lib/database.types'
 import { readCampRequirements, type CampRequirementCategory } from '@/lib/camp-requirements'
 
@@ -12,6 +13,12 @@ export type ModPret = 'single' | 'by_age'
 export type PretAdultDeSalvat = {
   amount: number
   components: { name: string; amount: number }[]
+}
+
+export class CampDeletedError extends Error {
+  constructor() {
+    super('Tabăra a fost ștearsă. Revino la lista de tabere.')
+  }
 }
 
 export async function saveCampOffer(
@@ -38,6 +45,9 @@ export async function saveCampOffer(
     p_age_prices: agePrices,
     p_adult_price: adultPrice,
   })
+  if (error?.code === 'P0001' && error.message === 'CAMP_DELETED') {
+    throw new CampDeletedError()
+  }
   if (error) throw error
 }
 
@@ -204,8 +214,7 @@ export async function getCategoriile(campId: string): Promise<CategoriePret[]> {
 }
 
 export async function stergeTabara(id: string): Promise<void> {
-  const { error } = await supabase.from('camps').delete().eq('id', id).select().single()
-  if (error) throw error
+  await deleteOffer('camps', id)
 }
 
 export async function getPreturilePeVarsta(campId: string): Promise<PretPeVarsta[]> {

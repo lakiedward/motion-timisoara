@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
@@ -16,6 +16,7 @@ import { schimbaPozaConcurs } from '@/api/competition/competition-hero'
 import { getClubSelectableLocations } from '@/api/club'
 import { getSelectableLocations } from '@/api/coach'
 import { HeroPhotoField } from '@/components/HeroPhotoField'
+import { OfferDeleteAction } from '@/components/OfferDeleteAction'
 import { mesajHeroLipsa } from '@/lib/hero-photo'
 import {
   competitionScheduleFromFields,
@@ -24,7 +25,6 @@ import {
 import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
 import { BackLink } from '@/components/page-header/PageHeader'
 import { Button } from '@/components/ui/button'
-import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { FieldMessage, fieldDescription } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -60,7 +60,6 @@ export default function CompetitionFormPage({ baza }: { baza: CompetitionPortalB
   const { owner, gata, eroare, reincearca } = useCompetitionOwner()
   const [fisier, setFisier] = useState<File | null>(null)
   const [eroareHero, setEroareHero] = useState<string | null>(null)
-  const [confirmaStergerea, setConfirmaStergerea] = useState(false)
 
   const existent = useQuery({
     queryKey: ['concurs-de-editat', id],
@@ -100,20 +99,6 @@ export default function CompetitionFormPage({ baza }: { baza: CompetitionPortalB
       })
     }
   }, [existent.data, reset])
-
-  const sterge = useMutation({
-    mutationFn: () => stergeConcurs(id as string),
-    onSuccess: () => {
-      toast.success('Concursul a fost șters.')
-      void qc.invalidateQueries({ queryKey: ['concursurile-mele'] })
-      void qc.invalidateQueries({ queryKey: ['concursuri-publice'] })
-      navigate(baza)
-    },
-    onError: (error) => {
-      setConfirmaStergerea(false)
-      toast.error(error instanceof Error ? error.message : 'Nu am putut șterge concursul.')
-    },
-  })
 
   const salveaza = handleSubmit(
     async (valori) => {
@@ -268,7 +253,7 @@ export default function CompetitionFormPage({ baza }: { baza: CompetitionPortalB
         <div className="flex flex-wrap gap-2 pt-2">
           <Button
             type="submit"
-            disabled={isSubmitting || sterge.isPending}
+            disabled={isSubmitting}
             aria-describedby={id ? undefined : 'competition-publication-note'}
           >
             {isSubmitting ? 'Se salvează…' : 'Salvează'}
@@ -276,23 +261,11 @@ export default function CompetitionFormPage({ baza }: { baza: CompetitionPortalB
           <Button type="button" variant="outline" asChild>
             <Link to={baza}>Anulează</Link>
           </Button>
-          {id && (
-            <Button type="button" variant="outline" onClick={() => setConfirmaStergerea(true)}>
-              Șterge concursul
-            </Button>
+          {id && existent.data && (
+            <OfferDeleteAction table="competitions" id={id} listPath={baza} disabled={isSubmitting} />
           )}
         </div>
       </form>
-      <ConfirmDialog
-        open={confirmaStergerea}
-        onOpenChange={setConfirmaStergerea}
-        title="Ștergi concursul?"
-        description="Concursul dispare din liste și de pe pagina publică. Acțiunea nu poate fi anulată."
-        confirmLabel="Șterge concursul"
-        destructive
-        pending={sterge.isPending}
-        onConfirm={() => sterge.mutate()}
-      />
       {id && (
         <div className="mt-10 space-y-6">
           <CompetitionOffersSection competitionId={id} />

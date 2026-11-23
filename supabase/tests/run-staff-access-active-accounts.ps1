@@ -19,6 +19,7 @@ try {
     if (-not $ready) { throw 'Isolated PostgreSQL did not become ready within 30 seconds.' }
     Invoke-ActiveDocker @('cp', (Join-Path $PSScriptRoot '../migrations'), "${containerName}:/tmp/migrations")
     Invoke-ActiveDocker @('cp', (Join-Path $PSScriptRoot 'staff-access-active-accounts.sql'), "${containerName}:/tmp/test.sql")
+    Invoke-ActiveDocker @('cp', (Join-Path $PSScriptRoot 'offer-deletion.sql'), "${containerName}:/tmp/offer-deletion.sql")
     Invoke-ActiveDocker @('exec', $containerName, 'psql', '-X', '-U', 'supabase_admin', '-d', 'active_test', '-v', 'ON_ERROR_STOP=1', '-f', '/tmp/test.sql')
 } finally {
     & docker rm --force --volumes $containerName *> $null
