@@ -37,6 +37,7 @@ SELECT public.test_assert(public.test_live(9,'consent',107,public.test_session(1
     'attendance in another occurrence does not grant access');
 RESET ROLE;
 
+GRANT INSERT ON public.test_results TO authenticated;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub', public.test_uuid(8)::TEXT, true);
 SELECT public.test_assert(private.can_receive_coach_live_location_events(:'live_topic'),
