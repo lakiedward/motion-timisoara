@@ -20,6 +20,7 @@ export function CoachSessionCatalog({ session }: { session: AdminSession }) {
       <SessionRoster
         courseId={session.courseId}
         occurrenceId={session.id}
+        startsAt={session.startsAt}
         listKey="coach-sessions"
         locked={!started}
         qrLinks

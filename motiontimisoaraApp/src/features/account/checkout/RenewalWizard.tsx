@@ -20,7 +20,7 @@ import type { Offering } from '../CheckoutPage'
 import { CheckoutBillingFields } from './CheckoutBillingFields'
 import { CheckoutOrderSummary } from './CheckoutOrderSummary'
 import { CheckoutPackagePicker } from './CheckoutPackagePicker'
-import { CheckoutPaymentStep } from './CheckoutPaymentStep'
+import { CheckoutPaymentMethods, CheckoutPaymentStep } from './CheckoutPaymentStep'
 import { CheckoutRulesConsent } from './CheckoutRulesConsent'
 import { CheckoutSteps } from './CheckoutSteps'
 import { TERMS_VERSION, acceptanceResetCode } from './checkout-acceptance'
@@ -140,7 +140,9 @@ export default function RenewalWizard({
       if (attempt.current?.signal.aborted || 'redirected' in result) return
       setProgress(null)
       if ('cash' in result) {
-        toast.success('Cumpărare înregistrată. Ședințele se adaugă după ce antrenorul confirmă plata cash.')
+        toast.success(
+          'Cumpărare înregistrată. Ședințele se adaugă după ce antrenorul confirmă plata cash.',
+        )
       } else if (!('ready' in result) || result.ready) {
         toast.success(result.message)
       } else {
@@ -234,10 +236,13 @@ export default function RenewalWizard({
         <div role="status" className="bg-muted space-y-3 rounded-xl p-4 text-sm sm:p-5">
           <p className="font-semibold">
             Ai o plată cu cardul începută
-            {open.sessions ? ` pentru ${open.sessions} ședințe` : ''} ({formatRonOffer(open.amount)}).
+            {open.sessions ? ` pentru ${open.sessions} ședințe` : ''} ({formatRonOffer(open.amount)}
+            ).
           </p>
           <p className="text-muted-foreground">
-            Finalizeaz-o din Înscrieri. După confirmare poți cumpăra din nou.
+            {open.expiredMonth
+              ? 'Luna pachetului s-a încheiat. Dacă ai plătit, așteaptă confirmarea. Altfel, contactează clubul pentru anulare.'
+              : 'Finalizeaz-o din Înscrieri. După confirmare poți cumpăra din nou.'}
           </p>
           <Button asChild variant="outline">
             <Link to="/account/enrollments">Mergi la Înscrieri</Link>
@@ -253,7 +258,8 @@ export default function RenewalWizard({
             <div role="status" className="bg-muted space-y-1 rounded-xl p-4 text-sm sm:p-5">
               <p className="font-semibold">
                 Ai deja o plată în așteptare
-                {open.sessions ? ` pentru ${open.sessions} ședințe` : ''} ({formatRonOffer(open.amount)}).
+                {open.sessions ? ` pentru ${open.sessions} ședințe` : ''} (
+                {formatRonOffer(open.amount)}).
               </p>
               <p className="text-muted-foreground">
                 {open.method === 'CASH'
@@ -275,6 +281,15 @@ export default function RenewalWizard({
             }}
           />
           {validation.isPlaceholderData ? <Skeleton className="h-24 rounded-xl" /> : priceBox}
+          {priced && allowCash && stripeConfigured && (
+            <CheckoutPaymentMethods
+              method={method}
+              allowCash={allowCash}
+              cashBlocked={false}
+              paymentAvailable={paymentAvailable}
+              switchMethod={setMethod}
+            />
+          )}
         </>
       )}
     </section>
@@ -294,7 +309,18 @@ export default function RenewalWizard({
             packageSize={choice.sessions}
             packageMonth={choice.month}
             packageDays={choiceDays(offering.coursePackages, choice)}
-            lines={quote ? [{ id: quote.childId, name: quote.name, amount: total, snapshot: quote.pricingSnapshot }] : []}
+            lines={
+              quote
+                ? [
+                    {
+                      id: quote.childId,
+                      name: quote.name,
+                      amount: total,
+                      snapshot: quote.pricingSnapshot,
+                    },
+                  ]
+                : []
+            }
             total={priced ? total : undefined}
           />
         }

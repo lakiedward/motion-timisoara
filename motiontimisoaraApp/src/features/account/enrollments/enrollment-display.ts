@@ -1,5 +1,5 @@
 import type { EnrollmentRow, MonthlyPackage } from '@/api/account'
-import { enrollmentPayable } from '@/api/payments/enrollments'
+import { enrollmentPayable, expiredCardPayment } from '@/api/payments/enrollments'
 import { dateLabel, monthName } from '@/lib/course-packages/package-month'
 import { plural } from '@/lib/plural'
 
@@ -107,7 +107,10 @@ export function canBuySessions(e: EnrollmentRow) {
     e.status === 'ACTIVE' &&
     Boolean(e.child) &&
     !e.payments.some(
-      (payment) => ['PENDING', 'FAILED'].includes(payment.status) && payment.method !== 'CASH',
+      (payment) =>
+        ['PENDING', 'FAILED'].includes(payment.status) &&
+        payment.method !== 'CASH' &&
+        !expiredCardPayment(payment),
     )
   )
 }

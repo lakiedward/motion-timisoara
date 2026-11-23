@@ -59,10 +59,11 @@ export async function getCourse(id: string): Promise<CourseDetail | null> {
 export type CourseCatalogItem = CourseListItem & {
   club: { id: string; name: string } | null
   spotsRemaining: number | null
+  course_packages?: { sessions: number; price: number }[]
 }
 
 const COURSE_CATALOG_SELECT =
-  '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), club:clubs(id,name), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order,caption)'
+  '*, sport:sports(id,code,name,default_photo_storage_path), coach:profiles(id,name,avatar_url), club:clubs(id,name), location:locations(*), occurrences:course_occurrences(id,starts_at,ends_at), course_photos(storage_path,display_order,caption), course_packages(sessions,price)'
 
 async function withSpotsRemaining(data: unknown): Promise<CourseCatalogItem[]> {
   const rows = (data ?? []) as Omit<CourseCatalogItem, 'spotsRemaining'>[]

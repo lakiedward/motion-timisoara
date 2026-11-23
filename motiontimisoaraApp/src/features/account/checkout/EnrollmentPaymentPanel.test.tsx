@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { EnrollmentPaymentPanel } from './EnrollmentPaymentPanel'
 import type { EnrollmentPayment } from '@/api/payments/enrollments'
 import { formatMoney } from '@/lib/money'
+import { EnrollmentRequestError } from '@/api/checkout'
 
 const mocks = vi.hoisted(() => ({
   read: vi.fn(),
@@ -97,7 +98,9 @@ describe('web payment panel on Stripe Checkout', () => {
   it('sends the saved enrollment to Stripe and locks the panel while redirecting', async () => {
     renderPanel()
     fireEvent.click(
-      await screen.findByRole('button', { name: `Plătește ${formatMoney(31612, 'RON')} pe Stripe` }),
+      await screen.findByRole('button', {
+        name: `Plătește ${formatMoney(31612, 'RON')} pe Stripe`,
+      }),
     )
     expect(await screen.findByRole('button', { name: 'Te ducem la Stripe…' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Închide' })).toBeDisabled()
@@ -106,7 +109,9 @@ describe('web payment panel on Stripe Checkout', () => {
   })
 
   it('shows a failed start once, next to the button, without a toast', async () => {
-    mocks.checkout.mockRejectedValue(new Error('Nu am putut deschide plata Stripe. Încearcă din nou.'))
+    mocks.checkout.mockRejectedValue(
+      new Error('Nu am putut deschide plata Stripe. Încearcă din nou.'),
+    )
     renderPanel()
     fireEvent.click(await screen.findByRole('button', { name: /pe Stripe$/ }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Nu am putut deschide plata Stripe.')
@@ -120,6 +125,26 @@ describe('web payment panel on Stripe Checkout', () => {
     renderPanel()
     fireEvent.click(await screen.findByRole('button', { name: /pe Stripe$/ }))
     await waitFor(() => expect(mocks.toast.success).toHaveBeenCalledTimes(1))
+  })
+
+  it('hides payment immediately if Stripe checkout rejects the expired month', async () => {
+    mocks.checkout.mockRejectedValue(
+      new EnrollmentRequestError('Luna s-a încheiat.', 'MONTH_ENDED'),
+    )
+    renderPanel()
+    fireEvent.click(await screen.findByRole('button', { name: /pe Stripe$/ }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Luna s-a încheiat.')
+    expect(screen.queryByRole('button', { name: /pe Stripe$/ })).not.toBeInTheDocument()
+  })
+
+  it('explains an already expired saved package without opening Stripe', async () => {
+    const row = enrollment()
+    row.payments[0].pricing_snapshot = { validity: 'CALENDAR_MONTH', validMonth: '2000-12' }
+    mocks.read.mockResolvedValue([row])
+    renderPanel()
+    expect(await screen.findByText(/Luna pachetului s-a încheiat/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /pe Stripe$/ })).not.toBeInTheDocument()
+    expect(mocks.checkout).not.toHaveBeenCalled()
   })
 })
 
@@ -197,10 +222,12 @@ describe('Android payment panel on the native sheet', () => {
     async (outcome) => {
       let resolve!: (value: unknown) => void
       let reject!: (reason: Error) => void
-      mocks.process.mockReturnValue(new Promise((yes, no) => {
-        resolve = yes
-        reject = no
-      }))
+      mocks.process.mockReturnValue(
+        new Promise((yes, no) => {
+          resolve = yes
+          reject = no
+        }),
+      )
       const { client, onClose, rerender } = renderPanel()
       fireEvent.click(await screen.findByRole('button', { name: /^Plătește/ }))
       await waitFor(() => expect(mocks.process).toHaveBeenCalledTimes(1))

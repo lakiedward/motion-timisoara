@@ -18,7 +18,7 @@ import { formatRonOffer } from '@/lib/money'
 import { stripeConfigured } from '@/lib/stripe'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { CheckoutPaymentStep } from './CheckoutPaymentStep'
+import { CheckoutPaymentMethods, CheckoutPaymentStep } from './CheckoutPaymentStep'
 import { CheckoutOrderSummary, CheckoutPriceReview, type SummaryLine } from './CheckoutOrderSummary'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusView } from '@/components/ui/status-view'
@@ -232,8 +232,17 @@ export default function CheckoutWizard({
       if (!payment.android) {
         setProgress('Te ducem la Stripe…')
         const started = await startStripeCheckout(created.enrollmentIds)
-        if (started === 'redirected') return { redirected: true as const, cash: false as const, free: false as const }
-        return { cash: false as const, free: false as const, result: { outcome: 'ready' as const, completed: created.enrollmentIds.length, total: created.enrollmentIds.length } }
+        if (started === 'redirected')
+          return { redirected: true as const, cash: false as const, free: false as const }
+        return {
+          cash: false as const,
+          free: false as const,
+          result: {
+            outcome: 'ready' as const,
+            completed: created.enrollmentIds.length,
+            total: created.enrollmentIds.length,
+          },
+        }
       }
       const result = await processEnrollmentPayments(
         created.enrollmentIds,
@@ -453,6 +462,15 @@ export default function CheckoutWizard({
               setAcceptedPrices(currentPrices ?? null)
             }}
           />
+          {kind === 'COURSE' && !isFree && allowCash && !cashBlocked && stripeConfigured && (
+            <CheckoutPaymentMethods
+              method={method}
+              allowCash={allowCash}
+              cashBlocked={cashBlocked}
+              paymentAvailable={paymentAvailable}
+              switchMethod={setMethod}
+            />
+          )}
         </section>
       )}
       {steps[step] === 'Facturare' && (
@@ -466,7 +484,9 @@ export default function CheckoutWizard({
               kindLabel={KIND_LABEL[kind]}
               packageSize={offering.perSession ? choice.sessions : undefined}
               packageMonth={offering.perSession ? choice.month : undefined}
-              packageDays={offering.perSession ? choiceDays(offering.coursePackages, choice) : undefined}
+              packageDays={
+                offering.perSession ? choiceDays(offering.coursePackages, choice) : undefined
+              }
               lines={summaryLines}
               total={pricesReady ? total : undefined}
             />

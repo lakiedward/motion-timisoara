@@ -93,6 +93,7 @@ export function AdminSessionRow({
           <SessionRoster
             courseId={s.courseId}
             occurrenceId={s.id}
+            startsAt={s.startsAt}
             listKey={listKey}
             locked={!started}
           />

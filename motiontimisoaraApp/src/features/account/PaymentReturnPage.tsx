@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { EnrollmentPaymentUnavailableError, getEnrollmentPayments } from '@/api/payments/enrollments'
+import { EnrollmentRequestError } from '@/api/checkout'
+import {
+  EnrollmentPaymentUnavailableError,
+  expiredCardPayment,
+  getEnrollmentPayments,
+} from '@/api/payments/enrollments'
 import { startStripeCheckout } from '@/api/payments/checkout-session'
 import { Button } from '@/components/ui/button'
 import { StatusView } from '@/components/ui/status-view'
@@ -31,7 +36,9 @@ export default function PaymentReturnPage() {
     retry: false,
     refetchInterval: (query) =>
       query.state.status === 'error' ||
-      query.state.data?.every((row) => row.payments[0].status === 'SUCCEEDED') ? false : 2000,
+      query.state.data?.every((row) => row.payments[0].status === 'SUCCEEDED')
+        ? false
+        : 2000,
   })
   const paid = Boolean(payments.data?.every((row) => row.payments[0].status === 'SUCCEEDED'))
 
@@ -46,6 +53,9 @@ export default function PaymentReturnPage() {
   }, [paid, queryClient])
 
   const retry = useMutation({ mutationFn: () => startStripeCheckout(ids) })
+  const monthEnded =
+    payments.data?.some((row) => expiredCardPayment(row.payments[0])) ||
+    (retry.error instanceof EnrollmentRequestError && retry.error.code === 'MONTH_ENDED')
 
   let content
   if (!ids.length || (result !== 'reusita' && result !== 'anulata')) {
@@ -108,9 +118,11 @@ export default function PaymentReturnPage() {
           text={
             retry.isError
               ? retry.error.message
-              : 'Nu s-a încasat nimic. Poți relua plata acum sau mai târziu, din Înscrieri.'
+              : monthEnded
+                ? 'Un pachet lunar a expirat. Verifică plățile în Înscrieri. Pentru a alege altă lună, contactează clubul.'
+                : 'Nu s-a încasat nimic. Poți relua plata acum sau mai târziu, din Înscrieri.'
           }
-          onRetry={redirecting || !payments.data ? undefined : () => retry.mutate()}
+          onRetry={redirecting || !payments.data || monthEnded ? undefined : () => retry.mutate()}
           retryLabel="Reia plata"
           className="pb-4"
         />

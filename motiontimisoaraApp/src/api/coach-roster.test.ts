@@ -26,6 +26,7 @@ vi.mock('@/lib/supabase', () => ({
 }))
 
 const inscris = (id: string, name: string) => ({ child: { id, name, birth_date: '2016-05-01' } })
+const startsAt = '2026-11-19T22:30:00Z'
 
 beforeEach(() => {
   raspuns = {}
@@ -46,7 +47,7 @@ test('copiii vin alfabetic, cu diacriticele românești la locul lor', async () 
     },
     attendance: { data: [], error: null },
   }
-  const roster = await getSessionRoster('curs', 'sedinta')
+  const roster = await getSessionRoster('curs', 'sedinta', startsAt)
   expect(roster.map((r) => r.child_name)).toEqual([
     'Ana Dumitrescu',
     'Andrei Popescu',
@@ -58,12 +59,12 @@ test('copiii vin alfabetic, cu diacriticele românești la locul lor', async () 
 test('ordinea nu depinde de ordinea în care vin rândurile din bază', async () => {
   const copii = [inscris('c1', 'Zoe Radu'), inscris('c2', 'Ana Dumitrescu')]
   raspuns = { enrollments: { data: copii, error: null }, attendance: { data: [], error: null } }
-  const prima = await getSessionRoster('curs', 'sedinta')
+  const prima = await getSessionRoster('curs', 'sedinta', startsAt)
   raspuns = {
     enrollments: { data: [...copii].reverse(), error: null },
     attendance: { data: [], error: null },
   }
-  const aDoua = await getSessionRoster('curs', 'sedinta')
+  const aDoua = await getSessionRoster('curs', 'sedinta', startsAt)
   expect(prima.map((r) => r.child_name)).toEqual(aDoua.map((r) => r.child_name))
 })
 
@@ -74,7 +75,7 @@ test('eroarea la citirea înscrierilor nu e înghițită', async () => {
     enrollments: { data: null, error: { message: 'boom' } },
     attendance: { data: [], error: null },
   }
-  await expect(getSessionRoster('curs', 'sedinta')).rejects.toBeTruthy()
+  await expect(getSessionRoster('curs', 'sedinta', startsAt)).rejects.toBeTruthy()
 })
 
 test('eroarea la citirea prezențelor nu e înghițită', async () => {
@@ -82,7 +83,7 @@ test('eroarea la citirea prezențelor nu e înghițită', async () => {
     enrollments: { data: [inscris('c1', 'Ana Dumitrescu')], error: null },
     attendance: { data: null, error: { message: 'boom' } },
   }
-  await expect(getSessionRoster('curs', 'sedinta')).rejects.toBeTruthy()
+  await expect(getSessionRoster('curs', 'sedinta', startsAt)).rejects.toBeTruthy()
 })
 
 test('starea de pontare a fiecărui copil vine din prezențele ședinței', async () => {
@@ -93,15 +94,13 @@ test('starea de pontare a fiecărui copil vine din prezențele ședinței', asyn
     },
     attendance: { data: [{ child_id: 'c1', status: 'PRESENT' }], error: null },
   }
-  const roster = await getSessionRoster('curs', 'sedinta')
+  const roster = await getSessionRoster('curs', 'sedinta', startsAt)
   expect(roster.find((r) => r.child_id === 'c1')?.status).toBe('PRESENT')
   expect(roster.find((r) => r.child_id === 'c2')?.status).toBeNull()
   expect(roster[0].child_birth_date).toBe('2016-05-01')
 })
 
-test('rândul copilului poartă data expirării pachetului consumat primul', async () => {
-  const azi = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Bucharest' }).format(new Date())
-  const anul = Number(azi.slice(0, 4)) + 1
+test('rândul copilului folosește data ședinței în fusul Europe/Bucharest', async () => {
   raspuns = {
     enrollments: {
       data: [
@@ -112,8 +111,8 @@ test('rândul copilului poartă data expirării pachetului consumat primul', asy
             {
               sessions: 4,
               sessions_used: 1,
-              valid_from: '2000-01-01',
-              valid_until: `${anul}-12-31`,
+              valid_from: '2026-11-20',
+              valid_until: '2026-11-20',
             },
           ],
         },
@@ -123,7 +122,7 @@ test('rândul copilului poartă data expirării pachetului consumat primul', asy
     },
     attendance: { data: [], error: null },
   }
-  const roster = await getSessionRoster('curs', 'sedinta')
-  expect(roster[0].package_note).toBe(`expiră pe 31 decembrie ${anul}`)
+  const roster = await getSessionRoster('curs', 'sedinta', startsAt)
+  expect(roster[0].package_note).toBe('expiră pe 20 noiembrie 2026')
   expect(roster[1].package_note).toBeNull()
 })

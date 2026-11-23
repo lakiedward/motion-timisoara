@@ -123,6 +123,16 @@ test('filters narrow the list and the empty result offers a reset', async () => 
   expect(screen.getAllByRole('article')).toHaveLength(1)
 })
 
+test('the price filter uses the same package rate as the card', async () => {
+  catalogRequest.mockResolvedValue([course({ course_packages: [{ sessions: 8, price: 28_000 }] })])
+  renderPage()
+  expect(await screen.findByText(/de la 35,00 lei/)).toBeInTheDocument()
+  await pickFilter('Preț pe ședință', 'Până la 50 lei / ședință')
+  expect(screen.getByRole('link', { name: 'Înot începători' })).toBeInTheDocument()
+  await pickFilter('Preț pe ședință', 'Până la 30 lei / ședință')
+  expect(screen.queryByRole('link', { name: 'Înot începători' })).not.toBeInTheDocument()
+})
+
 test('sport chips toggle and each active filter can be removed on its own', async () => {
   catalogRequest.mockResolvedValue([
     course({}),

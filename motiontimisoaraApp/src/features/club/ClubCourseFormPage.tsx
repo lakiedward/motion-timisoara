@@ -24,9 +24,15 @@ import { z } from 'zod'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { createClubCourse, getClubCourseById, updateClubCourse } from '@/api/club'
+import {
+  createClubCourse,
+  getClubCourseById,
+  setClubCourseActive,
+  updateClubCourse,
+} from '@/api/club'
 import { incarcaRegulamentCurs, stergeRegulamentCurs } from '@/api/camp-rules-file'
-import { renuntaLaOfertaFaraHero, schimbaPozaOferta } from '@/api/offer-hero'
+import { schimbaPozaOferta } from '@/api/offer-hero'
+import { useCourseCreation } from '@/components/course-packages/use-course-creation'
 import { publicUrl } from '@/api/public'
 import { HeroPhotoField } from '@/components/HeroPhotoField'
 import GalleryPhotosSection from '@/features/photo-gallery/GalleryPhotosSection'
@@ -48,7 +54,10 @@ import { FormSelectMenu } from '@/components/ui/form-select-menu'
 import { levelOptions } from '@/lib/level'
 import { getCoursePackages } from '@/api/course-packages'
 import { CoursePackagesFields } from '@/components/course-packages/CoursePackagesFields'
-import { storeCoursePackages } from '@/components/course-packages/store-course-packages'
+import {
+  refreshPublicCourses,
+  storeCoursePackages,
+} from '@/components/course-packages/store-course-packages'
 import { coursePackagesSchema, packagesToForm } from '@/lib/course-packages/course-packages'
 import { FormSection, RequiredFieldsNote, RequiredMark } from '@/components/FormSection'
 import { CourseOwnerField } from './course-form/CourseOwnerField'
@@ -140,6 +149,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
   })
   const [fisierLocal, setFisierLocal] = useState<File | null>(null)
   const [pozaHero, setPozaHero] = useState<File | null>(null)
+  const { hasDraft, saveCourse } = useCourseCreation()
   const [eroareHero, setEroareHero] = useState<string | null>(null)
   const [fisierSuprascris, setFisierSuprascris] = useState<CampRulesFileMeta | null | undefined>(
     undefined,
@@ -178,7 +188,6 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
     setEroareOrganizator(lipsa)
     return !lipsa
   }
-
   const schimbaOrganizator = (urmator: string) => {
     setOwner(urmator)
     setEroareOrganizator(null)
@@ -192,7 +201,9 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
       toast.error('Clubul nu a fost găsit.')
       return
     }
-    const lipsa = mesajHeroLipsa(pozaHero, existing?.hero_photo_storage_path ?? null)
+    const lipsa = hasDraft
+      ? null
+      : mesajHeroLipsa(pozaHero, existing?.hero_photo_storage_path ?? null)
     setEroareHero(lipsa)
     if (lipsa) return
     const payload = {
@@ -213,29 +224,37 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
       if (isEdit) {
         await updateClubCourse(id as string, payload)
         if (pozaHero) await schimbaPozaOferta('courses', 'course-photos', id as string, pozaHero)
-        if (!(await storeCoursePackages(qc, id as string, v.packages, 'edit'))) return
-      } else {
-        const creat = await createClubCourse(clubId, payload)
-        try {
-          await schimbaPozaOferta('courses', 'course-photos', creat.id, pozaHero as File)
-        } catch {
-          await renuntaLaOfertaFaraHero('courses', creat.id)
-          toast.error('Fără poza din capul paginii cursul nu se salvează.')
+        if (!(await storeCoursePackages(qc, id as string, v.packages, 'edit'))) {
+          refreshPublicCourses(qc)
+          void qc.invalidateQueries({ queryKey: [listQueryKey] })
           return
         }
-        if (v.packages.length) await storeCoursePackages(qc, creat.id, v.packages, 'new')
+      } else {
+        const courseId = await saveCourse({
+          create: (active) => createClubCourse(clubId, payload, active),
+          update: (courseId) => updateClubCourse(courseId, payload),
+          activate: (courseId) => setClubCourseActive(courseId, true),
+          refreshLists: () => {
+            void qc.invalidateQueries({ queryKey: [listQueryKey] })
+          },
+          hero: pozaHero,
+          packages: v.packages,
+        })
+        if (!courseId) return
         if (fisierLocal) {
           try {
-            await incarcaRegulamentCurs(creat.id, fisierLocal)
+            await incarcaRegulamentCurs(courseId, fisierLocal)
           } catch {
             toast.error('Cursul a fost creat, dar fișierul regulamentului nu a putut fi urcat.')
+            refreshPublicCourses(qc)
             qc.invalidateQueries({ queryKey: [listQueryKey] })
             navigate(listPath)
             return
           }
         }
       }
-      qc.invalidateQueries({ queryKey: [listQueryKey] })
+      await qc.invalidateQueries({ queryKey: [listQueryKey], refetchType: 'all' })
+      refreshPublicCourses(qc)
       toast.success(
         isEdit
           ? 'Curs actualizat. Ședințele viitoare urmează programul.'
@@ -351,7 +370,7 @@ export default function ClubCourseFormPage({ portal = 'club' }: { portal?: Cours
             <CourseOwnerField
               value={owner}
               clubs={clubs}
-              locked={isEdit}
+              locked={isEdit || hasDraft}
               error={eroareOrganizator}
               required
               onChange={schimbaOrganizator}
