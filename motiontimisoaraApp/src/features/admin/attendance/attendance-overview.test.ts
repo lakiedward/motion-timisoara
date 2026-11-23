@@ -1,5 +1,8 @@
+import { vi } from 'vitest'
+
 import type { AdminSession } from '@/api/attendance/admin-sessions'
 import {
+  dayKey,
   filterSessions,
   formatDay,
   formatTime,
@@ -126,5 +129,16 @@ describe('attendance overview', () => {
     expect(formatTime('2026-10-27T15:00:00Z')).toBe('17:00')
     expect(formatTime('2026-10-20T14:00:00Z')).toBe('17:00')
     expect(formatDay('2026-10-20T22:30:00Z', NOW)).toBe('Mâine, miercuri 21 octombrie')
+  })
+
+  it('uses a stable ISO day key even when the locale formatter uses slashes', () => {
+    const formatted = vi
+      .spyOn(Intl.DateTimeFormat.prototype, 'format', 'get')
+      .mockReturnValue(() => '10/21/2026')
+    try {
+      expect(dayKey('2026-10-20T22:30:00Z')).toBe('2026-10-21')
+    } finally {
+      formatted.mockRestore()
+    }
   })
 })
