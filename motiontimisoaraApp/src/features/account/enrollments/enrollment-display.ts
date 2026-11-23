@@ -90,7 +90,11 @@ export function sessionsLines(e: SessionsSource, today: string = bucharestToday(
         ? `Pachetul din ${dateLabel(expired.valid_from)} a expirat pe ${dateLabel(expired.valid_until)}`
         : `Pachetul lunar din ${monthName(expired.valid_from.slice(0, 7))} a expirat pe ${dateLabel(expired.valid_until)}`,
     )
-  if (!lines.length && e.status === 'PENDING' && !expiredMonthlyPayment(e.payments?.[0]))
+  if (
+    !lines.length &&
+    e.status === 'PENDING' &&
+    !expiredMonthlyPayment(e.payments?.[0], today.slice(0, 7))
+  )
     lines.push('Începe după confirmarea plății')
   return lines
 }

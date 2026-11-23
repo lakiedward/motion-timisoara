@@ -96,8 +96,8 @@ export function enrollmentPaid(row: EnrollmentPayment) {
 }
 
 export function expiredMonthlyPayment(
-  payment: { method: string; status: string; pricing_snapshot?: unknown } | undefined,
-  now = new Date(),
+  payment: { status: string; pricing_snapshot?: unknown } | undefined,
+  month = bucharestMonth(new Date()),
 ): boolean {
   if (!payment || !OPEN.includes(payment.status)) return false
   const snapshot = payment.pricing_snapshot
@@ -107,7 +107,7 @@ export function expiredMonthlyPayment(
     validity === MONTHLY &&
     typeof validMonth === 'string' &&
     /^\d{4}-(0[1-9]|1[0-2])$/.test(validMonth) &&
-    validMonth < bucharestMonth(now)
+    validMonth < month
   )
 }
 
@@ -115,7 +115,7 @@ export function expiredCardPayment(
   payment: { method: string; status: string; pricing_snapshot?: unknown } | undefined,
   now = new Date(),
 ): boolean {
-  return payment?.method === 'CARD' && expiredMonthlyPayment(payment, now)
+  return payment?.method === 'CARD' && expiredMonthlyPayment(payment, bucharestMonth(now))
 }
 
 export function enrollmentPayable(row: {
