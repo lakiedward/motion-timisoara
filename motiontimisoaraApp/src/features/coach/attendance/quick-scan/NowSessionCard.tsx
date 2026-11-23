@@ -99,5 +99,5 @@ function Card({
 
 export function NowSessionCard(props: { session: AdminSession } & CatalogAction) {
   const queue = useAttendanceQueue()
-  return queue ? <Card {...props} queue={queue} /> : null
+  return queue ? <Card key={props.session.id} {...props} queue={queue} /> : null
 }

@@ -37,14 +37,15 @@ async function renderCard(session: AdminSession, onCatalog = vi.fn()) {
     vi.fn(),
   )
   await queue.load()
-  render(
+  const card = (selected: AdminSession) => (
     <MemoryRouter>
       <AttendanceContext.Provider value={queue}>
-        <NowSessionCard session={session} onCatalog={onCatalog} />
+        <NowSessionCard session={selected} onCatalog={onCatalog} />
       </AttendanceContext.Provider>
-    </MemoryRouter>,
+    </MemoryRouter>
   )
-  return onCatalog
+  const { rerender } = render(card(session))
+  return { onCatalog, setSession: (selected: AdminSession) => rerender(card(selected)) }
 }
 
 it('opens the web scanner for the current session', async () => {
@@ -56,9 +57,19 @@ it('opens the web scanner for the current session', async () => {
 })
 
 it('opens the catalog of the session', async () => {
-  const onCatalog = await renderCard(base)
+  const { onCatalog } = await renderCard(base)
   await userEvent.click(screen.getByRole('button', { name: /Catalogul/ }))
   expect(onCatalog).toHaveBeenCalledOnce()
+})
+
+it('closes the previous camera when the dashboard switches occurrences', async () => {
+  const { setSession } = await renderCard(base)
+  await userEvent.click(screen.getByRole('button', { name: /Scanează cod QR/ }))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+  setSession({ ...base, id: 'occ-2', courseName: 'Următorul curs' })
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: /Scanează cod QR/ }))
+  expect(screen.getByRole('dialog', { name: /Următorul curs/ })).toBeInTheDocument()
 })
 
 it('keeps scanning closed until one hour before the start', async () => {
