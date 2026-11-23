@@ -32,7 +32,7 @@ const messages: Record<string, string> = {
   NOT_ENROLLED: 'Copilul nu are o înscriere activă la acest curs.',
   INVALID_QR: 'Codul nu mai este valabil. Cere codul actual al copilului.',
   FORBIDDEN: 'Nu ai acces la această ședință.',
-  TOO_EARLY: 'Pontajul se deschide la începutul ședinței.',
+  TOO_EARLY: 'Pontajul se deschide cu o oră înainte de ședință.',
   AMBIGUOUS_ENROLLMENT: 'Există mai multe înscrieri active. Contactează administratorul.',
 }
 

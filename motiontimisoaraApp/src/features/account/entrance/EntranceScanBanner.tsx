@@ -25,8 +25,8 @@ export function EntranceScanBanner({ className }: { className?: string }) {
         <span className="min-w-0">
           <span className="block font-semibold">Ești la intrare?</span>
           <span className="text-muted-foreground block text-sm">
-            Scanează foaia antrenorului și marchează-ți copilul prezent, de la 15 minute înainte de
-            ședință până la final.
+            Scanează foaia antrenorului și marchează-ți copilul prezent începând cu o oră înainte de
+            ședință și până la final.
           </span>
         </span>
       </div>

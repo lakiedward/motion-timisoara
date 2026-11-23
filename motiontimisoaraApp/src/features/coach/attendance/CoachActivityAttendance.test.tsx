@@ -81,8 +81,8 @@ test('o activitate viitoare arată când se deschide pontajul și blochează but
   renderList()
   await user.click(await screen.findByRole('button', { name: /Înot de Halloween/ }))
   expect(
-    (await screen.findAllByText(/Pontajul se deschide în ziua activității/)).length,
+    (await screen.findAllByText(/Pontajul se deschide/)).length,
   ).toBeGreaterThan(0)
-  for (const b of screen.getAllByRole('button', { name: /Prezent: Ana Pop/ }))
+  for (const b of screen.getAllByRole('button', { name: /Prezent: Dan Ilie/ }))
     expect(b).toBeDisabled()
 })

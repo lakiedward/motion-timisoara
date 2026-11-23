@@ -44,8 +44,8 @@ export function optionsProblem(
       return {
         title: 'Acum nu e nicio ședință deschisă',
         text: nextOpensAt
-          ? `Prezența se marchează de la 15 minute înainte de ședință până la final. Următoarea fereastră se deschide ${nextOpening(nextOpensAt, serverTime)}.`
-          : `Prezența se marchează de la 15 minute înainte de ședință până la final. Nu mai e programată nicio ședință la cursurile${coach}.`,
+          ? `Prezența se poate marca cu cel mult o oră înainte de ședință și până la final. Următoarea fereastră se deschide ${nextOpening(nextOpensAt, serverTime)}.`
+          : `Prezența se poate marca cu cel mult o oră înainte de ședință și până la final. Nu mai e programată nicio ședință la cursurile${coach}.`,
       }
     case 'NOT_ENROLLED':
       return {
@@ -75,7 +75,7 @@ export function checkinProblem(code: string): EntranceMessage {
     case 'OUTSIDE_WINDOW':
       return {
         title: 'Fereastra ședinței s-a închis',
-        text: 'Prezența se marchează de la 15 minute înainte de ședință până la final. Cere-i antrenorului să marcheze prezența copilului.',
+        text: 'Prezența se poate marca cu cel mult o oră înainte de ședință și până la final. Cere-i antrenorului să marcheze prezența copilului.',
       }
     case 'MANUAL_OVERRIDE':
       return {

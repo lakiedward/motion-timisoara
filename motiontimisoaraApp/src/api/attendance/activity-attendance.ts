@@ -6,7 +6,7 @@ export type ActivityAttendanceStatus = 'PRESENT' | 'ABSENT'
 
 const messages: Record<string, string> = {
   NOT_ENROLLED: 'Copilul nu are o înscriere activă la această activitate.',
-  TOO_EARLY: 'Pontajul se deschide în ziua activității.',
+  TOO_EARLY: 'Pontajul se deschide cu o oră înainte de activitate.',
   FORBIDDEN: 'Nu ai acces la această activitate.',
 }
 

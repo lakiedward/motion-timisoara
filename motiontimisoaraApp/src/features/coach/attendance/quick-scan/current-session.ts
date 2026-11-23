@@ -1,15 +1,14 @@
 import { useEffect, useState } from 'react'
 import type { AdminSession } from '@/api/attendance/admin-sessions'
 
-export const SCAN_LEAD_MS = 15 * 60 * 1000
+import { attendanceOpensAt } from '@/lib/attendance-window'
 
 export function currentSession(items: AdminSession[], now = Date.now()) {
   return (
     items
       .filter((s) => {
-        const start = Date.parse(s.startsAt)
         const end = Date.parse(s.endsAt)
-        return start - SCAN_LEAD_MS <= now && now < end
+        return attendanceOpensAt(s.startsAt) <= now && now < end
       })
       .sort((x, y) => x.startsAt.localeCompare(y.startsAt))[0] ?? null
   )

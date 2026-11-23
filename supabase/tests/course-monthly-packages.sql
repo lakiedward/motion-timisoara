@@ -22,7 +22,8 @@ CREATE TABLE public.courses(id UUID PRIMARY KEY, currency TEXT NOT NULL DEFAULT 
     active BOOLEAN NOT NULL DEFAULT true, capacity INTEGER, age_from INTEGER, age_to INTEGER, club_id UUID REFERENCES public.clubs(id),
     coach_id UUID REFERENCES public.profiles(id), name TEXT NOT NULL DEFAULT 'Curs');
 CREATE TABLE public.activities(id UUID PRIMARY KEY, currency TEXT NOT NULL, price BIGINT NOT NULL,
-    active BOOLEAN NOT NULL DEFAULT true, capacity INTEGER, coach_id UUID);
+    active BOOLEAN NOT NULL DEFAULT true, capacity INTEGER, coach_id UUID,
+    activity_date DATE NOT NULL DEFAULT CURRENT_DATE, start_time TIME NOT NULL DEFAULT '10:00');
 CREATE TABLE public.camps(id UUID PRIMARY KEY, currency TEXT NOT NULL, price BIGINT NOT NULL,
     capacity INTEGER, allow_cash BOOLEAN NOT NULL DEFAULT true, pricing_mode TEXT NOT NULL DEFAULT 'by_age');
 CREATE TABLE public.course_occurrences(id UUID PRIMARY KEY, course_id UUID NOT NULL REFERENCES public.courses(id) ON DELETE CASCADE,
@@ -91,6 +92,12 @@ CREATE FUNCTION public.pot_administra_curs(p_course_id UUID) RETURNS BOOLEAN LAN
 \i /tmp/migrations/00149_course_package_checkout.sql
 \i /tmp/migrations/00150_course_monthly_packages.sql
 \i /tmp/migrations/00151_course_monthly_package_attendance.sql
+CREATE FUNCTION public.pot_administra_activitate(p_activity_id UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE AS $$
+    SELECT EXISTS (SELECT 1 FROM public.activities WHERE id = p_activity_id AND coach_id = auth.uid());
+$$;
+\i /tmp/migrations/00100_activity_attendance.sql
+\i /tmp/migrations/00154_attendance_opening_window.sql
 
 CREATE FUNCTION public.test_uuid(v INTEGER) RETURNS UUID LANGUAGE sql IMMUTABLE AS $$
     SELECT ('00000000-0000-0000-0000-' || lpad(v::TEXT,12,'0'))::UUID
@@ -199,7 +206,8 @@ INSERT INTO public.course_occurrences(id, course_id, starts_at, ends_at) VALUES
     (public.test_uuid(903), public.test_uuid(100), '2026-02-01 00:30+02', '2026-02-01 01:20+02'),
     (public.test_uuid(904), public.test_uuid(100), '2026-01-20 16:00+02', '2026-01-20 17:00+02'),
     (public.test_uuid(905), public.test_uuid(100), '2026-01-22 16:00+02', '2026-01-22 17:00+02'),
-    (public.test_uuid(906), public.test_uuid(100), now() - INTERVAL '5 minutes', now() + INTERVAL '55 minutes');
+    (public.test_uuid(906), public.test_uuid(100), now() + INTERVAL '1 hour', now() + INTERVAL '2 hours'),
+    (public.test_uuid(907), public.test_uuid(100), now() + INTERVAL '61 minutes', now() + INTERVAL '121 minutes');
 
 SELECT public.test_assert(public.bucharest_date('2026-01-31 22:30+00') = '2026-02-01',
     'after midnight in Bucharest it is already the next day, although UTC is still on the 31st');
@@ -345,8 +353,17 @@ SELECT public.test_add_package(811, 1211, 2, '2026-01-01');
 SELECT public.test_assert(public.test_bulk(60, ARRAY[210, 211], 904)->>'success' = 'true'
     AND public.test_used(810) = 1 AND public.test_used(811) = 1, '„Toți prezenți” uses each child''s monthly package');
 
-SELECT public.test_add_package(812, 1214, 2, date_trunc('month', public.bucharest_date(now()))::DATE);
-SELECT public.test_add_package(813, 1215, 2, (date_trunc('month', public.bucharest_date(now())) + INTERVAL '1 month')::DATE);
+SELECT public.test_assert(public.test_mark(61, 206, 'PRESENT', 907)->>'code' = 'TOO_EARLY',
+    'manual attendance is rejected 61 minutes before the start');
+SELECT public.test_assert(public.test_scan(62, 206, 907)->>'code' = 'TOO_EARLY',
+    'coach QR is rejected 61 minutes before the start');
+SELECT public.test_assert(public.test_scan(63, 206, 906)->>'success' = 'true',
+    'coach QR opens one hour before the start');
+SELECT public.test_assert(public.test_mark(64, 206, 'ABSENT', 906, 3)->>'success' = 'true',
+    'club manual attendance opens one hour before the start');
+
+SELECT public.test_add_package(812, 1214, 2, date_trunc('month', public.bucharest_date(now() + INTERVAL '1 hour'))::DATE);
+SELECT public.test_add_package(813, 1215, 2, (date_trunc('month', public.bucharest_date(now() + INTERVAL '1 hour')) + INTERVAL '1 month')::DATE);
 SELECT set_config('request.jwt.claim.sub', public.test_uuid(1)::TEXT, true);
 SELECT public.get_coach_entrance_code(NULL);
 SELECT set_config('request.jwt.claim.sub', public.test_uuid(2)::TEXT, true);
@@ -354,6 +371,10 @@ DO $$
 DECLARE v_options JSONB; v_option JSONB; v_result JSONB;
 BEGIN
     v_options := public.entrance_checkin_options(public.test_token(1));
+    PERFORM public.test_assert(NOT EXISTS (SELECT 1 FROM jsonb_array_elements(v_options->'options') o
+        WHERE o->>'occurrenceId' = public.test_uuid(907)::TEXT), 'entrance options hide the session 61 minutes before');
+    v_result := public.entrance_checkin(public.test_token(1), public.test_uuid(907), public.test_uuid(214), public.test_uuid(40000));
+    PERFORM public.test_assert(v_result->>'code' = 'OUTSIDE_WINDOW', 'entrance submission is rejected 61 minutes before');
     SELECT o INTO v_option FROM jsonb_array_elements(v_options->'options') o
         WHERE o->>'childId' = public.test_uuid(214)::TEXT;
     PERFORM public.test_assert(v_option->>'state' = 'AVAILABLE' AND (v_option->>'remainingSessions')::INTEGER = 2,
@@ -364,7 +385,7 @@ BEGIN
         'entrance: a package bought for next month is shown as not started');
     v_result := public.entrance_checkin(public.test_token(1), public.test_uuid(906), public.test_uuid(214), public.test_uuid(40001));
     PERFORM public.test_assert(v_result->>'outcome' = 'recorded' AND (v_result->>'remainingSessions')::INTEGER = 1
-        AND public.test_used(812) = 1, 'entrance: the check-in uses this month''s package and shows what is left');
+        AND public.test_used(812) = 1, 'entrance opens one hour before and uses the package for the session month');
     PERFORM public.test_assert((SELECT debit_monthly_package_id = public.test_uuid(812) FROM public.attendance_accounting
         WHERE occurrence_id = public.test_uuid(906) AND child_id = public.test_uuid(214)), 'entrance: the debit remembers the package');
     v_result := public.entrance_checkin(public.test_token(1), public.test_uuid(906), public.test_uuid(215), public.test_uuid(40002));
@@ -373,6 +394,27 @@ BEGIN
 END $$;
 SELECT public.test_assert((public.test_mark(70, 214, 'ABSENT', 906)->>'success')::BOOLEAN AND public.test_used(812) = 0,
     'the coach correcting an entrance check-in gives the session back to the package');
+
+INSERT INTO public.activities(id, currency, price, coach_id, activity_date, start_time)
+    SELECT public.test_uuid(910), 'RON', 1000, public.test_uuid(1), local_start::DATE, local_start::TIME
+    FROM (SELECT (now() + INTERVAL '61 minutes') AT TIME ZONE 'Europe/Bucharest' AS local_start) t;
+INSERT INTO public.enrollments(kind, entity_id, child_id, status)
+    VALUES ('ACTIVITY', public.test_uuid(910), public.test_uuid(206), 'ACTIVE');
+SELECT set_config('request.jwt.claim.sub', public.test_uuid(1)::TEXT, true);
+DO $$
+BEGIN
+    PERFORM public.record_activity_attendance(public.test_uuid(910), ARRAY[public.test_uuid(206)], 'PRESENT');
+    RAISE EXCEPTION 'Activity attendance accepted 61 minutes before the start';
+EXCEPTION WHEN invalid_parameter_value THEN
+    PERFORM public.test_assert(SQLERRM = 'TOO_EARLY', 'activity marks are rejected 61 minutes before');
+END;
+$$;
+UPDATE public.activities SET
+    activity_date = ((now() + INTERVAL '1 hour') AT TIME ZONE 'Europe/Bucharest')::DATE,
+    start_time = ((now() + INTERVAL '1 hour') AT TIME ZONE 'Europe/Bucharest')::TIME
+    WHERE id = public.test_uuid(910);
+SELECT public.test_assert(public.record_activity_attendance(public.test_uuid(910), ARRAY[public.test_uuid(206)], 'PRESENT') = 1,
+    'activity marking opens one hour before its Bucharest start');
 
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub', public.test_uuid(2)::TEXT, true);

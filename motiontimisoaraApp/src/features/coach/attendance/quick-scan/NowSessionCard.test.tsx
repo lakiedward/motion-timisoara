@@ -61,13 +61,23 @@ it('opens the catalog of the session', async () => {
   expect(onCatalog).toHaveBeenCalledOnce()
 })
 
-it('keeps scanning closed until the session starts', async () => {
+it('keeps scanning closed until one hour before the start', async () => {
   await renderCard({
     ...base,
-    startsAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+    startsAt: new Date(Date.now() + 61 * 60_000).toISOString(),
+    endsAt: new Date(Date.now() + 121 * 60_000).toISOString(),
   })
   expect(screen.getByRole('button', { name: /Scanează cod QR/ })).toBeDisabled()
   expect(screen.getByText(/Scanarea se deschide la/)).toBeInTheDocument()
+})
+
+it('allows scanning before the session once attendance opens', async () => {
+  await renderCard({
+    ...base,
+    startsAt: new Date(Date.now() + 55 * 60_000).toISOString(),
+    endsAt: new Date(Date.now() + 115 * 60_000).toISOString(),
+  })
+  expect(screen.getByRole('button', { name: /Scanează cod QR/ })).toBeEnabled()
 })
 
 it('renders nothing without a coach attendance queue', () => {
