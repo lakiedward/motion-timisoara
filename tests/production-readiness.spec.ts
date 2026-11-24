@@ -1,22 +1,6 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Locator, type Page } from '@playwright/test'
 
 import { hasLiveBackend, isLocalPreview } from './helpers/target'
-
-/**
- * Production readiness for the React app (Romanian public routes).
- *
- * Local:  BASE_URL=http://localhost:3017 npx playwright test tests/production-readiness.spec.ts
- * Prod:   npx playwright test tests/production-readiness.spec.ts
- *         (default baseURL = https://www.motiontimisoara.com)
- *
- * The route table lives in motiontimisoaraApp/src/routes/router.tsx and is
- * Romanian end to end (/cursuri, /login, /register, …). Data comes from
- * Supabase over PostgREST, so listing assertions wait for the network instead
- * of asserting on a fixed row count.
- *
- * Checks that describe the React build or HTTPS-only hardening are gated on the
- * target: React copy is asserted on the local preview, TLS hardening only off it.
- */
 
 /** Public pages reachable from the header, with the label that links to them. */
 const HEADER_ROUTES = [
@@ -45,6 +29,10 @@ const NOT_FOUND_COPY = 'Pagina nu a fost găsită'
 
 /** Courses are fetched from Supabase after hydration; allow for a cold round trip. */
 const DATA_TIMEOUT = 40_000
+const COURSES_LOAD_ERROR = 'Nu am putut încărca cursurile'
+
+const courseListSettled = (page: Page, firstCard: Locator): Locator =>
+  firstCard.or(page.getByText(/Niciun curs/)).or(page.getByText(COURSES_LOAD_ERROR))
 
 /** Origin of a URL, or an empty string when it cannot be parsed. */
 function originOf(url: string | undefined): string {
@@ -95,14 +83,13 @@ async function gotoSettled(page: Page, route: string): Promise<void> {
 }
 
 test.describe('Production readiness — critical user flows', () => {
-  test('homepage renders the public shell and the hero', async ({ page, baseURL }) => {
+  test('homepage renders the public shell and the hero', async ({ page }) => {
     const response = await page.goto('/')
     expect(response?.status()).toBe(200)
 
     await expect(page.locator('header').first()).toBeVisible()
     await expect(page.locator('footer').first()).toBeVisible()
 
-    test.skip(!isLocalPreview(baseURL), 'React copy is asserted on the local preview only')
 
     // Brand wordmark in the header links home.
     await expect(page.getByRole('link', { name: 'Acasă' })).toBeVisible()
@@ -117,9 +104,8 @@ test.describe('Production readiness — critical user flows', () => {
     )
   })
 
-  test('header exposes every public Romanian route', async ({ page, baseURL }) => {
+  test('header exposes every public Romanian route', async ({ page }) => {
     await page.goto('/')
-    test.skip(!isLocalPreview(baseURL), 'React header is asserted on the local preview only')
 
     const nav = page.locator('header nav').first()
     for (const route of HEADER_ROUTES) {
@@ -130,9 +116,8 @@ test.describe('Production readiness — critical user flows', () => {
     }
   })
 
-  test('header navigation moves between pages and back home', async ({ page, baseURL }) => {
+  test('header navigation moves between pages and back home', async ({ page }) => {
     await page.goto('/')
-    test.skip(!isLocalPreview(baseURL), 'React header is asserted on the local preview only')
 
     await page.locator('header nav').getByRole('link', { name: 'Cursuri', exact: true }).click()
     await expect(page).toHaveURL(/\/cursuri$/)
@@ -142,9 +127,8 @@ test.describe('Production readiness — critical user flows', () => {
     await expect(page).toHaveURL(/\/$/)
   })
 
-  test('footer terms link opens the terms page', async ({ page, baseURL }) => {
+  test('footer terms link opens the terms page', async ({ page }) => {
     await page.goto('/')
-    test.skip(!isLocalPreview(baseURL), 'React footer is asserted on the local preview only')
 
     await page.locator('footer').getByRole('link', { name: 'Termeni', exact: true }).click()
     await expect(page).toHaveURL(/\/termeni$/)
@@ -155,8 +139,7 @@ test.describe('Production readiness — critical user flows', () => {
   // timeout and its own failure line, instead of the whole table going red on
   // whichever page happened to be slow.
   for (const route of PUBLIC_ROUTES) {
-    test(`${route} renders its own page without uncaught errors`, async ({ page, baseURL }) => {
-      test.skip(!isLocalPreview(baseURL), 'React route table is asserted on the local preview only')
+    test(`${route} renders its own page without uncaught errors`, async ({ page }) => {
 
       const errors: string[] = []
       page.on('pageerror', (error) => errors.push(error.message))
@@ -179,29 +162,26 @@ test.describe('Production readiness — critical user flows', () => {
     const response = await page.goto('/cursuri')
     expect(response?.status()).toBe(200)
 
-    test.skip(!isLocalPreview(baseURL), 'React listing is asserted on the local preview only')
 
     await expect(page.getByRole('heading', { name: 'Cursuri', level: 1 })).toBeVisible()
 
-    // Either the grid resolved with cards, or the page states there is nothing to show.
     const cards = page.getByRole('article')
-    const emptyState = page.getByText(/Niciun curs|Nu am putut încărca cursurile/)
-    await expect(cards.first().or(emptyState)).toBeVisible({ timeout: DATA_TIMEOUT })
+    const settled = courseListSettled(page, cards.first())
+    await expect(settled).toBeVisible({ timeout: DATA_TIMEOUT })
+    if (hasLiveBackend()) await expect(page.getByText(COURSES_LOAD_ERROR)).toBeHidden()
   })
 
   test('course details open from the listing', async ({ page, baseURL }) => {
     test.slow(isLocalPreview(baseURL), 'The dev server compiles the route on first hit')
 
     await page.goto('/cursuri')
-    test.skip(!isLocalPreview(baseURL), 'React listing is asserted on the local preview only')
 
     const firstCard = page.getByRole('article').first()
-    const emptyState = page.getByText(/Niciun curs|Nu am putut încărca cursurile/)
-    await expect(firstCard.or(emptyState)).toBeVisible({ timeout: DATA_TIMEOUT })
-    test.skip(await emptyState.isVisible(), 'No published course to open')
+    await expect(courseListSettled(page, firstCard)).toBeVisible({ timeout: DATA_TIMEOUT })
+    if (hasLiveBackend()) await expect(page.getByText(COURSES_LOAD_ERROR)).toBeHidden()
+    test.skip(!(await firstCard.isVisible()), 'No published course to open')
 
     const title = (await firstCard.getByRole('heading').first().textContent())?.trim() ?? ''
-    // An empty title would make the heading assertion below match anything.
     expect(title, 'course card should carry a name').not.toBe('')
     await firstCard.getByRole('link', { name: title }).click()
 
@@ -211,11 +191,10 @@ test.describe('Production readiness — critical user flows', () => {
     })
   })
 
-  test('login page renders the sign-in form at /login', async ({ page, baseURL }) => {
+  test('login page renders the sign-in form at /login', async ({ page }) => {
     const response = await page.goto('/login')
     expect(response?.status()).toBe(200)
 
-    test.skip(!isLocalPreview(baseURL), 'React auth copy is asserted on the local preview only')
 
     await expect(page.getByRole('heading', { name: 'Bine ai revenit' })).toBeVisible()
     await expect(page.locator('form')).toBeVisible()
@@ -233,11 +212,10 @@ test.describe('Production readiness — critical user flows', () => {
     )
   })
 
-  test('register page renders the parent sign-up form at /register', async ({ page, baseURL }) => {
+  test('register page renders the parent sign-up form at /register', async ({ page }) => {
     const response = await page.goto('/register')
     expect(response?.status()).toBe(200)
 
-    test.skip(!isLocalPreview(baseURL), 'React auth copy is asserted on the local preview only')
 
     await expect(page.getByRole('heading', { name: /Creează cont/ })).toBeVisible()
     for (const label of ['Nume complet', 'Email', 'Telefon', 'Parolă']) {
@@ -250,14 +228,13 @@ test.describe('Production readiness — critical user flows', () => {
     )
   })
 
-  test('unknown route renders the Romanian 404 page', async ({ page, baseURL }) => {
+  test('unknown route renders the Romanian 404 page', async ({ page }) => {
     const response = await page.goto('/aceasta-pagina-nu-exista-xyz123')
 
     // The SPA serves index.html for deep links, so the router — not the host — answers.
     expect(response?.status()).toBeLessThan(500)
     await expect(page.locator('body')).not.toBeEmpty()
 
-    test.skip(!isLocalPreview(baseURL), 'React 404 copy is asserted on the local preview only')
     await expect(page.getByText(NOT_FOUND_COPY)).toBeVisible()
   })
 })
@@ -354,7 +331,6 @@ test.describe('Production readiness — security & performance', () => {
     test.slow(isLocalPreview(baseURL), 'The dev server compiles the route on first hit')
 
     await page.goto('/')
-    test.skip(!isLocalPreview(baseURL), 'React hero is asserted on the local preview only')
 
     const hero = page.locator('img').first()
     await expect(hero).toBeVisible()
@@ -371,11 +347,10 @@ test.describe('Production readiness — responsive design', () => {
     test.slow(isLocalPreview(baseURL), 'The dev server compiles each route on first hit')
   })
 
-  test('mobile 375x812 collapses the nav without horizontal scroll', async ({ page, baseURL }) => {
+  test('mobile 375x812 collapses the nav without horizontal scroll', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 })
     await page.goto('/')
 
-    test.skip(!isLocalPreview(baseURL), 'React header is asserted on the local preview only')
 
     await expect(page.getByRole('button', { name: 'Meniu' })).toBeVisible()
     await expect(page.locator('header nav').first()).toBeHidden()
@@ -386,11 +361,10 @@ test.describe('Production readiness — responsive design', () => {
     }
   })
 
-  test('tablet 768x1024 keeps the collapsed nav', async ({ page, baseURL }) => {
+  test('tablet 768x1024 keeps the collapsed nav', async ({ page }) => {
     await page.setViewportSize({ width: 768, height: 1024 })
     await page.goto('/')
 
-    test.skip(!isLocalPreview(baseURL), 'React header is asserted on the local preview only')
 
     // The desktop nav must stay collapsed below the lg breakpoint, not merely
     // sit next to a visible burger.
@@ -410,7 +384,6 @@ test.describe('Production readiness — responsive design', () => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto('/')
 
-    test.skip(!isLocalPreview(baseURL), 'React header is asserted on the local preview only')
 
     await expect(page.locator('header nav').first()).toBeVisible()
     await expect(
@@ -430,7 +403,6 @@ test.describe('Production readiness — data integrity', () => {
     baseURL,
   }) => {
     await page.goto('/login')
-    test.skip(!isLocalPreview(baseURL), 'React validation copy is asserted on the local preview only')
 
     await page.getByRole('button', { name: 'Autentificare' }).click()
 
@@ -440,9 +412,8 @@ test.describe('Production readiness — data integrity', () => {
     await expect(page).toHaveURL(/\/login$/)
   })
 
-  test('register rejects an empty submit on every required field', async ({ page, baseURL }) => {
+  test('register rejects an empty submit on every required field', async ({ page }) => {
     await page.goto('/register')
-    test.skip(!isLocalPreview(baseURL), 'React validation copy is asserted on the local preview only')
 
     await page.getByRole('button', { name: 'Creează cont' }).click()
 
@@ -458,7 +429,6 @@ test.describe('Production readiness — data integrity', () => {
   })
 
   test('outbound links on our own pages are safe', async ({ page, baseURL }) => {
-    test.skip(!isLocalPreview(baseURL), 'React pages are asserted on the local preview only')
     const ownOrigin = originOf(baseURL)
 
     for (const route of ['/', '/despre', '/contact']) {

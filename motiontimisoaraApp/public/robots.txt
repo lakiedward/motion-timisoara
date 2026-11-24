@@ -1,0 +1,12 @@
+User-agent: *
+Disallow: /account
+Disallow: /coach
+Disallow: /club$
+Disallow: /club/
+Disallow: /admin
+Disallow: /prezenta/
+Disallow: /dev/
+Disallow: /stripe/
+Allow: /
+
+Sitemap: https://motionromania.ro/sitemap.xml

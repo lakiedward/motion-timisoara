@@ -2,15 +2,20 @@ import { test, expect } from '@playwright/test'
 
 import { isLocalPreview } from './helpers/target'
 
-/**
- * Smoke tests for the React app (Romanian public routes).
- *
- * Local:  BASE_URL=http://localhost:3017 npx playwright test tests/smoke-tests.spec.ts
- * Prod:   npx playwright test tests/smoke-tests.spec.ts
- *         (default baseURL = https://www.motiontimisoara.com)
- * React copy assertions (headings, labels) run only against the local preview.
- * Against production they skip, because that host may still serve the Angular app.
- */
+const SITEMAP_PATHS = [
+  '/',
+  '/cursuri',
+  '/activitati',
+  '/tabere',
+  '/concursuri',
+  '/antrenori',
+  '/cluburi',
+  '/harta',
+  '/despre',
+  '/contact',
+  '/termeni',
+  '/confidentialitate',
+]
 
 test.describe('Smoke — health', () => {
   test('homepage is UP', async ({ page }) => {
@@ -56,9 +61,22 @@ test.describe('Smoke — health', () => {
     expect(page.url()).toMatch(/^https:\/\//)
   })
 
-  test('robots.txt does not 500', async ({ request }) => {
+  test('robots.txt is served as text and points to the sitemap', async ({ request }) => {
     const response = await request.get('/robots.txt')
-    expect(response.status()).toBeLessThan(500)
+    expect(response.status()).toBe(200)
+    expect(response.headers()['content-type']).toContain('text/plain')
+    expect(await response.text()).toContain('Sitemap: https://motionromania.ro/sitemap.xml')
+  })
+
+  test('sitemap.xml lists the public pages', async ({ request }) => {
+    const response = await request.get('/sitemap.xml')
+    expect(response.status()).toBe(200)
+    expect(response.headers()['content-type']).toContain('xml')
+    const body = await response.text()
+    expect(body.startsWith('<?xml')).toBe(true)
+    expect(body).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
+    const locs = [...body.matchAll(/<loc>\s*([^<]*?)\s*<\/loc>/g)].map((m) => m[1])
+    expect(locs).toEqual(SITEMAP_PATHS.map((path) => `https://motionromania.ro${path}`))
   })
 })
 
@@ -75,37 +93,25 @@ test.describe('Smoke — Romanian routes', () => {
     await expect(page.getByText(/Motion România/i).first()).toBeVisible()
   })
 
-  test('courses list loads at /cursuri', async ({ page, baseURL }) => {
+  test('courses list loads at /cursuri', async ({ page }) => {
     const response = await page.goto('/cursuri')
     expect(response?.status()).toBeLessThan(400)
     expect(page.url()).toContain('/cursuri')
-    test.skip(
-      !isLocalPreview(baseURL),
-      'React heading copy is asserted on the local preview, not on the still-Angular production host'
-    )
     await page.waitForLoadState('domcontentloaded')
     await expect(page.getByRole('heading', { name: 'Cursuri' })).toBeVisible()
   })
 
-  test('login page loads at /login', async ({ page, baseURL }) => {
+  test('login page loads at /login', async ({ page }) => {
     const response = await page.goto('/login')
     expect(response?.status()).toBeLessThan(400)
-    test.skip(
-      !isLocalPreview(baseURL),
-      'React login copy is asserted on the local preview, not on the still-Angular production host'
-    )
     await expect(page.getByRole('heading', { name: /Bine ai revenit|Autentific/i })).toBeVisible()
     await expect(page.getByLabel('Email')).toBeVisible()
     await expect(page.getByLabel(/Parolă|Parola/)).toBeVisible()
   })
 
-  test('register page loads at /register', async ({ page, baseURL }) => {
+  test('register page loads at /register', async ({ page }) => {
     const response = await page.goto('/register')
     expect(response?.status()).toBeLessThan(400)
-    test.skip(
-      !isLocalPreview(baseURL),
-      'React register copy is asserted on the local preview, not on the still-Angular production host'
-    )
     await expect(page.getByRole('heading', { name: /Creează cont/i })).toBeVisible()
   })
 
