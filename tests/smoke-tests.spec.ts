@@ -75,8 +75,8 @@ test.describe('Smoke — health', () => {
     const body = await response.text()
     expect(body.startsWith('<?xml')).toBe(true)
     expect(body).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
-    const locs = [...body.matchAll(/<url><loc>https:\/\/motionromania\.ro([^<]*)<\/loc><\/url>/g)].map((m) => m[1])
-    expect(locs).toEqual(SITEMAP_PATHS)
+    const locs = [...body.matchAll(/<loc>\s*([^<]*?)\s*<\/loc>/g)].map((m) => m[1])
+    expect(locs).toEqual(SITEMAP_PATHS.map((path) => `https://motionromania.ro${path}`))
   })
 })
 
