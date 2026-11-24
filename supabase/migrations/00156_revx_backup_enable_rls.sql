@@ -1,0 +1,1 @@
+ALTER TABLE public.revx_sol_state_backup_20261123 ENABLE ROW LEVEL SECURITY;
