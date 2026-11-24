@@ -82,6 +82,15 @@ must match the deployed schema. Live Android/parent verification and fixture cle
 are recorded in `docs/superpowers/specs/2026-09-09-feature-320-live-location-app.md`.
 Migration/deployment approval does not replace final human UI/device acceptance.
 
+`00155_manual_attendance_live_location.sql` (PR #480) was applied as remote version
+`20261123181505` (`manual_attendance_live_location`) on 2026-11-23 after merge
+`9c117fb5`. Course discovery and the location transaction use the same eligibility
+rule: the parent's child has an active course enrollment and a `PRESENT` mark for
+the occurrence. Point reads still require explicit consent. The migration record,
+installed function bodies and authenticated execution grants were verified remotely.
+The existing Edge function returned HTTP 401 for an unauthenticated request; its
+source did not change. Course and camp access were exercised with isolated SQL data.
+
 **Next migration number = highest existing + 1.** Check with
 `git ls-files supabase/migrations | tail -1` before creating one — do not trust a
 number written down elsewhere.
