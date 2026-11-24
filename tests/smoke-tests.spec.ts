@@ -2,12 +2,20 @@ import { test, expect } from '@playwright/test'
 
 import { isLocalPreview } from './helpers/target'
 
-/**
- * Smoke tests for the React app (Romanian public routes).
- *
- * Local:  BASE_URL=http://localhost:3017 npx playwright test tests/smoke-tests.spec.ts
- * Prod:   BASE_URL=https://motionromania.ro npx playwright test tests/smoke-tests.spec.ts
- */
+const SITEMAP_PATHS = [
+  '/',
+  '/cursuri',
+  '/activitati',
+  '/tabere',
+  '/concursuri',
+  '/antrenori',
+  '/cluburi',
+  '/harta',
+  '/despre',
+  '/contact',
+  '/termeni',
+  '/confidentialitate',
+]
 
 test.describe('Smoke — health', () => {
   test('homepage is UP', async ({ page }) => {
@@ -65,9 +73,10 @@ test.describe('Smoke — health', () => {
     expect(response.status()).toBe(200)
     expect(response.headers()['content-type']).toContain('xml')
     const body = await response.text()
-    for (const path of ['/', '/cursuri', '/tabere', '/cluburi']) {
-      expect(body).toContain(`<loc>https://motionromania.ro${path}</loc>`)
-    }
+    expect(body.startsWith('<?xml')).toBe(true)
+    expect(body).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
+    const locs = [...body.matchAll(/<url><loc>https:\/\/motionromania\.ro([^<]*)<\/loc><\/url>/g)].map((m) => m[1])
+    expect(locs).toEqual(SITEMAP_PATHS)
   })
 })
 

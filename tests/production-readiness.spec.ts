@@ -1,20 +1,6 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Locator, type Page } from '@playwright/test'
 
 import { hasLiveBackend, isLocalPreview } from './helpers/target'
-
-/**
- * Production readiness for the React app (Romanian public routes).
- *
- * Local:  BASE_URL=http://localhost:3017 npx playwright test tests/production-readiness.spec.ts
- * Prod:   BASE_URL=https://motionromania.ro npx playwright test tests/production-readiness.spec.ts
- *
- * The route table lives in motiontimisoaraApp/src/routes/router.tsx and is
- * Romanian end to end (/cursuri, /login, /register, …). Data comes from
- * Supabase over PostgREST, so listing assertions wait for the network instead
- * of asserting on a fixed row count.
- *
- * Every target serves the React app; only HTTPS-only hardening is skipped on the local preview.
- */
 
 /** Public pages reachable from the header, with the label that links to them. */
 const HEADER_ROUTES = [
@@ -43,6 +29,10 @@ const NOT_FOUND_COPY = 'Pagina nu a fost găsită'
 
 /** Courses are fetched from Supabase after hydration; allow for a cold round trip. */
 const DATA_TIMEOUT = 40_000
+const COURSES_LOAD_ERROR = 'Nu am putut încărca cursurile'
+
+const courseListSettled = (page: Page, firstCard: Locator): Locator =>
+  firstCard.or(page.getByText(/Niciun curs/)).or(page.getByText(COURSES_LOAD_ERROR))
 
 /** Origin of a URL, or an empty string when it cannot be parsed. */
 function originOf(url: string | undefined): string {
@@ -175,10 +165,10 @@ test.describe('Production readiness — critical user flows', () => {
 
     await expect(page.getByRole('heading', { name: 'Cursuri', level: 1 })).toBeVisible()
 
-    // Either the grid resolved with cards, or the page states there is nothing to show.
     const cards = page.getByRole('article')
-    const emptyState = page.getByText(/Niciun curs|Nu am putut încărca cursurile/)
-    await expect(cards.first().or(emptyState)).toBeVisible({ timeout: DATA_TIMEOUT })
+    const settled = courseListSettled(page, cards.first())
+    await expect(settled).toBeVisible({ timeout: DATA_TIMEOUT })
+    if (hasLiveBackend()) await expect(page.getByText(COURSES_LOAD_ERROR)).toBeHidden()
   })
 
   test('course details open from the listing', async ({ page, baseURL }) => {
@@ -187,12 +177,11 @@ test.describe('Production readiness — critical user flows', () => {
     await page.goto('/cursuri')
 
     const firstCard = page.getByRole('article').first()
-    const emptyState = page.getByText(/Niciun curs|Nu am putut încărca cursurile/)
-    await expect(firstCard.or(emptyState)).toBeVisible({ timeout: DATA_TIMEOUT })
-    test.skip(await emptyState.isVisible(), 'No published course to open')
+    await expect(courseListSettled(page, firstCard)).toBeVisible({ timeout: DATA_TIMEOUT })
+    if (hasLiveBackend()) await expect(page.getByText(COURSES_LOAD_ERROR)).toBeHidden()
+    test.skip(!(await firstCard.isVisible()), 'No published course to open')
 
     const title = (await firstCard.getByRole('heading').first().textContent())?.trim() ?? ''
-    // An empty title would make the heading assertion below match anything.
     expect(title, 'course card should carry a name').not.toBe('')
     await firstCard.getByRole('link', { name: title }).click()
 

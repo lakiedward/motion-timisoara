@@ -1,11 +1,3 @@
-/**
- * Both E2E suites run against two very different targets:
- *   - the local Vite preview of the React app (BASE_URL=http://localhost:3017)
- *   - a deployed site (BASE_URL=https://motionromania.ro or the master-- deploy)
- *
- * HTTPS-only hardening and timing budgets differ between the two, so both
- * suites gate them through this single predicate.
- */
 export const isLocalPreview = (baseURL: string | undefined): boolean =>
   !!baseURL && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(baseURL)
 
